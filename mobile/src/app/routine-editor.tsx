@@ -24,17 +24,15 @@ export default function RoutineEditorScreen() {
   const insets = useSafeAreaInsets();
 
   // Global Store State
-  const { routineEditorState, setRoutineEditorState, loadRoutineEditorState } = useAppStore(state => ({
-    routineEditorState: state.routineEditorState,
-    setRoutineEditorState: state.setRoutineEditorState,
-    loadRoutineEditorState: state.loadRoutineEditorState
-  }));
+  const routineEditorState = useAppStore(state => state.routineEditorState);
+  const setRoutineEditorState = useAppStore(state => state.setRoutineEditorState);
+  const loadRoutineEditorState = useAppStore(state => state.loadRoutineEditorState);
 
   const { routineName, description, folder, imageUrl, exercises } = routineEditorState;
 
   React.useEffect(() => {
     loadRoutineEditorState();
-  }, []);
+  }, [loadRoutineEditorState]);
 
   const setRoutineName = (val: string) => setRoutineEditorState({ routineName: val });
   const setDescription = (val: string) => setRoutineEditorState({ description: val });
@@ -262,6 +260,115 @@ export default function RoutineEditorScreen() {
     </View>
   );
 
+  const renderExerciseItem = React.useCallback(({ item, drag, isActive }: any) => {
+    const imgUrl = getImageUrl(item);
+    return (
+      <ScaleDecorator activeScale={1.02}>
+        <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
+          <View style={{ 
+            flexDirection: 'column', 
+            alignItems: 'stretch',
+            backgroundColor: colors.card, 
+            borderRadius: 16, 
+            borderWidth: 1, 
+            borderColor: isActive ? colors.tint : colors.border,
+            overflow: 'hidden',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: isActive ? 0.3 : 0.1,
+            shadowRadius: 4,
+            elevation: isActive ? 8 : 2
+          }}>
+            {/* Media */}
+            <View style={{ width: '100%', aspectRatio: 1, backgroundColor: colors.background }}>
+              <ExerciseMediaPreview item={item} getImageUrl={getImageUrl} />
+            </View>
+
+            {/* Content */}
+            <View style={{ padding: 16 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 18, flex: 1, marginRight: 12 }} numberOfLines={2}>
+                  {item.name}
+                </Text>
+                <TouchableOpacity onPress={() => removeExercise(item.id)} style={{ padding: 8, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 12 }}>
+                  <Trash2 size={20} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Info Pills */}
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                {/* Series */}
+                <TouchableOpacity
+                  style={{ flex: 1, backgroundColor: colors.card, padding: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
+                  onPress={() => setSelectModalConfig({
+                    visible: true,
+                    title: 'Series',
+                    options: SETS_OPTIONS,
+                    value: String(item.sets),
+                    onSelect: (val) => updateExerciseField(item.id, 'sets', val)
+                  })}
+                >
+                  <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 }}>Series</Text>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>{item.sets}</Text>
+                </TouchableOpacity>
+
+                {/* Reps */}
+                <TouchableOpacity
+                  style={{ flex: 1, backgroundColor: colors.card, padding: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
+                  onPress={() => {
+                    const curr = String(item.reps);
+                    const has = REPS_OPTIONS.some(o => o.value === curr);
+                    const opts = has ? REPS_OPTIONS : [{ value: curr, label: curr }, ...REPS_OPTIONS];
+                    setSelectModalConfig({
+                      visible: true,
+                      title: 'Repeticiones',
+                      options: opts,
+                      value: curr,
+                      onSelect: (val) => updateExerciseField(item.id, 'reps', val)
+                    });
+                  }}
+                >
+                  <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 }}>Reps</Text>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>{item.reps}</Text>
+                </TouchableOpacity>
+
+                {/* Rest */}
+                <TouchableOpacity
+                  style={{ flex: 1, backgroundColor: colors.card, padding: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
+                  onPress={() => {
+                    const curr = String(item.rest_seconds || "60");
+                    const has = REST_OPTIONS.some(o => o.value === curr);
+                    const opts = has ? REST_OPTIONS : [{ value: curr, label: `${curr}s` }, ...REST_OPTIONS];
+                    setSelectModalConfig({
+                      visible: true,
+                      title: 'Descanso',
+                      options: opts,
+                      value: curr,
+                      onSelect: (val) => updateExerciseField(item.id, 'rest_seconds', val)
+                    });
+                  }}
+                >
+                  <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 }}>Desc. (s)</Text>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>{item.rest_seconds || 60}s</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Drag Handle */}
+              <TouchableOpacity 
+                onLongPress={drag} 
+                disabled={isActive}
+                style={{ marginTop: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, borderRadius: 12, borderWidth: 1, borderColor: colors.border }}
+              >
+                <GripVertical size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <Text style={{ color: colors.textSecondary, fontWeight: 'bold', fontSize: 14 }}>Mantén para reordenar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </ScaleDecorator>
+    );
+  }, [colors, updateExerciseField, removeExercise]);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
@@ -286,114 +393,7 @@ export default function RoutineEditorScreen() {
             keyExtractor={(item) => item.id}
             ListHeaderComponent={renderHeader}
             ListFooterComponent={renderFooter}
-            renderItem={({ item, drag, isActive }) => {
-              const imgUrl = getImageUrl(item);
-              return (
-                <ScaleDecorator activeScale={1.02}>
-                  <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
-                    <View style={{ 
-                      flexDirection: 'column', 
-                      alignItems: 'stretch',
-                      backgroundColor: colors.card, 
-                      borderRadius: 16, 
-                      borderWidth: 1, 
-                      borderColor: isActive ? colors.tint : colors.border,
-                      overflow: 'hidden',
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: isActive ? 0.3 : 0.1,
-                      shadowRadius: 4,
-                      elevation: isActive ? 8 : 2
-                    }}>
-                      {/* Media */}
-                      <View style={{ width: '100%', aspectRatio: 1, backgroundColor: colors.background }}>
-                        <ExerciseMediaPreview item={item} getImageUrl={getImageUrl} />
-                      </View>
-
-                      {/* Content */}
-                      <View style={{ padding: 16 }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 18, flex: 1, marginRight: 12 }} numberOfLines={2}>
-                            {item.name}
-                          </Text>
-                          <TouchableOpacity onPress={() => removeExercise(item.id)} style={{ padding: 8, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 12 }}>
-                            <Trash2 size={20} color="#ef4444" />
-                          </TouchableOpacity>
-                        </View>
-
-                        {/* Info Pills */}
-                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                          {/* Series */}
-                          <TouchableOpacity
-                            style={{ flex: 1, backgroundColor: colors.card, padding: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
-                            onPress={() => setSelectModalConfig({
-                              visible: true,
-                              title: 'Series',
-                              options: SETS_OPTIONS,
-                              value: String(item.sets),
-                              onSelect: (val) => updateExerciseField(item.id, 'sets', val)
-                            })}
-                          >
-                            <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 }}>Series</Text>
-                            <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>{item.sets}</Text>
-                          </TouchableOpacity>
-
-                          {/* Reps */}
-                          <TouchableOpacity
-                            style={{ flex: 1, backgroundColor: colors.card, padding: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
-                            onPress={() => {
-                              const curr = String(item.reps);
-                              const has = REPS_OPTIONS.some(o => o.value === curr);
-                              const opts = has ? REPS_OPTIONS : [{ value: curr, label: curr }, ...REPS_OPTIONS];
-                              setSelectModalConfig({
-                                visible: true,
-                                title: 'Repeticiones',
-                                options: opts,
-                                value: curr,
-                                onSelect: (val) => updateExerciseField(item.id, 'reps', val)
-                              });
-                            }}
-                          >
-                            <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 }}>Reps</Text>
-                            <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>{item.reps}</Text>
-                          </TouchableOpacity>
-
-                          {/* Rest */}
-                          <TouchableOpacity
-                            style={{ flex: 1, backgroundColor: colors.card, padding: 8, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' }}
-                            onPress={() => {
-                              const curr = String(item.rest_seconds || "60");
-                              const has = REST_OPTIONS.some(o => o.value === curr);
-                              const opts = has ? REST_OPTIONS : [{ value: curr, label: `${curr}s` }, ...REST_OPTIONS];
-                              setSelectModalConfig({
-                                visible: true,
-                                title: 'Descanso',
-                                options: opts,
-                                value: curr,
-                                onSelect: (val) => updateExerciseField(item.id, 'rest_seconds', val)
-                              });
-                            }}
-                          >
-                            <Text style={{ color: colors.textSecondary, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 }}>Desc. (s)</Text>
-                            <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>{item.rest_seconds || 60}s</Text>
-                          </TouchableOpacity>
-                        </View>
-
-                        {/* Drag Handle */}
-                        <TouchableOpacity 
-                          onLongPress={drag} 
-                          disabled={isActive}
-                          style={{ marginTop: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, borderRadius: 12, borderWidth: 1, borderColor: colors.border }}
-                        >
-                          <GripVertical size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
-                          <Text style={{ color: colors.textSecondary, fontWeight: 'bold', fontSize: 14 }}>Mantén para reordenar</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  </View>
-                </ScaleDecorator>
-              );
-            }}
+            renderItem={renderExerciseItem}
             contentContainerStyle={{ paddingTop: insets.top + 60, paddingBottom: 40 }}
           />
       </KeyboardAvoidingView>
