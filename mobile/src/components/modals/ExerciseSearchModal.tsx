@@ -10,6 +10,7 @@ import { getExerciseList } from '@/services/exerciseService';
 import apiClient from '@/services/apiClient';
 import { SelectModal, SelectOption } from '@/components/ui/SelectModal';
 import { SETS_OPTIONS, REPS_OPTIONS, REST_OPTIONS } from '@/constants/exerciseOptions';
+import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview';
 
 interface ExerciseSearchModalProps {
   visible: boolean;
@@ -451,11 +452,9 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
                   const imageUrl = getImageUrl(item.exercise);
                   return (
                     <View style={[styles.exerciseCard, { backgroundColor: colors.card, borderColor: colors.border, flexDirection: 'column', alignItems: 'stretch' }]}>
-                      <Image 
-                        source={{ uri: imageUrl }} 
-                        style={{ width: '100%', aspectRatio: 1, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
-                        resizeMode="cover"
-                      />
+                      <View style={{ width: '100%', aspectRatio: 1, borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: 'hidden', backgroundColor: colors.background }}>
+                        <ExerciseMediaPreview item={item.exercise} getImageUrl={getImageUrl} />
+                      </View>
                       <View style={{ padding: 12, flex: 1, backgroundColor: colors.background + '80' }}>
                         <Text style={[styles.exerciseName, { color: colors.text }]} numberOfLines={2}>{item.exercise.name}</Text>
                           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>

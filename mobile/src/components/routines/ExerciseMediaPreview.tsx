@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, Image, StyleSheet } from "react-native";
+import { View, Image, StyleSheet, TouchableOpacity, Text } from "react-native";
 import { WebView } from "react-native-webview";
+import { Play } from 'lucide-react-native';
 
 export const ExerciseMediaPreview = ({ item, getImageUrl }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const images = [];
   if (item.images && Array.isArray(item.images)) {
@@ -25,7 +27,7 @@ export const ExerciseMediaPreview = ({ item, getImageUrl }) => {
     if (images.length > 1 && !item.video_url && !item.youtube_id) {
       const interval = setInterval(() => {
         setCurrentIndex(prev => (prev + 1) % images.length);
-      }, 1500); // 1.5 seconds per frame
+      }, 1500);
       return () => clearInterval(interval);
     }
   }, [images.length, item.video_url, item.youtube_id]);
@@ -38,9 +40,9 @@ export const ExerciseMediaPreview = ({ item, getImageUrl }) => {
     return null;
   };
 
-  if (item.video_url || item.youtube_id) {
-    const yid = item.youtube_id || getYoutubeId(item.video_url);
-    
+  const yid = item.youtube_id || getYoutubeId(item.video_url);
+
+  if ((item.video_url || item.youtube_id) && isPlaying) {
     if (yid) {
       const html = `
         <!DOCTYPE html>
@@ -71,7 +73,6 @@ export const ExerciseMediaPreview = ({ item, getImageUrl }) => {
       );
     }
 
-    // Fallback si no es un video de youtube
     return (
       <View style={{ width: "100%", height: "100%", backgroundColor: "#000", pointerEvents: "none" }}>
         <WebView 
@@ -86,11 +87,32 @@ export const ExerciseMediaPreview = ({ item, getImageUrl }) => {
     );
   }
 
+  const thumbUri = yid && images.length === 1 && images[0].includes('placeholder') 
+    ? `https://img.youtube.com/vi/${yid}/hqdefault.jpg` 
+    : (images[currentIndex] || images[0]);
+
   return (
-    <Image 
-      source={{ uri: images[currentIndex] || images[0] }} 
-      style={{ width: "100%", height: "100%" }} 
-      resizeMode="cover" 
-    />
+    <TouchableOpacity 
+      activeOpacity={0.9} 
+      style={{ width: "100%", height: "100%" }}
+      onPress={() => {
+        if (item.video_url || item.youtube_id) setIsPlaying(true);
+      }}
+      disabled={!(item.video_url || item.youtube_id)}
+    >
+      <Image 
+        source={{ uri: thumbUri }} 
+        style={{ width: "100%", height: "100%" }} 
+        resizeMode="cover" 
+      />
+      {(item.video_url || item.youtube_id) && !isPlaying && (
+        <View style={{ position: 'absolute', inset: 0, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: 'rgba(0,0,0,0.6)', padding: 12, borderRadius: 32, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Play size={20} color="#fff" fill="#fff" />
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Reproducir</Text>
+          </View>
+        </View>
+      )}
+    </TouchableOpacity>
   );
 };
