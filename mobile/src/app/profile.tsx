@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, KeyboardAvo
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
-import { ChevronLeft, Camera, User, Mail, Shield, Save, Eye, Trophy, AlertTriangle, Dumbbell, Flame, Crown, Star, Medal, Zap, Sparkles, Award } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Camera, User, Mail, Shield, Save, Eye, Trophy, AlertTriangle, Dumbbell, Flame, Crown, Star, Medal, Zap, Sparkles, Award } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
 import AnimatedScreen from '@/components/AnimatedScreen';
@@ -122,6 +122,7 @@ export default function ProfileScreen() {
     const [username, setUsername] = useState(userProfile?.username || '');
     const [newPassword, setNewPassword] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [currentBadgeIndex, setCurrentBadgeIndex] = useState(0);
     
     const gamification = useAppStore(state => state.gamification);
 
@@ -282,20 +283,37 @@ export default function ProfileScreen() {
                 </View>
 
                 {gamification?.unlockedBadges && gamification.unlockedBadges.length > 0 ? (
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' }}>
-                        {gamification.unlockedBadges.map((badgeId) => {
-                            const badge = BADGE_DETAILS[badgeId] || BADGE_DETAILS.default;
-                            const IconComp = badge.icon;
-                            return (
-                                <View key={badgeId} style={{ width: '31%', backgroundColor: colors.background, borderRadius: 20, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
-                                    <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: badge.bg, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                                        <IconComp size={24} color={badge.color} />
-                                    </View>
-                                    <Text style={{ fontSize: 12, fontWeight: '900', color: colors.text, textAlign: 'center', marginBottom: 4 }}>{badge.name}</Text>
-                                    <Text style={{ fontSize: 10, color: colors.textSecondary, textAlign: 'center' }}>{badge.desc}</Text>
-                                </View>
-                            );
-                        })}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <TouchableOpacity 
+                            onPress={() => setCurrentBadgeIndex(prev => prev > 0 ? prev - 1 : gamification.unlockedBadges.length - 1)}
+                            style={{ padding: 12, backgroundColor: colors.background, borderRadius: 16, borderWidth: 1, borderColor: colors.border }}
+                        >
+                            <ChevronLeft size={24} color={colors.textSecondary} />
+                        </TouchableOpacity>
+
+                        <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 16 }}>
+                            {(() => {
+                                const badgeId = gamification.unlockedBadges[currentBadgeIndex];
+                                const badge = BADGE_DETAILS[badgeId] || BADGE_DETAILS.default;
+                                const IconComp = badge.icon;
+                                return (
+                                    <>
+                                        <View style={{ width: 80, height: 80, borderRadius: 24, backgroundColor: badge.bg, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                                            <IconComp size={40} color={badge.color} />
+                                        </View>
+                                        <Text style={{ fontSize: 16, fontWeight: '900', color: colors.text, textAlign: 'center', marginBottom: 4 }}>{badge.name}</Text>
+                                        <Text style={{ fontSize: 12, color: colors.textSecondary, textAlign: 'center' }}>{badge.desc}</Text>
+                                    </>
+                                );
+                            })()}
+                        </View>
+
+                        <TouchableOpacity 
+                            onPress={() => setCurrentBadgeIndex(prev => (prev + 1) % gamification.unlockedBadges.length)}
+                            style={{ padding: 12, backgroundColor: colors.background, borderRadius: 16, borderWidth: 1, borderColor: colors.border }}
+                        >
+                            <ChevronRight size={24} color={colors.textSecondary} />
+                        </TouchableOpacity>
                     </View>
                 ) : (
                     <View style={{ alignItems: 'center', paddingVertical: 16 }}>

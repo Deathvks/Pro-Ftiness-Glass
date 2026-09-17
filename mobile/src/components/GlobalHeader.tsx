@@ -27,6 +27,14 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
     const unreadCount = notifications.filter(n => !n.is_read).length;
 
     const insets = useSafeAreaInsets();
+    
+    const userProfile = useAppStore(state => state.userProfile);
+    const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+    const imageUrl = userProfile?.profile_image_url ? 
+        (userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`) 
+        : null;
+
     const blurTint = theme === 'light' ? 'light' : theme === 'dark' ? 'dark' : 'default';
 
     // If scrollY is provided, we animate the background opacity
@@ -62,9 +70,20 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                         <ChevronLeft size={24} color={colors.text} />
                     </GlassButton>
                 ) : (
-                    <GlassButton onPress={() => router.push('/profile')} theme={theme} colors={colors}>
-                        <User size={20} color={colors.textSecondary} />
-                    </GlassButton>
+                    <Pressable 
+                        onPress={() => router.push('/profile')} 
+                        style={{
+                            width: 40, height: 40, borderRadius: 20, 
+                            backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+                            alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
+                        }}
+                    >
+                        {imageUrl ? (
+                            <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} />
+                        ) : (
+                            <User size={20} color={colors.textSecondary} />
+                        )}
+                    </Pressable>
                 )}
                 {title && (
                     <Text style={{ color: colors.text, fontSize: 24, fontWeight: '900', letterSpacing: -0.5 }}>{title}</Text>

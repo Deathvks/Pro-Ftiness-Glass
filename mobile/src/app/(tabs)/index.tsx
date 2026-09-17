@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
-import { Flame, Play, Target, Clock, Droplet, Beef, Zap, Footprints, Activity as ActivityIcon, Dumbbell, User, Sparkles, Check, ChevronRight, Plus, ArrowUp, ArrowDown, Minus, CheckCircle, IceCream } from 'lucide-react-native';
+import { Flame, Play, Target, Clock, Droplet, Beef, Zap, Footprints, Activity as ActivityIcon, Dumbbell, User, Sparkles, Check, ChevronRight, Plus, ArrowUp, ArrowDown, Minus, CheckCircle, XCircle, IceCream } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/theme';
@@ -239,7 +239,15 @@ export default function Dashboard() {
                     <CircularProgress value={nutritionTotals.water} maxValue={targets.water} label="Agua" icon={Droplet} color="#38bdf8" themeColors={colors} size={80} />
                 </View>
                 <View style={{ width: '100%', alignItems: 'center', marginTop: 8 }}>
-                    <CircularProgress value={nutritionTotals.creatine} maxValue={targets.creatine} label="Creatina" icon={CheckCircle} color="#a78bfa" themeColors={colors} size={80} />
+                    <CircularProgress 
+                        value={nutritionTotals.creatine} 
+                        maxValue={targets.creatine} 
+                        label="Creatina" 
+                        icon={nutritionTotals.creatine > 0 ? CheckCircle : XCircle} 
+                        color={nutritionTotals.creatine > 0 ? '#a78bfa' : colors.textSecondary} 
+                        themeColors={colors} 
+                        size={80} 
+                    />
                 </View>
             </View>
         </View>
@@ -356,14 +364,14 @@ export default function Dashboard() {
             </View>
             <View style={{ flexDirection: 'row', gap: 16 }}>
                 <TouchableOpacity style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 24, alignItems: 'center' }}>
-                    <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: colors.success + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                        <Footprints size={32} color={colors.success} />
+                    <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: colors.tint + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                        <Footprints size={32} color={colors.tint} />
                     </View>
                     <Text style={{ fontSize: 16, fontWeight: '900', color: colors.text }}>Correr</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 24, alignItems: 'center' }}>
-                    <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: colors.warning + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                        <ActivityIcon size={32} color={colors.warning} />
+                    <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: colors.tint + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                        <ActivityIcon size={32} color={colors.tint} />
                     </View>
                     <Text style={{ fontSize: 16, fontWeight: '900', color: colors.text }}>Bicicleta</Text>
                 </TouchableOpacity>
