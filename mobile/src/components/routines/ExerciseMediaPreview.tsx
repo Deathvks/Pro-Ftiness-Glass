@@ -40,14 +40,42 @@ export const ExerciseMediaPreview = ({ item, getImageUrl }) => {
 
   if (item.video_url || item.youtube_id) {
     const yid = item.youtube_id || getYoutubeId(item.video_url);
-    const uri = yid 
-      ? `https://www.youtube.com/embed/${yid}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&origin=https://www.youtube.com` 
-      : item.video_url;
-      
+    
+    if (yid) {
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+          <style>
+            body { margin: 0; padding: 0; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
+            iframe { width: 100%; height: 100%; border: none; pointer-events: none; }
+          </style>
+        </head>
+        <body>
+          <iframe src="https://www.youtube.com/embed/${yid}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&loop=1&playlist=${yid}" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        </body>
+        </html>
+      `;
+      return (
+        <View style={{ width: "100%", height: "100%", backgroundColor: "#000", pointerEvents: "none" }}>
+          <WebView 
+            source={{ html, baseUrl: 'https://youtube.com' }} 
+            style={{ flex: 1, backgroundColor: "#000" }} 
+            allowsInlineMediaPlayback={true}
+            mediaPlaybackRequiresUserAction={false}
+            scrollEnabled={false}
+            pointerEvents="none"
+          />
+        </View>
+      );
+    }
+
+    // Fallback si no es un video de youtube
     return (
       <View style={{ width: "100%", height: "100%", backgroundColor: "#000", pointerEvents: "none" }}>
         <WebView 
-          source={{ uri, headers: { 'Referer': 'https://www.youtube.com/' } }} 
+          source={{ uri: item.video_url }} 
           style={{ flex: 1, backgroundColor: "#000" }} 
           allowsInlineMediaPlayback={true}
           mediaPlaybackRequiresUserAction={false}

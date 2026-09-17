@@ -325,13 +325,30 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
               {playingVideo ? (
                 <View style={{ width: '100%', height: 300, backgroundColor: colors.card }} pointerEvents="none">
                   <WebView 
-                    source={{ 
-                      uri: (() => {
-                        const yid = selectedExercise.youtube_id || getYoutubeId(selectedExercise.video_url);
-                        return yid ? `https://www.youtube.com/embed/${yid}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&origin=https://www.youtube.com` : selectedExercise.video_url;
-                      })(),
-                      headers: { 'Referer': 'https://www.youtube.com/' }
-                    }} 
+                    source={(() => {
+                      const yid = selectedExercise.youtube_id || getYoutubeId(selectedExercise.video_url);
+                      if (yid) {
+                        return {
+                          html: `
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                              <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+                              <style>
+                                body { margin: 0; padding: 0; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
+                                iframe { width: 100%; height: 100%; border: none; pointer-events: none; }
+                              </style>
+                            </head>
+                            <body>
+                              <iframe src="https://www.youtube.com/embed/${yid}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&loop=1&playlist=${yid}" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+                            </body>
+                            </html>
+                          `,
+                          baseUrl: 'https://youtube.com'
+                        };
+                      }
+                      return { uri: selectedExercise.video_url };
+                    })()}
                     style={{ flex: 1, backgroundColor: colors.card }}  
                     allowsInlineMediaPlayback={true}
                     mediaPlaybackRequiresUserAction={false}
