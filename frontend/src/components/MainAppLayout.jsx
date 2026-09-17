@@ -6,6 +6,7 @@ import useAppStore from '../store/useAppStore';
 import { APP_VERSION } from '../config/version';
 import { useToast } from '../hooks/useToast';
 import { useOfflineSync } from '../hooks/useOfflineSync';
+import { useAppTheme } from '../hooks/useAppTheme';
 import { initSocket } from '../services/socket';
 import * as userService from '../services/userService';
 
@@ -57,6 +58,21 @@ export default function MainAppLayout({
 }) {
   const { addToast } = useToast();
   useOfflineSync();
+  const { activeTheme } = useAppTheme();
+
+  // Workaround para re-calcular env(safe-area-inset-top) en iOS PWA al cambiar el tema
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) {
+      setTimeout(() => {
+        document.body.style.paddingTop = '1px';
+        window.dispatchEvent(new Event('resize'));
+        setTimeout(() => {
+          document.body.style.paddingTop = '0px';
+        }, 50);
+      }, 100);
+    }
+  }, [activeTheme]);
 
   const {
     userProfile,
