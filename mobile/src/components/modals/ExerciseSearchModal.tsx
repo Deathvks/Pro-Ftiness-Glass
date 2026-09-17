@@ -453,7 +453,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
                   return (
                     <View style={[styles.exerciseCard, { backgroundColor: colors.card, borderColor: colors.border, flexDirection: 'column', alignItems: 'stretch' }]}>
                       <View style={{ width: '100%', aspectRatio: 1, borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: 'hidden', backgroundColor: colors.background }}>
-                        <ExerciseMediaPreview item={item.exercise} getImageUrl={getImageUrl} />
+                        <ExerciseMediaPreview item={item.exercise} getImageUrl={getImageUrl} staticOnly={true} />
                       </View>
                       <View style={{ padding: 12, flex: 1, backgroundColor: colors.background + '80' }}>
                         <Text style={[styles.exerciseName, { color: colors.text }]} numberOfLines={2}>{item.exercise.name}</Text>

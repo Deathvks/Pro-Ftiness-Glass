@@ -66,24 +66,30 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
             {/* Left: Profile or Back Button & Title */}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 {showBackButton ? (
-                    <GlassButton onPress={() => router.back()} theme={theme} colors={colors}>
+                    <GlassButton onPress={() => {
+                        if (router.canGoBack()) {
+                            router.back();
+                        } else {
+                            router.replace('/');
+                        }
+                    }} theme={theme} colors={colors}>
                         <ChevronLeft size={24} color={colors.text} />
                     </GlassButton>
                 ) : (
-                    <Pressable 
+                    <GlassButton 
                         onPress={() => router.push('/profile')} 
+                        theme={theme}
                         style={{
                             width: 40, height: 40, borderRadius: 20, 
-                            backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
-                            alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
+                            alignItems: 'center', justifyContent: 'center'
                         }}
                     >
                         {imageUrl ? (
-                            <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} />
+                            <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%', borderRadius: 20 }} />
                         ) : (
                             <User size={20} color={colors.textSecondary} />
                         )}
-                    </Pressable>
+                    </GlassButton>
                 )}
                 {title && (
                     <Text style={{ color: colors.text, fontSize: 24, fontWeight: '900', letterSpacing: -0.5 }}>{title}</Text>

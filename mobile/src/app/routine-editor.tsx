@@ -103,8 +103,16 @@ export default function RoutineEditorScreen() {
     }
   };
 
+  const goBackSafe = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/routines');
+    }
+  };
+
   const handleSave = () => {
-    router.back();
+    goBackSafe();
   };
 
 
@@ -281,7 +289,7 @@ export default function RoutineEditorScreen() {
           }}>
             {/* Media */}
             <View style={{ width: '100%', aspectRatio: 1, backgroundColor: colors.background }}>
-              <ExerciseMediaPreview item={item} getImageUrl={getImageUrl} />
+              <ExerciseMediaPreview item={item} getImageUrl={getImageUrl} staticOnly={true} />
             </View>
 
             {/* Content */}
@@ -388,7 +396,7 @@ export default function RoutineEditorScreen() {
           <View style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0 }} />
         </Animated.View>
         
-        <GlassButton theme={theme} onPress={() => router.back()} style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
+        <GlassButton theme={theme} onPress={() => goBackSafe()} style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
           <X size={20} color={colors.textSecondary} />
         </GlassButton>
         
