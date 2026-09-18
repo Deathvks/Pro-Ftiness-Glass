@@ -2,7 +2,12 @@ import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
 export default function AppTabs() {
   return (
-    <NativeTabs>
+    <NativeTabs
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: 'transparent' },
+      }}
+    >
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Dashboard</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: "house", selected: "house.fill" }} md="home" />
