@@ -111,6 +111,9 @@ export const usePushNotifications = () => {
     checkSubscription();
 
     // --- NUEVO: Listeners Nativos de Firebase ---
+    let registrationListener;
+    let errorListener;
+
     if (isNative) {
       PushNotifications.addListener('registration', async (token) => {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -130,22 +133,21 @@ export const usePushNotifications = () => {
           addToast('Error al vincular con el servidor.', 'error');
         }
         setIsLoading(false);
-      });
+      }).then(listener => registrationListener = listener);
 
       PushNotifications.addListener('registrationError', (err) => {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         console.error('Error en el registro nativo:', err);
         setError('Error al registrar dispositivo.');
         setIsLoading(false);
-      });
+      }).then(listener => errorListener = listener);
     }
 
     // Limpiamos los listeners al desmontar
     return () => {
       isMounted = false;
-      if (isNative) {
-        PushNotifications.removeAllListeners();
-      }
+      if (registrationListener) registrationListener.remove();
+      if (errorListener) errorListener.remove();
     };
   }, [isSupported, getServiceWorkerRegistration, isNative, addToast]);
 
@@ -180,7 +182,19 @@ export const usePushNotifications = () => {
           }, 10000);
           await PushNotifications.register(); 
         } else {
-          addToast('No se ha concedido el permiso para las notificaciones.', 'warning');
+          addToast('Permiso denegado. Se abrirán los ajustes para activarlo.', 'warning');
+          setTimeout(async () => {
+             try {
+                const { NativeSettings, AndroidSettings, IOSSettings } = require('capacitor-native-settings');
+                if (Capacitor.getPlatform() === 'android') {
+                    await NativeSettings.openAndroid({ option: AndroidSettings.ApplicationDetails });
+                } else if (Capacitor.getPlatform() === 'ios') {
+                    await NativeSettings.openIOS({ option: IOSSettings.App });
+                }
+             } catch(e) {
+                 console.log("Error al abrir settings:", e);
+             }
+          }, 1500);
           setIsLoading(false);
           clearTimeout(globalTimeout);
         }
