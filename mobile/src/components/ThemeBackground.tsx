@@ -143,12 +143,15 @@ export default function ThemeBackground() {
   const theme = useAppStore(state => state.theme);
 
   if (theme === 'galaxy') {
+    const isDark = true; // Galaxy is always dark in web
     return (
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0a0a1a', zIndex: -1 }]} pointerEvents="none">
-        <LinearGradient
-          colors={['rgba(168, 85, 247, 0.25)', 'transparent']}
-          style={StyleSheet.absoluteFill}
+      <View style={[StyleSheet.absoluteFill, { zIndex: -1 }]} pointerEvents="none">
+        <Image 
+          source={require('../../assets/images/galaxy.jpg')} 
+          style={StyleSheet.absoluteFill as any}
+          resizeMode="cover"
         />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(10, 10, 26, 0.5)' }]} />
         <GalaxyStars />
         <GalaxyMeteor />
       </View>
@@ -165,10 +168,8 @@ export default function ThemeBackground() {
           resizeMode="cover"
         />
         {isDark ? (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(8, 47, 73, 0.75)' }]} />
-        ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(240, 249, 255, 0.2)' }]} />
-        )}
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(8, 47, 73, 0.5)' }]} />
+        ) : null}
       </View>
     );
   }
@@ -183,9 +184,9 @@ export default function ThemeBackground() {
           resizeMode="cover"
         />
         {isDark ? (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(69, 26, 3, 0.75)' }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(44, 30, 22, 0.5)' }]} />
         ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255, 251, 235, 0.15)' }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(253, 248, 245, 0.45)' }]} />
         )}
       </View>
     );
