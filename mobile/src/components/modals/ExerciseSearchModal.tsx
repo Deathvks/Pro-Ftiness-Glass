@@ -235,6 +235,24 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
   };
   
   const scrollY = React.useRef(new Animated.Value(0)).current;
+  const [isScrolled, setIsScrolled] = React.useState(false);
+  const isScrolledRef = React.useRef(false);
+
+  React.useEffect(() => {
+    const listener = scrollY.addListener(({ value }) => {
+        if (value > 20 && !isScrolledRef.current) {
+            isScrolledRef.current = true;
+            setIsScrolled(true);
+        } else if (value <= 20 && isScrolledRef.current) {
+            isScrolledRef.current = false;
+            setIsScrolled(false);
+        }
+    });
+
+    return () => {
+        scrollY.removeListener(listener);
+    };
+  }, [scrollY]);
   useEffect(() => {
     scrollY.setValue(0);
   }, [view]);
@@ -245,7 +263,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
     extrapolate: 'clamp'
   });
 
-  const AnimatedGlassView = Animated.createAnimatedComponent(GlassView);
+  
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
@@ -253,15 +271,16 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top, height: headerHeight, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }]}>
-          <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
-            <AnimatedGlassView 
-                glassEffectStyle="regular"
-                colorScheme={(['light', 'ocean', 'desert'].includes(theme)) ? 'light' : 'dark'}
-                style={StyleSheet.absoluteFill} 
-            />
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, opacity: 0.5 }]} />
-            <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0 }} />
-          </Animated.View>
+          <GlassView 
+            glassEffectStyle={{
+                style: isScrolled ? 'regular' : 'clear',
+                animate: true,
+                animationDuration: 0.3
+            }}
+            colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'}
+            style={StyleSheet.absoluteFill}
+        />
+        <Animated.View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0, opacity: bgOpacity }} />
 
           {view !== 'list' ? (
             <GlassButton theme={theme} onPress={() => setView('list')} style={styles.iconButton}>

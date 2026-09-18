@@ -10,6 +10,7 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { Colors } from '@/constants/theme';
 import { GlassButton } from '@/components/ui/GlassButton';
+import GlobalHeader from '@/components/GlobalHeader';
 import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
 import { PixabayModal } from '@/components/modals/PixabayModal';
 import { ExerciseSearchModal } from '@/components/modals/ExerciseSearchModal';
@@ -488,21 +489,8 @@ export default function RoutineEditorScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Header */}
-      <View style={[styles.mainHeader, { paddingTop: insets.top + 12, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0 }]}>
-        <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
-          <AnimatedBlurView intensity={theme === 'oled' ? 50 : 80} tint={['light', 'ocean', 'desert'].includes(theme) ? 'systemThinMaterialLight' : ['dark', 'ocean-dark', 'desert-dark', 'galaxy'].includes(theme) ? 'systemThinMaterialDark' : 'default' as any} style={StyleSheet.absoluteFill} />
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, opacity: 0.5 }]} />
-          <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0 }} />
-        </Animated.View>
-        
-        <GlassButton theme={theme} onPress={() => goBackSafe()} style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
-          <X size={20} color={colors.textSecondary} />
-        </GlassButton>
-        
-        <Text style={[styles.headerTitle, { color: colors.text, flex: 1, textAlign: 'center' }]}>Crear Nueva Rutina</Text>
-        
-        <View style={{ width: 40 }} />
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }}>
+        <GlobalHeader title="Crear Rutina" scrollY={scrollY} showBackButton={true} hideRightButtons={true} />
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
