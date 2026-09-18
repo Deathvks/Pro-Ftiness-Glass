@@ -46,7 +46,7 @@ export default function RootLayout() {
   // Save last path for reload persistence — only save stable tab paths
   useEffect(() => {
     if (isReady && isAuthenticated && pathname && pathname !== '/') {
-      const isStablePath = pathname.startsWith('/(tabs)') || pathname === '/routines' || pathname === '/nutrition' || pathname === '/hub' || pathname === '/social' || pathname === '/profile' || pathname === '/notifications';
+      const isStablePath = pathname.startsWith('/(tabs)') || pathname === '/routines' || pathname === '/nutrition' || pathname === '/hub' || pathname === '/social' || pathname === '/profile';
       // Also save if it's the index tab
       const isIndex = pathname === '/' || pathname === '/index';
       if ((isStablePath || isIndex) && typeof localStorage !== 'undefined') {
