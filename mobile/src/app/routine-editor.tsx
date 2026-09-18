@@ -176,8 +176,8 @@ export default function RoutineEditorScreen() {
       <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>Imagen de Portada</Text>
       
       <View style={{ alignItems: 'center', marginBottom: 24 }}>
-        {/* Cover Image Preview */}
-        <View style={[styles.imagePreviewContainer, { backgroundColor: colors.card, borderColor: imageUrl ? colors.tint : colors.border, borderWidth: imageUrl ? 2 : 1, width: '60%', aspectRatio: 16/9, height: 'auto' }]}>
+          {/* Cover Image Preview */}
+        <View style={[styles.imagePreviewContainer, { backgroundColor: colors.card, borderWidth: 0, width: '60%', aspectRatio: 16/9, height: 'auto' }]}>
           {imageUrl ? (
             <>
               {imageUrl.startsWith('grad-') ? (
@@ -185,10 +185,10 @@ export default function RoutineEditorScreen() {
                   colors={PREDEFINED_GRADIENTS.find(g => g.name === imageUrl)?.colors || [colors.card, colors.tint]} 
                   start={PREDEFINED_GRADIENTS.find(g => g.name === imageUrl)?.start || {x: 0, y: 0}}
                   end={PREDEFINED_GRADIENTS.find(g => g.name === imageUrl)?.end || {x: 1, y: 1}}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} 
+                  style={StyleSheet.absoluteFill} 
                 />
               ) : (
-                <Image source={{ uri: imageUrl }} style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} />
+                <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} />
               )}
               <TouchableOpacity
                 onPress={() => setImageUrl(null)}
@@ -205,6 +205,8 @@ export default function RoutineEditorScreen() {
               <Text style={{ color: colors.textSecondary, fontWeight: 'bold' }}>Sin imagen</Text>
             </View>
           )}
+          {/* Overlay border to ensure perfectly rounded corners clipping */}
+          <View style={[StyleSheet.absoluteFill, { borderRadius: 20, borderWidth: imageUrl ? 2 : 1, borderColor: imageUrl ? colors.tint : colors.border }]} pointerEvents="none" />
         </View>
 
         {/* Image Actions */}
@@ -227,9 +229,12 @@ export default function RoutineEditorScreen() {
             <TouchableOpacity
               key={index}
               onPress={() => setImageUrl(grad.name)}
-              style={[styles.colorSwatch, { borderWidth: imageUrl === grad.name ? 3 : 0, borderColor: colors.tint, marginRight: 0 }]}
+              style={[styles.colorSwatch, { marginRight: 0 }]}
             >
               <LinearGradient colors={grad.colors} start={grad.start} end={grad.end} style={[StyleSheet.absoluteFill, { borderRadius: 12 }]} />
+              {imageUrl === grad.name && (
+                <View style={[StyleSheet.absoluteFill, { borderRadius: 12, borderWidth: 3, borderColor: colors.tint }]} pointerEvents="none" />
+              )}
             </TouchableOpacity>
           ))}
         </View>
