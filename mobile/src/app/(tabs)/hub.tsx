@@ -141,14 +141,7 @@ export default function Hub() {
             title="Apariencia"
             description="Temas, acentos y colores"
             colors={colors}
-            onPress={() => {
-              Alert.alert('Apariencia', 'Selecciona el tema de la aplicación:', [
-                { text: 'Claro', onPress: () => setTheme('light') },
-                { text: 'Oscuro', onPress: () => setTheme('dark') },
-                { text: 'OLED (Negro)', onPress: () => setTheme('oled') },
-                { text: 'Cancelar', style: 'cancel' }
-              ]);
-            }}
+            onPress={() => router.push('/appearance')}
           />
 
           <HubButton

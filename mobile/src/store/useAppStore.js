@@ -16,6 +16,11 @@ const useAppStore = create((set, get) => ({
         set({ theme });
         if (typeof localStorage !== 'undefined') if (typeof localStorage !== 'undefined') localStorage.setItem('theme', theme);
     },
+    accent: (typeof localStorage !== 'undefined' && (typeof localStorage !== 'undefined' ? localStorage.getItem('accent') : null)) || '#3b82f6',
+    setAccent: (accent) => {
+        set({ accent });
+        if (typeof localStorage !== 'undefined') if (typeof localStorage !== 'undefined') localStorage.setItem('accent', accent);
+    },
     ...createAuthSlice(set, get),
     ...createDataSlice(set, get),
     ...createWorkoutSlice(set, get),
