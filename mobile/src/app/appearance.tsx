@@ -259,6 +259,7 @@ export default function AppearanceScreen() {
                   icon: Sparkles, 
                   label: 'Tema Galaxia', 
                   themeTint: '#a855f7', 
+                  btnText: '#fff',
                   desc: 'Desbloqueado',
                   buttons: [{ id: 'galaxy', label: theme === 'galaxy' ? 'Activo' : 'Aplicar' }]
                 },
@@ -267,6 +268,7 @@ export default function AppearanceScreen() {
                   icon: Droplet, 
                   label: 'Tema Océano', 
                   themeTint: '#0ea5e9', 
+                  btnText: '#fff',
                   desc: 'Desbloqueado',
                   buttons: [{ id: 'ocean', label: 'Claro' }, { id: 'ocean-dark', label: 'Oscuro' }]
                 },
@@ -275,6 +277,7 @@ export default function AppearanceScreen() {
                   icon: Sun, 
                   label: 'Tema Desierto', 
                   themeTint: '#d2b48c', 
+                  btnText: '#451a03',
                   desc: 'Desbloqueado',
                   buttons: [{ id: 'desert', label: 'Claro' }, { id: 'desert-dark', label: 'Oscuro' }]
                 }
@@ -328,7 +331,7 @@ export default function AppearanceScreen() {
                                 borderColor: colors.border
                               }}
                             >
-                              <Text style={{ fontSize: 11, fontWeight: 'bold', color: isBtnActive ? '#fff' : st.themeTint }}>
+                              <Text style={{ fontSize: 11, fontWeight: 'bold', color: isBtnActive ? st.btnText : st.themeTint }}>
                                 {btn.label}
                               </Text>
                             </TouchableOpacity>
