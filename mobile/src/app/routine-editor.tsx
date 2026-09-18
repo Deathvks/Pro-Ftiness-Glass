@@ -129,7 +129,7 @@ export default function RoutineEditorScreen() {
         is_trainer_template: false,
         exercises: exercises.map((ex: any, index: number) => ({
           exercise_list_id: ex.is_manual ? null : (ex.exercise_list_id || ex.exercise_id || ex.id),
-          name: ex.is_manual ? ex.name : undefined,
+          name: ex.name,
           muscle_group: ex.is_manual ? ex.muscle_group : undefined,
           sets: parseInt(String(ex.sets), 10) || 3,
           reps: String(ex.reps),
@@ -141,10 +141,12 @@ export default function RoutineEditorScreen() {
     try {
       if (routineId) {
         const updateRoutine = useAppStore.getState().updateRoutine;
-        await updateRoutine(routineId, routineData);
+        const res = await updateRoutine(routineId, routineData);
+        if (res && !res.success) throw new Error(res.message);
       } else {
         const createRoutine = useAppStore.getState().createRoutine;
-        await createRoutine(routineData);
+        const res = await createRoutine(routineData);
+        if (res && !res.success) throw new Error(res.message);
       }
       
       useAppStore.getState().clearRoutineEditorState();
