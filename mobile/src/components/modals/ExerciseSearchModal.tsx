@@ -56,6 +56,14 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
     ));
   };
 
+      const fadeAnim = React.useRef(new Animated.Value(0)).current;
+    React.useEffect(() => {
+        Animated.timing(fadeAnim, {
+            toValue: isScrolled ? 1 : 0,
+            duration: 200,
+            useNativeDriver: false
+        }).start();
+    }, [isScrolled]);
   useEffect(() => {
     if (visible) {
       loadExercises();
@@ -235,6 +243,24 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
   };
   
   const scrollY = React.useRef(new Animated.Value(0)).current;
+  const [isScrolled, setIsScrolled] = React.useState(false);
+  const isScrolledRef = React.useRef(false);
+
+  React.useEffect(() => {
+    const listener = scrollY.addListener(({ value }) => {
+        if (value > 20 && !isScrolledRef.current) {
+            isScrolledRef.current = true;
+            setIsScrolled(true);
+        } else if (value <= 20 && isScrolledRef.current) {
+            isScrolledRef.current = false;
+            setIsScrolled(false);
+        }
+    });
+
+    return () => {
+        scrollY.removeListener(listener);
+    };
+  }, [scrollY]);
   
   useEffect(() => {
     scrollY.setValue(0);
@@ -254,7 +280,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top, height: headerHeight, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }]}>
-          <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
+          <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
             <GlassView 
                 glassEffectStyle="regular"
                 colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'}
