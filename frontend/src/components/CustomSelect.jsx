@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
-const CustomSelect = ({ value, onChange, options, placeholder, className = "", triggerClassName = "", textClassName = "", multiple = false, searchable = false }) => {
+const CustomSelect = ({ value, onChange, options, placeholder, className = "", triggerClassName = "", textClassName = "", multiple = false, searchable = false, hideMultipleValues = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -177,12 +177,12 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
         `}
         disabled={isOpen && position.top === 0}
       >
-        <span className={textClassName || `text-sm font-bold truncate flex-1 ${(!multiple && selectedOption) || (multiple && selectedValues.length > 0) ? 'text-text-primary' : 'text-text-secondary'}`}>
-          {multiple 
-            ? (selectedValues.length > 0 ? selectedValues.join(', ') : placeholder) 
-            : (selectedOption ? selectedOption.label : placeholder)
-          }
-        </span>
+        <span className={textClassName || `text-sm font-bold truncate flex-1 ${(!multiple && selectedOption) || (multiple && selectedValues.length > 0 && !hideMultipleValues) ? 'text-text-primary' : 'text-text-secondary'}`}>
+            {multiple 
+              ? (hideMultipleValues ? placeholder : (selectedValues.length > 0 ? selectedValues.join(', ') : placeholder)) 
+              : (selectedOption ? selectedOption.label : placeholder)
+            }
+          </span>
         <ChevronDown
           size={16}
           className={`shrink-0 transition-transform duration-200 text-text-secondary ${

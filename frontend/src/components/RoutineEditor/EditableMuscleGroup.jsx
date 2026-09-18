@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '../../hooks/useToast';
 import i18n from '../../i18n';
 import CustomSelect from '../CustomSelect';
+import { X } from 'lucide-react';
+
 
 // Lista de grupos musculares idéntica al panel de administración
 const MUSCLE_GROUP_KEYS = [
@@ -66,20 +68,43 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
     return options.sort((a, b) => a.label.localeCompare(b.label));
   }, [t]);
 
-  if (isManual) {
+    if (isManual) {
+    const selectedArray = currentValue ? currentValue.split(',').map(m => m.trim()).filter(Boolean) : [];
+
     return (
-      <div className="w-full relative flex items-center min-w-[150px]">
-        <CustomSelect
-          value={currentValue}
-          onChange={handleSelectChange}
-          options={sortedOptions}
-          placeholder={t('muscle_group_placeholder', {
-            ns: 'exercise_ui',
-            defaultValue: 'Selecciona grupo...',
-          })}
-          className="w-full capitalize"
-          multiple={true}
-        />
+      <div className="w-full flex flex-col gap-2">
+        {selectedArray.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-1">
+            {selectedArray.map(m => (
+              <div key={m} className="flex items-center gap-1 bg-accent/10 text-accent px-2 py-1 rounded-lg text-xs font-bold capitalize">
+                <span>{t(m, { ns: 'exercise_muscles', defaultValue: m })}</span>
+                <button 
+                  onClick={() => {
+                    const newValues = selectedArray.filter(val => val !== m);
+                    onSave(newValues.join(', '));
+                  }}
+                  className="p-0.5 hover:bg-accent/20 rounded-md transition-colors"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="w-full relative flex items-center min-w-[150px]">
+          <CustomSelect
+            value={currentValue}
+            onChange={handleSelectChange}
+            options={sortedOptions}
+            placeholder={selectedArray.length > 0 ? "+ Añadir otro" : t('muscle_group_placeholder', {
+              ns: 'exercise_ui',
+              defaultValue: 'Añadir músculos...',
+            })}
+            className="w-full capitalize"
+            multiple={true}
+            hideMultipleValues={true}
+          />
+        </div>
       </div>
     );
   }
