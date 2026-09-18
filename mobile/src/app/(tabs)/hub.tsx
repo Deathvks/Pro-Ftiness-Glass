@@ -36,8 +36,8 @@ const HubButton = ({ icon: Icon, title, description, onPress, badge = false, isC
     }}
   >
     <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
-      <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.tint + '15', alignItems: 'center', justifyContent: 'center' }}>
-        <Icon size={24} color={colors.tint} />
+      <View style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}>
+        <Icon size={28} color={colors.tint} />
       </View>
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
