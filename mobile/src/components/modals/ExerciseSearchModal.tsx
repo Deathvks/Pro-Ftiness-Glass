@@ -56,16 +56,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
     ));
   };
 
-          const slideAnim = React.useRef(new Animated.Value(-200)).current;
-
-    React.useEffect(() => {
-        Animated.spring(slideAnim, {
-            toValue: isScrolled ? 0 : -200,
-            friction: 8,
-            tension: 50,
-            useNativeDriver: true
-        }).start();
-    }, [isScrolled]);
+  
   useEffect(() => {
     if (visible) {
       loadExercises();
@@ -263,6 +254,16 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         scrollY.removeListener(listener);
     };
   }, [scrollY]);
+        const slideAnim = React.useRef(new Animated.Value(-200)).current;
+
+    React.useEffect(() => {
+        Animated.spring(slideAnim, {
+            toValue: isScrolled ? 0 : -200,
+            friction: 8,
+            tension: 50,
+            useNativeDriver: true
+        }).start();
+    }, [isScrolled]);
   
   useEffect(() => {
     scrollY.setValue(0);
