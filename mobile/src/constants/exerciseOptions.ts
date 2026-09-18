@@ -55,3 +55,18 @@ export const REST_OPTIONS = [
   { value: "240", label: "4 min" },
   { value: "300", label: "5 min" },
 ];
+
+export const MUSCLE_OPTIONS = [
+  { value: 'Pecho', label: 'Pecho' },
+  { value: 'Espalda', label: 'Espalda' },
+  { value: 'Hombros', label: 'Hombros' },
+  { value: 'Bíceps', label: 'Bíceps' },
+  { value: 'Tríceps', label: 'Tríceps' },
+  { value: 'Piernas', label: 'Piernas' },
+  { value: 'Cuádriceps', label: 'Cuádriceps' },
+  { value: 'Isquios', label: 'Isquios' },
+  { value: 'Glúteos', label: 'Glúteos' },
+  { value: 'Core', label: 'Core' },
+  { value: 'Cardio', label: 'Cardio' },
+  { value: 'Varios', label: 'Varios' }
+];

@@ -14,7 +14,7 @@ import { PixabayModal } from '@/components/modals/PixabayModal';
 import { ExerciseSearchModal } from '@/components/modals/ExerciseSearchModal';
 import { CropModal } from '@/components/modals/CropModal';
 import { SelectModal, SelectOption } from '@/components/ui/SelectModal';
-import { SETS_OPTIONS, REPS_OPTIONS, REST_OPTIONS } from '@/constants/exerciseOptions';
+import { SETS_OPTIONS, REPS_OPTIONS, REST_OPTIONS, MUSCLE_OPTIONS } from '@/constants/exerciseOptions';
 import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview';
 
 export default function RoutineEditorScreen() {
@@ -130,6 +130,7 @@ export default function RoutineEditorScreen() {
         exercises: exercises.map((ex: any, index: number) => ({
           exercise_id: ex.exercise_id || ex.id,
           name: ex.is_manual ? ex.name : undefined,
+          muscle_group: ex.is_manual ? ex.muscle_group : undefined,
           sets: parseInt(String(ex.sets), 10) || 3,
           reps: String(ex.reps),
           rest_seconds: parseInt(String(ex.rest_seconds), 10) || 60,
@@ -362,19 +363,37 @@ export default function RoutineEditorScreen() {
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <View style={{ flex: 1, marginRight: 8 }}>
                   {(item.is_manual || item.exercise_id === null) ? (
-                    <TextInput
-                      style={{ color: colors.text, fontWeight: 'bold', fontSize: 18, padding: 0, margin: 0, borderBottomWidth: 1, borderBottomColor: colors.border }}
-                      placeholder="Nombre del ejercicio..."
-                      placeholderTextColor={colors.textSecondary}
-                      value={item.name}
-                      onChangeText={(val) => updateExerciseField(item.id, 'name', val)}
-                    />
+                    <View>
+                      <TextInput
+                        style={{ color: colors.text, fontWeight: 'bold', fontSize: 17, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.background, borderRadius: 12, borderWidth: 1, borderColor: colors.border, marginBottom: 10 }}
+                        placeholder="Ej. Flexiones con peso..."
+                        placeholderTextColor={colors.textSecondary}
+                        value={item.name}
+                        onChangeText={(val) => updateExerciseField(item.id, 'name', val)}
+                      />
+                      <TouchableOpacity
+                        style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignSelf: 'flex-start' }}
+                        onPress={() => setSelectModalConfig({
+                          visible: true,
+                          title: 'Músculo Principal',
+                          options: MUSCLE_OPTIONS,
+                          value: item.muscle_group || 'Varios',
+                          onSelect: (val) => updateExerciseField(item.id, 'muscle_group', val)
+                        })}
+                      >
+                        <Text style={{ color: colors.textSecondary, fontSize: 13, marginRight: 6 }}>Músculo:</Text>
+                        <Text style={{ color: colors.tint, fontSize: 13, fontWeight: 'bold' }}>{item.muscle_group || 'Varios'}</Text>
+                        <ChevronDown size={14} color={colors.tint} style={{ marginLeft: 6 }} />
+                      </TouchableOpacity>
+                    </View>
                   ) : (
-                    <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 18 }} numberOfLines={2}>{item.name}</Text>
+                    <>
+                      <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 18 }} numberOfLines={2}>{item.name}</Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
+                        {item.muscle_group || item.category || 'Varios'}
+                      </Text>
+                    </>
                   )}
-                  <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
-                    {item.muscle_group || item.category || 'Varios'}
-                  </Text>
                 </View>
                 <TouchableOpacity onPress={() => removeExercise(item.id)} style={{ padding: 8, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 12 }}>
                   <Trash2 size={20} color="#ef4444" />
