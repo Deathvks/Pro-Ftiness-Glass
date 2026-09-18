@@ -94,3 +94,10 @@ export const uploadRoutineImage = (file) => {
 export const deleteRoutine = (routineId) => {
     return apiClient(`/routines/${routineId}`, { method: 'DELETE' });
 };
+/**
+ * Elimina todas las rutinas del usuario.
+ */
+export const deleteAllRoutines = () => {
+    return apiClient('/routines/all', { method: 'DELETE' });
+};
+

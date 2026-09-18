@@ -89,7 +89,21 @@ export default function RoutinesScreen() {
         } },
         { text: 'Compartir', onPress: () => Alert.alert('TODO', 'Abrir modal de compartir') },
         { text: 'Duplicar', onPress: () => Alert.alert('TODO', 'Duplicar rutina') },
-        { text: 'Eliminar', onPress: () => Alert.alert('TODO', 'Eliminar rutina'), style: 'destructive' },
+        { text: 'Eliminar', onPress: () => {
+          Alert.alert(
+            'Eliminar Rutina',
+            '¿Estás seguro de que deseas eliminar esta rutina? Esta acción no se puede deshacer.',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Eliminar', style: 'destructive', onPress: async () => {
+                const result = await useAppStore.getState().deleteRoutine(routine.id);
+                if (result && !result.success) {
+                  Alert.alert('Error', result.message || 'No se pudo eliminar la rutina');
+                }
+              }}
+            ]
+          );
+        }, style: 'destructive' },
         { text: 'Cancelar', style: 'cancel' }
       ]
     );
@@ -107,7 +121,22 @@ export default function RoutinesScreen() {
 
         {/* Action Buttons */}
         <View style={styles.actionsRow}>
-          <GlassButton theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => Alert.alert('TODO', 'Eliminar todas')}>
+          <GlassButton theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => {
+            if (routines.length === 0) return;
+            Alert.alert(
+              'Eliminar Todas las Rutinas',
+              '¿Estás súper seguro? Perderás todas tus rutinas y esta acción NO se puede deshacer.',
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                { text: 'Eliminar Todas', style: 'destructive', onPress: async () => {
+                  const result = await useAppStore.getState().deleteAllRoutines();
+                  if (result && !result.success) {
+                    Alert.alert('Error', result.message || 'No se pudieron eliminar las rutinas');
+                  }
+                }}
+              ]
+            );
+          }}>
             <Trash2 size={20} color={routines.length > 0 ? '#ef4444' : colors.textSecondary} />
           </GlassButton>
           <GlassButton theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => Alert.alert('TODO', 'Privacidad Global')}>

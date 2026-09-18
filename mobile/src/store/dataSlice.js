@@ -304,6 +304,23 @@ export const createDataSlice = (set, get) => ({
     }
   },
 
+  deleteAllRoutines: async () => {
+    try {
+      await routineService.deleteAllRoutines();
+
+      set({ routines: [] });
+
+      const { activeWorkout, endWorkout } = get();
+      if (activeWorkout && activeWorkout.routine_id) {
+        endWorkout(false);
+      }
+
+      return { success: true, message: 'Todas las rutinas han sido eliminadas.' };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
   // --- FAVORITOS ---
 
   addFavoriteMeal: async (mealData) => {
