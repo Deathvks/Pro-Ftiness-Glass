@@ -78,7 +78,11 @@ export default function RoutinesScreen() {
             description: routine.description || '',
             folder: routine.folder || '',
             imageUrl: routine.image_url || null,
-            exercises: exercises.map((ex: any) => ({ ...ex }))
+            exercises: exercises.map((ex: any) => ({
+              ...ex,
+              exercise_id: ex.exercise_list_id || ex.exercise_id || null,
+              is_manual: ex.is_manual || (ex.exercise_list_id === null)
+            }))
           };
           setRoutineEditorState(normalizedRoutine);
           router.push('/routine-editor');

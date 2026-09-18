@@ -128,7 +128,7 @@ export default function RoutineEditorScreen() {
         folder: folder || null,
         is_trainer_template: false,
         exercises: exercises.map((ex: any, index: number) => ({
-          exercise_id: ex.exercise_id || ex.id,
+          exercise_list_id: ex.is_manual ? null : (ex.exercise_list_id || ex.exercise_id || ex.id),
           name: ex.is_manual ? ex.name : undefined,
           muscle_group: ex.is_manual ? ex.muscle_group : undefined,
           sets: parseInt(String(ex.sets), 10) || 3,
@@ -347,7 +347,7 @@ export default function RoutineEditorScreen() {
           }}>
             {/* Media Area */}
             <View style={{ width: '100%', aspectRatio: 1, backgroundColor: colors.border + '30', alignItems: 'center', justifyContent: 'center' }}>
-              {(!item.is_manual && item.exercise_id !== null) ? (
+              {(!item.is_manual && item.exercise_id !== null && item.exercise_list_id !== null) ? (
                 <ExerciseMediaPreview item={item} getImageUrl={getImageUrl} staticOnly={true} />
               ) : (
                 <View style={{ flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.03)' }}>
@@ -362,7 +362,7 @@ export default function RoutineEditorScreen() {
             <View style={{ flex: 1, padding: 12 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <View style={{ flex: 1, marginRight: 8 }}>
-                  {(item.is_manual || item.exercise_id === null) ? (
+                  {(item.is_manual || item.exercise_id === null || item.exercise_list_id === null) ? (
                     <View>
                       <TextInput
                         style={{ color: colors.text, fontWeight: 'bold', fontSize: 17, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.background, borderRadius: 12, borderWidth: 1, borderColor: colors.border, marginBottom: 10 }}
