@@ -8,7 +8,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { Colors } from '@/constants/theme';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { AiInfoModal } from '@/components/modals/AiInfoModal';
-import { BlurView } from 'expo-blur';
+import { GlassView } from 'expo-glass-effect';
 
 export default function GlobalHeader({ title, scrollY, showBackButton, hideRightButtons }: { title?: string, scrollY?: Animated.Value, showBackButton?: boolean, hideRightButtons?: boolean }) {
     const [showAiModal, setShowAiModal] = React.useState(false);
@@ -36,7 +36,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
         (userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`) 
         : null;
 
-    const blurTint = ['light', 'ocean', 'desert'].includes(theme) ? 'systemChromeMaterialLight' : ['dark', 'ocean-dark', 'desert-dark', 'galaxy'].includes(theme) ? 'systemChromeMaterialDark' : 'default';
+    const colorScheme = ['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark';
 
     // If scrollY is provided, we animate the background opacity
     const bgOpacity = scrollY ? scrollY.interpolate({
@@ -45,7 +45,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
         extrapolate: 'clamp'
     }) : 1; // Default to fully visible if no scrollY provided
 
-    const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
+    const AnimatedGlassView = Animated.createAnimatedComponent(GlassView);
 
     const ProfileButton = () => {
         const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -97,9 +97,9 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
 
     return (
         <View style={{ position: 'relative' }}>
-            <AnimatedBlurView 
-                intensity={theme === 'oled' ? 50 : 80}
-                tint={blurTint as any}
+            <AnimatedGlassView 
+                glassEffectStyle="regular"
+                colorScheme={colorScheme as any}
                 style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}
             />
             <Animated.View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colors.border, opacity: bgOpacity }} />

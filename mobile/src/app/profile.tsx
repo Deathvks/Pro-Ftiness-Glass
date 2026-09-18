@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, KeyboardAvoidingView, Platform, StyleSheet, Animated, Alert, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { GlassView } from 'expo-glass-effect';
 import { BlurView } from 'expo-blur';
 import { ChevronLeft, ChevronRight, Camera, User, Mail, Shield, Save, Eye, Trophy, AlertTriangle, Dumbbell, Flame, Crown, Star, Medal, Zap, Sparkles, Award } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
@@ -13,11 +14,11 @@ const AnimatedGlassBackground = Animated.createAnimatedComponent(View);
 
 const GlassButton = ({ onPress, children, theme, style, contentStyle }: any) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
-    const bgOpacityAnim = useRef(new Animated.Value(0)).current;
+    const bgOpacityAnim = useRef(new Animated.Value(['light', 'ocean', 'desert'].includes(theme) ? 0.4 : 0.15)).current;
 
     useEffect(() => {
         Animated.timing(bgOpacityAnim, {
-            toValue: 0,
+            toValue: ['light', 'ocean', 'desert'].includes(theme) ? 0.4 : 0.15,
             duration: 200,
             useNativeDriver: false
         }).start();
@@ -31,7 +32,7 @@ const GlassButton = ({ onPress, children, theme, style, contentStyle }: any) => 
             tension: 100
         }).start();
         Animated.timing(bgOpacityAnim, {
-            toValue: ['light', 'ocean', 'desert'].includes(theme) ? 0.15 : 0.1,
+            toValue: ['light', 'ocean', 'desert'].includes(theme) ? 0.6 : 0.3,
             duration: 150,
             useNativeDriver: false
         }).start();
@@ -45,7 +46,7 @@ const GlassButton = ({ onPress, children, theme, style, contentStyle }: any) => 
             tension: 100
         }).start();
         Animated.timing(bgOpacityAnim, {
-            toValue: 0,
+            toValue: ['light', 'ocean', 'desert'].includes(theme) ? 0.4 : 0.15,
             duration: 150,
             useNativeDriver: false
         }).start();
@@ -71,15 +72,11 @@ const GlassButton = ({ onPress, children, theme, style, contentStyle }: any) => 
                 transform: [{ scale: scaleAnim }],
                 zIndex: 10
             }]}>
-                <View style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius, overflow: 'hidden' }]}>
-                    <BlurView 
-                        tint={['light', 'ocean', 'desert'].includes(theme) ? 'systemThickMaterialLight' : 'systemThickMaterialDark'} 
-                        intensity={100}
-                        experimentalBlurMethod="dimezisBlurView"
-                        style={StyleSheet.absoluteFill} 
+                <GlassView 
+                        glassEffectStyle="regular"
+                        colorScheme={(['light', 'ocean', 'desert'].includes(theme)) ? 'light' : 'dark'}
+                        style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius }]} 
                     />
-                    <AnimatedGlassBackground style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,1)', opacity: bgOpacityAnim }]} />
-                </View>
                 
                 
                 

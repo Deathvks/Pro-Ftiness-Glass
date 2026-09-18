@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, FlatList, Image, ActivityIndicator, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, X, Image as ImageIcon } from 'lucide-react-native';
-import { BlurView } from 'expo-blur';
+import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
 import { GlassButton } from '@/components/ui/GlassButton';
@@ -65,7 +65,11 @@ export const PixabayModal: React.FC<PixabayModalProps> = ({ visible, onClose, on
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <BlurView intensity={theme === 'oled' ? 50 : 80} tint={['light', 'ocean', 'desert'].includes(theme) ? 'systemChromeMaterialLight' : 'systemChromeMaterialDark'} style={StyleSheet.absoluteFill}>
+      <GlassView 
+        glassEffectStyle="regular"
+        colorScheme={theme === 'oled' ? 'dark' : (['light', 'ocean', 'desert'].includes(theme)) ? 'light' : 'dark'}
+        style={StyleSheet.absoluteFill}
+      >
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
             
@@ -116,7 +120,7 @@ export const PixabayModal: React.FC<PixabayModalProps> = ({ visible, onClose, on
 
           </View>
         </KeyboardAvoidingView>
-      </BlurView>
+      </GlassView>
     </Modal>
   );
 };
