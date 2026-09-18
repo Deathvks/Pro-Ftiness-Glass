@@ -3,7 +3,8 @@ import { NativeTabs } from 'expo-router/unstable-native-tabs';
 export default function AppTabs() {
   return (
     <NativeTabs
-      screenOptions={{
+      sceneContainerStyle={{ backgroundColor: 'transparent' }}
+      screenOptions={{ 
         headerShown: false,
         contentStyle: { backgroundColor: 'transparent' },
       }}

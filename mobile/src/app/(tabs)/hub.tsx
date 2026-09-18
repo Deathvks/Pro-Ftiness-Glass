@@ -7,6 +7,7 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { Colors } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
+import ThemeBackground from '@/components/ThemeBackground';
 import { 
   BarChart2, 
   MessageCircle, 
@@ -77,6 +78,7 @@ export default function Hub() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ThemeBackground />
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }}>
         <GlobalHeader title="Menú" scrollY={scrollY} />
       </View>
