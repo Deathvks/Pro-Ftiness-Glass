@@ -273,7 +273,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top, height: headerHeight, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }]}>
           <GlassView 
             glassEffectStyle={{
-                style: isScrolled ? 'regular' : 'clear',
+                style: isScrolled ? 'regular' : 'none',
                 animate: true,
                 animationDuration: 0.3
             }}

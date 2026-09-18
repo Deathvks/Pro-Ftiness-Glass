@@ -126,7 +126,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
             
             <GlassView 
                 glassEffectStyle={{
-                    style: isScrolled ? 'regular' : 'clear',
+                    style: isScrolled ? 'regular' : 'none',
                     animate: true,
                     animationDuration: 0.3
                 }}
