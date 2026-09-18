@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Image
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { Flame, Play, Target, Clock, Droplet, Beef, Zap, Footprints, Activity as ActivityIcon, Dumbbell, User, Sparkles, Check, ChevronRight, Plus, ArrowUp, ArrowDown, Minus, CheckCircle, XCircle, IceCream } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
+import { useAppColors } from '@/hooks/useAppColors';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/theme';
 
@@ -24,10 +25,8 @@ const todayIndex = (new Date().getDay() + 6) % 7;
 
 export default function Dashboard() {
   const router = useRouter();
-  const theme = useAppStore(state => state.theme) || 'oled';
-  const accent = useAppStore(state => state.accent);
-  const baseColors = Colors[theme as keyof typeof Colors] || Colors.oled;
-  const colors = { ...baseColors, tint: accent || baseColors.tint };
+  const theme = useAppStore(state => state.theme);
+  const colors = useAppColors();
   
   const userProfile = useAppStore(state => state.userProfile || state.user);
   const gamification = useAppStore(state => state.gamification) || {};

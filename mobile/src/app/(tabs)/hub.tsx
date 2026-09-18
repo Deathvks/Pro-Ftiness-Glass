@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import useAppStore from '@/store/useAppStore';
+import { useAppColors } from '@/hooks/useAppColors';
+import { useAppColors } from '@/hooks/useAppColors';
 import { Colors } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import { 

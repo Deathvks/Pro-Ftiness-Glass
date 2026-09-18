@@ -4,6 +4,7 @@ import { useRouter, useSegments } from 'expo-router';
 import { User, Sparkles, Bell, ChevronLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useAppStore from '@/store/useAppStore';
+import { useAppColors } from '@/hooks/useAppColors';
 import { Colors } from '@/constants/theme';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { AiInfoModal } from '@/components/modals/AiInfoModal';
@@ -14,10 +15,8 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
     const router = useRouter();
     const segments = useSegments();
     
-    const theme = useAppStore(state => state.theme) || 'oled';
-    const accent = useAppStore(state => state.accent);
-    const baseColors = Colors[theme as keyof typeof Colors] || Colors.oled;
-    const colors = { ...baseColors, tint: accent || baseColors.tint };
+    const theme = useAppStore(state => state.theme);
+  const colors = useAppColors();
     
     const isDashboard = segments[segments.length - 1] === 'index' || segments.length === 1;
 

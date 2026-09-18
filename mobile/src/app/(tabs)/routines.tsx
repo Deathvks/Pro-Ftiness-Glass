@@ -3,6 +3,7 @@ import { View, FlatList, TextInput, StyleSheet, Alert, TouchableOpacity, Text, A
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, Plus, Trash2, Globe, Sparkles } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
+import { useAppColors } from '@/hooks/useAppColors';
 import { Colors } from '@/constants/theme';
 import { RoutinesTabs, TabKey } from '@/components/routines/RoutinesTabs';
 import { FolderList } from '@/components/routines/FolderList';
@@ -13,9 +14,7 @@ import { useRouter } from 'expo-router';
 
 export default function RoutinesScreen() {
   const theme = useAppStore(state => state.theme);
-  const accent = useAppStore(state => state.accent);
-  const baseColors = Colors[theme as keyof typeof Colors] || Colors.oled;
-  const colors = { ...baseColors, tint: accent || baseColors.tint };
+  const colors = useAppColors();
   const router = useRouter();
   
   // Zustand state

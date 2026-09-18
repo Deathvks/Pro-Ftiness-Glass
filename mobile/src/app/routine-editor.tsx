@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import useAppStore from '@/store/useAppStore';
+import { useAppColors } from '@/hooks/useAppColors';
 import { Colors } from '@/constants/theme';
 import { GlassButton } from '@/components/ui/GlassButton';
 import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
@@ -20,9 +21,7 @@ import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview
 export default function RoutineEditorScreen() {
   const router = useRouter();
   const theme = useAppStore(state => state.theme);
-  const accent = useAppStore(state => state.accent);
-  const baseColors = Colors[theme as keyof typeof Colors] || Colors.oled;
-  const colors = { ...baseColors, tint: accent || baseColors.tint };
+  const colors = useAppColors();
   const insets = useSafeAreaInsets();
 
   // Global Store State

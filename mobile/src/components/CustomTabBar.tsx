@@ -5,14 +5,13 @@ import { GlassView } from 'expo-glass-effect';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import useAppStore from '@/store/useAppStore';
+import { useAppColors } from '@/hooks/useAppColors';
 import { Colors } from '@/constants/theme';
 
 export default function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const theme = useAppStore(state => state.theme);
-  const accent = useAppStore(state => state.accent);
-  const baseColors = Colors[theme as keyof typeof Colors] || Colors.oled;
-  const colors = { ...baseColors, tint: accent || baseColors.tint };
+  const colors = useAppColors();
 
   const widthRef = useRef(0);
   const [containerWidth, setContainerWidth] = useState(0);

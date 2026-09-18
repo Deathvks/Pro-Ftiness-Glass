@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
+import { useAppColors } from '@/hooks/useAppColors';
 import { Colors } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import { 
@@ -55,9 +56,7 @@ export default function AppearanceScreen() {
   
   const [currentColorPage, setCurrentColorPage] = useState(0);
 
-  const baseColors = Colors[theme as keyof typeof Colors] || Colors.oled;
-  // Overwrite tint with our accent for this screen
-  const colors = { ...baseColors, tint: accent };
+  const colors = useAppColors();
   
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -119,13 +118,12 @@ export default function AppearanceScreen() {
               {[
                 { id: 'light', icon: Sun, label: 'Claro' },
                 { id: 'dark', icon: Moon, label: 'Oscuro' },
-                { id: 'oled', icon: Smartphone, label: 'OLED' },
-                { id: 'galaxy', icon: Sparkles, label: 'Galaxia' }
+                { id: 'oled', icon: Smartphone, label: 'OLED' }
               ].map((mode) => {
                 const isActive = theme === mode.id;
                 const ModeIcon = mode.icon;
                 return (
-                  <View key={mode.id} style={{ width: '50%', paddingHorizontal: 6, marginBottom: 12 }}>
+                  <View key={mode.id} style={{ width: '33.33%', paddingHorizontal: 6, marginBottom: 12 }}>
                     <TouchableOpacity
                       onPress={() => handleThemeChange(mode.id)}
                       style={{
@@ -157,8 +155,8 @@ export default function AppearanceScreen() {
                     setCurrentColorPage(p => Math.max(0, p - 1));
                     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
-                  disabled={currentColorPage === 0}
-                  style={{ opacity: currentColorPage === 0 ? 0.3 : 1 }}
+                  disabled={currentColorPage === 0 || ['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(theme)}
+                  style={{ opacity: (currentColorPage === 0 || ['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(theme)) ? 0.3 : 1 }}
                 >
                   <ChevronLeft size={20} color={colors.text} />
                 </TouchableOpacity>
@@ -167,14 +165,14 @@ export default function AppearanceScreen() {
                     setCurrentColorPage(p => Math.min(totalPages - 1, p + 1));
                     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
-                  disabled={currentColorPage === totalPages - 1}
-                  style={{ opacity: currentColorPage === totalPages - 1 ? 0.3 : 1 }}
+                  disabled={currentColorPage === totalPages - 1 || ['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(theme)}
+                  style={{ opacity: (currentColorPage === totalPages - 1 || ['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(theme)) ? 0.3 : 1 }}
                 >
                   <ChevronRight size={20} color={colors.text} />
                 </TouchableOpacity>
               </View>
             </View>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'flex-start' }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'flex-start', opacity: ['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(theme) ? 0.4 : 1 }} pointerEvents={['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(theme) ? 'none' : 'auto'}>
               {currentColors.map((opt) => {
                 const isActive = accent.toLowerCase() === opt.hex.toLowerCase();
                 return (
@@ -203,7 +201,129 @@ export default function AppearanceScreen() {
               })}
             </View>
           </View>
+        </View>{/* Switch Items (Haptics, etc) */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 16, borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
+              <View style={{ padding: 10, borderRadius: 14, backgroundColor: colors.tint + '15' }}>
+                <Vibrate size={20} color={colors.tint} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.text }}>Vibración y Hápticos</Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>Respuesta táctil en la app</Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              onPress={handleHapticToggle}
+              style={{
+                width: 50,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: hapticsEnabled ? colors.tint : colors.border,
+                justifyContent: 'center',
+                paddingHorizontal: 2,
+              }}
+            >
+              <View style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: '#fff',
+                transform: [{ translateX: hapticsEnabled ? 22 : 0 }],
+                shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2
+              }} />
+            </TouchableOpacity>
+          </View>
         </View>
+
+        {/* Switch Items (Haptics, etc) */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 16, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
+              <View style={{ padding: 10, borderRadius: 14, backgroundColor: colors.tint + '15' }}>
+                <Vibrate size={20} color={colors.tint} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.text }}>Vibración y Hápticos</Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>Respuesta táctil en la app</Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              onPress={handleHapticToggle}
+              style={{
+                width: 50,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: hapticsEnabled ? colors.tint : colors.border,
+                justifyContent: 'center',
+                paddingHorizontal: 2,
+              }}
+            >
+              <View style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: '#fff',
+                transform: [{ translateX: hapticsEnabled ? 22 : 0 }],
+                shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2
+              }} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Mis Temas */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <View style={{ padding: 10, borderRadius: 16, backgroundColor: colors.tint + '15' }}>
+              <Sparkles size={24} color={colors.tint} />
+            </View>
+            <Text style={{ fontSize: 24, fontWeight: '900', color: colors.text }}>Mis Temas</Text>
+          </View>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 24, marginLeft: 4 }}>
+            Temas exclusivos desbloqueables.
+          </Text>
+
+          <View style={{ gap: 16 }}>
+            {[
+              { id: 'galaxy', icon: Sparkles, label: 'Tema Galaxia', themeTint: '#a855f7' },
+              { id: theme === 'light' ? 'ocean' : 'ocean-dark', icon: Droplet, label: 'Tema Océano', themeTint: '#0ea5e9' },
+              { id: theme === 'light' ? 'desert' : 'desert-dark', icon: Sun, label: 'Tema Desierto', themeTint: '#d2b48c' }
+            ].map((st) => {
+              const isActive = theme === st.id || (st.id.startsWith('ocean') && theme.startsWith('ocean')) || (st.id.startsWith('desert') && theme.startsWith('desert'));
+              const STIcon = st.icon;
+              return (
+                <TouchableOpacity
+                  key={st.id}
+                  onPress={() => handleThemeChange(st.id)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: 16,
+                    backgroundColor: isActive ? st.themeTint + '15' : colors.background,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: isActive ? st.themeTint + '50' : colors.border,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                    <View style={{ padding: 10, borderRadius: 12, backgroundColor: isActive ? st.themeTint + '30' : colors.card }}>
+                      <STIcon size={22} color={isActive ? st.themeTint : colors.textSecondary} />
+                    </View>
+                    <View>
+                      <Text style={{ fontSize: 15, fontWeight: 'bold', color: isActive ? st.themeTint : colors.text }}>{st.label}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{isActive ? 'Activo' : 'Desbloqueado'}</Text>
+                    </View>
+                  </View>
+                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: isActive ? st.themeTint : 'transparent', borderWidth: 2, borderColor: isActive ? st.themeTint : colors.textSecondary }} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        
+
 
         {/* Switch Items (Haptics, etc) */}
         <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 16, borderWidth: 1, borderColor: colors.border }}>
@@ -240,7 +360,675 @@ export default function AppearanceScreen() {
           </View>
         </View>
 
-      </Animated.ScrollView>
+        {/* Mis Temas */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <View style={{ padding: 10, borderRadius: 16, backgroundColor: colors.tint + '15' }}>
+              <Sparkles size={24} color={colors.tint} />
+            </View>
+            <Text style={{ fontSize: 24, fontWeight: '900', color: colors.text }}>Mis Temas</Text>
+          </View>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 24, marginLeft: 4 }}>
+            Temas exclusivos desbloqueables.
+          </Text>
+
+          <View style={{ gap: 16 }}>
+            {[
+              { id: 'galaxy', icon: Sparkles, label: 'Tema Galaxia', themeTint: '#a855f7' },
+              { id: theme === 'light' ? 'ocean' : 'ocean-dark', icon: Droplet, label: 'Tema Océano', themeTint: '#0ea5e9' },
+              { id: theme === 'light' ? 'desert' : 'desert-dark', icon: Sun, label: 'Tema Desierto', themeTint: '#d2b48c' }
+            ].map((st) => {
+              const isActive = theme === st.id || (st.id.startsWith('ocean') && theme.startsWith('ocean')) || (st.id.startsWith('desert') && theme.startsWith('desert'));
+              const STIcon = st.icon;
+              return (
+                <TouchableOpacity
+                  key={st.id}
+                  onPress={() => handleThemeChange(st.id)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: 16,
+                    backgroundColor: isActive ? st.themeTint + '15' : colors.background,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: isActive ? st.themeTint + '50' : colors.border,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                    <View style={{ padding: 10, borderRadius: 12, backgroundColor: isActive ? st.themeTint + '30' : colors.card }}>
+                      <STIcon size={22} color={isActive ? st.themeTint : colors.textSecondary} />
+                    </View>
+                    <View>
+                      <Text style={{ fontSize: 15, fontWeight: 'bold', color: isActive ? st.themeTint : colors.text }}>{st.label}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{isActive ? 'Activo' : 'Desbloqueado'}</Text>
+                    </View>
+                  </View>
+                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: isActive ? st.themeTint : 'transparent', borderWidth: 2, borderColor: isActive ? st.themeTint : colors.textSecondary }} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        
+
+
+        {/* Switch Items (Haptics, etc) */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 16, borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
+              <View style={{ padding: 10, borderRadius: 14, backgroundColor: colors.tint + '15' }}>
+                <Vibrate size={20} color={colors.tint} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.text }}>Vibración y Hápticos</Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>Respuesta táctil en la app</Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              onPress={handleHapticToggle}
+              style={{
+                width: 50,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: hapticsEnabled ? colors.tint : colors.border,
+                justifyContent: 'center',
+                paddingHorizontal: 2,
+              }}
+            >
+              <View style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: '#fff',
+                transform: [{ translateX: hapticsEnabled ? 22 : 0 }],
+                shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2
+              }} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Mis Temas */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <View style={{ padding: 10, borderRadius: 16, backgroundColor: colors.tint + '15' }}>
+              <Sparkles size={24} color={colors.tint} />
+            </View>
+            <Text style={{ fontSize: 24, fontWeight: '900', color: colors.text }}>Mis Temas</Text>
+          </View>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 24, marginLeft: 4 }}>
+            Temas exclusivos desbloqueables.
+          </Text>
+
+          <View style={{ gap: 16 }}>
+            {[
+              { id: 'galaxy', icon: Sparkles, label: 'Tema Galaxia', themeTint: '#a855f7' },
+              { id: theme === 'light' ? 'ocean' : 'ocean-dark', icon: Droplet, label: 'Tema Océano', themeTint: '#0ea5e9' },
+              { id: theme === 'light' ? 'desert' : 'desert-dark', icon: Sun, label: 'Tema Desierto', themeTint: '#d2b48c' }
+            ].map((st) => {
+              const isActive = theme === st.id || (st.id.startsWith('ocean') && theme.startsWith('ocean')) || (st.id.startsWith('desert') && theme.startsWith('desert'));
+              const STIcon = st.icon;
+              return (
+                <TouchableOpacity
+                  key={st.id}
+                  onPress={() => handleThemeChange(st.id)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: 16,
+                    backgroundColor: isActive ? st.themeTint + '15' : colors.background,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: isActive ? st.themeTint + '50' : colors.border,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                    <View style={{ padding: 10, borderRadius: 12, backgroundColor: isActive ? st.themeTint + '30' : colors.card }}>
+                      <STIcon size={22} color={isActive ? st.themeTint : colors.textSecondary} />
+                    </View>
+                    <View>
+                      <Text style={{ fontSize: 15, fontWeight: 'bold', color: isActive ? st.themeTint : colors.text }}>{st.label}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{isActive ? 'Activo' : 'Desbloqueado'}</Text>
+                    </View>
+                  </View>
+                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: isActive ? st.themeTint : 'transparent', borderWidth: 2, borderColor: isActive ? st.themeTint : colors.textSecondary }} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+         
+
+        {/* Switch Items (Haptics, etc) */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 16, borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
+              <View style={{ padding: 10, borderRadius: 14, backgroundColor: colors.tint + '15' }}>
+                <Vibrate size={20} color={colors.tint} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.text }}>Vibración y Hápticos</Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>Respuesta táctil en la app</Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              onPress={handleHapticToggle}
+              style={{
+                width: 50,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: hapticsEnabled ? colors.tint : colors.border,
+                justifyContent: 'center',
+                paddingHorizontal: 2,
+              }}
+            >
+              <View style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: '#fff',
+                transform: [{ translateX: hapticsEnabled ? 22 : 0 }],
+                shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2
+              }} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Mis Temas */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <View style={{ padding: 10, borderRadius: 16, backgroundColor: colors.tint + '15' }}>
+              <Sparkles size={24} color={colors.tint} />
+            </View>
+            <Text style={{ fontSize: 24, fontWeight: '900', color: colors.text }}>Mis Temas</Text>
+          </View>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 24, marginLeft: 4 }}>
+            Temas exclusivos desbloqueables.
+          </Text>
+
+          <View style={{ gap: 16 }}>
+            {[
+              { id: 'galaxy', icon: Sparkles, label: 'Tema Galaxia', themeTint: '#a855f7' },
+              { id: theme === 'light' ? 'ocean' : 'ocean-dark', icon: Droplet, label: 'Tema Océano', themeTint: '#0ea5e9' },
+              { id: theme === 'light' ? 'desert' : 'desert-dark', icon: Sun, label: 'Tema Desierto', themeTint: '#d2b48c' }
+            ].map((st) => {
+              const isActive = theme === st.id || (st.id.startsWith('ocean') && theme.startsWith('ocean')) || (st.id.startsWith('desert') && theme.startsWith('desert'));
+              const STIcon = st.icon;
+              return (
+                <TouchableOpacity
+                  key={st.id}
+                  onPress={() => handleThemeChange(st.id)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: 16,
+                    backgroundColor: isActive ? st.themeTint + '15' : colors.background,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: isActive ? st.themeTint + '50' : colors.border,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                    <View style={{ padding: 10, borderRadius: 12, backgroundColor: isActive ? st.themeTint + '30' : colors.card }}>
+                      <STIcon size={22} color={isActive ? st.themeTint : colors.textSecondary} />
+                    </View>
+                    <View>
+                      <Text style={{ fontSize: 15, fontWeight: 'bold', color: isActive ? st.themeTint : colors.text }}>{st.label}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{isActive ? 'Activo' : 'Desbloqueado'}</Text>
+                    </View>
+                  </View>
+                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: isActive ? st.themeTint : 'transparent', borderWidth: 2, borderColor: isActive ? st.themeTint : colors.textSecondary }} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+         
+
+        {/* Switch Items (Haptics, etc) */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 16, borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
+              <View style={{ padding: 10, borderRadius: 14, backgroundColor: colors.tint + '15' }}>
+                <Vibrate size={20} color={colors.tint} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.text }}>Vibración y Hápticos</Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>Respuesta táctil en la app</Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              onPress={handleHapticToggle}
+              style={{
+                width: 50,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: hapticsEnabled ? colors.tint : colors.border,
+                justifyContent: 'center',
+                paddingHorizontal: 2,
+              }}
+            >
+              <View style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: '#fff',
+                transform: [{ translateX: hapticsEnabled ? 22 : 0 }],
+                shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2
+              }} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Mis Temas */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <View style={{ padding: 10, borderRadius: 16, backgroundColor: colors.tint + '15' }}>
+              <Sparkles size={24} color={colors.tint} />
+            </View>
+            <Text style={{ fontSize: 24, fontWeight: '900', color: colors.text }}>Mis Temas</Text>
+          </View>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 24, marginLeft: 4 }}>
+            Temas exclusivos desbloqueables.
+          </Text>
+
+          <View style={{ gap: 16 }}>
+            {[
+              { id: 'galaxy', icon: Sparkles, label: 'Tema Galaxia', themeTint: '#a855f7' },
+              { id: theme === 'light' ? 'ocean' : 'ocean-dark', icon: Droplet, label: 'Tema Océano', themeTint: '#0ea5e9' },
+              { id: theme === 'light' ? 'desert' : 'desert-dark', icon: Sun, label: 'Tema Desierto', themeTint: '#d2b48c' }
+            ].map((st) => {
+              const isActive = theme === st.id || (st.id.startsWith('ocean') && theme.startsWith('ocean')) || (st.id.startsWith('desert') && theme.startsWith('desert'));
+              const STIcon = st.icon;
+              return (
+                <TouchableOpacity
+                  key={st.id}
+                  onPress={() => handleThemeChange(st.id)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: 16,
+                    backgroundColor: isActive ? st.themeTint + '15' : colors.background,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: isActive ? st.themeTint + '50' : colors.border,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                    <View style={{ padding: 10, borderRadius: 12, backgroundColor: isActive ? st.themeTint + '30' : colors.card }}>
+                      <STIcon size={22} color={isActive ? st.themeTint : colors.textSecondary} />
+                    </View>
+                    <View>
+                      <Text style={{ fontSize: 15, fontWeight: 'bold', color: isActive ? st.themeTint : colors.text }}>{st.label}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{isActive ? 'Activo' : 'Desbloqueado'}</Text>
+                    </View>
+                  </View>
+                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: isActive ? st.themeTint : 'transparent', borderWidth: 2, borderColor: isActive ? st.themeTint : colors.textSecondary }} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+         
+
+        {/* Switch Items (Haptics, etc) */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 16, borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
+              <View style={{ padding: 10, borderRadius: 14, backgroundColor: colors.tint + '15' }}>
+                <Vibrate size={20} color={colors.tint} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.text }}>Vibración y Hápticos</Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>Respuesta táctil en la app</Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              onPress={handleHapticToggle}
+              style={{
+                width: 50,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: hapticsEnabled ? colors.tint : colors.border,
+                justifyContent: 'center',
+                paddingHorizontal: 2,
+              }}
+            >
+              <View style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: '#fff',
+                transform: [{ translateX: hapticsEnabled ? 22 : 0 }],
+                shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2
+              }} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Mis Temas */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <View style={{ padding: 10, borderRadius: 16, backgroundColor: colors.tint + '15' }}>
+              <Sparkles size={24} color={colors.tint} />
+            </View>
+            <Text style={{ fontSize: 24, fontWeight: '900', color: colors.text }}>Mis Temas</Text>
+          </View>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 24, marginLeft: 4 }}>
+            Temas exclusivos desbloqueables.
+          </Text>
+
+          <View style={{ gap: 16 }}>
+            {[
+              { id: 'galaxy', icon: Sparkles, label: 'Tema Galaxia', themeTint: '#a855f7' },
+              { id: theme === 'light' ? 'ocean' : 'ocean-dark', icon: Droplet, label: 'Tema Océano', themeTint: '#0ea5e9' },
+              { id: theme === 'light' ? 'desert' : 'desert-dark', icon: Sun, label: 'Tema Desierto', themeTint: '#d2b48c' }
+            ].map((st) => {
+              const isActive = theme === st.id || (st.id.startsWith('ocean') && theme.startsWith('ocean')) || (st.id.startsWith('desert') && theme.startsWith('desert'));
+              const STIcon = st.icon;
+              return (
+                <TouchableOpacity
+                  key={st.id}
+                  onPress={() => handleThemeChange(st.id)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: 16,
+                    backgroundColor: isActive ? st.themeTint + '15' : colors.background,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: isActive ? st.themeTint + '50' : colors.border,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                    <View style={{ padding: 10, borderRadius: 12, backgroundColor: isActive ? st.themeTint + '30' : colors.card }}>
+                      <STIcon size={22} color={isActive ? st.themeTint : colors.textSecondary} />
+                    </View>
+                    <View>
+                      <Text style={{ fontSize: 15, fontWeight: 'bold', color: isActive ? st.themeTint : colors.text }}>{st.label}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{isActive ? 'Activo' : 'Desbloqueado'}</Text>
+                    </View>
+                  </View>
+                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: isActive ? st.themeTint : 'transparent', borderWidth: 2, borderColor: isActive ? st.themeTint : colors.textSecondary }} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+         
+
+        {/* Switch Items (Haptics, etc) */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 16, borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
+              <View style={{ padding: 10, borderRadius: 14, backgroundColor: colors.tint + '15' }}>
+                <Vibrate size={20} color={colors.tint} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.text }}>Vibración y Hápticos</Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>Respuesta táctil en la app</Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              onPress={handleHapticToggle}
+              style={{
+                width: 50,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: hapticsEnabled ? colors.tint : colors.border,
+                justifyContent: 'center',
+                paddingHorizontal: 2,
+              }}
+            >
+              <View style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: '#fff',
+                transform: [{ translateX: hapticsEnabled ? 22 : 0 }],
+                shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2
+              }} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Mis Temas */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <View style={{ padding: 10, borderRadius: 16, backgroundColor: colors.tint + '15' }}>
+              <Sparkles size={24} color={colors.tint} />
+            </View>
+            <Text style={{ fontSize: 24, fontWeight: '900', color: colors.text }}>Mis Temas</Text>
+          </View>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 24, marginLeft: 4 }}>
+            Temas exclusivos desbloqueables.
+          </Text>
+
+          <View style={{ gap: 16 }}>
+            {[
+              { id: 'galaxy', icon: Sparkles, label: 'Tema Galaxia', themeTint: '#a855f7' },
+              { id: theme === 'light' ? 'ocean' : 'ocean-dark', icon: Droplet, label: 'Tema Océano', themeTint: '#0ea5e9' },
+              { id: theme === 'light' ? 'desert' : 'desert-dark', icon: Sun, label: 'Tema Desierto', themeTint: '#d2b48c' }
+            ].map((st) => {
+              const isActive = theme === st.id || (st.id.startsWith('ocean') && theme.startsWith('ocean')) || (st.id.startsWith('desert') && theme.startsWith('desert'));
+              const STIcon = st.icon;
+              return (
+                <TouchableOpacity
+                  key={st.id}
+                  onPress={() => handleThemeChange(st.id)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: 16,
+                    backgroundColor: isActive ? st.themeTint + '15' : colors.background,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: isActive ? st.themeTint + '50' : colors.border,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                    <View style={{ padding: 10, borderRadius: 12, backgroundColor: isActive ? st.themeTint + '30' : colors.card }}>
+                      <STIcon size={22} color={isActive ? st.themeTint : colors.textSecondary} />
+                    </View>
+                    <View>
+                      <Text style={{ fontSize: 15, fontWeight: 'bold', color: isActive ? st.themeTint : colors.text }}>{st.label}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{isActive ? 'Activo' : 'Desbloqueado'}</Text>
+                    </View>
+                  </View>
+                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: isActive ? st.themeTint : 'transparent', borderWidth: 2, borderColor: isActive ? st.themeTint : colors.textSecondary }} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+         
+
+        {/* Switch Items (Haptics, etc) */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 16, borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
+              <View style={{ padding: 10, borderRadius: 14, backgroundColor: colors.tint + '15' }}>
+                <Vibrate size={20} color={colors.tint} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.text }}>Vibración y Hápticos</Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>Respuesta táctil en la app</Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              onPress={handleHapticToggle}
+              style={{
+                width: 50,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: hapticsEnabled ? colors.tint : colors.border,
+                justifyContent: 'center',
+                paddingHorizontal: 2,
+              }}
+            >
+              <View style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: '#fff',
+                transform: [{ translateX: hapticsEnabled ? 22 : 0 }],
+                shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2
+              }} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Mis Temas */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <View style={{ padding: 10, borderRadius: 16, backgroundColor: colors.tint + '15' }}>
+              <Sparkles size={24} color={colors.tint} />
+            </View>
+            <Text style={{ fontSize: 24, fontWeight: '900', color: colors.text }}>Mis Temas</Text>
+          </View>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 24, marginLeft: 4 }}>
+            Temas exclusivos desbloqueables.
+          </Text>
+
+          <View style={{ gap: 16 }}>
+            {[
+              { id: 'galaxy', icon: Sparkles, label: 'Tema Galaxia', themeTint: '#a855f7' },
+              { id: theme === 'light' ? 'ocean' : 'ocean-dark', icon: Droplet, label: 'Tema Océano', themeTint: '#0ea5e9' },
+              { id: theme === 'light' ? 'desert' : 'desert-dark', icon: Sun, label: 'Tema Desierto', themeTint: '#d2b48c' }
+            ].map((st) => {
+              const isActive = theme === st.id || (st.id.startsWith('ocean') && theme.startsWith('ocean')) || (st.id.startsWith('desert') && theme.startsWith('desert'));
+              const STIcon = st.icon;
+              return (
+                <TouchableOpacity
+                  key={st.id}
+                  onPress={() => handleThemeChange(st.id)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: 16,
+                    backgroundColor: isActive ? st.themeTint + '15' : colors.background,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: isActive ? st.themeTint + '50' : colors.border,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                    <View style={{ padding: 10, borderRadius: 12, backgroundColor: isActive ? st.themeTint + '30' : colors.card }}>
+                      <STIcon size={22} color={isActive ? st.themeTint : colors.textSecondary} />
+                    </View>
+                    <View>
+                      <Text style={{ fontSize: 15, fontWeight: 'bold', color: isActive ? st.themeTint : colors.text }}>{st.label}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{isActive ? 'Activo' : 'Desbloqueado'}</Text>
+                    </View>
+                  </View>
+                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: isActive ? st.themeTint : 'transparent', borderWidth: 2, borderColor: isActive ? st.themeTint : colors.textSecondary }} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+         
+
+        {/* Switch Items (Haptics, etc) */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 16, borderWidth: 1, borderColor: colors.border }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
+              <View style={{ padding: 10, borderRadius: 14, backgroundColor: colors.tint + '15' }}>
+                <Vibrate size={20} color={colors.tint} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.text }}>Vibración y Hápticos</Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>Respuesta táctil en la app</Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              onPress={handleHapticToggle}
+              style={{
+                width: 50,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: hapticsEnabled ? colors.tint : colors.border,
+                justifyContent: 'center',
+                paddingHorizontal: 2,
+              }}
+            >
+              <View style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: '#fff',
+                transform: [{ translateX: hapticsEnabled ? 22 : 0 }],
+                shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2
+              }} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Mis Temas */}
+        <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <View style={{ padding: 10, borderRadius: 16, backgroundColor: colors.tint + '15' }}>
+              <Sparkles size={24} color={colors.tint} />
+            </View>
+            <Text style={{ fontSize: 24, fontWeight: '900', color: colors.text }}>Mis Temas</Text>
+          </View>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 24, marginLeft: 4 }}>
+            Temas exclusivos desbloqueables.
+          </Text>
+
+          <View style={{ gap: 16 }}>
+            {[
+              { id: 'galaxy', icon: Sparkles, label: 'Tema Galaxia', themeTint: '#a855f7' },
+              { id: theme === 'light' ? 'ocean' : 'ocean-dark', icon: Droplet, label: 'Tema Océano', themeTint: '#0ea5e9' },
+              { id: theme === 'light' ? 'desert' : 'desert-dark', icon: Sun, label: 'Tema Desierto', themeTint: '#d2b48c' }
+            ].map((st) => {
+              const isActive = theme === st.id || (st.id.startsWith('ocean') && theme.startsWith('ocean')) || (st.id.startsWith('desert') && theme.startsWith('desert'));
+              const STIcon = st.icon;
+              return (
+                <TouchableOpacity
+                  key={st.id}
+                  onPress={() => handleThemeChange(st.id)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: 16,
+                    backgroundColor: isActive ? st.themeTint + '15' : colors.background,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: isActive ? st.themeTint + '50' : colors.border,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                    <View style={{ padding: 10, borderRadius: 12, backgroundColor: isActive ? st.themeTint + '30' : colors.card }}>
+                      <STIcon size={22} color={isActive ? st.themeTint : colors.textSecondary} />
+                    </View>
+                    <View>
+                      <Text style={{ fontSize: 15, fontWeight: 'bold', color: isActive ? st.themeTint : colors.text }}>{st.label}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{isActive ? 'Activo' : 'Desbloqueado'}</Text>
+                    </View>
+                  </View>
+                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: isActive ? st.themeTint : 'transparent', borderWidth: 2, borderColor: isActive ? st.themeTint : colors.textSecondary }} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        </Animated.ScrollView>
     </View>
   );
 }
