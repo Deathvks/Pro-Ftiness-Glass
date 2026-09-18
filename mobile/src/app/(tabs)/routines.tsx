@@ -13,7 +13,9 @@ import { useRouter } from 'expo-router';
 
 export default function RoutinesScreen() {
   const theme = useAppStore(state => state.theme);
-  const colors = Colors[theme as keyof typeof Colors] || Colors.oled;
+  const accent = useAppStore(state => state.accent);
+  const baseColors = Colors[theme as keyof typeof Colors] || Colors.oled;
+  const colors = { ...baseColors, tint: accent || baseColors.tint };
   const router = useRouter();
   
   // Zustand state

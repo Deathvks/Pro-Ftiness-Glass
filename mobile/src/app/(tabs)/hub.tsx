@@ -64,7 +64,9 @@ const HubButton = ({ icon: Icon, title, description, onPress, badge = false, isC
 export default function Hub() {
   const theme = useAppStore(state => state.theme);
   const setTheme = useAppStore(state => state.setTheme);
-  const colors = Colors[theme] || Colors.oled;
+  const accent = useAppStore(state => state.accent);
+  const baseColors = Colors[theme as keyof typeof Colors] || Colors.oled;
+  const colors = { ...baseColors, tint: accent || baseColors.tint };
   const userProfile = useAppStore(state => state.userProfile);
   const router = useRouter();
   

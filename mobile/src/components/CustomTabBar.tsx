@@ -9,8 +9,10 @@ import { Colors } from '@/constants/theme';
 
 export default function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const theme = useAppStore(state => state.theme) || 'oled';
-  const colors = Colors[theme] || Colors.oled;
+  const theme = useAppStore(state => state.theme);
+  const accent = useAppStore(state => state.accent);
+  const baseColors = Colors[theme as keyof typeof Colors] || Colors.oled;
+  const colors = { ...baseColors, tint: accent || baseColors.tint };
 
   const widthRef = useRef(0);
   const [containerWidth, setContainerWidth] = useState(0);

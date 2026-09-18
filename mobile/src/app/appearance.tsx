@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
@@ -12,7 +13,9 @@ import {
   Smartphone, 
   Check,
   Vibrate,
-  Droplet
+  Sparkles,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react-native';
 
 const ACCENT_OPTIONS = [
@@ -39,15 +42,19 @@ const ACCENT_OPTIONS = [
   { id: 'neutral', label: 'Neutral', hex: '#737373' }
 ];
 
+const COLORS_PER_PAGE = 12;
+
 export default function AppearanceScreen() {
   const theme = useAppStore(state => state.theme);
   const setTheme = useAppStore(state => state.setTheme);
   const accent = useAppStore(state => state.accent || '#3b82f6');
   const setAccent = useAppStore(state => state.setAccent);
-  // Add haptics if available in store, otherwise mock it
+  
   const hapticsEnabled = useAppStore(state => (state as any).hapticsEnabled !== false);
   const setHapticsEnabled = useAppStore(state => (state as any).setHapticsEnabled || (() => {}));
   
+  const [currentColorPage, setCurrentColorPage] = useState(0);
+
   const baseColors = Colors[theme as keyof typeof Colors] || Colors.oled;
   // Overwrite tint with our accent for this screen
   const colors = { ...baseColors, tint: accent };
@@ -55,6 +62,30 @@ export default function AppearanceScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const scrollY = React.useRef(new Animated.Value(0)).current;
+
+  const totalPages = Math.ceil(ACCENT_OPTIONS.length / COLORS_PER_PAGE);
+  const currentColors = ACCENT_OPTIONS.slice(
+    currentColorPage * COLORS_PER_PAGE,
+    (currentColorPage * COLORS_PER_PAGE) + COLORS_PER_PAGE
+  );
+
+  const handleHapticToggle = () => {
+    const newValue = !hapticsEnabled;
+    setHapticsEnabled(newValue);
+    if (newValue) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+  };
+
+  const handleThemeChange = (id: string) => {
+    setTheme(id);
+    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handleAccentChange = (hex: string) => {
+    setAccent(hex);
+    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -88,14 +119,15 @@ export default function AppearanceScreen() {
               {[
                 { id: 'light', icon: Sun, label: 'Claro' },
                 { id: 'dark', icon: Moon, label: 'Oscuro' },
-                { id: 'oled', icon: Smartphone, label: 'OLED' } // Simplified for mobile
+                { id: 'oled', icon: Smartphone, label: 'OLED' },
+                { id: 'galaxy', icon: Sparkles, label: 'Galaxia' }
               ].map((mode) => {
                 const isActive = theme === mode.id;
                 const ModeIcon = mode.icon;
                 return (
-                  <View key={mode.id} style={{ width: '33.33%', paddingHorizontal: 6 }}>
+                  <View key={mode.id} style={{ width: '50%', paddingHorizontal: 6, marginBottom: 12 }}>
                     <TouchableOpacity
-                      onPress={() => setTheme(mode.id)}
+                      onPress={() => handleThemeChange(mode.id)}
                       style={{
                         backgroundColor: isActive ? colors.tint + '15' : colors.background,
                         borderWidth: 2,
@@ -117,14 +149,38 @@ export default function AppearanceScreen() {
 
           {/* Color de Acento */}
           <View style={{ marginBottom: 16 }}>
-            <Text style={{ fontSize: 12, fontWeight: 'bold', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16, marginLeft: 4 }}>Color de Acento</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <Text style={{ fontSize: 12, fontWeight: 'bold', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginLeft: 4 }}>Color de Acento</Text>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setCurrentColorPage(p => Math.max(0, p - 1));
+                    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  disabled={currentColorPage === 0}
+                  style={{ opacity: currentColorPage === 0 ? 0.3 : 1 }}
+                >
+                  <ChevronLeft size={20} color={colors.text} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setCurrentColorPage(p => Math.min(totalPages - 1, p + 1));
+                    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  disabled={currentColorPage === totalPages - 1}
+                  style={{ opacity: currentColorPage === totalPages - 1 ? 0.3 : 1 }}
+                >
+                  <ChevronRight size={20} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+            </View>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'flex-start' }}>
-              {ACCENT_OPTIONS.map((opt) => {
+              {currentColors.map((opt) => {
                 const isActive = accent.toLowerCase() === opt.hex.toLowerCase();
                 return (
                   <TouchableOpacity
                     key={opt.id}
-                    onPress={() => setAccent(opt.hex)}
+                    onPress={() => handleAccentChange(opt.hex)}
                     style={{
                       width: 48,
                       height: 48,
@@ -162,7 +218,7 @@ export default function AppearanceScreen() {
               </View>
             </View>
             <TouchableOpacity 
-              onPress={() => setHapticsEnabled(!hapticsEnabled)}
+              onPress={handleHapticToggle}
               style={{
                 width: 50,
                 height: 28,

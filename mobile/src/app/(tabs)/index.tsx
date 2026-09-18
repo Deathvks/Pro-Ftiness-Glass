@@ -25,7 +25,9 @@ const todayIndex = (new Date().getDay() + 6) % 7;
 export default function Dashboard() {
   const router = useRouter();
   const theme = useAppStore(state => state.theme) || 'oled';
-  const colors = Colors[theme] || Colors.oled;
+  const accent = useAppStore(state => state.accent);
+  const baseColors = Colors[theme as keyof typeof Colors] || Colors.oled;
+  const colors = { ...baseColors, tint: accent || baseColors.tint };
   
   const userProfile = useAppStore(state => state.userProfile || state.user);
   const gamification = useAppStore(state => state.gamification) || {};

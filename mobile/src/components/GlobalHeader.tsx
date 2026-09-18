@@ -15,7 +15,9 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
     const segments = useSegments();
     
     const theme = useAppStore(state => state.theme) || 'oled';
-    const colors = Colors[theme as keyof typeof Colors] || Colors.oled;
+    const accent = useAppStore(state => state.accent);
+    const baseColors = Colors[theme as keyof typeof Colors] || Colors.oled;
+    const colors = { ...baseColors, tint: accent || baseColors.tint };
     
     const isDashboard = segments[segments.length - 1] === 'index' || segments.length === 1;
 
