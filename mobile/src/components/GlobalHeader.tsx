@@ -12,30 +12,6 @@ import { GlassView } from 'expo-glass-effect';
 
 export default function GlobalHeader({ title, scrollY, showBackButton, hideRightButtons }: { title?: string, scrollY?: Animated.Value, showBackButton?: boolean, hideRightButtons?: boolean }) {
         const [showAiModal, setShowAiModal] = React.useState(false);
-    const [isScrolled, setIsScrolled] = React.useState(false);
-    const isScrolledRef = React.useRef(false);
-
-    React.useEffect(() => {
-        if (!scrollY) {
-            setIsScrolled(true);
-            isScrolledRef.current = true;
-            return;
-        }
-
-        const listener = scrollY.addListener(({ value }) => {
-            if (value > 20 && !isScrolledRef.current) {
-                isScrolledRef.current = true;
-                setIsScrolled(true);
-            } else if (value <= 20 && isScrolledRef.current) {
-                isScrolledRef.current = false;
-                setIsScrolled(false);
-            }
-        });
-
-        return () => {
-            scrollY.removeListener(listener);
-        };
-    }, [scrollY]);
     const router = useRouter();
     const segments = useSegments();
     
@@ -65,7 +41,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
     // If scrollY is provided, we animate the background opacity
     const bgOpacity = scrollY ? scrollY.interpolate({
         inputRange: [0, 50],
-        outputRange: [0, 1],
+        outputRange: [0.01, 1],
         extrapolate: 'clamp'
     }) : 1; // Default to fully visible if no scrollY provided
 
@@ -124,15 +100,13 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
     return (
         <View style={{ position: 'relative' }}>
             
-            <GlassView 
-                glassEffectStyle={{
-                    style: isScrolled ? 'regular' : 'none',
-                    animate: true,
-                    animationDuration: 0.3
-                }}
-                colorScheme={colorScheme as any}
-                style={StyleSheet.absoluteFill}
-            />
+            <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
+                <GlassView 
+                    glassEffectStyle="regular"
+                    colorScheme={colorScheme as any}
+                    style={StyleSheet.absoluteFill}
+                />
+            </Animated.View>
             <Animated.View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colors.border, opacity: bgOpacity }} />
             <View 
                 style={{ 

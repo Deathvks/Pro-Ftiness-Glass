@@ -235,31 +235,14 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
   };
   
   const scrollY = React.useRef(new Animated.Value(0)).current;
-  const [isScrolled, setIsScrolled] = React.useState(false);
-  const isScrolledRef = React.useRef(false);
-
-  React.useEffect(() => {
-    const listener = scrollY.addListener(({ value }) => {
-        if (value > 20 && !isScrolledRef.current) {
-            isScrolledRef.current = true;
-            setIsScrolled(true);
-        } else if (value <= 20 && isScrolledRef.current) {
-            isScrolledRef.current = false;
-            setIsScrolled(false);
-        }
-    });
-
-    return () => {
-        scrollY.removeListener(listener);
-    };
-  }, [scrollY]);
+  
   useEffect(() => {
     scrollY.setValue(0);
   }, [view]);
 
   const bgOpacity = scrollY.interpolate({
     inputRange: [0, 50],
-    outputRange: [0, 1],
+    outputRange: [0.01, 1],
     extrapolate: 'clamp'
   });
 
@@ -271,15 +254,13 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top, height: headerHeight, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }]}>
-          <GlassView 
-            glassEffectStyle={{
-                style: isScrolled ? 'regular' : 'none',
-                animate: true,
-                animationDuration: 0.3
-            }}
-            colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'}
-            style={StyleSheet.absoluteFill}
-        />
+          <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
+            <GlassView 
+                glassEffectStyle="regular"
+                colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'}
+                style={StyleSheet.absoluteFill}
+            />
+        </Animated.View>
         <Animated.View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0, opacity: bgOpacity }} />
 
           {view !== 'list' ? (
