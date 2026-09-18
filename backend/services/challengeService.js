@@ -6,6 +6,7 @@ const { User, UserChallenge, sequelize } = models;
 // Definición de retos
 export const CHALLENGES = {
     // Diarios
+    daily_progressive_overload: { type: 'daily', target: 4, xp: 0, title: 'Sobrecarga Progresiva', desc: 'Mantén el peso y haz más repeticiones (Otorga 25 XP al instante)' },
     daily_5_meals: { type: 'daily', target: 5, xp: 50, title: 'Registra 5 comidas', desc: 'Registra al menos 5 alimentos hoy' },
     daily_calories: { type: 'daily', target: 1, xp: 50, title: 'Calorías completadas', desc: 'Alcanza tu objetivo calórico diario' },
     daily_protein: { type: 'daily', target: 1, xp: 50, title: 'Proteína completada', desc: 'Alcanza tu objetivo de proteínas diario' },

@@ -2,7 +2,7 @@
 import { validationResult } from 'express-validator';
 import { Op } from 'sequelize';
 import models from '../models/index.js';
-import { processWorkoutGamification } from '../services/gamificationService.js';
+import { processWorkoutGamification, processProgressiveOverload } from '../services/gamificationService.js';
 import { createNotification } from '../services/notificationService.js';
 
 // --- Función para calcular 1RM ---
@@ -142,6 +142,7 @@ export const logWorkoutSession = async (req, res, next) => {
     }, { transaction: t });
 
     let newPRs = [];
+    let progressiveOverloads = [];
     const exercisesToProcess = details || exercises || [];
 
     for (const exercise of exercisesToProcess) {
@@ -262,7 +263,13 @@ export const logWorkoutSession = async (req, res, next) => {
     try {
       const { trackChallenge } = await import('../services/challengeService.js');
       
-      const dailyWorkoutRes = await trackChallenge(userId, 'daily_workout', 1);
+      
+        if (progressiveOverloads.length > 0) {
+            const overloadRes = await trackChallenge(userId, 'daily_progressive_overload', progressiveOverloads.length);
+            // Ya hemos dado los XP, así que no sumamos a xpAdded desde el reto, solo marcamos progreso.
+        }
+
+        const dailyWorkoutRes = await trackChallenge(userId, 'daily_workout', 1);
       if (dailyWorkoutRes.completedNow && dailyWorkoutRes.xpResult) {
         xpAdded += dailyWorkoutRes.xpResult.xpAdded;
         gamificationEvents.push({ 
@@ -348,12 +355,43 @@ export const logWorkoutSession = async (req, res, next) => {
       }
     }
 
-    res.status(201).json({
+    
+      // --- NOTIFICAR Y REGISTRAR SOBRECARGAS PROGRESIVAS ---
+      for (const overload of progressiveOverloads) {
+          xpAdded += overload.xp;
+          
+          const titleMsg = 'Sobrecarga Progresiva';
+          const bodyMsg = overload.xp > 0 
+             ? `¡Felicidades! Mantuviste el peso y lograste más repeticiones en ${overload.exercise}. Has ganado ${overload.xp} XP.`
+             : `¡Felicidades! Mantuviste el peso y lograste más repeticiones en ${overload.exercise}. Sigue así.`;
+
+          gamificationEvents.push({
+              type: 'progressive_overload',
+              title: titleMsg,
+              message: bodyMsg,
+              xpAdded: overload.xp
+          });
+
+          // Notificación In-App + Push
+          try {
+            await createNotification(userId, {
+                type: 'progressive_overload',
+                title: titleMsg,
+                message: bodyMsg,
+                data: { exercise: overload.exercise, xpAdded: overload.xp }
+            });
+          } catch (e) {
+            console.error('Error enviando notificación de sobrecarga:', e);
+          }
+      }
+
+      res.status(201).json({
       message: 'Entrenamiento guardado con éxito',
       workoutId: newWorkoutLog.id,
       newPRs: newPRs,
       xpAdded: xpAdded,
-      gamification: gamificationEvents
+      gamification: gamificationEvents,
+        gamificationEvents: gamificationEvents
     });
 
   } catch (error) {

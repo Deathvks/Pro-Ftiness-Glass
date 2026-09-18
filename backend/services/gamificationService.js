@@ -11,13 +11,15 @@ export const FOOD_LOG_XP = 5;
 export const WATER_LOG_XP = 5;
 export const CALORIE_TARGET_XP = 50;
 export const CREATINA_LOG_XP = 5;
+export const PROGRESSIVE_OVERLOAD_XP = 25;
 
 // Configuración de límites diarios
 const LIMITS = {
-    food_logs: 5,      // Máximo 5 comidas con XP
-    workouts: 2,       // Máximo 2 entrenamientos con XP
-    creatina: 2,       // Máximo 2 registros de creatina con XP
-    water_xp: 50       // Máximo 50 XP de agua
+    food_logs: 5,
+    workouts: 2,
+    creatina: 2,
+    water_xp: 50,
+    progressive_overload: 4
 };
 
 const BADGES_CONFIG = {
@@ -61,7 +63,8 @@ const getDailyState = (user, rawDate) => {
             food_logs: 0,
             workouts: 0,
             creatina: 0,
-            water_xp: 0
+            water_xp: 0,
+            progressive_overload: 0
         };
     } else {
         // Asegurar que existan las propiedades si el día es el mismo pero la estructura cambió
@@ -69,6 +72,7 @@ const getDailyState = (user, rawDate) => {
         if (state.water_xp === undefined) state.water_xp = 0;
         if (state.workouts === undefined) state.workouts = 0;
         if (state.food_logs === undefined) state.food_logs = 0;
+        if (state.progressive_overload === undefined) state.progressive_overload = 0;
     }
     return state;
 };
@@ -395,4 +399,26 @@ export default {
     CALORIE_TARGET_XP,
     CREATINA_LOG_XP,
     LIMITS
+};
+export const processProgressiveOverload = async (userId, exerciseName, rawDate, t) => {
+    try {
+        const user = await User.findByPk(userId, { transaction: t });
+        if (!user) return null;
+
+        const state = getDailyState(user, rawDate);
+        if (state.progressive_overload >= LIMITS.progressive_overload) {
+            return { success: true, xpAdded: 0, limitReached: true }; // Se da la enhorabuena sin XP
+        }
+
+        const xpResult = await addXp(userId, PROGRESSIVE_OVERLOAD_XP, 'Sobrecarga Progresiva: ' + exerciseName, { transaction: t, userInstance: user });
+        
+        state.progressive_overload += 1;
+        user.daily_gamification_state = state;
+        await user.save({ transaction: t });
+
+        return { ...xpResult, limitReached: false };
+    } catch (error) {
+        console.error('Error in processProgressiveOverload:', error);
+        return { success: false, error: error.message };
+    }
 };
