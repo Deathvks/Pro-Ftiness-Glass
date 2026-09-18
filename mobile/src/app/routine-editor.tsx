@@ -344,18 +344,24 @@ export default function RoutineEditorScreen() {
             shadowRadius: 4,
             elevation: isActive ? 8 : 2
           }}>
-            {/* Media - hide for manual exercises */}
-            {!item.is_manual && (
-              <View style={{ width: '100%', aspectRatio: 1, backgroundColor: colors.background }}>
+            {/* Media Area */}
+            <View style={{ width: '100%', aspectRatio: 1, backgroundColor: colors.border + '30', alignItems: 'center', justifyContent: 'center' }}>
+              {(!item.is_manual && item.exercise_id !== null) ? (
                 <ExerciseMediaPreview item={item} getImageUrl={getImageUrl} staticOnly={true} />
-              </View>
-            )}
+              ) : (
+                <View style={{ flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.03)' }}>
+                  <ImageIcon size={54} color={colors.textSecondary} style={{ opacity: 0.3, marginBottom: 12 }} />
+                  <Text style={{ color: colors.textSecondary, fontWeight: 'bold', fontSize: 16, opacity: 0.7 }}>Ejercicio Manual</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 13, opacity: 0.5, marginTop: 4 }}>Sin previsualización</Text>
+                </View>
+              )}
+            </View>
 
             {/* Content */}
             <View style={{ flex: 1, padding: 12 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <View style={{ flex: 1, marginRight: 8 }}>
-                  {item.is_manual ? (
+                  {(item.is_manual || item.exercise_id === null) ? (
                     <TextInput
                       style={{ color: colors.text, fontWeight: 'bold', fontSize: 18, padding: 0, margin: 0, borderBottomWidth: 1, borderBottomColor: colors.border }}
                       placeholder="Nombre del ejercicio..."
