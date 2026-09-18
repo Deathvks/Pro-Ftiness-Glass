@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Pressable, Animated, StyleSheet, ViewStyle } from 'react-native';
-import { GlassView } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
 
 const AnimatedGlassBackground = Animated.createAnimatedComponent(View);
 
@@ -16,8 +16,8 @@ export function GlassButton({ onPress, children, theme, style }: GlassButtonProp
     const scaleAnim = useRef(new Animated.Value(1)).current;
     
     // Base opacity: 0.25 for light mode, 0.15 for dark mode (using white tint)
-    const baseOpacity = (['light', 'ocean', 'desert'].includes(theme)) ? 0.25 : 0.15;
-    const pressedOpacity = (['light', 'ocean', 'desert'].includes(theme)) ? 0.4 : 0.3;
+    const baseOpacity = 0;
+    const pressedOpacity = (['light', 'ocean', 'desert'].includes(theme)) ? 0.15 : 0.1;
     
     const bgOpacityAnim = useRef(new Animated.Value(baseOpacity)).current;
 
@@ -82,14 +82,15 @@ export function GlassButton({ onPress, children, theme, style }: GlassButtonProp
                 elevation: (['light', 'ocean', 'desert'].includes(theme)) ? 2 : 0,
             }]}>
                 <View style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius, overflow: 'hidden' }]}>
-                    <GlassView 
-                        glassEffectStyle="regular"
-                        colorScheme={(['light', 'ocean', 'desert'].includes(theme)) ? 'light' : 'dark'}
+                    <BlurView 
+                        tint={(['light', 'ocean', 'desert'].includes(theme)) ? 'systemChromeMaterialLight' : 'systemChromeMaterialDark'} 
+                        intensity={(['light', 'ocean', 'desert'].includes(theme)) ? 80 : 100}
+                        experimentalBlurMethod="dimezisBlurView"
                         style={StyleSheet.absoluteFill} 
                     />
                     <AnimatedGlassBackground style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,1)', opacity: bgOpacityAnim }]} />
                 </View>
-                <View style={[StyleSheet.absoluteFill, { borderWidth: 1, borderColor: (['light', 'ocean', 'desert'].includes(theme)) ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.2)', borderRadius: finalBorderRadius }]} pointerEvents="none" />
+                
                 {children}
             </Animated.View>
         </Pressable>

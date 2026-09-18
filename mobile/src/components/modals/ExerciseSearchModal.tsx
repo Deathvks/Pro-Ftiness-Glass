@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Image, Platform, Linking, ScrollView, Animated } from 'react-native';
 import { useSafeAreaInsets as useSafeAreaInsetsNative } from 'react-native-safe-area-context';
-import { GlassView } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
 import { X, Search, Plus, Trash2, Check, ArrowLeft, Filter, Sparkles } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
@@ -245,7 +245,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
     extrapolate: 'clamp'
   });
 
-  const AnimatedGlassView = Animated.createAnimatedComponent(GlassView);
+  const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
@@ -254,11 +254,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top, height: headerHeight, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }]}>
           <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
-            <AnimatedGlassView 
-                glassEffectStyle="regular"
-                colorScheme={(['light', 'ocean', 'desert'].includes(theme)) ? 'light' : 'dark'}
-                style={StyleSheet.absoluteFill} 
-            />
+            <AnimatedBlurView intensity={theme === 'oled' ? 50 : 80} tint={['light', 'ocean', 'desert'].includes(theme) ? 'systemChromeMaterialLight' : ['dark', 'ocean-dark', 'desert-dark', 'galaxy'].includes(theme) ? 'systemChromeMaterialDark' : 'default' as any} style={StyleSheet.absoluteFill} />
             <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, opacity: 0.5 }]} />
             <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0 }} />
           </Animated.View>

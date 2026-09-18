@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions } from 'react-native';
-import { GlassView } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
 import { X, Check } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
 
@@ -37,11 +37,7 @@ export const CropModal = ({ visible, imageUrl, onClose, onCrop }: any) => {
 
   return (
     <Modal visible={visible} animationType="fade" transparent>
-      <GlassView 
-        glassEffectStyle="regular"
-        colorScheme={'dark'}
-        style={StyleSheet.absoluteFill}
-      >
+      <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 20, paddingTop: 60 }}>
             <TouchableOpacity onPress={onClose} style={styles.btn}><X color="#fff" /></TouchableOpacity>
@@ -59,7 +55,7 @@ export const CropModal = ({ visible, imageUrl, onClose, onCrop }: any) => {
             <Text style={{ color: '#fff', textAlign: 'center' }}>Nota: Las imágenes de Pixabay se auto-recortan al centro (Cover) en formato panorámico (16:9) para mantener la máxima calidad sin librerías externas pesadas.</Text>
           </View>
         </View>
-      </GlassView>
+      </BlurView>
     </Modal>
   );
 };
