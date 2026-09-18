@@ -5,7 +5,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { useAppColors } from '@/hooks/useAppColors';
 import { Colors } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import { 
@@ -64,11 +63,8 @@ const HubButton = ({ icon: Icon, title, description, onPress, badge = false, isC
 );
 
 export default function Hub() {
-  const theme = useAppStore(state => state.theme);
   const setTheme = useAppStore(state => state.setTheme);
-  const accent = useAppStore(state => state.accent);
-  const baseColors = Colors[theme as keyof typeof Colors] || Colors.oled;
-  const colors = { ...baseColors, tint: accent || baseColors.tint };
+  const colors = useAppColors();
   const userProfile = useAppStore(state => state.userProfile);
   const router = useRouter();
   
