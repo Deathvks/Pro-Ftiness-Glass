@@ -38,11 +38,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
     }, [scrollY]);
 
 
-    const bgOpacity = scrollY ? scrollY.interpolate({
-        inputRange: [0, 50],
-        outputRange: [0, 1],
-        extrapolate: 'clamp'
-    }) : 0;
+    
     const router = useRouter();
     const segments = useSegments();
     
@@ -68,13 +64,14 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
         : null;
 
     const colorScheme = ['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark';
-
-    // If scrollY is provided, we animate the background opacity
     const bgOpacity = scrollY ? scrollY.interpolate({
         inputRange: [0, 50],
-        outputRange: [0.01, 1],
+        outputRange: [0, 1],
         extrapolate: 'clamp'
-    }) : 1; // Default to fully visible if no scrollY provided
+    }) : 1;
+
+    // If scrollY is provided, we animate the background opacity
+     // Default to fully visible if no scrollY provided
 
     
 

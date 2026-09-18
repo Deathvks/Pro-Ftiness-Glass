@@ -254,21 +254,18 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         scrollY.removeListener(listener);
     };
   }, [scrollY]);
-        const bgOpacity = scrollY.interpolate({
-        inputRange: [0, 50],
-        outputRange: [0, 1],
-        extrapolate: 'clamp'
-    });
+        
   
   useEffect(() => {
     scrollY.setValue(0);
   }, [view]);
-
   const bgOpacity = scrollY.interpolate({
     inputRange: [0, 50],
-    outputRange: [0.01, 1],
+    outputRange: [0, 1],
     extrapolate: 'clamp'
   });
+
+  
 
   
 
