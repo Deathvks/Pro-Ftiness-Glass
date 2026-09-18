@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Image, Platform, Linking, ScrollView, Animated, Easing } from 'react-native';
 import { useSafeAreaInsets as useSafeAreaInsetsNative } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
+import { GlassView } from 'expo-glass-effect';
 import { X, Search, Plus, Trash2, Check, ArrowLeft, Filter, Sparkles } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
@@ -241,10 +241,10 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
 
   React.useEffect(() => {
     const listener = scrollY.addListener(({ value }) => {
-        if (value > 20 && !isScrolledRef.current) {
+        if (value > 5 && !isScrolledRef.current) {
             isScrolledRef.current = true;
             setIsScrolled(true);
-        } else if (value <= 20 && isScrolledRef.current) {
+        } else if (value <= 5 && isScrolledRef.current) {
             isScrolledRef.current = false;
             setIsScrolled(false);
         }
@@ -275,14 +275,15 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top, height: headerHeight, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }]}>
-          <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
-            <BlurView 
-                intensity={80}
-                tint={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'}
-                style={StyleSheet.absoluteFill}
-            />
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, opacity: 0.5 }]} />
-        </Animated.View>
+          <GlassView 
+            glassEffectStyle={{
+                style: isScrolled ? 'regular' : 'none',
+                animate: true,
+                animationDuration: 0.15
+            }}
+            colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'}
+            style={StyleSheet.absoluteFill}
+        />
         <Animated.View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0, opacity: bgOpacity }} />
 
           {view !== 'list' ? (
