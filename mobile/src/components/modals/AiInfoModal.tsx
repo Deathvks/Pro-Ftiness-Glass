@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'reac
 import { Sparkles, X, Zap, Clock, Info, ShieldCheck } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
-import { BlurView } from 'expo-blur';
+import { GlassView } from 'expo-glass-effect';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface AiInfoModalProps {
@@ -66,9 +66,9 @@ export function AiInfoModal({ visible, onClose }: AiInfoModalProps) {
       animationType="fade"
       onRequestClose={onClose}
     >
-      <BlurView 
-        intensity={80} 
-        tint={['light', 'ocean', 'desert'].includes(theme) ? 'systemUltraThinMaterialLight' : 'systemUltraThinMaterialDark'}
+      <GlassView 
+        glassEffectStyle="regular"
+        colorScheme={theme === 'oled' ? 'dark' : (['light', 'ocean', 'desert'].includes(theme)) ? 'light' : 'dark'}
         style={StyleSheet.absoluteFill}
       >
         <Pressable style={styles.overlay} onPress={onClose}>
@@ -135,7 +135,7 @@ export function AiInfoModal({ visible, onClose }: AiInfoModalProps) {
 
           </Pressable>
         </Pressable>
-      </BlurView>
+      </GlassView>
     </Modal>
   );
 }

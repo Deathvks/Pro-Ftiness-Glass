@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, KeyboardAvoidingView, Platform, StyleSheet, Animated, Alert, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { GlassView } from 'expo-glass-effect';
 import { BlurView } from 'expo-blur';
 import { ChevronLeft, ChevronRight, Camera, User, Mail, Shield, Save, Eye, Trophy, AlertTriangle, Dumbbell, Flame, Crown, Star, Medal, Zap, Sparkles, Award } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
@@ -72,10 +73,9 @@ const GlassButton = ({ onPress, children, theme, style, contentStyle }: any) => 
                 zIndex: 10
             }]}>
                 <View style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius, overflow: 'hidden' }]}>
-                    <BlurView 
-                        tint={['light', 'ocean', 'desert'].includes(theme) ? 'systemUltraThinMaterialLight' : 'systemUltraThinMaterialDark'} 
-                        intensity={100}
-                        experimentalBlurMethod="dimezisBlurView"
+                    <GlassView 
+                        glassEffectStyle="regular"
+                        colorScheme={(['light', 'ocean', 'desert'].includes(theme)) ? 'light' : 'dark'}
                         style={StyleSheet.absoluteFill} 
                     />
                     <AnimatedGlassBackground style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,1)', opacity: bgOpacityAnim }]} />
