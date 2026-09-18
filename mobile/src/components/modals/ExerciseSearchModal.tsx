@@ -56,11 +56,16 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
     ));
   };
 
-          const slideAnim = scrollY ? scrollY.interpolate({
-        inputRange: [0, 50],
-        outputRange: [-200, 0],
-        extrapolate: 'clamp'
-    }) : 0;
+          const slideAnim = React.useRef(new Animated.Value(-200)).current;
+
+    React.useEffect(() => {
+        Animated.spring(slideAnim, {
+            toValue: isScrolled ? 0 : -200,
+            friction: 8,
+            tension: 50,
+            useNativeDriver: true
+        }).start();
+    }, [isScrolled]);
   useEffect(() => {
     if (visible) {
       loadExercises();

@@ -36,11 +36,41 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
             scrollY.removeListener(listener);
         };
     }, [scrollY]);
-            const slideAnim = scrollY ? scrollY.interpolate({
-        inputRange: [0, 50],
-        outputRange: [-200, 0],
-        extrapolate: 'clamp'
-    }) : 0;
+            const [isScrolled, setIsScrolled] = React.useState(false);
+    const isScrolledRef = React.useRef(false);
+
+    React.useEffect(() => {
+        if (!scrollY) {
+            setIsScrolled(true);
+            isScrolledRef.current = true;
+            return;
+        }
+
+        const listener = scrollY.addListener(({ value }) => {
+            if (value > 20 && !isScrolledRef.current) {
+                isScrolledRef.current = true;
+                setIsScrolled(true);
+            } else if (value <= 20 && isScrolledRef.current) {
+                isScrolledRef.current = false;
+                setIsScrolled(false);
+            }
+        });
+
+        return () => {
+            scrollY.removeListener(listener);
+        };
+    }, [scrollY]);
+
+    const slideAnim = React.useRef(new Animated.Value(-200)).current;
+
+    React.useEffect(() => {
+        Animated.spring(slideAnim, {
+            toValue: isScrolled ? 0 : -200,
+            friction: 8,
+            tension: 50,
+            useNativeDriver: true
+        }).start();
+    }, [isScrolled]);
     const router = useRouter();
     const segments = useSegments();
     
