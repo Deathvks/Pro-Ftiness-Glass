@@ -56,14 +56,11 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
     ));
   };
 
-      const fadeAnim = React.useRef(new Animated.Value(0)).current;
-    React.useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: isScrolled ? 1 : 0,
-            duration: 200,
-            useNativeDriver: false
-        }).start();
-    }, [isScrolled]);
+          const slideAnim = scrollY ? scrollY.interpolate({
+        inputRange: [0, 50],
+        outputRange: [-200, 0],
+        extrapolate: 'clamp'
+    }) : 0;
   useEffect(() => {
     if (visible) {
       loadExercises();
@@ -279,8 +276,8 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         
         {/* Header */}
-        <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top, height: headerHeight, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }]}>
-          <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
+        <View style={[styles.header, { overflow: 'hidden' }, { borderBottomColor: colors.border, paddingTop: insets.top, height: headerHeight, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }]}>
+          <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ translateY: slideAnim }] }]}>
             <GlassView 
                 glassEffectStyle="regular"
                 colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'}

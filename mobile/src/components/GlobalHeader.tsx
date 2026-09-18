@@ -36,14 +36,11 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
             scrollY.removeListener(listener);
         };
     }, [scrollY]);
-        const fadeAnim = React.useRef(new Animated.Value(0)).current;
-    React.useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: isScrolled ? 1 : 0,
-            duration: 200,
-            useNativeDriver: false
-        }).start();
-    }, [isScrolled]);
+            const slideAnim = scrollY ? scrollY.interpolate({
+        inputRange: [0, 50],
+        outputRange: [-200, 0],
+        extrapolate: 'clamp'
+    }) : 0;
     const router = useRouter();
     const segments = useSegments();
     
@@ -130,9 +127,9 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
     };
 
     return (
-        <View style={{ position: 'relative' }}>
+        <View style={{ position: 'relative', overflow: 'hidden' }}>
             
-            <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
+            <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ translateY: slideAnim }] }]}>
                 <GlassView 
                     glassEffectStyle="regular"
                     colorScheme={colorScheme as any}
