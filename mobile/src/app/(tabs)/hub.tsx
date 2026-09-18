@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ImageBackground, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, ImageBackground, Alert, Animated } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
+import GlobalHeader from '@/components/GlobalHeader';
 import { 
   BarChart2, 
   MessageCircle, 
@@ -71,9 +72,21 @@ export default function Hub() {
   const isTrainer = userProfile?.role === 'trainer' || isAdmin;
   const isClient = !isTrainer;
 
+  const scrollY = React.useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }}>
+        <GlobalHeader title="Menú" scrollY={scrollY} />
+      </View>
+
+      <Animated.ScrollView 
+        contentContainerStyle={{ padding: 16, paddingTop: insets.top + 70, paddingBottom: 150 }} 
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        scrollEventThrottle={16}
+      >
         
         {/* Banner Hero */}
         <View style={{ width: '100%', height: 200, borderRadius: 24, overflow: 'hidden', marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 5 }}>
@@ -184,7 +197,7 @@ export default function Hub() {
 
         </View>
 
-      </ScrollView>
-    </SafeAreaView>
+      </Animated.ScrollView>
+    </View>
   );
 }
