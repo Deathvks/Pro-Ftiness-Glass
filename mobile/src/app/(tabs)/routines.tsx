@@ -88,7 +88,35 @@ export default function RoutinesScreen() {
           router.push('/routine-editor');
         } },
         { text: 'Compartir', onPress: () => Alert.alert('TODO', 'Abrir modal de compartir') },
-        { text: 'Duplicar', onPress: () => Alert.alert('TODO', 'Duplicar rutina') },
+        { text: 'Duplicar', onPress: async () => {
+          const exercises = routine.exercises || routine.RoutineExercises || [];
+          const copy = {
+            name: `${routine.name} (Copia)`,
+            description: routine.description || '',
+            folder: routine.folder || null,
+            image_url: routine.image_url || null,
+            is_trainer_template: false,
+            exercises: exercises.map((ex: any, index: number) => {
+              const isManual = ex.is_manual || (ex.exercise_list_id === null);
+              return {
+                exercise_list_id: isManual ? null : (ex.exercise_list_id || ex.exercise_id || ex.id),
+                name: ex.name,
+                muscle_group: isManual ? ex.muscle_group : undefined,
+                sets: parseInt(String(ex.sets), 10) || 3,
+                reps: String(ex.reps),
+                rest_seconds: parseInt(String(ex.rest_seconds), 10) || 60,
+                exercise_order: index,
+              };
+            })
+          };
+
+          const result = await useAppStore.getState().createRoutine(copy);
+          if (result && !result.success) {
+            Alert.alert('Error', result.message || 'No se pudo duplicar la rutina');
+          } else {
+            Alert.alert('Éxito', 'Rutina duplicada correctamente');
+          }
+        } },
         { text: 'Eliminar', onPress: () => {
           Alert.alert(
             'Eliminar Rutina',
