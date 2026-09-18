@@ -69,7 +69,20 @@ export default function RoutinesScreen() {
       'Opciones',
       routine.name,
       [
-        { text: 'Editar', onPress: () => Alert.alert('TODO', 'Abrir editor') },
+        { text: 'Editar', onPress: () => {
+          const setRoutineEditorState = useAppStore.getState().setRoutineEditorState;
+          const exercises = routine.exercises || routine.RoutineExercises || [];
+          const normalizedRoutine = {
+            routineId: routine.id,
+            routineName: routine.name,
+            description: routine.description || '',
+            folder: routine.folder || '',
+            imageUrl: routine.image_url || null,
+            exercises: exercises.map((ex: any) => ({ ...ex }))
+          };
+          setRoutineEditorState(normalizedRoutine);
+          router.push('/routine-editor');
+        } },
         { text: 'Compartir', onPress: () => Alert.alert('TODO', 'Abrir modal de compartir') },
         { text: 'Duplicar', onPress: () => Alert.alert('TODO', 'Duplicar rutina') },
         { text: 'Eliminar', onPress: () => Alert.alert('TODO', 'Eliminar rutina'), style: 'destructive' },
@@ -102,7 +115,10 @@ export default function RoutinesScreen() {
           <GlassButton 
             theme={theme} 
             style={{ width: 'auto', height: 44, paddingHorizontal: 16, borderRadius: 22, flexDirection: 'row', marginLeft: 'auto' }} 
-            onPress={() => router.push('/routine-editor')}
+            onPress={() => {
+              useAppStore.getState().clearRoutineEditorState();
+              router.push('/routine-editor');
+            }}
           >
             <Plus size={20} color={colors.text} style={{ marginRight: 8 }} />
             <Text style={[styles.createButtonText, { color: colors.text }]}>Crear Rutina</Text>

@@ -1,5 +1,6 @@
 export const createRoutineEditorSlice = (set, get) => ({
   routineEditorState: {
+    routineId: null,
     routineName: "",
     description: "",
     folder: "",
@@ -15,7 +16,7 @@ export const createRoutineEditorSlice = (set, get) => ({
     });
   },
   clearRoutineEditorState: () => {
-    const defaultState = { routineName: "", description: "", folder: "", imageUrl: null, exercises: [] };
+    const defaultState = { routineId: null, routineName: "", description: "", folder: "", imageUrl: null, exercises: [] };
     set({ routineEditorState: defaultState });
     if (typeof localStorage !== "undefined") localStorage.removeItem("routineEditorState");
   },

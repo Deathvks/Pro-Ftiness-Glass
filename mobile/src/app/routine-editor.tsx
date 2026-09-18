@@ -28,7 +28,7 @@ export default function RoutineEditorScreen() {
   const setRoutineEditorState = useAppStore(state => state.setRoutineEditorState);
   const loadRoutineEditorState = useAppStore(state => state.loadRoutineEditorState);
 
-  const { routineName, description, folder, imageUrl, exercises } = routineEditorState;
+  const { routineId, routineName, description, folder, imageUrl, exercises } = routineEditorState;
 
   React.useEffect(() => {
     loadRoutineEditorState();
@@ -138,8 +138,13 @@ export default function RoutineEditorScreen() {
     };
 
     try {
-      const createRoutine = useAppStore.getState().createRoutine;
-      await createRoutine(routineData);
+      if (routineId) {
+        const updateRoutine = useAppStore.getState().updateRoutine;
+        await updateRoutine(routineId, routineData);
+      } else {
+        const createRoutine = useAppStore.getState().createRoutine;
+        await createRoutine(routineData);
+      }
       
       useAppStore.getState().clearRoutineEditorState();
       goBackSafe();
@@ -312,7 +317,9 @@ export default function RoutineEditorScreen() {
         {/* Save */}
         <GlassButton theme={theme} colors={colors} onPress={handleSave} style={[styles.libraryBtn, { marginTop: 12 }]}>
           <Save size={20} color={colors.text} style={{ marginRight: 8 }} />
-          <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 16 }}>Crear Rutina</Text>
+          <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 16 }}>
+            {routineId ? 'Guardar Cambios' : 'Crear Rutina'}
+          </Text>
         </GlassButton>
       </View>
     </View>
