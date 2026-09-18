@@ -83,7 +83,7 @@ export function GlassButton({ onPress, children, theme, style }: GlassButtonProp
             }]}>
                 <View style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius, overflow: 'hidden' }]}>
                     <BlurView 
-                        tint={(['light', 'ocean', 'desert'].includes(theme)) ? 'light' : 'dark'} 
+                        tint={(['light', 'ocean', 'desert'].includes(theme)) ? 'systemUltraThinMaterialLight' : 'systemUltraThinMaterialDark'} 
                         intensity={(['light', 'ocean', 'desert'].includes(theme)) ? 80 : 100}
                         experimentalBlurMethod="dimezisBlurView"
                         style={StyleSheet.absoluteFill} 

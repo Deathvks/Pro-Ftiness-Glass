@@ -256,8 +256,8 @@ export default function AppearanceScreen() {
               {[
                 { 
                   baseId: 'galaxy', 
-                  icon: Sparkles, 
-                  label: 'Tema Galaxia', 
+                  icon: (props: any) => <FontAwesome5 name="meteor" size={props.size} color={props.color} />, 
+                    label: 'Tema Galaxia', 
                   themeTint: '#a855f7', 
                   btnText: '#fff',
                   desc: 'Desbloqueado',

@@ -68,7 +68,7 @@ export function AiInfoModal({ visible, onClose }: AiInfoModalProps) {
     >
       <BlurView 
         intensity={80} 
-        tint={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'}
+        tint={['light', 'ocean', 'desert'].includes(theme) ? 'systemUltraThinMaterialLight' : 'systemUltraThinMaterialDark'}
         style={StyleSheet.absoluteFill}
       >
         <Pressable style={styles.overlay} onPress={onClose}>

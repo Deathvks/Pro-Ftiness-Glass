@@ -254,7 +254,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top, height: headerHeight, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }]}>
           <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
-            <AnimatedBlurView intensity={theme === 'oled' ? 50 : 80} tint={['light', 'ocean', 'desert'].includes(theme) ? 'light' : ['dark', 'ocean-dark', 'desert-dark', 'galaxy'].includes(theme) ? 'dark' : 'default'} style={StyleSheet.absoluteFill} />
+            <AnimatedBlurView intensity={theme === 'oled' ? 50 : 80} tint={['light', 'ocean', 'desert'].includes(theme) ? 'systemThinMaterialLight' : ['dark', 'ocean-dark', 'desert-dark', 'galaxy'].includes(theme) ? 'systemThinMaterialDark' : 'default' as any} style={StyleSheet.absoluteFill} />
             <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, opacity: 0.5 }]} />
             <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0 }} />
           </Animated.View>
