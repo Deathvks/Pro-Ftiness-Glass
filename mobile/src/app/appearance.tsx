@@ -16,7 +16,8 @@ import {
   Vibrate,
   Sparkles,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Droplet
 } from 'lucide-react-native';
 
 const ACCENT_OPTIONS = [
