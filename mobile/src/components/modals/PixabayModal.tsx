@@ -65,7 +65,7 @@ export const PixabayModal: React.FC<PixabayModalProps> = ({ visible, onClose, on
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <BlurView intensity={theme === 'oled' ? 50 : 80} tint={theme === 'light' ? 'light' : 'dark'} style={StyleSheet.absoluteFill}>
+      <BlurView intensity={theme === 'oled' ? 50 : 80} tint={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} style={StyleSheet.absoluteFill}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
             

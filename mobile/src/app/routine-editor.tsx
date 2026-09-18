@@ -491,7 +491,7 @@ export default function RoutineEditorScreen() {
       {/* Header */}
       <View style={[styles.mainHeader, { paddingTop: insets.top + 12, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0 }]}>
         <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
-          <AnimatedBlurView intensity={theme === 'oled' ? 50 : 80} tint={theme === 'light' ? 'light' : theme === 'dark' ? 'dark' : 'default'} style={StyleSheet.absoluteFill} />
+          <AnimatedBlurView intensity={theme === 'oled' ? 50 : 80} tint={['light', 'ocean', 'desert'].includes(theme) ? 'light' : ['dark', 'ocean-dark', 'desert-dark', 'galaxy'].includes(theme) ? 'dark' : 'default'} style={StyleSheet.absoluteFill} />
           <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, opacity: 0.5 }]} />
           <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0 }} />
         </Animated.View>

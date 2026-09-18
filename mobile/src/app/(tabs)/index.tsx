@@ -175,7 +175,7 @@ export default function Dashboard() {
                             <View key={i} style={{ alignItems: 'center' }}>
                                 <Text style={{ fontSize: 9, fontWeight: 'bold', color: todayIndex === i ? colors.tint : colors.textSecondary, marginBottom: 6 }}>{letter}</Text>
                                 <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 1, borderColor: weeklyStats.days[i] ? colors.tint : colors.border, backgroundColor: weeklyStats.days[i] ? colors.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                                    {weeklyStats.days[i] && <Check size={12} color={((theme === 'light' || theme === 'ocean' || theme === 'desert') && colors.tint === '#d2b48c') ? '#451a03' : '#fff'} strokeWidth={4} />}
+                                    {weeklyStats.days[i] && <Check size={12} color={((['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') && colors.tint === '#d2b48c') ? '#451a03' : '#fff'} strokeWidth={4} />}
                                 </View>
                             </View>
                         ))}
@@ -184,8 +184,8 @@ export default function Dashboard() {
 
                 {/* Card: Meta Calórica */}
                 <View style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 20, shadowColor: '#000', shadowOffset: {width:0, height:4}, shadowOpacity: 0.08, shadowRadius: 12, elevation: 2 }}>
-                    <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: ((theme === 'light' || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24') + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-                        <Target size={18} color={(theme === 'light' || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24'} />
+                    <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: ((['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24') + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                        <Target size={18} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24'} />
                     </View>
                     <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 }}>Meta Diaria</Text>
                     <Text style={{ fontSize: 26, fontWeight: '900', color: colors.text, letterSpacing: -1 }}>{targets.calories}</Text>
@@ -228,16 +228,16 @@ export default function Dashboard() {
             
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', rowGap: 24 }}>
                 <View style={{ width: '45%', alignItems: 'center' }}>
-                    <CircularProgress value={nutritionTotals.calories} maxValue={targets.calories} label="Calorías" icon={Flame} color={(theme === 'light' || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24'} themeColors={colors} size={80} />
+                    <CircularProgress value={nutritionTotals.calories} maxValue={targets.calories} label="Calorías" icon={Flame} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24'} themeColors={colors} size={80} />
                 </View>
                 <View style={{ width: '45%', alignItems: 'center' }}>
-                    <CircularProgress value={nutritionTotals.protein} maxValue={targets.protein} label="Proteína" icon={Beef} color={(theme === 'light' || theme === 'ocean' || theme === 'desert') ? '#e11d48' : '#fb7185'} themeColors={colors} size={80} />
+                    <CircularProgress value={nutritionTotals.protein} maxValue={targets.protein} label="Proteína" icon={Beef} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#e11d48' : '#fb7185'} themeColors={colors} size={80} />
                 </View>
                 <View style={{ width: '45%', alignItems: 'center' }}>
-                    <CircularProgress value={nutritionTotals.sugar} maxValue={targets.sugar} label="Azúcar" icon={IceCream} color={(theme === 'light' || theme === 'ocean' || theme === 'desert') ? '#db2777' : '#f472b6'} themeColors={colors} size={80} />
+                    <CircularProgress value={nutritionTotals.sugar} maxValue={targets.sugar} label="Azúcar" icon={IceCream} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#db2777' : '#f472b6'} themeColors={colors} size={80} />
                 </View>
                 <View style={{ width: '45%', alignItems: 'center' }}>
-                    <CircularProgress value={nutritionTotals.water} maxValue={targets.water} label="Agua" icon={Droplet} color={(theme === 'light' || theme === 'ocean' || theme === 'desert') ? '#0284c7' : '#38bdf8'} themeColors={colors} size={80} />
+                    <CircularProgress value={nutritionTotals.water} maxValue={targets.water} label="Agua" icon={Droplet} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#0284c7' : '#38bdf8'} themeColors={colors} size={80} />
                 </View>
                 <View style={{ width: '100%', alignItems: 'center', marginTop: 8 }}>
                     <CircularProgress 
@@ -331,8 +331,8 @@ export default function Dashboard() {
                     const isUp = diff > 0;
                     const isDown = diff < 0;
                     return (
-                        <View style={{ backgroundColor: isUp ? ((theme === 'light' || theme === 'ocean' || theme === 'desert') ? '#d9770620' : '#fbbf2420') : isDown ? ((theme === 'light' || theme === 'ocean' || theme === 'desert') ? '#16a34a20' : '#22c55e20') : colors.background, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16 }}>
-                            {isUp ? <ArrowUp size={22} color={(theme === 'light' || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24'} /> : isDown ? <ArrowDown size={22} color={(theme === 'light' || theme === 'ocean' || theme === 'desert') ? '#16a34a' : '#22c55e'} /> : <Minus size={22} color={colors.textSecondary} />}
+                        <View style={{ backgroundColor: isUp ? ((['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#d9770620' : '#fbbf2420') : isDown ? ((['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#16a34a20' : '#22c55e20') : colors.background, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16 }}>
+                            {isUp ? <ArrowUp size={22} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24'} /> : isDown ? <ArrowDown size={22} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#16a34a' : '#22c55e'} /> : <Minus size={22} color={colors.textSecondary} />}
                         </View>
                     );
                 })()}
@@ -348,7 +348,7 @@ export default function Dashboard() {
                             </Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                 <Text style={{ fontSize: 14, fontWeight: '800', color: colors.text }}>{parseFloat(log.weight_kg).toFixed(1)}</Text>
-                                {diff !== 0 && (diff > 0 ? <ArrowUp size={12} color={(theme === 'light' || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24'} /> : <ArrowDown size={12} color={(theme === 'light' || theme === 'ocean' || theme === 'desert') ? '#16a34a' : '#22c55e'} />)}
+                                {diff !== 0 && (diff > 0 ? <ArrowUp size={12} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24'} /> : <ArrowDown size={12} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#16a34a' : '#22c55e'} />)}
                             </View>
                         </View>
                     );

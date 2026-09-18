@@ -5,6 +5,8 @@ import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
 
 export default function DashboardInsights({ workoutLog, bodyWeightLog, colors }) {
+  const theme = useAppStore(state => state.theme);
+
   const insights = useMemo(() => {
     const alerts = [];
     const today = new Date();
@@ -23,35 +25,46 @@ export default function DashboardInsights({ workoutLog, bodyWeightLog, colors })
           icon: Flame,
           title: '¡Hora de moverse!',
           message: `Llevas ${daysSinceLastWorkout} días sin entrenar. No pierdas el ritmo, haz aunque sea una sesión rápida.`,
-          color: colors.warning
+          color: theme === 'ocean' ? '#d97706' : colors.warning
         });
       }
     } else {
       alerts.push({
-        id: 'welcome',
+        id: 'first-workout',
         icon: Dumbbell,
-        title: '¡Empieza tu camino!',
+        title: '¡Empieza tu viaje!',
         message: 'Ve a la sección de rutinas y registra tu primer entrenamiento para empezar a ver estadísticas.',
-        color: colors.tint
+        color: theme === 'ocean' ? '#0284c7' : colors.tint
       });
     }
 
     if (bodyWeightLog && bodyWeightLog.length > 0) {
-      const daysSinceLastWeight = getDaysDiff(bodyWeightLog[0].log_date);
+      const daysSinceLastWeight = getDaysDiff(bodyWeightLog[0].date);
       if (daysSinceLastWeight > 7) {
         alerts.push({
-          id: 'weight_tracking',
+          id: 'weight-reminder',
           icon: Scale,
-          title: 'No olvides pesarte',
+          title: 'Actualiza tu peso',
           message: 'Llevas más de una semana sin registrar tu peso. Mantenlo actualizado para ajustar tus métricas.',
-          color: colors.tint
+          color: theme === 'ocean' ? '#0284c7' : colors.tint
         });
       }
     }
-    return alerts;
-  }, [workoutLog, bodyWeightLog, colors]);
 
-  if (insights.length === 0) return null;
+    if (alerts.length === 0) {
+      alerts.push({
+        id: 'all-good',
+        icon: TrendingUp,
+        title: '¡Todo en orden!',
+        message: 'Tus registros están al día. Sigue así para mantener tus estadísticas precisas.',
+        color: colors.success || '#10B981'
+      });
+    }
+
+    return alerts;
+  }, [workoutLog, bodyWeightLog, colors, theme]);
+
+  if (!insights.length) return null;
 
   return (
     <View style={{ marginBottom: 24 }}>

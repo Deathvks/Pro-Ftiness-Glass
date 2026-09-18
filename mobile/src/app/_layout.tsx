@@ -89,7 +89,7 @@ export default function RootLayout() {
   }, [isReady, isAuthenticated]);
 
   const theme = useAppStore(state => state.theme);
-  const isDark = theme === 'dark' || theme === 'oled' || theme === 'galaxy' || theme === 'ocean-dark' || theme === 'desert-dark';
+  const isDark = ['dark', 'ocean-dark', 'desert-dark', 'galaxy'].includes(theme) || theme === 'oled' || theme === 'galaxy' || theme === 'ocean-dark' || theme === 'desert-dark';
 
   const NavigationTheme = isDark ? { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent' } } : { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
 

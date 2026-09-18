@@ -13,11 +13,11 @@ const AnimatedGlassBackground = Animated.createAnimatedComponent(View);
 
 const GlassButton = ({ onPress, children, theme, style, contentStyle }: any) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
-    const bgOpacityAnim = useRef(new Animated.Value(theme === 'light' ? 0.4 : 0.15)).current;
+    const bgOpacityAnim = useRef(new Animated.Value(['light', 'ocean', 'desert'].includes(theme) ? 0.4 : 0.15)).current;
 
     useEffect(() => {
         Animated.timing(bgOpacityAnim, {
-            toValue: theme === 'light' ? 0.4 : 0.15,
+            toValue: ['light', 'ocean', 'desert'].includes(theme) ? 0.4 : 0.15,
             duration: 200,
             useNativeDriver: false
         }).start();
@@ -31,7 +31,7 @@ const GlassButton = ({ onPress, children, theme, style, contentStyle }: any) => 
             tension: 100
         }).start();
         Animated.timing(bgOpacityAnim, {
-            toValue: theme === 'light' ? 0.6 : 0.3,
+            toValue: ['light', 'ocean', 'desert'].includes(theme) ? 0.6 : 0.3,
             duration: 150,
             useNativeDriver: false
         }).start();
@@ -45,7 +45,7 @@ const GlassButton = ({ onPress, children, theme, style, contentStyle }: any) => 
             tension: 100
         }).start();
         Animated.timing(bgOpacityAnim, {
-            toValue: theme === 'light' ? 0.4 : 0.15,
+            toValue: ['light', 'ocean', 'desert'].includes(theme) ? 0.4 : 0.15,
             duration: 150,
             useNativeDriver: false
         }).start();
@@ -73,7 +73,7 @@ const GlassButton = ({ onPress, children, theme, style, contentStyle }: any) => 
             }]}>
                 <View style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius, overflow: 'hidden' }]}>
                     <BlurView 
-                        tint={theme === 'light' ? 'light' : 'dark'} 
+                        tint={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} 
                         intensity={100}
                         experimentalBlurMethod="dimezisBlurView"
                         style={StyleSheet.absoluteFill} 
@@ -81,7 +81,7 @@ const GlassButton = ({ onPress, children, theme, style, contentStyle }: any) => 
                     <AnimatedGlassBackground style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,1)', opacity: bgOpacityAnim }]} />
                 </View>
                 
-                <View style={[StyleSheet.absoluteFill, { borderWidth: 1, borderColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.2)', borderRadius: finalBorderRadius }]} pointerEvents="none" />
+                <View style={[StyleSheet.absoluteFill, { borderWidth: 1, borderColor: ['light', 'ocean', 'desert'].includes(theme) ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.2)', borderRadius: finalBorderRadius }]} pointerEvents="none" />
                 
                 <View style={contentStyle || { flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                     {children}
@@ -309,7 +309,7 @@ export default function ProfileScreen() {
                                             shadowRadius: 8,
                                             elevation: 3,
                                             borderWidth: 1,
-                                            borderColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)'
+                                            borderColor: ['light', 'ocean', 'desert'].includes(theme) ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)'
                                         }}>
                                             <IconComp size={36} color={badge.color} strokeWidth={1.5} />
                                         </View>

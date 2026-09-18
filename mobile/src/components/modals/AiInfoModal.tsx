@@ -68,7 +68,7 @@ export function AiInfoModal({ visible, onClose }: AiInfoModalProps) {
     >
       <BlurView 
         intensity={80} 
-        tint={theme === 'light' ? 'light' : 'dark'}
+        tint={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'}
         style={StyleSheet.absoluteFill}
       >
         <Pressable style={styles.overlay} onPress={onClose}>
@@ -87,7 +87,7 @@ export function AiInfoModal({ visible, onClose }: AiInfoModalProps) {
                   <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Sistema de Créditos</Text>
                 </View>
               </View>
-              <TouchableOpacity onPress={onClose} style={[styles.closeButton, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)' }]}>
+              <TouchableOpacity onPress={onClose} style={[styles.closeButton, { backgroundColor: ['light', 'ocean', 'desert'].includes(theme) ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)' }]}>
                 <X size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
@@ -102,7 +102,7 @@ export function AiInfoModal({ visible, onClose }: AiInfoModalProps) {
                 </Text>
               </View>
 
-              <View style={[styles.statBox, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.border }]}>
+              <View style={[styles.statBox, { backgroundColor: ['light', 'ocean', 'desert'].includes(theme) ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.border }]}>
                 <Clock size={20} color={colors.textSecondary} style={{ marginBottom: 4 }} />
                 <Text style={[styles.statLabel, { color: colors.textSecondary }]}>SE RECARGA EN</Text>
                 <Text style={[styles.statValue2, { color: colors.text }]}>{timeLeft}</Text>

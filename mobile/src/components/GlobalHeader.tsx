@@ -36,7 +36,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
         (userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`) 
         : null;
 
-    const blurTint = theme === 'light' ? 'light' : theme === 'dark' ? 'dark' : 'default';
+    const blurTint = ['light', 'ocean', 'desert'].includes(theme) ? 'light' : ['dark', 'ocean-dark', 'desert-dark', 'galaxy'].includes(theme) ? 'dark' : 'default';
 
     // If scrollY is provided, we animate the background opacity
     const bgOpacity = scrollY ? scrollY.interpolate({

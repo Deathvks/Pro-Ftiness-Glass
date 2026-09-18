@@ -135,7 +135,7 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
     <View style={[styles.container, { bottom: insets.bottom + 12 }]}>
       {/* Background Navbar */}
       <GlassView
-        colorScheme={theme === 'light' ? 'light' : 'dark'}
+        colorScheme={(['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark')}
         glassEffectStyle="regular"
         style={[StyleSheet.absoluteFill, styles.blurContainer]}
       />
@@ -224,14 +224,14 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
           pointerEvents="none"
         >
           <GlassView
-            colorScheme={theme === 'light' ? 'light' : 'dark'}
+            colorScheme={(['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark')}
             glassEffectStyle="prominent"
             style={{
               flex: 1,
               borderWidth: 1,
-              borderColor: theme === 'light' ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)',
+              borderColor: ['light', 'ocean', 'desert'].includes(theme) ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)',
               borderRadius: 20,
-              backgroundColor: theme === 'light' ? 'rgba(0, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0.5)',
+              backgroundColor: ['light', 'ocean', 'desert'].includes(theme) ? 'rgba(0, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0.5)',
             }}
           />
         </Animated.View>
