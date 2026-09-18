@@ -377,12 +377,12 @@ export default function RoutineEditorScreen() {
                           visible: true,
                           title: 'Músculo Principal',
                           options: MUSCLE_OPTIONS,
-                          value: item.muscle_group || 'Varios',
+                          value: item.muscle_group || 'Otro',
                           onSelect: (val) => updateExerciseField(item.id, 'muscle_group', val)
                         })}
                       >
                         <Text style={{ color: colors.textSecondary, fontSize: 13, marginRight: 6 }}>Músculo:</Text>
-                        <Text style={{ color: colors.tint, fontSize: 13, fontWeight: 'bold' }}>{item.muscle_group || 'Varios'}</Text>
+                        <Text style={{ color: colors.tint, fontSize: 13, fontWeight: 'bold' }}>{item.muscle_group || 'Otro'}</Text>
                         <ChevronDown size={14} color={colors.tint} style={{ marginLeft: 6 }} />
                       </TouchableOpacity>
                     </View>
@@ -390,7 +390,7 @@ export default function RoutineEditorScreen() {
                     <>
                       <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 18 }} numberOfLines={2}>{item.name}</Text>
                       <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>
-                        {item.muscle_group || item.category || 'Varios'}
+                        {item.muscle_group || item.category || 'Otro'}
                       </Text>
                     </>
                   )}

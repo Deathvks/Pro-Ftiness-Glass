@@ -57,16 +57,11 @@ export const REST_OPTIONS = [
 ];
 
 export const MUSCLE_OPTIONS = [
-  { value: 'Pecho', label: 'Pecho' },
-  { value: 'Espalda', label: 'Espalda' },
-  { value: 'Hombros', label: 'Hombros' },
-  { value: 'Bíceps', label: 'Bíceps' },
-  { value: 'Tríceps', label: 'Tríceps' },
-  { value: 'Piernas', label: 'Piernas' },
-  { value: 'Cuádriceps', label: 'Cuádriceps' },
-  { value: 'Isquios', label: 'Isquios' },
-  { value: 'Glúteos', label: 'Glúteos' },
-  { value: 'Core', label: 'Core' },
-  { value: 'Cardio', label: 'Cardio' },
-  { value: 'Varios', label: 'Varios' }
-];
+  'Pecho', 'Espalda', 'Dorsales', 'Trapecios', 'Lumbares',
+  'Hombros', 'Deltoides Anterior', 'Deltoides Medio', 'Deltoides Posterior',
+  'Bíceps', 'Bíceps Cabeza Corta', 'Bíceps Cabeza Larga',
+  'Tríceps', 'Tríceps Cabeza Larga', 'Tríceps Cabeza Lateral', 'Tríceps Cabeza Medial',
+  'Antebrazos', 'Cuádriceps', 'Isquiotibiales', 'Glúteos', 
+  'Abductores', 'Aductores', 'Pantorrillas', 'Abdominales', 
+  'Oblicuos', 'Cardio', 'Cuerpo completo', 'Otro'
+].map(m => ({ value: m, label: m })).sort((a, b) => a.label.localeCompare(b.label));
