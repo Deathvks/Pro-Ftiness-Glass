@@ -143,7 +143,7 @@ export default function ThemeBackground() {
 
   if (theme === 'galaxy') {
     return (
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0a0a1a', zIndex: -1 }]} pointerEvents="none">
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0a0a1a' }]} pointerEvents="none">
         <View style={[StyleSheet.absoluteFill, { opacity: 0.8 }]}>
            <View style={{ position: 'absolute', top: -height*0.2, left: -width*0.2, width: width*1.5, height: height*1.5, opacity: 0.15, backgroundColor: '#a855f7', borderRadius: width, filter: [{ blur: 100 }] as any }} />
         </View>
@@ -156,7 +156,7 @@ export default function ThemeBackground() {
   if (theme.startsWith('ocean')) {
     const isDark = theme === 'ocean-dark';
     return (
-      <View style={[StyleSheet.absoluteFill, { zIndex: -1 }]} pointerEvents="none">
+      <View style={[StyleSheet.absoluteFill]} pointerEvents="none">
         <Image 
           source={require('../../assets/images/ocean.jpg')} 
           style={StyleSheet.absoluteFill as any}
@@ -174,7 +174,7 @@ export default function ThemeBackground() {
   if (theme.startsWith('desert')) {
     const isDark = theme === 'desert-dark';
     return (
-      <View style={[StyleSheet.absoluteFill, { zIndex: -1 }]} pointerEvents="none">
+      <View style={[StyleSheet.absoluteFill]} pointerEvents="none">
         <Image 
           source={require('../../assets/images/desert.jpg')} 
           style={StyleSheet.absoluteFill as any}

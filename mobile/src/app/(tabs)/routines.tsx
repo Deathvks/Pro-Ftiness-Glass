@@ -9,6 +9,7 @@ import { RoutinesTabs, TabKey } from '@/components/routines/RoutinesTabs';
 import { FolderList } from '@/components/routines/FolderList';
 import { RoutineCard } from '@/components/routines/RoutineCard';
 import GlobalHeader from '@/components/GlobalHeader';
+import ThemeBackground from '@/components/ThemeBackground';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { useRouter } from 'expo-router';
 
@@ -222,6 +223,7 @@ export default function RoutinesScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ThemeBackground />
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }}>
         <GlobalHeader title="Rutinas" scrollY={scrollY} />
       </View>

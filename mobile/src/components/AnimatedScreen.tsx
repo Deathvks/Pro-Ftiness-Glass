@@ -3,6 +3,7 @@ import { View, Animated, Platform, KeyboardAvoidingView, StyleSheet } from 'reac
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
+import ThemeBackground from '@/components/ThemeBackground';
 
 interface AnimatedScreenProps {
     header: React.ReactNode;
@@ -27,6 +28,7 @@ export default function AnimatedScreen({
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <ThemeBackground />
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
                 <Animated.ScrollView
                     showsVerticalScrollIndicator={false}

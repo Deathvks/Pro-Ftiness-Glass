@@ -91,13 +91,15 @@ export default function RootLayout() {
   const theme = useAppStore(state => state.theme);
   const isDark = theme === 'dark' || theme === 'oled' || theme === 'galaxy' || theme === 'ocean-dark' || theme === 'desert-dark';
 
+  const NavigationTheme = isDark ? { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent' } } : { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
+
   if (!isReady) {
     return null;
   }
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000' }}>
-      <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={NavigationTheme}>
         <ThemeBackground />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

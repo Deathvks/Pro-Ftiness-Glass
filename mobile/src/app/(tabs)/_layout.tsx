@@ -11,6 +11,7 @@ export default function AppTabs() {
   return (
     <Tabs
       tabBar={props => <CustomTabBar {...props} />}
+      sceneContainerStyle={{ backgroundColor: 'transparent' }}
       screenOptions={{
         headerShown: false,
       }}>
