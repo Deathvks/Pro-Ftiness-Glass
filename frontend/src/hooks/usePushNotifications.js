@@ -184,12 +184,14 @@ export const usePushNotifications = () => {
         } else {
           addToast('Permiso denegado. Se abrirán los ajustes para activarlo.', 'warning');
           setTimeout(async () => {
-             try {
+              try {
                 const { NativeSettings, AndroidSettings, IOSSettings } = require('capacitor-native-settings');
                 if (Capacitor.getPlatform() === 'android') {
-                    await NativeSettings.openAndroid({ option: AndroidSettings.ApplicationDetails });
+                    // AppNotification abre directamente la pestaña de notificaciones de la app
+                    await NativeSettings.openAndroid({ option: AndroidSettings.AppNotification });
                 } else if (Capacitor.getPlatform() === 'ios') {
-                    await NativeSettings.openIOS({ option: IOSSettings.App });
+                    // AppNotification también existe en iOS para ir directo (IOSSettings.AppNotification)
+                    await NativeSettings.openIOS({ option: IOSSettings.AppNotification });
                 }
              } catch(e) {
                  console.log("Error al abrir settings:", e);
