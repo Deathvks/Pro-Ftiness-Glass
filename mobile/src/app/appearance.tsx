@@ -254,38 +254,65 @@ export default function AppearanceScreen() {
 
           <View style={{ gap: 16 }}>
             {[
-              { id: 'galaxy', icon: Sparkles, label: 'Tema Galaxia', themeTint: '#a855f7' },
-              { id: theme === 'light' ? 'ocean' : 'ocean-dark', icon: Droplet, label: 'Tema Océano', themeTint: '#0ea5e9' },
-              { id: theme === 'light' ? 'desert' : 'desert-dark', icon: Sun, label: 'Tema Desierto', themeTint: '#d2b48c' }
+              { id: 'galaxy', icon: Sparkles, label: 'Tema Galaxia', themeTint: '#a855f7', desc: 'Desbloqueado' },
+              { id: theme === 'light' ? 'ocean' : 'ocean-dark', icon: Droplet, label: 'Tema Océano', themeTint: '#0ea5e9', desc: 'Desbloqueado' },
+              { id: theme === 'light' ? 'desert' : 'desert-dark', icon: Sun, label: 'Tema Desierto', themeTint: '#d2b48c', desc: 'Desbloqueado' }
             ].map((st) => {
               const isActive = theme === st.id || (st.id.startsWith('ocean') && theme.startsWith('ocean')) || (st.id.startsWith('desert') && theme.startsWith('desert'));
               const STIcon = st.icon;
               return (
-                <TouchableOpacity
-                  key={st.id}
-                  onPress={() => handleThemeChange(st.id)}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: 16,
-                    backgroundColor: isActive ? st.themeTint + '15' : colors.background,
-                    borderRadius: 20,
-                    borderWidth: 1,
-                    borderColor: isActive ? st.themeTint + '50' : colors.border,
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                    <View style={{ padding: 10, borderRadius: 12, backgroundColor: isActive ? st.themeTint + '30' : colors.card }}>
-                      <STIcon size={22} color={isActive ? st.themeTint : colors.textSecondary} />
+                <View key={st.id}>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: 16,
+                      backgroundColor: isActive ? st.themeTint + '15' : colors.card,
+                      borderRadius: 20,
+                      borderWidth: 1,
+                      borderColor: isActive ? st.themeTint + '50' : colors.border,
+                      shadowColor: isActive ? st.themeTint : 'transparent',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: isActive ? 0.2 : 0,
+                      shadowRadius: 10,
+                      elevation: isActive ? 3 : 0,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={{ padding: 10, borderRadius: 14, backgroundColor: isActive ? st.themeTint + '20' : colors.background }}>
+                        <STIcon size={22} color={isActive ? st.themeTint : colors.textSecondary} />
+                      </View>
+                      <View>
+                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: isActive ? st.themeTint : colors.text }}>{st.label}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                           <Check size={12} color={colors.success} />
+                           <Text style={{ fontSize: 11, color: colors.textSecondary }}>{st.desc}</Text>
+                        </View>
+                      </View>
                     </View>
-                    <View>
-                      <Text style={{ fontSize: 15, fontWeight: 'bold', color: isActive ? st.themeTint : colors.text }}>{st.label}</Text>
-                      <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>{isActive ? 'Activo' : 'Desbloqueado'}</Text>
-                    </View>
+                    <TouchableOpacity
+                      onPress={() => handleThemeChange(st.id)}
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 20,
+                        backgroundColor: isActive ? st.themeTint : colors.background,
+                        borderWidth: isActive ? 0 : 1,
+                        borderColor: colors.border
+                      }}
+                    >
+                      <Text style={{ fontSize: 12, fontWeight: 'bold', color: isActive ? '#fff' : st.themeTint }}>
+                        {isActive ? 'Activo' : 'Aplicar'}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
-                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: isActive ? st.themeTint : 'transparent', borderWidth: 2, borderColor: isActive ? st.themeTint : colors.textSecondary }} />
-                </TouchableOpacity>
+                  {isActive && st.id === 'galaxy' && (
+                    <Text style={{ fontSize: 11, color: st.themeTint, fontWeight: 'bold', marginTop: 12, marginLeft: 8 }}>
+                       El Tema Galaxia usa su propio acento estelar (desactiva el acento manual).
+                    </Text>
+                  )}
+                </View>
               );
             })}
           </View>

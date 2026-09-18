@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { initLocalStorage } from '@/utils/localStoragePolyfill';
 import useAppStore from '@/store/useAppStore';
+import ThemeBackground from '@/components/ThemeBackground';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -88,16 +89,17 @@ export default function RootLayout() {
   }, [isReady, isAuthenticated]);
 
   const theme = useAppStore(state => state.theme);
-  const isDark = theme === 'dark' || theme === 'oled';
+  const isDark = theme === 'dark' || theme === 'oled' || theme === 'galaxy' || theme === 'ocean-dark' || theme === 'desert-dark';
 
   if (!isReady) {
     return null;
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000' }}>
       <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
+        <ThemeBackground />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="routine-editor" options={{ presentation: 'fullScreenModal', headerShown: false }} />
           <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
