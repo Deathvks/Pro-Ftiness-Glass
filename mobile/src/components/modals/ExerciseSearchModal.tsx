@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, Modal, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Image, Platform, Linking, ScrollView, Animated } from 'react-native';
+import { View, Text, StyleSheet, Modal, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Image, Platform, Linking, ScrollView, Animated, Easing } from 'react-native';
 import { useSafeAreaInsets as useSafeAreaInsetsNative } from 'react-native-safe-area-context';
 import { GlassView } from 'expo-glass-effect';
 import { X, Search, Plus, Trash2, Check, ArrowLeft, Filter, Sparkles } from 'lucide-react-native';
@@ -257,10 +257,10 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         const slideAnim = React.useRef(new Animated.Value(-200)).current;
 
     React.useEffect(() => {
-        Animated.spring(slideAnim, {
+        Animated.timing(slideAnim, {
             toValue: isScrolled ? 0 : -200,
-            friction: 8,
-            tension: 50,
+            duration: 300,
+            easing: Easing.out(Easing.cubic),
             useNativeDriver: true
         }).start();
     }, [isScrolled]);

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Image, Text, TouchableOpacity, StyleSheet, Pressable, Animated } from 'react-native';
+import { View, Image, Text, TouchableOpacity, StyleSheet, Pressable, Animated, Easing } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import { User, Sparkles, Bell, ChevronLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -41,10 +41,10 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
     const slideAnim = React.useRef(new Animated.Value(-200)).current;
 
     React.useEffect(() => {
-        Animated.spring(slideAnim, {
+        Animated.timing(slideAnim, {
             toValue: isScrolled ? 0 : -200,
-            friction: 8,
-            tension: 50,
+            duration: 300,
+            easing: Easing.out(Easing.cubic),
             useNativeDriver: true
         }).start();
     }, [isScrolled]);
