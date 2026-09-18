@@ -24,22 +24,25 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
   let currentValue = initialValue;
 
   if (initialValue) {
-    const valLower = initialValue.toLowerCase();
-    // Mapeos de compatibilidad heredados a las nuevas claves en español
-    if (valLower === 'pectoralis major' || valLower === 'pectoral mayor' || valLower === 'chest') currentValue = 'Pecho';
-    else if (valLower === 'biceps brachii' || valLower === 'bíceps braquial' || valLower === 'biceps') currentValue = 'Bíceps';
-    else if (valLower === 'triceps brachii' || valLower === 'tríceps braquial' || valLower === 'triceps') currentValue = 'Tríceps';
-    else if (valLower === 'latissimus dorsi' || valLower === 'dorsal ancho' || valLower === 'lats') currentValue = 'Dorsales';
-    else if (valLower === 'trapezius' || valLower === 'trapecio' || valLower === 'traps') currentValue = 'Trapecios';
-    else if (valLower === 'quadriceps femoris' || valLower === 'cuádriceps' || valLower === 'quads') currentValue = 'Cuádriceps';
-    else if (valLower === 'rectus abdominis' || valLower === 'recto abdominal' || valLower === 'abs') currentValue = 'Abdominales';
-    else if (valLower === 'gluteus maximus' || valLower === 'glúteo mayor' || valLower === 'glutes') currentValue = 'Glúteos';
-    else if (valLower === 'biceps femoris' || valLower === 'femoral' || valLower === 'hamstrings') currentValue = 'Isquiotibiales';
-    else if (valLower === 'back') currentValue = 'Espalda';
-    else if (valLower === 'shoulders') currentValue = 'Hombros';
-    else if (valLower === 'calves') currentValue = 'Pantorrillas';
-    else if (valLower === 'forearms') currentValue = 'Antebrazos';
-    else if (valLower === 'otro' || valLower === 'other' || valLower === 'n/a' || valLower === 'unknown') currentValue = 'Otro';
+    const parts = initialValue.split(',').map(p => p.trim());
+    currentValue = parts.map(part => {
+      const valLower = part.toLowerCase();
+      if (valLower === 'pectoralis major' || valLower === 'pectoral mayor' || valLower === 'chest') return 'Pecho';
+      if (valLower === 'biceps brachii' || valLower === 'bíceps braquial' || valLower === 'biceps') return 'Bíceps';
+      if (valLower === 'triceps brachii' || valLower === 'tríceps braquial' || valLower === 'triceps') return 'Tríceps';
+      if (valLower === 'latissimus dorsi' || valLower === 'dorsal ancho' || valLower === 'lats') return 'Dorsales';
+      if (valLower === 'trapezius' || valLower === 'trapecio' || valLower === 'traps') return 'Trapecios';
+      if (valLower === 'quadriceps femoris' || valLower === 'cuádriceps' || valLower === 'quads') return 'Cuádriceps';
+      if (valLower === 'rectus abdominis' || valLower === 'recto abdominal' || valLower === 'abs') return 'Abdominales';
+      if (valLower === 'gluteus maximus' || valLower === 'glúteo mayor' || valLower === 'glutes') return 'Glúteos';
+      if (valLower === 'biceps femoris' || valLower === 'femoral' || valLower === 'hamstrings') return 'Isquiotibiales';
+      if (valLower === 'back') return 'Espalda';
+      if (valLower === 'shoulders') return 'Hombros';
+      if (valLower === 'calves') return 'Pantorrillas';
+      if (valLower === 'forearms') return 'Antebrazos';
+      if (valLower === 'otro' || valLower === 'other' || valLower === 'n/a' || valLower === 'unknown') return 'Otro';
+      return part;
+    }).join(', ');
   }
 
   const handleSelectChange = (newValue) => {
@@ -75,6 +78,7 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
             defaultValue: 'Selecciona grupo...',
           })}
           className="w-full capitalize"
+          multiple={true}
         />
       </div>
     );
@@ -84,7 +88,7 @@ const EditableMuscleGroup = ({ initialValue, onSave, isManual }) => {
   return (
     <div className="w-full px-1">
       <p className="font-bold text-sm sm:text-base text-text-primary capitalize truncate">
-        {t(currentValue, { ns: 'exercise_muscles', defaultValue: currentValue })}
+        {currentValue.split(',').map(m => t(m.trim(), { ns: 'exercise_muscles', defaultValue: m.trim() })).join(', ')}
       </p>
     </div>
   );
