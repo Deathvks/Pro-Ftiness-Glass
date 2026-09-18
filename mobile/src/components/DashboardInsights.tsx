@@ -71,12 +71,23 @@ export default function DashboardInsights({ workoutLog, bodyWeightLog, colors })
       {insights.map(insight => {
         const Icon = insight.icon;
         return (
-          <View key={insight.id} style={{ backgroundColor: insight.color + '15', borderColor: insight.color + '30', borderWidth: 1, borderRadius: 24, padding: 20, marginBottom: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-              <Icon size={24} color={insight.color} style={{ marginRight: 16, marginTop: 2 }} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', color: insight.color, marginBottom: 4 }}>{insight.title}</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20 }}>{insight.message}</Text>
+          <View key={insight.id} style={{ 
+            backgroundColor: colors.card, 
+            borderRadius: 24, 
+            marginBottom: 12,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.1,
+            shadowRadius: 16,
+            elevation: 2
+          }}>
+            <View style={{ backgroundColor: insight.color + '15', borderColor: insight.color + '30', borderWidth: 1, borderRadius: 24, padding: 20 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                <Icon size={24} color={insight.color} style={{ marginRight: 16, marginTop: 2 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: insight.color, marginBottom: 4 }}>{insight.title}</Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20 }}>{insight.message}</Text>
+                </View>
               </View>
             </View>
           </View>

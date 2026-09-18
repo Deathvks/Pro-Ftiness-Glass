@@ -1,55 +1,32 @@
-import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/theme';
-import useAppStore from '@/store/useAppStore';
-import CustomTabBar from '@/components/CustomTabBar';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
 export default function AppTabs() {
-  const theme = useAppStore(state => state.theme);
-  const colors = Colors[theme] || Colors.oled;
-
   return (
-    <Tabs
-      tabBar={props => <CustomTabBar {...props} />}
-      sceneContainerStyle={{ backgroundColor: 'transparent' }}
-      screenOptions={{
-        headerShown: false,
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Dashboard',
-          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "home" : "home-outline"} color={color} size={24} />,
-        }}
-      />
-      <Tabs.Screen
-        name="social"
-        options={{
-          title: 'Comunidad',
-          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "people" : "people-outline"} color={color} size={24} />,
-        }}
-      />
-      <Tabs.Screen
-        name="nutrition"
-        options={{
-          title: 'Nutrición',
-          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "flame" : "flame-outline"} color={color} size={24} />,
-        }}
-      />
-      <Tabs.Screen
-        name="routines"
-        options={{
-          title: 'Rutinas',
-          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "flash" : "flash-outline"} color={color} size={24} />,
-        }}
-      />
-      <Tabs.Screen
-        name="hub"
-        options={{
-          title: 'Menú',
-          tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? "grid" : "grid-outline"} color={color} size={24} />,
-        }}
-      />
-    </Tabs>
+    <NativeTabs>
+      <NativeTabs.Trigger name="index">
+        <NativeTabs.Trigger.Label>Dashboard</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: "house", selected: "house.fill" }} md="home" />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="social">
+        <NativeTabs.Trigger.Label>Comunidad</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: "person.2", selected: "person.2.fill" }} md="group" />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="nutrition">
+        <NativeTabs.Trigger.Label>Nutrición</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: "flame", selected: "flame.fill" }} md="local_fire_department" />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="routines">
+        <NativeTabs.Trigger.Label>Rutinas</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: "bolt", selected: "bolt.fill" }} md="flash_on" />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="hub">
+        <NativeTabs.Trigger.Label>Menú</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: "square.grid.2x2", selected: "square.grid.2x2.fill" }} md="grid_view" />
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }
