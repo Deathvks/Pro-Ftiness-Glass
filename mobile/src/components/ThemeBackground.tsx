@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Image, Dimensions } from 'react-native';
 import useAppStore from '@/store/useAppStore';
@@ -144,9 +145,10 @@ export default function ThemeBackground() {
   if (theme === 'galaxy') {
     return (
       <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0a0a1a', zIndex: -1 }]} pointerEvents="none">
-        <View style={[StyleSheet.absoluteFill, { opacity: 0.8, overflow: 'hidden' }]}>
-           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: height * 0.6, opacity: 0.25, backgroundColor: '#a855f7' }} />
-        </View>
+        <LinearGradient
+          colors={['rgba(168, 85, 247, 0.25)', 'transparent']}
+          style={StyleSheet.absoluteFill}
+        />
         <GalaxyStars />
         <GalaxyMeteor />
       </View>
@@ -158,7 +160,7 @@ export default function ThemeBackground() {
     return (
       <View style={[StyleSheet.absoluteFill, { zIndex: -1 }]} pointerEvents="none">
         <Image 
-          source={{ uri: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=800&q=80' }} 
+          source={require('../../assets/images/ocean.jpg')} 
           style={StyleSheet.absoluteFill as any}
           resizeMode="cover"
         />
@@ -176,7 +178,7 @@ export default function ThemeBackground() {
     return (
       <View style={[StyleSheet.absoluteFill, { zIndex: -1 }]} pointerEvents="none">
         <Image 
-          source={{ uri: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?auto=format&fit=crop&w=800&q=80' }} 
+          source={require('../../assets/images/desert.jpg')} 
           style={StyleSheet.absoluteFill as any}
           resizeMode="cover"
         />
