@@ -8,7 +8,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { Colors } from '@/constants/theme';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { AiInfoModal } from '@/components/modals/AiInfoModal';
-import { GlassView } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
 
 export default function GlobalHeader({ title, scrollY, showBackButton, hideRightButtons }: { title?: string, scrollY?: Animated.Value, showBackButton?: boolean, hideRightButtons?: boolean }) {
         const [showAiModal, setShowAiModal] = React.useState(false);
@@ -38,16 +38,11 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
     }, [scrollY]);
 
 
-    const slideAnim = React.useRef(new Animated.Value(-200)).current;
-
-    React.useEffect(() => {
-        Animated.timing(slideAnim, {
-            toValue: isScrolled ? 0 : -200,
-            duration: 300,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true
-        }).start();
-    }, [isScrolled]);
+    const bgOpacity = scrollY ? scrollY.interpolate({
+        inputRange: [0, 50],
+        outputRange: [0, 1],
+        extrapolate: 'clamp'
+    }) : 0;
     const router = useRouter();
     const segments = useSegments();
     
@@ -134,15 +129,17 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
     };
 
     return (
-        <View style={{ position: 'relative', overflow: 'hidden' }}>
+        <View style={{ position: 'relative' }}>
             
-            <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ translateY: slideAnim }] }]}>
-                <GlassView 
-                    glassEffectStyle="regular"
-                    colorScheme={colorScheme as any}
+            
+            <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
+                <BlurView 
+                    intensity={80}
+                    tint={colorScheme as any}
                     style={StyleSheet.absoluteFill}
                 />
             </Animated.View>
+
             <Animated.View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colors.border, opacity: bgOpacity }} />
             <View 
                 style={{ 

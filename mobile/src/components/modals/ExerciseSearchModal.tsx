@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Image, Platform, Linking, ScrollView, Animated, Easing } from 'react-native';
 import { useSafeAreaInsets as useSafeAreaInsetsNative } from 'react-native-safe-area-context';
-import { GlassView } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
 import { X, Search, Plus, Trash2, Check, ArrowLeft, Filter, Sparkles } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
@@ -254,16 +254,11 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         scrollY.removeListener(listener);
     };
   }, [scrollY]);
-        const slideAnim = React.useRef(new Animated.Value(-200)).current;
-
-    React.useEffect(() => {
-        Animated.timing(slideAnim, {
-            toValue: isScrolled ? 0 : -200,
-            duration: 300,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true
-        }).start();
-    }, [isScrolled]);
+        const bgOpacity = scrollY.interpolate({
+        inputRange: [0, 50],
+        outputRange: [0, 1],
+        extrapolate: 'clamp'
+    });
   
   useEffect(() => {
     scrollY.setValue(0);
@@ -282,13 +277,14 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         
         {/* Header */}
-        <View style={[styles.header, { overflow: 'hidden' }, { borderBottomColor: colors.border, paddingTop: insets.top, height: headerHeight, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }]}>
-          <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ translateY: slideAnim }] }]}>
-            <GlassView 
-                glassEffectStyle="regular"
-                colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'}
+        <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top, height: headerHeight, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }]}>
+          <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
+            <BlurView 
+                intensity={80}
+                tint={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'}
                 style={StyleSheet.absoluteFill}
             />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, opacity: 0.5 }]} />
         </Animated.View>
         <Animated.View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0, opacity: bgOpacity }} />
 
