@@ -143,9 +143,9 @@ export default function ThemeBackground() {
 
   if (theme === 'galaxy') {
     return (
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0a0a1a' }]} pointerEvents="none">
-        <View style={[StyleSheet.absoluteFill, { opacity: 0.8 }]}>
-           <View style={{ position: 'absolute', top: -height*0.2, left: -width*0.2, width: width*1.5, height: height*1.5, opacity: 0.15, backgroundColor: '#a855f7', borderRadius: width, filter: [{ blur: 100 }] as any }} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0a0a1a', zIndex: -1 }]} pointerEvents="none">
+        <View style={[StyleSheet.absoluteFill, { opacity: 0.8, overflow: 'hidden' }]}>
+           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: height * 0.6, opacity: 0.25, backgroundColor: '#a855f7' }} />
         </View>
         <GalaxyStars />
         <GalaxyMeteor />
@@ -156,16 +156,16 @@ export default function ThemeBackground() {
   if (theme.startsWith('ocean')) {
     const isDark = theme === 'ocean-dark';
     return (
-      <View style={[StyleSheet.absoluteFill]} pointerEvents="none">
+      <View style={[StyleSheet.absoluteFill, { zIndex: -1 }]} pointerEvents="none">
         <Image 
-          source={require('../../assets/images/ocean.jpg')} 
+          source={{ uri: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=800&q=80' }} 
           style={StyleSheet.absoluteFill as any}
           resizeMode="cover"
         />
         {isDark ? (
           <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(8, 47, 73, 0.75)' }]} />
         ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(240, 249, 255, 0.6)' }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(240, 249, 255, 0.2)' }]} />
         )}
       </View>
     );
@@ -174,16 +174,16 @@ export default function ThemeBackground() {
   if (theme.startsWith('desert')) {
     const isDark = theme === 'desert-dark';
     return (
-      <View style={[StyleSheet.absoluteFill]} pointerEvents="none">
+      <View style={[StyleSheet.absoluteFill, { zIndex: -1 }]} pointerEvents="none">
         <Image 
-          source={require('../../assets/images/desert.jpg')} 
+          source={{ uri: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?auto=format&fit=crop&w=800&q=80' }} 
           style={StyleSheet.absoluteFill as any}
           resizeMode="cover"
         />
         {isDark ? (
           <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(69, 26, 3, 0.75)' }]} />
         ) : (
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255, 251, 235, 0.5)' }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255, 251, 235, 0.15)' }]} />
         )}
       </View>
     );
