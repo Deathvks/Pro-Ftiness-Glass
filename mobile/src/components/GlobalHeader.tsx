@@ -12,34 +12,12 @@ import { GlassView } from 'expo-glass-effect';
 
 export default function GlobalHeader({ title, scrollY, showBackButton, hideRightButtons }: { title?: string, scrollY?: Animated.Value, showBackButton?: boolean, hideRightButtons?: boolean }) {
         const [showAiModal, setShowAiModal] = React.useState(false);
-    const [isScrolled, setIsScrolled] = React.useState(false);
-    const isScrolledRef = React.useRef(false);
-
-    React.useEffect(() => {
-        if (!scrollY) {
-            setIsScrolled(true);
-            isScrolledRef.current = true;
-            return;
-        }
-
-        const listener = scrollY.addListener(({ value }) => {
-            if (value > 20 && !isScrolledRef.current) {
-                isScrolledRef.current = true;
-                setIsScrolled(true);
-            } else if (value <= 20 && isScrolledRef.current) {
-                isScrolledRef.current = false;
-                setIsScrolled(false);
-            }
-        });
-
-        return () => {
-            scrollY.removeListener(listener);
-        };
-    }, [scrollY]);
+    
 
 
     
-    const [isScrolled, setIsScrolled] = React.useState(false);
+    
+        const [isScrolled, setIsScrolled] = React.useState(false);
     const isScrolledRef = React.useRef(false);
 
     React.useEffect(() => {
