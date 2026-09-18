@@ -9,6 +9,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "axios": "^1.20.0",
     "expo": "~57.0.23",
+    "expo-asset": "~57.0.18",
     "expo-auth-session": "~57.0.12",
     "expo-blur": "~57.0.3",
     "expo-constants": "~57.0.17",
