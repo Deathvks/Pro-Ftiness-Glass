@@ -45,7 +45,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
         extrapolate: 'clamp'
     }) : 1; // Default to fully visible if no scrollY provided
 
-    const AnimatedGlassView = Animated.createAnimatedComponent(GlassView);
+    
 
     const ProfileButton = () => {
         const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -97,11 +97,13 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
 
     return (
         <View style={{ position: 'relative' }}>
-            <AnimatedGlassView 
-                glassEffectStyle="regular"
-                colorScheme={colorScheme as any}
-                style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}
-            />
+            <Animated.View style={[StyleSheet.absoluteFill, { opacity: bgOpacity }]}>
+                <GlassView 
+                    glassEffectStyle="regular"
+                    colorScheme={colorScheme as any}
+                    style={StyleSheet.absoluteFill}
+                />
+            </Animated.View>
             <Animated.View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colors.border, opacity: bgOpacity }} />
             <View 
                 style={{ 
