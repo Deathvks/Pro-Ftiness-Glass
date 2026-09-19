@@ -116,6 +116,7 @@ export const usePushNotifications = () => {
 
     if (isNative) {
       PushNotifications.addListener('registration', async (token) => {
+        console.log('[PUSH NATIVO] ¡Evento registration recibido!', token.value);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         try {
           // Guardamos el token FCM con formato especial para identificarlo en el backend
@@ -136,6 +137,7 @@ export const usePushNotifications = () => {
       }).then(listener => registrationListener = listener);
 
       PushNotifications.addListener('registrationError', (err) => {
+        console.error('[PUSH NATIVO] ¡Evento registrationError recibido!', err);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         console.error('Error en el registro nativo:', err);
         setError('Error al registrar dispositivo.');
@@ -172,7 +174,9 @@ export const usePushNotifications = () => {
     try {
       if (isNative) {
         // --- SUSCRIPCIÓN NATIVA (Firebase) ---
+        console.log('[PUSH NATIVO] Solicitando permisos...');
         const perm = await PushNotifications.requestPermissions();
+        console.log('[PUSH NATIVO] Permisos concedidos:', perm.receive);
         if (perm.receive === 'granted') {
           // Esto dispara el listener 'registration' que configuramos en el useEffect
           timeoutRef.current = setTimeout(() => {
@@ -180,7 +184,9 @@ export const usePushNotifications = () => {
              clearTimeout(globalTimeout);
              addToast('Tiempo agotado. Revisa tus servicios de Google Play o la conexión.', 'warning');
           }, 10000);
-          await PushNotifications.register(); 
+          console.log('[PUSH NATIVO] Llamando a PushNotifications.register()...');
+          await PushNotifications.register();
+          console.log('[PUSH NATIVO] PushNotifications.register() ejecutado correctamente (esperando eventos).'); 
         } else {
           addToast('Permiso denegado. Se abrirán los ajustes para activarlo.', 'warning');
           setTimeout(async () => {

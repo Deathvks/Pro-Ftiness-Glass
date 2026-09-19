@@ -1,7 +1,7 @@
 {
   "name": "pro-fitness-glass",
   "private": true,
-  "version": "7.1.14",
+  "version": "7.1.15",
   "type": "module",
   "engines": {
     "node": ">=20.0.0",
@@ -38,6 +38,7 @@
     "capacitor-native-settings": "^8.1.0",
     "date-fns": "^4.1.0",
     "driver.js": "^1.4.0",
+    "googleapis": "^181.0.0",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "^2.3.8",
