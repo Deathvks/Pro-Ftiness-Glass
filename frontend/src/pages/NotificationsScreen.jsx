@@ -250,7 +250,7 @@ const LoginDetailsModal = ({ notification, onClose, timeZone }) => {
 
 const NotificationsScreen = ({ setView }) => {
   const navigate = useNavigate();
-  const {
+  const { 
     notifications,
     unreadCount,
     notificationsLoading,
@@ -262,7 +262,7 @@ const NotificationsScreen = ({ setView }) => {
     removeNotification,
     clearAllNotifications,
     userProfile
-  } = useAppStore();
+   } = useAppStore(useShallow(state => ({ notifications: state.notifications, unreadCount: state.unreadCount, notificationsLoading: state.notificationsLoading, notificationPage: state.notificationPage, notificationTotalPages: state.notificationTotalPages, fetchNotifications: state.fetchNotifications, markNotificationAsRead: state.markNotificationAsRead, markAllNotificationsAsRead: state.markAllNotificationsAsRead, removeNotification: state.removeNotification, clearAllNotifications: state.clearAllNotifications, userProfile: state.userProfile })));
 
   const { scheduleEngagementNotifications, scheduleDailyReminders } = useLocalNotifications();
 

@@ -2,10 +2,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { NutritionCharts } from './ProgressCharts';
 
 const NutritionView = ({ axisColor }) => {
-    const { nutritionSummary, fetchNutritionSummary, isLoading } = useAppStore();
+    const { nutritionSummary, fetchNutritionSummary, isLoading } = useAppStore(useShallow(state => ({ nutritionSummary: state.nutritionSummary, fetchNutritionSummary: state.fetchNutritionSummary, isLoading: state.isLoading })));
     const [date, setDate] = useState(new Date());
 
     useEffect(() => {

@@ -6,6 +6,7 @@ import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import WaterLogModal from '../components/WaterLogModal';
 import NutritionLogModal from '../components/NutritionLogModal';
 import FoodScannerModal from '../components/FoodScannerModal';
@@ -115,7 +116,7 @@ const Nutrition = ({ setView }) => {
         deleteFavoriteMeal,
         fetchNotifications,
         fetchInitialData,
-    } = useAppStore(state => ({
+    } = useAppStore(useShallow(state => ({
         userProfile: state.userProfile,
         nutritionLog: state.nutritionLog,
         waterLog: state.waterLog,
@@ -130,7 +131,7 @@ const Nutrition = ({ setView }) => {
         deleteFavoriteMeal: state.deleteFavoriteMeal,
         fetchNotifications: state.fetchNotifications,
         fetchInitialData: state.fetchInitialData,
-    }));
+    })));
 
     const [modal, setModal] = useState({ type: null, data: null });
     const [viewLog, setViewLog] = useState(null);

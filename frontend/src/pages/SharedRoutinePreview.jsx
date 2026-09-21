@@ -20,6 +20,7 @@ import Spinner from '../components/Spinner';
 import ExerciseMedia from '../components/ExerciseMedia';
 import { useToast } from '../hooks/useToast';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -30,10 +31,10 @@ const SharedRoutinePreview = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { t } = useTranslation('exercise_names');
-  const { userProfile, fetchInitialData } = useAppStore(state => ({
+  const { userProfile, fetchInitialData } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     fetchInitialData: state.fetchInitialData
-  }));
+  })));
 
   const [routine, setRoutine] = useState(null);
   const [loading, setLoading] = useState(true);

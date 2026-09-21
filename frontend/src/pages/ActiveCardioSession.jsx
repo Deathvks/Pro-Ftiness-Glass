@@ -8,6 +8,7 @@ import {
   Clock, Flame, Footprints, ChevronLeft
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { 
   calculateDistance, 
   calculatePace, 
@@ -60,12 +61,12 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
   const navigate = useNavigate();
   const { addToast } = useToast();
 
-  const { userProfile, bodyWeightLog, fetchInitialData, logWorkout } = useAppStore(state => ({
+  const { userProfile, bodyWeightLog, fetchInitialData, logWorkout } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     bodyWeightLog: state.bodyWeightLog,
     fetchInitialData: state.fetchInitialData,
     logWorkout: state.logWorkout
-  }));
+  })));
 
   // --- TEMA PARA EL MAPA Y ACENTOS ---
   const { theme, accent } = useAppTheme();

@@ -4,6 +4,7 @@ import { Save, Plus, Star, Check, Camera, X, ArrowLeft } from 'lucide-react';
 import Spinner from '../../Spinner';
 import { useToast } from '../../../hooks/useToast';
 import useAppStore from '../../../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
@@ -173,10 +174,10 @@ const ManualEntryForm = ({
     setIsPer100g
 }) => {
     const { addToast } = useToast();
-    const { favoriteMeals, addXp } = useAppStore(state => ({
+    const { favoriteMeals, addXp } = useAppStore(useShallow(state => ({
         favoriteMeals: state.favoriteMeals,
         addXp: state.addXp
-    }));
+    })));
 
     const { formData, per100Data, isFavorite } = formState;
 

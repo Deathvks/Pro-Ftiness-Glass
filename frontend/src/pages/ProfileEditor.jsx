@@ -3,16 +3,17 @@ import { Camera } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Camera as CapCamera } from '@capacitor/camera';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { updateUserProfile } from '../services/userService';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 import PermissionModal from '../components/PermissionModal';
 
 const ProfileEditor = ({ onDone }) => {
-    const { user, fetchInitialData } = useAppStore(state => ({
+    const { user, fetchInitialData } = useAppStore(useShallow(state => ({
         user: state.user,
         fetchInitialData: state.fetchInitialData,
-    }));
+    })));
     const { addToast } = useToast();
 
     const [username, setUsername] = useState(user?.username || '');

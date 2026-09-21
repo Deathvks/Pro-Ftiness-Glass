@@ -2,10 +2,11 @@
 import React, { useMemo } from 'react';
 import { Lightbulb, Flame, Scale, Dumbbell, AlertTriangle, TrendingUp } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import GlassCard from '../GlassCard';
 
 const DashboardInsights = () => {
-  const { workoutLog, bodyWeightLog, nutritionSummary, userProfile } = useAppStore();
+  const { workoutLog, bodyWeightLog, nutritionSummary, userProfile } = useAppStore(useShallow(state => ({ workoutLog: state.workoutLog, bodyWeightLog: state.bodyWeightLog, nutritionSummary: state.nutritionSummary, userProfile: state.userProfile })));
 
   const insights = useMemo(() => {
     const alerts = [];

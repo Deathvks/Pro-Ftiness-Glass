@@ -9,6 +9,7 @@ import ConfirmationModal from './ConfirmationModal';
 import socialService from '../services/socialService';
 import { forkRoutine } from '../services/routineService';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '../hooks/useToast';
 import { getSocket } from '../services/socket';
 
@@ -49,7 +50,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [commentToDelete, setCommentToDelete] = useState(null);
     
-    const { userProfile, exercises } = useAppStore();
+    const { userProfile, exercises } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, exercises: state.exercises })));
     const { showToast } = useToast();
     const { t } = useTranslation('exercise_names');
 

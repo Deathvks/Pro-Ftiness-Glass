@@ -3,9 +3,10 @@ import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import GlassCard from '../GlassCard';
 import useAppStore from '../../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 
 const CalendarView = ({ setDetailedLog, workouts }) => {
-    const { workoutLog: storeWorkoutLog } = useAppStore(state => ({ workoutLog: state.workoutLog }));
+    const { workoutLog: storeWorkoutLog } = useAppStore(useShallow(state => ({ workoutLog: state.workoutLog })));
     const workoutLog = workouts || storeWorkoutLog;
     const [calendarDate, setCalendarDate] = useState(new Date());
 

@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Play, Copy, Search, Filter, Clock, Target, Dumbbell, Image as ImageIcon } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '../hooks/useToast';
 import CustomSelect from '../components/CustomSelect';
 import exerciseTranslations from '../locales/es/exercise_names.json';
@@ -137,14 +138,14 @@ const TemplateRoutines = ({ setView }) => {
     exercises,
     getOrFetchAllExercises,
     getOrFetchTemplateRoutines
-  } = useAppStore(state => ({
+  } = useAppStore(useShallow(state => ({
     templateRoutines: state.templateRoutines,
     startWorkout: state.startWorkout,
     createRoutine: state.createRoutine,
     exercises: state.allExercises || [],
     getOrFetchAllExercises: state.getOrFetchAllExercises,
     getOrFetchTemplateRoutines: state.getOrFetchTemplateRoutines,
-  }));
+  })));
   const { theme } = useAppTheme();
 
   useEffect(() => {

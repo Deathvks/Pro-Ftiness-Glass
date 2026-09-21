@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Flame, Beef, Wheat, Salad, Copy, ArrowLeft, Plu
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '../hooks/useToast';
 import * as templateDietService from '../services/templateDietService';
 import * as nutritionService from '../services/nutritionService';
@@ -18,12 +19,12 @@ const GOAL_LABELS = {
 
 const TemplateDiets = ({ setView }) => {
     const { addToast } = useToast();
-    const { userProfile, selectedDate, fetchDataForDate, bodyWeightLog } = useAppStore(state => ({
+    const { userProfile, selectedDate, fetchDataForDate, bodyWeightLog } = useAppStore(useShallow(state => ({
         userProfile: state.userProfile,
         selectedDate: state.selectedDate,
         fetchDataForDate: state.fetchDataForDate,
         bodyWeightLog: state.bodyWeightLog,
-    }));
+    })));
 
     const [selectedGoal, setSelectedGoal] = useState(() => userProfile?.goal || 'all');
     const [diets, setDiets] = useState([]);

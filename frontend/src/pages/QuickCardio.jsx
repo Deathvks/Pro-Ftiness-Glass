@@ -3,6 +3,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { Helmet } from 'react-helmet-async';
 import { ChevronLeft, Clock, Flame, Play, X, Save, Search, Filter, MapPin, BookCopy, Compass } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { CARDIO_ACTIVITIES } from '../data/cardioLibrary';
 import { useToast } from '../hooks/useToast';
 import GlassCard from '../components/GlassCard';
@@ -185,12 +186,12 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
 
 const QuickCardio = ({ onBack, setView }) => {
   const { addToast } = useToast();
-  const { userProfile, bodyWeightLog, fetchInitialData, logWorkout } = useAppStore(state => ({
+  const { userProfile, bodyWeightLog, fetchInitialData, logWorkout } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     bodyWeightLog: state.bodyWeightLog,
     fetchInitialData: state.fetchInitialData,
     logWorkout: state.logWorkout
-  }));
+  })));
 
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');

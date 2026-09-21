@@ -558,7 +558,7 @@ export default function Social({ setView }) {
 
     const { showToast } = useToast();
 
-    const {
+    const { 
         userProfile,
         socialFriends,
         socialRequests,
@@ -578,7 +578,7 @@ export default function Social({ setView }) {
         uploadStory,
         subscribeToStories,
         subscribeToSocialEvents
-    } = useAppStore();
+     } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, socialFriends: state.socialFriends, socialRequests: state.socialRequests, socialSearchResults: state.socialSearchResults, socialLeaderboard: state.socialLeaderboard, isSocialLoading: state.isSocialLoading, searchUsers: state.searchUsers, fetchFriends: state.fetchFriends, fetchFriendRequests: state.fetchFriendRequests, sendFriendRequest: state.sendFriendRequest, respondFriendRequest: state.respondFriendRequest, removeFriend: state.removeFriend, fetchLeaderboard: state.fetchLeaderboard, stories: state.stories, myStories: state.myStories, fetchStories: state.fetchStories, uploadStory: state.uploadStory, subscribeToStories: state.subscribeToStories, subscribeToSocialEvents: state.subscribeToSocialEvents })));
 
     // Carga inicial (sin las historias)
     useEffect(() => {

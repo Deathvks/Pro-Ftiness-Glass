@@ -3,12 +3,13 @@ import { useEffect, useRef } from 'react';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 
 const HubTourGuide = () => {
-    const { hubTourCompleted, completeHubTour } = useAppStore(state => ({
+    const { hubTourCompleted, completeHubTour } = useAppStore(useShallow(state => ({
         hubTourCompleted: state.hubTourCompleted,
         completeHubTour: state.completeHubTour
-    }));
+    })));
 
     const driverRef = useRef(null);
     const timeoutRef = useRef(null);

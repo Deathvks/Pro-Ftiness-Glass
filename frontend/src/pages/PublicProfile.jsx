@@ -114,7 +114,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
     const userId = propUserId || paramUserId;
 
-    const {
+    const { 
         fetchPublicProfile,
         socialViewedProfile: fetchedProfile,
         isSocialLoading,
@@ -130,7 +130,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         fetchStories,
         token,
         refreshRoutines
-    } = useAppStore();
+     } = useAppStore(useShallow(state => ({ fetchPublicProfile: state.fetchPublicProfile, socialViewedProfile: state.socialViewedProfile, isSocialLoading: state.isSocialLoading, socialError: state.socialError, clearViewedProfile: state.clearViewedProfile, socialFriends: state.socialFriends, socialRequests: state.socialRequests, sendFriendRequest: state.sendFriendRequest, removeFriend: state.removeFriend, userProfile: state.userProfile, gamification: state.gamification, stories: state.stories, fetchStories: state.fetchStories, token: state.token, refreshRoutines: state.refreshRoutines })));
 
     const [badgePage, setBadgePage] = useState(0);
     const BADGES_PER_PAGE = 4;

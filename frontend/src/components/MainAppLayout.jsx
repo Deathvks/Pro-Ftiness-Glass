@@ -3,6 +3,7 @@ import React, { Suspense, useEffect, useState, useRef, startTransition } from 'r
 import { SparklesIcon, BellIcon, Cog8ToothIcon as SettingsIcon, UserIcon, ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { BoltIcon as Zap, CheckCircleIcon } from '@heroicons/react/24/solid';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { APP_VERSION } from '../config/version';
 import { useToast } from '../hooks/useToast';
 import { useOfflineSync } from '../hooks/useOfflineSync';
@@ -96,7 +97,7 @@ export default function MainAppLayout({
     subscribeToSocialEvents,
     show2FAPromo,
     tourActive,
-  } = useAppStore(state => ({
+  } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     prNotification: state.prNotification,
     showWelcomeModal: state.showWelcomeModal,
@@ -118,7 +119,7 @@ export default function MainAppLayout({
     subscribeToSocialEvents: state.subscribeToSocialEvents,
     show2FAPromo: state.show2FAPromo,
     tourActive: state.tourActive,
-  }));
+  })));
 
   const [showAIModal, setShowAIModal] = useState(false);
   const [aiRemaining, setAiRemaining] = useState(() => localStorage.getItem('ai_remaining_uses') || '5');

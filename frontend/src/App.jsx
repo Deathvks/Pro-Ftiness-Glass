@@ -11,6 +11,7 @@ import { NavigationBar } from '@capgo/capacitor-navigation-bar';
 import { App as CapApp } from '@capacitor/app';
 import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom'; 
 import useAppStore from './store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 
 import { useAppNavigation } from './hooks/useAppNavigation';
 import { useAppTheme } from './hooks/useAppTheme';
@@ -130,7 +131,7 @@ export default function App() {
     show2FAPromo,
     setShow2FAPromo,
     checkWelcomeModal,
-  } = useAppStore(state => ({
+  } = useAppStore(useShallow(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
     isLoading: state.isLoading,
@@ -146,7 +147,7 @@ export default function App() {
     show2FAPromo: state.show2FAPromo,
     setShow2FAPromo: state.setShow2FAPromo,
     checkWelcomeModal: state.checkWelcomeModal,
-  }));
+  })));
 
   useEffect(() => {
     if (userProfile?.id) {

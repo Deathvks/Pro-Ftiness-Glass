@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { Plus, Ruler } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import BodyMeasurementModal from '../BodyMeasurementModal';
 import CustomSelect from '../CustomSelect';
 import GlassCard from '../GlassCard';
@@ -34,7 +35,7 @@ const axisConfig = (color) => ({ stroke: color, fontSize: 11, tickLine: false, a
 const grid = <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />;
 
 const MeasurementsView = ({ axisColor }) => {
-    const { bodyMeasurementsLog = [], logBodyMeasurement } = useAppStore();
+    const { bodyMeasurementsLog = [], logBodyMeasurement } = useAppStore(useShallow(state => ({ bodyMeasurementsLog: state.bodyMeasurementsLog, logBodyMeasurement: state.logBodyMeasurement })));
     const [type, setType] = useState('cintura');
     const [showModal, setShowModal] = useState(false);
 

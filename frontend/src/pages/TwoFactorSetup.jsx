@@ -5,16 +5,17 @@ import {
   Unlock, Loader2, HelpCircle, X, AlertTriangle, ShieldAlert
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '../hooks/useToast';
 import * as authService from '../services/authService';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 
 const TwoFactorSetup = ({ setView }) => {
-  const { userProfile, fetchInitialData } = useAppStore(state => ({
+  const { userProfile, fetchInitialData } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     fetchInitialData: state.fetchInitialData
-  }));
+  })));
 
   const { addToast } = useToast();
 

@@ -3,15 +3,16 @@ import React, { useState, useMemo } from 'react';
 import { ArrowDown, Minus, ArrowUp, ChevronLeft, Save, Sparkles, Scale } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 
 const PhysicalProfileEditor = ({ onDone }) => {
-  const { userProfile, updateUserProfile, bodyWeightLog } = useAppStore(state => ({
+  const { userProfile, updateUserProfile, bodyWeightLog } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     updateUserProfile: state.updateUserProfile,
     bodyWeightLog: state.bodyWeightLog,
-  }));
+  })));
   const { addToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});

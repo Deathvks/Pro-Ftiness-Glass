@@ -19,6 +19,7 @@ import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getS
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -161,11 +162,11 @@ const StatusIndicator = ({ lastSeen }) => {
 
 const AdminPanel = ({ onCancel }) => {
   const { showToast: addToast } = useToast();
-  const { userProfile, setUserProfile, setGamificationData } = useAppStore(state => ({
+  const { userProfile, setUserProfile, setGamificationData } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     setUserProfile: state.setUserProfile,
     setGamificationData: state.setGamificationData
-  }));
+  })));
 
   // Recuperar la pestaña activa de localStorage o usar default 'users'
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('admin_active_tab') || 'users');

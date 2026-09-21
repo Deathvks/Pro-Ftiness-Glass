@@ -176,14 +176,14 @@ const FloatingHearts = ({ active }) => {
 };
 
 const StoryViewer = ({ userId, onClose }) => {
-  const {
+  const { 
     stories,
     myStories,
     userProfile,
     markStoryAsViewed,
     likeStory,
     deleteMyStory
-  } = useAppStore();
+   } = useAppStore(useShallow(state => ({ stories: state.stories, myStories: state.myStories, userProfile: state.userProfile, markStoryAsViewed: state.markStoryAsViewed, likeStory: state.likeStory, deleteMyStory: state.deleteMyStory })));
 
   const [viewingUserId, setViewingUserId] = useState(userId);
   const isMyStory = viewingUserId === userProfile?.id;

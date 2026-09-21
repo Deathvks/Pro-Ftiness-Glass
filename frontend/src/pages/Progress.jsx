@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { Lightbulb, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
 
 import DailyDetailView from '../components/progress/DailyDetailView';
@@ -43,12 +44,12 @@ const TABS = [
 const Progress = ({ darkMode, setView }) => {
     const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_muscles']);
 
-    const { workoutLog, bodyWeightLog, exercises, getOrFetchAllExercises } = useAppStore(state => ({
+    const { workoutLog, bodyWeightLog, exercises, getOrFetchAllExercises } = useAppStore(useShallow(state => ({
         workoutLog: state.workoutLog,
         bodyWeightLog: state.bodyWeightLog,
         exercises: state.allExercises || [],
         getOrFetchAllExercises: state.getOrFetchAllExercises
-    }));
+    })));
 
     const tabsRef = React.useRef(null);
 

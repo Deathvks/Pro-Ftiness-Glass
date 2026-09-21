@@ -3,12 +3,13 @@ import { useEffect, useRef } from 'react';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 
 const NutritionTourGuide = () => {
-  const { nutritionTourCompleted, completeNutritionTour } = useAppStore(state => ({
+  const { nutritionTourCompleted, completeNutritionTour } = useAppStore(useShallow(state => ({
     nutritionTourCompleted: state.nutritionTourCompleted,
     completeNutritionTour: state.completeNutritionTour
-  }));
+  })));
 
   const driverRef = useRef(null);
   const timeoutRef = useRef(null);

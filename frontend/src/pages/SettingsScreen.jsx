@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6'; 
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { APP_VERSION } from '../config/version';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import Spinner from '../components/Spinner';
@@ -130,11 +131,11 @@ export default function SettingsScreen({
     userProfile,
     resetCookieConsent,
     setUserProfile
-  } = useAppStore(state => ({
+  } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     resetCookieConsent: state.resetCookieConsent,
     setUserProfile: state.setUserProfile
-  }));
+  })));
 
   const { addToast } = useToast();
 

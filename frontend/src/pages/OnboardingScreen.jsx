@@ -6,6 +6,7 @@ import {
   Coffee, Footprints, Dumbbell, Trophy, Loader2
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 import { createRoutine } from '../services/routineService';
@@ -232,10 +233,10 @@ const BottomActionBar = ({ step, totalSteps, handleBack, handleNext, handleCompl
 // --- COMPONENTE PRINCIPAL ---
 
 const OnboardingScreen = () => {
-  const { updateUserProfile, userProfile } = useAppStore(state => ({
+  const { updateUserProfile, userProfile } = useAppStore(useShallow(state => ({
     updateUserProfile: state.updateUserProfile,
     userProfile: state.userProfile
-  }));
+  })));
   const { addToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('');

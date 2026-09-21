@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6'; 
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useAppTheme } from '../hooks/useAppTheme';
 import GlassCard from '../components/GlassCard';
 import { useToast } from '../hooks/useToast';
@@ -78,7 +79,7 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled }
 );
 
 export default function AppearanceScreen({ setView }) {
-  const { userProfile, hapticsEnabled, setHapticsEnabled } = useAppStore();
+  const { userProfile, hapticsEnabled, setHapticsEnabled } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, hapticsEnabled: state.hapticsEnabled, setHapticsEnabled: state.setHapticsEnabled })));
   const { addToast } = useToast();
   const { 
     theme, activeTheme, setTheme, accent, setAccent, 
