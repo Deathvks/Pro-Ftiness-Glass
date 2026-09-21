@@ -3,6 +3,7 @@ import ModalPortal from './ModalPortal';
 import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react';
 import { X, Heart, Download, Loader2, ImageOff, Volume2, VolumeX, Trash2, ChevronLeft, Film } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import UserAvatar from './UserAvatar';
 import ConfirmationModal from './ConfirmationModal';
 

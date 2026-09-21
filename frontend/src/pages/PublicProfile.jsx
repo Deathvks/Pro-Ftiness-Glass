@@ -26,6 +26,7 @@ import {
     Play
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import ConfirmationModal from '../components/ConfirmationModal';

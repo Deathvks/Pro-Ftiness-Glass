@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import Spinner from '../components/Spinner';
 import { isToday, isYesterday, parseISO } from 'date-fns';
 import {
