@@ -119,6 +119,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(true);
     const [verificationCode, setVerificationCode] = useState('');
 
     const [otp, setOtp] = useState(new Array(6).fill(""));
@@ -456,7 +457,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             // Si hace un login normal con su cuenta correctamente, podemos borrar el ref
             localStorage.removeItem('pending_ref');
 
-            await handleLogin({ email, password });
+            await handleLogin({ email, password, rememberMe });
             setIsLoading(false);
         } catch (err) {
             // Manejar específicamente el error de "Cuenta no verificada"

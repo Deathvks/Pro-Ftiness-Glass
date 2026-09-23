@@ -128,7 +128,7 @@ export const loginUser = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  let { email, password } = req.body;
+  let { email, password, rememberMe } = req.body;
   const identifier = email.toLowerCase().trim();
 
   try {
@@ -216,7 +216,8 @@ export const loginUser = async (req, res, next) => {
     }
 
     const platform = req.headers['x-app-platform'] || 'web';
-    const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
+    let expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
+    if (rememberMe) expiresIn = '3650d';
 
     const payload = { userId: user.id, role: user.role };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn });
