@@ -49,21 +49,17 @@ const createUserSession = async (userId, token, req) => {
     const osName = result.os.name || 'SO desconocido';
     const deviceName = `${browserName} en ${osName}`;
 
-    const existingSession = await UserSession.findOne({
-      where: {
-        user_id: userId,
-        device_name: deviceName,
-        device_type: deviceType
-      }
-    });
+    // Limpieza de sesiones caducadas
+      try {
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        await UserSession.destroy({
+          where: {
+            user_id: userId,
+            last_active: { [Op.lt]: thirtyDaysAgo }
+          }
+        });
+      } catch(e) {}
 
-    if (existingSession) {
-      await existingSession.update({
-        token: token,
-        ip_address: ip,
-        last_active: new Date()
-      });
-    } else {
       await UserSession.create({
         user_id: userId,
         token: token,
@@ -72,7 +68,6 @@ const createUserSession = async (userId, token, req) => {
         ip_address: ip,
         last_active: new Date()
       });
-    }
 
     // AUDITORÍA DE SEGURIDAD: Log de éxito
     try {
