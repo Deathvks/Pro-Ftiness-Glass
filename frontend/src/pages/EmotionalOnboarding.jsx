@@ -106,7 +106,7 @@ const EmotionalOnboarding = ({ onFinish, onBack }) => {
     const BackButton = () => (
         <button 
             onClick={() => step === 0 ? onBack() : setStep(prev => prev - 1)}
-            className="absolute top-6 left-6 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white/70 hover:text-white transition-all backdrop-blur-sm z-50 border border-white/5"
+            className="absolute top-5 left-5 sm:top-6 sm:left-6 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white/70 hover:text-white transition-all backdrop-blur-sm z-50 border border-white/5"
         >
             <ChevronLeft size={24} />
         </button>
@@ -254,7 +254,7 @@ const EmotionalOnboarding = ({ onFinish, onBack }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 overflow-hidden bg-black font-sans">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] overflow-hidden bg-black font-sans">
             <style>{noSpinnerStyle}</style>
             
             {/* FONDO CON IMAGEN Y EFECTOS RESTAURADOS */}
@@ -263,16 +263,18 @@ const EmotionalOnboarding = ({ onFinish, onBack }) => {
                 <div className="absolute inset-0 bg-gradient-to-b from-black via-black/90 to-black/80" />
                 <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-accent/20 rounded-full blur-[150px] animate-pulse" />
             </div>
-
-            <BackButton />
             
             <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[85vh] max-h-[750px]">
+                {/* BOTÓN BACK MOVIDO DENTRO DEL MODAL PARA NO SOLAPAR CON CONTENIDO NI NOTCH */}
+                <BackButton />
+
                 {/* Barra de progreso usando el color de acento */}
-                <div className="h-1.5 bg-black/20 w-full">
+                <div className="h-1.5 bg-black/20 w-full shrink-0">
                     <div className="h-full bg-accent transition-all duration-700 ease-out" style={{ width: `${((step + 1) / 4) * 100}%` }} />
                 </div>
                 
-                <div className="flex-1 overflow-y-auto p-6 sm:p-8 custom-scrollbar">
+                {/* Contenedor scrolleable con padding top extra (pt-16/pt-20) para que no choque con la flecha */}
+                <div className="flex-1 overflow-y-auto p-6 pt-16 sm:p-8 sm:pt-20 custom-scrollbar">
                     {renderContent()}
                 </div>
             </div>
