@@ -627,7 +627,7 @@ html.galaxy-theme #root::after {
 
   .light-theme input[type="checkbox"]:checked {
     background-color: var(--color-accent) !important;
-    border-color: rgba(0, 0, 0, 0.3) !important;
+    border-color: var(--color-accent) !important;
   }
   .light-theme input[type="checkbox"]:checked::before {
     color: var(--btn-accent-text, #ffffff);
@@ -1153,10 +1153,3 @@ body .driver-popover .driver-popover-close-btn:hover {
 
 /* Correcciones de contraste para temas pastel en Light Mode */
 :root { --text-accent: var(--color-accent); }
-/* Para que los iconos activos en pastel se vean sobre fondo blanco sin cambiar su color */
-html.light-theme .text-accent {
-  filter: drop-shadow(0.5px 0 0 rgba(0,0,0,0.4)) 
-          drop-shadow(-0.5px 0 0 rgba(0,0,0,0.4)) 
-          drop-shadow(0 0.5px 0 rgba(0,0,0,0.4)) 
-          drop-shadow(0 -0.5px 0 rgba(0,0,0,0.4));
-}

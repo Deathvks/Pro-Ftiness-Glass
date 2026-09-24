@@ -927,7 +927,7 @@ export default function Social({ setView }) {
                                 return (
                                     <UserListItem key={user.id} user={user} onNavigate={goToProfile} action={
                                         !isMe && !isFriend && !hasSentRequest ? (
-                                            <button onClick={(e) => handleSendRequest(e, user.id)} className="p-3 bg-accent/10 text-accent hover:bg-accent hover:text-accent-contrast rounded-[14px] transition-colors z-10"><UserPlus size={20} /></button>
+                                            <button onClick={(e) => handleSendRequest(e, user.id)} className="p-3 bg-accent text-accent-contrast shadow-sm hover:brightness-110 active:scale-95 rounded-[14px] transition-all z-10"><UserPlus size={20} /></button>
                                         ) : isFriend ? <span className="text-xs font-bold text-green-500 bg-green-500/10 px-3 py-1.5 rounded-lg">Amigo</span> : hasSentRequest ? <span className="text-xs font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-lg">Enviada</span> : isMe ? <span className="text-xs font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-lg">Tú</span> : null
                                     } />
                                 );
