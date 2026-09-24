@@ -113,12 +113,30 @@ export const addXp = async (userId, amount, reason = 'Actividad completada', opt
             user.level = newLevel;
             if (newLevel > oldLevel) {
                 leveledUp = true;
+                let extraMsg = '';
+                if (newLevel === 5) extraMsg = '\n¡Desbloqueas 5 nuevos colores pastel para la app!';
+                if (newLevel === 10) extraMsg = '\n¡Desbloqueas 5 nuevos pasteles vibrantes para la app!';
                 createNotification(userId, {
                     type: 'success',
                     title: '¡Subida de Nivel!',
-                    message: `¡Felicidades! Has alcanzado el Nivel ${newLevel}.`,
+                    message: `¡Felicidades! Has alcanzado el Nivel ${newLevel}.${extraMsg}`,
                     data: { type: 'level_up', newLevel }
                 });
+                
+                // Emitir evento socket para el Toast global en tiempo real
+                try {
+                    import('../server.js').then(({ io }) => {
+                        if (io) {
+                            io.to(userId.toString()).emit('GAMIFICATION_EVENT', {
+                                type: 'level_up',
+                                newLevel: newLevel,
+                                leveledUp: true
+                            });
+                        }
+                    });
+                } catch (err) {
+                    console.error("Error emitiendo level_up socket:", err);
+                }
             }
         }
 

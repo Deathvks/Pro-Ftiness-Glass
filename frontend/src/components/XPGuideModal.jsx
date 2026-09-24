@@ -2,7 +2,7 @@ import ModalPortal from './ModalPortal';
 /* frontend/src/components/XPGuideModal.jsx */
 import React, { useRef, useState, useEffect } from 'react';
 import {
-  X, Trophy, Dumbbell, Calendar, Plus, Activity, Star, Crown,
+  X, Trophy, Dumbbell, Palette, Calendar, Plus, Activity, Star, Crown,
   Utensils, Droplets, Zap, Rocket, ChefHat, Info, LogIn, Flame,
   Footprints, Shield, History, ArrowRight } from
 'lucide-react';
@@ -142,6 +142,42 @@ const XPGuideModal = ({ onClose }) => {
                 )}
                                 </div>
                             </section>
+
+                              <section className="mb-10 w-full">
+                                  <h3 className="text-[11px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest mb-4 ml-1 flex items-center gap-2">
+                                      <Trophy size={16} className="text-accent" strokeWidth={2.5} />
+                                      Recompensas de Personalización
+                                  </h3>
+                                  <div className="space-y-3 w-full">
+                                      <div className={dailyCardClass}>
+                                          <div className="flex items-center gap-4 min-w-0 flex-1">
+                                              <div className="p-3 bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 text-accent rounded-[14px] shrink-0 shadow-sm">
+                                                  <Palette size={20} strokeWidth={2} />
+                                              </div>
+                                              <div className="flex flex-col min-w-0">
+                                                  <span className="font-extrabold text-sm text-text-primary tracking-tight">Nivel 5</span>
+                                                  <span className="text-[11px] text-text-secondary mt-0.5 leading-snug">
+                                                      Desbloqueas 5 nuevos colores pastel: Menta Suave, Melocotón, Agua de Rosas, Lavanda y Azul Bebé.
+                                                  </span>
+                                              </div>
+                                          </div>
+                                      </div>
+                                      <div className={dailyCardClass}>
+                                          <div className="flex items-center gap-4 min-w-0 flex-1">
+                                              <div className="p-3 bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 text-accent rounded-[14px] shrink-0 shadow-sm">
+                                                  <Palette size={20} strokeWidth={2} />
+                                              </div>
+                                              <div className="flex flex-col min-w-0">
+                                                  <span className="font-extrabold text-sm text-text-primary tracking-tight">Nivel 10</span>
+                                                  <span className="text-[11px] text-text-secondary mt-0.5 leading-snug">
+                                                      Desbloqueas 5 pasteles vibrantes: Rosa Atardecer, Espuma de Mar, Bígaro, Limonada y Cerezo.
+                                                  </span>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </section>
+
 
                             <section className="mb-10 w-full">
                                 <h3 className="text-[11px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest mb-4 ml-1 flex items-center gap-2">

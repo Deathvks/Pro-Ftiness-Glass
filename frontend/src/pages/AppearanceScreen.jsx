@@ -95,7 +95,7 @@ export default function AppearanceScreen({ setView }) {
     startThemeTest, isTestingTheme, testTimeLeft 
   } = useAppTheme();
 
-  const [currentColorPage, setCurrentColorPage] = useState(0);
+  
   const [showThemeReloadModal, setShowThemeReloadModal] = useState(false);
   const [pendingThemeAction, setPendingThemeAction] = useState(null);
 
@@ -108,12 +108,7 @@ export default function AppearanceScreen({ setView }) {
   const isOceanUnlocked = (userProfile?.referralCount || 0) >= 11 || userProfile?.role === 'admin';
   const isOceanActive = activeTheme === 'ocean' || activeTheme === 'ocean-dark';
 
-  const COLORS_PER_PAGE = 12;
-  const totalPages = Math.ceil(ACCENT_OPTIONS.length / COLORS_PER_PAGE);
-  const currentColors = ACCENT_OPTIONS.slice(
-    currentColorPage * COLORS_PER_PAGE,
-    (currentColorPage * COLORS_PER_PAGE) + COLORS_PER_PAGE
-  );
+  
 
   const handleThemeClick = (mode) => {
     if (isIOS()) {
@@ -178,43 +173,95 @@ export default function AppearanceScreen({ setView }) {
 
           {/* Acentos */}
           <div className="mb-8">
-            <div className="flex justify-between items-center mb-4 ml-1">
-              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider">Acento de Color</h3>
-              {totalPages > 1 && (
-                <div className="flex gap-1.5">
-                  <button
-                    onClick={() => setCurrentColorPage(p => Math.max(0, p - 1))}
-                    disabled={currentColorPage === 0 || isGalaxyActive}
-                    className="p-1.5 rounded-[10px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 transition-colors"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <button
-                    onClick={() => setCurrentColorPage(p => Math.min(totalPages - 1, p + 1))}
-                    disabled={currentColorPage === totalPages - 1 || isGalaxyActive}
-                    className="p-1.5 rounded-[10px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 transition-colors"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              )}
-            </div>
-            
             <div className={`transition-all duration-300 ${isGalaxyActive || isDesertActive || isOceanActive ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
-              <div className="grid grid-cols-6 gap-3 sm:gap-4">
-                {currentColors.map(opt => {
-                  const isLocked = opt.reqLevel && (userProfile?.level || 1) < opt.reqLevel && userProfile?.role !== 'admin';
+              
+              {/* Por defecto */}
+              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 ml-1">Acento de Color</h3>
+              <div className="grid grid-cols-6 gap-3 sm:gap-4 mb-6">
+                {ACCENT_OPTIONS.filter(o => !o.reqLevel).map(opt => {
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => setAccent(opt.id)}
+                      title={opt.label}
+                      className="group relative flex justify-center items-center w-full aspect-square"
+                    >
+                      <span
+                        className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
+                        style={{
+                          backgroundColor: opt.hex,
+                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
+                        }}
+                      />
+                      {accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && (
+                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
+                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Por niveles */}
+              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 ml-1 mt-8">Acento de color por niveles</h3>
+              
+              {/* Nivel 5 */}
+              <h4 className="text-[11px] font-bold text-accent/70 uppercase tracking-wider mb-3 ml-1">Nivel 5</h4>
+              <div className="grid grid-cols-5 gap-3 sm:gap-4 mb-6">
+                {ACCENT_OPTIONS.filter(o => o.reqLevel === 5).map(opt => {
+                  const isLocked = (userProfile?.level || 1) < 5 && userProfile?.role !== 'admin';
                   return (
                     <button
                       key={opt.id}
                       onClick={() => {
                         if (isLocked) {
-                          addToast(`Desbloquea este color alcanzando el nivel ${opt.reqLevel}`, 'info', 'lock');
+                          addToast(`Requiere nivel 5 para aplicarlo`, 'info', 'lock');
                         } else {
                           setAccent(opt.id);
                         }
                       }}
-                      title={opt.label + (isLocked ? ` (Nivel ${opt.reqLevel})` : '')}
+                      title={opt.label + (isLocked ? ` (Nivel 5)` : '')}
+                      className={`group relative flex justify-center items-center w-full aspect-square ${isLocked ? 'opacity-40 grayscale-[0.3]' : ''}`}
+                    >
+                      <span
+                        className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
+                        style={{
+                          backgroundColor: opt.hex,
+                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
+                        }}
+                      />
+                      {accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked && (
+                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
+                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
+                        </span>
+                      )}
+                      {isLocked && (
+                        <span className="absolute inset-0 flex items-center justify-center text-black/40 dark:text-black/60 pointer-events-none drop-shadow-sm">
+                          <Lock size={16} strokeWidth={2.5} />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Nivel 10 */}
+              <h4 className="text-[11px] font-bold text-accent/70 uppercase tracking-wider mb-3 ml-1 mt-6">Nivel 10</h4>
+              <div className="grid grid-cols-5 gap-3 sm:gap-4 mb-2">
+                {ACCENT_OPTIONS.filter(o => o.reqLevel === 10).map(opt => {
+                  const isLocked = (userProfile?.level || 1) < 10 && userProfile?.role !== 'admin';
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => {
+                        if (isLocked) {
+                          addToast(`Requiere nivel 10 para aplicarlo`, 'info', 'lock');
+                        } else {
+                          setAccent(opt.id);
+                        }
+                      }}
+                      title={opt.label + (isLocked ? ` (Nivel 10)` : '')}
                       className={`group relative flex justify-center items-center w-full aspect-square ${isLocked ? 'opacity-40 grayscale-[0.3]' : ''}`}
                     >
                       <span

@@ -658,7 +658,12 @@ export default function MainAppLayout({
           addToast(`+${event.amount} XP: ${event.reason}`, 'success');
         } else if (event.type === 'badge') {
           addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
-        } else if (event.type === 'challenge_completed') {
+        } else if (event.type === 'level_up') {
+            let extraStr = '';
+            if (event.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
+            if (event.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
+            addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel} 🚀${extraStr}`, 'success', 6000);
+          } else if (event.type === 'challenge_completed') {
           addToast(`¡Reto completado! ${event.message} (+${event.xpAdded} XP)`, 'success');
           if (event.leveledUp) {
             addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel} 🏆`, 'success', 6000);
@@ -678,7 +683,12 @@ export default function MainAppLayout({
     const handleGamificationEvent = async (data) => {
       if (data.type === 'referral_success') {
         useAppStore.getState().addReferralAnimation(data);
-      } else if (data.type === 'challenge_completed') {
+      } else if (data.type === 'level_up') {
+          let extraStr = '';
+          if (data.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
+          if (data.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
+          addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel} 🚀${extraStr}`, 'success', 6000);
+        } else if (data.type === 'challenge_completed') {
         addToast(`¡Reto completado! ${data.message} (+${data.xpAdded} XP)`, 'success');
         if (data.leveledUp) {
           addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel} 🏆`, 'success', 6000);

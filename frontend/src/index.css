@@ -272,6 +272,7 @@ html.galaxy-theme #root::after {
   --color-accent: #84cc16;
   --color-accent-transparent: rgba(132, 204, 22, 0.12);
   --color-accent-border: rgba(132, 204, 22, 0.28);
+  --btn-accent-text: #000000;
 }
 
 .accent-fuchsia {
@@ -314,6 +315,7 @@ html.galaxy-theme #root::after {
   --color-accent: #eab308;
   --color-accent-transparent: rgba(234, 179, 8, 0.12);
   --color-accent-border: rgba(234, 179, 8, 0.28);
+  --btn-accent-text: #000000;
 }
 
 .accent-sky {
@@ -345,18 +347,21 @@ html.galaxy-theme #root::after {
   --color-accent: #a8e6cf;
   --color-accent-transparent: rgba(168, 230, 207, 0.12);
   --color-accent-border: rgba(168, 230, 207, 0.28);
+  --btn-accent-text: #000000;
 }
 
 .accent-peach {
   --color-accent: #ffd3b6;
   --color-accent-transparent: rgba(255, 211, 182, 0.12);
   --color-accent-border: rgba(255, 211, 182, 0.28);
+  --btn-accent-text: #000000;
 }
 
 .accent-rose-water {
   --color-accent: #ffaaa5;
   --color-accent-transparent: rgba(255, 170, 165, 0.12);
   --color-accent-border: rgba(255, 170, 165, 0.28);
+  --btn-accent-text: #000000;
 }
 
 .accent-lavender {
@@ -381,6 +386,7 @@ html.galaxy-theme #root::after {
   --color-accent: #96edd1;
   --color-accent-transparent: rgba(150, 237, 209, 0.12);
   --color-accent-border: rgba(150, 237, 209, 0.28);
+  --btn-accent-text: #000000;
 }
 
 .accent-periwinkle {
@@ -393,12 +399,14 @@ html.galaxy-theme #root::after {
   --color-accent: #fdfd96;
   --color-accent-transparent: rgba(253, 253, 150, 0.12);
   --color-accent-border: rgba(253, 253, 150, 0.28);
+  --btn-accent-text: #000000;
 }
 
 .accent-cherry-blossom {
   --color-accent: #fccbcf;
   --color-accent-transparent: rgba(252, 203, 207, 0.12);
   --color-accent-border: rgba(252, 203, 207, 0.28);
+  --btn-accent-text: #000000;
 }
 
 
