@@ -440,7 +440,7 @@ export default function AsesoriaScreen({ onBack }) {
                         {msg.attachment_url && msg.attachment_type?.startsWith('video/') ? (
                           <div className="mb-2">
                             <video 
-                              src={msg.attachment_url} 
+                              src={`${msg.attachment_url}#t=0.001`} preload="metadata" 
                               controls 
                               className="w-full max-h-[200px] rounded-lg bg-black/10"
                             />
@@ -557,3 +557,4 @@ export default function AsesoriaScreen({ onBack }) {
     </div>
   );
 }
+

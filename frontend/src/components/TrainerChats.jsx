@@ -752,7 +752,7 @@ export default function TrainerChats({ onClose }) {
                         {msg.attachment_url && msg.attachment_type?.startsWith('video/') ? (
                           <div className="mb-2 rounded-xl overflow-hidden bg-black/10">
                             <video
-                              src={msg.attachment_url}
+                              src={`${msg.attachment_url}#t=0.001`} preload="metadata"
                               controls
                               className="max-w-full h-auto max-h-[300px] rounded-xl" />
                             <button
@@ -1128,5 +1128,6 @@ export default function TrainerChats({ onClose }) {
     </div>
   );
 }
+
 
 
