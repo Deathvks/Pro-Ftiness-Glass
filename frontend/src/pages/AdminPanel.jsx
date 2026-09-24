@@ -800,7 +800,7 @@ const AdminPanel = ({ onCancel }) => {
                           {/* 2. Detalles (Rol + Verificado + Nivel) */}
                           <td className="p-4 align-middle">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md ${user.role === 'admin' ? 'bg-accent/10 text-accent ring-1 ring-accent/30' : user.role === 'trainer' ? 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
+                              <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md ${user.role === 'admin' ? 'bg-accent text-accent-contrast ring-1 ring-accent/30' : user.role === 'trainer' ? 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
                                 {user.role}
                               </span>
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10">
@@ -855,7 +855,7 @@ const AdminPanel = ({ onCancel }) => {
                           {/* 5. Acciones */}
                           <td className="p-4 pr-6 align-middle text-right">
                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => setUserToEdit(user)} className="p-2 rounded-xl bg-black/5 dark:bg-white/5 text-text-secondary hover:text-accent hover:bg-accent/10 transition-all active:scale-95">
+                              <button onClick={() => setUserToEdit(user)} className="p-2 rounded-xl bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-accent hover:text-accent-contrast transition-all active:scale-95">
                                 <Edit size={16} />
                               </button>
                               <button onClick={() => setUserToDelete(user)} className="p-2 rounded-xl bg-black/5 dark:bg-white/5 text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95">
@@ -894,7 +894,7 @@ const AdminPanel = ({ onCancel }) => {
                           </div>
                         </div>
                         <div className="flex flex-col gap-2 shrink-0">
-                          <button onClick={() => setUserToEdit(user)} className="p-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary hover:text-accent hover:bg-accent/10 transition-all active:scale-95"><Edit size={16} /></button>
+                          <button onClick={() => setUserToEdit(user)} className="p-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary hover:bg-accent hover:text-accent-contrast transition-all active:scale-95"><Edit size={16} /></button>
                           <button onClick={() => setUserToDelete(user)} className="p-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95"><Trash2 size={16} /></button>
                         </div>
                       </div>
@@ -904,7 +904,7 @@ const AdminPanel = ({ onCancel }) => {
                         
                         <div className="flex items-center justify-between">
                            <div className="flex items-center gap-2">
-                             <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md ${user.role === 'admin' ? 'bg-accent/10 text-accent ring-1 ring-accent/30' : user.role === 'trainer' ? 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
+                             <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md ${user.role === 'admin' ? 'bg-accent text-accent-contrast ring-1 ring-accent/30' : user.role === 'trainer' ? 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
                                {user.role}
                              </span>
                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10">
@@ -1005,7 +1005,7 @@ const AdminPanel = ({ onCancel }) => {
                       <div className="flex flex-col md:flex-row gap-5 justify-between items-start">
                         <div className="flex-1 space-y-4">
                           <div className="flex flex-wrap items-center gap-3">
-                            <span className="px-3 py-1 bg-accent/10 text-accent ring-1 ring-accent/30 text-[10px] font-black rounded-md uppercase tracking-widest">
+                            <span className="px-3 py-1 bg-accent text-accent-contrast ring-1 ring-accent/30 text-[10px] font-black rounded-md uppercase tracking-widest">
                               {REPORT_CATEGORY_LABELS[report.category] || report.category}
                             </span>
                             <span className="text-xs font-mono font-medium text-text-muted">{formatDateSafe(report.created_at)}</span>
@@ -1070,7 +1070,7 @@ const AdminPanel = ({ onCancel }) => {
                     <button
                       onClick={() => setReportPage(p => Math.max(1, p - 1))}
                       disabled={reportPage === 1}
-                      className="p-3 rounded-[16px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary disabled:opacity-30 hover:bg-accent hover:text-white hover:ring-accent transition-all active:scale-95 shadow-sm"
+                      className="p-3 rounded-[16px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary disabled:opacity-30 hover:bg-accent hover:text-accent-contrast hover:ring-accent transition-all active:scale-95 shadow-sm"
                     >
                       <ChevronLeft size={20} strokeWidth={2.5} />
                     </button>
@@ -1080,7 +1080,7 @@ const AdminPanel = ({ onCancel }) => {
                     <button
                       onClick={() => setReportPage(p => Math.min(totalPages, p + 1))}
                       disabled={reportPage === totalPages}
-                      className="p-3 rounded-[16px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary disabled:opacity-30 hover:bg-accent hover:text-white hover:ring-accent transition-all active:scale-95 shadow-sm"
+                      className="p-3 rounded-[16px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary disabled:opacity-30 hover:bg-accent hover:text-accent-contrast hover:ring-accent transition-all active:scale-95 shadow-sm"
                     >
                       <ChevronRight size={20} strokeWidth={2.5} />
                     </button>
