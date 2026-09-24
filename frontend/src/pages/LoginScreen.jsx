@@ -687,11 +687,12 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                                             e.preventDefault();
                                             showForgotPassword();
                                         }}
-                                    type="button"
-                                    className="text-xs font-semibold text-text-secondary hover:text-accent transition-colors ml-2 shrink-0"
-                                >
-                                    ¿Olvidaste tu contraseña?
-                                </button>
+                                        type="button"
+                                        className="text-xs font-semibold text-text-secondary hover:text-accent transition-colors ml-2 shrink-0"
+                                    >
+                                        ¿Olvidaste tu contraseña?
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
