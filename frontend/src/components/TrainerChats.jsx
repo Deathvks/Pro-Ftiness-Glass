@@ -482,47 +482,8 @@ export default function TrainerChats({ onClose }) {
             
             return (
               <>
-                {activeClients.length === 0 ? (
-                  <div className="p-8 text-center text-text-secondary">
-                    No tienes clientes activos aún.
-                  </div>
-                ) : (
-                  activeClients.map((client) => {
-                    const isSelected = selectedClient?.id === client.id;
-                    return (
-                      <div
-                        key={client.id}
-                        onClick={() => openChat(client)}
-                        className={`relative flex items-center gap-4 p-3 sm:p-4 cursor-pointer rounded-[20px] transition-all duration-300 group overflow-hidden ${isSelected ? 'bg-accent/10 border border-accent/30 shadow-[0_4px_20px_-5px_rgba(239,68,68,0.15)]' : 'bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10 hover:border-black/10 dark:hover:border-white/10'}`}
-                      >
-                        {isSelected && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-accent rounded-r-full shadow-[0_0_10px_rgba(239,68,68,0.8)]"></div>}
-                        <div className="relative shrink-0">
-                          {client.profile_image_url ? (
-                            <img src={getFullImageUrl(client.profile_image_url)} alt={client.name} className="w-12 h-12 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10" referrerPolicy="no-referrer" />
-                          ) : (
-                            <UserCircleIcon className="w-12 h-12 text-text-secondary" />
-                          )}
-                          {client.unreadCount > 0 && <div className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full ring-2 ring-bg-primary animate-pulse-soft">{client.unreadCount}</div>}
-                          {client.lastSeen && (new Date() - new Date(client.lastSeen) < 2 * 60 * 1000) && <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-bg-primary rounded-full"></div>}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1 min-w-0">
-                            <h3 className="font-bold text-text-primary truncate text-sm">{client.name || client.username}</h3>
-                            {client.role === 'trainee' && <span className="shrink-0 px-1.5 py-0.5 bg-accent/20 text-accent text-[9px] sm:text-[10px] font-bold uppercase tracking-wider rounded-full ring-1 ring-accent/30">Asesorado</span>}
-                          </div>
-                          {client.lastMessage && (
-                            <p className="text-xs text-text-secondary truncate pr-4 opacity-80 font-medium">
-                              {String(client.lastMessage.sender_id) === String(userId) ? 'Tú: ' : ''}{client.lastMessage.attachment_type === 'bot_reply' ? '🤖 Respuesta automática' : client.lastMessage.attachment_url ? '📎 Archivo adjunto' : client.lastMessage.content}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-
-                                {isAdmin && (
-                  <div className="mt-6 mb-2">
+                {isAdmin && (
+                  <div className="mb-6">
                     <button 
                       onClick={() => setShowBotChats(!showBotChats)}
                       className="flex items-center justify-between w-full p-4 bg-black/5 dark:bg-white/5 rounded-[20px] hover:bg-black/10 dark:hover:bg-white/10 transition-colors border border-glass-border shadow-sm"
@@ -577,7 +538,47 @@ export default function TrainerChats({ onClose }) {
                   </div>
                 )}
 
-                {closedClients.length > 0 && (
+                
+                {activeClients.length === 0 ? (
+                  <div className="p-8 text-center text-text-secondary">
+                    No tienes clientes activos aún.
+                  </div>
+                ) : (
+                  activeClients.map((client) => {
+                    const isSelected = selectedClient?.id === client.id;
+                    return (
+                      <div
+                        key={client.id}
+                        onClick={() => openChat(client)}
+                        className={`relative flex items-center gap-4 p-3 sm:p-4 cursor-pointer rounded-[20px] transition-all duration-300 group overflow-hidden ${isSelected ? 'bg-accent/10 border border-accent/30 shadow-[0_4px_20px_-5px_rgba(239,68,68,0.15)]' : 'bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10 hover:border-black/10 dark:hover:border-white/10'}`}
+                      >
+                        {isSelected && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-accent rounded-r-full shadow-[0_0_10px_rgba(239,68,68,0.8)]"></div>}
+                        <div className="relative shrink-0">
+                          {client.profile_image_url ? (
+                            <img src={getFullImageUrl(client.profile_image_url)} alt={client.name} className="w-12 h-12 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10" referrerPolicy="no-referrer" />
+                          ) : (
+                            <UserCircleIcon className="w-12 h-12 text-text-secondary" />
+                          )}
+                          {client.unreadCount > 0 && <div className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full ring-2 ring-bg-primary animate-pulse-soft">{client.unreadCount}</div>}
+                          {client.lastSeen && (new Date() - new Date(client.lastSeen) < 2 * 60 * 1000) && <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-bg-primary rounded-full"></div>}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 min-w-0">
+                            <h3 className="font-bold text-text-primary truncate text-sm">{client.name || client.username}</h3>
+                            {client.role === 'trainee' && <span className="shrink-0 px-1.5 py-0.5 bg-accent/20 text-accent text-[9px] sm:text-[10px] font-bold uppercase tracking-wider rounded-full ring-1 ring-accent/30">Asesorado</span>}
+                          </div>
+                          {client.lastMessage && (
+                            <p className="text-xs text-text-secondary truncate pr-4 opacity-80 font-medium">
+                              {String(client.lastMessage.sender_id) === String(userId) ? 'Tú: ' : ''}{client.lastMessage.attachment_type === 'bot_reply' ? '🤖 Respuesta automática' : client.lastMessage.attachment_url ? '📎 Archivo adjunto' : client.lastMessage.content}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+
+                                {closedClients.length > 0 && (
                   <div className="mt-6 mb-2">
                     <button 
                       onClick={() => setShowClosedChats(!showClosedChats)}
