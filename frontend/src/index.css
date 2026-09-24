@@ -389,10 +389,11 @@ html.galaxy-theme #root::after {
   --btn-accent-text: #000000;
 }
 
-.accent-periwinkle {
-  --color-accent: #c5cbe1;
-  --color-accent-transparent: rgba(197, 203, 225, 0.12);
-  --color-accent-border: rgba(197, 203, 225, 0.28);
+.accent-mango {
+  --color-accent: #ffbe76;
+  --color-accent-transparent: rgba(255, 190, 118, 0.12);
+  --color-accent-border: rgba(255, 190, 118, 0.28);
+  --btn-accent-text: #000000;
 }
 
 .accent-lemonade {
@@ -1138,4 +1139,8 @@ body .driver-popover .driver-popover-close-btn:hover {
 
 .hide-global-header .global-header-element {
   display: none !important;
+}
+
+.text-accent-contrast {
+  color: var(--btn-accent-text, #ffffff) !important;
 }

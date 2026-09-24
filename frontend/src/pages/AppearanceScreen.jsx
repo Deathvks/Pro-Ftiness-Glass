@@ -40,7 +40,7 @@ const ACCENT_OPTIONS = [
   { id: 'baby-blue', label: 'Azul Bebé', hex: '#a2cffe', reqLevel: 5 },
   { id: 'sunset-pink', label: 'Rosa Atardecer', hex: '#ff9a9e', reqLevel: 10 },
   { id: 'seafoam', label: 'Espuma de Mar', hex: '#96edd1', reqLevel: 10 },
-  { id: 'periwinkle', label: 'Bígaro', hex: '#c5cbe1', reqLevel: 10 },
+  { id: 'mango', label: 'Mango Pastel', hex: '#ffbe76', reqLevel: 10 },
   { id: 'lemonade', label: 'Limonada', hex: '#fdfd96', reqLevel: 10 },
   { id: 'cherry-blossom', label: 'Cerezo', hex: '#fccbcf', reqLevel: 10 },
 ];
@@ -155,7 +155,7 @@ export default function AppearanceScreen({ setView }) {
                   key={mode}
                   onClick={() => handleThemeClick(mode)}
                   className={`flex flex-col items-center justify-center gap-2 p-4 rounded-[20px] transition-all duration-300 ${theme === mode && !isTestingTheme
-                    ? 'bg-accent text-white shadow-lg shadow-accent/30 scale-105'
+                    ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/30 scale-105'
                     : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
                     }`}
                 >
@@ -207,7 +207,12 @@ export default function AppearanceScreen({ setView }) {
               <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 ml-1 mt-8">Acento de color por niveles</h3>
               
               {/* Nivel 5 */}
-              <h4 className="text-[11px] font-bold text-accent/70 uppercase tracking-wider mb-3 ml-1">Nivel 5</h4>
+              <div className="flex items-center gap-2 mb-3 ml-1 mt-6">
+                  <div className="scale-[0.6] origin-left -my-3">
+                    <LevelBadge level={5} size="sm" />
+                  </div>
+                  <h4 className="text-sm font-black text-text-primary tracking-tight">Nivel 5</h4>
+                </div>
               <div className="grid grid-cols-5 gap-3 sm:gap-4 mb-6">
                 {ACCENT_OPTIONS.filter(o => o.reqLevel === 5).map(opt => {
                   const isLocked = (userProfile?.level || 1) < 5 && userProfile?.role !== 'admin';
@@ -247,7 +252,12 @@ export default function AppearanceScreen({ setView }) {
               </div>
 
               {/* Nivel 10 */}
-              <h4 className="text-[11px] font-bold text-accent/70 uppercase tracking-wider mb-3 ml-1 mt-6">Nivel 10</h4>
+              <div className="flex items-center gap-2 mb-3 ml-1 mt-6">
+                  <div className="scale-[0.6] origin-left -my-3">
+                    <LevelBadge level={10} size="sm" />
+                  </div>
+                  <h4 className="text-sm font-black text-text-primary tracking-tight">Nivel 10</h4>
+                </div>
               <div className="grid grid-cols-5 gap-3 sm:gap-4 mb-2">
                 {ACCENT_OPTIONS.filter(o => o.reqLevel === 10).map(opt => {
                   const isLocked = (userProfile?.level || 1) < 10 && userProfile?.role !== 'admin';

@@ -60,7 +60,7 @@ const XPGuideModal = ({ onClose }) => {
   };
 
   const dailyCardClass = "flex items-center justify-between p-4 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-all duration-300 group shadow-sm gap-3";
-  const dailyXpClass = "font-black text-accent text-[11px] sm:text-xs transition-transform group-hover:scale-105 whitespace-nowrap text-right shrink-0 px-3 py-1.5 bg-accent/10 rounded-lg ring-1 ring-accent/30 tracking-wide";
+  const dailyXpClass = "font-black text-accent-contrast text-[11px] sm:text-xs transition-transform group-hover:scale-105 whitespace-nowrap text-right shrink-0 px-3 py-1.5 bg-accent rounded-lg shadow-sm tracking-wide";
 
   const goldCardClass = "flex items-center justify-between p-4 bg-gradient-to-br from-amber-500/10 to-amber-500/20 rounded-[24px] ring-1 ring-amber-500/30 hover:ring-amber-500/50 transition-all duration-300 group shadow-sm gap-3";
   const goldXpClass = "font-black text-amber-500 text-[11px] sm:text-xs transition-transform group-hover:scale-105 whitespace-nowrap text-right shrink-0 px-3 py-1.5 bg-amber-500/20 rounded-lg ring-1 ring-amber-500/40 tracking-wide";
@@ -76,8 +76,8 @@ const XPGuideModal = ({ onClose }) => {
                     <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-1 sm:hidden shrink-0" />
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-extrabold flex items-center gap-3 text-text-primary tracking-tight">
-                            <div className="p-2.5 bg-accent/10 rounded-[14px] ring-1 ring-accent/30 shrink-0 shadow-sm">
-                                <Star className="text-accent fill-accent animate-pulse" size={20} strokeWidth={1.5} />
+                            <div className="p-2.5 bg-accent rounded-[14px] shrink-0 shadow-sm text-accent-contrast">
+                                <Star className="fill-current animate-pulse" size={20} strokeWidth={1.5} />
                             </div>
                             Sistema XP
                         </h2>
@@ -107,19 +107,19 @@ const XPGuideModal = ({ onClose }) => {
                     {activeTab === 'guide' &&
           <div className="animate-[fade-in_0.3s_ease-out]">
                             <div className="bg-accent/10 rounded-[24px] p-5 flex items-start gap-4 mb-8 ring-1 ring-accent/30 shadow-sm w-full">
-                                <div className="p-2 bg-accent rounded-[12px] text-white shrink-0 mt-0.5 shadow-md">
+                                <div className="p-2 bg-accent rounded-[12px] text-accent-contrast shrink-0 mt-0.5 shadow-md">
                                     <Info size={18} strokeWidth={2.5} />
                                 </div>
                                 <p className="text-text-secondary text-sm font-medium leading-relaxed">
                                     Gana XP realizando acciones diarias. <br />
-                                    <span className="text-accent font-extrabold tracking-widest uppercase text-[10px] mt-2 block">Nota importante:</span> 
+                                    <span className="bg-accent text-accent-contrast px-2 py-0.5 rounded-md inline-block font-extrabold tracking-widest uppercase text-[10px] mt-2 mb-1 shadow-sm">Nota importante:</span> 
                                     Para mantener tu racha, basta con realizar <strong>cualquiera</strong> de estas acciones al menos una vez al día.
                                 </p>
                             </div>
 
                             <section className="mb-10 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[28px] p-5 w-full overflow-hidden shadow-inner">
                                 <h3 className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest mb-5 flex items-center gap-2">
-                                    <Shield size={16} className="text-accent" strokeWidth={2.5} />
+                                    <div className="p-1.5 bg-accent text-accent-contrast rounded-[8px] shadow-sm"><Shield size={14} strokeWidth={2.5} /></div>
                                     Jerarquía de Rangos
                                 </h3>
                                 <div
@@ -145,13 +145,13 @@ const XPGuideModal = ({ onClose }) => {
 
                               <section className="mb-10 w-full">
                                   <h3 className="text-[11px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest mb-4 ml-1 flex items-center gap-2">
-                                      <Trophy size={16} className="text-accent" strokeWidth={2.5} />
+                                      <div className="p-1.5 bg-accent text-accent-contrast rounded-[8px] shadow-sm"><Trophy size={14} strokeWidth={2.5} /></div>
                                       Recompensas de Personalización
                                   </h3>
                                   <div className="space-y-3 w-full">
                                       <div className={dailyCardClass}>
                                           <div className="flex items-center gap-4 min-w-0 flex-1">
-                                              <div className="p-3 bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 text-accent rounded-[14px] shrink-0 shadow-sm">
+                                              <div className="p-3 bg-accent text-accent-contrast rounded-[14px] shrink-0 shadow-md">
                                                   <Palette size={20} strokeWidth={2} />
                                               </div>
                                               <div className="flex flex-col min-w-0">
@@ -164,13 +164,13 @@ const XPGuideModal = ({ onClose }) => {
                                       </div>
                                       <div className={dailyCardClass}>
                                           <div className="flex items-center gap-4 min-w-0 flex-1">
-                                              <div className="p-3 bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 text-accent rounded-[14px] shrink-0 shadow-sm">
+                                              <div className="p-3 bg-accent text-accent-contrast rounded-[14px] shrink-0 shadow-md">
                                                   <Palette size={20} strokeWidth={2} />
                                               </div>
                                               <div className="flex flex-col min-w-0">
                                                   <span className="font-extrabold text-sm text-text-primary tracking-tight">Nivel 10</span>
                                                   <span className="text-[11px] text-text-secondary mt-0.5 leading-snug">
-                                                      Desbloqueas 5 pasteles vibrantes: Rosa Atardecer, Espuma de Mar, Bígaro, Limonada y Cerezo.
+                                                      Desbloqueas 5 pasteles vibrantes: Rosa Atardecer, Espuma de Mar, Mango Pastel, Limonada y Cerezo.
                                                   </span>
                                               </div>
                                           </div>
@@ -420,7 +420,7 @@ const XPGuideModal = ({ onClose }) => {
                                     {xpHistory.map((log) =>
               <div key={log.id} className="relative flex gap-4 items-start group">
                                             <div className="w-10 h-10 shrink-0 rounded-full bg-bg-primary ring-4 ring-bg-primary flex items-center justify-center z-10 shadow-sm">
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${log.amount > 0 ? 'bg-accent/10 text-accent' : 'bg-red-500/10 text-red-500'}`}>
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${log.amount > 0 ? 'bg-accent text-accent-contrast' : 'bg-red-500/10 text-red-500'}`}>
                                                     <Star size={14} strokeWidth={2.5} />
                                                 </div>
                                             </div>
@@ -430,7 +430,7 @@ const XPGuideModal = ({ onClose }) => {
                                                     <span className="font-extrabold text-sm text-text-primary tracking-tight">
                                                         {log.reason || 'XP Obtenida'}
                                                     </span>
-                                                    <span className={`font-black text-xs shrink-0 px-2 py-1 rounded-md ${log.amount > 0 ? 'bg-accent/10 text-accent ring-1 ring-accent/30' : 'bg-red-500/10 text-red-500 ring-1 ring-red-500/30'}`}>
+                                                    <span className={`font-black text-xs shrink-0 px-2 py-1 rounded-md ${log.amount > 0 ? 'bg-accent text-accent-contrast ring-1 ring-accent/30' : 'bg-red-500/10 text-red-500 ring-1 ring-red-500/30'}`}>
                                                         {log.amount > 0 ? '+' : ''}{log.amount} XP
                                                     </span>
                                                 </div>
