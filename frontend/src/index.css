@@ -340,6 +340,69 @@ html.galaxy-theme #root::after {
   --color-accent-border: rgba(120, 113, 108, 0.28);
 }
 
+/* 4.1) NUEVOS ACENTOS PASTEL */
+.accent-mint {
+  --color-accent: #a8e6cf;
+  --color-accent-transparent: rgba(168, 230, 207, 0.12);
+  --color-accent-border: rgba(168, 230, 207, 0.28);
+}
+
+.accent-peach {
+  --color-accent: #ffd3b6;
+  --color-accent-transparent: rgba(255, 211, 182, 0.12);
+  --color-accent-border: rgba(255, 211, 182, 0.28);
+}
+
+.accent-rose-water {
+  --color-accent: #ffaaa5;
+  --color-accent-transparent: rgba(255, 170, 165, 0.12);
+  --color-accent-border: rgba(255, 170, 165, 0.28);
+}
+
+.accent-lavender {
+  --color-accent: #c5a3ff;
+  --color-accent-transparent: rgba(197, 163, 255, 0.12);
+  --color-accent-border: rgba(197, 163, 255, 0.28);
+}
+
+.accent-baby-blue {
+  --color-accent: #a2cffe;
+  --color-accent-transparent: rgba(162, 207, 254, 0.12);
+  --color-accent-border: rgba(162, 207, 254, 0.28);
+}
+
+.accent-sunset-pink {
+  --color-accent: #ff9a9e;
+  --color-accent-transparent: rgba(255, 154, 158, 0.12);
+  --color-accent-border: rgba(255, 154, 158, 0.28);
+}
+
+.accent-seafoam {
+  --color-accent: #96edd1;
+  --color-accent-transparent: rgba(150, 237, 209, 0.12);
+  --color-accent-border: rgba(150, 237, 209, 0.28);
+}
+
+.accent-periwinkle {
+  --color-accent: #c5cbe1;
+  --color-accent-transparent: rgba(197, 203, 225, 0.12);
+  --color-accent-border: rgba(197, 203, 225, 0.28);
+}
+
+.accent-lemonade {
+  --color-accent: #fdfd96;
+  --color-accent-transparent: rgba(253, 253, 150, 0.12);
+  --color-accent-border: rgba(253, 253, 150, 0.28);
+}
+
+.accent-cherry-blossom {
+  --color-accent: #fccbcf;
+  --color-accent-transparent: rgba(252, 203, 207, 0.12);
+  --color-accent-border: rgba(252, 203, 207, 0.28);
+}
+
+
+
 .accent-neutral {
   --color-accent: #737373;
   --color-accent-transparent: rgba(115, 115, 115, 0.12);
