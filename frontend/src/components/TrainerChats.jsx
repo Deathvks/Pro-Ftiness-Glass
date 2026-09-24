@@ -220,8 +220,8 @@ export default function TrainerChats({ onClose }) {
     setIsResending(true);
     try {
       const { client, level } = resendConfirmData;
-      const res = await apiClient('/chat/trainer/bot-reminder-resend/' + client.id + '/' + level, { method: 'POST' });
-      addToast('Reenvío completado: Push (' + (res.status?.push || 'error') + '), Email (' + (res.status?.email || 'error') + ')', 'success');
+      const res = await apiClient('/chat/trainer/bot-reminder-resend/' + client.id + '/' + level + '?type=' + resendConfirmData.type, { method: 'POST' });
+      addToast('Reenvío completado con éxito', 'success');
       setResendConfirmData(null);
     } catch (e) {
       console.error(e);
@@ -1088,18 +1088,22 @@ export default function TrainerChats({ onClose }) {
                           <div className="text-xs text-text-secondary mt-0.5 flex items-center gap-1">{description}</div>
                           {isCompleted ? (
                             !isFinal && (
-  <div 
-    className="flex items-center gap-3 mt-2 cursor-pointer hover:opacity-80 active:scale-95 transition-all p-1 -ml-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
-    onClick={() => setResendConfirmData({ client: botModalClient, level: stepLevel })}
-    title="Toca para reenviar push y correo"
-  >
-    <div className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded-md pointer-events-none">
-      <BellAlertIcon className="w-3 h-3" /> Push Enviado
-    </div>
-    <div className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded-md pointer-events-none">
-      <EnvelopeIcon className="w-3 h-3" /> Email Enviado
-    </div>
-  </div>
+  <div className="flex items-center gap-3 mt-2">
+                                  <div 
+                                    className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded-md cursor-pointer hover:bg-green-500/20 active:scale-95 transition-all"
+                                    onClick={(e) => { e.stopPropagation(); setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'push' }); }}
+                                    title="Toca para reenviar solo el Push"
+                                  >
+                                    <BellAlertIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Push Enviado</span>
+                                  </div>
+                                  <div 
+                                    className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded-md cursor-pointer hover:bg-green-500/20 active:scale-95 transition-all"
+                                    onClick={(e) => { e.stopPropagation(); setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'email' }); }}
+                                    title="Toca para reenviar solo el Correo"
+                                  >
+                                    <EnvelopeIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Email Enviado</span>
+                                  </div>
+                                </div>
 )
                           ) : isActive ? (
                             <div className="mt-2 text-xs font-bold text-accent bg-accent/10 px-3 py-1.5 rounded-lg inline-block">
@@ -1171,11 +1175,17 @@ export default function TrainerChats({ onClose }) {
             <div className="w-12 h-1.5 bg-glass-border rounded-full mx-auto mb-6 md:hidden shrink-0" />
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <EnvelopeIcon className="w-8 h-8 text-accent" />
+                {resendConfirmData.type === 'push' ? (
+                  <BellAlertIcon className="w-8 h-8 text-accent" />
+                ) : (
+                  <EnvelopeIcon className="w-8 h-8 text-accent" />
+                )}
               </div>
-              <h3 className="text-xl font-black text-text-primary mb-2">¿Reenviar avisos?</h3>
+              <h3 className="text-xl font-black text-text-primary mb-2">
+                {resendConfirmData.type === 'push' ? '¿Reenviar Push?' : '¿Reenviar Correo?'}
+              </h3>
               <p className="text-sm text-text-secondary">
-                Se volverá a enviar la notificación push y el correo del <strong>Aviso {resendConfirmData.level}</strong> a <strong>{resendConfirmData.client.name}</strong>.
+                Se volverá a enviar {resendConfirmData.type === 'push' ? 'la notificación push' : 'el correo electrónico'} del <strong>Aviso {resendConfirmData.level}</strong> a <strong>{resendConfirmData.client.name}</strong>.
               </p>
             </div>
             <div className="flex gap-3">

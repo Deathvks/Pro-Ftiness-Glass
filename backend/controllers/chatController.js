@@ -658,28 +658,36 @@ export const resendBotReminder = async (req, res) => {
       return res.status(400).json({ error: 'Nivel inválido' });
     }
 
-    const status = { push: 'error', notification: 'error', email: 'error' };
+    const type = req.query.type || 'all';
+    const status = { push: 'skipped', notification: 'skipped', email: 'skipped' };
 
-    try {
-      const { createNotification } = await import('../services/notificationService.js');
-      await createNotification(prospect.id, {
-        type: 'chat_message',
-        title: title,
-        message: text,
-        data: { url: '/social' }
-      });
-      status.notification = 'ok';
-      status.push = 'ok';
-    } catch (e) {
-      console.error('Error push/notif:', e);
+    if (type === 'push' || type === 'all') {
+      try {
+        const { createNotification } = await import('../services/notificationService.js');
+        await createNotification(prospect.id, {
+          type: 'chat_message',
+          title: title,
+          message: text,
+          data: { url: '/social' }
+        });
+        status.notification = 'ok';
+        status.push = 'ok';
+      } catch (e) {
+        console.error('Error push/notif:', e);
+        status.push = 'error';
+        status.notification = 'error';
+      }
     }
 
-    try {
-      const { sendBotReminderEmail } = await import('../services/emailService.js');
-      await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, parsedLevel);
-      status.email = 'ok';
-    } catch (e) {
-      console.error('Error email:', e);
+    if (type === 'email' || type === 'all') {
+      try {
+        const { sendBotReminderEmail } = await import('../services/emailService.js');
+        await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, parsedLevel);
+        status.email = 'ok';
+      } catch (e) {
+        console.error('Error email:', e);
+        status.email = 'error';
+      }
     }
 
     res.json({ message: 'Recordatorio reenviado', status });
