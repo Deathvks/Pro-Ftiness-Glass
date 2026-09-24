@@ -672,7 +672,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
                             <div className="flex flex-col mt-2 px-2 gap-2">
                                 {errors.password && <p className="form-error-text text-left text-xs font-medium">{errors.password}</p>}
-                                <div className="flex justify-between items-center w-full mt-1">
+                                <div className="flex flex-wrap justify-between items-center gap-y-3 gap-x-2 w-full mt-2">
                                     <label className="flex items-center gap-2 cursor-pointer group">
                                         <input 
                                             type="checkbox" 
@@ -688,7 +688,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                                             showForgotPassword();
                                         }}
                                         type="button"
-                                        className="text-xs font-semibold text-text-secondary hover:text-accent transition-colors ml-2 shrink-0"
+                                        className="text-xs font-semibold text-text-secondary hover:text-accent transition-colors shrink-0"
                                     >
                                         ¿Olvidaste tu contraseña?
                                     </button>
