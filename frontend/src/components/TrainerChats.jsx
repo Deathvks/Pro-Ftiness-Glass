@@ -214,31 +214,31 @@ export default function TrainerChats({ onClose }) {
     try {
       const levelToExecute = (client.lastMessage?.bot_reminder_level || 0) + 1;
       if (levelToExecute > 3) {
-        showToast('El chat se cerrar hoy o ya se ha cerrado.', 'info');
+        addToast('El chat se cerrará hoy o ya se ha cerrado.', 'info');
         return;
       }
       
-      const response = await apiClient(\/chat/trainer/bot-reminder/\/\\, { method: 'POST' });
+      const response = await apiClient('/chat/trainer/bot-reminder/' + client.id + '/' + levelToExecute, { method: 'POST' });
       const statuses = response.status;
       
-      showToast(
-        \Push: \ |  +
-        App: \ |  +
-        Email: \\,
-        'success', 
-        { duration: 5000 }
+      addToast(
+        'Push: ' + (statuses.push === 'ok' ? 'OK' : 'Error') + ' | ' +
+        'App: ' + (statuses.notification === 'ok' ? 'OK' : 'Error') + ' | ' +
+        'Email: ' + (statuses.email === 'ok' ? 'OK' : 'Error'),
+        'success'
       );
 
       // Refresh chat list to update level
-      fetchChats();
+      fetchClients();
       if (selectedClient?.id === client.id) {
          setMessages(prev => [...prev, response.newMessage]);
       }
     } catch (err) {
       console.error(err);
-      showToast('Error al enviar el aviso', 'error');
+      addToast('Error al enviar el aviso', 'error');
     }
   };
+
 
 
   const openChat = async (client) => {
@@ -987,6 +987,7 @@ export default function TrainerChats({ onClose }) {
     </div>
   );
 }
+
 
 
 
