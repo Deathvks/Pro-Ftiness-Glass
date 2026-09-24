@@ -818,7 +818,8 @@ const chatController = {
   getUnreadCount,
   editMessage,
   runRetroactiveBotReplies,
-sendManualBotReminder
+sendManualBotReminder,
+  resendBotReminder
 };
 
 export default chatController;
