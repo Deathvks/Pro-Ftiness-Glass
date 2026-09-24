@@ -1030,7 +1030,17 @@ export default function TrainerChats({ onClose }) {
                     const now = new Date();
                     const targetDate = new Date(lastDate.getTime() + requiredDays * 24 * 60 * 60 * 1000);
                     const diffMs = targetDate - now;
-                    if (diffMs <= 0) return "Pendiente de envío (11:00 AM)";
+                    if (diffMs <= 0) {
+                      const next11AM = new Date();
+                      next11AM.setHours(11, 0, 0, 0);
+                      if (next11AM < now) {
+                        next11AM.setDate(next11AM.getDate() + 1);
+                      }
+                      const waitMs = next11AM - now;
+                      const h = Math.floor(waitMs / (1000 * 60 * 60));
+                      const m = Math.floor((waitMs % (1000 * 60 * 60)) / (1000 * 60));
+                      return `Sale a las 11:00 AM (en ${h}h ${m}m)`;
+                    }
                     
                     const h = Math.floor(diffMs / (1000 * 60 * 60));
                     const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
