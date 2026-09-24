@@ -716,7 +716,7 @@ const OnboardingScreen = () => {
         <StoryProgress total={totalSteps} current={step} />
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden w-full relative z-10">
-          <div className="min-h-full flex flex-col items-center justify-center p-6 md:p-12 max-w-2xl mx-auto pt-20 pb-[calc(var(--safe-bottom)+7rem)]">
+          <div className="min-h-full flex flex-col items-center justify-center px-6 md:px-12 max-w-2xl mx-auto pt-20 md:pt-28 pb-[calc(var(--safe-bottom)+8rem)] md:pb-[10rem]">
             <div className="w-full">
               {renderContent()}
             </div>
