@@ -14,6 +14,8 @@ router.post('/mark-read/:otherUserId', authenticateToken, chatController.markMes
 router.post('/upload', authenticateToken, uploadMemory.single('file'), chatController.uploadAttachment);
 router.get('/unread-count', authenticateToken, chatController.getUnreadCount);
 router.put('/message/:messageId', authenticateToken, chatController.editMessage);
+router.post('/trainer/bot-reminder/:prospectId/:level', authenticateToken, chatController.sendManualBotReminder);
 
 export default router;
+
 
