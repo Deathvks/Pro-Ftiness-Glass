@@ -360,7 +360,7 @@ const WelcomeModal = ({ onClose }) => {
                   <Brain size={18} style={{ color: 'var(--color-accent)' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: 'var(--color-accent)', margin: '0 0 4px', textTransform: 'uppercase' }}>Rutinas y Dietas a Medida</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: 'var(--text-primary)', margin: '0 0 4px', textTransform: 'uppercase' }}>Rutinas y Dietas a Medida</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
                     Genera rutinas 100% personalizadas y obtén pautas nutricionales precisas adaptadas milimétricamente a tus objetivos diarios.
                   </p>
@@ -428,4 +428,5 @@ const WelcomeModal = ({ onClose }) => {
 };
 
 export default WelcomeModal;
+
 

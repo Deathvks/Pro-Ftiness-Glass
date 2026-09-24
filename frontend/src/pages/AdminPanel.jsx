@@ -104,7 +104,7 @@ const PlatformBadge = ({ user }) => {
     title = 'Web App (PWA)';
   } else if (deviceType === 'mobile' || deviceType === 'tablet') {
     icon = <Globe size={10} className="text-white" />;
-    bg = 'bg-orange-500';
+    bg = 'bg-slate-700';
     title = 'Web (Móvil)';
   }
 
@@ -616,10 +616,10 @@ const AdminPanel = ({ onCancel }) => {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 flex items-center justify-center rounded-full bg-orange-500 ring-2 ring-bg-primary text-white">
-                    <Globe size={10} />
-                  </div>
-                  <span className="text-sm font-medium text-text-primary">Web (Móvil)</span>
+                  <div className="w-5 h-5 flex items-center justify-center rounded-full bg-slate-700 ring-2 ring-bg-primary text-white">
+                      <Globe size={10} />
+                    </div>
+                    <span className="text-sm font-medium text-text-primary">Web (Móvil)</span>
                 </div>
                 
                 <div className="flex items-center gap-2">
@@ -1184,4 +1184,5 @@ const AdminPanel = ({ onCancel }) => {
 };
 
 export default AdminPanel;
+
 
