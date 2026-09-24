@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { UserCircleIcon, ChatBubbleLeftRightIcon, ChevronLeftIcon, PaperAirplaneIcon, PaperClipIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, ChatBubbleLeftRightIcon, ChevronLeftIcon, PaperAirplaneIcon, PaperClipIcon, CheckCircleIcon, ClockIcon, XMarkIcon, BellAlertIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 import apiClient from '../services/apiClient';
 import { initSocket } from '../services/socket';
 import { useToast } from '../hooks/useToast';
@@ -25,6 +25,7 @@ export default function TrainerChats({ onClose }) {
   const [showBotChats, setShowBotChats] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [touchStartY, setTouchStartY] = useState(null);
+  const [botModalClient, setBotModalClient] = useState(null);
   const [selectedClient, setSelectedClient] = useState(() => {
     const saved = sessionStorage.getItem('trainer_chats_selected_client');
     return saved ? JSON.parse(saved) : null;
@@ -544,7 +545,7 @@ export default function TrainerChats({ onClose }) {
                           return (
                             <div
                               key={client.id}
-                              onClick={() => openChat(client)}
+                              onClick={() => setBotModalClient(client)}
                               className={`relative flex items-center gap-4 p-3 cursor-pointer rounded-[16px] transition-all duration-200 group ${isSelected ? 'bg-accent/10 border border-accent/30' : 'bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10'}`}
                             >
                               <div className="relative shrink-0">
@@ -557,7 +558,7 @@ export default function TrainerChats({ onClose }) {
                               <div className="flex-1 min-w-0">
                                 <h3 className="font-bold text-text-primary truncate text-sm mb-0.5">{client.name || client.username}</h3>
                                 <div className="flex items-center gap-2">
-                                  <button onClick={(e) => executeBotReminder(e, client)} className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full ring-1 transition-all hover:scale-105 active:scale-95 cursor-pointer ${client.bot_color}`}>{client.bot_label} (Forzar)</button>
+                                  <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full ring-1 ${client.bot_color}`}>{client.bot_label}</span>
                                 </div>
                               </div>
                             </div>
@@ -982,11 +983,116 @@ export default function TrainerChats({ onClose }) {
         </div>
       )}
 
+                  {/* BOT SEQUENCE MODAL */}
+      {botModalClient && (
+        <div className="fixed inset-0 z-[200] flex flex-col justify-end md:justify-center items-center px-4 md:px-0">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={() => setBotModalClient(null)} />
+          <div
+            className="relative w-full max-w-md bg-bg-secondary md:rounded-[24px] rounded-t-[32px] p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] md:pb-6 shadow-2xl border-t md:border border-glass-border overflow-hidden flex flex-col max-h-[85vh]"
+            style={{ transform: 'translateY(' + dragY + 'px)', transition: touchStartY !== null ? 'none' : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)' }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={(e) => {
+              if (dragY > 100) setBotModalClient(null);
+              handleTouchEnd();
+            }}
+          >
+            <div className="w-12 h-1.5 bg-glass-border rounded-full mx-auto mb-6 md:hidden shrink-0" />
+            
+            <div className="flex items-center gap-4 mb-6 shrink-0">
+              {botModalClient.profile_image_url ? (
+                <img src={getFullImageUrl(botModalClient.profile_image_url)} alt="Profile" className="w-14 h-14 rounded-full object-cover ring-2 ring-accent/20" />
+              ) : (
+                <UserCircleIcon className="w-14 h-14 text-text-secondary" />
+              )}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-lg text-text-primary truncate">{botModalClient.name || botModalClient.username}</h3>
+                <p className="text-sm text-text-secondary">Secuencia de Inactividad</p>
+              </div>
+              <button onClick={() => setBotModalClient(null)} className="p-2 rounded-full bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 transition-colors hidden md:block">
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto no-scrollbar relative mb-6">
+              <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-glass-border z-0"></div>
+              <div className="space-y-6 relative z-10">
+                {(() => {
+                  const level = botModalClient.lastMessage?.bot_reminder_level || 0;
+                  const lastDate = botModalClient.lastMessage ? new Date(botModalClient.lastMessage.created_at) : new Date();
+                  const diffDays = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
+                  
+                  const renderStep = (stepLevel, title, description, daysLeft, isFinal = false) => {
+                    const isCompleted = level >= stepLevel;
+                    const isActive = level === stepLevel - 1;
+                    
+                    return (
+                      <div className="flex items-start gap-4">
+                        <div className={'w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm z-10 ' + (isCompleted ? 'bg-green-500 text-white' : isActive ? 'bg-accent text-accent-contrast ring-4 ring-accent/20' : 'bg-black/5 dark:bg-white/5 text-text-tertiary border border-glass-border')}>
+                          {isCompleted ? <CheckCircleIcon className="w-6 h-6" /> : <ClockIcon className="w-5 h-5" />}
+                        </div>
+                        <div className={'flex-1 pt-2 ' + (isActive ? 'opacity-100' : 'opacity-70')}>
+                          <h4 className={'font-bold text-sm ' + (isCompleted ? 'text-green-500' : 'text-text-primary')}>{title}</h4>
+                          <p className="text-xs text-text-secondary mt-0.5">{description}</p>
+                          {isCompleted ? (
+                            !isFinal && (
+                              <div className="flex items-center gap-3 mt-2">
+                                <div className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded-md">
+                                  <BellAlertIcon className="w-3 h-3" /> Push Enviado
+                                </div>
+                                <div className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded-md">
+                                  <EnvelopeIcon className="w-3 h-3" /> Email Enviado
+                                </div>
+                              </div>
+                            )
+                          ) : isActive ? (
+                            <div className="mt-2 text-xs font-bold text-accent bg-accent/10 px-3 py-1.5 rounded-lg inline-block">
+                              Se enviará en {Math.max(0, daysLeft)} día(s)
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  };
+
+                  return (
+                    <>
+                      {renderStep(1, "Aviso 1", "¿Continuamos con tu cambio?", 3 - diffDays)}
+                      {renderStep(2, "Aviso 2", "Aún estás a tiempo de empezar 💪", (level === 0 ? 3 - diffDays + 2 : 2 - diffDays))}
+                      {renderStep(3, "Aviso 3", "Último aviso antes de cerrar 🧹", (level === 0 ? 3 - diffDays + 3 : level === 1 ? 2 - diffDays + 1 : 1 - diffDays))}
+                      {renderStep(4, "Cierre", "Se bloqueará la conversación", (level === 0 ? 3 - diffDays + 4 : level === 1 ? 2 - diffDays + 2 : level === 2 ? 1 - diffDays + 1 : 1 - diffDays), true)}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
+            <div className="flex gap-3 shrink-0">
+              <button 
+                onClick={() => {
+                  setBotModalClient(null);
+                  openChat(botModalClient);
+                }}
+                className="flex-1 py-3.5 bg-black/5 dark:bg-white/5 rounded-[16px] font-bold text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+              >
+                Abrir Chat
+              </button>
+              {(botModalClient.lastMessage?.bot_reminder_level || 0) < 3 && (
+                <button 
+                  onClick={(e) => {
+                    executeBotReminder(e, botModalClient);
+                  }}
+                  className="flex-1 py-3.5 bg-accent text-accent-contrast rounded-[16px] font-bold shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <PaperAirplaneIcon className="w-4 h-4" />
+                  Forzar Siguiente
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
-
-
-
-
-
