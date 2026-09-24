@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { UserCircleIcon, ChatBubbleLeftRightIcon, ChevronLeftIcon, PaperAirplaneIcon, PaperClipIcon, CheckCircleIcon, ClockIcon, XMarkIcon, BellAlertIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, ChatBubbleLeftRightIcon, ChevronLeftIcon, PaperAirplaneIcon, PaperClipIcon, CheckCircleIcon, ClockIcon, XMarkIcon, BellAlertIcon, EnvelopeIcon, FireIcon, ArchiveBoxXMarkIcon } from '@heroicons/react/24/outline';
 import apiClient from '../services/apiClient';
 import { initSocket } from '../services/socket';
 import { useToast } from '../hooks/useToast';
@@ -1023,11 +1023,27 @@ export default function TrainerChats({ onClose }) {
               <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-glass-border z-0"></div>
               <div className="space-y-6 relative z-10">
                 {(() => {
-                  const level = botModalClient.lastMessage?.bot_reminder_level || 0;
+                                    const level = botModalClient.lastMessage?.bot_reminder_level || 0;
                   const lastDate = botModalClient.lastMessage ? new Date(botModalClient.lastMessage.created_at) : new Date();
-                  const diffDays = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
                   
-                  const renderStep = (stepLevel, title, description, daysLeft, isFinal = false) => {
+                  const getExactTimeLeft = (requiredDays) => {
+                    const now = new Date();
+                    const targetDate = new Date(lastDate.getTime() + requiredDays * 24 * 60 * 60 * 1000);
+                    const diffMs = targetDate - now;
+                    if (diffMs <= 0) return "Pendiente de envío (11:00 AM)";
+                    
+                    const h = Math.floor(diffMs / (1000 * 60 * 60));
+                    const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    if (h >= 24) {
+                      const d = Math.floor(h / 24);
+                      const rh = h % 24;
+                      return `Se enviará en ${d}d ${rh}h ${m}m`;
+                    }
+                    return `Se enviará en ${h}h ${m}m`;
+                  };
+                  
+                  const renderStep = (stepLevel, title, description, requiredDays, isFinal = false) => {
                     const isCompleted = level >= stepLevel;
                     const isActive = level === stepLevel - 1;
                     
@@ -1038,7 +1054,7 @@ export default function TrainerChats({ onClose }) {
                         </div>
                         <div className={'flex-1 pt-2 ' + (isActive ? 'opacity-100' : 'opacity-70')}>
                           <h4 className={'font-bold text-sm ' + (isCompleted ? 'text-green-500' : 'text-text-primary')}>{title}</h4>
-                          <p className="text-xs text-text-secondary mt-0.5">{description}</p>
+                          <div className="text-xs text-text-secondary mt-0.5 flex items-center gap-1">{description}</div>
                           {isCompleted ? (
                             !isFinal && (
                               <div className="flex items-center gap-3 mt-2">
@@ -1052,7 +1068,7 @@ export default function TrainerChats({ onClose }) {
                             )
                           ) : isActive ? (
                             <div className="mt-2 text-xs font-bold text-accent bg-accent/10 px-3 py-1.5 rounded-lg inline-block">
-                              Se enviará en {Math.max(0, daysLeft)} día(s)
+                              {getExactTimeLeft(requiredDays)}
                             </div>
                           ) : null}
                         </div>
@@ -1062,12 +1078,13 @@ export default function TrainerChats({ onClose }) {
 
                   return (
                     <>
-                      {renderStep(1, "Aviso 1", "¿Continuamos con tu cambio?", 3 - diffDays)}
-                      {renderStep(2, "Aviso 2", "Aún estás a tiempo de empezar 💪", (level === 0 ? 3 - diffDays + 2 : 2 - diffDays))}
-                      {renderStep(3, "Aviso 3", "Último aviso antes de cerrar 🧹", (level === 0 ? 3 - diffDays + 3 : level === 1 ? 2 - diffDays + 1 : 1 - diffDays))}
-                      {renderStep(4, "Cierre", "Se bloqueará la conversación", (level === 0 ? 3 - diffDays + 4 : level === 1 ? 2 - diffDays + 2 : level === 2 ? 1 - diffDays + 1 : 1 - diffDays), true)}
+                      {renderStep(1, "Aviso 1", "¿Continuamos con tu cambio?", 3)}
+                      {renderStep(2, "Aviso 2", <><span className="mr-1">Aún estás a tiempo de empezar</span> <FireIcon className="w-4 h-4 text-orange-500 shrink-0"/></>, level === 0 ? 5 : 2)}
+                      {renderStep(3, "Aviso 3", <><span className="mr-1">Último aviso antes de cerrar</span> <ArchiveBoxXMarkIcon className="w-4 h-4 text-red-500 shrink-0"/></>, level === 0 ? 6 : level === 1 ? 3 : 1)}
+                      {renderStep(4, "Cierre", "Se bloqueará la conversación", level === 0 ? 7 : level === 1 ? 4 : level === 2 ? 2 : 1, true)}
                     </>
                   );
+
                 })()}
               </div>
             </div>
@@ -1101,3 +1118,4 @@ export default function TrainerChats({ onClose }) {
     </div>
   );
 }
+

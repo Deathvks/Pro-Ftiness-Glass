@@ -385,17 +385,17 @@ const WelcomeModal = ({ onClose }) => {
 
               {/* Optimización Extrema */}
               <div className="wm-feature-card wm-feature-4" style={{ border: '1px solid var(--glass-border)' }}>
-                <div className="wm-accent-line" style={{ background: '#f59e0b' }} />
-                <div className="wm-icon-wrap" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                  <Sparkles size={18} style={{ color: '#f59e0b' }} />
+                <div className="wm-accent-line" style={{ background: '#ea580c' }} />
+                <div className="wm-icon-wrap" style={{ background: 'rgba(234,88,12,0.1)', border: '1px solid rgba(234,88,12,0.2)' }}>
+                  <Sparkles size={18} style={{ color: '#ea580c' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f59e0b', margin: '0 0 4px', textTransform: 'uppercase' }}>60 FPS y Fluidez</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#ea580c', margin: '0 0 4px', textTransform: 'uppercase' }}>60 FPS y Fluidez</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
                     Hemos optimizado cada animación y transición. Ahora pasar entre vistas es instantáneo, con gestos ultra-precisos de deslizamiento.
                   </p>
                 </div>
-                <span className="wm-num" style={{ color: '#f59e0b' }}>04</span>
+                <span className="wm-num" style={{ color: '#ea580c' }}>04</span>
               </div>
 
             </div>
@@ -428,3 +428,4 @@ const WelcomeModal = ({ onClose }) => {
 };
 
 export default WelcomeModal;
+
