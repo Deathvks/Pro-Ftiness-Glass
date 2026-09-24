@@ -33,7 +33,16 @@ const ACCENT_OPTIONS = [
   { id: 'slate', label: 'Pizarra', hex: '#64748b' },
   { id: 'zinc', label: 'Zinc', hex: '#71717a' },
   { id: 'stone', label: 'Piedra', hex: '#78716c' },
-  { id: 'neutral', label: 'Neutral', hex: '#737373' }
+  { id: 'mint', label: 'Menta Suave', hex: '#a8e6cf', reqLevel: 5 },
+  { id: 'peach', label: 'Melocotón', hex: '#ffd3b6', reqLevel: 5 },
+  { id: 'rose-water', label: 'Agua de Rosas', hex: '#ffaaa5', reqLevel: 5 },
+  { id: 'lavender', label: 'Lavanda', hex: '#c5a3ff', reqLevel: 5 },
+  { id: 'baby-blue', label: 'Azul Bebé', hex: '#a2cffe', reqLevel: 5 },
+  { id: 'sunset-pink', label: 'Rosa Atardecer', hex: '#ff9a9e', reqLevel: 10 },
+  { id: 'seafoam', label: 'Espuma de Mar', hex: '#96edd1', reqLevel: 10 },
+  { id: 'periwinkle', label: 'Bígaro', hex: '#c5cbe1', reqLevel: 10 },
+  { id: 'lemonade', label: 'Limonada', hex: '#fdfd96', reqLevel: 10 },
+  { id: 'cherry-blossom', label: 'Cerezo', hex: '#fccbcf', reqLevel: 10 },
 ];
 
 const isIOS = () => {
@@ -193,27 +202,41 @@ export default function AppearanceScreen({ setView }) {
             
             <div className={`transition-all duration-300 ${isGalaxyActive || isDesertActive || isOceanActive ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
               <div className="grid grid-cols-6 gap-3 sm:gap-4">
-                {currentColors.map(opt => (
-                  <button
-                    key={opt.id}
-                    onClick={() => setAccent(opt.id)}
-                    title={opt.label}
-                    className="group relative flex justify-center items-center w-full aspect-square"
-                  >
-                    <span
-                      className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
-                      style={{
-                        backgroundColor: opt.hex,
-                        boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
+                {currentColors.map(opt => {
+                  const isLocked = opt.reqLevel && (userProfile?.level || 1) < opt.reqLevel && userProfile?.role !== 'admin';
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => {
+                        if (isLocked) {
+                          addToast(`Desbloquea este color alcanzando el nivel ${opt.reqLevel}`, 'info', 'lock');
+                        } else {
+                          setAccent(opt.id);
+                        }
                       }}
-                    />
-                    {accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && (
-                      <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
-                        <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
-                      </span>
-                    )}
-                  </button>
-                ))}
+                      title={opt.label + (isLocked ? ` (Nivel ${opt.reqLevel})` : '')}
+                      className={`group relative flex justify-center items-center w-full aspect-square ${isLocked ? 'opacity-40 grayscale-[0.3]' : ''}`}
+                    >
+                      <span
+                        className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
+                        style={{
+                          backgroundColor: opt.hex,
+                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
+                        }}
+                      />
+                      {accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked && (
+                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
+                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
+                        </span>
+                      )}
+                      {isLocked && (
+                        <span className="absolute inset-0 flex items-center justify-center text-black/40 dark:text-black/60 pointer-events-none drop-shadow-sm">
+                          <Lock size={16} strokeWidth={2.5} />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
