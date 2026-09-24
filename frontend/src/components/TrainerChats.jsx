@@ -506,7 +506,7 @@ export default function TrainerChats({ onClose }) {
                           {client.lastSeen && (new Date() - new Date(client.lastSeen) < 2 * 60 * 1000) && <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-bg-primary rounded-full"></div>}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1 overflow-hidden">
+                          <div className="flex items-center gap-2 mb-1 min-w-0">
                             <h3 className="font-bold text-text-primary truncate text-sm">{client.name || client.username}</h3>
                             {client.role === 'trainee' && <span className="shrink-0 px-1.5 py-0.5 bg-accent/20 text-accent text-[9px] sm:text-[10px] font-bold uppercase tracking-wider rounded-full ring-1 ring-accent/30">Asesorado</span>}
                           </div>
@@ -521,7 +521,7 @@ export default function TrainerChats({ onClose }) {
                   })
                 )}
 
-                                {isAdmin && botClients.length > 0 && (
+                                {isAdmin && (
                   <div className="mt-6 mb-2">
                     <button 
                       onClick={() => setShowBotChats(!showBotChats)}
@@ -542,7 +542,11 @@ export default function TrainerChats({ onClose }) {
                     
                     <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showBotChats ? 'max-h-[2000px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
                       <div className="flex flex-col gap-2">
-                        {botClients.map((client) => {
+                        {botClients.length === 0 ? (
+                          <div className="p-4 text-center text-xs text-text-secondary opacity-70">
+                            Actualmente no hay chats por gestionar por inactividad.
+                          </div>
+                        ) : botClients.map((client) => {
                           const isSelected = selectedClient?.id === client.id;
                           return (
                             <div
@@ -644,7 +648,7 @@ export default function TrainerChats({ onClose }) {
             >
               <button
               onClick={() => setSelectedClient(null)}
-              className="md:hidden w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-text-primary hover:bg-white/10 transition-colors">
+              className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-text-primary hover:bg-white/10 transition-colors">
               
                 <ChevronLeftIcon className="w-6 h-6 text-text-primary" />
               </button>
