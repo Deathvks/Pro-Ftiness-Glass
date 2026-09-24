@@ -908,12 +908,12 @@ export default function MainAppLayout({
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold transition-all outline-none focus:outline-none ${
                       isAILimitReached 
                         ? 'bg-bg-secondary text-text-muted border border-glass-border opacity-70' 
-                        : 'bg-gradient-to-r from-accent to-accent/80 text-white shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-105 border border-accent'
+                        : 'bg-gradient-to-r from-accent to-accent/80 text-accent-contrast shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-105 border border-accent'
                     }`}
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                     title="Créditos IA"
                   >
-                    <SparklesIcon className={`w-3.5 h-3.5 ${isAILimitReached ? '' : 'text-white drop-shadow-md animate-pulse'}`} />
+                    <SparklesIcon className={`w-3.5 h-3.5 ${isAILimitReached ? '' : 'text-accent-contrast drop-shadow-md animate-pulse'}`} />
                     <span className={isAILimitReached ? '' : 'drop-shadow-md'}>{aiRemaining}/{aiLimit}</span>
                   </button>
               </div>
