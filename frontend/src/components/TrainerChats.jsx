@@ -990,11 +990,16 @@ export default function TrainerChats({ onClose }) {
           <div
             className="relative w-full max-w-md bg-bg-secondary md:rounded-[24px] rounded-t-[32px] p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] md:pb-6 shadow-2xl border-t md:border border-glass-border overflow-hidden flex flex-col max-h-[85vh]"
             style={{ transform: 'translateY(' + dragY + 'px)', transition: touchStartY !== null ? 'none' : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)' }}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={(e) => {
+            onTouchStart={(e) => setTouchStartY(e.touches[0].clientY)}
+            onTouchMove={(e) => {
+              if (touchStartY === null) return;
+              const diff = e.touches[0].clientY - touchStartY;
+              if (diff > 0) setDragY(diff);
+            }}
+            onTouchEnd={() => {
               if (dragY > 100) setBotModalClient(null);
-              handleTouchEnd();
+              setDragY(0);
+              setTouchStartY(null);
             }}
           >
             <div className="w-12 h-1.5 bg-glass-border rounded-full mx-auto mb-6 md:hidden shrink-0" />
