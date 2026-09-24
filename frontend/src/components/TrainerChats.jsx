@@ -21,6 +21,8 @@ export default function TrainerChats({ onClose }) {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [clientToLink, setClientToLink] = useState(null);
+  const [dragY, setDragY] = useState(0);
+  const [touchStartY, setTouchStartY] = useState(null);
   const [selectedClient, setSelectedClient] = useState(() => {
     const saved = sessionStorage.getItem('trainer_chats_selected_client');
     return saved ? JSON.parse(saved) : null;
@@ -780,9 +782,35 @@ export default function TrainerChats({ onClose }) {
     
       {/* Modal Confirmacion Anadir a Asesoria */}
       {clientToLink && (
-        <div className="fixed inset-0 z-[300] flex flex-col justify-end md:justify-center items-center px-0 md:px-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={() => setClientToLink(null)} />
-          <div className="relative w-full max-w-sm bg-bg-secondary md:rounded-[24px] rounded-t-3xl p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] md:pb-6 animate-[slide-up_0.3s_ease-out] shadow-2xl border-t md:border border-glass-border">
+        <div className="fixed inset-0 z-[300] flex flex-col justify-end md:justify-center items-center px-0 md:px-4" style={{ animation: 'fadeIn 0.2s ease-out' }}>
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" 
+            onClick={() => setClientToLink(null)} 
+            style={{ opacity: Math.max(0, 1 - dragY / 300) }}
+          />
+          <div 
+            className="relative w-full max-w-sm bg-bg-secondary md:rounded-[24px] rounded-t-3xl p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] md:pb-6 shadow-2xl border-t md:border border-glass-border"
+            style={{
+              transform: `translateY(${dragY}px)`,
+              transition: touchStartY !== null ? 'none' : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)'
+            }}
+            onTouchStart={(e) => setTouchStartY(e.touches[0].clientY)}
+            onTouchMove={(e) => {
+              if (touchStartY === null) return;
+              const diff = e.touches[0].clientY - touchStartY;
+              if (diff > 0) setDragY(diff);
+            }}
+            onTouchEnd={() => {
+              if (dragY > 100) {
+                setClientToLink(null);
+              }
+              setDragY(0);
+              setTouchStartY(null);
+            }}
+          >
+            {/* Drag Handle para móvil */}
+            <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-5 sm:hidden shrink-0" />
+            
             <h3 className="text-lg font-bold text-text-primary mb-2">Añadir a Asesoría</h3>
             <p className="text-sm text-text-secondary mb-6 leading-relaxed">
               ¿Estás seguro de que deseas vincular a <span className="font-bold text-text-primary">{clientToLink.name}</span> a tu asesoría? Podrás asignarle rutinas y hacerle seguimiento detallado.
