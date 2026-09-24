@@ -188,11 +188,11 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
                 } ${
                     isAILimitReached
                         ? 'bg-bg-secondary text-text-muted border border-glass-border opacity-70 shadow-sm'
-                        : 'bg-gradient-to-r from-accent to-accent/80 text-white shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-[1.02] border border-accent'
+                        : 'bg-gradient-to-r from-accent to-accent/80 text-accent-contrast shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-[1.02] border border-accent'
                 }`}
             >
                 <div className="relative flex items-center justify-center shrink-0">
-                    <SparklesIcon className={`w-5 h-5 ${isAILimitReached ? 'text-text-muted' : 'text-white drop-shadow-md animate-pulse'}`} />
+                    <SparklesIcon className={`w-5 h-5 ${isAILimitReached ? 'text-text-muted' : 'text-accent-contrast drop-shadow-md animate-pulse'}`} />
                 </div>
                 {!isCollapsed && (
                     <div className="flex flex-col items-start min-w-0">
