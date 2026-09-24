@@ -551,8 +551,8 @@ html.galaxy-theme #root::after {
   }
 
   .light-theme input[type="checkbox"]:checked {
-    background-color: var(--color-accent) !important;
-    border-color: var(--color-accent) !important;
+    background-color: var(--text-accent, var(--color-accent)) !important;
+    border-color: var(--text-accent, var(--color-accent)) !important;
   }
 
   input[type="checkbox"]:checked::before {
