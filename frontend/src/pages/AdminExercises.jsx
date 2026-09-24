@@ -1107,7 +1107,7 @@ const AdminExercises = ({ isTrainerMode = false }) => {
                       className="flex-1 py-3.5 bg-accent font-bold rounded-[16px] transition-all active:scale-95 flex justify-center items-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-50"
                     >
                       {isUpdating ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                      Guardar Cambios
+                      <span className="hidden sm:inline">Guardar Cambios</span><span className="sm:hidden">Guardar</span>
                     </button>
                   </div>
                 </div>
@@ -1131,6 +1131,7 @@ const AdminExercises = ({ isTrainerMode = false }) => {
 };
 
 export default AdminExercises;
+
 
 
 

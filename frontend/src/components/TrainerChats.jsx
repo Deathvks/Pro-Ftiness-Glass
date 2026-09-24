@@ -1117,7 +1117,7 @@ export default function TrainerChats({ onClose }) {
                   className="flex-1 py-3.5 bg-accent text-accent-contrast rounded-[16px] font-bold shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
                   <PaperAirplaneIcon className="w-4 h-4" />
-                  Forzar Siguiente
+                  Forzar
                 </button>
               )}
             </div>
@@ -1128,4 +1128,5 @@ export default function TrainerChats({ onClose }) {
     </div>
   );
 }
+
 

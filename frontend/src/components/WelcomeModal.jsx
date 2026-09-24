@@ -187,7 +187,7 @@ const WelcomeModal = ({ onClose }) => {
       `}</style>
 
       {/* Backdrop */}
-      <ModalPortal><div
+      <ModalPortal disableSwipeToClose={true}><div
           className="wm-backdrop fixed inset-0"
           style={{
             zIndex: 150,
@@ -428,5 +428,6 @@ const WelcomeModal = ({ onClose }) => {
 };
 
 export default WelcomeModal;
+
 
 
