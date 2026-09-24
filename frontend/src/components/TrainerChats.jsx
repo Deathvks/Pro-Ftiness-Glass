@@ -780,9 +780,9 @@ export default function TrainerChats({ onClose }) {
     
       {/* Modal Confirmacion Anadir a Asesoria */}
       {clientToLink && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setClientToLink(null)} />
-          <div className="relative bg-bg-secondary w-full max-w-sm rounded-[24px] p-6 shadow-2xl border border-glass-border animate-[slide-up_0.2s_ease-out]">
+        <div className="fixed inset-0 z-[300] flex flex-col justify-end md:justify-center items-center px-0 md:px-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={() => setClientToLink(null)} />
+          <div className="relative w-full max-w-sm bg-bg-secondary md:rounded-[24px] rounded-t-3xl p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] md:pb-6 animate-[slide-up_0.3s_ease-out] shadow-2xl border-t md:border border-glass-border">
             <h3 className="text-lg font-bold text-text-primary mb-2">Añadir a Asesoría</h3>
             <p className="text-sm text-text-secondary mb-6 leading-relaxed">
               ¿Estás seguro de que deseas vincular a <span className="font-bold text-text-primary">{clientToLink.name}</span> a tu asesoría? Podrás asignarle rutinas y hacerle seguimiento detallado.
@@ -790,7 +790,7 @@ export default function TrainerChats({ onClose }) {
             <div className="flex gap-3">
               <button 
                 onClick={() => setClientToLink(null)}
-                className="flex-1 py-3 bg-black/5 dark:bg-white/5 rounded-xl font-bold text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                className="flex-1 py-4 bg-black/5 dark:bg-white/5 rounded-2xl font-bold text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               >
                 Cancelar
               </button>
@@ -799,7 +799,7 @@ export default function TrainerChats({ onClose }) {
                   handleLinkClient(clientToLink.id);
                   setClientToLink(null);
                 }}
-                className="flex-1 py-3 bg-accent text-bg-primary rounded-xl font-bold shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 transition-all"
+                className="flex-1 py-4 bg-accent text-bg-primary rounded-2xl font-bold shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 transition-all"
               >
                 Vincular
               </button>
