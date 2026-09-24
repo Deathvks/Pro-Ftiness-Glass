@@ -120,9 +120,9 @@ const StoryBubble = ({ user, isMe, hasStories, hasUnseen, onClick, onAdd }) => {
                             e.stopPropagation();
                             onAdd();
                         }}
-                        className="absolute bottom-0 right-0 bg-[var(--color-accent)] text-white rounded-full p-[5px] sm:p-1.5 border-[3px] border-bg-primary hover:scale-110 transition-all duration-300 z-20 bg-gradient-to-br from-white/25 to-transparent backdrop-blur-[12px] shadow-[0_4px_15px_var(--color-accent-transparent),inset_0_2px_2px_rgba(255,255,255,0.4)] hover:brightness-110 hover:shadow-[0_8px_20px_var(--color-accent-transparent),inset_0_2px_2px_rgba(255,255,255,0.5)]"
+                        className="absolute bottom-0 right-0 bg-[var(--color-accent)] text-accent-contrast rounded-full p-[5px] sm:p-1.5 border-[3px] border-bg-primary hover:scale-110 transition-all duration-300 z-20 bg-gradient-to-br from-white/25 to-transparent backdrop-blur-[12px] shadow-[0_4px_15px_var(--color-accent-transparent),inset_0_2px_2px_rgba(255,255,255,0.4)] hover:brightness-110 hover:shadow-[0_8px_20px_var(--color-accent-transparent),inset_0_2px_2px_rgba(255,255,255,0.5)]"
                     >
-                        <Plus size={12} strokeWidth={3} />
+                        <Plus size={12} strokeWidth={3} className="text-accent-contrast" />
                     </button>
                 )}
             </div>
@@ -926,7 +926,7 @@ export default function Social({ setView }) {
                                 return (
                                     <UserListItem key={user.id} user={user} onNavigate={goToProfile} action={
                                         !isMe && !isFriend && !hasSentRequest ? (
-                                            <button onClick={(e) => handleSendRequest(e, user.id)} className="p-3 bg-accent/10 text-accent hover:bg-accent hover:text-white rounded-[14px] transition-colors z-10"><UserPlus size={20} /></button>
+                                            <button onClick={(e) => handleSendRequest(e, user.id)} className="p-3 bg-accent/10 text-accent hover:bg-accent hover:text-accent-contrast rounded-[14px] transition-colors z-10"><UserPlus size={20} /></button>
                                         ) : isFriend ? <span className="text-xs font-bold text-green-500 bg-green-500/10 px-3 py-1.5 rounded-lg">Amigo</span> : hasSentRequest ? <span className="text-xs font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-lg">Enviada</span> : isMe ? <span className="text-xs font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-lg">Tú</span> : null
                                     } />
                                 );
