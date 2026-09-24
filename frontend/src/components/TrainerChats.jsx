@@ -26,6 +26,10 @@ export default function TrainerChats({ onClose }) {
   const [dragY, setDragY] = useState(0);
   const [touchStartY, setTouchStartY] = useState(null);
   const [botModalClient, setBotModalClient] = useState(null);
+  const [resendConfirmData, setResendConfirmData] = useState(null);
+  const [resendDragY, setResendDragY] = useState(0);
+  const [resendTouchStartY, setResendTouchStartY] = useState(null);
+  const [isResending, setIsResending] = useState(false);
   const [selectedClient, setSelectedClient] = useState(() => {
     const saved = sessionStorage.getItem('trainer_chats_selected_client');
     return saved ? JSON.parse(saved) : null;
@@ -210,7 +214,24 @@ export default function TrainerChats({ onClose }) {
     }
   };
 
-    const executeBotReminder = async (e, client) => {
+    
+  const handleResendNotification = async () => {
+    if (!resendConfirmData || isResending) return;
+    setIsResending(true);
+    try {
+      const { client, level } = resendConfirmData;
+      const res = await apiClient('/chat/trainer/bot-reminder-resend/' + client.id + '/' + level, { method: 'POST' });
+      addToast('Reenvío completado: Push (' + (res.status?.push || 'error') + '), Email (' + (res.status?.email || 'error') + ')', 'success');
+      setResendConfirmData(null);
+    } catch (e) {
+      console.error(e);
+      addToast('Error al reenviar notificaciones', 'error');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const executeBotReminder = async (e, client) => {
     e.stopPropagation();
     try {
       const levelToExecute = (client.lastMessage?.bot_reminder_level || 0) + 1;
@@ -1120,6 +1141,54 @@ export default function TrainerChats({ onClose }) {
                   Forzar
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {resendConfirmData && (
+        <div className="fixed inset-0 z-[210] flex flex-col justify-end md:justify-center items-center px-4 md:px-0">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={() => setResendConfirmData(null)} />
+          <div
+            className="relative w-full max-w-sm bg-bg-secondary md:rounded-[24px] rounded-t-[32px] p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] md:pb-6 shadow-2xl border-t md:border border-glass-border overflow-hidden flex flex-col"
+            style={{ transform: 'translateY(' + resendDragY + 'px)', transition: resendTouchStartY !== null ? 'none' : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)' }}
+            onTouchStart={(e) => setResendTouchStartY(e.touches[0].clientY)}
+            onTouchMove={(e) => {
+              if (resendTouchStartY === null) return;
+              const diff = e.touches[0].clientY - resendTouchStartY;
+              if (diff > 0) setResendDragY(diff);
+            }}
+            onTouchEnd={() => {
+              if (resendDragY > 100) setResendConfirmData(null);
+              setResendDragY(0);
+              setResendTouchStartY(null);
+            }}
+          >
+            <div className="w-12 h-1.5 bg-glass-border rounded-full mx-auto mb-6 md:hidden shrink-0" />
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <EnvelopeIcon className="w-8 h-8 text-accent" />
+              </div>
+              <h3 className="text-xl font-black text-text-primary mb-2">¿Reenviar avisos?</h3>
+              <p className="text-sm text-text-secondary">
+                Se volverá a enviar la notificación push y el correo del <strong>Aviso {resendConfirmData.level}</strong> a <strong>{resendConfirmData.client.name}</strong>.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setResendConfirmData(null)}
+                className="flex-1 py-3.5 bg-black/5 dark:bg-white/5 rounded-[16px] font-bold text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                disabled={isResending}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleResendNotification}
+                className="flex-1 py-3.5 bg-accent text-accent-contrast rounded-[16px] font-bold shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 transition-all flex items-center justify-center"
+                disabled={isResending}
+              >
+                {isResending ? 'Enviando...' : 'Sí, Reenviar'}
+              </button>
             </div>
           </div>
         </div>

@@ -633,6 +633,62 @@ export const getUnreadCount = async (req, res, next) => {
   }
 };
 
+
+export const resendBotReminder = async (req, res) => {
+  try {
+    const { prospectId, level } = req.params;
+    const parsedLevel = parseInt(level, 10);
+    const models = (await import('../models/index.js')).default;
+    const { User } = models;
+    const prospect = await User.findByPk(prospectId);
+    if (!prospect) return res.status(404).json({ error: 'Cliente no encontrado' });
+
+    let title = '';
+    let text = '';
+    if (parsedLevel === 1) {
+      title = '¿Continuamos con tu cambio?';
+      text = 'Hola, he visto que dejaste el chat abierto. Si tienes cualquier duda sobre la asesoría o quieres empezar, ¡escríbeme por aquí y nos ponemos a ello!';
+    } else if (parsedLevel === 2) {
+      title = 'Aún estás a tiempo de empezar 💪';
+      text = 'Solo te escribo para recordarte que sigo por aquí si necesitas ayuda para dar el primer paso. Si no estás interesado, no te preocupes.';
+    } else if (parsedLevel === 3) {
+      title = 'Último aviso antes de cerrar el chat ⏳';
+      text = 'Si no recibo respuesta en 1 día, cerraré esta conversación para mantener el buzón limpio. Siempre podrás volver a solicitar asesoría más adelante.';
+    } else {
+      return res.status(400).json({ error: 'Nivel inválido' });
+    }
+
+    const status = { push: 'error', notification: 'error', email: 'error' };
+
+    try {
+      const { createNotification } = await import('../services/notificationService.js');
+      await createNotification(prospect.id, {
+        type: 'chat_message',
+        title: title,
+        message: text,
+        data: { url: '/social' }
+      });
+      status.notification = 'ok';
+      status.push = 'ok';
+    } catch (e) {
+      console.error('Error push/notif:', e);
+    }
+
+    try {
+      const { sendBotReminderEmail } = await import('../services/emailService.js');
+      await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, parsedLevel);
+      status.email = 'ok';
+    } catch (e) {
+      console.error('Error email:', e);
+    }
+
+    res.json({ message: 'Recordatorio reenviado', status });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+};
+
 export const sendManualBotReminder = async (req, res) => {
   try {
     const { prospectId, level } = req.params;
