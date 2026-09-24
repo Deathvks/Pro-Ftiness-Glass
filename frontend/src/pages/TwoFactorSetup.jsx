@@ -260,7 +260,7 @@ const TwoFactorSetup = ({ setView }) => {
           
           <button
             onClick={() => setInfoModal(null)}
-            className="w-full py-4 bg-accent text-white font-bold text-lg rounded-[20px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20"
+            className="w-full py-4 bg-accent text-accent-contrast font-bold text-lg rounded-[20px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20"
           >
             Entendido
           </button>
@@ -371,7 +371,7 @@ const TwoFactorSetup = ({ setView }) => {
               onClick={startAppSetup}
             >
               {/* BADGE RECOMENDADO */}
-              <div className="absolute top-0 left-0 bg-accent text-white text-[10px] font-black px-4 py-1.5 rounded-br-[24px] rounded-tl-[32px] z-10 shadow-sm tracking-widest uppercase">
+              <div className="absolute top-0 left-0 bg-accent text-accent-contrast text-[10px] font-black px-4 py-1.5 rounded-br-[24px] rounded-tl-[32px] z-10 shadow-sm tracking-widest uppercase">
                 Recomendado
               </div>
 
@@ -488,7 +488,7 @@ const TwoFactorSetup = ({ setView }) => {
           <button
             onClick={handleVerifyAndEnable}
             disabled={verifyCode.length < 6 || isLoading}
-            className="w-full bg-accent text-white font-bold text-lg py-4 rounded-[20px] hover:shadow-lg hover:shadow-accent/20 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-accent text-accent-contrast font-bold text-lg py-4 rounded-[20px] hover:shadow-lg hover:shadow-accent/20 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isLoading ? <Loader2 size={24} className="animate-spin" /> : 'Verificar y Activar'}
           </button>

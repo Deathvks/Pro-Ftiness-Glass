@@ -559,7 +559,7 @@ export default function TrainerChats({ onClose }) {
                           ) : (
                             <UserCircleIcon className="w-12 h-12 text-text-secondary" />
                           )}
-                          {client.unreadCount > 0 && <div className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full ring-2 ring-bg-primary animate-pulse-soft">{client.unreadCount}</div>}
+                          {client.unreadCount > 0 && <div className="absolute -top-1 -right-1 bg-accent text-accent-contrast text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full ring-2 ring-bg-primary animate-pulse-soft">{client.unreadCount}</div>}
                           {client.lastSeen && (new Date() - new Date(client.lastSeen) < 2 * 60 * 1000) && <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-bg-primary rounded-full"></div>}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -866,7 +866,7 @@ export default function TrainerChats({ onClose }) {
               </button>
               <button 
                 onClick={() => handleEditSubmit(editingMessageId)} 
-                className="flex-1 py-4 rounded-[20px] font-bold text-white bg-accent hover:bg-accent-hover active:scale-95 transition-all shadow-lg shadow-accent/20"
+                className="flex-1 py-4 rounded-[20px] font-bold text-accent-contrast bg-accent hover:bg-accent-hover active:scale-95 transition-all shadow-lg shadow-accent/20"
               >
                 Aplicar Cambios
               </button>

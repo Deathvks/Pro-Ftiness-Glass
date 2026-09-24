@@ -483,11 +483,11 @@ const ManualEntryForm = ({
                 </button>
 
                 {isEditing || editingFavorite ? (
-                    <button type="button" onClick={handleSaveEdited} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-4 rounded-2xl font-extrabold transition-all bg-accent text-white disabled:opacity-50 hover:brightness-110 active:scale-95">
+                    <button type="button" onClick={handleSaveEdited} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-4 rounded-2xl font-extrabold transition-all bg-accent text-accent-contrast disabled:opacity-50 hover:brightness-110 active:scale-95">
                         {isLoading || isUploading ? <Spinner size={24} color="#ffffff" /> : <><Save size={20} className="mr-2" strokeWidth={2.5} /> Guardar Cambios</>}
                     </button>
                 ) : editingListItem ? (
-                    <button type="button" onClick={handleUpdateListItem} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-4 rounded-2xl font-extrabold transition-all bg-accent text-white disabled:opacity-50 hover:brightness-110 active:scale-95">
+                    <button type="button" onClick={handleUpdateListItem} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-4 rounded-2xl font-extrabold transition-all bg-accent text-accent-contrast disabled:opacity-50 hover:brightness-110 active:scale-95">
                         {isLoading || isUploading ? <Spinner size={24} color="#ffffff" /> : <><Save size={20} className="mr-2" strokeWidth={2.5} /> Actualizar Comida</>}
                     </button>
                 ) : (
@@ -495,7 +495,7 @@ const ManualEntryForm = ({
                         <button type="button" onClick={handleAddToList} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-4 rounded-2xl font-extrabold transition-all bg-bg-secondary text-accent border border-glass-border hover:bg-glass-bg active:scale-95 disabled:opacity-50">
                             {isLoading || isUploading ? <Spinner size={24} /> : <><Plus size={20} className="mr-2" strokeWidth={2.5} /> Añadir a la lista</>}
                         </button>
-                        <button type="button" onClick={handleSaveAndClose} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-4 rounded-2xl font-extrabold transition-all bg-accent text-white hover:brightness-110 active:scale-95 disabled:opacity-50">
+                        <button type="button" onClick={handleSaveAndClose} disabled={isLoading || isUploading} className="w-full flex items-center justify-center py-4 rounded-2xl font-extrabold transition-all bg-accent text-accent-contrast hover:brightness-110 active:scale-95 disabled:opacity-50">
                             {isLoading || isUploading ? <Spinner size={24} color="#ffffff" /> : <><Check size={20} className="mr-2" strokeWidth={2.5} /> Añadir y Guardar</>}
                         </button>
                     </div>

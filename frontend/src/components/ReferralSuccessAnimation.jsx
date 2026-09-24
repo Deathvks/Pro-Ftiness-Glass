@@ -76,7 +76,7 @@ const ReferralSuccessAnimation = () => {
 
                     <button
             onClick={handleClose}
-            className="w-full py-4 bg-accent text-white font-bold rounded-xl shadow-lg shadow-accent/20 hover:bg-accent-hover transition-all active:scale-95">
+            className="w-full py-4 bg-accent text-accent-contrast font-bold rounded-xl shadow-lg shadow-accent/20 hover:bg-accent-hover transition-all active:scale-95">
             
                         ¡Genial!
                     </button>

@@ -39,7 +39,7 @@ const NotFoundPage = ({ navigate }) => {
           </button>
           <button
             onClick={() => navigate('dashboard')}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-accent text-white rounded-full font-bold shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-95 transition-all"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-accent text-accent-contrast rounded-full font-bold shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-95 transition-all"
           >
             <Home size={20} />
             Ir al Inicio

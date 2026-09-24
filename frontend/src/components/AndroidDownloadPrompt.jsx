@@ -114,7 +114,7 @@ const AndroidDownloadPrompt = () => {
                             <a
                                 href={downloadUrl}
                                 onClick={handleDownload}
-                                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-accent text-white dark:text-bg-primary rounded-lg font-bold text-sm hover:scale-[1.02] transition-transform shadow-md no-underline"
+                                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-accent text-accent-contrast dark:text-bg-primary rounded-lg font-bold text-sm hover:scale-[1.02] transition-transform shadow-md no-underline"
                             >
                                 <Download size={16} /> Descargar
                             </a>

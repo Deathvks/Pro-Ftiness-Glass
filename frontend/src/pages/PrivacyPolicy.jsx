@@ -68,7 +68,7 @@ const PrivacyPolicy = ({ onBack }) => {
             {/* --- SECCIÓN DESTACADA: Historias --- */}
             <PolicyCard className="md:col-span-2" highlight={true}>
               <div className="flex items-center gap-4 mb-6">
-                <div className="p-3.5 bg-accent text-white rounded-[20px] shadow-lg shadow-accent/30 ring-1 ring-white/20">
+                <div className="p-3.5 bg-accent text-accent-contrast rounded-[20px] shadow-lg shadow-accent/30 ring-1 ring-white/20">
                   <Clock size={28} strokeWidth={2.5} />
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">Historias y Contenido Efímero</h2>

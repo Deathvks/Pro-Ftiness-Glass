@@ -168,7 +168,7 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
                         <button
                             onClick={() => setWeight(100)}
                             className={`flex-1 py-3 px-4 text-xs font-extrabold rounded-xl transition-all duration-300 border ${
-                                weight === 100 ? 'bg-accent text-white border-accent' : 'bg-bg-primary text-text-secondary border-glass-border hover:border-accent/50'
+                                weight === 100 ? 'bg-accent text-accent-contrast border-accent' : 'bg-bg-primary text-text-secondary border-glass-border hover:border-accent/50'
                             }`}
                         >
                             100 g
@@ -177,7 +177,7 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
                             <button
                                 onClick={() => setWeight(food.serving_weight_g)}
                                 className={`flex-1 py-3 px-4 text-xs font-extrabold rounded-xl transition-all duration-300 border ${
-                                    weight === food.serving_weight_g ? 'bg-accent text-white border-accent' : 'bg-bg-primary text-text-secondary border-glass-border hover:border-accent/50'
+                                    weight === food.serving_weight_g ? 'bg-accent text-accent-contrast border-accent' : 'bg-bg-primary text-text-secondary border-glass-border hover:border-accent/50'
                                 }`}
                             >
                                 Ración ({food.serving_weight_g}g)
@@ -210,7 +210,7 @@ const FoodDetailView = ({ food, onClose, onAdd }) => {
                     <button
                         onClick={handleAddToList}
                         disabled={!weight || weight <= 0}
-                        className="w-full py-4 bg-accent text-white font-extrabold rounded-2xl flex items-center justify-center gap-2 transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
+                        className="w-full py-4 bg-accent text-accent-contrast font-extrabold rounded-2xl flex items-center justify-center gap-2 transition-all hover:brightness-110 active:scale-95 disabled:opacity-50"
                     >
                         <Plus size={22} strokeWidth={3} />
                         <span className="text-[15px]">Añadir a la Lista</span>

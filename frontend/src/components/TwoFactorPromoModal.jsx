@@ -56,7 +56,7 @@ const TwoFactorPromoModal = ({ onConfigure, onClose }) => {
             <div className="flex flex-col w-full gap-3">
               <button
                 onClick={handleConfigure}
-                className="w-full py-3 px-4 bg-accent text-white font-bold rounded-lg flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-accent/20">
+                className="w-full py-3 px-4 bg-accent text-accent-contrast font-bold rounded-lg flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-accent/20">
                 
                 Configurar ahora <ArrowRight size={18} />
               </button>

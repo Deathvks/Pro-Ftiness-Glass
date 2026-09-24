@@ -54,7 +54,7 @@ export default function PermissionModal({ isOpen, onClose, permissionName }) {
         <div className="flex flex-col gap-3">
             <button
             onClick={handleOpenSettings}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent py-3 font-semibold text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-accent/20">
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-accent py-3 font-semibold text-accent-contrast transition-all hover:scale-105 active:scale-95 shadow-lg shadow-accent/20">
             
               <ExternalLink size={18} />
               Ir a Ajustes

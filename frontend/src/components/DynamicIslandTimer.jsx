@@ -207,7 +207,7 @@ const DynamicIslandTimer = () => {
                 className={`
                                     px-3 py-1.5 rounded-[14px] flex items-center justify-center transition-all focus:outline-none active:scale-95
                                     ${isRestTimerPaused ?
-                'bg-accent text-white hover:opacity-90 shadow-sm shadow-accent/30' :
+                'bg-accent text-accent-contrast hover:opacity-90 shadow-sm shadow-accent/30' :
                 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'}
                                 `
                 }>
@@ -273,7 +273,7 @@ const DynamicIslandTimer = () => {
 
                             <button
                 onClick={(e) => {e.stopPropagation();togglePauseRestTimer();}}
-                className={`p-4 rounded-full transition-all active:scale-95 ${isRestTimerPaused ? 'bg-accent text-white shadow-lg shadow-accent/30' : 'bg-white/10 text-white ring-1 ring-white/10 hover:bg-white/20'}`}
+                className={`p-4 rounded-full transition-all active:scale-95 ${isRestTimerPaused ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/30' : 'bg-white/10 text-accent-contrast ring-1 ring-white/10 hover:bg-white/20'}`}
                 title={isRestTimerPaused ? "Reanudar" : "Pausar"}>
                 
                                 {isRestTimerPaused ? <Play size={28} fill="currentColor" className="ml-1" /> : <Pause size={28} fill="currentColor" />}

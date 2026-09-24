@@ -474,7 +474,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
                     e.stopPropagation();
                     fileInputRef.current.click();
                   }}
-                  className="!absolute bottom-0 right-0 p-3 bg-accent rounded-[16px] text-white shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-300"
+                  className="!absolute bottom-0 right-0 p-3 bg-accent rounded-[16px] text-accent-contrast shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-300"
                   aria-label="Cambiar foto de perfil"
                 >
                   <Camera size={20} strokeWidth={2.5} />
@@ -589,7 +589,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex items-center justify-center gap-2 px-8 py-4 w-full sm:w-auto min-w-[200px] rounded-[20px] bg-accent text-white font-bold text-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-accent/20"
+                className="flex items-center justify-center gap-2 px-8 py-4 w-full sm:w-auto min-w-[200px] rounded-[20px] bg-accent text-accent-contrast font-bold text-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-accent/20"
               >
                 {isLoading ? (
                   <Spinner size={24} color="white" />
@@ -841,7 +841,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
                       setShowUnsavedModal(false);
                       handleSave({ preventDefault: () => {} });
                     }}
-                    className="w-full py-4 rounded-[16px] font-bold bg-accent text-white hover:bg-accent/90 transition-all active:scale-95 flex items-center justify-center gap-2"
+                    className="w-full py-4 rounded-[16px] font-bold bg-accent text-accent-contrast hover:bg-accent/90 transition-all active:scale-95 flex items-center justify-center gap-2"
                   >
                     <Save size={20} />
                     Aplicar y salir
@@ -894,7 +894,7 @@ const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
         <button type="button" onClick={onCancel} className="text-text-secondary font-bold px-6 py-3.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-[16px] transition-colors active:scale-95">
           Cancelar
         </button>
-        <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-white font-bold px-8 py-3.5 rounded-[20px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20">
+        <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-accent-contrast font-bold px-8 py-3.5 rounded-[20px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20">
           Recortar
         </button>
       </div>

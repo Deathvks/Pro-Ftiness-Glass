@@ -68,7 +68,7 @@ const PixabayModal = ({ isOpen, onClose, onSelectImage }) => {
                     </div>
                     <button
             onClick={() => searchImages(query)}
-            className="bg-accent text-white px-5 py-2.5 rounded-xl font-medium hover:bg-accent/80 transition-colors shadow-lg shadow-accent/20">
+            className="bg-accent text-accent-contrast px-5 py-2.5 rounded-xl font-medium hover:bg-accent/80 transition-colors shadow-lg shadow-accent/20">
             
                         Buscar
                     </button>

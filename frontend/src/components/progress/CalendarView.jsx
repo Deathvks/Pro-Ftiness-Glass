@@ -60,7 +60,7 @@ const CalendarView = ({ setDetailedLog, workouts }) => {
                 onClick={() => handleDayClick(dateStr)}
                 className={`flex items-center justify-center aspect-square rounded-[16px] sm:rounded-full text-sm sm:text-base transition-all duration-300 outline-none
                     ${hasWorkout
-                        ? 'bg-accent text-white font-extrabold shadow-md shadow-accent/30 hover:scale-110 active:scale-95 cursor-pointer ring-2 ring-accent/30'
+                        ? 'bg-accent text-accent-contrast font-extrabold shadow-md shadow-accent/30 hover:scale-110 active:scale-95 cursor-pointer ring-2 ring-accent/30'
                         : isToday 
                             ? 'bg-black/5 dark:bg-white/5 text-text-primary font-bold ring-1 ring-black/10 dark:ring-white/20 opacity-70 cursor-default'
                             : 'text-text-secondary font-medium opacity-50 cursor-default hover:bg-black/5 dark:hover:bg-white/5'

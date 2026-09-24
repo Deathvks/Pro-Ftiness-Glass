@@ -21,7 +21,7 @@ const WaterLogModal = ({ initialQuantity = 0, onSave, onClose, isLoading }) => {
   const handleSave = () => onSave(quantity);
 
   const baseButtonClasses = "px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 active:scale-95";
-  const activeModeClasses = "bg-accent text-white shadow-lg shadow-accent/20";
+  const activeModeClasses = "bg-accent text-accent-contrast shadow-lg shadow-accent/20";
   const inactiveModeClasses = "bg-transparent text-text-secondary hover:text-text-primary";
 
   // Botones circulares con estilo Glass
@@ -127,7 +127,7 @@ const WaterLogModal = ({ initialQuantity = 0, onSave, onClose, isLoading }) => {
         <button
           onClick={handleSave}
           disabled={isLoading}
-          className="flex items-center justify-center w-full mt-10 py-4 rounded-[20px] bg-accent text-white font-bold text-lg shadow-lg shadow-accent/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100">
+          className="flex items-center justify-center w-full mt-10 py-4 rounded-[20px] bg-accent text-accent-contrast font-bold text-lg shadow-lg shadow-accent/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100">
           
           {isLoading ? <Spinner size={24} color="white" /> : 'Guardar Registro'}
         </button>

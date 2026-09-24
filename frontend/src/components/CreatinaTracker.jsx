@@ -294,7 +294,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                                                 <button
                           type="submit"
                           disabled={isSubmitting || !grams}
-                          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-accent text-white font-bold rounded-[20px] hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed transition-all shadow-lg shadow-accent/20">
+                          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-accent text-accent-contrast font-bold rounded-[20px] hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed transition-all shadow-lg shadow-accent/20">
                           
                                                     <Plus size={20} strokeWidth={2.5} />
                                                     {isSubmitting ? 'Guardando...' : 'Añadir Toma'}
@@ -406,7 +406,7 @@ const CreatinaTracker = ({ onClose, selectedDate }) => {
                                 <button type="button" onClick={handleCloseEditModal} disabled={isSubmitting} className="w-full sm:flex-1 px-6 py-4 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary font-bold rounded-[20px] hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95">
                                     Cancelar
                                 </button>
-                                <button type="submit" disabled={isSubmitting || !editGrams} className="w-full sm:flex-[2] flex items-center justify-center gap-2 px-6 py-4 bg-accent text-white font-bold rounded-[20px] hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 transition-all active:scale-95 shadow-lg shadow-accent/20">
+                                <button type="submit" disabled={isSubmitting || !editGrams} className="w-full sm:flex-[2] flex items-center justify-center gap-2 px-6 py-4 bg-accent text-accent-contrast font-bold rounded-[20px] hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 transition-all active:scale-95 shadow-lg shadow-accent/20">
                                     <Save size={20} strokeWidth={2.5} />
                                     {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
                                 </button>

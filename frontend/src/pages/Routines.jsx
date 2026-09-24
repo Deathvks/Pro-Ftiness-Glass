@@ -159,7 +159,7 @@ const GlobalPrivacyModal = ({ onClose }) => {
           <div className="p-6 shrink-0 border-t border-black/5 dark:border-white/10 bg-bg-primary pb-[calc(2rem+var(--safe-bottom))] sm:pb-6 rounded-b-none sm:rounded-b-[32px]">
             <button
               onClick={handleSave}
-              className="w-full py-4 rounded-[20px] font-bold text-sm sm:text-base bg-accent text-white hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20"
+              className="w-full py-4 rounded-[20px] font-bold text-sm sm:text-base bg-accent text-accent-contrast hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20"
             >
               Guardar Cambios
             </button>
@@ -313,7 +313,7 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
                 </div>
                 <button
                   onClick={copyLink}
-                  className="p-3 bg-accent text-white hover:scale-105 active:scale-95 rounded-[16px] transition-all shadow-lg shadow-accent/20"
+                  className="p-3 bg-accent text-accent-contrast hover:scale-105 active:scale-95 rounded-[16px] transition-all shadow-lg shadow-accent/20"
                   title="Copiar enlace"
                 >
                   <Copy size={20} />
@@ -742,13 +742,13 @@ const Routines = ({ setView }) => {
   // --- Nueva función para obtener clases de Píldoras con margen seguro (mx-1.5 y my-2) ---
   const getTabClass = (tabId) => `mx-1.5 my-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap outline-none flex items-center gap-2 ${
     activeTab === tabId
-        ? 'bg-accent text-white shadow-md shadow-accent/30 scale-105'
+        ? 'bg-accent text-accent-contrast shadow-md shadow-accent/30 scale-105'
         : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
   }`;
 
   const getFolderClass = (folderId) => `mx-1.5 my-2 px-5 py-2.5 text-sm font-bold rounded-[20px] transition-all duration-300 whitespace-nowrap flex items-center gap-2 outline-none flex-shrink-0 ${
     selectedFolder === folderId
-        ? 'bg-accent text-white shadow-md shadow-accent/30 scale-105'
+        ? 'bg-accent text-accent-contrast shadow-md shadow-accent/30 scale-105'
         : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
   }`;
 
@@ -788,7 +788,7 @@ const Routines = ({ setView }) => {
             folder: selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : ''
           });
         }}
-        className="flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-white font-bold transition hover:scale-105 shadow-lg shadow-accent/30 flex-1 md:flex-none"
+        className="flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-accent-contrast font-bold transition hover:scale-105 shadow-lg shadow-accent/30 flex-1 md:flex-none"
       >
         <Plus size={18} />
         Crear Rutina
@@ -1092,7 +1092,7 @@ const Routines = ({ setView }) => {
                           className={`w-full inline-flex items-center justify-center gap-2 py-4 rounded-[20px] font-bold text-sm sm:text-base transition-all
                           ${isCompleted || isActive || isBlockedByOtherWorkout
                               ? 'bg-black/5 dark:bg-white/5 text-text-muted cursor-not-allowed'
-                              : 'bg-accent text-white hover:scale-[1.02] active:scale-95 shadow-lg shadow-accent/20'
+                              : 'bg-accent text-accent-contrast hover:scale-[1.02] active:scale-95 shadow-lg shadow-accent/20'
                             }
                         `}
                         >

@@ -187,14 +187,14 @@ const GymBot = ({ isDocked }) => (
 
                 <div className="absolute top-1/2 -left-7 w-12 h-12 flex items-center justify-center origin-right animate-[spin_4s_ease-in-out_infinite_alternate] transform-gpu">
                     <div className="w-full h-2 bg-gray-300 dark:bg-gray-700 absolute right-0 rounded-full"></div>
-                    <div className="absolute left-0 p-1.5 bg-accent rounded-lg shadow-lg text-white transform -rotate-90 border border-white/20">
+                    <div className="absolute left-0 p-1.5 bg-accent rounded-lg shadow-lg text-accent-contrast transform -rotate-90 border border-white/20">
                         <Dumbbell size={18} fill="currentColor" />
                     </div>
                 </div>
 
                 <div className="absolute top-1/2 -right-7 w-12 h-12 flex items-center justify-center origin-left animate-[spin_4s_ease-in-out_infinite_alternate-reverse] transform-gpu">
                     <div className="w-full h-2 bg-gray-300 dark:bg-gray-700 absolute left-0 rounded-full"></div>
-                    <div className="absolute right-0 p-1.5 bg-accent rounded-lg shadow-lg text-white transform rotate-90 border border-white/20">
+                    <div className="absolute right-0 p-1.5 bg-accent rounded-lg shadow-lg text-accent-contrast transform rotate-90 border border-white/20">
                         <Dumbbell size={18} fill="currentColor" />
                     </div>
                 </div>
@@ -471,7 +471,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                                 <button
                                     onClick={onRegister}
-                                    className="text-sm font-bold bg-accent hover:bg-accent/90 text-white px-6 py-2.5 rounded-[16px] transition-all shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-2"
+                                    className="text-sm font-bold bg-accent hover:bg-accent/90 text-accent-contrast px-6 py-2.5 rounded-[16px] transition-all shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-2"
                                 >
                                     Empezar
                                     <ChevronRight size={18} strokeWidth={3} />
@@ -511,7 +511,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto justify-center mb-8">
                                 <button
                                     onClick={onRegister}
-                                    className="group relative inline-flex items-center justify-center gap-3 px-10 py-4 bg-accent hover:bg-accent/90 text-white rounded-[24px] font-bold text-lg transition-all transform hover:-translate-y-1 active:scale-95 shadow-xl shadow-accent/25 ring-1 ring-white/20 overflow-hidden z-20 transform-gpu"
+                                    className="group relative inline-flex items-center justify-center gap-3 px-10 py-4 bg-accent hover:bg-accent/90 text-accent-contrast rounded-[24px] font-bold text-lg transition-all transform hover:-translate-y-1 active:scale-95 shadow-xl shadow-accent/25 ring-1 ring-white/20 overflow-hidden z-20 transform-gpu"
                                 >
                                     <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></span>
                                     Empezar Gratis
@@ -849,7 +849,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                             <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
                                                 <button
                                                     onClick={onRegister}
-                                                    className="w-full sm:w-auto px-12 py-4 bg-accent text-white rounded-[24px] font-black text-xl shadow-xl shadow-accent/30 hover:scale-[1.02] active:scale-95 transition-all duration-300 transform-gpu"
+                                                    className="w-full sm:w-auto px-12 py-4 bg-accent text-accent-contrast rounded-[24px] font-black text-xl shadow-xl shadow-accent/30 hover:scale-[1.02] active:scale-95 transition-all duration-300 transform-gpu"
                                                 >
                                                     Comenzar Gratis
                                                 </button>

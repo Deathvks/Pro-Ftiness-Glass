@@ -473,7 +473,7 @@ const AdminPanel = ({ onCancel }) => {
           <button 
             onClick={handleFreeMemory} 
             disabled={isUpdating}
-            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-accent text-white font-bold hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 active:scale-95 whitespace-nowrap disabled:opacity-50 text-xs sm:text-base w-fit"
+            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-accent text-accent-contrast font-bold hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 active:scale-95 whitespace-nowrap disabled:opacity-50 text-xs sm:text-base w-fit"
             title="Forzar al servidor a liberar memoria RAM no utilizada"
           >
               <RefreshCw size={16} className={isUpdating ? "animate-spin" : ""} />
@@ -486,7 +486,7 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('users')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'users'
-            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
@@ -496,7 +496,7 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('reports')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'reports'
-            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
@@ -509,7 +509,7 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('exercises')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'exercises'
-            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
@@ -519,7 +519,7 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('notifications')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'notifications'
-            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
@@ -529,7 +529,7 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('emails')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'emails'
-            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
@@ -539,7 +539,7 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('uploads')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'uploads'
-            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
@@ -667,7 +667,7 @@ const AdminPanel = ({ onCancel }) => {
                   </button>
                   <button
                     onClick={() => setIsCreatingUser(true)}
-                    className="flex items-center justify-center gap-1.5 px-5 py-3 rounded-full bg-accent text-white font-bold transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap shadow-lg shadow-accent/20"
+                    className="flex items-center justify-center gap-1.5 px-5 py-3 rounded-full bg-accent text-accent-contrast font-bold transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap shadow-lg shadow-accent/20"
                   >
                     <Plus size={18} strokeWidth={2.5} />
                     <span className="hidden sm:inline">Nuevo Usuario</span>

@@ -71,7 +71,7 @@ const ForgotPasswordScreen = ({ showLogin }) => {
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="flex items-center justify-center gap-2 w-full rounded-[20px] bg-accent text-white font-bold text-lg py-4 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-accent/20"
+                                        className="flex items-center justify-center gap-2 w-full rounded-[20px] bg-accent text-accent-contrast font-bold text-lg py-4 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-accent/20"
                                     >
                                         {isLoading ? <Spinner size={24} color="white" /> : (
                                             <>

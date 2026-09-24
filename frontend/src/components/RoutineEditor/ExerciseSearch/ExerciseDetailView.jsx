@@ -437,7 +437,7 @@ const ExerciseDetailView = ({
         {isReplacing ? (
           <button
             onClick={handleAddClick}
-            className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-[20px] font-bold text-base sm:text-lg transition-all hover:scale-[1.02] active:scale-95 bg-accent text-white shadow-lg shadow-accent/20"
+            className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-[20px] font-bold text-base sm:text-lg transition-all hover:scale-[1.02] active:scale-95 bg-accent text-accent-contrast shadow-lg shadow-accent/20"
           >
             <Repeat size={24} />
             {t("exercise_ui:replace_exercise", "Reemplazar Ejercicio")}
@@ -449,7 +449,7 @@ const ExerciseDetailView = ({
             className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-[20px] font-bold text-base sm:text-lg transition-all hover:scale-[1.02] active:scale-95 ${
               isStaged
                 ? "bg-green-500/20 text-green-500 ring-1 ring-green-500/30"
-                : "bg-accent text-white shadow-lg shadow-accent/20"
+                : "bg-accent text-accent-contrast shadow-lg shadow-accent/20"
             }`}
           >
             {isStaged ? (

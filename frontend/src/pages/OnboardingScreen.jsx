@@ -161,7 +161,7 @@ const BigOptionButton = ({ selected, onClick, icon: Icon, title, desc, delay = "
     onClick={onClick}
     className={`w-full p-5 rounded-2xl border transition-all duration-300 flex items-center gap-4 group text-left relative overflow-hidden animate-slide-right ${delay}
     ${selected
-        ? 'bg-accent text-white border-accent shadow-[0_10px_30px_-10px_var(--accent)] scale-[1.02]'
+        ? 'bg-accent text-accent-contrast border-accent shadow-[0_10px_30px_-10px_var(--accent)] scale-[1.02]'
         : 'bg-bg-secondary/40 border-white/10 hover:bg-bg-secondary hover:border-glass-highlight text-text-secondary hover:text-text-primary hover:scale-[1.01]'
       } active:scale-[0.98]`}
   >
@@ -213,7 +213,7 @@ const BottomActionBar = ({ step, totalSteps, handleBack, handleNext, handleCompl
       <button
         onClick={step === totalSteps ? handleComplete : handleNext}
         disabled={disabled || isLoading}
-        className="bg-accent text-white px-8 py-4 rounded-full font-bold shadow-[0_10px_40px_-10px_var(--accent)] flex items-center gap-3 transition-all hover:scale-110 active:scale-90 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none text-lg hover:shadow-[0_20px_50px_-15px_var(--accent)]"
+        className="bg-accent text-accent-contrast px-8 py-4 rounded-full font-bold shadow-[0_10px_40px_-10px_var(--accent)] flex items-center gap-3 transition-all hover:scale-110 active:scale-90 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none text-lg hover:shadow-[0_20px_50px_-15px_var(--accent)]"
       >
         {isLoading ? (
           <>
@@ -512,7 +512,7 @@ const OnboardingScreen = () => {
                       : 'border-glass-border bg-bg-secondary/30 text-text-secondary hover:border-glass-highlight hover:bg-bg-secondary'
                       }`}
                   >
-                    <div className={`p-4 rounded-full transition-colors ${formData.gender === g ? 'bg-accent text-white' : 'bg-bg-primary'}`}>
+                    <div className={`p-4 rounded-full transition-colors ${formData.gender === g ? 'bg-accent text-accent-contrast' : 'bg-bg-primary'}`}>
                       <User size={32} strokeWidth={formData.gender === g ? 3 : 2} />
                     </div>
                     <span className="font-bold text-lg">{g === 'male' ? 'Hombre' : 'Mujer'}</span>

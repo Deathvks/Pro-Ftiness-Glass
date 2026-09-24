@@ -402,7 +402,7 @@ const BugReportModal = ({ onClose }) => {
             type="submit"
             form="bug-form"
             disabled={isSubmitting || !isValid}
-            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-accent text-white font-bold rounded-[20px] shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed transition-all">
+            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-accent text-accent-contrast font-bold rounded-[20px] shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed transition-all">
             
                         {isSubmitting ?
             <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin" /> :

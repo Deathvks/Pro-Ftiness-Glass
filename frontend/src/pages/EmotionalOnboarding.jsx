@@ -230,7 +230,7 @@ const EmotionalOnboarding = ({ onFinish, onBack }) => {
                                 <foreignObject x={xEnd - 40} y={yEnd - (isLoss ? -10 : 45)} width="80" height="40">
                                     <div className="flex flex-col items-center">
                                         {isLoss ? null : <span className="text-white font-bold text-lg leading-none">{formData.targetWeight}</span>}
-                                        <span className="text-[9px] font-bold text-white px-1.5 rounded uppercase bg-accent">Meta</span>
+                                        <span className="text-[9px] font-bold text-accent-contrast px-1.5 rounded uppercase bg-accent">Meta</span>
                                         {isLoss ? <span className="text-white font-bold text-lg leading-none">{formData.targetWeight}</span> : null}
                                     </div>
                                 </foreignObject>

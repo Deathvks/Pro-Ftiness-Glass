@@ -474,7 +474,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                              <button 
                                  onClick={() => { handleDownloadRoutine(viewingRoutine.id); setViewingRoutine(null); }}
                                  disabled={downloadingRoutineId === viewingRoutine.id}
-                                 className="w-full py-4 rounded-[20px] bg-accent hover:scale-[1.02] active:scale-95 text-white font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-accent/20 disabled:opacity-50 disabled:hover:scale-100"
+                                 className="w-full py-4 rounded-[20px] bg-accent hover:scale-[1.02] active:scale-95 text-accent-contrast font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-accent/20 disabled:opacity-50 disabled:hover:scale-100"
                              >
                                  {downloadingRoutineId === viewingRoutine.id ? (
                                      <Spinner size="small" color="white" />
@@ -568,7 +568,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                     <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary mb-2 flex items-center justify-center gap-3">
                         {profile.username}
                         {userStory && (
-                            <span className="text-[10px] bg-accent text-white px-2 py-1 rounded-full uppercase tracking-widest font-black shadow-md shadow-accent/30">
+                            <span className="text-[10px] bg-accent text-accent-contrast px-2 py-1 rounded-full uppercase tracking-widest font-black shadow-md shadow-accent/30">
                                 Historia
                             </span>
                         )}
@@ -591,7 +591,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         {relationshipStatus === 'none' && (
                             <button
                                 onClick={handleSendRequest}
-                                className="flex items-center gap-2 px-6 py-3 bg-accent text-white font-bold rounded-full hover:scale-105 transition-all active:scale-95 outline-none focus:outline-none shadow-lg shadow-accent/20"
+                                className="flex items-center gap-2 px-6 py-3 bg-accent text-accent-contrast font-bold rounded-full hover:scale-105 transition-all active:scale-95 outline-none focus:outline-none shadow-lg shadow-accent/20"
                             >
                                 <UserPlus size={18} />
                                 Añadir Amigo
@@ -625,7 +625,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                         )}
 
                         {relationshipStatus === 'pending_received' && (
-                            <button onClick={handleGoBack} className="flex items-center gap-2 px-6 py-3 bg-accent text-white font-bold rounded-full hover:scale-105 transition-all active:scale-95 outline-none focus:outline-none shadow-lg shadow-accent/20">
+                            <button onClick={handleGoBack} className="flex items-center gap-2 px-6 py-3 bg-accent text-accent-contrast font-bold rounded-full hover:scale-105 transition-all active:scale-95 outline-none focus:outline-none shadow-lg shadow-accent/20">
                                 <UserCheck size={18} />
                                 Responder Solicitud
                             </button>
@@ -841,7 +841,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                                     handleDownloadRoutine(routine.id);
                                                 }}
                                                 disabled={downloadingRoutineId === routine.id}
-                                                className="w-full py-3.5 rounded-[20px] bg-accent hover:scale-[1.02] active:scale-95 text-sm font-bold text-white flex items-center justify-center gap-2 transition-all shadow-lg shadow-accent/20 disabled:opacity-50 disabled:hover:scale-100"
+                                                className="w-full py-3.5 rounded-[20px] bg-accent hover:scale-[1.02] active:scale-95 text-sm font-bold text-accent-contrast flex items-center justify-center gap-2 transition-all shadow-lg shadow-accent/20 disabled:opacity-50 disabled:hover:scale-100"
                                             >
                                                 {downloadingRoutineId === routine.id ? (
                                                     <Spinner size="small" color="white" />

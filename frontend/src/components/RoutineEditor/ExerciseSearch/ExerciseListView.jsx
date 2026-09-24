@@ -132,7 +132,7 @@ const ExerciseListView = ({
           {!isReadOnly && (
             <button
               onClick={onViewSummary}
-              className="relative flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 rounded-full bg-accent text-white font-bold text-sm md:text-base whitespace-nowrap transition-all hover:scale-105 active:scale-95 shadow-lg shadow-accent/20"
+              className="relative flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 rounded-full bg-accent text-accent-contrast font-bold text-sm md:text-base whitespace-nowrap transition-all hover:scale-105 active:scale-95 shadow-lg shadow-accent/20"
             >
               <ListChecks size={18} />
               <span className="hidden sm:inline">{t('exercise_ui:view_cart', 'Ver Selección')}</span>
@@ -261,7 +261,7 @@ const ExerciseListView = ({
             {!isReadOnly && (
               <button
                 onClick={onAddManual}
-                className="w-full flex items-center justify-center gap-3 p-4 rounded-[20px] bg-accent text-white hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20"
+                className="w-full flex items-center justify-center gap-3 p-4 rounded-[20px] bg-accent text-accent-contrast hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20"
               >
                 <Plus size={20} />
                 <span className="font-bold text-base">

@@ -69,7 +69,7 @@ const AIInfoModal = ({ onClose }) => {
         {/* Cabecera */}
         <div className="p-5 flex justify-between items-start relative z-10 border-b border-transparent dark:border-b dark:border-white/10">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-accent text-white shadow-lg shadow-accent/30">
+            <div className="p-3 rounded-2xl bg-accent text-accent-contrast shadow-lg shadow-accent/30">
               <Sparkles className="w-6 h-6" />
             </div>
             <div>
@@ -149,7 +149,7 @@ const AIInfoModal = ({ onClose }) => {
           {/* Botón Cerrar */}
           <button
             onClick={onClose}
-            className="w-full py-3.5 rounded-xl font-bold bg-accent text-white hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20">
+            className="w-full py-3.5 rounded-xl font-bold bg-accent text-accent-contrast hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-accent/20">
             
             Entendido
           </button>

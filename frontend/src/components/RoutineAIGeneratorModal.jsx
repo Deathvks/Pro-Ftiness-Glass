@@ -171,7 +171,7 @@ FORMATO SI ES VÁLIDO:
         <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-4 sm:hidden shrink-0" />
         <div className="p-5 border-b border-glass-border flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-accent text-white shadow-lg shadow-accent/20">
+            <div className="p-2 rounded-xl bg-accent text-accent-contrast shadow-lg shadow-accent/20">
               <Wand2 className="w-5 h-5" />
             </div>
             <div>

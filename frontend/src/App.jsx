@@ -557,7 +557,7 @@ export default function App() {
             </p>
             <button 
               onClick={() => window.location.reload()}
-              className="w-full bg-accent text-white font-bold py-3.5 px-4 rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-md shadow-accent/20"
+              className="w-full bg-accent text-accent-contrast font-bold py-3.5 px-4 rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-md shadow-accent/20"
             >
               Recargar Aplicación
             </button>

@@ -400,7 +400,7 @@ const Progress = ({ darkMode, setView }) => {
                             }}
                             className={`px-5 py-2.5 text-sm font-bold rounded-[20px] transition-all duration-300 whitespace-nowrap outline-none ${
                                 viewType === tab.id 
-                                    ? 'bg-accent text-white shadow-lg shadow-accent/20 scale-[1.02] active-tab' 
+                                    ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02] active-tab' 
                                     : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'
                             }`}
                         >

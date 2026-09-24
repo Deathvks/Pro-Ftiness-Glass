@@ -286,7 +286,7 @@ const ExerciseSummaryView = ({
         <button
           onClick={onFinalize}
           disabled={stagedExercises.length === 0 || !isCartValid}
-          className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-[20px] bg-accent text-white font-bold text-base sm:text-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:active:scale-100 shadow-lg shadow-accent/20"
+          className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-[20px] bg-accent text-accent-contrast font-bold text-base sm:text-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:active:scale-100 shadow-lg shadow-accent/20"
         >
           <Check size={24} strokeWidth={2.5} />
           {t("exercise_ui:add_n_exercises", { count: stagedExercises.length })}

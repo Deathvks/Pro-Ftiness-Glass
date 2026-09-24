@@ -274,7 +274,7 @@ const TransferModal = ({ sourceName, existingManuals = [], onClose, onTransferSu
             <button 
               onClick={handleConfirm} 
               disabled={isSubmitting}
-              className="px-5 py-3 rounded-xl text-sm font-bold bg-accent text-white hover:opacity-90 transition-colors disabled:opacity-50"
+              className="px-5 py-3 rounded-xl text-sm font-bold bg-accent text-accent-contrast hover:opacity-90 transition-colors disabled:opacity-50"
             >
               {isSubmitting ? "Transfiriendo..." : "Transferir"}
             </button>

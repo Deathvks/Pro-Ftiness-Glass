@@ -310,7 +310,7 @@ const TemplateRoutines = ({ setView }) => {
         <div className="flex flex-wrap items-center gap-3">
           <button 
             onClick={() => setShowFilters(!showFilters)} 
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all ${showFilters ? 'bg-accent text-white shadow-md shadow-accent/20' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'}`}
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all ${showFilters ? 'bg-accent text-accent-contrast shadow-md shadow-accent/20' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'}`}
           >
             <Filter size={16} /> Filtros
           </button>
@@ -420,7 +420,7 @@ const TemplateRoutines = ({ setView }) => {
                         </button>
                         <button 
                           onClick={() => handleStartWorkout(routine)} 
-                          className="w-full sm:flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-[16px] bg-accent text-white font-bold hover:scale-[1.02] active:scale-95 transition-all text-base shadow-lg shadow-accent/20"
+                          className="w-full sm:flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-[16px] bg-accent text-accent-contrast font-bold hover:scale-[1.02] active:scale-95 transition-all text-base shadow-lg shadow-accent/20"
                         >
                           <Play size={20} strokeWidth={2.5} fill="currentColor" /> Empezar
                         </button>

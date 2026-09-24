@@ -608,7 +608,7 @@ const StoryViewer = ({ userId, onClose }) => {
 
             <button
             onClick={animateAndClose}
-            className="w-full py-3.5 px-6 bg-accent hover:bg-accent/90 text-white font-bold rounded-xl transition-all transform active:scale-[0.98] shadow-lg shadow-accent/20 relative z-10">
+            className="w-full py-3.5 px-6 bg-accent hover:bg-accent/90 text-accent-contrast font-bold rounded-xl transition-all transform active:scale-[0.98] shadow-lg shadow-accent/20 relative z-10">
             
                 Volver al Feed
             </button>

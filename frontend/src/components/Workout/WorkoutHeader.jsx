@@ -157,7 +157,7 @@ const WorkoutHeader = ({
             className={`p-4 sm:p-5 rounded-full transition-all flex items-center justify-center active:scale-90 ${
               hasWorkoutStarted && !isWorkoutPaused
                 ? 'bg-black/5 dark:bg-white/10 text-text-primary hover:bg-black/10 dark:hover:bg-white/20 ring-1 ring-black/5 dark:ring-white/10'
-                : 'bg-accent text-white hover:scale-105 shadow-lg shadow-accent/40 ring-1 ring-accent/50'
+                : 'bg-accent text-accent-contrast hover:scale-105 shadow-lg shadow-accent/40 ring-1 ring-accent/50'
             }`}
           >
             {isWorkoutPaused ? (

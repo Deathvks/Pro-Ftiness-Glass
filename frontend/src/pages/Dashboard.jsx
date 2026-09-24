@@ -662,7 +662,7 @@ const Dashboard = ({ setView }) => {
               return (
                 <div key={i} className="flex flex-col items-center gap-1.5 flex-1 min-w-[20px]">
                   <span className={`text-[9px] font-bold ${isToday ? 'text-accent' : 'text-text-muted'}`}>{dayLetters[i]}</span>
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${hasWorkout ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-transparent text-transparent border border-glass-border'}`}>
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${hasWorkout ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20' : 'bg-transparent text-transparent border border-glass-border'}`}>
                     {hasWorkout && <Check size={10} strokeWidth={4} />}
                   </div>
                 </div>
@@ -1017,7 +1017,7 @@ const Dashboard = ({ setView }) => {
                   setShowIosReloadModal(false);
                   startThemeTest(10, true);
                 }}
-                className="flex-1 py-3.5 rounded-[20px] font-bold text-white bg-accent hover:bg-accent/90 transition-transform active:scale-95 shadow-lg shadow-accent/20"
+                className="flex-1 py-3.5 rounded-[20px] font-bold text-accent-contrast bg-accent hover:bg-accent/90 transition-transform active:scale-95 shadow-lg shadow-accent/20"
               >
                 {t('Recargar', { defaultValue: 'Recargar' })}
               </button>

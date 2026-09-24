@@ -46,7 +46,7 @@ const PrivacyBanner = ({ privacy, onNavigate }) => {
         <GlassCard id="social-privacy-banner"
             className={`glass max-w-3xl mx-auto w-full mb-8 rounded-[32px] p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-5 border-none transition-all duration-300 hover:shadow-xl ${isPublic ? 'ring-1 ring-accent/30 bg-accent/5' : 'ring-1 ring-black/5 dark:ring-white/10 bg-black/5 dark:bg-white/5'}`}
         >
-            <div className={`p-4 rounded-[24px] text-white shrink-0 shadow-lg ${isPublic ? 'bg-accent shadow-accent/30' : 'bg-gray-500 shadow-gray-500/30'}`}>
+            <div className={`p-4 rounded-[24px] text-accent-contrast shrink-0 shadow-lg ${isPublic ? 'bg-accent shadow-accent/30' : 'bg-gray-500 shadow-gray-500/30'}`}>
                 {isPublic ? <Globe size={28} /> : <Lock size={28} />}
             </div>
 
@@ -188,7 +188,7 @@ const StoryTermsModal = ({ onAccept, onReject }) => {
                             <div className="flex flex-col gap-3 mt-auto">
                                 <button
                                     onClick={onAccept}
-                                    className="w-full py-4 rounded-[20px] font-bold bg-accent text-white shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-95 transition-all text-sm sm:text-base"
+                                    className="w-full py-4 rounded-[20px] font-bold bg-accent text-accent-contrast shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-95 transition-all text-sm sm:text-base"
                                 >
                                     Aceptar y Continuar
                                 </button>
@@ -409,7 +409,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     onClick={() => setPrivacy('friends')}
                                     className={`flex-1 py-3 px-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1 
                                         ${privacy === 'friends'
-                                            ? 'bg-accent text-white ring-accent shadow-lg shadow-accent/20 scale-[1.02]'
+                                            ? 'bg-accent text-accent-contrast ring-accent shadow-lg shadow-accent/20 scale-[1.02]'
                                             : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
                                         }`}
                                 >
@@ -420,7 +420,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     onClick={() => setPrivacy('public')}
                                     className={`flex-1 py-3 px-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1 
                                         ${privacy === 'public'
-                                            ? 'bg-accent text-white ring-accent shadow-lg shadow-accent/20 scale-[1.02]'
+                                            ? 'bg-accent text-accent-contrast ring-accent shadow-lg shadow-accent/20 scale-[1.02]'
                                             : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
                                         }`}
                                 >
@@ -432,7 +432,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                         onClick={toggleHDR}
                                         className={`flex-initial px-4 py-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1
                                             ${isHDR
-                                                ? 'bg-accent text-white ring-accent shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)] animate-pulse-slow'
+                                                ? 'bg-accent text-accent-contrast ring-accent shadow-[0_0_15px_rgba(var(--accent-rgb),0.4)] animate-pulse-slow'
                                                 : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 opacity-60 hover:opacity-100'
                                             }`}
                                     >
@@ -445,7 +445,7 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                             <button
                                 onClick={handleSubmit}
                                 disabled={!file || isUploading}
-                                className="w-full py-4 mt-auto mb-2 bg-accent text-white font-bold rounded-[20px] hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-accent/20"
+                                className="w-full py-4 mt-auto mb-2 bg-accent text-accent-contrast font-bold rounded-[20px] hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-accent/20"
                             >
                                 {isUploading ? <Spinner size={20} color="#ffffff" /> : 'Compartir Historia'}
                             </button>
@@ -470,7 +470,7 @@ const TabButton = ({ id, icon: Icon, label, badge, isActive, onClick }) => (
         onClick={() => onClick(id)}
         className={`flex items-center gap-2 py-2.5 px-5 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-300 flex-shrink-0 outline-none
         ${isActive
-                ? 'bg-accent text-white shadow-md shadow-accent/30 scale-105'
+                ? 'bg-accent text-accent-contrast shadow-md shadow-accent/30 scale-105'
                 : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
             }`}
     >
@@ -864,7 +864,7 @@ export default function Social({ setView }) {
             <div className="space-y-8">
                 <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10">
                     <h3 className="text-2xl font-extrabold text-text-primary mb-6 flex items-center gap-3">
-                        Solicitudes Recibidas {received.length > 0 && <span className="bg-accent text-white text-sm px-3 py-1 rounded-full font-bold shadow-md shadow-accent/20">{received.length}</span>}
+                        Solicitudes Recibidas {received.length > 0 && <span className="bg-accent text-accent-contrast text-sm px-3 py-1 rounded-full font-bold shadow-md shadow-accent/20">{received.length}</span>}
                     </h3>
                     {received.length === 0 ? (
                         <div className="text-center py-12 bg-black/5 dark:bg-white/5 rounded-[24px]">
@@ -908,7 +908,7 @@ export default function Social({ setView }) {
                     <GlassCard className="glass p-3 rounded-full flex items-center gap-3 focus-within:ring-2 focus-within:ring-accent/50 transition-all border-none ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
                         <Search size={22} className="text-text-muted ml-3 shrink-0" />
                         <input type="text" placeholder="Buscar por nombre de usuario..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-transparent border-none outline-none text-text-primary flex-1 min-w-0 font-medium placeholder:text-text-muted py-2" />
-                        <button type="submit" disabled={isSocialLoading} className="bg-accent text-white font-bold px-6 py-3 rounded-full active:scale-95 transition-all shadow-md shadow-accent/20 shrink-0">
+                        <button type="submit" disabled={isSocialLoading} className="bg-accent text-accent-contrast font-bold px-6 py-3 rounded-full active:scale-95 transition-all shadow-md shadow-accent/20 shrink-0">
                             {isSocialLoading ? <Spinner size={20} color="#fff" /> : 'Buscar'}
                         </button>
                     </GlassCard>
@@ -1080,7 +1080,7 @@ export default function Social({ setView }) {
                 <div className="flex flex-col sm:flex-row gap-4">
                     <button
                         onClick={() => setShowCreateSquadModal(true)}
-                        className="flex-1 py-4 bg-accent text-white font-bold rounded-[24px] hover:scale-[1.02] flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-accent/20"
+                        className="flex-1 py-4 bg-accent text-accent-contrast font-bold rounded-[24px] hover:scale-[1.02] flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-accent/20"
                     >
                         <PlusCircle size={20} className="shrink-0" /> <span>Crear Grupo</span>
                     </button>
@@ -1204,7 +1204,7 @@ export default function Social({ setView }) {
                                     <label className="block text-sm font-bold text-text-secondary mb-2 px-1">Descripción (Opcional)</label>
                                     <input type="text" maxLength={100} value={squadForm.description} onChange={e => setSquadForm({ ...squadForm, description: e.target.value })} className={baseInputClasses} placeholder="¿De qué trata este grupo?" />
                                 </div>
-                                <button type="submit" disabled={!squadForm.name.trim()} className="w-full bg-accent text-white font-bold py-4 rounded-[20px] hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all mt-4 shadow-lg shadow-accent/20">Crear Grupo</button>
+                                <button type="submit" disabled={!squadForm.name.trim()} className="w-full bg-accent text-accent-contrast font-bold py-4 rounded-[20px] hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all mt-4 shadow-lg shadow-accent/20">Crear Grupo</button>
                             </form>
                         </GlassCard>
                     </div>
@@ -1231,7 +1231,7 @@ export default function Social({ setView }) {
                                     <label className="block text-sm font-bold text-text-secondary mb-2 px-1">Código de Invitación</label>
                                     <input required type="text" placeholder="Ej: A1B2C3D4" value={squadForm.invite_code} onChange={e => setSquadForm({ ...squadForm, invite_code: e.target.value.toUpperCase() })} className={`${baseInputClasses} font-mono uppercase tracking-widest text-center text-lg`} />
                                 </div>
-                                <button type="submit" disabled={!squadForm.invite_code.trim()} className="w-full bg-accent text-white font-bold py-4 rounded-[20px] hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all mt-4 shadow-lg shadow-accent/20">Unirse</button>
+                                <button type="submit" disabled={!squadForm.invite_code.trim()} className="w-full bg-accent text-accent-contrast font-bold py-4 rounded-[20px] hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all mt-4 shadow-lg shadow-accent/20">Unirse</button>
                             </form>
                         </GlassCard>
                     </div>
