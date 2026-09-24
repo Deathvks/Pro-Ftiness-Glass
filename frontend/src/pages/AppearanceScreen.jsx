@@ -40,7 +40,7 @@ const ACCENT_OPTIONS = [
   { id: 'lavender', label: 'Lavanda', hex: '#c5a3ff', reqLevel: 5 },
   { id: 'baby-blue', label: 'Azul Bebé', hex: '#a2cffe', reqLevel: 5 },
   { id: 'sunset-pink', label: 'Rosa Atardecer', hex: '#ff9a9e', reqLevel: 10 },
-  { id: 'seafoam', label: 'Espuma de Mar', hex: '#96edd1', reqLevel: 10 },
+  { id: 'pistachio', label: 'Pistacho', hex: '#c5e1a5', reqLevel: 10 },
   { id: 'mango', label: 'Mango Pastel', hex: '#ffbe76', reqLevel: 10 },
   { id: 'lemonade', label: 'Limonada', hex: '#fdfd96', reqLevel: 10 },
   { id: 'cherry-blossom', label: 'Cerezo', hex: '#fccbcf', reqLevel: 10 },

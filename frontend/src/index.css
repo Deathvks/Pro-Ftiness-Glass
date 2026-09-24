@@ -368,24 +368,27 @@ html.galaxy-theme #root::after {
   --color-accent: #c5a3ff;
   --color-accent-transparent: rgba(197, 163, 255, 0.12);
   --color-accent-border: rgba(197, 163, 255, 0.28);
+  --btn-accent-text: #000000;
 }
 
 .accent-baby-blue {
   --color-accent: #a2cffe;
   --color-accent-transparent: rgba(162, 207, 254, 0.12);
   --color-accent-border: rgba(162, 207, 254, 0.28);
+  --btn-accent-text: #000000;
 }
 
 .accent-sunset-pink {
   --color-accent: #ff9a9e;
   --color-accent-transparent: rgba(255, 154, 158, 0.12);
   --color-accent-border: rgba(255, 154, 158, 0.28);
+  --btn-accent-text: #000000;
 }
 
-.accent-seafoam {
-  --color-accent: #96edd1;
-  --color-accent-transparent: rgba(150, 237, 209, 0.12);
-  --color-accent-border: rgba(150, 237, 209, 0.28);
+.accent-pistachio {
+  --color-accent: #c5e1a5;
+  --color-accent-transparent: rgba(197, 225, 165, 0.12);
+  --color-accent-border: rgba(197, 225, 165, 0.28);
   --btn-accent-text: #000000;
 }
 

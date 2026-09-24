@@ -170,7 +170,7 @@ const XPGuideModal = ({ onClose }) => {
                                               <div className="flex flex-col min-w-0">
                                                   <span className="font-extrabold text-sm text-text-primary tracking-tight">Nivel 10</span>
                                                   <span className="text-[11px] text-text-secondary mt-0.5 leading-snug">
-                                                      Desbloqueas 5 pasteles vibrantes: Rosa Atardecer, Espuma de Mar, Mango Pastel, Limonada y Cerezo.
+                                                      Desbloqueas 5 pasteles vibrantes: Rosa Atardecer, Pistacho, Mango Pastel, Limonada y Cerezo.
                                                   </span>
                                               </div>
                                           </div>
