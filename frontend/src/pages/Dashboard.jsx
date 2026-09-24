@@ -662,7 +662,7 @@ const Dashboard = ({ setView }) => {
               return (
                 <div key={i} className="flex flex-col items-center gap-1.5 flex-1 min-w-[20px]">
                   <span className={`text-[9px] font-bold ${isToday ? 'text-accent' : 'text-text-muted'}`}>{dayLetters[i]}</span>
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${hasWorkout ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20' : 'bg-transparent text-transparent border border-glass-border'}`}>
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${hasWorkout ? 'bg-accent text-accent-contrast' : 'bg-transparent text-transparent border border-glass-border'}`}>
                     {hasWorkout && <Check size={10} strokeWidth={4} />}
                   </div>
                 </div>
