@@ -140,9 +140,11 @@ const SortableImageItem = ({ img, idx, onRemove, onCrop }) => {
   );
 };
 
-// Componente para animar múltiples fotos
+// Componente para animar múltiples fotos (Optimizado)
 const ImageSlideshow = ({ ex, isShort }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const containerRef = useRef(null);
   
   let images = [];
   if (ex.images && Array.isArray(ex.images) && ex.images.length > 0) {
@@ -156,13 +158,24 @@ const ImageSlideshow = ({ ex, isShort }) => {
   const delayMs = Math.max(1500, 3000 - (images.length * 200)); 
 
   useEffect(() => {
-    if (images.length > 1) {
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsVisible(entry.isIntersecting);
+    }, { rootMargin: '100px' });
+    
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (images.length > 1 && isVisible) {
       const interval = setInterval(() => {
         setCurrentIndex(prev => (prev + 1) % images.length);
       }, delayMs);
       return () => clearInterval(interval);
     }
-  }, [images.length, delayMs]);
+  }, [images.length, delayMs, isVisible]);
 
   if (images.length === 0) {
     if (ex.video_url && (ex.video_url.includes('youtube') || ex.video_url?.includes('youtu.be'))) {
@@ -200,7 +213,7 @@ const ImageSlideshow = ({ ex, isShort }) => {
   };
 
   return (
-    <div className="absolute inset-0 w-full h-full">
+    <div ref={containerRef} className="absolute inset-0 w-full h-full">
       {images.map((url, idx) => (
         <img 
           key={idx}
