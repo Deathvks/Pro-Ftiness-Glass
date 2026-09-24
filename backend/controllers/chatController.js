@@ -636,7 +636,7 @@ export const getUnreadCount = async (req, res, next) => {
 export const sendManualBotReminder = async (req, res) => {
   try {
     const { prospectId, level } = req.params;
-    const trainerId = req.user.id;
+    const trainerId = req.user.userId;
     const parsedLevel = parseInt(level, 10);
 
     const { User, Message } = models;
@@ -766,5 +766,6 @@ sendManualBotReminder
 };
 
 export default chatController;
+
 
 
