@@ -20,6 +20,7 @@ const getFullImageUrl = (path) => {
 export default function TrainerChats({ onClose }) {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [clientToLink, setClientToLink] = useState(null);
   const [selectedClient, setSelectedClient] = useState(() => {
     const saved = sessionStorage.getItem('trainer_chats_selected_client');
     return saved ? JSON.parse(saved) : null;
@@ -550,7 +551,7 @@ export default function TrainerChats({ onClose }) {
                 {/* Botón Vincular si no es trainee */}
               {selectedClient.role !== 'trainee' &&
             <button
-              onClick={() => handleLinkClient(selectedClient.id)}
+              onClick={() => setClientToLink(selectedClient)}
               className="shrink-0 px-3 py-1.5 bg-accent text-bg-primary font-bold text-xs rounded-full hover:bg-accent/90 transition-colors shadow-sm">
               
                   Añadir a Asesoría
