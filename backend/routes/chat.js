@@ -16,3 +16,4 @@ router.get('/unread-count', authenticateToken, chatController.getUnreadCount);
 router.put('/message/:messageId', authenticateToken, chatController.editMessage);
 
 export default router;
+

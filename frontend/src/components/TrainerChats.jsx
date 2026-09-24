@@ -209,6 +209,38 @@ export default function TrainerChats({ onClose }) {
     }
   };
 
+    const executeBotReminder = async (e, client) => {
+    e.stopPropagation();
+    try {
+      const levelToExecute = (client.lastMessage?.bot_reminder_level || 0) + 1;
+      if (levelToExecute > 3) {
+        showToast('El chat se cerrar hoy o ya se ha cerrado.', 'info');
+        return;
+      }
+      
+      const response = await apiClient(\/chat/trainer/bot-reminder/\/\\, { method: 'POST' });
+      const statuses = response.status;
+      
+      showToast(
+        \Push: \ |  +
+        App: \ |  +
+        Email: \\,
+        'success', 
+        { duration: 5000 }
+      );
+
+      // Refresh chat list to update level
+      fetchChats();
+      if (selectedClient?.id === client.id) {
+         setMessages(prev => [...prev, response.newMessage]);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error al enviar el aviso', 'error');
+    }
+  };
+
+
   const openChat = async (client) => {
     setSelectedClient(client);
     setChatLoading(true);
@@ -430,7 +462,7 @@ export default function TrainerChats({ onClose }) {
           <h2 className="font-bold text-text-primary text-sm leading-tight flex items-center gap-2">
             Clientes
             {totalUnread > 0 &&
-            <span className="text-[10px] font-bold bg-accent text-bg-primary px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold bg-accent text-accent-contrast px-2 py-0.5 rounded-full">
                 {totalUnread}
               </span>
             }
@@ -670,7 +702,7 @@ export default function TrainerChats({ onClose }) {
               {selectedClient.role !== 'trainee' &&
             <button
               onClick={() => setClientToLink(selectedClient)}
-              className="shrink-0 px-3 py-1.5 bg-accent text-bg-primary font-bold text-xs rounded-full hover:bg-accent/90 transition-colors shadow-sm">
+              className="shrink-0 px-3 py-1.5 bg-accent text-accent-contrast font-bold text-xs rounded-full hover:bg-accent/90 transition-colors shadow-sm">
               
                   Añadir a Asesoría
                 </button>
@@ -705,7 +737,7 @@ export default function TrainerChats({ onClose }) {
                     )}
                     <div className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
                       <div 
-                        className={`max-w-[75%] rounded-2xl px-3 py-2 relative shadow-sm ${isMe ? 'bg-accent text-bg-primary rounded-tr-sm' : 'glass border border-glass-border text-text-primary rounded-tl-sm'} ${activeMessageOptions === msg.id ? 'ring-2 ring-accent scale-[0.98] transition-transform' : 'transition-transform'}`}
+                        className={`max-w-[75%] rounded-2xl px-3 py-2 relative shadow-sm ${isMe ? 'bg-accent text-accent-contrast rounded-tr-sm' : 'glass border border-glass-border text-text-primary rounded-tl-sm'} ${activeMessageOptions === msg.id ? 'ring-2 ring-accent scale-[0.98] transition-transform' : 'transition-transform'}`}
                         onTouchStart={() => handlePressStart(msg)}
                         onTouchEnd={handlePressEnd}
                         onTouchCancel={handlePressEnd}
@@ -743,7 +775,7 @@ export default function TrainerChats({ onClose }) {
                           {renderMessageContent(msg)}
                         </div>
 
-                        <div className={`text-[9px] mt-0.5 flex items-center justify-end gap-1 ${isMe ? 'text-bg-primary/70' : 'text-text-muted'}`}>
+                        <div className={`text-[9px] mt-0.5 flex items-center justify-end gap-1 ${isMe ? 'text-accent-contrast/70' : 'text-text-muted'}`}>
                           <span>{formatTime(msg.created_at || new Date())}</span>
                           {isMe && (
                             <div className={`flex items-center -space-x-1.5 -mt-0.5 ${msg.read_at ? 'text-blue-500' : 'opacity-70'}`}>
@@ -805,7 +837,7 @@ export default function TrainerChats({ onClose }) {
                 <button
                 type="submit"
                 disabled={!newMessage.trim() || uploading}
-                className="w-12 h-12 shrink-0 rounded-full bg-accent text-bg-primary flex items-center justify-center hover:bg-accent-hover active:scale-95 transition-colors disabled:opacity-50 disabled:grayscale">
+                className="w-12 h-12 shrink-0 rounded-full bg-accent text-accent-contrast flex items-center justify-center hover:bg-accent-hover active:scale-95 transition-colors disabled:opacity-50 disabled:grayscale">
                 
                   <PaperAirplaneIcon className="w-5 h-5 -ml-0.5" />
                 </button>
@@ -943,7 +975,7 @@ export default function TrainerChats({ onClose }) {
                   handleLinkClient(clientToLink.id);
                   setClientToLink(null);
                 }}
-                className="flex-1 py-4 bg-accent text-bg-primary rounded-2xl font-bold shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 transition-all"
+                className="flex-1 py-4 bg-accent text-accent-contrast rounded-2xl font-bold shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 transition-all"
               >
                 Vincular
               </button>
@@ -955,3 +987,6 @@ export default function TrainerChats({ onClose }) {
     </div>
   );
 }
+
+
+

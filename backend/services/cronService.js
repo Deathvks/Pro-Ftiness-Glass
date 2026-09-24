@@ -475,8 +475,7 @@ const checkChatBotReminders = () => {
               sender_id: trainerId,
               receiver_id: prospect.id,
               content: text,
-              bot_reminder_level: nextLevel,
-              created_at: new Date()
+              bot_reminder_level: nextLevel, attachment_type: 'bot_reply', created_at: new Date()
             });
 
             createNotification(prospect.id, {
@@ -511,3 +510,4 @@ export const startCronJobs = () => {
   resetInactiveStreaks();
   checkChatBotReminders(); // <-- Añadido el nuevo vigilante
 };
+

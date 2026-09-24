@@ -156,7 +156,7 @@ const WelcomeModal = ({ onClose }) => {
           border-radius: 18px;
           border: none;
           background: var(--color-accent);
-          color: #fff;
+          color: var(--btn-accent-text, #fff);
           font-weight: 800;
           font-size: 15px;
           letter-spacing: 0.06em;
@@ -283,7 +283,7 @@ const WelcomeModal = ({ onClose }) => {
                 <div className="wm-badge" style={{
                     position: 'absolute', top: '-10px', right: '-22px',
                     background: 'var(--color-accent)',
-                    color: '#fff',
+                    color: 'var(--btn-accent-text, #fff)',
                     fontSize: '9px', fontWeight: 900,
                     letterSpacing: '0.15em',
                     padding: '4px 10px',

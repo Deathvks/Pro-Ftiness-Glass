@@ -633,6 +633,77 @@ export const getUnreadCount = async (req, res, next) => {
   }
 };
 
+export const sendManualBotReminder = async (req, res) => {
+  try {
+    const { prospectId, level } = req.params;
+    const trainerId = req.user.id;
+    const parsedLevel = parseInt(level, 10);
+
+    const { User, Message } = models;
+    const prospect = await User.findByPk(prospectId);
+    if (!prospect) return res.status(404).json({ error: 'Cliente no encontrado' });
+
+    let title = '';
+    let text = '';
+    if (parsedLevel === 1) {
+      title = '¿Continuamos con tu cambio?';
+      text = 'Hola, he visto que dejaste el chat abierto. Si tienes cualquier duda sobre la asesoría o quieres empezar, ¡escríbeme por aquí y nos ponemos a ello!';
+    } else if (parsedLevel === 2) {
+      title = 'Aún estás a tiempo de empezar 💪';
+      text = 'Solo te escribo para recordarte que sigo por aquí si necesitas ayuda para dar el primer paso. Si no estás interesado, no te preocupes.';
+    } else if (parsedLevel === 3) {
+      title = 'Último aviso antes de cerrar el chat 🧹';
+      text = 'Si no recibo respuesta en 1 día, cerraré esta conversación para mantener el buzón limpio. Siempre podrás volver a solicitar asesoría más adelante.';
+    } else {
+      return res.status(400).json({ error: 'Nivel invlido' });
+    }
+
+    const newMessage = await Message.create({
+      sender_id: trainerId,
+      receiver_id: prospect.id,
+      content: text,
+      bot_reminder_level: parsedLevel,
+      attachment_type: 'bot_reply',
+      created_at: new Date()
+    });
+
+    const status = { push: 'error', notification: 'error', email: 'error' };
+
+    try {
+      // In-app notification and push
+      await createNotification(prospect.id, {
+        type: 'chat_message',
+        title: title,
+        message: text,
+        data: { url: '/social' } // Adjust URL if needed
+      });
+      status.notification = 'ok';
+      status.push = 'ok';
+    } catch (e) {
+      console.error('Error push/notif:', e);
+    }
+
+    try {
+      const { sendBotReminderEmail } = await import('../services/emailService.js');
+      await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, parsedLevel);
+      status.email = 'ok';
+    } catch (e) {
+      console.error('Error email:', e);
+    }
+
+    if (io) {
+      io.to(prospect.id.toString()).emit('chat_message', { type: 'refresh' });
+      io.to(trainerId.toString()).emit('chat_message', { type: 'refresh' });
+    }
+
+    res.json({ message: 'Recordatorio enviado', status, newMessage });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
+
 export const runRetroactiveBotReplies = async () => {
   try {
     const requestMessages = await Message.findAll({
@@ -690,7 +761,10 @@ const chatController = {
   uploadAttachment,
   getUnreadCount,
   editMessage,
-  runRetroactiveBotReplies
+  runRetroactiveBotReplies,
+sendManualBotReminder
 };
 
 export default chatController;
+
+
