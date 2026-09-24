@@ -34,6 +34,9 @@ export default {
         'glass-bg': 'var(--glass-bg)',
         'glass-highlight': 'var(--glass-highlight)',
       },
+      textColor: {
+        'accent': 'var(--text-accent, var(--color-accent))',
+      },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
