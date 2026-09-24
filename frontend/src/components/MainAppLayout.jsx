@@ -1121,7 +1121,7 @@ export default function MainAppLayout({
                     : 'Al alcanzar el Nivel 5 has desbloqueado 5 nuevos colores pastel para personalizar tu app.'}
                 </p>
                 <p className="text-text-muted text-xs mb-5">
-                  Ve a <strong>Ajustes → Personalización</strong> para aplicarlos.
+                  Ve a <strong>Hub → Personalización</strong> para aplicarlos.
                 </p>
                 <div className="flex gap-2.5 justify-center mb-6 flex-wrap">
                   {accentUnlockLevel >= 5 && (

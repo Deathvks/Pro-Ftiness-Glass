@@ -78,7 +78,7 @@ const LoginMethodBadge = ({ user }) => {
   return (
     <div title={`Registrado vía ${method.type}`} className={`w-5 h-5 flex items-center justify-center rounded-full overflow-hidden shrink-0 ${method.bg} ring-2 ring-bg-primary relative group`}>
       {method.isApp ? (
-        <span className="text-white text-[10px] font-bold">@</span>
+        <span className="text-accent-contrast text-[10px] font-bold">@</span>
       ) : (
         <img src={method.icon} alt={method.type} className="w-3 h-3 object-contain" />
       )}
