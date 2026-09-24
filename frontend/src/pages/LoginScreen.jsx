@@ -670,15 +670,23 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                                 onChange={(e) => setPassword(e.target.value)}
                             />
 
-                            <div className="flex justify-between items-start mt-2 px-2">
-                                <div className="flex-1">
-                                    {errors.password && <p className="form-error-text text-left text-xs font-medium">{errors.password}</p>}
-                                </div>
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        showForgotPassword();
-                                    }}
+                            <div className="flex flex-col mt-2 px-2 gap-2">
+                                {errors.password && <p className="form-error-text text-left text-xs font-medium">{errors.password}</p>}
+                                <div className="flex justify-between items-center w-full mt-1">
+                                    <label className="flex items-center gap-2 cursor-pointer group">
+                                        <input 
+                                            type="checkbox" 
+                                            className="h-4 w-4 text-accent rounded border-glass-border bg-black/10 dark:bg-white/10 focus:ring-accent focus:ring-offset-bg-primary transition-all cursor-pointer"
+                                            checked={rememberMe}
+                                            onChange={(e) => setRememberMe(e.target.checked)}
+                                        />
+                                        <span className="text-xs font-semibold text-text-secondary group-hover:text-text-primary transition-colors">Recordar sesión</span>
+                                    </label>
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            showForgotPassword();
+                                        }}
                                     type="button"
                                     className="text-xs font-semibold text-text-secondary hover:text-accent transition-colors ml-2 shrink-0"
                                 >
