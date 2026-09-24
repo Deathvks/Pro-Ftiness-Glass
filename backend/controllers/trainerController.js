@@ -203,7 +203,8 @@ export const deleteClient = async (req, res) => {
         if (client.email && !client.email.endsWith('@profitnessglass.internal')) {
             client.trainer_id = null;
             client.role = 'user';
-            await client.save();
+        client.trainer_id = null;
+        await client.save();
             return res.json({ message: 'El usuario ya existía en la app. Se ha desvinculado de tu asesoría correctamente.' });
         }
 
@@ -251,12 +252,7 @@ export const linkClient = async (req, res) => {
         const { clientId } = req.params;
         const user = await User.findOne({ 
             where: { 
-                id: clientId, 
-                role: 'user',
-                [Op.or]: [
-                    { trainer_id: null },
-                    { trainer_id: req.user.userId }
-                ]
+                id: clientId, role: 'user'
             } 
         });
         
