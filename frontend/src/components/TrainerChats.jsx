@@ -1088,15 +1088,19 @@ export default function TrainerChats({ onClose }) {
                           <div className="text-xs text-text-secondary mt-0.5 flex items-center gap-1">{description}</div>
                           {isCompleted ? (
                             !isFinal && (
-                              <div className="flex items-center gap-3 mt-2">
-                                <div className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded-md">
-                                  <BellAlertIcon className="w-3 h-3" /> Push Enviado
-                                </div>
-                                <div className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded-md">
-                                  <EnvelopeIcon className="w-3 h-3" /> Email Enviado
-                                </div>
-                              </div>
-                            )
+  <div 
+    className="flex items-center gap-3 mt-2 cursor-pointer hover:opacity-80 active:scale-95 transition-all p-1 -ml-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
+    onClick={() => setResendConfirmData({ client: botModalClient, level: stepLevel })}
+    title="Toca para reenviar push y correo"
+  >
+    <div className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded-md pointer-events-none">
+      <BellAlertIcon className="w-3 h-3" /> Push Enviado
+    </div>
+    <div className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded-md pointer-events-none">
+      <EnvelopeIcon className="w-3 h-3" /> Email Enviado
+    </div>
+  </div>
+)
                           ) : isActive ? (
                             <div className="mt-2 text-xs font-bold text-accent bg-accent/10 px-3 py-1.5 rounded-lg inline-block">
                               {getExactTimeLeft(requiredDays)}
@@ -1138,7 +1142,7 @@ export default function TrainerChats({ onClose }) {
                   className="flex-1 py-3.5 bg-accent text-accent-contrast rounded-[16px] font-bold shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
                   <PaperAirplaneIcon className="w-4 h-4" />
-                  Forzar
+                  Forzar Aviso {(botModalClient.lastMessage?.bot_reminder_level || 0) + 1}
                 </button>
               )}
             </div>
