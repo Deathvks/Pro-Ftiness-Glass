@@ -538,7 +538,7 @@ export default function App() {
         <meta property="og:site_name" content="Pro Fitness Glass" />
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
-        <meta name="theme-color" content={headerColor} />
+        
       </Helmet>
 
       <VersionUpdater />
