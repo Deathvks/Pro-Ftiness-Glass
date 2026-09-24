@@ -1025,10 +1025,10 @@ export default function MainAppLayout({
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-colors duration-300 ease-out active:scale-90 outline-none focus:outline-none ring-0 ${isVisuallyActive ? 'text-accent-contrast' : 'text-text-secondary'}`}
+                  className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-colors duration-300 ease-out active:scale-90 outline-none focus:outline-none ring-0 ${isVisuallyActive ? 'text-accent' : 'text-text-secondary'}`}
                   style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'both', WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <div className={`transition-all duration-300 ${isVisuallyActive ? 'scale-110 bg-accent rounded-full p-2 shadow-sm' : 'group-hover:scale-110'} relative flex items-center justify-center`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
+                  <div className={`transition-transform duration-300 ${isVisuallyActive ? 'scale-125' : 'group-hover:scale-110'} relative`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
                     {typeof item.icon === 'function' ? item.icon(isVisuallyActive) : item.icon}
                     {pendingCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>}
                     {pendingCount === 0 && item.badge && <span className="absolute -top-1 -right-2 w-2 h-2 bg-accent rounded-full animate-pulse shadow-[0_0_8px_var(--color-accent-transparent)]"></span>}
@@ -1105,8 +1105,8 @@ export default function MainAppLayout({
               {/* Header con drag handle */}
               <div className="shrink-0 p-5 sm:p-6 pb-0 flex flex-col items-center">
                 <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
-                <div className="w-16 h-16 bg-accent text-accent-contrast rounded-full flex items-center justify-center mb-4 shadow-sm">
-                  <Palette size={28} />
+                <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mb-4">
+                  <Palette className="text-accent" size={28} />
                 </div>
                 <h3 className="text-xl font-black mb-2 text-text-primary">
                   {accentUnlockLevel === 10 ? '¡10 Nuevos Colores!' : '¡5 Nuevos Colores!'}

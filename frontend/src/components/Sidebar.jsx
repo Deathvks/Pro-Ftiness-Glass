@@ -15,7 +15,7 @@ const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, 
       isRed
         ? 'text-text-secondary hover:bg-red-500/10 hover:text-red-500'
         : isActive
-        ? 'bg-accent text-accent-contrast shadow-sm translate-x-1'
+        ? 'glass shadow-sm text-accent translate-x-1'
         : 'text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 hover:translate-x-1'
     }`}
   >
