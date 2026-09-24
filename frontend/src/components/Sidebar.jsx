@@ -30,7 +30,7 @@ const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, 
     >
       {typeof icon === 'function' ? icon(isActive) : icon}
       {badgeCount > 0 && (
-        <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]" />
+        <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full border-2 border-black/10 dark:border-[--glass-bg] shadow-sm" />
       )}
       {badgeCount === 0 && badge && (
         <span className="absolute -top-1 -right-2 w-2.5 h-2.5">
@@ -188,7 +188,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
                 } ${
                     isAILimitReached
                         ? 'bg-bg-secondary text-text-muted border border-glass-border opacity-70 shadow-sm'
-                        : 'bg-gradient-to-r from-accent to-accent/80 text-accent-contrast shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-[1.02] border border-accent'
+                        : 'bg-gradient-to-r from-accent to-accent/80 text-accent-contrast shadow-sm dark:shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-[1.02] border border-black/10 dark:border-accent'
                 }`}
             >
                 <div className="relative flex items-center justify-center shrink-0">

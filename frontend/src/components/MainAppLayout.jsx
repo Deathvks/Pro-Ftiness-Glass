@@ -908,7 +908,7 @@ export default function MainAppLayout({
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold transition-all outline-none focus:outline-none ${
                       isAILimitReached 
                         ? 'bg-bg-secondary text-text-muted border border-glass-border opacity-70' 
-                        : 'bg-gradient-to-r from-accent to-accent/80 text-accent-contrast shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-105 border border-accent'
+                        : 'bg-gradient-to-r from-accent to-accent/80 text-accent-contrast shadow-sm dark:shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-105 border border-black/10 dark:border-accent'
                     }`}
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                     title="Créditos IA"
@@ -927,7 +927,7 @@ export default function MainAppLayout({
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <BellIcon className="w-6 h-6" />
-                  {unreadCount > 0 && <span className="absolute top-1.5 right-2 w-3 h-3 bg-accent rounded-full z-10 border-2 border-[--glass-bg]"></span>}
+                  {unreadCount > 0 && <span className="absolute top-1.5 right-2 w-3 h-3 bg-accent rounded-full z-10 border-2 border-black/10 dark:border-[--glass-bg] shadow-sm"></span>}
                 </button>
               </div>
 
@@ -1030,7 +1030,7 @@ export default function MainAppLayout({
                 >
                   <div className={`transition-transform duration-300 ${isVisuallyActive ? 'scale-125' : 'group-hover:scale-110'} relative`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
                     {typeof item.icon === 'function' ? item.icon(isVisuallyActive) : item.icon}
-                    {pendingCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>}
+                    {pendingCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-black/10 dark:border-[--glass-bg] shadow-sm"></span>}
                     {pendingCount === 0 && item.badge && <span className="absolute -top-1 -right-2 w-2 h-2 bg-accent rounded-full animate-pulse shadow-[0_0_8px_var(--color-accent-transparent)]"></span>}
                   </div>
                 </button>
