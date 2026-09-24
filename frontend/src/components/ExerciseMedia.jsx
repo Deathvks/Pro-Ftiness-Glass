@@ -1,7 +1,7 @@
 /* frontend/src/components/ExerciseMedia.jsx */
 import React, { useState, useEffect, memo } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
-import { useAppTheme } from '../hooks/useAppTheme';
+
 
 // Base URL para construir las rutas de imágenes/vídeos
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
@@ -14,7 +14,7 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -
 const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, className = '', fitMode = 'cover', forceAuto = false, forceImage = false, disableAnimation = false }) => {
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
-  const { theme } = useAppTheme();
+  
 
   // --- LÓGICA INTELIGENTE DE EXTRACCIÓN ---
   const rawImageUrl = src || 
@@ -118,8 +118,8 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   const youtubeThumbnail = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
 
   // Lógica de contraste para Oscuro, OLED y Galaxia:
-  const isDarkTheme = theme === 'oled' || theme === 'dark' || theme === 'galaxy';
-  const imageBgClass = isDarkTheme ? 'bg-gray-200' : 'bg-bg-secondary';
+  
+  const imageBgClass = 'bg-bg-secondary dark:bg-gray-200';
   
   // Fondo característico para los placeholders
   const placeholderBgClass = 'bg-accent/10 text-accent';
@@ -184,11 +184,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
       let blendClass = isAuto ? 'object-contain' : `object-${fitMode}`;
       if (url.includes('wger.de')) {
         blendClass = 'object-contain'; // Los dibujos de WGER siempre deben hacer 'contain' para no cortarse
-        if (isDarkTheme) {
-          blendClass += ' filter invert hue-rotate-180 mix-blend-screen';
-        } else {
-          blendClass += ' mix-blend-multiply';
-        }
+        blendClass += ' mix-blend-multiply dark:invert dark:hue-rotate-180 dark:mix-blend-screen';
       }
       return blendClass;
     };
