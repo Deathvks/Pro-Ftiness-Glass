@@ -125,7 +125,9 @@ const NutritionTourGuide = () => {
       }
     });
 
-    const checkModalsAndStart = () => {
+    let retryCount = 0;
+        const MAX_RETRIES = 10;
+        const checkModalsAndStart = () => {
             if (window.location.pathname !== '/nutrition') {
                 timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
                 return;
@@ -150,13 +152,21 @@ const NutritionTourGuide = () => {
 
       // 3. Prioridad: Chequeo de otros modales activos
       const activeModals = Array.from(document.querySelectorAll('.fixed.inset-0')).filter(el => {
-        const style = window.getComputedStyle(el);
-        const zIndex = parseInt(style.zIndex, 10) || 0;
-        return zIndex >= 40 && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
-      });
+                // Excluir overlays del propio driver.js para no bloquearnos a nosotros mismos
+                if (el.classList.contains('driver-active-element') || el.id === 'driver-popover-content' || el.closest('#driver-popover-content')) return false;
+                const style = window.getComputedStyle(el);
+                const zIndex = parseInt(style.zIndex, 10) || 0;
+                return zIndex >= 40 && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+            });
 
-      if (activeModals.length > 0) {
-        timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
+      retryCount++;
+            if (activeModals.length > 0) {
+                if (retryCount >= MAX_RETRIES) {
+                    // Demasiados reintentos — otros modales bloquean el tour. Marcar como completado para no molestar más.
+                    completeNutritionTour();
+                    return;
+                }
+                timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
       } else {
         if (!hasStartedRef.current && driverRef.current) {
           hasStartedRef.current = true;

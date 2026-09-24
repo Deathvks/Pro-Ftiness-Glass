@@ -112,6 +112,8 @@ const HubTourGuide = () => {
             }
         });
 
+        let retryCount = 0;
+        const MAX_RETRIES = 10;
         const checkModalsAndStart = () => {
             if (window.location.pathname !== '/hub') {
                 timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
@@ -126,12 +128,20 @@ const HubTourGuide = () => {
             }
 
             const activeModals = Array.from(document.querySelectorAll('.fixed.inset-0')).filter(el => {
+                // Excluir overlays del propio driver.js para no bloquearnos a nosotros mismos
+                if (el.classList.contains('driver-active-element') || el.id === 'driver-popover-content' || el.closest('#driver-popover-content')) return false;
                 const style = window.getComputedStyle(el);
                 const zIndex = parseInt(style.zIndex, 10) || 0;
                 return zIndex >= 40 && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
             });
 
+            retryCount++;
             if (activeModals.length > 0) {
+                if (retryCount >= MAX_RETRIES) {
+                    // Demasiados reintentos — otros modales bloquean el tour. Marcar como completado para no molestar más.
+                    completeHubTour();
+                    return;
+                }
                 timeoutRef.current = setTimeout(checkModalsAndStart, 1000);
             } else {
                 if (!hasStartedRef.current && driverRef.current) {

@@ -13,6 +13,8 @@ import * as userService from '../services/userService';
 
 // Componentes UI
 import Sidebar from './Sidebar';
+import ModalPortal from './ModalPortal';
+import { Palette } from 'lucide-react';
 import Spinner from './Spinner';
 import PRToast from './PRToast';
 import ConfirmationModal from './ConfirmationModal';
@@ -122,6 +124,8 @@ export default function MainAppLayout({
   })));
 
   const [showAIModal, setShowAIModal] = useState(false);
+  const [showAccentUnlockModal, setShowAccentUnlockModal] = useState(false);
+  const [accentUnlockLevel, setAccentUnlockLevel] = useState(null);
   const [aiRemaining, setAiRemaining] = useState(() => localStorage.getItem('ai_remaining_uses') || '5');
   const [aiLimit, setAiLimit] = useState(() => localStorage.getItem('ai_daily_limit') || '5');
   const [viewResetKey, setViewResetKey] = useState(0);
@@ -674,6 +678,42 @@ export default function MainAppLayout({
     }
   }, [gamificationEvents, clearGamificationEvents, addToast]);
 
+  // --- MODAL DE DESBLOQUEO DE ACENTOS PARA USUARIOS EXISTENTES ---
+  useEffect(() => {
+    if (!userProfile || !gamification) return;
+    const level = gamification.level || 1;
+    const userId = userProfile.id;
+    if (!userId) return;
+
+    const key5 = `accent_unlock_notified_5_${userId}`;
+    const key10 = `accent_unlock_notified_10_${userId}`;
+
+    // Priorizar nivel 10 sobre nivel 5
+    if (level >= 10 && localStorage.getItem(key10) !== 'true') {
+      // Esperar a que se resuelvan otros modales primero
+      const timer = setTimeout(() => {
+        const state = useAppStore.getState();
+        if (!state.showWelcomeModal && !state.show2FAPromo && state.cookieConsent !== null) {
+          setAccentUnlockLevel(10);
+          setShowAccentUnlockModal(true);
+          localStorage.setItem(key10, 'true');
+          localStorage.setItem(key5, 'true'); // También marcar nivel 5
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    } else if (level >= 5 && localStorage.getItem(key5) !== 'true') {
+      const timer = setTimeout(() => {
+        const state = useAppStore.getState();
+        if (!state.showWelcomeModal && !state.show2FAPromo && state.cookieConsent !== null) {
+          setAccentUnlockLevel(5);
+          setShowAccentUnlockModal(true);
+          localStorage.setItem(key5, 'true');
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [userProfile, gamification]);
+
   useEffect(() => {
     if (!userProfile) return;
     
@@ -1051,6 +1091,64 @@ export default function MainAppLayout({
 
       <AndroidDownloadPrompt />
       <APKUpdater />
+      {showAccentUnlockModal && (
+        <ModalPortal>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[100] animate-in fade-in duration-300" onClick={() => setShowAccentUnlockModal(false)}>
+            <div className="bg-bg-primary border border-glass-border rounded-3xl shadow-2xl p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+              <div className="mx-auto w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mb-4">
+                <Palette className="text-accent" size={28} />
+              </div>
+              <h3 className="text-xl font-black mb-2 text-text-primary">
+                {accentUnlockLevel === 10 ? '¡10 Nuevos Colores!' : '¡5 Nuevos Colores!'}
+              </h3>
+              <p className="text-text-secondary mb-2 text-sm">
+                {accentUnlockLevel === 10
+                  ? 'Al alcanzar el Nivel 10 has desbloqueado 5 colores pastel adicionales. ¡Junto con los del Nivel 5, ya tienes los 10 disponibles!'
+                  : 'Al alcanzar el Nivel 5 has desbloqueado 5 nuevos colores pastel para personalizar tu app.'}
+              </p>
+              <p className="text-text-muted text-xs mb-5">
+                Ve a <strong>Ajustes → Personalización</strong> para aplicarlos.
+              </p>
+              <div className="flex gap-2 justify-center mb-5 flex-wrap">
+                {accentUnlockLevel >= 5 && (
+                  <>
+                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#a8e6cf' }} title="Menta Suave" />
+                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#ffd3b6' }} title="Melocotón" />
+                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#ffaaa5' }} title="Agua de Rosas" />
+                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#c5a3ff' }} title="Lavanda" />
+                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#a2cffe' }} title="Azul Bebé" />
+                  </>
+                )}
+                {accentUnlockLevel >= 10 && (
+                  <>
+                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#ff9a9e' }} title="Rosa Atardecer" />
+                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#c5e1a5' }} title="Pistacho" />
+                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#ffbe76' }} title="Mango" />
+                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#fdfd96' }} title="Limonada" />
+                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#fccbcf' }} title="Flor de Cerezo" />
+                  </>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  setShowAccentUnlockModal(false);
+                  navigate('appearance');
+                }}
+                className="w-full py-3 px-4 bg-accent text-accent-contrast font-bold rounded-xl hover:bg-accent/90 transition-all mb-2"
+              >
+                Ir a Personalización
+              </button>
+              <button
+                onClick={() => setShowAccentUnlockModal(false)}
+                className="w-full py-2 px-4 text-text-muted font-medium text-sm"
+              >
+                Ahora no
+              </button>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
       <ReferralSuccessAnimation />
     </div>
   );
