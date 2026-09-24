@@ -684,35 +684,41 @@ export default function MainAppLayout({
     const level = gamification.level || 1;
     const userId = userProfile.id;
     if (!userId) return;
+    
+    // Si hay otros modales bloqueantes, no hacer nada aún
+    if (showWelcomeModal || show2FAPromo || tourActive || cookieConsent === null || showEmailVerificationModal || showCodeVerificationModal || isGlobalModalOpen) return;
 
     const key5 = `accent_unlock_notified_5_${userId}`;
     const key10 = `accent_unlock_notified_10_${userId}`;
 
     // Priorizar nivel 10 sobre nivel 5
     if (level >= 10 && localStorage.getItem(key10) !== 'true') {
-      // Esperar a que se resuelvan otros modales primero
       const timer = setTimeout(() => {
-        const state = useAppStore.getState();
-        if (!state.showWelcomeModal && !state.show2FAPromo && state.cookieConsent !== null) {
-          setAccentUnlockLevel(10);
-          setShowAccentUnlockModal(true);
-          localStorage.setItem(key10, 'true');
-          localStorage.setItem(key5, 'true'); // También marcar nivel 5
-        }
-      }, 3000);
+        setAccentUnlockLevel(10);
+        setShowAccentUnlockModal(true);
+        localStorage.setItem(key10, 'true');
+        localStorage.setItem(key5, 'true');
+      }, 1500);
       return () => clearTimeout(timer);
     } else if (level >= 5 && localStorage.getItem(key5) !== 'true') {
       const timer = setTimeout(() => {
-        const state = useAppStore.getState();
-        if (!state.showWelcomeModal && !state.show2FAPromo && state.cookieConsent !== null) {
-          setAccentUnlockLevel(5);
-          setShowAccentUnlockModal(true);
-          localStorage.setItem(key5, 'true');
-        }
-      }, 3000);
+        setAccentUnlockLevel(5);
+        setShowAccentUnlockModal(true);
+        localStorage.setItem(key5, 'true');
+      }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [userProfile, gamification]);
+  }, [
+    userProfile?.id, 
+    gamification?.level, 
+    showWelcomeModal, 
+    show2FAPromo, 
+    tourActive, 
+    cookieConsent, 
+    showEmailVerificationModal, 
+    showCodeVerificationModal,
+    isGlobalModalOpen
+  ]);
 
   useEffect(() => {
     if (!userProfile) return;
