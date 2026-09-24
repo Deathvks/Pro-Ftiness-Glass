@@ -56,11 +56,14 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
         const hasScroll = isScrollableClass;
         
         if (hasScroll) {
-          if (el.scrollTop > 2) {
-            canSwipe = false;
-            break;
+            // Si el elemento es realmente scrolleable (vertical u horizontal), 
+            // deshabilitamos el swipe-to-close si se inicia el toque sobre l.
+            // As obligamos a que deslicen desde el header para cerrar, evitando cierres accidentales.
+            if (el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth) {
+              canSwipe = false;
+              break;
+            }
           }
-        }
         el = el.parentElement;
       }
     }

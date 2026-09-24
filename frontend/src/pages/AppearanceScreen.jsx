@@ -9,6 +9,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAppTheme } from '../hooks/useAppTheme';
 import GlassCard from '../components/GlassCard';
 import { useToast } from '../hooks/useToast';
+import LevelBadge from '../components/LevelBadge';
 import ConfirmationModal from '../components/ConfirmationModal';
 
 // --- Constantes de Apariencia ---

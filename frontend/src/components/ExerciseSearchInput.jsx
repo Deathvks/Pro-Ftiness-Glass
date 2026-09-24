@@ -37,7 +37,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
   // Al no depender de isSearching, cerramos el teclado (y perdemos foco)
   // sin borrar el texto que el usuario había escrito.
   useEffect(() => {
-    setInputValue(String(initialQuery || ''));
+    // setInputValue(String(initialQuery || '')); // Don't clear text so user doesn't lose it when scrolling/dismissing keyboard
   }, [initialQuery]);
 
   // Maneja el clic fuera para cerrar el dropdown en lugar de usar onBlur
@@ -53,21 +53,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
         const currentVal = inputValue.trim();
         const initialVal = String(initialQuery || '').trim();
 
-        if (currentVal && currentVal !== initialVal && !disableManualAdd) {
-          const fakeExercise = {
-            id: null, 
-            name: currentVal,
-            muscle_group: tMuscle('unknown', { defaultValue: 'N/A' }), 
-            image_url: null, 
-            video_url: null,
-            image_url_start: null,
-            image_url_end: null,
-            is_manual: true 
-          };
-          onExerciseSelect(fakeExercise);
-        } else {
-          setInputValue(String(initialQuery || ''));
-        }
+        setInputValue(String(initialQuery || ''));
       }
     };
 
