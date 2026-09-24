@@ -1093,57 +1093,66 @@ export default function MainAppLayout({
       <APKUpdater />
       {showAccentUnlockModal && (
         <ModalPortal>
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[100] animate-in fade-in duration-300" onClick={() => setShowAccentUnlockModal(false)}>
-            <div className="bg-bg-primary border border-glass-border rounded-3xl shadow-2xl p-6 max-w-sm w-full text-center animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
-              <div className="mx-auto w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mb-4">
-                <Palette className="text-accent" size={28} />
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]" onClick={() => setShowAccentUnlockModal(false)}>
+            <div className="bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-t-[32px] sm:rounded-[32px] w-full max-w-md flex flex-col shadow-2xl overflow-hidden animate-[slide-up_0.3s_ease-out] mt-auto sm:mt-0" onClick={e => e.stopPropagation()}>
+
+              {/* Header con drag handle */}
+              <div className="shrink-0 p-5 sm:p-6 pb-0 flex flex-col items-center">
+                <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
+                <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mb-4">
+                  <Palette className="text-accent" size={28} />
+                </div>
+                <h3 className="text-xl font-black mb-2 text-text-primary">
+                  {accentUnlockLevel === 10 ? '¡10 Nuevos Colores!' : '¡5 Nuevos Colores!'}
+                </h3>
               </div>
-              <h3 className="text-xl font-black mb-2 text-text-primary">
-                {accentUnlockLevel === 10 ? '¡10 Nuevos Colores!' : '¡5 Nuevos Colores!'}
-              </h3>
-              <p className="text-text-secondary mb-2 text-sm">
-                {accentUnlockLevel === 10
-                  ? 'Al alcanzar el Nivel 10 has desbloqueado 5 colores pastel adicionales. ¡Junto con los del Nivel 5, ya tienes los 10 disponibles!'
-                  : 'Al alcanzar el Nivel 5 has desbloqueado 5 nuevos colores pastel para personalizar tu app.'}
-              </p>
-              <p className="text-text-muted text-xs mb-5">
-                Ve a <strong>Ajustes → Personalización</strong> para aplicarlos.
-              </p>
-              <div className="flex gap-2 justify-center mb-5 flex-wrap">
-                {accentUnlockLevel >= 5 && (
-                  <>
-                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#a8e6cf' }} title="Menta Suave" />
-                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#ffd3b6' }} title="Melocotón" />
-                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#ffaaa5' }} title="Agua de Rosas" />
-                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#c5a3ff' }} title="Lavanda" />
-                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#a2cffe' }} title="Azul Bebé" />
-                  </>
-                )}
-                {accentUnlockLevel >= 10 && (
-                  <>
-                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#ff9a9e' }} title="Rosa Atardecer" />
-                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#c5e1a5' }} title="Pistacho" />
-                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#ffbe76' }} title="Mango" />
-                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#fdfd96' }} title="Limonada" />
-                    <span className="w-8 h-8 rounded-full shadow-md" style={{ background: '#fccbcf' }} title="Flor de Cerezo" />
-                  </>
-                )}
+
+              {/* Contenido */}
+              <div className="px-5 sm:px-6 pb-6 pt-2 text-center">
+                <p className="text-text-secondary mb-2 text-sm">
+                  {accentUnlockLevel === 10
+                    ? 'Al alcanzar el Nivel 10 has desbloqueado 5 colores pastel adicionales. ¡Junto con los del Nivel 5, ya tienes los 10 disponibles!'
+                    : 'Al alcanzar el Nivel 5 has desbloqueado 5 nuevos colores pastel para personalizar tu app.'}
+                </p>
+                <p className="text-text-muted text-xs mb-5">
+                  Ve a <strong>Ajustes → Personalización</strong> para aplicarlos.
+                </p>
+                <div className="flex gap-2.5 justify-center mb-6 flex-wrap">
+                  {accentUnlockLevel >= 5 && (
+                    <>
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#a8e6cf' }} title="Menta Suave" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffd3b6' }} title="Melocotón" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffaaa5' }} title="Agua de Rosas" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#c5a3ff' }} title="Lavanda" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#a2cffe' }} title="Azul Bebé" />
+                    </>
+                  )}
+                  {accentUnlockLevel >= 10 && (
+                    <>
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ff9a9e' }} title="Rosa Atardecer" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#c5e1a5' }} title="Pistacho" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffbe76' }} title="Mango" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fdfd96' }} title="Limonada" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fccbcf' }} title="Flor de Cerezo" />
+                    </>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setShowAccentUnlockModal(false);
+                    navigate('appearance');
+                  }}
+                  className="w-full py-3.5 px-4 bg-accent text-accent-contrast font-bold rounded-2xl hover:bg-accent/90 transition-all mb-2 active:scale-[0.97]"
+                >
+                  Ir a Personalización
+                </button>
+                <button
+                  onClick={() => setShowAccentUnlockModal(false)}
+                  className="w-full py-2.5 px-4 text-text-muted font-medium text-sm active:scale-[0.97]"
+                >
+                  Ahora no
+                </button>
               </div>
-              <button
-                onClick={() => {
-                  setShowAccentUnlockModal(false);
-                  navigate('appearance');
-                }}
-                className="w-full py-3 px-4 bg-accent text-accent-contrast font-bold rounded-xl hover:bg-accent/90 transition-all mb-2"
-              >
-                Ir a Personalización
-              </button>
-              <button
-                onClick={() => setShowAccentUnlockModal(false)}
-                className="w-full py-2 px-4 text-text-muted font-medium text-sm"
-              >
-                Ahora no
-              </button>
             </div>
           </div>
         </ModalPortal>
