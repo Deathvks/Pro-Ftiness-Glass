@@ -154,6 +154,15 @@ export const getChatHistory = async (req, res, next) => {
       }
     }
 
+    if (requestor && requestor.role === 'user') {
+      whereCondition = {
+        [Op.and]: [
+          whereCondition,
+          { [Op.or]: [{ is_closed: false }, { is_closed: null }] }
+        ]
+      };
+    }
+
     const messages = await Message.findAll({
       where: whereCondition,
       order: [['created_at', 'ASC']],

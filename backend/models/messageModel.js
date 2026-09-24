@@ -31,6 +31,14 @@ const Message = sequelize.define('Message', {
   attachment_type: {
     type: DataTypes.STRING,
     allowNull: true,
+  },
+  is_closed: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  bot_reminder_level: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
   }
 }, {
   tableName: 'messages',

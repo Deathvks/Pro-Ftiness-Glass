@@ -21,6 +21,8 @@ export default function TrainerChats({ onClose }) {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [clientToLink, setClientToLink] = useState(null);
+  const [showClosedChats, setShowClosedChats] = useState(false);
+  const [showBotChats, setShowBotChats] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [touchStartY, setTouchStartY] = useState(null);
   const [selectedClient, setSelectedClient] = useState(() => {
@@ -440,84 +442,193 @@ export default function TrainerChats({ onClose }) {
           <div className="flex justify-center p-8">
               <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
             </div> :
-          clients.length === 0 ?
-          <div className="p-8 text-center text-text-secondary">
-              No tienes clientes asignados aún.
-            </div> :
+                    (() => {
+            const activeClients = clients.filter(c => !c.is_chat_closed);
+            const closedClients = clients.filter(c => c.is_chat_closed);
 
-          clients.map((client) => {
-            const isSelected = selectedClient?.id === client.id;
-            return (
-              <div
-                key={client.id}
-                onClick={() => openChat(client)}
-                className={`relative flex items-center gap-4 p-3 sm:p-4 cursor-pointer rounded-[20px] transition-all duration-300 group overflow-hidden
-                  ${isSelected ?
-                'bg-accent/10 border border-accent/30 shadow-[0_4px_20px_-5px_rgba(239,68,68,0.15)]' :
-                'bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10 hover:border-black/10 dark:hover:border-white/10'}`
-                }>
+            let botClients = [];
+            if (isAdmin) {
+              botClients = activeClients.filter(c => c.role === 'user').map(client => {
+                const level = client.lastMessage?.bot_reminder_level || 0;
+                const diffDays = client.lastMessage ? Math.floor((new Date() - new Date(client.lastMessage.created_at)) / (1000 * 60 * 60 * 24)) : 0;
                 
-                {isSelected &&
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-accent rounded-r-full shadow-[0_0_10px_rgba(239,68,68,0.8)]"></div>
+                let urgency = 999;
+                let label = '';
+                let color = '';
+                
+                if (level === 0) {
+                  urgency = 3 - diffDays;
+                  label = `Aviso 1 en ${Math.max(0, urgency)}d`;
+                  color = 'text-yellow-500 bg-yellow-500/10 ring-yellow-500/30';
+                } else if (level === 1) {
+                  urgency = 2 - diffDays;
+                  label = `Aviso 2 en ${Math.max(0, urgency)}d`;
+                  color = 'text-orange-500 bg-orange-500/10 ring-orange-500/30';
+                } else if (level === 2) {
+                  urgency = 1 - diffDays;
+                  label = `Aviso 3 en ${Math.max(0, urgency)}d`;
+                  color = 'text-red-500 bg-red-500/10 ring-red-500/30';
+                } else if (level === 3) {
+                  urgency = 1 - diffDays;
+                  label = `Cierre en ${Math.max(0, urgency)}d`;
+                  color = 'text-red-600 bg-red-600/20 ring-red-600/50 animate-pulse';
                 }
                 
-                <div className="relative shrink-0">
-                  {client.profile_image_url ?
-                  <img src={getFullImageUrl(client.profile_image_url)} alt={client.name} className="w-12 h-12 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10" referrerPolicy="no-referrer" /> :
-
-                  <UserCircleIcon className="w-12 h-12 text-text-secondary" />
-                  }
-                  {client.unreadCount > 0 &&
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow">
-                      {client.unreadCount}
-                    </span>
-                  }
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-baseline mb-0.5">
-                    <h3 className={`font-bold text-[15px] line-clamp-1 flex-1 ${client.unreadCount > 0 ? 'text-accent' : 'text-text-primary'}`}>{client.name}</h3>
-                      {client.lastMessage &&
-                      <span className="text-[10px] text-text-muted shrink-0 ml-2">
-                        {formatLastMessageDate(client.lastMessage.created_at)}
-                        </span>
-                      }
+                return { ...client, bot_urgency: urgency, bot_label: label, bot_color: color };
+              }).filter(c => c.bot_urgency <= 2); // Show those approaching action (<= 2 days)
+              
+              botClients.sort((a, b) => a.bot_urgency - b.bot_urgency);
+            }
+            
+            return (
+              <>
+                {activeClients.length === 0 ? (
+                  <div className="p-8 text-center text-text-secondary">
+                    No tienes clientes activos aún.
                   </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className={`text-[13px] line-clamp-2 flex-1 flex items-center min-w-0 ${client.unreadCount > 0 ? 'font-bold text-text-primary' : 'text-text-secondary'}`}>
-                          {client.lastMessage ? (
-                            <span className="flex items-center gap-1 w-full">
-                              {String(client.lastMessage.sender_id) !== String(client.id) && (
-                                <div className={`flex items-center -space-x-1.5 shrink-0 ${client.lastMessage.read_at ? 'text-blue-500' : 'text-text-muted'}`}>
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-                                </div>
-                              )}
-                              <span className="truncate flex-1">
-                                {client.lastMessage.content ? client.lastMessage.content : '📷 Archivo adjunto'}
-                              </span>
-                            </span>
+                ) : (
+                  activeClients.map((client) => {
+                    const isSelected = selectedClient?.id === client.id;
+                    return (
+                      <div
+                        key={client.id}
+                        onClick={() => openChat(client)}
+                        className={`relative flex items-center gap-4 p-3 sm:p-4 cursor-pointer rounded-[20px] transition-all duration-300 group overflow-hidden ${isSelected ? 'bg-accent/10 border border-accent/30 shadow-[0_4px_20px_-5px_rgba(239,68,68,0.15)]' : 'bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10 hover:border-black/10 dark:hover:border-white/10'}`}
+                      >
+                        {isSelected && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-accent rounded-r-full shadow-[0_0_10px_rgba(239,68,68,0.8)]"></div>}
+                        <div className="relative shrink-0">
+                          {client.profile_image_url ? (
+                            <img src={getFullImageUrl(client.profile_image_url)} alt={client.name} className="w-12 h-12 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10" referrerPolicy="no-referrer" />
                           ) : (
-                            'Sin mensajes aún'
+                            <UserCircleIcon className="w-12 h-12 text-text-secondary" />
+                          )}
+                          {client.unreadCount > 0 && <div className="absolute -top-1 -right-1 bg-accent text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full ring-2 ring-bg-primary animate-pulse-soft">{client.unreadCount}</div>}
+                          {client.lastSeen && (new Date() - new Date(client.lastSeen) < 2 * 60 * 1000) && <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-bg-primary rounded-full"></div>}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 overflow-hidden">
+                            <h3 className="font-bold text-text-primary truncate text-sm">{client.name || client.username}</h3>
+                            {client.role === 'trainee' && <span className="shrink-0 px-1.5 py-0.5 bg-accent/20 text-accent text-[9px] sm:text-[10px] font-bold uppercase tracking-wider rounded-full ring-1 ring-accent/30">Asesorado</span>}
+                          </div>
+                          {client.lastMessage && (
+                            <p className="text-xs text-text-secondary truncate pr-4 opacity-80 font-medium">
+                              {String(client.lastMessage.sender_id) === String(userId) ? 'Tú: ' : ''}{client.lastMessage.attachment_type === 'bot_reply' ? '🤖 Respuesta automática' : client.lastMessage.attachment_url ? '📎 Archivo adjunto' : client.lastMessage.content}
+                            </p>
                           )}
                         </div>
-                        {client.unreadCount > 0 &&
-                      <div className="w-3 h-3 rounded-full bg-accent shrink-0 shadow-sm animate-pulse shadow-accent/50 ml-1"></div>
-                      }
+                      </div>
+                    );
+                  })
+                )}
+
+                                {isAdmin && botClients.length > 0 && (
+                  <div className="mt-6 mb-2">
+                    <button 
+                      onClick={() => setShowBotChats(!showBotChats)}
+                      className="flex items-center justify-between w-full p-4 bg-black/5 dark:bg-white/5 rounded-[20px] hover:bg-black/10 dark:hover:bg-white/10 transition-colors border border-glass-border shadow-sm"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                        </div>
+                        <span className="font-bold text-sm text-text-primary">Secuencia Bot ({botClients.length})</span>
+                      </div>
+                      <svg className={`w-5 h-5 text-text-secondary transition-transform duration-300 ${showBotChats ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showBotChats ? 'max-h-[2000px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+                      <div className="flex flex-col gap-2">
+                        {botClients.map((client) => {
+                          const isSelected = selectedClient?.id === client.id;
+                          return (
+                            <div
+                              key={client.id}
+                              onClick={() => openChat(client)}
+                              className={`relative flex items-center gap-4 p-3 cursor-pointer rounded-[16px] transition-all duration-200 group ${isSelected ? 'bg-accent/10 border border-accent/30' : 'bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10'}`}
+                            >
+                              <div className="relative shrink-0">
+                                {client.profile_image_url ? (
+                                  <img src={getFullImageUrl(client.profile_image_url)} alt={client.name} className="w-10 h-10 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <UserCircleIcon className="w-10 h-10 text-text-secondary" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-text-primary truncate text-sm mb-0.5">{client.name || client.username}</h3>
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full ring-1 ${client.bot_color}`}>
+                                    {client.bot_label}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  {isAdmin && (
-                    <p className="text-[11px] text-text-muted mt-1 font-medium">
-                      Entrenador: {client.trainer_name ? client.trainer_name : 'No asignado'}
-                    </p>
-                  )}
-                </div>
-              </div>);
-          })
-          }
+                  </div>
+                )}
+
+                {closedClients.length > 0 && (
+                  <div className="mt-6 mb-2">
+                    <button 
+                      onClick={() => setShowClosedChats(!showClosedChats)}
+                      className="flex items-center justify-between w-full p-4 bg-black/5 dark:bg-white/5 rounded-[20px] hover:bg-black/10 dark:hover:bg-white/10 transition-colors border border-glass-border shadow-sm"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-text-secondary/20 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                          </svg>
+                        </div>
+                        <span className="font-bold text-sm text-text-primary">Carpeta de Cerrados ({closedClients.length})</span>
+                      </div>
+                      <svg className={`w-5 h-5 text-text-secondary transition-transform duration-300 ${showClosedChats ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showClosedChats ? 'max-h-[2000px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+                      <div className="flex flex-col gap-2">
+                        {closedClients.map((client) => {
+                          const isSelected = selectedClient?.id === client.id;
+                          return (
+                            <div
+                              key={client.id}
+                              onClick={() => openChat(client)}
+                              className={`relative flex items-center gap-4 p-3 cursor-pointer rounded-[16px] transition-all duration-200 group ${isSelected ? 'bg-accent/10 border border-accent/30' : 'bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10'}`}
+                            >
+                              <div className="relative shrink-0">
+                                {client.profile_image_url ? (
+                                  <img src={getFullImageUrl(client.profile_image_url)} alt={client.name} className="w-10 h-10 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10 grayscale" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <UserCircleIcon className="w-10 h-10 text-text-secondary opacity-50" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0 opacity-70">
+                                <h3 className="font-bold text-text-primary truncate pr-2 text-sm">{client.name || client.username}</h3>
+                                {client.lastMessage && (
+                                  <p className="text-xs text-text-secondary truncate pr-4">Cerrado por inactividad</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
 
-      {/* ÁREA DE CHAT */}
+        {/* ÁREA DE CHAT */}
       <div className={`flex flex-col flex-1 min-w-0 h-full relative ${!selectedClient ? 'hidden md:flex' : 'fixed inset-0 z-[100] bg-bg-primary animate-fade-in md:static md:flex md:bg-transparent'}`}>
         {!selectedClient ?
         <div className="hidden md:flex h-full flex-col items-center justify-center text-center opacity-50 space-y-4">

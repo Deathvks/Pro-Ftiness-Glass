@@ -252,3 +252,31 @@ export const sendCoachingLinkedEmail = async (email, trainerName) => {
     console.error('Error enviando correo de asesoría vinculada:', error);
   }
 };
+
+export const sendBotReminderEmail = async (email, userName, level) => {
+  const titles = {
+    1: '¿Continuamos con tu cambio?',
+    2: 'Aún estás a tiempo de empezar 💪',
+    3: 'Último aviso antes de cerrar el chat ⏳'
+  };
+  const texts = {
+    1: 'He visto que dejaste el chat abierto. Si tienes cualquier duda sobre la asesoría o quieres empezar, ¡estoy disponible!',
+    2: 'Solo te escribo para recordarte que sigo por aquí si necesitas ayuda para dar el primer paso. ¡Anímate!',
+    3: 'Si no hay actividad en 1 día, el chat se cerrará por inactividad. Puedes volver a pedir asesoría cuando quieras.'
+  };
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #6366f1;">${titles[level]}</h2>
+      <p>Hola ${userName},</p>
+      <p>${texts[level]}</p>
+      <p style="margin-top: 30px;">
+        <a href="https://pro-fitness-glass.zeabur.app/social" style="background-color: #6366f1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+          Ir al chat
+        </a>
+      </p>
+    </div>
+  `;
+
+  return sendEmail(email, `Aviso de asesoría: ${titles[level]}`, html);
+};

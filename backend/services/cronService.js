@@ -5,6 +5,7 @@ import db from '../models/index.js';
 import pushService from './pushService.js';
 import { createNotification } from './notificationService.js';
 import { cleanOrphanedImages, deleteFile } from './imageService.js';
+import { sendBotReminderEmail } from './emailService.js';
 
 /**
  * Obtiene la hora y fecha local para una zona horaria dada.
@@ -388,6 +389,116 @@ const resetInactiveStreaks = () => {
   });
 };
 
+
+/**
+ * Bot de chats de asesoría para prospectos
+ */
+const checkChatBotReminders = () => {
+  cron.schedule('0 11 * * *', async () => {
+    try {
+      console.log('[Cron] Iniciando revisión de bot de chats de asesoría...');
+      const { User, Message } = db;
+      
+      const prospects = await User.findAll({ where: { role: 'user' } });
+      const trainers = await User.findAll({ where: { role: { [Op.in]: ['admin', 'trainer'] } } });
+      const trainerIds = trainers.map(t => t.id);
+
+      for (const prospect of prospects) {
+        for (const trainerId of trainerIds) {
+          const lastMsg = await Message.findOne({
+            where: {
+              [Op.or]: [
+                { sender_id: prospect.id, receiver_id: trainerId },
+                { sender_id: trainerId, receiver_id: prospect.id }
+              ]
+            },
+            order: [['created_at', 'DESC']]
+          });
+
+          if (!lastMsg || lastMsg.is_closed) continue;
+
+          const now = new Date();
+          const lastDate = new Date(lastMsg.created_at);
+          const diffDays = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
+          
+          const level = lastMsg.bot_reminder_level || 0;
+          let nextLevel = null;
+          let title = '';
+          let text = '';
+
+          if (level === 0 && diffDays >= 3) {
+            nextLevel = 1;
+            title = '¿Continuamos con tu cambio?';
+            text = 'Hola, he visto que dejaste el chat abierto. Si tienes cualquier duda sobre la asesoría o quieres empezar, ¡escríbeme por aquí y nos ponemos a ello!';
+          } else if (level === 1 && diffDays >= 2) {
+            nextLevel = 2;
+            title = 'Aún estás a tiempo de empezar 💪';
+            text = 'Solo te escribo para recordarte que sigo por aquí si necesitas ayuda para dar el primer paso. Si no estás interesado, no te preocupes.';
+          } else if (level === 2 && diffDays >= 1) {
+            nextLevel = 3;
+            title = 'Último aviso antes de cerrar el chat ⏳';
+            text = 'Si no recibo respuesta en 1 día, cerraré esta conversación para mantener el buzón limpio. Siempre podrás volver a solicitar asesoría más adelante.';
+          } else if (level === 3 && diffDays >= 1) {
+            nextLevel = 4;
+          }
+
+          if (nextLevel === 4) {
+            console.log(`[Cron] Cerrando chat entre prospecto ${prospect.id} y entrenador ${trainerId}`);
+            
+            await Message.update(
+              { is_closed: true },
+              {
+                where: {
+                  [Op.or]: [
+                    { sender_id: prospect.id, receiver_id: trainerId },
+                    { sender_id: trainerId, receiver_id: prospect.id }
+                  ]
+                }
+              }
+            );
+
+            // Ensure trainer_id is null
+            prospect.trainer_id = null;
+            await prospect.save();
+
+            createNotification(prospect.id, {
+              type: 'chat_closed',
+              title: 'Conversación cerrada por inactividad',
+              message: 'Tu chat de asesoría ha sido cerrado. Puedes volver a solicitarla cuando quieras.',
+              action_url: '/social'
+            });
+
+          } else if (nextLevel !== null) {
+            console.log(`[Cron] Enviando aviso nivel ${nextLevel} a prospecto ${prospect.id}`);
+            
+            await Message.create({
+              sender_id: trainerId,
+              receiver_id: prospect.id,
+              content: text,
+              bot_reminder_level: nextLevel,
+              created_at: new Date()
+            });
+
+            createNotification(prospect.id, {
+              type: 'chat_message',
+              title: title,
+              message: text,
+              action_url: '/social'
+            });
+
+            try {
+              await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, nextLevel);
+            } catch(e) { console.error('[Cron] Error email bot', e); }
+          }
+        }
+      }
+      console.log('[Cron] Revisión de bot finalizada.');
+    } catch(err) {
+      console.error('[Cron] Error bot de chats:', err.message);
+    }
+  });
+};
+
 export const startCronJobs = () => {
   console.log('[Cron] Iniciando tareas (Optimizado)...');
   checkNutritionGoals();
@@ -397,5 +508,6 @@ export const startCronJobs = () => {
   scheduleImageCleanup();
   cleanupExpiredStories();
   checkStreakWars();
-  resetInactiveStreaks(); // <-- Añadido el nuevo vigilante
+  resetInactiveStreaks();
+  checkChatBotReminders(); // <-- Añadido el nuevo vigilante
 };
