@@ -557,9 +557,7 @@ export default function TrainerChats({ onClose }) {
                               <div className="flex-1 min-w-0">
                                 <h3 className="font-bold text-text-primary truncate text-sm mb-0.5">{client.name || client.username}</h3>
                                 <div className="flex items-center gap-2">
-                                  <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full ring-1 ${client.bot_color}`}>
-                                    {client.bot_label}
-                                  </span>
+                                  <button onClick={(e) => executeBotReminder(e, client)} className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full ring-1 transition-all hover:scale-105 active:scale-95 cursor-pointer ${client.bot_color}`}>{client.bot_label} (Forzar)</button>
                                 </div>
                               </div>
                             </div>
@@ -987,6 +985,7 @@ export default function TrainerChats({ onClose }) {
     </div>
   );
 }
+
 
 
 
