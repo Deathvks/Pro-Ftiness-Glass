@@ -3,12 +3,12 @@ import React, { useState, useEffect, memo } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 
 
-// Base URL para construir las rutas de imágenes/vídeos
+// Base URL para construir las rutas de imÃƒÂ¡genes/vÃƒÂ­deos
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
 /**
- * Componente para mostrar la imagen o vídeo del ejercicio.
+ * Componente para mostrar la imagen o vÃƒÂ­deo del ejercicio.
  * Acepta 'details' (el objeto del ejercicio), 'src' directo, y 'className'.
  */
 const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, className = '', fitMode = 'cover', forceAuto = false, forceImage = false, disableAnimation = false }) => {
@@ -16,7 +16,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   const [videoError, setVideoError] = useState(false);
   
 
-  // --- LÓGICA INTELIGENTE DE EXTRACCIÓN ---
+  // --- LÃƒâ€œGICA INTELIGENTE DE EXTRACCIÃƒâ€œN ---
   const rawImageUrl = src || 
     details?.image_url_start || 
     details?.image_url || 
@@ -55,8 +55,8 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     rawImages = [];
   }
 
-  // Si no hay imágenes, o si las hay, SIEMPRE aseguramos que start y end estén si existen.
-  // Pero para evitar duplicados, lo validamos después con el Set.
+  // Si no hay imÃƒÂ¡genes, o si las hay, SIEMPRE aseguramos que start y end estÃƒÂ©n si existen.
+  // Pero para evitar duplicados, lo validamos despuÃƒÂ©s con el Set.
   if (details?.image_url_start || details?.exercise?.image_url_start || details?.exercise_details?.image_url_start) {
     rawImages.unshift(details.image_url_start || details?.exercise?.image_url_start || details?.exercise_details?.image_url_start);
   }
@@ -64,14 +64,14 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     rawImages.push(details.image_url_end || details?.exercise?.image_url_end || details?.exercise_details?.image_url_end);
   }
 
-  // SOLUCIÓN: Reseteamos el estado SOLO si cambia de verdad la URL de la imagen o el vídeo.
+  // SOLUCIÃƒâ€œN: Reseteamos el estado SOLO si cambia de verdad la URL de la imagen o el vÃƒÂ­deo.
   // Evita el parpadeo constante al actualizar series o repeticiones en el objeto details.
   useEffect(() => {
     setImageError(false);
     setVideoError(false);
   }, [rawImageUrl, rawVideoUrl, rawImages?.length]);
 
-  // Construcción segura de la URL final
+  // ConstrucciÃƒÂ³n segura de la URL final
   const getBestImageUrl = (url) => {
     if (!url || url === 'null' || url === 'undefined' || (typeof url === 'string' && url.trim() === '')) return null;
     if (typeof url !== 'string') url = String(url); // En caso de que sea un String object
@@ -80,7 +80,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
     const filename = cleanUrl.split('/').pop();
     
-    // Expresión regular relajada: Busca el patrón UUID en CUALQUIER parte del nombre
+    // ExpresiÃƒÂ³n regular relajada: Busca el patrÃƒÂ³n UUID en CUALQUIER parte del nombre
     const isWgerUuid = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(filename);
     
     if (isWgerUuid || cleanUrl.includes('exercise-images')) {
@@ -117,14 +117,14 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   // Use mqdefault.jpg for a native 16:9 aspect ratio without black bars
   const youtubeThumbnail = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
 
-  // Lógica de contraste para Oscuro, OLED y Galaxia:
+  // LÃƒÂ³gica de contraste para Oscuro, OLED y Galaxia:
   
   const imageBgClass = 'bg-bg-secondary dark:bg-gray-200';
   
-  // Fondo característico para los placeholders
+  // Fondo caracterÃƒÂ­stico para los placeholders
   const placeholderBgClass = 'bg-accent/10 text-accent';
 
-  // Fallback directo si no hay ningún recurso asignado (evita renderizar etiquetas vacías)
+  // Fallback directo si no hay ningÃƒÂºn recurso asignado (evita renderizar etiquetas vacÃƒÂ­as)
   if (!finalImageUrl && !videoUrl && !youtubeThumbnail) {
     return (
       <div className={`aspect-video ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center ${className}`}>
@@ -139,7 +139,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
       <div className={`aspect-video w-full h-full rounded-xl overflow-hidden bg-black ${className}`}>
         <iframe
           key={youtubeId}
-          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0`}
+          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&loop=1&playlist=${youtubeId}`}
           className="w-full h-full border-none pointer-events-none"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
@@ -148,7 +148,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     );
   }
 
-  // Renderizado de vídeo (no YouTube directo a <video>)
+  // Renderizado de vÃƒÂ­deo (no YouTube directo a <video>)
   if (videoUrl && !videoError && !youtubeId) {
     return (
       <video
@@ -161,7 +161,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
         playsInline
         onError={() => setVideoError(true)}
       >
-        Tu navegador no soporta el tag de vídeo.
+        Tu navegador no soporta el tag de vÃƒÂ­deo.
       </video>
     );
   }
@@ -176,7 +176,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     const finalBgClass = fitMode === 'cover' ? 'bg-transparent' : 'bg-black/5 dark:bg-white/5';
     const containerClasses = `${aspectRatioClass} relative rounded-[24px] overflow-hidden ${finalBgClass} flex items-center justify-center ${className}`;
 
-    // Lógica mágica para eliminar el fondo blanco de los dibujos de Wger
+    // LÃƒÂ³gica mÃƒÂ¡gica para eliminar el fondo blanco de los dibujos de Wger
     const getImageBlendClass = (url) => {
       if (!url) return '';
       if (url === youtubeThumbnail) return 'object-cover';
@@ -231,7 +231,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
               <img
                 key={idx}
                 src={url}
-                alt={`Demostración de ${details?.name || 'ejercicio'} - slide ${idx}`}
+                alt={`DemostraciÃƒÂ³n de ${details?.name || 'ejercicio'} - slide ${idx}`}
                 className={`${posClass} ${sizeClass} transition-opacity duration-500 ease-in-out ${getImageBlendClass(url)} ${visibilityClass}`}
                 style={visibilityStyle}
                 onError={() => setImageError(true)}
@@ -249,7 +249,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
         <img
           key={imageToRender}
           src={imageToRender}
-          alt={`Demostración de ${details?.name || 'ejercicio'}`}
+          alt={`DemostraciÃƒÂ³n de ${details?.name || 'ejercicio'}`}
           className={`${imgBaseClass} transition-opacity duration-500 ${getImageBlendClass(imageToRender)}`}
           onError={() => setImageError(true)}
           loading="lazy"
@@ -265,7 +265,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     </div>
   );
 }, (prevProps, nextProps) => {
-  // SOLUCIÓN: Comparador estricto para React.memo. 
+  // SOLUCIÃƒâ€œN: Comparador estricto para React.memo. 
   // Congela el componente si cambian las reps/series pero NO cambia el archivo de imagen.
   const extractMedia = (d) => {
     if (!d) return '';
