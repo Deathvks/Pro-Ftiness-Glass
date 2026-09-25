@@ -48,6 +48,7 @@ const ExerciseView = ({ allExercises, exerciseProgressData, axisColor, onShowHis
             onChange={setSelectedExercise}
             options={exerciseOptions}
             placeholder={tCommon('Elige un ejercicio', { defaultValue: 'Elige un ejercicio' })}
+            searchable={true}
           />
           {/* --- FIN DE LA MODIFICACIÓN --- */}
 
