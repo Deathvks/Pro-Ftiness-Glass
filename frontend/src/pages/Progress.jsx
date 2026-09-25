@@ -511,7 +511,7 @@ const Progress = ({ darkMode, setView }) => {
                 </div>
             )}
 
-            {viewType === 'exercise' && <ExerciseView allExercises={allExercisesNames} exerciseProgressData={exerciseProgressData} axisColor={axisColor} onShowHistory={handleShowHistory} />}
+            {viewType === 'exercise' && <ExerciseView allExercises={executedExercisesList} exerciseProgressData={exerciseProgressData} axisColor={axisColor} onShowHistory={handleShowHistory} />}
             {viewType === 'nutrition' && <NutritionView axisColor={axisColor} />}
             {viewType === 'records' && <RecordsView />}
             {viewType === 'bodyWeight' && <BodyWeightChart data={bodyWeightChartData} axisColor={axisColor} />}
