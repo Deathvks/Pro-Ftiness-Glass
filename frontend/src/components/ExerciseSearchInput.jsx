@@ -143,7 +143,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
     };
 
     onExerciseSelect(normalizedExercise); 
-    setInputValue('');
+    setInputValue(exercise.name || '');
     setIsSearching(false); 
   };
 
