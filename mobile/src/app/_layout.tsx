@@ -17,6 +17,7 @@ export default function RootLayout() {
   const [hasRestoredPath, setHasRestoredPath] = useState(false);
   
   const isAuthenticated = useAppStore(state => state.isAuthenticated);
+  const userProfile = useAppStore(state => state.userProfile);
   const router = useRouter();
   const segments = useSegments();
   const pathname = usePathname();
@@ -44,7 +45,7 @@ export default function RootLayout() {
     prepare();
   }, []);
 
-  // Save last path for reload persistence — only save stable tab paths
+  // Save last path for reload persistence - only save stable tab paths
   useEffect(() => {
     if (isReady && isAuthenticated && pathname && pathname !== '/') {
       const isStablePath = pathname.startsWith('/(tabs)') || pathname === '/routines' || pathname === '/nutrition' || pathname === '/hub' || pathname === '/social' || pathname === '/profile';
@@ -62,23 +63,34 @@ export default function RootLayout() {
 
     const inLogin = segments[0] === 'login';
     const inRegister = segments[0] === 'register';
+    const inForgot = segments[0] === 'forgot-password';
+    const inOnboarding = segments[0] === 'onboarding';
 
-    if (!isAuthenticated && !inLogin && !inRegister) {
+    const needsOnboarding = isAuthenticated && userProfile && !userProfile.goal && userProfile.role !== 'trainee';
+
+    if (!isAuthenticated && !inLogin && !inRegister && !inForgot) {
       router.replace('/login');
-    } else if (isAuthenticated && (inLogin || inRegister)) {
-      router.replace('/(tabs)');
+    } else if (needsOnboarding && !inOnboarding) {
+      // Bloquear acceso hasta que complete el onboarding
+      router.replace('/onboarding');
+    } else if (isAuthenticated && (inLogin || inRegister || inForgot)) {
+      if (needsOnboarding) {
+        router.replace('/onboarding');
+      } else {
+        router.replace('/(tabs)');
+      }
     } else if (isAuthenticated && !hasRestoredPath) {
       setHasRestoredPath(true);
-      // Only restore if we're currently at the root/index — don't redirect if already navigated
+      // Only restore if we're currently at the root/index - don't redirect if already navigated
       const atRoot = segments.length <= 1 || (segments[0] === '(tabs)' && (!segments[1] || segments[1] === 'index'));
-      if (atRoot) {
+      if (atRoot && !needsOnboarding) {
         const lastPath = typeof localStorage !== 'undefined' ? localStorage.getItem('last_path') : null;
-        if (lastPath && lastPath !== '/' && lastPath !== '/index' && !lastPath.includes('login') && !lastPath.includes('register')) {
+        if (lastPath && lastPath !== '/' && lastPath !== '/index' && !lastPath.includes('login') && !lastPath.includes('register') && !lastPath.includes('onboarding')) {
           setTimeout(() => router.replace(lastPath as any), 100);
         }
       }
     }
-  }, [isAuthenticated, isReady, segments, hasRestoredPath]);
+  }, [isAuthenticated, isReady, segments, hasRestoredPath, userProfile]);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -104,8 +116,10 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="routine-editor" options={{ presentation: 'fullScreenModal', headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="register" options={{ headerShown: false, animation: 'fade' }} />
+          <Stack.Screen name="forgot-password" options={{ headerShown: false, animation: 'fade' }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

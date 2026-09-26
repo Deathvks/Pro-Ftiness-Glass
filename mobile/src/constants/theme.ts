@@ -5,21 +5,21 @@ export const Colors = {
     text: '#111827',
     textSecondary: '#6B7280',
     border: '#E5E7EB',
-    tint: '#3b82f6',
+    tint: '#22c55e',
     tabBar: '#FFFFFF',
     tabBarInactive: '#9CA3AF',
     success: '#10B981',
     warning: '#F59E0B',
   },
   dark: {
-    background: '#111827',
-    card: '#1F2937',
-    text: '#F9FAFB',
-    textSecondary: '#9CA3AF',
-    border: '#374151',
-    tint: '#3b82f6',
-    tabBar: '#1F2937',
-    tabBarInactive: '#6B7280',
+    background: '#0f172a',
+    card: '#1e293b',
+    text: '#e5e7eb',
+    textSecondary: '#9ca3af',
+    border: '#334155',
+    tint: '#22c55e',
+    tabBar: '#0f172a',
+    tabBarInactive: '#64748b',
     success: '#10B981',
     warning: '#fbbf24',
   },
@@ -29,7 +29,7 @@ export const Colors = {
     text: '#FFFFFF',
     textSecondary: '#A1A1AA',
     border: '#27272A',
-    tint: '#3b82f6',
+    tint: '#22c55e',
     tabBar: '#000000',
     tabBarInactive: '#52525B',
     success: '#10B981',
@@ -95,4 +95,24 @@ export const Colors = {
     success: '#10B981',
     warning: '#f59e0b',
   }
+};
+export const MaxContentWidth = 960;
+
+export const Spacing = {
+  zero: 0,
+  one: 4,
+  two: 8,
+  three: 12,
+  four: 16,
+  five: 20,
+  six: 24,
+  seven: 28,
+  eight: 32,
+};
+
+export const Fonts = {
+  regular: 'System',
+  medium: 'System',
+  bold: 'System',
+  heavy: 'System',
 };

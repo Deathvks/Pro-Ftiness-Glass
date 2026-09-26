@@ -7,7 +7,7 @@ const AnimatedGlassBackground = Animated.createAnimatedComponent(View);
 interface GlassButtonProps {
     onPress: () => void;
     children: React.ReactNode;
-    theme: 'light' | 'dark' | 'oled';
+    theme: 'light' | 'dark' | 'oled' | 'galaxy' | 'ocean' | 'desert' | string;
     style?: ViewStyle | ViewStyle[];
     colors?: any;
 }
@@ -15,9 +15,9 @@ interface GlassButtonProps {
 export function GlassButton({ onPress, children, theme, style }: GlassButtonProps) {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     
-    // Base opacity: 0.25 for light mode, 0.15 for dark mode (using white tint)
-    const baseOpacity = (['light', 'ocean', 'desert'].includes(theme)) ? 0.25 : 0.15;
-    const pressedOpacity = (['light', 'ocean', 'desert'].includes(theme)) ? 0.4 : 0.3;
+    const isLight = ['light', 'ocean', 'desert'].includes(theme);
+    const baseOpacity = isLight ? 0.25 : 0.15;
+    const pressedOpacity = isLight ? 0.4 : 0.3;
     
     const bgOpacityAnim = useRef(new Animated.Value(baseOpacity)).current;
 
@@ -27,7 +27,7 @@ export function GlassButton({ onPress, children, theme, style }: GlassButtonProp
             duration: 200,
             useNativeDriver: false
         }).start();
-    }, [theme]);
+    }, [theme, baseOpacity]);
 
     const handlePressIn = () => {
         Animated.spring(scaleAnim, {
@@ -57,12 +57,22 @@ export function GlassButton({ onPress, children, theme, style }: GlassButtonProp
         }).start();
     };
 
+    const flattenedUserStyle = style ? StyleSheet.flatten(style) : {};
+    
+    // Si no tiene flex ni width, le damos width fijo. Si tiene flex, forzamos width 100% interno.
     const defaultStyle: ViewStyle = {
-        width: 36, height: 36, 
-        alignItems: 'center', justifyContent: 'center'
+        alignItems: 'center', 
+        justifyContent: 'center'
     };
+    
+    if (flattenedUserStyle.width === undefined && flattenedUserStyle.flex === undefined) {
+        defaultStyle.width = 36;
+    }
+    if (flattenedUserStyle.height === undefined) {
+        defaultStyle.height = 36;
+    }
 
-    const finalStyle = style ? { ...defaultStyle, ...StyleSheet.flatten(style) } : defaultStyle;
+    const finalStyle = { ...defaultStyle, ...flattenedUserStyle };
     const finalBorderRadius = (finalStyle.borderRadius as number) ?? 18;
 
     return (
@@ -71,21 +81,25 @@ export function GlassButton({ onPress, children, theme, style }: GlassButtonProp
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={[{ flex: finalStyle.flex, width: finalStyle.width, alignSelf: finalStyle.alignSelf }]}
         >
             <Animated.View style={[finalStyle, {
                 position: 'relative', 
+                flex: undefined, // Quitamos el flex interno para que no se estire verticalmente de forma extraña
+                width: '100%',   // Forzamos que llene el Pressable horizontalmente
+                height: finalStyle.height || '100%', // Forzamos que llene verticalmente
                 transform: [{ scale: scaleAnim }],
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: (['light', 'ocean', 'desert'].includes(theme)) ? 0.08 : 0,
+                shadowOpacity: isLight ? 0.08 : 0,
                 shadowRadius: 8,
-                elevation: (['light', 'ocean', 'desert'].includes(theme)) ? 2 : 0,
+                elevation: isLight ? 2 : 0,
             }]}>
                 <GlassView 
-                        glassEffectStyle="regular"
-                        colorScheme={(['light', 'ocean', 'desert'].includes(theme)) ? 'light' : 'dark'}
-                        style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius }]} 
-                    />
+                    glassEffectStyle="regular"
+                    colorScheme={isLight ? 'light' : 'dark'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius }]} 
+                />
                 
                 {children}
             </Animated.View>

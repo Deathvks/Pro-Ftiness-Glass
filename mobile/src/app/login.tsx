@@ -11,6 +11,7 @@ import Svg, { Path } from 'react-native-svg';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Google from 'expo-auth-session/providers/google';
 import { verifyEmail, resendVerificationEmail } from '@/services/authService';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -40,6 +41,23 @@ export default function Login() {
   // Verification state
   const [needsVerification, setNeedsVerification] = useState(false);
   const [code, setCode] = useState(['', '', '', '', '', '']);
+
+  const [googleRequest, googleResponse, promptAsyncGoogle] = Google.useAuthRequest({
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+  });
+
+  const handleGoogleLogin = useAppStore(state => state.handleGoogleLogin);
+
+  React.useEffect(() => {
+    if (googleResponse?.type === 'success' && googleResponse.authentication?.accessToken) {
+      setIsLoading(true);
+      handleGoogleLogin({ token: googleResponse.authentication.accessToken }).finally(() => {
+        setIsLoading(false);
+      });
+    }
+  }, [googleResponse]);
   const [resendCooldown, setResendCooldown] = useState(10);
   const inputRefs = React.useRef<Array<TextInput | null>>([]);
 
@@ -96,7 +114,6 @@ export default function Login() {
 
   const handleLogin = useAppStore(state => state.handleLogin);
   
-  const handleGoogleLogin = useAppStore(state => state.handleGoogleLogin);
   const handleDiscordLogin = useAppStore(state => state.handleDiscordLogin);
   const handleXLogin = useAppStore(state => state.handleXLogin);
   const handleGithubLogin = useAppStore(state => state.handleGithubLogin);
@@ -111,27 +128,33 @@ export default function Login() {
 
   const redirectUri = AuthSession.makeRedirectUri({ scheme: 'mobile' });
 
-  const handleGoogleClick = async () => {
-    try {
-      const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=email%20profile&state=google`;
-      const result = await AuthSession.startAsync({ authUrl, returnUrl: redirectUri });
-      if (result.type === 'success' && result.params.access_token) {
-        setIsLoading(true);
-        await handleGoogleLogin({ token: result.params.access_token });
+  // Custom helper to replace the removed AuthSession.startAsync
+  const startAsync = async ({ authUrl, returnUrl }: { authUrl: string, returnUrl: string }) => {
+    const result = await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
+    if (result.type === 'success' && result.url) {
+      const params: Record<string, string> = {};
+      // OAuth variables are usually after ? or #
+      const queryPart = result.url.includes('#') ? result.url.split('#')[1] : result.url.split('?')[1];
+      if (queryPart) {
+        queryPart.split('&').forEach(pair => {
+          const [key, value] = pair.split('=');
+          if (key) params[key] = decodeURIComponent(value || '');
+        });
       }
-    } catch (e: any) {
-      alert('Error conectando con Google: ' + (e.message || e));
-    } finally {
-      setIsLoading(false);
+      return { type: 'success', params, url: result.url };
     }
+    return result;
+  };
+
+  const handleGoogleClick = () => {
+    promptAsyncGoogle();
   };
 
   const handleDiscordClick = async () => {
     try {
       const DISCORD_CLIENT_ID = process.env.EXPO_PUBLIC_DISCORD_CLIENT_ID;
       const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify%20email&state=discord`;
-      const result = await AuthSession.startAsync({ authUrl, returnUrl: redirectUri });
+      const result = await startAsync({ authUrl, returnUrl: redirectUri });
       if (result.type === 'success' && result.params.access_token) {
         setIsLoading(true);
         await handleDiscordLogin({ token: result.params.access_token });
@@ -147,7 +170,7 @@ export default function Login() {
     try {
       const X_CLIENT_ID = process.env.EXPO_PUBLIC_X_CLIENT_ID;
       const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${X_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=tweet.read%20users.read&state=x&code_challenge=challenge&code_challenge_method=plain`;
-      const result = await AuthSession.startAsync({ authUrl, returnUrl: redirectUri });
+      const result = await startAsync({ authUrl, returnUrl: redirectUri });
       if (result.type === 'success' && result.params.code) {
         setIsLoading(true);
         await handleXLogin({ code: result.params.code, redirectUri, codeVerifier: 'challenge' });
@@ -163,7 +186,7 @@ export default function Login() {
     try {
       const GITHUB_CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
       const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email&state=github`;
-      const result = await AuthSession.startAsync({ authUrl, returnUrl: redirectUri });
+      const result = await startAsync({ authUrl, returnUrl: redirectUri });
       if (result.type === 'success' && result.params.code) {
         setIsLoading(true);
         await handleGithubLogin({ code: result.params.code });
@@ -425,7 +448,10 @@ export default function Login() {
                     </View>
                     
                     <View style={styles.passwordFooter}>
-                      <TouchableOpacity style={styles.forgotPassword}>
+                      <TouchableOpacity 
+                        style={styles.forgotPassword}
+                        onPress={() => router.push('/forgot-password')}
+                      >
                         <Text style={[styles.forgotText, { color: theme.textSecondary }]}>¿Olvidaste tu contraseña?</Text>
                       </TouchableOpacity>
                     </View>
