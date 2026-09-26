@@ -78,6 +78,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
       <div
         onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
       ref={dropdownRef}
       style={{
         position: 'fixed',
@@ -86,7 +87,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
         left: `${position.left}px`,
         minWidth: `${position.width}px`,
       }}
-      className={`bg-bg-secondary border border-transparent dark:border dark:border-white/10 rounded-xl shadow-lg z-[9999] flex flex-col ${
+      className={`no-swipe bg-bg-secondary border border-transparent dark:border dark:border-white/10 rounded-xl shadow-lg z-[9999] flex flex-col ${
         position.bottom !== undefined ? 'animate-[fade-in-down_0.2s_ease_out]' : 'animate-[fade-in-up_0.2s_ease_out]'
       }`}
     >

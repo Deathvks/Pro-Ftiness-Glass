@@ -7,6 +7,8 @@ import {
   Trophy, Flame, Dumbbell, Crown, Star, Eye, EyeOff, CheckCircle2, X, Shield, Zap, Diamond, Sparkles, Medal
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
+import ModalPortal from '../components/ModalPortal';
+import useModalLock from '../hooks/useModalLock';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
@@ -612,18 +614,16 @@ const Profile = ({ onCancel, setView, navigate }) => {
         hasPassword={hasPassword}
       />
 
-            <AnimatePresence>
-        {showPasswordModal && (
-          <ChangePasswordModal
-            onClose={() => setShowPasswordModal(false)}
-            hasPassword={hasPassword}
-            updateUserAccount={updateUserAccount}
-            handleLogout={handleLogout}
-            addToast={addToast}
-            baseInputClasses={baseInputClasses}
-          />
-        )}
-      </AnimatePresence>
+            {showPasswordModal && (
+        <ChangePasswordModal
+          onClose={() => setShowPasswordModal(false)}
+          hasPassword={hasPassword}
+          updateUserAccount={updateUserAccount}
+          handleLogout={handleLogout}
+          addToast={addToast}
+          baseInputClasses={baseInputClasses}
+        />
+      )}
 
       <AnimatePresence>
         {showUnsavedModal && (
@@ -842,8 +842,9 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
   const [showNew, setShowNew] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  
+
+  useModalLock();
+
   const reqs = [
     { id: 'length', label: '8+ caracteres', valid: newPassword.length >= 8 },
     { id: 'uppercase', label: '1 Mayúscula', valid: /[A-Z]/.test(newPassword) },
@@ -872,75 +873,66 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col justify-end sm:justify-center items-center px-0 sm:px-4">
-      <motion.div 
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-        className="absolute inset-0 bg-black/60 backdrop-blur-md" 
-        onClick={onClose} 
-      />
-      
-      <motion.div 
-        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className="relative w-full max-w-md bg-bg-secondary sm:rounded-[24px] rounded-t-[32px] p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] shadow-2xl sm:border border-t border-glass-border overflow-hidden flex flex-col"
-        drag="y"
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 1 }}
-        onDragEnd={(e, info) => {
-          if (info.offset.y > 100 || info.velocity.y > 500) onClose();
-        }}
+    <ModalPortal>
+      <div 
+        className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out] p-0 sm:p-4 overscroll-none"
+        onClick={onClose}
       >
-        <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-6 sm:hidden shrink-0" />
-        
-        <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-16 h-16 rounded-[20px] bg-accent/10 flex items-center justify-center text-accent ring-1 ring-accent/30 mb-4">
-            <Key size={32} strokeWidth={2} />
-          </div>
-          <h3 className="text-2xl font-extrabold tracking-tight text-text-primary">{hasPassword ? "Cambiar Contraseña" : "Crear Contraseña"}</h3>
-          <p className="text-text-secondary font-medium text-sm mt-2">
-            Asegúrate de usar una contraseña segura.
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {error && <p className="form-error-text text-center text-sm font-bold bg-red/10 p-3 rounded-[12px] text-red">{error}</p>}
+        <div 
+          className="relative w-full max-w-md mt-auto sm:mt-0 rounded-t-[32px] sm:rounded-[24px] bg-bg-secondary p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] sm:border border-t border-glass-border shadow-2xl flex flex-col animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.2s_ease-out] overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-6 sm:hidden shrink-0" />
           
-          {hasPassword && (
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="w-16 h-16 rounded-[20px] bg-accent/10 flex items-center justify-center text-accent ring-1 ring-accent/30 mb-4">
+              <Key size={32} strokeWidth={2} />
+            </div>
+            <h3 className="text-2xl font-extrabold tracking-tight text-text-primary">{hasPassword ? "Cambiar Contraseña" : "Crear Contraseña"}</h3>
+            <p className="text-text-secondary font-medium text-sm mt-2">
+              Asegúrate de usar una contraseña segura.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {error && <p className="form-error-text text-center text-sm font-bold bg-red/10 p-3 rounded-[12px] text-red">{error}</p>}
+            
+            {hasPassword && (
+              <div className="relative">
+                <input
+                  type={showCurrent ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => { setCurrentPassword(e.target.value); setError(''); }}
+                  className={baseInputClasses}
+                  placeholder="Contraseña actual"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowCurrent(!showCurrent)} 
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors"
+                >
+                  {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            )}
+
             <div className="relative">
               <input
-                type={showCurrent ? "text" : "password"}
-                value={currentPassword}
-                onChange={(e) => { setCurrentPassword(e.target.value); setError(''); }}
+                type={showNew ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => { setNewPassword(e.target.value); setError(''); }}
                 className={baseInputClasses}
-                placeholder="Contraseña actual"
+                placeholder="Nueva contraseña"
               />
               <button 
                 type="button" 
-                onClick={() => setShowCurrent(!showCurrent)} 
+                onClick={() => setShowNew(!showNew)} 
                 className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors"
               >
-                {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-          )}
 
-          <div className="relative">
-            <input
-              type={showNew ? "text" : "password"}
-              value={newPassword}
-              onChange={(e) => { setNewPassword(e.target.value); setError(''); }}
-              className={baseInputClasses}
-              placeholder="Nueva contraseña"
-            />
-            <button 
-              type="button" 
-              onClick={() => setShowNew(!showNew)} 
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors"
-            >
-              {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-
-          {newPassword.length > 0 && (
             <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-2 px-2">
               {reqs.map(r => (
                 <div key={r.id} className="flex items-center gap-2">
@@ -955,28 +947,28 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
                 </div>
               ))}
             </div>
-          )}
 
-          <div className="flex flex-col gap-3 mt-4">
-            <button
-              type="submit"
-              disabled={isLoading || !isValid}
-              className="w-full py-4 bg-accent text-accent-contrast font-bold rounded-[16px] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-accent/20 flex items-center justify-center"
-            >
-              {isLoading ? <Spinner size={20} color="white" /> : "Guardar Contraseña"}
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isLoading}
-              className="w-full py-4 bg-black/5 dark:bg-white/5 text-text-primary font-bold rounded-[16px] hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 transition-all"
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </div>
+            <div className="flex flex-col gap-3 mt-4">
+              <button
+                type="submit"
+                disabled={isLoading || !isValid}
+                className="w-full py-4 bg-accent text-accent-contrast font-bold rounded-[16px] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-accent/20 flex items-center justify-center"
+              >
+                {isLoading ? <Spinner size={20} color="white" /> : "Guardar Contraseña"}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isLoading}
+                className="w-full py-4 bg-black/5 dark:bg-white/5 text-text-primary font-bold rounded-[16px] hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 transition-all"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </ModalPortal>
   );
 };
 
