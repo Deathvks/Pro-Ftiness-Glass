@@ -42,7 +42,7 @@ import aiRoutes from './routes/ai.js';
 import trainerRoutes from './routes/trainerRoutes.js';
 import chatRoutes from './routes/chat.js';
 import securityRoutes from './routes/securityRoutes.js';
-import { checkBlacklist } from './middleware/securityMonitor.js';
+import { checkBlacklist, sniffingDetector } from './middleware/securityMonitor.js';
 import { startCronJobs } from './services/cronService.js';
 
 const app = express();
@@ -55,6 +55,7 @@ app.use(helmet({ crossOriginResourcePolicy: false }));
 
 // Middleware de Seguridad (Bloqueo de IPs)
 app.use(checkBlacklist);
+app.use(sniffingDetector);
 
 // OPTIMIZACIÓN: Compresión global antes de cualquier ruta o archivo estático
 app.use(compression());
@@ -216,4 +217,5 @@ db.sequelize.sync()
   });
 
 export { io };
+
 
