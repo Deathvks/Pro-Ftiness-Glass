@@ -536,7 +536,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
                         const badge = BADGE_DETAILS[badgeId] || BADGE_DETAILS.default;
                         return (
                             <div key={badgeId} className="flex flex-col items-center p-3 rounded-[20px] bg-bg-secondary ring-1 ring-glass-border shadow-sm text-center">
-                                <div className={w-10 h-10 rounded-[14px] flex items-center justify-center mb-2 \ \}>
+                                <div className={`w-10 h-10 rounded-[14px] flex items-center justify-center mb-2 ${badge.bg} ${badge.color}`}>
                                     <badge.icon size={20} strokeWidth={2} />
                                 </div>
                                 <span className="text-[10px] font-bold text-text-primary leading-tight">{badge.name}</span>
