@@ -849,9 +849,10 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
     { id: 'length', label: 'Al menos 12 caracteres', valid: newPassword.length >= 12 },
     { id: 'upper', label: 'Una mayúscula', valid: /[A-Z]/.test(newPassword) },
     { id: 'lower', label: 'Una minúscula', valid: /[a-z]/.test(newPassword) },
-    { id: 'special', label: 'Un carácter especial (!@#$...)', valid: /[!@#$%^&*(),.?":{}|<>\-_+=\[\]\/'`]/.test(newPassword) },
+    { id: 'special', label: 'Un carácter especial (!@#$...)', valid: /[!@#$%^&*(),.?":{}|<>\-_+=\[\]\\/'`]/.test(newPassword) },
     { id: 'digits', label: 'No más de 3 números seguidos', valid: !/\d{4,}/.test(newPassword) && newPassword.length > 0 }
   ];
+  
   const isValid = reqs.every(r => r.valid) && (!hasPassword || currentPassword.length > 0);
 
   const handleSubmit = async (e) => {
@@ -951,6 +952,27 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
                 ))}
               </div>
             )}
+
+            <div className="flex flex-col gap-3 mt-4">
+              <button
+                type="submit"
+                disabled={isLoading || !isValid}
+                className="w-full py-4 bg-accent text-accent-contrast font-bold rounded-[16px] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-accent/20 flex items-center justify-center"
+              >
+                {isLoading ? <Spinner size={20} color="white" /> : "Guardar Contraseña"}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isLoading}
+                className="w-full py-4 bg-black/5 dark:bg-white/5 text-text-primary font-bold rounded-[16px] hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 transition-all"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </ModalPortal>
   );
 };
