@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
-  ChevronLeft, ChevronRight, Save, User, Camera, AlertTriangle, Mail, Key, Lock, Globe, Trash2,
+  ChevronLeft, ChevronRight, Save, User, UserCircle, Camera, AlertTriangle, Mail, AtSign, Key, Lock, ShieldCheck, Globe, LayoutTemplate, Trash2,
   Trophy, Flame, Dumbbell, Crown, Star, Eye, X, Shield, Zap, Diamond, Sparkles, Medal
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
@@ -461,10 +461,10 @@ const Profile = ({ onCancel, setView, navigate }) => {
         <div className="mb-6">
             <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 px-4">Datos Básicos</h2>
             <div className="bg-bg-secondary rounded-[24px] shadow-sm ring-1 ring-glass-border overflow-hidden">
-                <div className="flex items-center justify-between p-4 border-b border-glass-border">
+                <div className="group flex items-center justify-between p-4 border-b border-glass-border">
                     <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-lg bg-blue-500 flex items-center justify-center text-white shadow-sm">
-                            <User size={16} strokeWidth={2.5} />
+                        <div className="w-8 h-8 rounded-[12px] bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-secondary ring-1 ring-glass-border shadow-sm shrink-0 group-hover:bg-accent/10 group-hover:text-accent group-hover:ring-accent/30 transition-colors">
+                            <UserCircle size={18} strokeWidth={2} />
                         </div>
                         <span className="text-[15px] font-medium text-text-primary">Usuario</span>
                     </div>
@@ -472,10 +472,10 @@ const Profile = ({ onCancel, setView, navigate }) => {
                 </div>
                 {errors.username && <p className="text-xs text-red font-bold px-4 pb-2 pt-1">{errors.username}</p>}
 
-                <div className="flex items-center justify-between p-4">
+                <div className="group flex items-center justify-between p-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center text-white shadow-sm">
-                            <Mail size={16} strokeWidth={2.5} />
+                        <div className="w-8 h-8 rounded-[12px] bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-secondary ring-1 ring-glass-border shadow-sm shrink-0 group-hover:bg-accent/10 group-hover:text-accent group-hover:ring-accent/30 transition-colors">
+                            <AtSign size={18} strokeWidth={2} />
                         </div>
                         <span className="text-[15px] font-medium text-text-primary">Email</span>
                     </div>
@@ -490,20 +490,20 @@ const Profile = ({ onCancel, setView, navigate }) => {
             <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 px-4">Seguridad</h2>
             <div className="bg-bg-secondary rounded-[24px] shadow-sm ring-1 ring-glass-border overflow-hidden">
                 {hasPassword && (
-                <div className="flex items-center justify-between p-4 border-b border-glass-border">
+                <div className="group flex items-center justify-between p-4 border-b border-glass-border">
                     <div className="flex items-center gap-3 mr-2">
-                        <div className="w-7 h-7 rounded-lg bg-gray-500 flex items-center justify-center text-white shadow-sm shrink-0">
-                            <Lock size={16} strokeWidth={2.5} />
+                        <div className="w-8 h-8 rounded-[12px] bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-secondary ring-1 ring-glass-border shadow-sm shrink-0 group-hover:bg-accent/10 group-hover:text-accent group-hover:ring-accent/30 transition-colors">
+                            <Shield size={18} strokeWidth={2} />
                         </div>
                         <span className="text-[15px] font-medium text-text-primary whitespace-nowrap">Contraseña actual</span>
                     </div>
                     <input type="password" name="currentPassword" value={formData.currentPassword} onChange={handleChange} className="text-right bg-transparent outline-none text-text-secondary font-medium w-full min-w-0" placeholder="••••••" />
                 </div>
                 )}
-                <div className="flex items-center justify-between p-4">
+                <div className="group flex items-center justify-between p-4">
                     <div className="flex items-center gap-3 mr-2">
-                        <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center text-white shadow-sm shrink-0">
-                            <Key size={16} strokeWidth={2.5} />
+                        <div className="w-8 h-8 rounded-[12px] bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-secondary ring-1 ring-glass-border shadow-sm shrink-0 group-hover:bg-accent/10 group-hover:text-accent group-hover:ring-accent/30 transition-colors">
+                            <Key size={18} strokeWidth={2} />
                         </div>
                         <span className="text-[15px] font-medium text-text-primary whitespace-nowrap">Cambiar contraseña</span>
                     </div>
@@ -532,10 +532,10 @@ const Profile = ({ onCancel, setView, navigate }) => {
         {/* Group 3: Mi Perfil Social & Progreso */}
         <div className="mb-6">
             <div className="bg-bg-secondary rounded-[24px] shadow-sm ring-1 ring-glass-border overflow-hidden">
-                <button type="button" onClick={handleViewPublicProfile} className="w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors">
+                <button type="button" onClick={handleViewPublicProfile} className="group w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors">
                     <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center text-white shadow-sm shrink-0">
-                            <Globe size={16} strokeWidth={2.5} />
+                        <div className="w-8 h-8 rounded-[12px] bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-secondary ring-1 ring-glass-border shadow-sm shrink-0 group-hover:bg-accent/10 group-hover:text-accent group-hover:ring-accent/30 transition-colors">
+                            <LayoutTemplate size={18} strokeWidth={2} />
                         </div>
                         <span className="text-[15px] font-medium text-text-primary">Ver mi perfil público</span>
                     </div>
@@ -573,19 +573,19 @@ const Profile = ({ onCancel, setView, navigate }) => {
         <div className="mb-10">
             <h2 className="text-xs font-bold text-red/60 uppercase tracking-wider mb-2 px-4">Zona de Peligro</h2>
             <div className="bg-bg-secondary rounded-[24px] shadow-sm ring-1 ring-glass-border overflow-hidden">
-                <button type="button" onClick={() => setModalAction('deleteData')} className="w-full flex items-center justify-between p-4 border-b border-glass-border hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors">
+                <button type="button" onClick={() => setModalAction('deleteData')} className="group w-full flex items-center justify-between p-4 border-b border-glass-border hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors">
                     <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-lg bg-orange-500 flex items-center justify-center text-white shadow-sm shrink-0">
-                            <Trash2 size={16} strokeWidth={2.5} />
+                        <div className="w-8 h-8 rounded-[12px] bg-orange-500/10 flex items-center justify-center text-orange-500 ring-1 ring-orange-500/30 shadow-sm shrink-0 group-hover:bg-orange-500/20 transition-colors">
+                            <Trash2 size={18} strokeWidth={2} />
                         </div>
                         <span className="text-[15px] font-medium text-orange-500">Borrar mi historial de datos</span>
                     </div>
                     <ChevronRight size={18} className="text-text-muted" />
                 </button>
-                <button type="button" onClick={() => setModalAction('deleteAccount')} className="w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors">
+                <button type="button" onClick={() => setModalAction('deleteAccount')} className="group w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors">
                     <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-lg bg-red flex items-center justify-center text-white shadow-sm shrink-0">
-                            <AlertTriangle size={16} strokeWidth={2.5} />
+                        <div className="w-8 h-8 rounded-[12px] bg-red/10 flex items-center justify-center text-red ring-1 ring-red/30 shadow-sm shrink-0 group-hover:bg-red/20 transition-colors">
+                            <AlertTriangle size={18} strokeWidth={2} />
                         </div>
                         <span className="text-[15px] font-medium text-red">Borrar cuenta definitivamente</span>
                     </div>
