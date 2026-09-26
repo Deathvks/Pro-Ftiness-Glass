@@ -437,10 +437,33 @@ export const getTrainerClientsChats = async (req, res, next) => {
         });
       }
 
+      let botReminders = [];
+      if (isAdmin) {
+        botReminders = await Message.findAll({
+          where: {
+            [Op.or]: [
+              { sender_id: client.id, receiver_id: { [Op.in]: trainerAdminIds } },
+              { sender_id: { [Op.in]: trainerAdminIds }, receiver_id: client.id }
+            ],
+            bot_reminder_level: { [Op.gt]: 0 }
+          }
+        });
+      } else {
+        botReminders = await Message.findAll({
+          where: {
+            [Op.or]: [
+              { sender_id: client.id, receiver_id: userId },
+              { sender_id: userId, receiver_id: client.id }
+            ],
+            bot_reminder_level: { [Op.gt]: 0 }
+          }
+        });
+      }
       return {
         ...client.toJSON(),
         trainer_name: trainerMap[client.trainer_id] || null,
         lastMessage: lastMessage ? lastMessage.toJSON() : null,
+        botReminders: botReminders.map(m => m.toJSON()),
         unreadCount
       };
     }));

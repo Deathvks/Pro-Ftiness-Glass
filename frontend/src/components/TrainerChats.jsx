@@ -27,13 +27,15 @@ export default function TrainerChats({ onClose }) {
   const [touchStartY, setTouchStartY] = useState(null);
   const [botModalClient, setBotModalClient] = useState(null);
 
-  useEffect(() => {
+    useEffect(() => {
     if (botModalClient) {
       const updatedClient = clients.find(c => c.id === botModalClient.id);
       if (updatedClient) {
+        const remindersChanged = JSON.stringify(updatedClient.botReminders) !== JSON.stringify(botModalClient.botReminders);
         if (updatedClient.lastMessage?.id !== botModalClient.lastMessage?.id || 
             updatedClient.lastMessage?.bot_push_status !== botModalClient.lastMessage?.bot_push_status || 
-            updatedClient.lastMessage?.bot_email_status !== botModalClient.lastMessage?.bot_email_status) {
+            updatedClient.lastMessage?.bot_email_status !== botModalClient.lastMessage?.bot_email_status ||
+            remindersChanged) {
           setBotModalClient(updatedClient);
         }
       }
@@ -1103,30 +1105,30 @@ export default function TrainerChats({ onClose }) {
                             !isFinal && (
   <div className="flex items-center gap-3 mt-2">
                                       <div 
-                                        className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all " + (botModalClient.lastMessage?.bot_push_status !== 'ok' ? 'cursor-pointer active:scale-95' : 'cursor-default')}
-style={botModalClient.lastMessage?.bot_push_status !== 'ok' ? { color: '#dc2626', backgroundColor: 'rgba(220,38,38,0.1)' } : { color: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)' }}
+                                        className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all " + ((botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_push_status || botModalClient.lastMessage?.bot_push_status) !== 'ok' ? 'cursor-pointer active:scale-95' : 'cursor-default')}
+style={(botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_push_status || botModalClient.lastMessage?.bot_push_status) !== 'ok' ? { color: '#dc2626', backgroundColor: 'rgba(220,38,38,0.1)' } : { color: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)' }}
                                         onClick={(e) => { 
                                           e.stopPropagation(); 
-                                          if (botModalClient.lastMessage?.bot_push_status !== 'ok') {
+                                          if ((botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_push_status || botModalClient.lastMessage?.bot_push_status) !== 'ok') {
                                             setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'push' }); 
                                           }
                                         }}
-                                        title={botModalClient.lastMessage?.bot_push_status !== 'ok' ? "Toca para reenviar solo el Push" : "Push enviado correctamente"}
+                                        title={(botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_push_status || botModalClient.lastMessage?.bot_push_status) !== 'ok' ? "Toca para reenviar solo el Push" : "Push enviado correctamente"}
                                       >
-                                        {botModalClient.lastMessage?.bot_push_status !== 'ok' ? (<><BellAlertIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Push Error ❌</span></>) : (<><BellAlertIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Push Enviado</span></>)}
+                                        {(botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_push_status || botModalClient.lastMessage?.bot_push_status) !== 'ok' ? (<><BellAlertIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Push Error ❌</span></>) : (<><BellAlertIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Push Enviado</span></>)}
                                       </div>
                                       <div 
-                                        className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all " + (botModalClient.lastMessage?.bot_email_status !== 'ok' ? 'cursor-pointer active:scale-95' : 'cursor-default')}
-style={botModalClient.lastMessage?.bot_email_status !== 'ok' ? { color: '#dc2626', backgroundColor: 'rgba(220,38,38,0.1)' } : { color: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)' }}
+                                        className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all " + ((botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_email_status || botModalClient.lastMessage?.bot_email_status) !== 'ok' ? 'cursor-pointer active:scale-95' : 'cursor-default')}
+style={(botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_email_status || botModalClient.lastMessage?.bot_email_status) !== 'ok' ? { color: '#dc2626', backgroundColor: 'rgba(220,38,38,0.1)' } : { color: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)' }}
                                         onClick={(e) => { 
                                           e.stopPropagation(); 
-                                          if (botModalClient.lastMessage?.bot_email_status !== 'ok') {
+                                          if ((botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_email_status || botModalClient.lastMessage?.bot_email_status) !== 'ok') {
                                             setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'email' }); 
                                           }
                                         }}
-                                        title={botModalClient.lastMessage?.bot_email_status !== 'ok' ? "Toca para reenviar solo el Correo" : "Correo enviado correctamente"}
+                                        title={(botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_email_status || botModalClient.lastMessage?.bot_email_status) !== 'ok' ? "Toca para reenviar solo el Correo" : "Correo enviado correctamente"}
                                       >
-                                        {botModalClient.lastMessage?.bot_email_status !== 'ok' ? (<><EnvelopeIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Email Error ❌</span></>) : (<><EnvelopeIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Email Enviado</span></>)}
+                                        {(botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_email_status || botModalClient.lastMessage?.bot_email_status) !== 'ok' ? (<><EnvelopeIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Email Error ❌</span></>) : (<><EnvelopeIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Email Enviado</span></>)}
                                       </div>
                                     </div>
 )
@@ -1236,6 +1238,10 @@ style={botModalClient.lastMessage?.bot_email_status !== 'ok' ? { color: '#dc2626
     </div>
   );
 }
+
+
+
+
 
 
 
