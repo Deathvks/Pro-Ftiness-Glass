@@ -647,12 +647,12 @@ export const resendBotReminder = async (req, res) => {
     let text = '';
     if (parsedLevel === 1) {
       title = '¿Continuamos con tu cambio?';
-      text = 'Hola, he visto que dejaste el chat abierto. Si tienes cualquier duda sobre la asesoría o quieres empezar, ¡escríbeme por aquí y nos ponemos a ello!';
+      text = 'Hola, he visto que dejaste el chat abierto. Si tienes cualquier duda sobre la asesoría o quieres empezar, escríbeme por aquí y nos ponemos a ello!';
     } else if (parsedLevel === 2) {
-      title = 'Aún estás a tiempo de empezar 💪';
+      title = 'Aún estás a tiempo de empezar 🔥';
       text = 'Solo te escribo para recordarte que sigo por aquí si necesitas ayuda para dar el primer paso. Si no estás interesado, no te preocupes.';
     } else if (parsedLevel === 3) {
-      title = 'Último aviso antes de cerrar el chat ⏳';
+      title = 'Último aviso antes de cerrar el chat ❌';
       text = 'Si no recibo respuesta en 1 día, cerraré esta conversación para mantener el buzón limpio. Siempre podrás volver a solicitar asesoría más adelante.';
     } else {
       return res.status(400).json({ error: 'Nivel inválido' });
@@ -718,12 +718,12 @@ export const sendManualBotReminder = async (req, res) => {
     let text = '';
     if (parsedLevel === 1) {
       title = '¿Continuamos con tu cambio?';
-      text = 'Hola, he visto que dejaste el chat abierto. Si tienes cualquier duda sobre la asesoría o quieres empezar, ¡escríbeme por aquí y nos ponemos a ello!';
+      text = 'Hola, he visto que dejaste el chat abierto. Si tienes cualquier duda sobre la asesoría o quieres empezar, escríbeme por aquí y nos ponemos a ello!';
     } else if (parsedLevel === 2) {
-      title = 'Aún estás a tiempo de empezar 💪';
+      title = 'Aún estás a tiempo de empezar 🔥';
       text = 'Solo te escribo para recordarte que sigo por aquí si necesitas ayuda para dar el primer paso. Si no estás interesado, no te preocupes.';
     } else if (parsedLevel === 3) {
-      title = 'Último aviso antes de cerrar el chat 🧹';
+      title = 'Último aviso antes de cerrar el chat ❌';
       text = 'Si no recibo respuesta en 1 día, cerraré esta conversación para mantener el buzón limpio. Siempre podrás volver a solicitar asesoría más adelante.';
     } else {
       return res.status(400).json({ error: 'Nivel invlido' });
@@ -842,6 +842,9 @@ sendManualBotReminder,
 };
 
 export default chatController;
+
+
+
 
 
 
