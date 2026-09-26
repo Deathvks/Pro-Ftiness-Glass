@@ -414,366 +414,169 @@ const Profile = ({ onCancel, setView, navigate }) => {
   return (
     <>
       <Helmet>
-        <title>{`Editar Perfil: ${formData.username || 'Usuario'} - Pro Fitness Glass`}</title>
+        <title>{Editar Perfil:  - Pro Fitness Glass}</title>
       </Helmet>
 
-      <div className="w-full max-w-4xl mx-auto px-4 pb-28 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] mt-6 sm:mt-0">
-        <button
-          onClick={() => {
-            if (isDirty) {
-              setShowUnsavedModal(true);
-            } else {
-              onCancel();
-            }
-          }}
-          className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-full text-text-secondary font-bold hover:text-text-primary transition-colors mb-6 w-fit active:scale-95"
-        >
-          <ChevronLeft size={20} strokeWidth={2.5} />
-          Volver
-        </button>
-
-        <h1 className="hidden md:block w-fit text-4xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
-          Editar Perfil
-        </h1>
-
-        <GlassCard className="glass p-6 sm:p-10 rounded-[32px] shadow-xl border-none ring-1 ring-black/5 dark:ring-white/10 mb-8 transition-all duration-300">
-          <form onSubmit={handleSave} className="flex flex-col gap-6 sm:gap-8" noValidate>
-            {errors.api && (
-              <p className="text-center text-red font-bold mb-4 -mt-2">{errors.api}</p>
-            )}
-
-            <div className="flex flex-col items-center gap-4">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageChange}
-                accept="image/png, image/jpeg, image/webp"
-                className="hidden"
-              />
-              <div
-                className="relative w-36 h-36 rounded-[40px] cursor-pointer group hover:scale-105 transition-transform duration-300 shadow-xl bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 p-1"
-                onClick={openImageModal}
-                title="Ver imagen ampliada"
-              >
-                {imagePreview ? (
-                  <img
-                    src={getProcessedImageUrl(imagePreview)}
-                    alt={`Foto de perfil de ${formData.username || 'usuario'}`}
-                    className="w-full h-full rounded-[36px] object-cover"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => { e.target.onerror = null; }}
-                  />
-                ) : (
-                  <div className="w-full h-full rounded-[36px] bg-black/5 dark:bg-white/5 flex items-center justify-center">
-                    <User size={64} className="text-text-muted opacity-50" strokeWidth={1.5} />
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    fileInputRef.current.click();
-                  }}
-                  className="!absolute bottom-0 right-0 p-3 bg-accent rounded-[16px] text-accent-contrast shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-300"
-                  aria-label="Cambiar foto de perfil"
-                >
-                  <Camera size={20} strokeWidth={2.5} />
-                </button>
-              </div>
-              {errors.image && (
-                <p className="form-error-text -mt-2 font-bold">{errors.image}</p>
+      <div className="w-full max-w-2xl mx-auto px-4 pb-28 sm:p-6 lg:p-10 animate-[fade-in_0.3s_ease-out] mt-2 sm:mt-0">
+        
+        {/* Header - Avatar */}
+        <div className="flex flex-col items-center mt-6 mb-8">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageChange}
+              accept="image/png, image/jpeg, image/webp"
+              className="hidden"
+            />
+            <div
+              className="relative w-28 h-28 rounded-full cursor-pointer group shadow-md bg-bg-secondary ring-1 ring-glass-border p-1"
+              onClick={openImageModal}
+            >
+              {imagePreview ? (
+                <img
+                  src={getProcessedImageUrl(imagePreview)}
+                  alt="Foto de perfil"
+                  className="w-full h-full rounded-full object-cover"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => { e.target.onerror = null; }}
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center">
+                  <User size={48} className="text-text-muted" strokeWidth={1.5} />
+                </div>
               )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current.click();
+                }}
+                className="absolute bottom-0 right-0 p-2.5 bg-accent rounded-full text-accent-contrast shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform"
+              >
+                <Camera size={18} strokeWidth={2.5} />
+              </button>
             </div>
+            <h1 className="text-2xl font-bold mt-4 text-text-primary">{userProfile.username || 'Usuario'}</h1>
+            <p className="text-sm text-text-secondary">{userProfile.email}</p>
+        </div>
 
-            <div>
-              <h2 className="text-2xl font-extrabold mb-6 flex items-center gap-3 text-text-primary tracking-tight">
-                <div className="p-2.5 bg-accent/10 text-accent rounded-[16px] ring-1 ring-accent/30 shadow-sm shrink-0">
-                  <User size={24} strokeWidth={2.5} />
+        {/* Group 1: Datos Bsicos */}
+        <div className="mb-6">
+            <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 px-4">Datos Bsicos</h2>
+            <div className="bg-bg-secondary rounded-[24px] shadow-sm ring-1 ring-glass-border overflow-hidden">
+                <div className="flex items-center justify-between p-4 border-b border-glass-border">
+                    <span className="text-[15px] font-medium text-text-primary">Usuario</span>
+                    <input type="text" name="username" value={formData.username} onChange={handleChange} className="text-right bg-transparent outline-none text-text-secondary font-medium w-1/2 min-w-[100px]" placeholder="Tu usuario" />
                 </div>
-                Datos Básicos
-              </h2>
-              <div className="flex flex-col gap-5">
-                <div>
-                  <label htmlFor="username" className="block text-[11px] sm:text-xs font-bold text-text-secondary mb-2 px-1 uppercase tracking-wider">
-                    Nombre de usuario
-                  </label>
-                  <input
-                    id="username"
-                    name="username"
-                    type="text"
-                    value={formData.username}
-                    onChange={handleChange}
-                    className={baseInputClasses}
-                    maxLength={30}
-                    placeholder="Escribe tu nombre de usuario"
-                  />
-                  {errors.username && (
-                    <p className="form-error-text mt-2 font-bold px-2">{errors.username}</p>
-                  )}
+                {errors.username && <p className="text-xs text-red font-bold px-4 pb-2 pt-1">{errors.username}</p>}
+
+                <div className="flex items-center justify-between p-4">
+                    <span className="text-[15px] font-medium text-text-primary">Email</span>
+                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="text-right bg-transparent outline-none text-text-secondary font-medium w-1/2 min-w-[100px]" placeholder="Tu email" />
                 </div>
-                <div>
-                  <label htmlFor="email" className="block text-[11px] sm:text-xs font-bold text-text-secondary mb-2 px-1 uppercase tracking-wider">
-                    Correo Electrónico
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={baseInputClasses}
-                    placeholder="Escribe tu email"
-                  />
-                  {errors.email && (
-                    <p className="form-error-text mt-2 font-bold px-2">{errors.email}</p>
-                  )}
-                </div>
-              </div>
+                {errors.email && <p className="text-xs text-red font-bold px-4 pb-2 pt-1">{errors.email}</p>}
             </div>
+        </div>
 
-            <div className="pt-8 border-t border-black/5 dark:border-white/10">
-              <h2 className="text-2xl font-extrabold mb-3 flex items-center gap-3 text-text-primary tracking-tight">
-                <div className="p-2.5 bg-accent/10 text-accent rounded-[16px] ring-1 ring-accent/30 shadow-sm shrink-0">
-                  <Shield size={24} strokeWidth={2.5} />
-                </div>
-                {hasPassword ? 'Seguridad y Contraseña' : 'Establecer Contraseña'}
-              </h2>
-              <p className="text-sm font-medium text-text-secondary mb-6 leading-relaxed px-1">
-                {hasPassword
-                  ? 'Si dejas estos campos en blanco tu contraseña no cambiará.'
-                  : 'Añade una contraseña para poder iniciar sesión directamente con tu correo electrónico.'}
-              </p>
-              <div className="flex flex-col gap-5">
+        {/* Group 2: Seguridad */}
+        <div className="mb-6">
+            <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 px-4">Seguridad</h2>
+            <div className="bg-bg-secondary rounded-[24px] shadow-sm ring-1 ring-glass-border overflow-hidden">
                 {hasPassword && (
-                  <div>
-                    <label htmlFor="currentPassword" className="block text-[11px] sm:text-xs font-bold text-text-secondary mb-2 px-1 uppercase tracking-wider">
-                      Contraseña Actual
-                    </label>
-                    <input
-                      id="currentPassword"
-                      name="currentPassword"
-                      type="password"
-                      value={formData.currentPassword}
-                      onChange={handleChange}
-                      className={baseInputClasses}
-                      placeholder="Ingresa tu contraseña actual"
-                    />
-                    {errors.currentPassword && (
-                      <p className="form-error-text mt-2 font-bold px-2">
-                        {errors.currentPassword}
-                      </p>
-                    )}
-                  </div>
-                )}
-                <div>
-                  <label htmlFor="newPassword" className="block text-[11px] sm:text-xs font-bold text-text-secondary mb-2 px-1 uppercase tracking-wider">
-                    {hasPassword ? 'Nueva Contraseña' : 'Contraseña Nueva'}
-                  </label>
-                  <input
-                    id="newPassword"
-                    name="newPassword"
-                    type="password"
-                    value={formData.newPassword}
-                    onChange={handleChange}
-                    className={baseInputClasses}
-                    placeholder="Escribe una nueva contraseña"
-                  />
-                  {errors.newPassword && (
-                    <p className="form-error-text mt-2 font-bold px-2">{errors.newPassword}</p>
-                  )}
+                <div className="flex items-center justify-between p-4 border-b border-glass-border">
+                    <span className="text-[15px] font-medium text-text-primary whitespace-nowrap mr-2">Contrasea actual</span>
+                    <input type="password" name="currentPassword" value={formData.currentPassword} onChange={handleChange} className="text-right bg-transparent outline-none text-text-secondary font-medium w-full min-w-0" placeholder="••••••" />
                 </div>
-              </div>
+                )}
+                <div className="flex items-center justify-between p-4">
+                    <span className="text-[15px] font-medium text-text-primary whitespace-nowrap mr-2">{hasPassword ? "Nueva contrasea" : "Crear contrasea"}</span>
+                    <input type="password" name="newPassword" value={formData.newPassword} onChange={handleChange} className="text-right bg-transparent outline-none text-text-secondary font-medium w-full min-w-0" placeholder="••••••" />
+                </div>
+                {(errors.currentPassword || errors.newPassword) && (
+                    <div className="px-4 pb-3">
+                        {errors.currentPassword && <p className="text-xs text-red font-bold">{errors.currentPassword}</p>}
+                        {errors.newPassword && <p className="text-xs text-red font-bold">{errors.newPassword}</p>}
+                    </div>
+                )}
             </div>
+        </div>
 
-            <div className="flex justify-center pt-8 border-t border-black/5 dark:border-white/10 mt-2">
-              <button
-                type="submit"
+        {/* Action Button */}
+        {isDirty && (
+            <button
+                onClick={(e) => handleSave(e)}
                 disabled={isLoading}
-                className="flex items-center justify-center gap-2 px-8 py-4 w-full sm:w-auto min-w-[200px] rounded-[20px] bg-accent text-accent-contrast font-bold text-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-accent/20"
-              >
-                {isLoading ? (
-                  <Spinner size={24} color="white" />
-                ) : (
-                  <>
-                    <Save size={20} strokeWidth={2.5} />
-                    <span>Guardar Cambios</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </GlassCard>
+                className="w-full bg-accent text-accent-contrast font-bold text-[15px] py-4 rounded-[20px] shadow-lg shadow-accent/20 mb-8 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+                {isLoading ? <Spinner size={20} color="white" /> : <><Save size={18} strokeWidth={2.5}/> Guardar Cambios</>}
+            </button>
+        )}
 
-        {/* --- APARTADO: PERFIL SOCIAL --- */}
-        <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 mb-8 hover:shadow-xl transition-all duration-300">
-          <h3 className="text-xl font-extrabold text-text-primary mb-3 flex items-center gap-3 tracking-tight">
-            <div className="p-2.5 bg-accent/10 rounded-[12px] ring-1 ring-accent/30 shrink-0">
-              <Eye size={20} className="text-accent" strokeWidth={2.5} />
-            </div>
-            Perfil Social Público
-          </h3>
-          <p className="text-sm font-medium text-text-secondary mb-6 leading-relaxed">
-            Así es como otros usuarios ven tu perfil, logros y estadísticas en la comunidad.
-            Puedes personalizar qué información compartir desde la sección de privacidad en Ajustes.
-          </p>
-          <button
-            type="button"
-            onClick={handleViewPublicProfile}
-            className="flex items-center justify-center gap-2 px-6 py-4 w-full sm:w-auto rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95 shadow-sm"
-          >
-            <User size={18} strokeWidth={2.5} />
-            <span>Previsualizar Mi Perfil</span>
-          </button>
-        </GlassCard>
-
-        {/* --- APARTADO: INSIGNIAS --- */}
-        <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 mb-8 hover:shadow-xl transition-all duration-300">
-          <h3 className="text-xl font-extrabold text-text-primary mb-6 flex items-center gap-3 tracking-tight">
-            <div className="p-2.5 bg-accent/10 rounded-[12px] ring-1 ring-accent/30 shrink-0">
-              <Trophy size={20} className="text-accent" strokeWidth={2.5} />
-            </div>
-            Mis Insignias
-          </h3>
-
-          {gamification?.unlockedBadges && gamification.unlockedBadges.length > 0 ? (
-            (() => {
-              const unlockedBadges = gamification.unlockedBadges;
-              const totalPages = Math.ceil(unlockedBadges.length / itemsPerPage);
-              const currentBadges = unlockedBadges.slice(
-                badgePage * itemsPerPage,
-                (badgePage + 1) * itemsPerPage
-              );
-
-              return (
-                <div className="relative px-2 sm:px-12">
-                  {totalPages > 1 && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setBadgePage(p => Math.max(0, p - 1))}
-                        disabled={badgePage === 0}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 p-2.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 rounded-[16px] text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all z-10 hidden sm:block active:scale-95 shadow-sm"
-                      >
-                        <ChevronLeft size={20} strokeWidth={2.5} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBadgePage(p => Math.min(totalPages - 1, p + 1))}
-                        disabled={badgePage === totalPages - 1}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 p-2.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 rounded-[16px] text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all z-10 hidden sm:block active:scale-95 shadow-sm"
-                      >
-                        <ChevronRight size={20} strokeWidth={2.5} />
-                      </button>
-                    </>
-                  )}
-
-                  <div className={`grid gap-4 ${itemsPerPage === 1 ? 'grid-cols-1' : 'grid-cols-3'}`}>
-                    {currentBadges.map((badgeId) => {
-                      const badge = BADGE_DETAILS[badgeId] || BADGE_DETAILS.default;
-                      return (
-                        <div key={badgeId} className="flex flex-col items-center text-center p-5 rounded-[24px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 transition-transform hover:-translate-y-1">
-                          <div className={`p-4 rounded-[20px] mb-4 bg-bg-primary shadow-sm ring-1 ring-black/5 dark:ring-white/10 ${badge.color}`}>
-                            <badge.icon size={32} strokeWidth={1.5} />
-                          </div>
-                          <span className="font-extrabold text-sm text-text-primary mb-1">{badge.name}</span>
-                          <span className="text-xs font-medium text-text-secondary">{badge.desc}</span>
+        {/* Group 3: Mi Perfil Social & Progreso */}
+        <div className="mb-6">
+            <div className="bg-bg-secondary rounded-[24px] shadow-sm ring-1 ring-glass-border overflow-hidden">
+                <button type="button" onClick={handleViewPublicProfile} className="w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors">
+                    <div className="flex items-center gap-3">
+                        <div className="p-1.5 bg-blue-500/10 rounded-[10px] text-blue-500">
+                            <Eye size={18} strokeWidth={2.5} />
                         </div>
-                      );
+                        <span className="text-[15px] font-medium text-text-primary">Ver mi perfil pblico</span>
+                    </div>
+                    <ChevronRight size={18} className="text-text-muted" />
+                </button>
+            </div>
+        </div>
+
+        {/* Group 4: Badges */}
+        <div className="mb-8">
+            <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 px-4">Mis Insignias</h2>
+            {gamification?.unlockedBadges?.length > 0 ? (
+                <div className="grid grid-cols-3 gap-3">
+                    {gamification.unlockedBadges.slice(0, 6).map((badgeId) => {
+                        const badge = BADGE_DETAILS[badgeId] || BADGE_DETAILS.default;
+                        return (
+                            <div key={badgeId} className="flex flex-col items-center p-3 rounded-[20px] bg-bg-secondary ring-1 ring-glass-border shadow-sm text-center">
+                                <div className={w-10 h-10 rounded-[14px] flex items-center justify-center mb-2 \ \}>
+                                    <badge.icon size={20} strokeWidth={2} />
+                                </div>
+                                <span className="text-[10px] font-bold text-text-primary leading-tight">{badge.name}</span>
+                            </div>
+                        );
                     })}
-                  </div>
-
-                  {/* Controles de página para móvil */}
-                  {totalPages > 1 && (
-                    <div className="flex sm:hidden items-center justify-between mt-6 px-2">
-                      <button
-                        onClick={() => setBadgePage(p => Math.max(0, p - 1))}
-                        disabled={badgePage === 0}
-                        className="p-2.5 rounded-[12px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 disabled:opacity-30 text-text-secondary active:scale-95"
-                      >
-                        <ChevronLeft size={20} strokeWidth={2.5} />
-                      </button>
-                      <div className="flex gap-2">
-                        {Array.from({ length: totalPages }).map((_, i) => (
-                          <div
-                            key={i}
-                            className={`w-1.5 h-1.5 rounded-full transition-colors ${i === badgePage ? 'bg-accent' : 'bg-black/10 dark:bg-white/20'}`}
-                          />
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => setBadgePage(p => Math.min(totalPages - 1, p + 1))}
-                        disabled={badgePage === totalPages - 1}
-                        className="p-2.5 rounded-[12px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 disabled:opacity-30 text-text-secondary active:scale-95"
-                      >
-                        <ChevronRight size={20} strokeWidth={2.5} />
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Indicadores de página Desktop */}
-                  {totalPages > 1 && (
-                    <div className="hidden sm:flex justify-center gap-2 mt-6">
-                      {Array.from({ length: totalPages }).map((_, i) => (
-                        <div
-                          key={i}
-                          className={`w-1.5 h-1.5 rounded-full transition-colors ${i === badgePage ? 'bg-accent' : 'bg-black/10 dark:bg-white/20'}`}
-                        />
-                      ))}
-                    </div>
-                  )}
                 </div>
-              );
-            })()
-          ) : (
-            <div className="text-center p-10 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
-              <Trophy size={48} className="mx-auto text-text-muted opacity-50 mb-4" strokeWidth={1.5} />
-              <p className="text-text-primary font-extrabold text-lg mb-1">Sin insignias aún</p>
-              <p className="text-text-secondary font-medium text-sm">¡Sigue entrenando para desbloquear recompensas!</p>
-            </div>
-          )}
-        </GlassCard>
+            ) : (
+                <div className="bg-bg-secondary rounded-[24px] p-6 ring-1 ring-glass-border text-center">
+                    <Trophy size={24} className="text-text-muted mx-auto mb-2" />
+                    <p className="text-sm text-text-secondary">An no tienes insignias.</p>
+                </div>
+            )}
+        </div>
 
-        {/* --- ZONA DE PELIGRO --- */}
-        <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-red/30 bg-red/5">
-          <h3 className="text-xl font-extrabold text-red mb-6 flex items-center gap-3 tracking-tight">
-            <div className="p-2.5 bg-red/10 rounded-[12px] ring-1 ring-red/30 shrink-0">
-              <AlertTriangle size={20} strokeWidth={2.5} />
+        {/* Group 5: Danger Zone */}
+        <div className="mb-10">
+            <h2 className="text-xs font-bold text-red/60 uppercase tracking-wider mb-2 px-4">Zona de Peligro</h2>
+            <div className="bg-bg-secondary rounded-[24px] shadow-sm ring-1 ring-glass-border overflow-hidden">
+                <button type="button" onClick={() => setModalAction('deleteData')} className="w-full flex items-center justify-between p-4 border-b border-glass-border hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors">
+                    <span className="text-[15px] font-medium text-orange-500">Borrar mi historial de datos</span>
+                    <ChevronRight size={18} className="text-text-muted" />
+                </button>
+                <button type="button" onClick={() => setModalAction('deleteAccount')} className="w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors">
+                    <span className="text-[15px] font-medium text-red">Borrar cuenta definitivamente</span>
+                    <ChevronRight size={18} className="text-text-muted" />
+                </button>
             </div>
-            Zona de Peligro
-          </h3>
-          <div className="flex flex-col md:flex-row gap-5">
-            <div className="flex-1 bg-bg-primary rounded-[24px] p-6 ring-1 ring-black/5 dark:ring-white/10 shadow-sm flex flex-col">
-              <p className="text-sm text-text-primary font-extrabold mb-2 uppercase tracking-wider">Borrar Mis Datos</p>
-              <p className="text-xs font-medium text-text-secondary mb-6 leading-relaxed flex-1">
-                Elimina todo tu historial de entrenamientos, rutinas y nutrición, pero conserva tu perfil de usuario.
-              </p>
-              <button
-                type="button"
-                onClick={() => setModalAction('deleteData')}
-                className="w-full px-4 py-4 rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95"
-              >
-                Borrar Historial
-              </button>
-            </div>
+        </div>
 
-            <div className="flex-1 bg-bg-primary rounded-[24px] p-6 ring-1 ring-red/20 shadow-sm flex flex-col">
-              <p className="text-sm text-red font-extrabold mb-2 uppercase tracking-wider">Borrar Cuenta Definitivamente</p>
-              <p className="text-xs font-medium text-red/80 mb-6 leading-relaxed flex-1">
-                Elimina permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer.
-              </p>
-              <button
-                type="button"
-                onClick={() => setModalAction('deleteAccount')}
-                className="w-full px-4 py-4 rounded-[20px] bg-red text-white font-bold hover:bg-red/90 transition-colors shadow-lg shadow-red/20 active:scale-95"
-              >
-                Borrar Cuenta
-              </button>
-            </div>
-          </div>
-        </GlassCard>
       </div>
 
-      {/* --- MODAL DE RECORTE DE IMAGEN --- */}
+      {isImageModalOpen && (
+        <ProfileImageModal
+          imageUrl={getProcessedImageUrl(imagePreview)}
+          username={formData.username}
+          onClose={() => setIsImageModalOpen(false)}
+        />
+      )}
+
       {isCropping && tempImage && (
         <ImageCropModal
           imageSrc={tempImage}
@@ -785,7 +588,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
         />
       )}
 
-      {/* --- MODAL DE CONFIRMACIÓN DE BORRADO --- */}
       <DeleteConfirmationModal
         modalAction={modalAction}
         isModalLoading={isModalLoading}
@@ -799,17 +601,9 @@ const Profile = ({ onCancel, setView, navigate }) => {
         hasPassword={hasPassword}
       />
 
-      {isImageModalOpen && (
-        <ProfileImageModal
-          imageUrl={getProcessedImageUrl(imagePreview)}
-          username={formData.username}
-          onClose={() => setIsImageModalOpen(false)}
-        />
-      )}
-
       <AnimatePresence>
         {showUnsavedModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -821,17 +615,17 @@ const Profile = ({ onCancel, setView, navigate }) => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md"
+              className="relative w-full max-w-sm"
             >
-              <GlassCard className="glass p-6 rounded-[28px] border-none ring-1 ring-white/10 shadow-2xl flex flex-col gap-6">
+              <div className="bg-bg-secondary p-6 rounded-[28px] ring-1 ring-glass-border shadow-2xl flex flex-col gap-6">
                 <div className="flex flex-col items-center text-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent ring-4 ring-accent/5">
+                  <div className="w-16 h-16 rounded-[20px] bg-accent/10 flex items-center justify-center text-accent ring-1 ring-accent/30">
                     <AlertTriangle size={32} strokeWidth={2.5} />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-text-primary mb-2">Cambios sin guardar</h3>
                     <p className="text-sm text-text-secondary font-medium">
-                      Tienes cambios pendientes. ¿Quieres aplicarlos ahora o descartarlos y salir?
+                      Tienes cambios pendientes. Quieres aplicarlos ahora o salir sin guardar?
                     </p>
                   </div>
                 </div>
@@ -841,10 +635,9 @@ const Profile = ({ onCancel, setView, navigate }) => {
                       setShowUnsavedModal(false);
                       handleSave({ preventDefault: () => {} });
                     }}
-                    className="w-full py-4 rounded-[16px] font-bold bg-accent text-accent-contrast hover:bg-accent/90 transition-all active:scale-95 flex items-center justify-center gap-2"
+                    className="w-full py-4 rounded-[16px] font-bold bg-accent text-accent-contrast hover:brightness-110 transition-all active:scale-95"
                   >
-                    <Save size={20} />
-                    Aplicar y salir
+                    Guardar y salir
                   </button>
                   <button
                     onClick={() => {
@@ -853,10 +646,10 @@ const Profile = ({ onCancel, setView, navigate }) => {
                     }}
                     className="w-full py-4 rounded-[16px] font-bold bg-black/5 dark:bg-white/5 text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-95"
                   >
-                    Descartar cambios
+                    Salir sin guardar
                   </button>
                 </div>
-              </GlassCard>
+              </div>
             </motion.div>
           </div>
         )}

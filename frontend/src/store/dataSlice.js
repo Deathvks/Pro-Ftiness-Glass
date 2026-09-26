@@ -169,9 +169,9 @@ export const createDataSlice = (set, get) => ({
         });
       }
     } catch (error) {
-      console.error("Error de autenticación o carga de datos:", error);
-      get().handleLogout();
-    } finally {
+        console.error("Error al cargar datos iniciales (posiblemente de red):", error);
+        // NO cerramos sesion automaticamente aqui, apiClient se encarga de los 401.
+      } finally {
       set({ isLoading: false });
     }
   },
