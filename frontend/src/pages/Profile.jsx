@@ -886,7 +886,7 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
       <motion.div 
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className="relative w-full max-w-md bg-bg-secondary sm:rounded-[24px] rounded-t-[32px] p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] shadow-2xl sm:border border-t border-glass-border overflow-hidden flex flex-col"
-        style={{ transform: 	ranslateY(px), transition: touchStartY !== null ? "none" : "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}
+        style={{ transform: `translateY(${dragY}px)`, transition: touchStartY !== null ? "none" : "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}
         onTouchStart={(e) => setTouchStartY(e.touches[0].clientY)}
         onTouchMove={(e) => {
           if (touchStartY === null) return;
