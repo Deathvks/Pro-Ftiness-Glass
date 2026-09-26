@@ -480,7 +480,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
                         </div>
                         <span className="text-[15px] font-medium text-text-primary">Email</span>
                     </div>
-                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="text-right bg-transparent outline-none text-text-secondary font-medium flex-1 ml-4 min-w-0 truncate" placeholder="Tu email" />
+                    <span className="text-right text-text-secondary font-medium flex-1 ml-4 min-w-0 truncate">{userProfile.email}</span>
                 </div>
                 {errors.email && <p className="text-xs text-red font-bold px-4 pb-2 pt-1">{errors.email}</p>}
             </div>
@@ -732,9 +732,7 @@ const DeleteConfirmationModal = ({
   baseInputClasses,
   hasPassword,
 }) => {
-  const [dragY, setDragY] = useState(0);
-  const [touchStartY, setTouchStartY] = useState(null);
-
+  
   if (!modalAction) return null;
 
   const isDeleteAccount = modalAction === "deleteAccount";
@@ -845,9 +843,7 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const [dragY, setDragY] = useState(0);
-  const [touchStartY, setTouchStartY] = useState(null);
-
+  
   const reqs = [
     { id: 'length', label: '8+ caracteres', valid: newPassword.length >= 8 },
     { id: 'uppercase', label: '1 Mayúscula', valid: /[A-Z]/.test(newPassword) },

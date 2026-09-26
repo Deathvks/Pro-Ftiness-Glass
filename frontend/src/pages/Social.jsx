@@ -500,14 +500,13 @@ const UserListItem = ({ user, action, subtext, isHighlighted, onNavigate }) => {
                     : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10'
                 }`}
         >
-            <div className="flex items-center gap-4">
-                <UserAvatar user={fixedUser} size={12} className="w-12 h-12 shadow-sm transition-transform group-hover:scale-105" />
-
-                <div>
-                    <p className={`font-bold text-base transition-colors line-clamp-1 ${isHighlighted ? 'text-accent' : 'text-text-primary group-hover:text-accent'}`}>
+            <div className="flex items-center gap-4 flex-1 min-w-0 pr-3">
+                <UserAvatar user={fixedUser} size={12} className="w-12 h-12 shadow-sm transition-transform group-hover:scale-105 shrink-0" />
+                <div className="flex-1 min-w-0">
+                    <p className={`font-bold text-base transition-colors truncate ${isHighlighted ? 'text-accent' : 'text-text-primary group-hover:text-accent'}`}>
                         {user.username || user.name || 'Usuario'}
                     </p>
-                    <p className="text-xs font-medium text-text-secondary mt-0.5 line-clamp-1">
+                    <p className="text-xs font-medium text-text-secondary mt-0.5 truncate">
                         {subtext || `Nivel ${user.level || 1} • ${user.xp || 0} XP`}
                     </p>
                 </div>

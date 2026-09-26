@@ -29,23 +29,6 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        buttonRef.current && !buttonRef.current.contains(event.target) &&
-        dropdownRef.current && !dropdownRef.current.contains(event.target)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside, { passive: true });
-    return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-        document.removeEventListener('touchstart', handleClickOutside);
-      };
-  }, []);
-
   const selectedValues = multiple ? (typeof value === 'string' && value ? value.split(',').map(v => v.trim()) : []) : [];
   const selectedOption = !multiple ? options.find(opt => opt.value === value && !opt.isHeader) : null;
 
@@ -86,7 +69,15 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
   });
 
   const DropdownPortal = () => createPortal(
-    <div
+    <>
+      <div 
+        className="fixed inset-0 z-[9998]" 
+        onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
+        onTouchStart={(e) => { e.stopPropagation(); setIsOpen(false); }}
+      />
+      <div
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
       ref={dropdownRef}
       style={{
         position: 'fixed',
@@ -135,7 +126,8 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
           ))
         )}
       </div>
-    </div>,
+    </div>
+    </>,
     document.body
   );
 
