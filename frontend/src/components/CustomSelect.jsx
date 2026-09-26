@@ -39,36 +39,12 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    // En iOS, el autoFocus del input despliega el teclado y hace que el navegador
-    // haga scroll automáticamente para centrarlo. Ignoramos los scrolls en el primer medio segundo.
-    let justOpened = true;
-    const timer = setTimeout(() => { justOpened = false; }, 500);
-
-    const handleScroll = (event) => {
-      if (isOpen && !justOpened) {
-        if (
-          (dropdownRef.current && dropdownRef.current.contains(event.target)) ||
-          (buttonRef.current && buttonRef.current.contains(event.target))
-        ) {
-          return;
-        }
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('scroll', handleScroll, true);
-    }
-    
+      document.addEventListener('touchstart', handleClickOutside, { passive: true });
     return () => {
-      document.removeEventListener('scroll', handleScroll, true);
-      clearTimeout(timer);
-    };
-  }, [isOpen]);
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
+      };
+  }, []);
 
   const selectedValues = multiple ? (typeof value === 'string' && value ? value.split(',').map(v => v.trim()) : []) : [];
   const selectedOption = !multiple ? options.find(opt => opt.value === value && !opt.isHeader) : null;
@@ -131,8 +107,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-black/5 dark:bg-white/5 rounded-lg px-3 py-2 text-sm outline-none text-text-primary focus:ring-1 focus:ring-accent"
-            autoFocus
-          />
+            />
         </div>
       )}
       
