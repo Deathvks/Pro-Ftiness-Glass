@@ -41,7 +41,7 @@ const PromoBanner = ({ type, onClick }) => {
           </div>
           
           <div className="hidden sm:flex items-center ml-auto mr-4">
-            <span className="text-xs font-bold text-accent uppercase tracking-wider bg-accent/10 px-3 py-1 rounded-full border border-accent/20">Chat Asesoría</span>
+            <span className="text-xs font-bold text-accent uppercase tracking-wider bg-accent/10 px-3 py-1 rounded-full transition-colors group-hover:bg-accent/20">Chat Asesoría</span>
           </div>
 
           <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center shrink-0 text-white shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-300 ml-auto sm:ml-0">
