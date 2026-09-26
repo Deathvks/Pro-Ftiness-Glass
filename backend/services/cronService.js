@@ -471,23 +471,32 @@ const checkChatBotReminders = () => {
           } else if (nextLevel !== null) {
             console.log(`[Cron] Enviando aviso nivel ${nextLevel} a prospecto ${prospect.id}`);
             
-            await Message.create({
+            const newMsg = await Message.create({
               sender_id: trainerId,
               receiver_id: prospect.id,
               content: text,
-              bot_reminder_level: nextLevel, attachment_type: 'bot_reply', created_at: new Date()
+              bot_reminder_level: nextLevel, attachment_type: 'bot_reply', created_at: new Date(),
+              bot_push_status: 'pending', bot_email_status: 'pending'
             });
 
-            createNotification(prospect.id, {
-              type: 'chat_message',
-              title: title,
-              message: text,
-              action_url: '/social'
-            });
+            let pushStat = 'error';
+            let emailStat = 'error';
+
+            try {
+              await createNotification(prospect.id, {
+                type: 'chat_message', title: title, message: text, action_url: '/social'
+              });
+              pushStat = 'ok';
+            } catch(e) {}
 
             try {
               await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, nextLevel);
+              emailStat = 'ok';
             } catch(e) { console.error('[Cron] Error email bot', e); }
+
+            newMsg.bot_push_status = pushStat;
+            newMsg.bot_email_status = emailStat;
+            await newMsg.save();
           }
         }
       }
@@ -510,4 +519,6 @@ export const startCronJobs = () => {
   resetInactiveStreaks();
   checkChatBotReminders(); // <-- Añadido el nuevo vigilante
 };
+
+
 

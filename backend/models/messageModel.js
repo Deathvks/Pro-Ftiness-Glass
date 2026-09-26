@@ -39,6 +39,14 @@ const Message = sequelize.define('Message', {
   bot_reminder_level: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
+  },
+  bot_push_status: {
+    type: DataTypes.STRING,
+    defaultValue: 'pending',
+  },
+  bot_email_status: {
+    type: DataTypes.STRING,
+    defaultValue: 'pending',
   }
 }, {
   tableName: 'messages',
@@ -48,3 +56,4 @@ const Message = sequelize.define('Message', {
 });
 
 export default Message;
+

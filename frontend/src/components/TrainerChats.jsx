@@ -26,6 +26,19 @@ export default function TrainerChats({ onClose }) {
   const [dragY, setDragY] = useState(0);
   const [touchStartY, setTouchStartY] = useState(null);
   const [botModalClient, setBotModalClient] = useState(null);
+
+  useEffect(() => {
+    if (botModalClient) {
+      const updatedClient = clients.find(c => c.id === botModalClient.id);
+      if (updatedClient) {
+        if (updatedClient.lastMessage?.id !== botModalClient.lastMessage?.id || 
+            updatedClient.lastMessage?.bot_push_status !== botModalClient.lastMessage?.bot_push_status || 
+            updatedClient.lastMessage?.bot_email_status !== botModalClient.lastMessage?.bot_email_status) {
+          setBotModalClient(updatedClient);
+        }
+      }
+    }
+  }, [clients]);
   const [resendConfirmData, setResendConfirmData] = useState(null);
   const [resendDragY, setResendDragY] = useState(0);
   const [resendTouchStartY, setResendTouchStartY] = useState(null);
@@ -1089,21 +1102,21 @@ export default function TrainerChats({ onClose }) {
                           {isCompleted ? (
                             !isFinal && (
   <div className="flex items-center gap-3 mt-2">
-                                  <div 
-                                    className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded-md cursor-pointer hover:bg-green-500/20 active:scale-95 transition-all"
-                                    onClick={(e) => { e.stopPropagation(); setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'push' }); }}
-                                    title="Toca para reenviar solo el Push"
-                                  >
-                                    <BellAlertIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Push Enviado</span>
+                                    <div 
+                                      className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md cursor-pointer active:scale-95 transition-all " + (client.lastMessage?.bot_push_status === 'error' ? 'text-red-600 bg-red-500/10 hover:bg-red-500/20' : 'text-green-600 bg-green-500/10 hover:bg-green-500/20')}
+                                      onClick={(e) => { e.stopPropagation(); setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'push' }); }}
+                                      title="Toca para reenviar solo el Push"
+                                    >
+                                      {client.lastMessage?.bot_push_status === 'error' ? (<><BellAlertIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Push Error ❌</span></>) : (<><BellAlertIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Push Enviado</span></>)}
+                                    </div>
+                                    <div 
+                                      className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md cursor-pointer active:scale-95 transition-all " + (client.lastMessage?.bot_email_status === 'error' ? 'text-red-600 bg-red-500/10 hover:bg-red-500/20' : 'text-green-600 bg-green-500/10 hover:bg-green-500/20')}
+                                      onClick={(e) => { e.stopPropagation(); setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'email' }); }}
+                                      title="Toca para reenviar solo el Correo"
+                                    >
+                                      {client.lastMessage?.bot_email_status === 'error' ? (<><EnvelopeIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Email Error ❌</span></>) : (<><EnvelopeIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Email Enviado</span></>)}
+                                    </div>
                                   </div>
-                                  <div 
-                                    className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded-md cursor-pointer hover:bg-green-500/20 active:scale-95 transition-all"
-                                    onClick={(e) => { e.stopPropagation(); setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'email' }); }}
-                                    title="Toca para reenviar solo el Correo"
-                                  >
-                                    <EnvelopeIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Email Enviado</span>
-                                  </div>
-                                </div>
 )
                           ) : isActive ? (
                             <div className="mt-2 text-xs font-bold text-accent bg-accent/10 px-3 py-1.5 rounded-lg inline-block">
@@ -1211,6 +1224,9 @@ export default function TrainerChats({ onClose }) {
     </div>
   );
 }
+
+
+
 
 
 
