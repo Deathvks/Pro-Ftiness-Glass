@@ -414,7 +414,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
   return (
     <>
       <Helmet>
-        <title>{Editar Perfil:  - Pro Fitness Glass}</title>
+        <title>{`Editar Perfil: ${formData.username || "Usuario"} - Pro Fitness Glass`}</title>
       </Helmet>
 
       <div className="w-full max-w-2xl mx-auto px-4 pb-28 sm:p-6 lg:p-10 animate-[fade-in_0.3s_ease-out] mt-2 sm:mt-0">
