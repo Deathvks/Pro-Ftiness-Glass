@@ -279,10 +279,11 @@ export const sendBotReminderEmail = async (email, userName, level) => {
   `;
 
     const mailOptions = {
-    from: '"Pro Fitness Glass" <' + process.env.EMAIL_USER + '>',
+    from: process.env.EMAIL_USER,
     to: email,
     subject: 'Aviso de asesoría: ' + titles[level],
     html: html
   };
   return sendMailAndLog(mailOptions);
 };
+
