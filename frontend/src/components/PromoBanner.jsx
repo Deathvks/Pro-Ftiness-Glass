@@ -29,23 +29,23 @@ const PromoBanner = ({ type, onClick }) => {
           <div className="absolute -right-10 -top-10 w-40 h-40 bg-accent/20 rounded-full blur-3xl group-hover:bg-accent/30 transition-all duration-500" />
         </div>
         
-        <div className="p-4 sm:p-5 flex items-center justify-between gap-4 relative z-10">
-          <div className="flex flex-col gap-1">
-            <h3 className="text-[15px] sm:text-base font-bold text-text-primary flex items-center gap-1.5">
+        <div className="p-4 sm:p-5 flex items-center gap-3 sm:gap-4 relative z-10">
+          <div className="flex-1 min-w-0 flex flex-col gap-1">
+            <h3 className="text-sm sm:text-base font-bold text-text-primary flex items-center gap-1.5">
               {content.title}
-              <Sparkles className="w-4 h-4 text-accent animate-pulse shrink-0" />
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent animate-pulse shrink-0" />
             </h3>
-            <p className="text-[13px] sm:text-sm text-text-secondary leading-tight max-w-sm">
+            <p className="text-xs sm:text-sm text-text-secondary leading-snug pr-2 sm:pr-0">
               {content.desc}
             </p>
           </div>
           
-          <div className="hidden sm:flex items-center ml-auto mr-4">
+          <div className="hidden sm:flex items-center shrink-0 pr-2">
             <span className="text-xs font-bold text-accent uppercase tracking-wider bg-accent/10 px-3 py-1 rounded-full transition-colors group-hover:bg-accent/20">Chat Asesoría</span>
           </div>
 
-          <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center shrink-0 text-white shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-300 ml-auto sm:ml-0">
-            <ChevronRight size={20} strokeWidth={3} />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-accent flex items-center justify-center shrink-0 text-white shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-300">
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
           </div>
         </div>
       </GlassCard>
