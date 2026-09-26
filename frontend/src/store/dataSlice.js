@@ -171,6 +171,11 @@ export const createDataSlice = (set, get) => ({
     } catch (error) {
         console.error("Error al cargar datos iniciales (posiblemente de red):", error);
         // NO cerramos sesion automaticamente aqui, apiClient se encarga de los 401.
+        // Si es un error de red (backend reiniciando), reintentamos automáticamente tras 2s
+        if (error?.message?.includes('fetch') || error?.message?.includes('network') || error?.name === 'TypeError') {
+          console.log('[fetchInitialData] Error de red detectado, reintentando en 2s...');
+          setTimeout(() => { get().fetchInitialData(); }, 2000);
+        }
       } finally {
       set({ isLoading: false });
     }
