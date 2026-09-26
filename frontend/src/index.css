@@ -1151,16 +1151,5 @@ body .driver-popover .driver-popover-close-btn:hover {
   color: var(--btn-accent-text, #ffffff) !important;
 }
 
-/* Correcciones de contraste para temas pastel en Light Mode */
 :root { --text-accent: var(--color-accent); }
-html.light-theme.accent-mint { --text-accent: #10b981; } /* emerald-500 */
-html.light-theme.accent-peach { --text-accent: #f97316; } /* orange-500 */
-html.light-theme.accent-rose-water { --text-accent: #ef4444; } /* red-500 */
-html.light-theme.accent-lavender { --text-accent: #8b5cf6; } /* violet-500 */
-html.light-theme.accent-baby-blue { --text-accent: #3b82f6; } /* blue-500 */
-html.light-theme.accent-sunset-pink { --text-accent: #ec4899; } /* pink-500 */
-html.light-theme.accent-pistachio { --text-accent: #65a30d; } /* lime-600 */
-html.light-theme.accent-mango { --text-accent: #f59e0b; } /* amber-500 */
-html.light-theme.accent-lemonade { --text-accent: #eab308; } /* yellow-500 */
-html.light-theme.accent-cherry-blossom { --text-accent: #f43f5e; } /* rose-500 */
 
