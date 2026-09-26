@@ -938,22 +938,23 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
               </button>
             </div>
 
-            {newPassword.length > 0 && (
-              <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-2 px-2 animate-[fade-in-down_0.2s_ease-out]">
+            <div className="mt-1 flex flex-col gap-2">
+              <span className="text-xs font-bold text-text-muted px-2">Requisitos de la nueva contraseña:</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-2 px-2">
                 {reqs.map(r => (
-                  <div key={r.id} className="flex items-center gap-1.5">
-                    {r.valid ? (
-                      <CheckCircle2 size={12} className="text-green-500 shrink-0" />
-                    ) : (
-                      <div className="w-3 h-3 rounded-full border border-glass-border shrink-0" />
-                    )}
-                    <span className={`text-[10px] sm:text-[11px] transition-colors ${r.valid ? 'text-text-primary' : 'text-text-secondary'}`}>
-                      {r.label}
-                    </span>
-                  </div>
-                ))}
+                <div key={r.id} className="flex items-center gap-1.5">
+                  {r.valid ? (
+                    <CheckCircle2 size={12} className="text-green-500 shrink-0" />
+                  ) : (
+                    <div className="w-3 h-3 rounded-full border border-glass-border shrink-0" />
+                  )}
+                  <span className={`text-[10px] sm:text-[11px] transition-colors ${r.valid ? 'text-text-primary' : 'text-text-secondary'}`}>
+                    {r.label}
+                  </span>
+                </div>
+              ))}
               </div>
-            )}
+            </div>
 
             <div className="flex flex-col gap-3 mt-4">
               <button
