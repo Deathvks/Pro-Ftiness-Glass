@@ -546,9 +546,9 @@ const Nutrition = ({ setView }) => {
                 <h1 id="nutrition-header" className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">Nutrición</h1>
             </div>
 
-            <DateNavigator selectedDate={selectedDate} onDateChange={fetchDataForDate} />
-
             <PromoBanner type="nutrition" onClick={() => setView('asesoria')} />
+
+            <DateNavigator selectedDate={selectedDate} onDateChange={fetchDataForDate} />
 
             {isLoading && !isSubmitting ? (
                 <div className="flex justify-center items-center py-20"><Spinner size={40} /></div>
