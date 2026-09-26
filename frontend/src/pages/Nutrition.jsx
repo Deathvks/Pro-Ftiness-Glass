@@ -16,6 +16,7 @@ import SugarTargetModal from '../components/SugarTargetModal';
 import NutritionTourGuide from '../components/NutritionTourGuide';
 import { useToast } from '../hooks/useToast';
 import * as nutritionService from '../services/nutritionService';
+import PromoBanner from '../components/PromoBanner';
 
 const DateNavigator = ({ selectedDate, onDateChange }) => {
     const today = new Date();
@@ -546,6 +547,8 @@ const Nutrition = ({ setView }) => {
             </div>
 
             <DateNavigator selectedDate={selectedDate} onDateChange={fetchDataForDate} />
+
+            <PromoBanner type="nutrition" onClick={() => setView('asesoria')} />
 
             {isLoading && !isSubmitting ? (
                 <div className="flex justify-center items-center py-20"><Spinner size={40} /></div>

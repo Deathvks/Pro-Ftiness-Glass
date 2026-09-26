@@ -33,6 +33,7 @@ import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import { useTranslation } from 'react-i18next';
 import TemplateRoutines from './TemplateRoutines';
+import PromoBanner from '../components/PromoBanner';
 import ManualExercisesManager from '../components/ManualExercisesManager';
 import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
 import RoutineAIGeneratorModal from '../components/RoutineAIGeneratorModal';
@@ -812,6 +813,8 @@ const Routines = ({ setView }) => {
           }
         />
       </Helmet>
+
+      <PromoBanner type="routines" onClick={() => setView('asesoria')} />
 
       <div className="hidden md:flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
         <h1 className="text-3xl md:text-4xl font-extrabold mt-10 md:mt-0 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
