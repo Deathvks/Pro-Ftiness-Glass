@@ -935,46 +935,24 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
               </button>
             </div>
 
-            <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-2 px-2">
-              {reqs.map(r => (
-                <div key={r.id} className="flex items-center gap-2">
-                  {r.valid ? (
-                    <CheckCircle2 size={14} className="text-green-500 shrink-0" />
-                  ) : (
-                    <div className="w-3.5 h-3.5 rounded-full border border-glass-border shrink-0" />
-                  )}
-                  <span className={`text-[11px] sm:text-xs font-bold transition-colors ${r.valid ? 'text-text-primary' : 'text-text-secondary'}`}>
-                    {r.label}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex flex-col gap-3 mt-4">
-              <button
-                type="submit"
-                disabled={isLoading || !isValid}
-                className="w-full py-4 bg-accent text-accent-contrast font-bold rounded-[16px] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-accent/20 flex items-center justify-center"
-              >
-                {isLoading ? <Spinner size={20} color="white" /> : "Guardar Contraseña"}
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isLoading}
-                className="w-full py-4 bg-black/5 dark:bg-white/5 text-text-primary font-bold rounded-[16px] hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 transition-all"
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+            {newPassword.length > 0 && (
+              <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-2 px-2 animate-[fade-in-down_0.2s_ease-out]">
+                {reqs.map(r => (
+                  <div key={r.id} className="flex items-center gap-1.5">
+                    {r.valid ? (
+                      <CheckCircle2 size={12} className="text-green-500 shrink-0" />
+                    ) : (
+                      <div className="w-3 h-3 rounded-full border border-glass-border shrink-0" />
+                    )}
+                    <span className={`text-[10px] sm:text-[11px] transition-colors ${r.valid ? 'text-text-primary' : 'text-text-secondary'}`}>
+                      {r.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
     </ModalPortal>
   );
 };
 
 export default Profile;
-
-
-
