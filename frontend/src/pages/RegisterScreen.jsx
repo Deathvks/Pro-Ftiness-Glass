@@ -496,7 +496,7 @@ const RegisterScreen = ({ showLogin }) => {
         { id: 'length', label: 'Al menos 12 caracteres', valid: password.length >= 12 },
         { id: 'upper', label: 'Una mayúscula', valid: /[A-Z]/.test(password) },
         { id: 'lower', label: 'Una minúscula', valid: /[a-z]/.test(password) },
-        { id: 'special', label: 'Un carácter especial (!@#$...)', valid: /[!@#$%^&*(),.?":{}|<>\-_+=\[\]\\/'`]/.test(password) },
+        { id: 'special', label: 'Un carácter especial (!@#$...)', valid: /[!@#$%^&*(),.?":{}|<>\-_+=\x5B\x5D\x2F\x5C'`]/.test(password) },
         { id: 'digits', label: 'No más de 3 números seguidos', valid: !/\d{4,}/.test(password) && password.length > 0 }
     ];
     const isValidPassword = reqs.every(r => r.valid);

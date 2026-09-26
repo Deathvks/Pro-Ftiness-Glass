@@ -851,7 +851,7 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
     { id: 'length', label: 'Al menos 12 caracteres', valid: newPassword.length >= 12 },
     { id: 'upper', label: 'Una mayúscula', valid: /[A-Z]/.test(newPassword) },
     { id: 'lower', label: 'Una minúscula', valid: /[a-z]/.test(newPassword) },
-    { id: 'special', label: 'Un carácter especial (!@#$...)', valid: /[!@#$%^&*(),.?":{}|<>\-_+=\[\]\\/'`]/.test(newPassword) },
+    { id: 'special', label: 'Un carácter especial (!@#$...)', valid: /[!@#$%^&*(),.?":{}|<>\-_+=\x5B\x5D\x2F\x5C'`]/.test(newPassword) },
     { id: 'digits', label: 'No más de 3 números seguidos', valid: !/\d{4,}/.test(newPassword) && newPassword.length > 0 }
   ];
   
@@ -859,7 +859,14 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isValid) return;
+    if (!isValid) {
+      if (hasPassword && currentPassword.length === 0) {
+        setError('Introduce tu contraseña actual para confirmar.');
+      } else {
+        setError('La nueva contraseña no cumple todos los requisitos.');
+      }
+      return;
+    }
     setIsLoading(true);
     setError('');
 
@@ -903,39 +910,45 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
             {error && <p className="form-error-text text-center text-sm font-bold bg-red/10 p-3 rounded-[12px] text-red">{error}</p>}
             
             {hasPassword && (
-              <div className="relative">
-                <input
-                  type={showCurrent ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => { setCurrentPassword(e.target.value); setError(''); }}
-                  className={baseInputClasses}
-                  placeholder="Contraseña actual"
-                />
-                <button 
-                  type="button" 
-                  onClick={() => setShowCurrent(!showCurrent)} 
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors"
-                >
-                  {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-text-muted px-2">1. Confirma tu contraseña actual</label>
+                <div className="relative">
+                  <input
+                    type={showCurrent ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => { setCurrentPassword(e.target.value); setError(''); }}
+                    className={baseInputClasses}
+                    placeholder="Contraseña actual"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowCurrent(!showCurrent)} 
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors"
+                  >
+                    {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
             )}
 
-            <div className="relative">
-              <input
-                type={showNew ? "text" : "password"}
-                value={newPassword}
-                onChange={(e) => { setNewPassword(e.target.value); setError(''); }}
-                className={baseInputClasses}
-                placeholder="Nueva contraseña"
-              />
-              <button 
-                type="button" 
-                onClick={() => setShowNew(!showNew)} 
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors"
-              >
-                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+            <div className="flex flex-col gap-1 mt-2">
+              <label className="text-xs font-bold text-text-muted px-2">2. Elige una nueva contraseña</label>
+              <div className="relative">
+                <input
+                  type={showNew ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => { setNewPassword(e.target.value); setError(''); }}
+                  className={baseInputClasses}
+                  placeholder="Nueva contraseña"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowNew(!showNew)} 
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors"
+                >
+                  {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <div className="mt-1 flex flex-col gap-2">
@@ -959,8 +972,8 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
             <div className="flex flex-col gap-3 mt-4">
               <button
                 type="submit"
-                disabled={isLoading || !isValid}
-                className="w-full py-4 bg-accent text-accent-contrast font-bold rounded-[16px] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-accent/20 flex items-center justify-center"
+                disabled={isLoading}
+                className={`w-full py-4 font-bold rounded-[16px] active:scale-95 transition-all flex items-center justify-center shadow-lg ${!isValid ? 'bg-bg-secondary text-text-secondary border border-glass-border shadow-none' : 'bg-accent text-accent-contrast shadow-accent/20'} disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {isLoading ? <Spinner size={20} color="white" /> : "Guardar Contraseña"}
               </button>
