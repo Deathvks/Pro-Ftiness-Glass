@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
-const CustomSelect = ({ value, onChange, options, placeholder, className = "", triggerClassName = "", textClassName = "", multiple = false, searchable = false, hideMultipleValues = false }) => {
+const CustomSelect = ({ value, onChange, options, placeholder, className = "", triggerClassName = "", textClassName = "", multiple = false, searchable = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -119,16 +119,12 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
         left: `${position.left}px`,
         minWidth: `${position.width}px`,
       }}
-      onTouchStart={(e) => e.stopPropagation()}
-      onTouchMove={(e) => e.stopPropagation()}
-      onTouchEnd={(e) => e.stopPropagation()}
-      onWheel={(e) => e.stopPropagation()}
-      className={`bg-bg-secondary border border-transparent dark:border dark:border-white/10 rounded-xl shadow-lg max-h-64 overflow-y-auto z-[9999] p-2 flex flex-col gap-1 ${
+      className={`bg-bg-secondary border border-transparent dark:border dark:border-white/10 rounded-xl shadow-lg z-[9999] flex flex-col ${
         position.bottom !== undefined ? 'animate-[fade-in-down_0.2s_ease_out]' : 'animate-[fade-in-up_0.2s_ease_out]'
       }`}
     >
       {searchable && (
-        <div className="sticky top-0 bg-bg-secondary z-10 pb-2 mb-1 border-b border-black/5 dark:border-white/10">
+        <div className="p-2 pb-2 border-b border-black/5 dark:border-white/10 shrink-0 bg-bg-secondary rounded-t-xl">
           <input
             type="text"
             placeholder="Buscar..."
@@ -139,28 +135,31 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
           />
         </div>
       )}
-      {finalOptions.length === 0 ? (
-        <div className="px-3 py-4 text-center text-sm text-text-secondary">Sin resultados</div>
-      ) : (
-        finalOptions.map((option, idx) => option.isHeader ? (
-          <div key={`header-${idx}`} className="px-3 py-1.5 mt-1 text-[10px] font-bold text-text-muted uppercase tracking-wider">
-            {option.label}
-          </div>
+      
+      <div className={`max-h-64 overflow-y-auto overscroll-contain flex flex-col gap-1 p-2 ${searchable ? 'pt-1' : ''}`}>
+        {finalOptions.length === 0 ? (
+          <div className="px-3 py-4 text-center text-sm text-text-secondary">Sin resultados</div>
         ) : (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => handleOptionClick(option.value)}
-            className={`block w-full text-left px-3 py-2 transition-colors duration-200 rounded-md text-sm shrink-0 ${
-              isSelected(option.value)
-                ? 'bg-accent/10 text-accent font-medium'
-                : 'text-text-primary hover:bg-accent/10 hover:text-accent'
-            }`}
-          >
-            {option.label}
-          </button>
-        ))
-      )}
+          finalOptions.map((option, idx) => option.isHeader ? (
+            <div key={`header-${idx}`} className="px-3 py-1.5 mt-1 text-[10px] font-bold text-text-muted uppercase tracking-wider">
+              {option.label}
+            </div>
+          ) : (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleOptionClick(option.value)}
+              className={`block w-full text-left px-3 py-2 transition-colors duration-200 rounded-md text-sm shrink-0 ${
+                isSelected(option.value)
+                  ? 'bg-accent/10 text-accent font-medium'
+                  : 'text-text-primary hover:bg-accent/10 hover:text-accent'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))
+        )}
+      </div>
     </div>,
     document.body
   );
@@ -177,12 +176,12 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
         `}
         disabled={isOpen && position.top === 0}
       >
-        <span className={textClassName || `text-sm font-bold truncate flex-1 ${(!multiple && selectedOption) || (multiple && selectedValues.length > 0 && !hideMultipleValues) ? 'text-text-primary' : 'text-text-secondary'}`}>
-            {multiple 
-              ? (hideMultipleValues ? placeholder : (selectedValues.length > 0 ? selectedValues.join(', ') : placeholder)) 
-              : (selectedOption ? selectedOption.label : placeholder)
-            }
-          </span>
+        <span className={textClassName || `text-sm font-bold truncate flex-1 ${(!multiple && selectedOption) || (multiple && selectedValues.length > 0) ? 'text-text-primary' : 'text-text-secondary'}`}>
+          {multiple 
+            ? (selectedValues.length > 0 ? selectedValues.join(', ') : placeholder) 
+            : (selectedOption ? selectedOption.label : placeholder)
+          }
+        </span>
         <ChevronDown
           size={16}
           className={`shrink-0 transition-transform duration-200 text-text-secondary ${
