@@ -959,7 +959,7 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
                   ) : (
                     <div className="w-3.5 h-3.5 rounded-full border border-glass-border shrink-0" />
                   )}
-                  <span className={	ext-[11px] sm:text-xs font-bold transition-colors }>
+                  <span className={`text-[11px] sm:text-xs font-bold transition-colors ${r.valid ? 'text-text-primary' : 'text-text-secondary'}`}>
                     {r.label}
                   </span>
                 </div>
