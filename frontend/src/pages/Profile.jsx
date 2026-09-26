@@ -846,9 +846,11 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
   useModalLock();
 
   const reqs = [
-    { id: 'length', label: '8+ caracteres', valid: newPassword.length >= 8 },
-    { id: 'uppercase', label: '1 Mayúscula', valid: /[A-Z]/.test(newPassword) },
-    { id: 'number', label: '1 Número', valid: /[0-9]/.test(newPassword) }
+    { id: 'length', label: 'Al menos 12 caracteres', valid: newPassword.length >= 12 },
+    { id: 'upper', label: 'Una mayúscula', valid: /[A-Z]/.test(newPassword) },
+    { id: 'lower', label: 'Una minúscula', valid: /[a-z]/.test(newPassword) },
+    { id: 'special', label: 'Un carácter especial (!@#$...)', valid: /[!@#$%^&*(),.?":{}|<>\-_+=\[\]\/'`]/.test(newPassword) },
+    { id: 'digits', label: 'No más de 3 números seguidos', valid: !/\d{4,}/.test(newPassword) && newPassword.length > 0 }
   ];
   const isValid = reqs.every(r => r.valid) && (!hasPassword || currentPassword.length > 0);
 
