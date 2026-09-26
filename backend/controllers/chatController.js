@@ -715,8 +715,8 @@ export const resendBotReminder = async (req, res) => {
 
     const lastMsg = await models.Message.findOne({ where: { receiver_id: prospect.id, bot_reminder_level: parsedLevel }, order: [['created_at', 'DESC']] });
     if (lastMsg) {
-      if (type === 'push' || type === 'all') lastMsg.bot_push_status = status.push === 'ok' ? 'ok' : 'error';
-      if (type === 'email' || type === 'all') lastMsg.bot_email_status = status.email === 'ok' ? 'ok' : 'error';
+      if (type === 'push' || type === 'all') lastMsg.bot_push_status = status.push === 'ok' ? 'manual_ok' : 'error';
+      if (type === 'email' || type === 'all') lastMsg.bot_email_status = status.email === 'ok' ? 'manual_ok' : 'error';
       await lastMsg.save();
     }
 
@@ -785,8 +785,8 @@ export const sendManualBotReminder = async (req, res) => {
       console.error('Error email:', e);
     }
 
-    newMessage.bot_push_status = status.push === 'ok' ? 'ok' : 'error';
-    newMessage.bot_email_status = status.email === 'ok' ? 'ok' : 'error';
+    newMessage.bot_push_status = status.push === 'ok' ? 'manual_ok' : 'error';
+    newMessage.bot_email_status = status.email === 'ok' ? 'manual_ok' : 'error';
     await newMessage.save();
 
     if (io) {

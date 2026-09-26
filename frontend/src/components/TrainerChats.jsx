@@ -234,8 +234,33 @@ export default function TrainerChats({ onClose }) {
     if (!resendConfirmData || isResending) return;
     setIsResending(true);
     try {
-      const { client, level } = resendConfirmData;
-      const res = await apiClient('/chat/trainer/bot-reminder-resend/' + client.id + '/' + level + '?type=' + resendConfirmData.type, { method: 'POST' });
+      const { client, level, type } = resendConfirmData;
+      const res = await apiClient('/chat/trainer/bot-reminder-resend/' + client.id + '/' + level + '?type=' + type, { method: 'POST' });
+      
+      // Update local state so it immediately says "Enviado Manualmente"
+      setClients(prev => prev.map(c => {
+        if (c.id === client.id) {
+          const updated = { ...c };
+          if (!updated.botReminders) updated.botReminders = [];
+          
+          let existing = updated.botReminders.find(m => m.bot_reminder_level === level);
+          if (!existing) {
+             existing = { bot_reminder_level: level };
+             updated.botReminders.push(existing);
+          }
+          
+          if (type === 'push') existing.bot_push_status = 'manual_ok';
+          if (type === 'email') existing.bot_email_status = 'manual_ok';
+          
+          if (updated.lastMessage?.bot_reminder_level === level) {
+             if (type === 'push') updated.lastMessage.bot_push_status = 'manual_ok';
+             if (type === 'email') updated.lastMessage.bot_email_status = 'manual_ok';
+          }
+          return updated;
+        }
+        return c;
+      }));
+
       addToast('Reenvío completado con éxito', 'success');
       setResendConfirmData(null);
     } catch (e) {
@@ -1104,33 +1129,49 @@ export default function TrainerChats({ onClose }) {
                           {isCompleted ? (
                             !isFinal && (
   <div className="flex items-center gap-3 mt-2">
-                                      <div 
-                                        className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all " + ((botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_push_status || botModalClient.lastMessage?.bot_push_status) !== 'ok' ? 'cursor-pointer active:scale-95' : 'cursor-default')}
-style={(botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_push_status || botModalClient.lastMessage?.bot_push_status) !== 'ok' ? { color: '#dc2626', backgroundColor: 'rgba(220,38,38,0.1)' } : { color: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)' }}
-                                        onClick={(e) => { 
-                                          e.stopPropagation(); 
-                                          if ((botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_push_status || botModalClient.lastMessage?.bot_push_status) !== 'ok') {
-                                            setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'push' }); 
-                                          }
-                                        }}
-                                        title={(botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_push_status || botModalClient.lastMessage?.bot_push_status) !== 'ok' ? "Toca para reenviar solo el Push" : "Push enviado correctamente"}
-                                      >
-                                        {(botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_push_status || botModalClient.lastMessage?.bot_push_status) !== 'ok' ? (<><BellAlertIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Push Error ❌</span></>) : (<><BellAlertIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Push Enviado</span></>)}
-                                      </div>
-                                      <div 
-                                        className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all " + ((botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_email_status || botModalClient.lastMessage?.bot_email_status) !== 'ok' ? 'cursor-pointer active:scale-95' : 'cursor-default')}
-style={(botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_email_status || botModalClient.lastMessage?.bot_email_status) !== 'ok' ? { color: '#dc2626', backgroundColor: 'rgba(220,38,38,0.1)' } : { color: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)' }}
-                                        onClick={(e) => { 
-                                          e.stopPropagation(); 
-                                          if ((botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_email_status || botModalClient.lastMessage?.bot_email_status) !== 'ok') {
-                                            setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'email' }); 
-                                          }
-                                        }}
-                                        title={(botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_email_status || botModalClient.lastMessage?.bot_email_status) !== 'ok' ? "Toca para reenviar solo el Correo" : "Correo enviado correctamente"}
-                                      >
-                                        {(botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_email_status || botModalClient.lastMessage?.bot_email_status) !== 'ok' ? (<><EnvelopeIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Email Error ❌</span></>) : (<><EnvelopeIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Email Enviado</span></>)}
-                                      </div>
-                                    </div>
+  {(() => {
+    const pushStatus = botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_push_status || (botModalClient.lastMessage?.bot_reminder_level === stepLevel ? botModalClient.lastMessage?.bot_push_status : null) || 'error';
+    const emailStatus = botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_email_status || (botModalClient.lastMessage?.bot_reminder_level === stepLevel ? botModalClient.lastMessage?.bot_email_status : null) || 'error';
+    
+    const isPushOk = pushStatus === 'ok' || pushStatus === 'manual_ok';
+    const isEmailOk = emailStatus === 'ok' || emailStatus === 'manual_ok';
+
+    return (
+      <>
+        <div 
+          className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all " + (!isPushOk ? 'cursor-pointer active:scale-95 hover:brightness-95' : 'cursor-default')}
+          style={!isPushOk ? { color: '#dc2626', backgroundColor: 'rgba(220,38,38,0.1)' } : { color: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)' }}
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            if (!isPushOk) setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'push' }); 
+          }}
+          title={!isPushOk ? "Toca para reenviar solo el Push" : (pushStatus === 'manual_ok' ? "Push reenviado manualmente" : "Push enviado correctamente")}
+        >
+          {!isPushOk ? (
+            <><BellAlertIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Push Error ✕</span></>
+          ) : (
+            <><BellAlertIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">{pushStatus === 'manual_ok' ? 'Push Manual ✓' : 'Push ✓'}</span></>
+          )}
+        </div>
+        <div 
+          className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all " + (!isEmailOk ? 'cursor-pointer active:scale-95 hover:brightness-95' : 'cursor-default')}
+          style={!isEmailOk ? { color: '#dc2626', backgroundColor: 'rgba(220,38,38,0.1)' } : { color: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)' }}
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            if (!isEmailOk) setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'email' }); 
+          }}
+          title={!isEmailOk ? "Toca para reenviar solo el Correo" : (emailStatus === 'manual_ok' ? "Correo reenviado manualmente" : "Correo enviado correctamente")}
+        >
+          {!isEmailOk ? (
+            <><EnvelopeIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Email Error ✕</span></>
+          ) : (
+            <><EnvelopeIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">{emailStatus === 'manual_ok' ? 'Email Manual ✓' : 'Email ✓'}</span></>
+          )}
+        </div>
+      </>
+    );
+  })()}
+</div>
 )
                           ) : isActive ? (
                             <div className="mt-2 text-xs font-bold text-accent bg-accent/10 px-3 py-1.5 rounded-lg inline-block">

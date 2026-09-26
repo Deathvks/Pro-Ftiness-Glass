@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
+import { useToast } from '../hooks/useToast';
 import { useShallow } from 'zustand/react/shallow';
 import Spinner from '../components/Spinner';
 import { isToday, isYesterday, parseISO } from 'date-fns';
@@ -267,6 +268,7 @@ const NotificationsScreen = ({ setView }) => {
 
   const { scheduleEngagementNotifications, scheduleDailyReminders } = useLocalNotifications();
 
+  const { addToast } = useToast();
   const [activeFilter, setActiveFilter] = useState('all');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
@@ -332,8 +334,10 @@ const NotificationsScreen = ({ setView }) => {
 
     if (deleteAction.type === 'all') {
       await clearAllNotifications();
+      addToast('Todas las notificaciones borradas', 'success');
     } else if (deleteAction.type === 'single' && deleteAction.id) {
       await removeNotification(deleteAction.id);
+      addToast('Notificación borrada', 'success');
     }
     setDeleteAction(null);
   };
