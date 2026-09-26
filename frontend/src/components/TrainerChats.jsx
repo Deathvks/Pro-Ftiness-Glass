@@ -1103,28 +1103,28 @@ export default function TrainerChats({ onClose }) {
                             !isFinal && (
   <div className="flex items-center gap-3 mt-2">
                                       <div 
-                                        className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all " + (client.lastMessage?.bot_push_status === 'error' ? 'text-red-600 bg-red-500/10 hover:bg-red-500/20 cursor-pointer active:scale-95' : 'text-green-600 bg-green-500/10 cursor-default')}
+                                        className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all " + (botModalClient.lastMessage?.bot_push_status === 'error' ? 'text-red-600 bg-red-500/10 hover:bg-red-500/20 cursor-pointer active:scale-95' : 'text-green-600 bg-green-500/10 cursor-default')}
                                         onClick={(e) => { 
                                           e.stopPropagation(); 
-                                          if (client.lastMessage?.bot_push_status === 'error') {
+                                          if (botModalClient.lastMessage?.bot_push_status === 'error') {
                                             setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'push' }); 
                                           }
                                         }}
-                                        title={client.lastMessage?.bot_push_status === 'error' ? "Toca para reenviar solo el Push" : "Push enviado correctamente"}
+                                        title={botModalClient.lastMessage?.bot_push_status === 'error' ? "Toca para reenviar solo el Push" : "Push enviado correctamente"}
                                       >
-                                        {client.lastMessage?.bot_push_status === 'error' ? (<><BellAlertIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Push Error ❌</span></>) : (<><BellAlertIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Push Enviado</span></>)}
+                                        {botModalClient.lastMessage?.bot_push_status === 'error' ? (<><BellAlertIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Push Error ❌</span></>) : (<><BellAlertIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Push Enviado</span></>)}
                                       </div>
                                       <div 
-                                        className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all " + (client.lastMessage?.bot_email_status === 'error' ? 'text-red-600 bg-red-500/10 hover:bg-red-500/20 cursor-pointer active:scale-95' : 'text-green-600 bg-green-500/10 cursor-default')}
+                                        className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all " + (botModalClient.lastMessage?.bot_email_status === 'error' ? 'text-red-600 bg-red-500/10 hover:bg-red-500/20 cursor-pointer active:scale-95' : 'text-green-600 bg-green-500/10 cursor-default')}
                                         onClick={(e) => { 
                                           e.stopPropagation(); 
-                                          if (client.lastMessage?.bot_email_status === 'error') {
+                                          if (botModalClient.lastMessage?.bot_email_status === 'error') {
                                             setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'email' }); 
                                           }
                                         }}
-                                        title={client.lastMessage?.bot_email_status === 'error' ? "Toca para reenviar solo el Correo" : "Correo enviado correctamente"}
+                                        title={botModalClient.lastMessage?.bot_email_status === 'error' ? "Toca para reenviar solo el Correo" : "Correo enviado correctamente"}
                                       >
-                                        {client.lastMessage?.bot_email_status === 'error' ? (<><EnvelopeIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Email Error ❌</span></>) : (<><EnvelopeIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Email Enviado</span></>)}
+                                        {botModalClient.lastMessage?.bot_email_status === 'error' ? (<><EnvelopeIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Email Error ❌</span></>) : (<><EnvelopeIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">Email Enviado</span></>)}
                                       </div>
                                     </div>
 )
@@ -1234,6 +1234,7 @@ export default function TrainerChats({ onClose }) {
     </div>
   );
 }
+
 
 
 
