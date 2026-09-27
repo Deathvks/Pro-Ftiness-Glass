@@ -66,6 +66,109 @@ export const createDataSlice = (set, get) => ({
           
           set({ personalRecords: records });
       } catch (error) {
+          console.error("Error actualizando récords personales:", error);
+          // No sobrescribimos con vacío si falla, para mantener lo que ya tengamos localmente
+          if (!get().personalRecords) set({ personalRecords: [] });
+      }
+  },
+
+  fetchInitialData: async () => {
+    if (!get().token) {
+      set({ isAuthenticated: false, isLoading: false });
+      return;
+    }
+
+    set({ isLoading: true });
+    try {
+      const profileData = await userService.getMyProfile();
+
+      // Actualizar silenciosamente la zona horaria si ha cambiado
+      try {
+        const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (profileData.timezone !== currentTimezone) {
+            await userService.updateUserProfile({ timezone: currentTimezone }).catch(console.error);
+            profileData.timezone = currentTimezone;
+        }
+      } catch (e) {
+        console.warn('Could not detect timezone', e);
+      }
+
+      get().checkWelcomeModal();
+
+      set({ userProfile: profileData, isAuthenticated: true });
+
+      // Obtener el conteo de chats no leídos
+      if (get().fetchUnreadChats) {
+        get().fetchUnreadChats();
+      }
+
+      if (profileData && get().setGamificationData) {
+        get().setGamificationData({
+          xp: profileData.xp,
+          level: profileData.level,
+          streak: profileData.streak,
+          last_activity_date: profileData.last_activity_date,
+          unlocked_badges: profileData.unlocked_badges
+        });
+
+        const today = getTodayDateString();
+        if (get().checkStreak) get().checkStreak(today);
+
+        const hasFirstLoginBadge = profileData.unlocked_badges && profileData.unlocked_badges.includes('first_login');
+        if (get().unlockBadge && !hasFirstLoginBadge) {
+          get().unlockBadge('first_login');
+        }
+      }
+
+      if (profileData?.id) {
+        await get().checkCookieConsent(profileData.id);
+      }
+
+      if (profileData.goal) {
+        const today = get().selectedDate;
+
+        const [
+          routines,
+          workouts,
+          bodyweight,
+          measurements,
+          nutrition,
+          favoriteMeals,
+          recentMeals,
+          todaysCreatine,
+          creatineStats,
+          prsResponse
+        ] = await Promise.all([
+          routineService.getRoutines(),
+          workoutService.getWorkouts(),
+          bodyWeightService.getHistory(),
+          bodyMeasurementService.getHistory(),
+          nutritionService.getNutritionLogsByDate(today),
+          favoriteMealService.getFavoriteMeals(),
+          nutritionService.getRecentMeals(),
+          creatinaService.getCreatinaLogs({ startDate: today, endDate: today }),
+          creatinaService.getCreatinaStats(),
+          personalRecordService.getPersonalRecords(1, 'all').catch(() => [])
+        ]);
+        
+        // BLINDAJE: Detectamos estructura paginada { records: [...] }
+        const safePRs = prsResponse?.records || (Array.isArray(prsResponse) ? prsResponse : []);
+
+        set({
+          routines: routines || [],
+          workoutLog: workouts || [],
+          bodyWeightLog: bodyweight || [],
+          bodyMeasurementsLog: measurements || [],
+          nutritionLog: nutrition.nutrition || [],
+          waterLog: nutrition.water || { quantity_ml: 0 },
+          favoriteMeals,
+          recentMeals: recentMeals || [],
+          todaysCreatineLog: todaysCreatine.data || [],
+          creatineStats: creatineStats.data || null,
+          personalRecords: safePRs
+        });
+      }
+        } catch (error) {
         console.error("Error al cargar datos iniciales (posiblemente de red):", error);
         if (error?.message?.includes('fetch') || error?.message?.includes('network') || error?.name === 'TypeError' || error?.isMaintenance) {
           console.log('[fetchInitialData] Error de red detectado, reintentando en 3s...');
