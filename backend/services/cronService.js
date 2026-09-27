@@ -504,7 +504,9 @@ const checkChatBotReminders = () => {
     } catch(err) {
       console.error('[Cron] Error bot de chats:', err.message);
     }
-  });
+  }, {
+      timezone: 'Europe/Madrid'
+    });
 };
 
 export const startCronJobs = () => {
