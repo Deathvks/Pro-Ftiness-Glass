@@ -862,8 +862,10 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
     if (!isValid) {
       if (hasPassword && currentPassword.length === 0) {
         setError('Introduce tu contraseña actual para confirmar.');
-      } else {
+      } else if (!reqs.every(r => r.valid)) {
         setError('La nueva contraseña no cumple todos los requisitos.');
+      } else if (newPassword !== confirmNewPassword) {
+        setError('Las contraseñas no coinciden.');
       }
       return;
     }
@@ -952,7 +954,6 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
             </div>
 
             <div className="mt-1 flex flex-col gap-2">
-              <span className="text-xs font-bold text-text-muted px-2">Requisitos de la nueva contraseña:</span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-2 px-2">
                 {reqs.map(r => (
                 <div key={r.id} className="flex items-center gap-1.5">
@@ -967,6 +968,38 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
                 </div>
               ))}
               </div>
+            </div>
+            
+            <div className="flex flex-col gap-1 mt-2">
+              <label className="text-xs font-bold text-text-muted px-2">3. Repite nueva contraseña</label>
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={confirmNewPassword}
+                  onChange={(e) => { setConfirmNewPassword(e.target.value); setError(''); }}
+                  className={baseInputClasses}
+                  placeholder="Repite nueva contraseña"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowConfirm(!showConfirm)} 
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors"
+                >
+                  {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {confirmNewPassword.length > 0 && (
+                <div className="mt-1 flex items-center gap-1.5 px-2">
+                  {newPassword === confirmNewPassword ? (
+                    <CheckCircle2 size={12} className="text-green-500 shrink-0" />
+                  ) : (
+                    <div className="w-3 h-3 rounded-full border border-glass-border shrink-0" />
+                  )}
+                  <span className={`text-[10px] sm:text-[11px] transition-colors ${newPassword === confirmNewPassword ? 'text-text-primary' : 'text-text-secondary'}`}>
+                    Las contraseñas coinciden
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-3 mt-4">
