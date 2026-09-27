@@ -842,6 +842,8 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
   const [newPassword, setNewPassword] = useState('');
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -855,7 +857,7 @@ const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLo
     { id: 'digits', label: 'No más de 3 números seguidos', valid: !/\d{4,}/.test(newPassword) && newPassword.length > 0 }
   ];
   
-  const isValid = reqs.every(r => r.valid) && (!hasPassword || currentPassword.length > 0);
+  const isValid = reqs.every(r => r.valid) && (!hasPassword || currentPassword.length > 0) && newPassword === confirmNewPassword;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
