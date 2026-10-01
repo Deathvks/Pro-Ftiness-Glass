@@ -11,6 +11,30 @@ import { createStorySlice } from './storySlice';
 import { createRoutineEditorSlice } from './routineEditorSlice';
 
 const useAppStore = create((set, get) => ({
+    hydrateFromStorage: () => {
+        if (typeof localStorage === 'undefined') return;
+        
+        const theme = localStorage.getItem('theme');
+        if (theme) set({ theme });
+        
+        const accent = localStorage.getItem('accent');
+        if (accent) set({ accent });
+        
+        const haptics = localStorage.getItem('hapticsEnabled');
+        if (haptics !== null) {
+            try { set({ hapticsEnabled: JSON.parse(haptics) }); } catch(e){}
+        }
+        
+                const tours = ['tourCompleted', 'nutritionTourCompleted', 'routineTourCompleted', 'socialTourCompleted', 'hubTourCompleted'];
+        tours.forEach(tour => {
+            if (localStorage.getItem(tour) === 'true') set({ [tour]: true });
+        });
+        
+        const routineDraft = localStorage.getItem('routineEditorState');
+        if (routineDraft) {
+            try { set({ routineEditorState: JSON.parse(routineDraft) }); } catch(e){}
+        }
+    },
     theme: (typeof localStorage !== 'undefined' && (typeof localStorage !== 'undefined' ? localStorage.getItem('theme') : null)) || 'oled',
     setTheme: (theme) => {
         set({ theme });

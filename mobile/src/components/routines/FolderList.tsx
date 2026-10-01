@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import useAppStore from '@/store/useAppStore';
-import { Colors } from '@/constants/theme';
+import { useAppColors } from '@/hooks/useAppColors';
 import { Folder } from 'lucide-react-native';
 
 interface FolderListProps {
@@ -11,8 +11,7 @@ interface FolderListProps {
 }
 
 export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderListProps) {
-  const theme = useAppStore(state => state.theme);
-  const colors = Colors[theme as keyof typeof Colors] || Colors.oled;
+  const colors = useAppColors();
   const accentColor = colors.tint; 
 
   const allOptions = ['Todas', ...folders, 'Sin Carpeta'];

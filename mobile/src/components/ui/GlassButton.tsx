@@ -9,15 +9,17 @@ interface GlassButtonProps {
     children: React.ReactNode;
     theme: 'light' | 'dark' | 'oled' | 'galaxy' | 'ocean' | 'desert' | string;
     style?: ViewStyle | ViewStyle[];
+    color?: string;
     colors?: any;
+    noShadow?: boolean;
 }
 
-export function GlassButton({ onPress, children, theme, style }: GlassButtonProps) {
+export function GlassButton({ onPress, children, theme, style, color, noShadow }: GlassButtonProps) {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     
     const isLight = ['light', 'ocean', 'desert'].includes(theme);
-    const baseOpacity = isLight ? 0.25 : 0.15;
-    const pressedOpacity = isLight ? 0.4 : 0.3;
+    const baseOpacity = isLight ? 0.5 : 0.15;
+    const pressedOpacity = isLight ? 0.7 : 0.3;
     
     const bgOpacityAnim = useRef(new Animated.Value(baseOpacity)).current;
 
@@ -65,10 +67,12 @@ export function GlassButton({ onPress, children, theme, style }: GlassButtonProp
         justifyContent: 'center'
     };
     
-    if (flattenedUserStyle.width === undefined && flattenedUserStyle.flex === undefined) {
+    const hasPadding = flattenedUserStyle.padding !== undefined || flattenedUserStyle.paddingHorizontal !== undefined;
+    
+    if (flattenedUserStyle.width === undefined && flattenedUserStyle.flex === undefined && !hasPadding) {
         defaultStyle.width = 36;
     }
-    if (flattenedUserStyle.height === undefined) {
+    if (flattenedUserStyle.height === undefined && !hasPadding) {
         defaultStyle.height = 36;
     }
 
@@ -86,20 +90,31 @@ export function GlassButton({ onPress, children, theme, style }: GlassButtonProp
             <Animated.View style={[finalStyle, {
                 position: 'relative', 
                 flex: undefined, // Quitamos el flex interno para que no se estire verticalmente de forma extraña
-                width: '100%',   // Forzamos que llene el Pressable horizontalmente
+                width: finalStyle.width !== undefined ? '100%' : undefined,   // Forzamos que llene el Pressable horizontalmente si hay width fijo
                 height: finalStyle.height || '100%', // Forzamos que llene verticalmente
+                borderRadius: finalBorderRadius, // FIX: Aplica el border radius al contenedor que tiene el borde
                 transform: [{ scale: scaleAnim }],
                 shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isLight ? 0.08 : 0,
-                shadowRadius: 8,
-                elevation: isLight ? 2 : 0,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: (isLight && !noShadow) ? 0.35 : 0,
+                shadowRadius: 15,
+                borderWidth: isLight ? 1 : 0,
+                borderColor: isLight ? 'rgba(255,255,255,0.7)' : 'transparent',
+                elevation: (isLight && !noShadow) ? 4 : 0,
             }]}>
                 <GlassView 
                     glassEffectStyle="regular"
                     colorScheme={isLight ? 'light' : 'dark'}
                     style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius }]} 
                 />
+                <Animated.View style={[
+                    StyleSheet.absoluteFill,
+                    { 
+                        borderRadius: finalBorderRadius,
+                        backgroundColor: color || (isLight ? '#ffffff' : '#000000'),
+                        opacity: bgOpacityAnim
+                    }
+                ]} />
                 
                 {children}
             </Animated.View>

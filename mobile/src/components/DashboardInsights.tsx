@@ -39,7 +39,7 @@ export default function DashboardInsights({ workoutLog, bodyWeightLog, colors })
     }
 
     if (bodyWeightLog && bodyWeightLog.length > 0) {
-      const daysSinceLastWeight = getDaysDiff(bodyWeightLog[0].date);
+      const daysSinceLastWeight = getDaysDiff(bodyWeightLog[0].log_date);
       if (daysSinceLastWeight > 7) {
         alerts.push({
           id: 'weight-reminder',

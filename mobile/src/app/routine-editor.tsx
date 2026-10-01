@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { X, Check, Image as ImageIcon, Folder, Info, ChevronDown, Plus, Camera, Search, Library, Sparkles, Upload, Save, Trash2, GripVertical, PlayCircle } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { GlassView } from 'expo-glass-effect';
 import * as ImagePicker from 'expo-image-picker';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -221,12 +222,12 @@ export default function RoutineEditorScreen() {
 
         {/* Image Actions */}
         <View style={{ width: '100%', gap: 12, marginBottom: 24 }}>
-          <GlassButton theme={theme} colors={colors} onPress={handleImagePick} style={styles.actionBtn}>
+          <GlassButton noShadow theme={theme} colors={colors} onPress={handleImagePick} style={styles.actionBtn}>
             <Upload size={18} color={colors.text} style={{ marginRight: 8 }} />
             <Text style={{ color: colors.text, fontWeight: 'bold' }}>Subir foto</Text>
           </GlassButton>
           
-          <GlassButton theme={theme} colors={colors} onPress={() => setShowPixabay(true)} style={styles.actionBtn}>
+          <GlassButton noShadow theme={theme} colors={colors} onPress={() => setShowPixabay(true)} style={styles.actionBtn}>
             <Search size={18} color={colors.text} style={{ marginRight: 8 }} />
             <Text style={{ color: colors.text, fontWeight: 'bold' }}>Buscar en Pixabay</Text>
           </GlassButton>
@@ -255,7 +256,7 @@ export default function RoutineEditorScreen() {
         <TextInput
           style={[styles.input, styles.flex2, { color: colors.text, backgroundColor: colors.card, borderColor: colors.border }]}
           placeholder="Nombre de la rutina..."
-          placeholderTextColor={colors.textSecondary}
+          selectionColor={colors.tint} placeholderTextColor={colors.textSecondary}
           value={routineName}
           onChangeText={setRoutineName}
         />
@@ -275,7 +276,7 @@ export default function RoutineEditorScreen() {
       <TextInput
         style={[styles.input, styles.textArea, { color: colors.text, backgroundColor: colors.card, borderColor: colors.border }]}
         placeholder="Descripción (opcional)..."
-        placeholderTextColor={colors.textSecondary}
+        selectionColor={colors.tint} placeholderTextColor={colors.textSecondary}
         value={description}
         onChangeText={setDescription}
         multiline
@@ -302,27 +303,29 @@ export default function RoutineEditorScreen() {
 
       <View style={{ gap: 12, width: '100%' }}>
         {/* AI Analizer */}
-        <GlassButton theme={theme} colors={colors} onPress={() => Alert.alert('IA', 'Próximamente')} style={styles.aiButton}>
-          <Sparkles size={20} color={colors.text} />
-          <Text style={[styles.aiButtonText, { color: colors.text }]}>Analizar Rutina con IA</Text>
+        <GlassButton noShadow theme={theme} colors={colors} onPress={() => Alert.alert('IA', 'Próximamente')} style={[styles.aiButton, { overflow: 'hidden' }]}>
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />
+          <Sparkles size={20} color={colors.tint} />
+          <Text style={[styles.aiButtonText, { color: colors.tint }]}>Analizar Rutina con IA</Text>
         </GlassButton>
 
         {/* Add from Library */}
-        <GlassButton theme={theme} colors={colors} onPress={() => setShowExerciseSearch(true)} style={styles.libraryBtn}>
+        <GlassButton noShadow theme={theme} colors={colors} onPress={() => setShowExerciseSearch(true)} style={styles.libraryBtn}>
           <Library size={20} color={colors.text} style={{ marginRight: 8 }} />
           <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 16 }}>Añadir desde Biblioteca</Text>
         </GlassButton>
         
         {/* Add Manual */}
-        <GlassButton theme={theme} colors={colors} onPress={addManualExercise} style={styles.manualBtn}>
+        <GlassButton noShadow theme={theme} colors={colors} onPress={addManualExercise} style={styles.manualBtn}>
           <Plus size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
           <Text style={{ color: colors.textSecondary, fontWeight: 'bold', fontSize: 16 }}>Añadir Ejercicio Manual</Text>
         </GlassButton>
 
         {/* Save */}
-        <GlassButton theme={theme} colors={colors} onPress={handleSave} style={[styles.libraryBtn, { marginTop: 12 }]}>
-          <Save size={20} color={colors.text} style={{ marginRight: 8 }} />
-          <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 16 }}>
+        <GlassButton noShadow theme={theme} colors={colors} onPress={handleSave} style={[styles.libraryBtn, { marginTop: 12, overflow: 'hidden' }]}>
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />
+          <Save size={20} color={colors.tint} style={{ marginRight: 8 }} />
+          <Text style={{ color: colors.tint, fontWeight: 'bold', fontSize: 16 }}>
             {routineId ? 'Guardar Cambios' : 'Crear Rutina'}
           </Text>
         </GlassButton>
@@ -371,7 +374,7 @@ export default function RoutineEditorScreen() {
                       <TextInput
                         style={{ color: colors.text, fontWeight: 'bold', fontSize: 17, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.background, borderRadius: 12, borderWidth: 1, borderColor: colors.border, marginBottom: 10 }}
                         placeholder="Ej. Flexiones con peso..."
-                        placeholderTextColor={colors.textSecondary}
+                        selectionColor={colors.tint} placeholderTextColor={colors.textSecondary}
                         value={item.name}
                         onChangeText={(val) => updateExerciseField(item.id, 'name', val)}
                       />
@@ -399,9 +402,11 @@ export default function RoutineEditorScreen() {
                     </>
                   )}
                 </View>
-                <TouchableOpacity onPress={() => removeExercise(item.id)} style={{ padding: 8, backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: 12 }}>
-                  <Trash2 size={20} color="#ef4444" />
-                </TouchableOpacity>
+                                                    <TouchableOpacity onPress={() => removeExercise(item.id)} style={{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+                    <GlassView glassEffectStyle="regular" colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} style={StyleSheet.absoluteFill} />
+                    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: '#ef4444', opacity: 0.15 }]} />
+                    <Trash2 size={20} color="#ef4444" />
+                  </TouchableOpacity>
               </View>
 
               {/* Info Pills */}
@@ -741,3 +746,6 @@ const styles = StyleSheet.create({
     height: 'auto',
   }
 });
+
+
+

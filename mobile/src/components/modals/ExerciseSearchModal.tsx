@@ -4,7 +4,7 @@ import { useSafeAreaInsets as useSafeAreaInsetsNative } from 'react-native-safe-
 import { GlassView } from 'expo-glass-effect';
 import { X, Search, Plus, Trash2, Check, ArrowLeft, Filter, Sparkles } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
-import { Colors } from '@/constants/theme';
+import { useAppColors } from '@/hooks/useAppColors';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { getExerciseList } from '@/services/exerciseService';
 import apiClient from '@/services/apiClient';
@@ -23,7 +23,7 @@ import { WebView } from 'react-native-webview';
 export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visible, onClose, onAddExercises }) => {
   const insets = useSafeAreaInsetsNative();
   const theme = useAppStore(state => state.theme);
-  const colors = Colors[theme as keyof typeof Colors] || Colors.oled;
+  const colors = useAppColors();
 
   const [view, setView] = useState<'list' | 'detail' | 'summary'>('list');
   const [exercises, setExercises] = useState<any[]>([]);
@@ -202,24 +202,27 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
             </Text>
           ) : null}
           
-          <View style={{ marginTop: 12, alignItems: 'flex-end' }}>
-            <TouchableOpacity 
-              style={[styles.addButton, { backgroundColor: isStaged ? colors.tint : colors.background, borderColor: isStaged ? colors.tint : colors.border, alignSelf: 'stretch', width: 'auto', flexDirection: 'row', gap: 8, borderRadius: 12, paddingVertical: 8 }]}
-              onPress={() => toggleStaged(item)}
-            >
-              {isStaged ? (
-                <>
-                  <Check size={18} color="#fff" />
-                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Añadido</Text>
-                </>
-              ) : (
-                <>
-                  <Plus size={18} color={colors.text} />
-                  <Text style={{ color: colors.text, fontWeight: 'bold' }}>Añadir</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
+                                  <View style={{ marginTop: 12, alignItems: 'stretch' }}>
+              <GlassButton 
+                noShadow 
+                theme={theme} 
+                style={{ width: '100%', flexDirection: 'row', gap: 8, borderRadius: 12, paddingVertical: 10, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
+                onPress={() => toggleStaged(item)}
+              >
+                {stagedIds.has(item.id) && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />}
+                {stagedIds.has(item.id) ? (
+                  <>
+                    <Check size={18} color={colors.tint} />
+                    <Text style={{ color: colors.tint, fontWeight: 'bold' }}>Añadido</Text>
+                  </>
+                ) : (
+                  <>
+                    <Plus size={18} color={colors.text} />
+                    <Text style={{ color: colors.text, fontWeight: 'bold' }}>Añadir</Text>
+                  </>
+                )}
+              </GlassButton>
+            </View>
         </View>
       </TouchableOpacity>
     );
@@ -276,22 +279,18 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top, height: headerHeight, backgroundColor: 'transparent', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }]}>
           <GlassView 
-            glassEffectStyle={{
-                style: isScrolled ? 'regular' : 'none',
-                animate: true,
-                animationDuration: 0.15
-            }}
+            glassEffectStyle="regular"
             colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'}
             style={StyleSheet.absoluteFill}
         />
         <Animated.View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colors.border, position: 'absolute', bottom: 0, left: 0, right: 0, opacity: bgOpacity }} />
 
           {view !== 'list' ? (
-            <GlassButton theme={theme} onPress={() => setView('list')} style={styles.iconButton}>
+            <GlassButton noShadow theme={theme} onPress={() => setView('list')} style={styles.iconButton}>
               <ArrowLeft size={20} color={colors.text} />
             </GlassButton>
           ) : (
-            <GlassButton theme={theme} onPress={onClose} style={styles.iconButton}>
+            <GlassButton noShadow theme={theme} onPress={onClose} style={styles.iconButton}>
               <X size={20} color={colors.text} />
             </GlassButton>
           )}
@@ -303,7 +302,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
           {view === 'summary' || view === 'detail' ? (
             <View style={{ width: 40 }} />
           ) : (
-            <GlassButton theme={theme} onPress={() => setView('summary')} style={{ width: 'auto', paddingHorizontal: 16, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
+            <GlassButton noShadow theme={theme} onPress={() => setView('summary')} style={{ width: 'auto', paddingHorizontal: 16, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: colors.tint, fontWeight: 'bold', fontSize: 13 }}>
                 Ver ({stagedExercises.length})
               </Text>
@@ -331,7 +330,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
                       <TextInput
                         style={[styles.searchInput, { color: colors.text }]}
                         placeholder="Buscar ejercicios..."
-                        placeholderTextColor={colors.textSecondary}
+                        selectionColor={colors.tint} placeholderTextColor={colors.textSecondary}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                       />
@@ -453,8 +452,9 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
             </View>
 
             <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background, position: 'absolute', bottom: 0, left: 0, right: 0 }]}>
-              <GlassButton theme={theme} colors={colors} style={{ width: '100%', height: 50, borderRadius: 16 }} onPress={() => { toggleStaged(selectedExercise); setView('list'); }}>
-                <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 16 }}>
+                            <GlassButton noShadow theme={theme} colors={colors} style={{ width: '100%', height: 50, borderRadius: 16, overflow: 'hidden' }} onPress={() => { toggleStaged(selectedExercise); setView('list'); }}>
+                <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />
+                <Text style={{ color: colors.tint, fontWeight: 'bold', fontSize: 16 }}>
                   {stagedIds.has(selectedExercise.id) ? 'Quitar del carrito' : 'Añadir al carrito'}
                 </Text>
               </GlassButton>
@@ -549,15 +549,17 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
                             </TouchableOpacity>
                           </View>
 
-                          <View style={{ marginTop: 12, alignItems: 'flex-end' }}>
-                            <TouchableOpacity 
-                              style={{ alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, borderColor: colors.border, borderWidth: 1, flexDirection: 'row', gap: 8, borderRadius: 12, paddingVertical: 8 }}
-                              onPress={() => toggleStaged(item.exercise)}
-                            >
-                              <Trash2 size={18} color="#ef4444" />
-                              <Text style={{ color: '#ef4444', fontWeight: 'bold' }}>Eliminar</Text>
-                            </TouchableOpacity>
-                          </View>
+                            <View style={{ marginTop: 12, alignItems: 'stretch' }}>
+                              <GlassButton 
+                                noShadow
+                                theme={theme}
+                                style={{ width: '100%', alignItems: 'center', justifyContent: 'center', borderColor: colors.border, borderWidth: 1, flexDirection: 'row', gap: 8, borderRadius: 12, paddingVertical: 10 }}
+                                onPress={() => toggleStaged(item.exercise)}
+                              >
+                                <Trash2 size={18} color="#ef4444" />
+                                <Text style={{ color: '#ef4444', fontWeight: 'bold' }}>Eliminar</Text>
+                              </GlassButton>
+                            </View>
                         </View>
                       </View>
                     );
@@ -565,8 +567,9 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
                 />
               )}
               <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
-                <GlassButton theme={theme} colors={colors} style={{ width: '100%', height: 50, borderRadius: 16 }} onPress={handleConfirm}>
-                  <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: 16 }}>
+                                <GlassButton noShadow theme={theme} colors={colors} style={{ width: '100%', height: 50, borderRadius: 16, overflow: 'hidden' }} onPress={handleConfirm}>
+                  <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />
+                  <Text style={{ color: colors.tint, fontWeight: 'bold', fontSize: 16 }}>
                     Confirmar {stagedExercises.length} Ejercicios
                   </Text>
                 </GlassButton>
@@ -675,3 +678,8 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   }
 });
+
+
+
+
+

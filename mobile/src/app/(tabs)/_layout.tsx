@@ -1,12 +1,23 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { useAppColors } from '@/hooks/useAppColors';
 
 export default function AppTabs() {
+  const colors = useAppColors();
+
   return (
     <NativeTabs
+      key={colors.tint}
+      activeTintColor={colors.tint}
+      activeIndicatorColor={colors.tint}
+      inactiveTintColor={colors.textSecondary}
+      iconColor={{ default: colors.textSecondary, selected: colors.tint }}
       sceneContainerStyle={{ backgroundColor: 'transparent' }}
       screenOptions={{ 
         headerShown: false,
         contentStyle: { backgroundColor: 'transparent' },
+        tabBarActiveTintColor: colors.tint,
+        tabBarInactiveTintColor: colors.textSecondary,
+        activeIndicatorColor: colors.tint,
       }}
     >
       <NativeTabs.Trigger name="index">

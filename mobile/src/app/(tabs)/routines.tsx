@@ -11,6 +11,8 @@ import { RoutineCard } from '@/components/routines/RoutineCard';
 import GlobalHeader from '@/components/GlobalHeader';
 import ThemeBackground from '@/components/ThemeBackground';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { PrivacyModal } from '@/components/modals/PrivacyModal';
+import { getContrastColor } from '@/utils/colorUtils';
 import { useRouter } from 'expo-router';
 
 export default function RoutinesScreen() {
@@ -26,6 +28,7 @@ export default function RoutinesScreen() {
 
   // Local State
   const [activeTab, setActiveTab] = useState<TabKey>('myRoutines');
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<string>('Todas');
   const [query, setQuery] = useState('');
 
@@ -151,7 +154,7 @@ export default function RoutinesScreen() {
 
         {/* Action Buttons */}
         <View style={styles.actionsRow}>
-          <GlassButton theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => {
+          <GlassButton noShadow theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => {
             if (routines.length === 0) return;
             Alert.alert(
               'Eliminar Todas las Rutinas',
@@ -169,22 +172,44 @@ export default function RoutinesScreen() {
           }}>
             <Trash2 size={20} color={routines.length > 0 ? '#ef4444' : colors.textSecondary} />
           </GlassButton>
-          <GlassButton theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => Alert.alert('TODO', 'Privacidad Global')}>
+          <GlassButton noShadow theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => setShowPrivacyModal(true)}>
             <Globe size={20} color={colors.textSecondary} />
           </GlassButton>
-          <GlassButton theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => Alert.alert('TODO', 'Generador IA')}>
-            <Sparkles size={20} color={colors.tint} />
+          <GlassButton noShadow theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => Alert.alert('TODO', 'Generador IA')}>
+            <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15, borderRadius: 22 }]} />
+            <Sparkles size={20} color={getContrastColor(colors.tint, theme)} />
           </GlassButton>
           <GlassButton 
+            noShadow
             theme={theme} 
-            style={{ width: 'auto', height: 44, paddingHorizontal: 16, borderRadius: 22, flexDirection: 'row', marginLeft: 'auto' }} 
-            onPress={() => {
-              useAppStore.getState().clearRoutineEditorState();
-              router.push('/routine-editor');
-            }}
+            style={{ flex: 1, height: 44, paddingHorizontal: 12, borderRadius: 22, flexDirection: 'row', justifyContent: 'center', overflow: 'hidden' }} 
+                          onPress={() => {
+                const editorState = useAppStore.getState().routineEditorState;
+                if ((editorState.exercises && editorState.exercises.length > 0) || editorState.routineName) {
+                  Alert.alert(
+                    "Borrador encontrado",
+                    "Tienes una rutina en proceso. ¿Deseas continuarla o empezar de cero?",
+                    [
+                      { text: "Continuar", onPress: () => router.push('/routine-editor') },
+                      { 
+                        text: "Empezar de cero", 
+                        style: "destructive", 
+                        onPress: () => {
+                          useAppStore.getState().clearRoutineEditorState();
+                          router.push('/routine-editor');
+                        }
+                      }
+                    ]
+                  );
+                } else {
+                  useAppStore.getState().clearRoutineEditorState();
+                  router.push('/routine-editor');
+                }
+              }}
           >
-            <Plus size={20} color={colors.text} style={{ marginRight: 8 }} />
-            <Text style={[styles.createButtonText, { color: colors.text }]}>Crear Rutina</Text>
+            <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />
+            <Plus size={20} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 6 }} />
+            <Text style={[styles.createButtonText, { color: colors.tint }]} numberOfLines={1} adjustsFontSizeToFit>Crear Rutina</Text>
           </GlassButton>
         </View>
 
@@ -280,10 +305,11 @@ export default function RoutinesScreen() {
           }
           contentContainerStyle={styles.listContent}
           onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
-          scrollEventThrottle={16}
+                    scrollEventThrottle={16}
         />
       )}
       
+      <PrivacyModal visible={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
     </View>
   );
 }
@@ -349,3 +375,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   }
 });
+
+
+
+
+
+

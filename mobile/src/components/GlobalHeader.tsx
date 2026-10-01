@@ -77,60 +77,8 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
 
     
 
-    
-
-    const ProfileButton = () => {
-        const scaleAnim = useRef(new Animated.Value(1)).current;
-        const opacityAnim = useRef(new Animated.Value(1)).current;
-
-        const handlePressIn = () => {
-            Animated.spring(scaleAnim, { toValue: 0.82, useNativeDriver: true, friction: 5, tension: 100 }).start();
-            Animated.timing(opacityAnim, { toValue: 0.6, duration: 150, useNativeDriver: true }).start();
-        };
-
-        const handlePressOut = () => {
-            Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, friction: 5, tension: 100 }).start();
-            Animated.timing(opacityAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
-        };
-
         return (
-            <Pressable 
-                onPress={() => router.push('/profile')} 
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-                style={{ width: 40, height: 40, borderRadius: 20 }}
-            >
-                <Animated.View style={{ 
-                    flex: 1, 
-                    borderRadius: 20, 
-                    overflow: 'hidden', 
-                    transform: [{ scale: scaleAnim }],
-                    opacity: opacityAnim,
-                    borderWidth: 1, 
-                    borderColor: colors.border,
-                    backgroundColor: colors.card,
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 8,
-                    elevation: 8
-                }}>
-                    {imageUrl ? (
-                        <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} />
-                    ) : (
-                        <User size={20} color={colors.textSecondary} />
-                    )}
-                </Animated.View>
-            </Pressable>
-        );
-    };
-
-    return (
         <View style={{ position: 'relative' }}>
-            
-            
             <GlassView 
                 glassEffectStyle={{
                     style: isScrolled ? 'regular' : 'none',
@@ -161,11 +109,22 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                         } else {
                             router.replace('/');
                         }
-                    }} theme={theme} colors={colors}>
+                    }} theme={theme} colors={colors} noShadow>
                         <ChevronLeft size={24} color={colors.text} />
                     </GlassButton>
                 ) : (
-                    <ProfileButton />
+                    <GlassButton 
+                        onPress={() => router.push('/profile')} 
+                        theme={theme}
+                        noShadow
+                        style={{ width: 40, height: 40, borderRadius: 20, overflow: 'hidden', padding: 0 }}
+                    >
+                        {imageUrl ? (
+                            <Image source={{ uri: imageUrl }} style={{ width: '100%', height: '100%' }} />
+                        ) : (
+                            <User size={20} color={colors.text} />
+                        )}
+                    </GlassButton>
                 )}
                 {title && (
                     <Text style={{ color: colors.text, fontSize: 24, fontWeight: '900', letterSpacing: -0.5 }}>{title}</Text>
@@ -184,14 +143,15 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, zIndex: 2 }}>
                     <GlassButton 
                         onPress={() => setShowAiModal(true)} 
-                        theme={theme} 
-                        style={{ width: 'auto', height: 36, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 18 }}
+                        theme={theme}
+                        noShadow
+                        style={{ height: 36, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 18 }}
                     >
                         <Sparkles size={14} color={colors.text} />
                         <Text style={{ color: colors.text, fontSize: 12, fontWeight: '900' }}>{aiRemaining}/{aiLimit}</Text>
                     </GlassButton>
 
-                    <GlassButton onPress={() => router.push('/notifications')} theme={theme} colors={colors}>
+                    <GlassButton onPress={() => router.push('/notifications')} theme={theme} colors={colors} noShadow>
                         <Bell size={18} color={colors.text} />
                         {unreadCount > 0 && (
                             <View style={{ position: 'absolute', top: -2, right: -2, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.tint, borderWidth: 2, borderColor: colors.background }} />

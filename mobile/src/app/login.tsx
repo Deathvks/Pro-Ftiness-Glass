@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingVi
 import useAppStore from '@/store/useAppStore';
 import { useRouter, Link } from 'expo-router';
 import { BlurView } from 'expo-blur';
+import { GlassButton } from '@/components/ui/GlassButton';
 import { LogIn, Sparkles, Eye, EyeOff, CheckCircle2, Mail } from 'lucide-react-native';
 import { FontAwesome5, FontAwesome6 } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/use-theme';
@@ -277,6 +278,8 @@ export default function Login() {
         <View style={{ flex: 1, minHeight: 20 }} />
         
         {/* LOGO */}
+          {!needsVerification && (
+            <>
         <Image 
           source={require('../../assets/images/logo.webp')} 
           style={styles.logo} 
@@ -295,6 +298,8 @@ export default function Login() {
             </Text>
           </BlurView>
         </View>
+            </>
+          )}
 
         {needsVerification ? (
           <>
@@ -343,17 +348,18 @@ export default function Login() {
                     ))}
                   </View>
 
-                  <TouchableOpacity 
-                    style={[styles.loginButton, { backgroundColor: theme.tint, shadowColor: theme.tint, marginTop: 12, opacity: code.some(d => d === '') ? 0.7 : 1 }]}
+                  <GlassButton 
+                    theme={colorScheme}
+                    color={theme.tint}
+                    style={[styles.loginButton, { marginTop: 12, opacity: code.some(d => d === '') ? 0.7 : 1 }]}
                     onPress={handleVerifySubmit}
-                    disabled={isLoading || code.some(d => d === '')}
                   >
                     {isLoading ? (
                       <ActivityIndicator color="#0f172a" />
                     ) : (
                       <Text style={styles.loginButtonText}>Verificar Código</Text>
                     )}
-                  </TouchableOpacity>
+                  </GlassButton>
 
                   <View style={[styles.footer, { marginTop: 24, borderTopWidth: 0, paddingTop: 0 }]}>
                     <Text style={[styles.footerText, { color: theme.textSecondary }]}>¿No has recibido el código? </Text>
@@ -458,10 +464,11 @@ export default function Login() {
                   </View>
 
                   {/* SUBMIT BUTTON */}
-                  <TouchableOpacity 
-                    style={[styles.loginButton, { backgroundColor: theme.tint, shadowColor: theme.tint }]}
+                  <GlassButton 
+                    theme={colorScheme}
+                    color={theme.tint}
+                    style={styles.loginButton}
                     onPress={handleLoginSubmit}
-                    disabled={isLoading}
                   >
                     {isLoading ? (
                       <ActivityIndicator color="#0f172a" />
@@ -471,7 +478,7 @@ export default function Login() {
                         <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
                       </>
                     )}
-                  </TouchableOpacity>
+                  </GlassButton>
 
                   {/* DIVIDER */}
                   <View style={styles.divider}>
@@ -637,6 +644,7 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     flexDirection: 'row',
+    width: '100%',
     height: 56,
     borderRadius: 20,
     justifyContent: 'center',

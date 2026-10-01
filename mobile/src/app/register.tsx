@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, Image } from 'react-native';
 import { useRouter, Link } from 'expo-router';
 import { BlurView } from 'expo-blur';
+import { GlassButton } from '@/components/ui/GlassButton';
 import { Sparkles, UserPlus, Info, ArrowRight, CheckCircle2, Eye, EyeOff, Mail } from 'lucide-react-native';
 import { FontAwesome5, FontAwesome6 } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/use-theme';
@@ -265,6 +266,8 @@ export default function Register() {
       >
         <View style={{ flex: 1, minHeight: 20 }} />
         
+          {!needsVerification && (
+            <>
         <Image 
           source={require('@/../assets/images/logo.webp')} 
           style={{ width: 80, height: 80, alignSelf: 'center', marginBottom: 12 }} 
@@ -283,6 +286,8 @@ export default function Register() {
             </Text>
           </BlurView>
         </View>
+            </>
+          )}
 
         {needsVerification ? (
           <>
@@ -331,17 +336,18 @@ export default function Register() {
                     ))}
                   </View>
 
-                  <TouchableOpacity 
-                    style={[styles.loginButton, { backgroundColor: theme.tint, shadowColor: theme.tint, marginTop: 12, opacity: code.some(d => d === '') ? 0.7 : 1 }]}
+                  <GlassButton
+                    theme={colorScheme}
+                    color={theme.tint}
+                    style={[styles.loginButton, { marginTop: 12, opacity: code.some(d => d === '') ? 0.7 : 1 }]}
                     onPress={handleVerifySubmit}
-                    disabled={isLoading || code.some(d => d === '')}
                   >
                     {isLoading ? (
                       <ActivityIndicator color="#0f172a" />
                     ) : (
                       <Text style={styles.loginButtonText}>Verificar Código</Text>
                     )}
-                  </TouchableOpacity>
+                  </GlassButton>
 
                   <View style={[styles.footer, { marginTop: 24 }]}>
                     <Text style={[styles.footerText, { color: theme.textSecondary }]}>¿No has recibido el código? </Text>
@@ -504,10 +510,11 @@ export default function Register() {
                   </View>
 
                   {/* SUBMIT BUTTON */}
-                  <TouchableOpacity 
-                    style={[styles.loginButton, { backgroundColor: theme.tint, shadowColor: theme.tint }]}
+                  <GlassButton
+                    theme={colorScheme}
+                    color={theme.tint}
+                    style={styles.loginButton}
                     onPress={handleRegisterSubmit}
-                    disabled={isLoading}
                   >
                     {isLoading ? (
                       <ActivityIndicator color="#0f172a" />
@@ -517,7 +524,7 @@ export default function Register() {
                         <Text style={styles.loginButtonText}>Registrarse</Text>
                       </>
                     )}
-                  </TouchableOpacity>
+                  </GlassButton>
 
                   {/* SOCIAL BUTTONS */}
                   <View style={styles.socialContainer}>
@@ -672,6 +679,7 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     flexDirection: 'row',
+    width: '100%',
     height: 52,
     borderRadius: 16,
     alignItems: 'center',

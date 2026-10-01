@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { initLocalStorage } from '@/utils/localStoragePolyfill';
 import useAppStore from '@/store/useAppStore';
 import ThemeBackground from '@/components/ThemeBackground';
+import { useAppColors } from '@/hooks/useAppColors';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,6 +26,7 @@ export default function RootLayout() {
   useEffect(() => {
     async function prepare() {
       await initLocalStorage();
+      useAppStore.getState().hydrateFromStorage();
       
       const token = localStorage.getItem('pro_fitness_token');
       const savedTheme = localStorage.getItem('theme');
@@ -100,10 +102,11 @@ export default function RootLayout() {
     }
   }, [isReady, isAuthenticated]);
 
+  const colors = useAppColors();
   const theme = useAppStore(state => state.theme);
   const isDark = ['dark', 'ocean-dark', 'desert-dark', 'galaxy'].includes(theme) || theme === 'oled' || theme === 'galaxy' || theme === 'ocean-dark' || theme === 'desert-dark';
 
-  const NavigationTheme = isDark ? { ...DarkTheme, colors: { ...DarkTheme.colors, background: 'transparent' } } : { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
+  const NavigationTheme = isDark ? { ...DarkTheme, colors: { ...DarkTheme.colors, primary: colors.tint, background: 'transparent' } } : { ...DefaultTheme, colors: { ...DefaultTheme.colors, primary: colors.tint, background: 'transparent' } };
 
   if (!isReady) {
     return null;

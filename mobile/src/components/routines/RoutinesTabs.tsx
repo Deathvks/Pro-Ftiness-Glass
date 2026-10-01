@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import useAppStore from '@/store/useAppStore';
-import { Colors } from '@/constants/theme';
+import { useAppColors } from '@/hooks/useAppColors';
 import { BookCopy, Compass, Dumbbell, Zap } from 'lucide-react-native';
 
 export type TabKey = 'myRoutines' | 'explore' | 'manualExercises' | 'quickCardio';
@@ -12,9 +12,7 @@ interface RoutinesTabsProps {
 }
 
 export function RoutinesTabs({ activeTab, onChangeTab }: RoutinesTabsProps) {
-  const theme = useAppStore(state => state.theme);
-  const colors = Colors[theme as keyof typeof Colors] || Colors.oled;
-  // TODO: Add dynamic accent color support if available in mobile store
+  const colors = useAppColors();
   const accentColor = colors.tint; 
 
   const tabs = [
