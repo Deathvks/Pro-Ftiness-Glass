@@ -117,7 +117,9 @@ io.use((socket, next) => {
     socket.user = decoded;
     next();
   } catch (err) {
-    console.error('Socket error: Invalid token for socket', socket.id, err.message);
+    if (!err.message.includes('jwt expired')) {
+      console.error('Socket error: Invalid token for socket', socket.id, err.message);
+    }
     return next(new Error('Authentication error: Invalid token'));
   }
 });

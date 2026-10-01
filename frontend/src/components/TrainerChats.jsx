@@ -537,8 +537,8 @@ export default function TrainerChats({ onClose }) {
               <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
             </div> :
                     (() => {
-            const activeClients = clients.filter(c => !c.is_chat_closed);
-            const closedClients = clients.filter(c => c.is_chat_closed);
+            const activeClients = clients.filter(c => !c.lastMessage?.is_closed);
+            const closedClients = clients.filter(c => c.lastMessage?.is_closed);
 
             let botClients = [];
             if (isAdmin) {
