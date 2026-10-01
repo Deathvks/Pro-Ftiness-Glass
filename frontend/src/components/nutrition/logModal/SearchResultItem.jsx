@@ -155,7 +155,7 @@ const SearchResultItem = ({ item, onAdd, onDelete, onEdit }) => {
 
                 <button
                     type="button"
-                    className="p-2.5 rounded-xl text-white bg-accent group-hover:scale-105 transition-all pointer-events-none"
+                    className="p-2.5 rounded-xl text-accent-contrast bg-accent group-hover:scale-105 transition-all pointer-events-none"
                     title="Añadir a la lista"
                     aria-hidden="true"
                     tabIndex={-1}

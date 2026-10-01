@@ -3,15 +3,16 @@ import React, { useState, useMemo } from 'react';
 import { ArrowDown, Minus, ArrowUp, ChevronLeft, Save, Sparkles, Scale } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 
 const PhysicalProfileEditor = ({ onDone }) => {
-  const { userProfile, updateUserProfile, bodyWeightLog } = useAppStore(state => ({
+  const { userProfile, updateUserProfile, bodyWeightLog } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     updateUserProfile: state.updateUserProfile,
     bodyWeightLog: state.bodyWeightLog,
-  }));
+  })));
   const { addToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -100,7 +101,7 @@ const PhysicalProfileEditor = ({ onDone }) => {
   const baseInputClasses = "w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] px-5 py-4 text-text-primary focus:ring-2 focus:ring-accent/50 outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold placeholder:text-text-muted shadow-inner";
   const choiceButtonClasses = "flex flex-col items-center justify-center gap-3 p-5 rounded-[20px] transition-all duration-300 font-bold text-sm sm:text-base border-none ring-1 active:scale-95";
   const inactiveChoiceClasses = "ring-black/5 dark:ring-white/10 bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary";
-  const activeChoiceClasses = "ring-accent bg-accent text-white shadow-lg shadow-accent/20";
+  const activeChoiceClasses = "ring-accent bg-accent text-accent-contrast shadow-lg shadow-accent/20";
   const labelClasses = "block text-[11px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest mb-3";
 
   return (
@@ -176,7 +177,7 @@ const PhysicalProfileEditor = ({ onDone }) => {
 
             <div className="flex flex-col justify-end">
                 <div className="bg-accent/10 p-5 rounded-[24px] ring-1 ring-accent/30 flex items-start gap-4">
-                  <div className="p-3 bg-accent rounded-[16px] text-white shrink-0 shadow-sm mt-1">
+                  <div className="p-3 bg-accent rounded-[16px] text-accent-contrast shrink-0 shadow-sm mt-1">
                     <Scale size={24} strokeWidth={2} />
                   </div>
                   <div>
@@ -229,7 +230,7 @@ const PhysicalProfileEditor = ({ onDone }) => {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex items-center justify-center gap-2 px-10 py-4 w-full sm:w-auto min-w-[200px] rounded-[20px] bg-accent text-white font-bold text-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-accent/20"
+              className="flex items-center justify-center gap-2 px-10 py-4 w-full sm:w-auto min-w-[200px] rounded-[20px] bg-accent text-accent-contrast font-bold text-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-accent/20"
             >
               {isLoading ? <Spinner size={24} color="white" /> : <><Save size={20} strokeWidth={2.5} /><span>Guardar Perfil</span></>}
             </button>

@@ -3,10 +3,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import {
-  ChevronLeft, ChevronRight, Save, User, Camera, AlertTriangle,
-  Trophy, Flame, Dumbbell, Crown, Star, Eye, X, Shield, Zap, Diamond, Sparkles, Medal
+  ChevronLeft, ChevronRight, Save, User, UserCircle, Camera, AlertTriangle, Mail, AtSign, Key, Lock, ShieldCheck, Globe, LayoutTemplate, Trash2,
+  Trophy, Flame, Dumbbell, Crown, Star, Eye, EyeOff, CheckCircle2, X, Shield, Zap, Diamond, Sparkles, Medal
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
+import ModalPortal from '../components/ModalPortal';
+import useModalLock from '../hooks/useModalLock';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
@@ -199,6 +201,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
   const [modalPassword, setModalPassword] = useState('');
   const [modalError, setModalError] = useState('');
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const hasPassword = userProfile?.hasPassword;
 
@@ -414,366 +417,181 @@ const Profile = ({ onCancel, setView, navigate }) => {
   return (
     <>
       <Helmet>
-        <title>{`Editar Perfil: ${formData.username || 'Usuario'} - Pro Fitness Glass`}</title>
+        <title>{`Editar Perfil: ${formData.username || "Usuario"} - Pro Fitness Glass`}</title>
       </Helmet>
 
-      <div className="w-full max-w-4xl mx-auto px-4 pb-28 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] mt-6 sm:mt-0">
-        <button
-          onClick={() => {
-            if (isDirty) {
-              setShowUnsavedModal(true);
-            } else {
-              onCancel();
-            }
-          }}
-          className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-full text-text-secondary font-bold hover:text-text-primary transition-colors mb-6 w-fit active:scale-95"
-        >
-          <ChevronLeft size={20} strokeWidth={2.5} />
-          Volver
-        </button>
-
-        <h1 className="hidden md:block w-fit text-4xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
-          Editar Perfil
-        </h1>
-
-        <GlassCard className="glass p-6 sm:p-10 rounded-[32px] shadow-xl border-none ring-1 ring-black/5 dark:ring-white/10 mb-8 transition-all duration-300">
-          <form onSubmit={handleSave} className="flex flex-col gap-6 sm:gap-8" noValidate>
-            {errors.api && (
-              <p className="text-center text-red font-bold mb-4 -mt-2">{errors.api}</p>
-            )}
-
-            <div className="flex flex-col items-center gap-4">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImageChange}
-                accept="image/png, image/jpeg, image/webp"
-                className="hidden"
-              />
-              <div
-                className="relative w-36 h-36 rounded-[40px] cursor-pointer group hover:scale-105 transition-transform duration-300 shadow-xl bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 p-1"
-                onClick={openImageModal}
-                title="Ver imagen ampliada"
-              >
-                {imagePreview ? (
-                  <img
-                    src={getProcessedImageUrl(imagePreview)}
-                    alt={`Foto de perfil de ${formData.username || 'usuario'}`}
-                    className="w-full h-full rounded-[36px] object-cover"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => { e.target.onerror = null; }}
-                  />
-                ) : (
-                  <div className="w-full h-full rounded-[36px] bg-black/5 dark:bg-white/5 flex items-center justify-center">
-                    <User size={64} className="text-text-muted opacity-50" strokeWidth={1.5} />
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    fileInputRef.current.click();
-                  }}
-                  className="!absolute bottom-0 right-0 p-3 bg-accent rounded-[16px] text-white shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-300"
-                  aria-label="Cambiar foto de perfil"
-                >
-                  <Camera size={20} strokeWidth={2.5} />
-                </button>
-              </div>
-              {errors.image && (
-                <p className="form-error-text -mt-2 font-bold">{errors.image}</p>
+      <div className="w-full max-w-2xl mx-auto px-4 pb-28 sm:p-6 lg:p-10 animate-[fade-in_0.3s_ease-out] mt-2 sm:mt-0">
+        
+        {/* Header - Avatar */}
+        <div className="flex flex-col items-center mt-6 mb-8">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageChange}
+              accept="image/png, image/jpeg, image/webp"
+              className="hidden"
+            />
+            <div
+              className="relative w-24 h-24 rounded-full cursor-pointer overflow-hidden shadow-sm ring-1 ring-glass-border mb-3"
+              onClick={openImageModal}
+            >
+              {imagePreview ? (
+                <img
+                  src={getProcessedImageUrl(imagePreview)}
+                  alt="Foto de perfil"
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => { e.target.onerror = null; }}
+                />
+              ) : (
+                <div className="w-full h-full bg-black/5 dark:bg-white/5 flex items-center justify-center">
+                  <User size={40} className="text-text-muted opacity-50" strokeWidth={1.5} />
+                </div>
               )}
             </div>
+            <button
+                type="button"
+                onClick={() => fileInputRef.current.click()}
+                className="text-[15px] font-bold text-accent active:opacity-50 transition-opacity mb-4"
+            >
+                Editar foto
+            </button>
+            <h1 className="text-2xl font-bold text-text-primary">{userProfile.username || 'Usuario'}</h1>
+            <p className="text-sm text-text-secondary">{userProfile.email}</p>
+        </div>
 
-            <div>
-              <h2 className="text-2xl font-extrabold mb-6 flex items-center gap-3 text-text-primary tracking-tight">
-                <div className="p-2.5 bg-accent/10 text-accent rounded-[16px] ring-1 ring-accent/30 shadow-sm shrink-0">
-                  <User size={24} strokeWidth={2.5} />
-                </div>
-                Datos Básicos
-              </h2>
-              <div className="flex flex-col gap-5">
-                <div>
-                  <label htmlFor="username" className="block text-[11px] sm:text-xs font-bold text-text-secondary mb-2 px-1 uppercase tracking-wider">
-                    Nombre de usuario
-                  </label>
-                  <input
-                    id="username"
-                    name="username"
-                    type="text"
-                    value={formData.username}
-                    onChange={handleChange}
-                    className={baseInputClasses}
-                    maxLength={30}
-                    placeholder="Escribe tu nombre de usuario"
-                  />
-                  {errors.username && (
-                    <p className="form-error-text mt-2 font-bold px-2">{errors.username}</p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="email" className="block text-[11px] sm:text-xs font-bold text-text-secondary mb-2 px-1 uppercase tracking-wider">
-                    Correo Electrónico
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={baseInputClasses}
-                    placeholder="Escribe tu email"
-                  />
-                  {errors.email && (
-                    <p className="form-error-text mt-2 font-bold px-2">{errors.email}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-8 border-t border-black/5 dark:border-white/10">
-              <h2 className="text-2xl font-extrabold mb-3 flex items-center gap-3 text-text-primary tracking-tight">
-                <div className="p-2.5 bg-accent/10 text-accent rounded-[16px] ring-1 ring-accent/30 shadow-sm shrink-0">
-                  <Shield size={24} strokeWidth={2.5} />
-                </div>
-                {hasPassword ? 'Seguridad y Contraseña' : 'Establecer Contraseña'}
-              </h2>
-              <p className="text-sm font-medium text-text-secondary mb-6 leading-relaxed px-1">
-                {hasPassword
-                  ? 'Si dejas estos campos en blanco tu contraseña no cambiará.'
-                  : 'Añade una contraseña para poder iniciar sesión directamente con tu correo electrónico.'}
-              </p>
-              <div className="flex flex-col gap-5">
-                {hasPassword && (
-                  <div>
-                    <label htmlFor="currentPassword" className="block text-[11px] sm:text-xs font-bold text-text-secondary mb-2 px-1 uppercase tracking-wider">
-                      Contraseña Actual
-                    </label>
-                    <input
-                      id="currentPassword"
-                      name="currentPassword"
-                      type="password"
-                      value={formData.currentPassword}
-                      onChange={handleChange}
-                      className={baseInputClasses}
-                      placeholder="Ingresa tu contraseña actual"
-                    />
-                    {errors.currentPassword && (
-                      <p className="form-error-text mt-2 font-bold px-2">
-                        {errors.currentPassword}
-                      </p>
-                    )}
-                  </div>
-                )}
-                <div>
-                  <label htmlFor="newPassword" className="block text-[11px] sm:text-xs font-bold text-text-secondary mb-2 px-1 uppercase tracking-wider">
-                    {hasPassword ? 'Nueva Contraseña' : 'Contraseña Nueva'}
-                  </label>
-                  <input
-                    id="newPassword"
-                    name="newPassword"
-                    type="password"
-                    value={formData.newPassword}
-                    onChange={handleChange}
-                    className={baseInputClasses}
-                    placeholder="Escribe una nueva contraseña"
-                  />
-                  {errors.newPassword && (
-                    <p className="form-error-text mt-2 font-bold px-2">{errors.newPassword}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-center pt-8 border-t border-black/5 dark:border-white/10 mt-2">
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="flex items-center justify-center gap-2 px-8 py-4 w-full sm:w-auto min-w-[200px] rounded-[20px] bg-accent text-white font-bold text-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-accent/20"
-              >
-                {isLoading ? (
-                  <Spinner size={24} color="white" />
-                ) : (
-                  <>
-                    <Save size={20} strokeWidth={2.5} />
-                    <span>Guardar Cambios</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </GlassCard>
-
-        {/* --- APARTADO: PERFIL SOCIAL --- */}
-        <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 mb-8 hover:shadow-xl transition-all duration-300">
-          <h3 className="text-xl font-extrabold text-text-primary mb-3 flex items-center gap-3 tracking-tight">
-            <div className="p-2.5 bg-accent/10 rounded-[12px] ring-1 ring-accent/30 shrink-0">
-              <Eye size={20} className="text-accent" strokeWidth={2.5} />
-            </div>
-            Perfil Social Público
-          </h3>
-          <p className="text-sm font-medium text-text-secondary mb-6 leading-relaxed">
-            Así es como otros usuarios ven tu perfil, logros y estadísticas en la comunidad.
-            Puedes personalizar qué información compartir desde la sección de privacidad en Ajustes.
-          </p>
-          <button
-            type="button"
-            onClick={handleViewPublicProfile}
-            className="flex items-center justify-center gap-2 px-6 py-4 w-full sm:w-auto rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95 shadow-sm"
-          >
-            <User size={18} strokeWidth={2.5} />
-            <span>Previsualizar Mi Perfil</span>
-          </button>
-        </GlassCard>
-
-        {/* --- APARTADO: INSIGNIAS --- */}
-        <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 mb-8 hover:shadow-xl transition-all duration-300">
-          <h3 className="text-xl font-extrabold text-text-primary mb-6 flex items-center gap-3 tracking-tight">
-            <div className="p-2.5 bg-accent/10 rounded-[12px] ring-1 ring-accent/30 shrink-0">
-              <Trophy size={20} className="text-accent" strokeWidth={2.5} />
-            </div>
-            Mis Insignias
-          </h3>
-
-          {gamification?.unlockedBadges && gamification.unlockedBadges.length > 0 ? (
-            (() => {
-              const unlockedBadges = gamification.unlockedBadges;
-              const totalPages = Math.ceil(unlockedBadges.length / itemsPerPage);
-              const currentBadges = unlockedBadges.slice(
-                badgePage * itemsPerPage,
-                (badgePage + 1) * itemsPerPage
-              );
-
-              return (
-                <div className="relative px-2 sm:px-12">
-                  {totalPages > 1 && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setBadgePage(p => Math.max(0, p - 1))}
-                        disabled={badgePage === 0}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 p-2.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 rounded-[16px] text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all z-10 hidden sm:block active:scale-95 shadow-sm"
-                      >
-                        <ChevronLeft size={20} strokeWidth={2.5} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBadgePage(p => Math.min(totalPages - 1, p + 1))}
-                        disabled={badgePage === totalPages - 1}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 p-2.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 rounded-[16px] text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all z-10 hidden sm:block active:scale-95 shadow-sm"
-                      >
-                        <ChevronRight size={20} strokeWidth={2.5} />
-                      </button>
-                    </>
-                  )}
-
-                  <div className={`grid gap-4 ${itemsPerPage === 1 ? 'grid-cols-1' : 'grid-cols-3'}`}>
-                    {currentBadges.map((badgeId) => {
-                      const badge = BADGE_DETAILS[badgeId] || BADGE_DETAILS.default;
-                      return (
-                        <div key={badgeId} className="flex flex-col items-center text-center p-5 rounded-[24px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 transition-transform hover:-translate-y-1">
-                          <div className={`p-4 rounded-[20px] mb-4 bg-bg-primary shadow-sm ring-1 ring-black/5 dark:ring-white/10 ${badge.color}`}>
-                            <badge.icon size={32} strokeWidth={1.5} />
-                          </div>
-                          <span className="font-extrabold text-sm text-text-primary mb-1">{badge.name}</span>
-                          <span className="text-xs font-medium text-text-secondary">{badge.desc}</span>
+        {/* Group 1: Datos Básicos */}
+        <div className="mb-6">
+            <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 px-4">Datos Básicos</h2>
+            <div className="bg-bg-secondary rounded-[24px] shadow-sm ring-1 ring-glass-border overflow-hidden">
+                <div className="group flex items-center justify-between p-4 border-b border-glass-border">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-[12px] bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-secondary ring-1 ring-glass-border shadow-sm shrink-0 group-hover:bg-accent/10 group-hover:text-accent group-hover:ring-accent/30 transition-colors">
+                            <UserCircle size={18} strokeWidth={2} />
                         </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Controles de página para móvil */}
-                  {totalPages > 1 && (
-                    <div className="flex sm:hidden items-center justify-between mt-6 px-2">
-                      <button
-                        onClick={() => setBadgePage(p => Math.max(0, p - 1))}
-                        disabled={badgePage === 0}
-                        className="p-2.5 rounded-[12px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 disabled:opacity-30 text-text-secondary active:scale-95"
-                      >
-                        <ChevronLeft size={20} strokeWidth={2.5} />
-                      </button>
-                      <div className="flex gap-2">
-                        {Array.from({ length: totalPages }).map((_, i) => (
-                          <div
-                            key={i}
-                            className={`w-1.5 h-1.5 rounded-full transition-colors ${i === badgePage ? 'bg-accent' : 'bg-black/10 dark:bg-white/20'}`}
-                          />
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => setBadgePage(p => Math.min(totalPages - 1, p + 1))}
-                        disabled={badgePage === totalPages - 1}
-                        className="p-2.5 rounded-[12px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 disabled:opacity-30 text-text-secondary active:scale-95"
-                      >
-                        <ChevronRight size={20} strokeWidth={2.5} />
-                      </button>
+                        <span className="text-[15px] font-medium text-text-primary">Usuario</span>
                     </div>
-                  )}
-
-                  {/* Indicadores de página Desktop */}
-                  {totalPages > 1 && (
-                    <div className="hidden sm:flex justify-center gap-2 mt-6">
-                      {Array.from({ length: totalPages }).map((_, i) => (
-                        <div
-                          key={i}
-                          className={`w-1.5 h-1.5 rounded-full transition-colors ${i === badgePage ? 'bg-accent' : 'bg-black/10 dark:bg-white/20'}`}
-                        />
-                      ))}
-                    </div>
-                  )}
+                    <input type="text" name="username" value={formData.username} onChange={handleChange} className="text-right bg-transparent outline-none text-text-secondary font-medium flex-1 ml-4 min-w-0 truncate" placeholder="Tu usuario" />
                 </div>
-              );
-            })()
-          ) : (
-            <div className="text-center p-10 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
-              <Trophy size={48} className="mx-auto text-text-muted opacity-50 mb-4" strokeWidth={1.5} />
-              <p className="text-text-primary font-extrabold text-lg mb-1">Sin insignias aún</p>
-              <p className="text-text-secondary font-medium text-sm">¡Sigue entrenando para desbloquear recompensas!</p>
-            </div>
-          )}
-        </GlassCard>
+                {errors.username && <p className="text-xs text-red font-bold px-4 pb-2 pt-1">{errors.username}</p>}
 
-        {/* --- ZONA DE PELIGRO --- */}
-        <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-red/30 bg-red/5">
-          <h3 className="text-xl font-extrabold text-red mb-6 flex items-center gap-3 tracking-tight">
-            <div className="p-2.5 bg-red/10 rounded-[12px] ring-1 ring-red/30 shrink-0">
-              <AlertTriangle size={20} strokeWidth={2.5} />
+                <div className="group flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-[12px] bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-secondary ring-1 ring-glass-border shadow-sm shrink-0 group-hover:bg-accent/10 group-hover:text-accent group-hover:ring-accent/30 transition-colors">
+                            <AtSign size={18} strokeWidth={2} />
+                        </div>
+                        <span className="text-[15px] font-medium text-text-primary">Email</span>
+                    </div>
+                    <span className="text-right text-text-secondary font-medium flex-1 ml-4 min-w-0 truncate">{userProfile.email}</span>
+                </div>
+                {errors.email && <p className="text-xs text-red font-bold px-4 pb-2 pt-1">{errors.email}</p>}
             </div>
-            Zona de Peligro
-          </h3>
-          <div className="flex flex-col md:flex-row gap-5">
-            <div className="flex-1 bg-bg-primary rounded-[24px] p-6 ring-1 ring-black/5 dark:ring-white/10 shadow-sm flex flex-col">
-              <p className="text-sm text-text-primary font-extrabold mb-2 uppercase tracking-wider">Borrar Mis Datos</p>
-              <p className="text-xs font-medium text-text-secondary mb-6 leading-relaxed flex-1">
-                Elimina todo tu historial de entrenamientos, rutinas y nutrición, pero conserva tu perfil de usuario.
-              </p>
-              <button
-                type="button"
-                onClick={() => setModalAction('deleteData')}
-                className="w-full px-4 py-4 rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95"
-              >
-                Borrar Historial
-              </button>
-            </div>
+        </div>
 
-            <div className="flex-1 bg-bg-primary rounded-[24px] p-6 ring-1 ring-red/20 shadow-sm flex flex-col">
-              <p className="text-sm text-red font-extrabold mb-2 uppercase tracking-wider">Borrar Cuenta Definitivamente</p>
-              <p className="text-xs font-medium text-red/80 mb-6 leading-relaxed flex-1">
-                Elimina permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer.
-              </p>
-              <button
-                type="button"
-                onClick={() => setModalAction('deleteAccount')}
-                className="w-full px-4 py-4 rounded-[20px] bg-red text-white font-bold hover:bg-red/90 transition-colors shadow-lg shadow-red/20 active:scale-95"
-              >
-                Borrar Cuenta
-              </button>
-            </div>
+        {/* Group 2: Seguridad */}
+        {hasPassword && (
+          <div className="mb-6">
+              <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 px-4">Seguridad</h2>
+              <div className="bg-bg-secondary rounded-[24px] shadow-sm ring-1 ring-glass-border overflow-hidden">
+                  <button type="button" onClick={() => setShowPasswordModal(true)} className="group w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors">
+                      <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-[12px] bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-secondary ring-1 ring-glass-border shadow-sm shrink-0 group-hover:bg-accent/10 group-hover:text-accent group-hover:ring-accent/30 transition-colors">
+                              <Key size={18} strokeWidth={2} />
+                          </div>
+                          <span className="text-[15px] font-medium text-text-primary">Cambiar contraseña</span>
+                      </div>
+                      <ChevronRight size={18} className="text-text-muted" />
+                  </button>
+              </div>
           </div>
-        </GlassCard>
+        )}
+
+        {/* Action Button */}
+        {isDirty && (
+            <button
+                onClick={(e) => handleSave(e)}
+                disabled={isLoading}
+                className="w-full bg-accent text-accent-contrast font-bold text-[15px] py-4 rounded-[20px] shadow-lg shadow-accent/20 mb-8 active:scale-95 transition-all flex items-center justify-center"
+            >
+                {isLoading ? <Spinner size={20} color="white" /> : "Guardar Cambios"}
+            </button>
+        )}
+
+        {/* Group 3: Mi Perfil Social & Progreso */}
+        <div className="mb-6">
+            <div className="bg-bg-secondary rounded-[24px] shadow-sm ring-1 ring-glass-border overflow-hidden">
+                <button type="button" onClick={handleViewPublicProfile} className="group w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-[12px] bg-black/5 dark:bg-white/5 flex items-center justify-center text-text-secondary ring-1 ring-glass-border shadow-sm shrink-0 group-hover:bg-accent/10 group-hover:text-accent group-hover:ring-accent/30 transition-colors">
+                            <LayoutTemplate size={18} strokeWidth={2} />
+                        </div>
+                        <span className="text-[15px] font-medium text-text-primary">Ver mi perfil público</span>
+                    </div>
+                    <ChevronRight size={18} className="text-text-muted" />
+                </button>
+            </div>
+        </div>
+
+        {/* Group 4: Badges */}
+        <div className="mb-8">
+            <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 px-4">Mis Insignias</h2>
+            {gamification?.unlockedBadges?.length > 0 ? (
+                <div className="grid grid-cols-3 gap-3">
+                    {gamification.unlockedBadges.slice(0, 6).map((badgeId) => {
+                        const badge = BADGE_DETAILS[badgeId] || BADGE_DETAILS.default;
+                        return (
+                            <div key={badgeId} className="flex flex-col items-center p-3 rounded-[20px] bg-bg-secondary ring-1 ring-glass-border shadow-sm text-center">
+                                <div className={`w-10 h-10 rounded-[14px] flex items-center justify-center mb-2 ${badge.bg} ${badge.color}`}>
+                                    <badge.icon size={20} strokeWidth={2} />
+                                </div>
+                                <span className="text-[10px] font-bold text-text-primary leading-tight">{badge.name}</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className="bg-bg-secondary rounded-[24px] p-6 ring-1 ring-glass-border text-center">
+                    <Trophy size={24} className="text-text-muted mx-auto mb-2" />
+                    <p className="text-sm text-text-secondary">Aún no tienes insignias.</p>
+                </div>
+            )}
+        </div>
+
+        {/* Group 5: Danger Zone */}
+        <div className="mb-10">
+            <h2 className="text-xs font-bold text-red/60 uppercase tracking-wider mb-2 px-4">Zona de Peligro</h2>
+            <div className="bg-bg-secondary rounded-[24px] shadow-sm ring-1 ring-glass-border overflow-hidden">
+                <button type="button" onClick={() => setModalAction('deleteData')} className="group w-full flex items-center justify-between p-4 border-b border-glass-border hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-[12px] bg-orange-500/10 flex items-center justify-center text-orange-500 ring-1 ring-orange-500/30 shadow-sm shrink-0 group-hover:bg-orange-500/20 transition-colors">
+                            <Trash2 size={18} strokeWidth={2} />
+                        </div>
+                        <span className="text-[15px] font-medium text-orange-500">Borrar mi historial de datos</span>
+                    </div>
+                    <ChevronRight size={18} className="text-text-muted" />
+                </button>
+                <button type="button" onClick={() => setModalAction('deleteAccount')} className="group w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-[12px] bg-red/10 flex items-center justify-center text-red ring-1 ring-red/30 shadow-sm shrink-0 group-hover:bg-red/20 transition-colors">
+                            <AlertTriangle size={18} strokeWidth={2} />
+                        </div>
+                        <span className="text-[15px] font-medium text-red">Borrar cuenta definitivamente</span>
+                    </div>
+                    <ChevronRight size={18} className="text-text-muted" />
+                </button>
+            </div>
+        </div>
+
       </div>
 
-      {/* --- MODAL DE RECORTE DE IMAGEN --- */}
+      {isImageModalOpen && (
+        <ProfileImageModal
+          imageUrl={getProcessedImageUrl(imagePreview)}
+          username={formData.username}
+          onClose={() => setIsImageModalOpen(false)}
+        />
+      )}
+
       {isCropping && tempImage && (
         <ImageCropModal
           imageSrc={tempImage}
@@ -785,7 +603,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
         />
       )}
 
-      {/* --- MODAL DE CONFIRMACIÓN DE BORRADO --- */}
       <DeleteConfirmationModal
         modalAction={modalAction}
         isModalLoading={isModalLoading}
@@ -799,17 +616,20 @@ const Profile = ({ onCancel, setView, navigate }) => {
         hasPassword={hasPassword}
       />
 
-      {isImageModalOpen && (
-        <ProfileImageModal
-          imageUrl={getProcessedImageUrl(imagePreview)}
-          username={formData.username}
-          onClose={() => setIsImageModalOpen(false)}
+            {showPasswordModal && (
+        <ChangePasswordModal
+          onClose={() => setShowPasswordModal(false)}
+          hasPassword={hasPassword}
+          updateUserAccount={updateUserAccount}
+          handleLogout={handleLogout}
+          addToast={addToast}
+          baseInputClasses={baseInputClasses}
         />
       )}
 
       <AnimatePresence>
         {showUnsavedModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -821,17 +641,17 @@ const Profile = ({ onCancel, setView, navigate }) => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md"
+              className="relative w-full max-w-sm"
             >
-              <GlassCard className="glass p-6 rounded-[28px] border-none ring-1 ring-white/10 shadow-2xl flex flex-col gap-6">
+              <div className="bg-bg-secondary p-6 rounded-[28px] ring-1 ring-glass-border shadow-2xl flex flex-col gap-6">
                 <div className="flex flex-col items-center text-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent ring-4 ring-accent/5">
+                  <div className="w-16 h-16 rounded-[20px] bg-accent/10 flex items-center justify-center text-accent ring-1 ring-accent/30">
                     <AlertTriangle size={32} strokeWidth={2.5} />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-text-primary mb-2">Cambios sin guardar</h3>
                     <p className="text-sm text-text-secondary font-medium">
-                      Tienes cambios pendientes. ¿Quieres aplicarlos ahora o descartarlos y salir?
+                      Tienes cambios pendientes. Quieres aplicarlos ahora o salir sin guardar?
                     </p>
                   </div>
                 </div>
@@ -841,10 +661,9 @@ const Profile = ({ onCancel, setView, navigate }) => {
                       setShowUnsavedModal(false);
                       handleSave({ preventDefault: () => {} });
                     }}
-                    className="w-full py-4 rounded-[16px] font-bold bg-accent text-white hover:bg-accent/90 transition-all active:scale-95 flex items-center justify-center gap-2"
+                    className="w-full py-4 rounded-[16px] font-bold bg-accent text-accent-contrast hover:brightness-110 transition-all active:scale-95"
                   >
-                    <Save size={20} />
-                    Aplicar y salir
+                    Guardar y salir
                   </button>
                   <button
                     onClick={() => {
@@ -853,10 +672,10 @@ const Profile = ({ onCancel, setView, navigate }) => {
                     }}
                     className="w-full py-4 rounded-[16px] font-bold bg-black/5 dark:bg-white/5 text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-all active:scale-95"
                   >
-                    Descartar cambios
+                    Salir sin guardar
                   </button>
                 </div>
-              </GlassCard>
+              </div>
             </motion.div>
           </div>
         )}
@@ -894,7 +713,7 @@ const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
         <button type="button" onClick={onCancel} className="text-text-secondary font-bold px-6 py-3.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-[16px] transition-colors active:scale-95">
           Cancelar
         </button>
-        <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-white font-bold px-8 py-3.5 rounded-[20px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20">
+        <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-accent-contrast font-bold px-8 py-3.5 rounded-[20px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20">
           Recortar
         </button>
       </div>
@@ -915,46 +734,61 @@ const DeleteConfirmationModal = ({
   baseInputClasses,
   hasPassword,
 }) => {
+  
   if (!modalAction) return null;
 
-  const isDeleteAccount = modalAction === 'deleteAccount';
-  const title = isDeleteAccount ? 'Borrar Cuenta Definitivamente' : 'Borrar Historial de Datos';
+  const isDeleteAccount = modalAction === "deleteAccount";
+  const title = isDeleteAccount ? "Borrar Cuenta Definitivamente" : "Borrar Historial de Datos";
 
   const themeConfig = isDeleteAccount 
     ? {
-        ring: 'ring-red/30',
-        iconBg: 'bg-red/10',
-        iconRing: 'ring-red/30',
-        text: 'text-red',
-        buttonBg: 'bg-red',
-        buttonHover: 'hover:scale-[1.02]',
-        shadow: 'shadow-red/20'
+        ring: "border-red-500/30",
+        iconBg: "bg-red-500/10",
+        iconRing: "ring-red-500/30",
+        text: "text-red-500",
+        buttonBg: "bg-red-600",
+        shadow: "shadow-red-500/20"
       }
     : {
-        ring: 'ring-orange-500/30',
-        iconBg: 'bg-orange-500/10',
-        iconRing: 'ring-orange-500/30',
-        text: 'text-orange-500',
-        buttonBg: 'bg-orange-500',
-        buttonHover: 'hover:scale-[1.02]',
-        shadow: 'shadow-orange-500/20'
+        ring: "border-orange-500/30",
+        iconBg: "bg-orange-500/10",
+        iconRing: "ring-orange-500/30",
+        text: "text-orange-500",
+        buttonBg: "bg-orange-500",
+        shadow: "shadow-orange-500/20"
       };
 
   const message = isDeleteAccount
-    ? `¿Estás ABSOLUTAMENTE seguro? Esta acción es irreversible. Tu cuenta y todos tus datos serán eliminados permanentemente.`
-    : `¿Estás seguro? Todos tus registros de entrenamientos, nutrición y progreso serán eliminados. Tu cuenta se conservará.`;
+    ? "¿Estás ABSOLUTAMENTE seguro? Esta acción es irreversible. Tu cuenta y todos tus datos serán eliminados permanentemente."
+    : "¿Estás seguro? Todos tus registros de entrenamientos, nutrición y progreso serán eliminados. Tu cuenta se conservará.";
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[150] p-4 animate-[fade-in_0.2s_ease-out]">
-      <div className="absolute inset-0" onClick={handleModalClose} />
-      <div className={`w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl bg-bg-primary ring-1 ${themeConfig.ring}`}>
+    <div className="fixed inset-0 z-[200] flex flex-col justify-end sm:justify-center items-center px-0 sm:px-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity animate-[fade-in_0.2s_ease-out]" onClick={handleModalClose} />
+      
+      <div 
+        className={`relative w-full max-w-md bg-bg-secondary sm:rounded-[24px] rounded-t-[32px] p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] shadow-2xl sm:border border-t border-glass-border overflow-hidden flex flex-col animate-[scale-in_0.2s_ease-out] ${themeConfig.shadow}`}
+        style={{ transform: "translateY(" + dragY + "px)", transition: touchStartY !== null ? "none" : "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)" }}
+        onTouchStart={(e) => setTouchStartY(e.touches[0].clientY)}
+        onTouchMove={(e) => {
+          if (touchStartY === null) return;
+          const diff = e.touches[0].clientY - touchStartY;
+          if (diff > 0) setDragY(diff);
+        }}
+        onTouchEnd={() => {
+          if (dragY > 100) handleModalClose();
+          setDragY(0);
+          setTouchStartY(null);
+        }}
+      >
+        <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-6 sm:hidden shrink-0" />
         
         <div className="flex flex-col items-center text-center mb-6">
           <div className={`w-20 h-20 rounded-[24px] flex items-center justify-center mb-5 ring-1 shadow-sm ${themeConfig.iconBg} ${themeConfig.text} ${themeConfig.iconRing}`}>
             <AlertTriangle size={40} strokeWidth={1.5} />
           </div>
           <h3 className={`text-2xl font-extrabold tracking-tight ${themeConfig.text}`}>{title}</h3>
-          <p className="text-text-secondary font-medium text-sm mt-3 leading-relaxed">
+          <p className="text-text-secondary font-medium text-sm mt-3 leading-relaxed px-2">
             {message}
           </p>
           {hasPassword && (
@@ -965,14 +799,14 @@ const DeleteConfirmationModal = ({
         </div>
 
         {hasPassword && (
-          <div className="mb-8">
+          <div className="mb-6 px-2">
             <input
               type="password"
               placeholder="Contraseña actual"
               value={modalPassword}
               onChange={(e) => {
                 setModalPassword(e.target.value);
-                setModalError('');
+                setModalError("");
               }}
               className={baseInputClasses}
               autoFocus
@@ -981,22 +815,18 @@ const DeleteConfirmationModal = ({
           </div>
         )}
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 px-2">
           <button
             onClick={handleModalConfirm}
-            disabled={isModalLoading}
-            className={`flex items-center justify-center gap-2 w-full py-4 rounded-[20px] font-bold transition-all text-white active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-lg ${themeConfig.buttonBg} ${themeConfig.shadow} ${themeConfig.buttonHover}`}
+            disabled={isModalLoading || (hasPassword && !modalPassword)}
+            className={`w-full py-4 text-white font-bold rounded-[16px] hover:brightness-110 active:scale-95 transition-all shadow-lg ${themeConfig.buttonBg} disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            {isModalLoading ? (
-              <Spinner size={20} color="#ffffff" />
-            ) : (
-              `Confirmar ${isDeleteAccount ? 'Borrado' : 'Limpieza'}`
-            )}
+            {isModalLoading ? <Spinner size={20} color="#ffffff" /> : `Confirmar ${isDeleteAccount ? "Borrado" : "Limpieza"}`}
           </button>
           <button
             onClick={handleModalClose}
             disabled={isModalLoading}
-            className="w-full py-4 rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 font-bold text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95"
+            className="w-full py-4 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary font-bold rounded-[16px] active:scale-95 transition-all"
           >
             Cancelar
           </button>
@@ -1006,5 +836,196 @@ const DeleteConfirmationModal = ({
   );
 };
 
-export default Profile;
+// --- Componente: Modal de Cambiar Contraseña ---
+const ChangePasswordModal = ({ onClose, hasPassword, updateUserAccount, handleLogout, addToast, baseInputClasses }) => {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
+  useModalLock();
+
+  const reqs = [
+    { id: 'length', label: 'Al menos 12 caracteres', valid: newPassword.length >= 12 },
+    { id: 'upper', label: 'Una mayúscula', valid: /[A-Z]/.test(newPassword) },
+    { id: 'lower', label: 'Una minúscula', valid: /[a-z]/.test(newPassword) },
+    { id: 'special', label: 'Un carácter especial (!@#$...)', valid: /[!@#$%^&*(),.?":{}|<>\-_+=\x5B\x5D\x2F\x5C'`]/.test(newPassword) },
+    { id: 'digits', label: 'No más de 3 números seguidos', valid: !/\d{4,}/.test(newPassword) && newPassword.length > 0 }
+  ];
+  
+  const isValid = reqs.every(r => r.valid) && (!hasPassword || currentPassword.length > 0) && newPassword === confirmNewPassword;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!isValid) {
+      if (hasPassword && currentPassword.length === 0) {
+        setError('Introduce tu contraseña actual para confirmar.');
+      } else if (!reqs.every(r => r.valid)) {
+        setError('La nueva contraseña no cumple todos los requisitos.');
+      } else if (newPassword !== confirmNewPassword) {
+        setError('Las contraseñas no coinciden.');
+      }
+      return;
+    }
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const data = new FormData();
+      if (hasPassword) data.append('currentPassword', currentPassword);
+      data.append('newPassword', newPassword);
+      
+      await updateUserAccount(data);
+      addToast('Contraseña actualizada. Por favor, inicia sesión de nuevo.', 'success');
+      handleLogout();
+    } catch (err) {
+      setError(err.message || 'Error al actualizar la contraseña');
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <ModalPortal>
+      <div 
+        className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out] p-0 sm:p-4 overscroll-none"
+        onClick={onClose}
+      >
+        <div 
+          className="relative w-full max-w-md mt-auto sm:mt-0 rounded-t-[32px] sm:rounded-[24px] bg-bg-secondary p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] sm:border border-t border-glass-border shadow-2xl flex flex-col animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.2s_ease-out] overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-6 sm:hidden shrink-0" />
+          
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="w-16 h-16 rounded-[20px] bg-accent/10 flex items-center justify-center text-accent ring-1 ring-accent/30 mb-4">
+              <Key size={32} strokeWidth={2} />
+            </div>
+            <h3 className="text-2xl font-extrabold tracking-tight text-text-primary">{hasPassword ? "Cambiar Contraseña" : "Crear Contraseña"}</h3>
+            <p className="text-text-secondary font-medium text-sm mt-2">
+              Asegúrate de usar una contraseña segura.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {error && <p className="form-error-text text-center text-sm font-bold bg-red/10 p-3 rounded-[12px] text-red">{error}</p>}
+            
+            {hasPassword && (
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-text-muted px-2">1. Confirma tu contraseña actual</label>
+                <div className="relative">
+                  <input
+                    type={showCurrent ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => { setCurrentPassword(e.target.value); setError(''); }}
+                    className={baseInputClasses}
+                    placeholder="Contraseña actual"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowCurrent(!showCurrent)} 
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors"
+                  >
+                    {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1 mt-2">
+              <label className="text-xs font-bold text-text-muted px-2">2. Elige una nueva contraseña</label>
+              <div className="relative">
+                <input
+                  type={showNew ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => { setNewPassword(e.target.value); setError(''); }}
+                  className={baseInputClasses}
+                  placeholder="Nueva contraseña"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowNew(!showNew)} 
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors"
+                >
+                  {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-1 flex flex-col gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-2 px-2">
+                {reqs.map(r => (
+                <div key={r.id} className="flex items-center gap-1.5">
+                  {r.valid ? (
+                    <CheckCircle2 size={12} className="text-green-500 shrink-0" />
+                  ) : (
+                    <div className="w-3 h-3 rounded-full border border-glass-border shrink-0" />
+                  )}
+                  <span className={`text-[10px] sm:text-[11px] transition-colors ${r.valid ? 'text-text-primary' : 'text-text-secondary'}`}>
+                    {r.label}
+                  </span>
+                </div>
+              ))}
+              </div>
+            </div>
+            
+            <div className="flex flex-col gap-1 mt-2">
+              <label className="text-xs font-bold text-text-muted px-2">3. Repite nueva contraseña</label>
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={confirmNewPassword}
+                  onChange={(e) => { setConfirmNewPassword(e.target.value); setError(''); }}
+                  className={baseInputClasses}
+                  placeholder="Repite nueva contraseña"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowConfirm(!showConfirm)} 
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-primary transition-colors"
+                >
+                  {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {confirmNewPassword.length > 0 && (
+                <div className="mt-1 flex items-center gap-1.5 px-2">
+                  {newPassword === confirmNewPassword ? (
+                    <CheckCircle2 size={12} className="text-green-500 shrink-0" />
+                  ) : (
+                    <div className="w-3 h-3 rounded-full border border-glass-border shrink-0" />
+                  )}
+                  <span className={`text-[10px] sm:text-[11px] transition-colors ${newPassword === confirmNewPassword ? 'text-text-primary' : 'text-text-secondary'}`}>
+                    Las contraseñas coinciden
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3 mt-4">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`w-full py-4 font-bold rounded-[16px] active:scale-95 transition-all flex items-center justify-center shadow-lg ${!isValid ? 'bg-bg-secondary text-text-secondary border border-glass-border shadow-none' : 'bg-accent text-accent-contrast shadow-accent/20'} disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {isLoading ? <Spinner size={20} color="white" /> : "Guardar Contraseña"}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isLoading}
+                className="w-full py-4 bg-black/5 dark:bg-white/5 text-text-primary font-bold rounded-[16px] hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 transition-all"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </ModalPortal>
+  );
+};
+
+export default Profile;

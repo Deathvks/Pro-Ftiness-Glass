@@ -6,6 +6,7 @@ import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import WaterLogModal from '../components/WaterLogModal';
 import NutritionLogModal from '../components/NutritionLogModal';
 import FoodScannerModal from '../components/FoodScannerModal';
@@ -15,6 +16,7 @@ import SugarTargetModal from '../components/SugarTargetModal';
 import NutritionTourGuide from '../components/NutritionTourGuide';
 import { useToast } from '../hooks/useToast';
 import * as nutritionService from '../services/nutritionService';
+import PromoBanner from '../components/PromoBanner';
 
 const DateNavigator = ({ selectedDate, onDateChange }) => {
     const today = new Date();
@@ -115,7 +117,7 @@ const Nutrition = ({ setView }) => {
         deleteFavoriteMeal,
         fetchNotifications,
         fetchInitialData,
-    } = useAppStore(state => ({
+    } = useAppStore(useShallow(state => ({
         userProfile: state.userProfile,
         nutritionLog: state.nutritionLog,
         waterLog: state.waterLog,
@@ -130,7 +132,7 @@ const Nutrition = ({ setView }) => {
         deleteFavoriteMeal: state.deleteFavoriteMeal,
         fetchNotifications: state.fetchNotifications,
         fetchInitialData: state.fetchInitialData,
-    }));
+    })));
 
     const [modal, setModal] = useState({ type: null, data: null });
     const [viewLog, setViewLog] = useState(null);
@@ -543,6 +545,8 @@ const Nutrition = ({ setView }) => {
             <div className="hidden md:flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
                 <h1 id="nutrition-header" className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">Nutrición</h1>
             </div>
+
+            <PromoBanner type="nutrition" onClick={() => setView('asesoria')} />
 
             <DateNavigator selectedDate={selectedDate} onDateChange={fetchDataForDate} />
 

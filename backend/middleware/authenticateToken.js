@@ -26,7 +26,7 @@ const authenticateToken = async (req, res, next) => {
         const session = await UserSession.findOne({ where: { token } });
 
         if (!session) {
-            return res.status(403).json({ error: 'Sesión no válida o expirada (revocada).' });
+            return res.status(401).json({ error: 'Sesión no válida o expirada (revocada).' });
         }
 
         // --- OPTIMIZACIÓN CRÍTICA (AHORRO DE DINERO) ---
@@ -53,7 +53,7 @@ const authenticateToken = async (req, res, next) => {
         next();
 
     } catch (err) {
-        return res.status(403).json({ error: 'Token no válido o expirado.' });
+        return res.status(401).json({ error: 'Token no válido o expirado.' });
     }
 };
 

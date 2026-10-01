@@ -34,6 +34,20 @@ const REP_OPTIONS = [
   { value: "Al fallo", label: "Al fallo" },
 ];
 
+const REST_OPTIONS = [
+  { value: "0", label: "0s" },
+  { value: "15", label: "15s" },
+  { value: "30", label: "30s" },
+  { value: "45", label: "45s" },
+  { value: "60", label: "1 min" },
+  { value: "90", label: "1m 30s" },
+  { value: "120", label: "2 min" },
+  { value: "150", label: "2m 30s" },
+  { value: "180", label: "3 min" },
+  { value: "240", label: "4 min" },
+  { value: "300", label: "5 min" },
+];
+
 // Componente para la vista de Resumen/Carrito
 const ExerciseSummaryView = ({
   stagedExercises,
@@ -120,10 +134,15 @@ const ExerciseSummaryView = ({
                 item.exercise.target ||
                 item.exercise.category ||
                 "Other";
-              const translatedMusclesList = rawMuscleGroup.split(",").map((m) =>
-                t(m.trim(), {
+              const muscleArray = Array.isArray(rawMuscleGroup)
+                ? rawMuscleGroup
+                : typeof rawMuscleGroup === "string"
+                ? rawMuscleGroup.split(",")
+                : ["Other"];
+              const translatedMusclesList = muscleArray.map((m) =>
+                t(String(m).trim(), {
                   ns: "exercise_muscles",
-                  defaultValue: m.trim(),
+                  defaultValue: String(m).trim(),
                 }),
               );
 
@@ -227,18 +246,30 @@ const ExerciseSummaryView = ({
                         <label className={labelClasses}>
                           {t("exercise_ui:rest_s", "Desc. (s)")}
                         </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={item.rest_seconds}
-                          onChange={(e) =>
+                        <CustomSelect
+                          value={String(item.rest_seconds || "60")}
+                          onChange={(val) =>
                             onUpdate(
                               item.exercise.id,
                               "rest_seconds",
-                              e.target.value,
+                              val,
                             )
                           }
-                          className={inputClasses + " !px-2"}
+                          options={(() => {
+                            const curr = String(item.rest_seconds || "60");
+                            const has = REST_OPTIONS.some(o => o.value === curr);
+                            return has ? REST_OPTIONS : [{ value: curr, label: `${curr}s` }, ...REST_OPTIONS];
+                          })()}
+                          className="w-full bg-black/5 dark:bg-white/5 rounded-[16px] ring-1 ring-black/5 dark:ring-white/10"
+                          triggerClassName={
+                            inputClasses
+                              .replace("bg-black/5", "")
+                              .replace("dark:bg-white/5", "")
+                              .replace("ring-1 ring-black/5 dark:ring-white/10", "") +
+                            " !px-2 flex items-center justify-between appearance-none rounded-[16px]"
+                          }
+                          textClassName="text-text-primary font-bold text-center truncate flex-1"
+                          searchable={false}
                         />
                       </div>
                     </div>
@@ -255,7 +286,7 @@ const ExerciseSummaryView = ({
         <button
           onClick={onFinalize}
           disabled={stagedExercises.length === 0 || !isCartValid}
-          className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-[20px] bg-accent text-white font-bold text-base sm:text-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:active:scale-100 shadow-lg shadow-accent/20"
+          className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-[20px] bg-accent text-accent-contrast font-bold text-base sm:text-lg transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:active:scale-100 shadow-lg shadow-accent/20"
         >
           <Check size={24} strokeWidth={2.5} />
           {t("exercise_ui:add_n_exercises", { count: stagedExercises.length })}

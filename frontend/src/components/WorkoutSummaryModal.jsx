@@ -363,7 +363,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
 
             <button
               onClick={onClose}
-              className="w-full py-3.5 rounded-xl bg-accent text-white font-bold text-lg transition hover:scale-[1.01] shadow-lg shadow-accent/20 flex items-center justify-center">
+              className="w-full py-3.5 rounded-xl bg-accent text-accent-contrast font-bold text-lg transition hover:scale-[1.01] shadow-lg shadow-accent/20 flex items-center justify-center">
               
               Cerrar
             </button>

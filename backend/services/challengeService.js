@@ -6,6 +6,7 @@ const { User, UserChallenge, sequelize } = models;
 // Definición de retos
 export const CHALLENGES = {
     // Diarios
+    daily_progressive_overload: { type: 'daily', target: 4, xp: 0, title: 'Sobrecarga Progresiva', desc: 'Mantén el peso y haz más repeticiones (Otorga 25 XP al instante)' },
     daily_5_meals: { type: 'daily', target: 5, xp: 50, title: 'Registra 5 comidas', desc: 'Registra al menos 5 alimentos hoy' },
     daily_calories: { type: 'daily', target: 1, xp: 50, title: 'Calorías completadas', desc: 'Alcanza tu objetivo calórico diario' },
     daily_protein: { type: 'daily', target: 1, xp: 50, title: 'Proteína completada', desc: 'Alcanza tu objetivo de proteínas diario' },
@@ -89,12 +90,13 @@ export const trackChallenge = async (userId, challengeKey, increment = 1, opts =
         }
 
         let needsReset = false;
-        if (userChallenge.last_completed_at) {
-            const lastCompletedStr = new Date(userChallenge.last_completed_at).toLocaleDateString("en-CA", { timeZone: "Europe/Madrid" });
+        const lastUpdated = userChallenge.updatedAt || userChallenge.updated_at;
+        if (userChallenge.progress > 0 && lastUpdated) {
+            const lastUpdatedStr = new Date(lastUpdated).toLocaleDateString("en-CA", { timeZone: "Europe/Madrid" });
             
-            if (challengeDef.type === 'daily' && lastCompletedStr !== todaySpain) {
+            if (challengeDef.type === 'daily' && lastUpdatedStr !== todaySpain) {
                 needsReset = true;
-            } else if (challengeDef.type === 'weekly' && !isSameSpainWeek(userChallenge.last_completed_at)) {
+            } else if (challengeDef.type === 'weekly' && !isSameSpainWeek(lastUpdated)) {
                 needsReset = true;
             }
         }
@@ -221,14 +223,15 @@ export const getChallengesForUser = async (userId) => {
         let isCompleted = uc.completed;
         let progress = uc.progress;
 
-        if (uc.last_completed_at) {
+        const lastUpdated = uc.updatedAt || uc.updated_at;
+        if (progress > 0 && lastUpdated) {
             const def = CHALLENGES[uc.challengeId];
             if (def) {
-                const lastCompletedStr = new Date(uc.last_completed_at).toLocaleDateString("en-CA", { timeZone: "Europe/Madrid" });
-                if (def.type === 'daily' && lastCompletedStr !== todaySpain) {
+                const lastUpdatedStr = new Date(lastUpdated).toLocaleDateString("en-CA", { timeZone: "Europe/Madrid" });
+                if (def.type === 'daily' && lastUpdatedStr !== todaySpain) {
                     isCompleted = false;
                     progress = 0;
-                } else if (def.type === 'weekly' && !isSameSpainWeek(uc.last_completed_at)) {
+                } else if (def.type === 'weekly' && !isSameSpainWeek(lastUpdated)) {
                     isCompleted = false;
                     progress = 0;
                 }

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { UserCircleIcon, ChatBubbleLeftRightIcon, ChevronLeftIcon, PaperAirplaneIcon, PaperClipIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, ChatBubbleLeftRightIcon, ChevronLeftIcon, PaperAirplaneIcon, PaperClipIcon, CheckCircleIcon, ClockIcon, XMarkIcon, BellAlertIcon, EnvelopeIcon, FireIcon, ArchiveBoxXMarkIcon } from '@heroicons/react/24/outline';
 import apiClient from '../services/apiClient';
 import { initSocket } from '../services/socket';
 import { useToast } from '../hooks/useToast';
@@ -20,6 +20,32 @@ const getFullImageUrl = (path) => {
 export default function TrainerChats({ onClose }) {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [clientToLink, setClientToLink] = useState(null);
+  const [showClosedChats, setShowClosedChats] = useState(false);
+  const [showBotChats, setShowBotChats] = useState(false);
+  const [dragY, setDragY] = useState(0);
+  const [touchStartY, setTouchStartY] = useState(null);
+  const [botModalClient, setBotModalClient] = useState(null);
+
+    useEffect(() => {
+    if (botModalClient) {
+      const updatedClient = clients.find(c => c.id === botModalClient.id);
+      if (updatedClient) {
+        const remindersChanged = JSON.stringify(updatedClient.botReminders) !== JSON.stringify(botModalClient.botReminders);
+        if (updatedClient.lastMessage?.id !== botModalClient.lastMessage?.id || 
+            updatedClient.lastMessage?.bot_push_status !== botModalClient.lastMessage?.bot_push_status || 
+            updatedClient.lastMessage?.bot_email_status !== botModalClient.lastMessage?.bot_email_status ||
+            remindersChanged) {
+          setBotModalClient(updatedClient);
+        }
+      }
+    }
+  }, [clients]);
+  const [resendConfirmData, setResendConfirmData] = useState(null);
+  const [resendDragY, setResendDragY] = useState(0);
+  const [resendTouchStartY, setResendTouchStartY] = useState(null);
+  const [isResending, setIsResending] = useState(false);
+  const [isExecutingBot, setIsExecutingBot] = useState(false);
   const [selectedClient, setSelectedClient] = useState(() => {
     const saved = sessionStorage.getItem('trainer_chats_selected_client');
     return saved ? JSON.parse(saved) : null;
@@ -197,10 +223,88 @@ export default function TrainerChats({ onClose }) {
     try {
       await apiClient(`/chat/mark-read/${clientId}`, { method: 'POST' });
       setClients((prev) => prev.map((c) => String(c.id) === String(clientId) ? { ...c, unreadCount: 0 } : c));
+      const fetchUnreadChats = useAppStore.getState().fetchUnreadChats;
+      if (fetchUnreadChats) fetchUnreadChats();
     } catch (e) {
       console.error("Error marcando como leido", e);
     }
   };
+
+    
+  const handleResendNotification = async () => {
+    if (!resendConfirmData || isResending) return;
+    setIsResending(true);
+    try {
+      const { client, level, type } = resendConfirmData;
+      const res = await apiClient('/chat/trainer/bot-reminder-resend/' + client.id + '/' + level + '?type=' + type, { method: 'POST' });
+      
+      // Update local state so it immediately says "Enviado Manualmente"
+      setClients(prev => prev.map(c => {
+        if (c.id === client.id) {
+          const updated = { ...c };
+          if (!updated.botReminders) updated.botReminders = [];
+          
+          let existing = updated.botReminders.find(m => m.bot_reminder_level === level);
+          if (!existing) {
+             existing = { bot_reminder_level: level };
+             updated.botReminders.push(existing);
+          }
+          
+          if (type === 'push') existing.bot_push_status = 'manual_ok';
+          if (type === 'email') existing.bot_email_status = 'manual_ok';
+          
+          if (updated.lastMessage?.bot_reminder_level === level) {
+             if (type === 'push') updated.lastMessage.bot_push_status = 'manual_ok';
+             if (type === 'email') updated.lastMessage.bot_email_status = 'manual_ok';
+          }
+          return updated;
+        }
+        return c;
+      }));
+
+      addToast('Reenvío completado con éxito', 'success');
+      setResendConfirmData(null);
+    } catch (e) {
+      console.error(e);
+      addToast('Error al reenviar notificaciones', 'error');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const executeBotReminder = async (e, client) => {
+    e.stopPropagation();
+    if (isExecutingBot) return;
+    setIsExecutingBot(true);
+    try {
+      const levelToExecute = (client.lastMessage?.bot_reminder_level || 0) + 1;
+      if (levelToExecute > 3) {
+        addToast('El chat se cerrará hoy o ya se ha cerrado.', 'info');
+        return;
+      }
+      
+      const response = await apiClient('/chat/trainer/bot-reminder/' + client.id + '/' + levelToExecute, { method: 'POST' });
+      const statuses = response.status;
+      
+      addToast(
+        'Push: ' + (statuses.push === 'ok' ? 'OK' : 'Error') + ' | ' +
+        'App: ' + (statuses.notification === 'ok' ? 'OK' : 'Error') + ' | ' +
+        'Email: ' + (statuses.email === 'ok' ? 'OK' : 'Error'),
+        'success'
+      );
+
+      // Refresh chat list to update level
+      fetchClients();
+      if (selectedClient?.id === client.id) {
+         setMessages(prev => [...prev, response.newMessage]);
+      }
+    } catch (err) {
+      console.error(err);
+      addToast('Error al enviar el aviso', 'error');
+    }
+  };
+
+
 
   const openChat = async (client) => {
     setSelectedClient(client);
@@ -423,7 +527,7 @@ export default function TrainerChats({ onClose }) {
           <h2 className="font-bold text-text-primary text-sm leading-tight flex items-center gap-2">
             Clientes
             {totalUnread > 0 &&
-            <span className="text-[10px] font-bold bg-accent text-bg-primary px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold bg-accent text-accent-contrast px-2 py-0.5 rounded-full">
                 {totalUnread}
               </span>
             }
@@ -435,84 +539,196 @@ export default function TrainerChats({ onClose }) {
           <div className="flex justify-center p-8">
               <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
             </div> :
-          clients.length === 0 ?
-          <div className="p-8 text-center text-text-secondary">
-              No tienes clientes asignados aún.
-            </div> :
+                    (() => {
+            const activeClients = clients.filter(c => !c.lastMessage?.is_closed);
+            const closedClients = clients.filter(c => c.lastMessage?.is_closed);
 
-          clients.map((client) => {
-            const isSelected = selectedClient?.id === client.id;
-            return (
-              <div
-                key={client.id}
-                onClick={() => openChat(client)}
-                className={`relative flex items-center gap-4 p-3 sm:p-4 cursor-pointer rounded-[20px] transition-all duration-300 group overflow-hidden
-                  ${isSelected ?
-                'bg-accent/10 border border-accent/30 shadow-[0_4px_20px_-5px_rgba(239,68,68,0.15)]' :
-                'bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10 hover:border-black/10 dark:hover:border-white/10'}`
-                }>
+            let botClients = [];
+            if (isAdmin) {
+              botClients = activeClients.filter(c => c.role === 'user').map(client => {
+                const level = client.lastMessage?.bot_reminder_level || 0;
+                const diffDays = client.lastMessage ? Math.floor((new Date() - new Date(client.lastMessage.created_at)) / (1000 * 60 * 60 * 24)) : 0;
                 
-                {isSelected &&
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-accent rounded-r-full shadow-[0_0_10px_rgba(239,68,68,0.8)]"></div>
+                let urgency = 999;
+                let label = '';
+                let color = '';
+                
+                if (level === 0) {
+                  urgency = 3 - diffDays;
+                  label = `Aviso 1 en ${Math.max(0, urgency)}d`;
+                  color = 'text-yellow-500 bg-yellow-500/10 ring-yellow-500/30';
+                } else if (level === 1) {
+                  urgency = 2 - diffDays;
+                  label = `Aviso 2 en ${Math.max(0, urgency)}d`;
+                  color = 'text-orange-500 bg-orange-500/10 ring-orange-500/30';
+                } else if (level === 2) {
+                  urgency = 1 - diffDays;
+                  label = `Aviso 3 en ${Math.max(0, urgency)}d`;
+                  color = 'text-red-500 bg-red-500/10 ring-red-500/30';
+                } else if (level === 3) {
+                  urgency = 1 - diffDays;
+                  label = `Cierre en ${Math.max(0, urgency)}d`;
+                  color = 'text-red-600 bg-red-600/20 ring-red-600/50 animate-pulse';
                 }
                 
-                <div className="relative shrink-0">
-                  {client.profile_image_url ?
-                  <img src={getFullImageUrl(client.profile_image_url)} alt={client.name} className="w-12 h-12 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10" referrerPolicy="no-referrer" /> :
-
-                  <UserCircleIcon className="w-12 h-12 text-text-secondary" />
-                  }
-                  {client.unreadCount > 0 &&
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow">
-                      {client.unreadCount}
-                    </span>
-                  }
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-baseline mb-0.5">
-                    <h3 className={`font-bold text-[15px] line-clamp-1 flex-1 ${client.unreadCount > 0 ? 'text-accent' : 'text-text-primary'}`}>{client.name}</h3>
-                      {client.lastMessage &&
-                      <span className="text-[10px] text-text-muted shrink-0 ml-2">
-                        {formatLastMessageDate(client.lastMessage.created_at)}
-                        </span>
-                      }
-                  </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className={`text-[13px] line-clamp-2 flex-1 flex items-center min-w-0 ${client.unreadCount > 0 ? 'font-bold text-text-primary' : 'text-text-secondary'}`}>
-                          {client.lastMessage ? (
-                            <span className="flex items-center gap-1 w-full">
-                              {String(client.lastMessage.sender_id) !== String(client.id) && (
-                                <div className={`flex items-center -space-x-1.5 shrink-0 ${client.lastMessage.read_at ? 'text-blue-500' : 'text-text-muted'}`}>
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                return { ...client, bot_urgency: urgency, bot_label: label, bot_color: color };
+              }).filter(c => c.bot_urgency <= 2); // Show those approaching action (<= 2 days)
+              
+              botClients.sort((a, b) => a.bot_urgency - b.bot_urgency);
+            }
+            
+            return (
+              <>
+                {isAdmin && (
+                  <div className="mb-6">
+                    <button 
+                      onClick={() => setShowBotChats(!showBotChats)}
+                      className="flex items-center justify-between w-full p-4 bg-black/5 dark:bg-white/5 rounded-[20px] hover:bg-black/10 dark:hover:bg-white/10 transition-colors border border-glass-border shadow-sm"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                        </div>
+                        <span className="font-bold text-sm text-text-primary">Secuencia Bot ({botClients.length})</span>
+                      </div>
+                      <svg className={`w-5 h-5 text-text-secondary transition-transform duration-300 ${showBotChats ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showBotChats ? 'max-h-[2000px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+                      <div className="flex flex-col gap-2">
+                        {botClients.length === 0 ? (
+                          <div className="p-4 text-center text-xs text-text-secondary opacity-70">
+                            Actualmente no hay chats por gestionar por inactividad.
+                          </div>
+                        ) : botClients.map((client) => {
+                          const isSelected = selectedClient?.id === client.id;
+                          return (
+                            <div
+                              key={client.id}
+                              onClick={() => setBotModalClient(client)}
+                              className={`relative flex items-center gap-4 p-3 cursor-pointer rounded-[16px] transition-all duration-200 group ${isSelected ? 'bg-accent/10 border border-accent/30' : 'bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10'}`}
+                            >
+                              <div className="relative shrink-0">
+                                {client.profile_image_url ? (
+                                  <img src={getFullImageUrl(client.profile_image_url)} alt={client.name} className="w-10 h-10 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <UserCircleIcon className="w-10 h-10 text-text-secondary" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-text-primary truncate text-sm mb-0.5">{client.name || client.username}</h3>
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full ring-1 ${client.bot_color}`}>{client.bot_label}</span>
                                 </div>
-                              )}
-                              <span className="truncate flex-1">
-                                {client.lastMessage.content ? client.lastMessage.content : '📷 Archivo adjunto'}
-                              </span>
-                            </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                
+                {activeClients.length === 0 ? (
+                  <div className="p-8 text-center text-text-secondary">
+                    No tienes clientes activos aún.
+                  </div>
+                ) : (
+                  activeClients.map((client) => {
+                    const isSelected = selectedClient?.id === client.id;
+                    return (
+                      <div
+                        key={client.id}
+                        onClick={() => openChat(client)}
+                        className={`relative flex items-center gap-4 p-3 sm:p-4 cursor-pointer rounded-[20px] transition-all duration-300 group overflow-hidden ${isSelected ? 'bg-accent/10 border border-accent/30 shadow-[0_4px_20px_-5px_rgba(239,68,68,0.15)]' : 'bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10 hover:border-black/10 dark:hover:border-white/10'}`}
+                      >
+                        {isSelected && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-10 bg-accent rounded-r-full shadow-[0_0_10px_rgba(239,68,68,0.8)]"></div>}
+                        <div className="relative shrink-0">
+                          {client.profile_image_url ? (
+                            <img src={getFullImageUrl(client.profile_image_url)} alt={client.name} className="w-12 h-12 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10" referrerPolicy="no-referrer" />
                           ) : (
-                            'Sin mensajes aún'
+                            <UserCircleIcon className="w-12 h-12 text-text-secondary" />
+                          )}
+                          {client.unreadCount > 0 && <div className="absolute -top-1 -right-1 bg-accent text-accent-contrast text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full ring-2 ring-bg-primary animate-pulse-soft">{client.unreadCount}</div>}
+                          {client.lastSeen && (new Date() - new Date(client.lastSeen) < 2 * 60 * 1000) && <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-bg-primary rounded-full"></div>}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 min-w-0">
+                            <h3 className="font-bold text-text-primary truncate text-sm">{client.name || client.username}</h3>
+                            {client.role === 'trainee' && <span className="shrink-0 px-1.5 py-0.5 bg-accent/20 text-accent text-[9px] sm:text-[10px] font-bold uppercase tracking-wider rounded-full ring-1 ring-accent/30">Asesorado</span>}
+                          </div>
+                          {client.lastMessage && (
+                            <p className="text-xs text-text-secondary truncate pr-4 opacity-80 font-medium">
+                              {String(client.lastMessage.sender_id) === String(userId) ? 'Tú: ' : ''}{client.lastMessage.attachment_type === 'bot_reply' ? '🤖 Respuesta automática' : client.lastMessage.attachment_url ? '📎 Archivo adjunto' : client.lastMessage.content}
+                            </p>
                           )}
                         </div>
-                        {client.unreadCount > 0 &&
-                      <div className="w-3 h-3 rounded-full bg-accent shrink-0 shadow-sm animate-pulse shadow-accent/50 ml-1"></div>
-                      }
+                      </div>
+                    );
+                  })
+                )}
+
+                                {closedClients.length > 0 && (
+                  <div className="mt-6 mb-2">
+                    <button 
+                      onClick={() => setShowClosedChats(!showClosedChats)}
+                      className="flex items-center justify-between w-full p-4 bg-black/5 dark:bg-white/5 rounded-[20px] hover:bg-black/10 dark:hover:bg-white/10 transition-colors border border-glass-border shadow-sm"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-text-secondary/20 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                          </svg>
+                        </div>
+                        <span className="font-bold text-sm text-text-primary">Carpeta de Cerrados ({closedClients.length})</span>
+                      </div>
+                      <svg className={`w-5 h-5 text-text-secondary transition-transform duration-300 ${showClosedChats ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showClosedChats ? 'max-h-[2000px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+                      <div className="flex flex-col gap-2">
+                        {closedClients.map((client) => {
+                          const isSelected = selectedClient?.id === client.id;
+                          return (
+                            <div
+                              key={client.id}
+                              onClick={() => openChat(client)}
+                              className={`relative flex items-center gap-4 p-3 cursor-pointer rounded-[16px] transition-all duration-200 group ${isSelected ? 'bg-accent/10 border border-accent/30' : 'bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10'}`}
+                            >
+                              <div className="relative shrink-0">
+                                {client.profile_image_url ? (
+                                  <img src={getFullImageUrl(client.profile_image_url)} alt={client.name} className="w-10 h-10 rounded-full object-cover ring-1 ring-black/5 dark:ring-white/10 grayscale" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <UserCircleIcon className="w-10 h-10 text-text-secondary opacity-50" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0 opacity-70">
+                                <h3 className="font-bold text-text-primary truncate pr-2 text-sm">{client.name || client.username}</h3>
+                                {client.lastMessage && (
+                                  <p className="text-xs text-text-secondary truncate pr-4">Cerrado por inactividad</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  {isAdmin && (
-                    <p className="text-[11px] text-text-muted mt-1 font-medium">
-                      Entrenador: {client.trainer_name ? client.trainer_name : 'No asignado'}
-                    </p>
-                  )}
-                </div>
-              </div>);
-          })
-          }
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
 
-      {/* ÁREA DE CHAT */}
+        {/* ÁREA DE CHAT */}
       <div className={`flex flex-col flex-1 min-w-0 h-full relative ${!selectedClient ? 'hidden md:flex' : 'fixed inset-0 z-[100] bg-bg-primary animate-fade-in md:static md:flex md:bg-transparent'}`}>
         {!selectedClient ?
         <div className="hidden md:flex h-full flex-col items-center justify-center text-center opacity-50 space-y-4">
@@ -528,7 +744,7 @@ export default function TrainerChats({ onClose }) {
             >
               <button
               onClick={() => setSelectedClient(null)}
-              className="md:hidden w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-text-primary hover:bg-white/10 transition-colors">
+              className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-text-primary hover:bg-white/10 transition-colors">
               
                 <ChevronLeftIcon className="w-6 h-6 text-text-primary" />
               </button>
@@ -548,8 +764,8 @@ export default function TrainerChats({ onClose }) {
                 {/* Botón Vincular si no es trainee */}
               {selectedClient.role !== 'trainee' &&
             <button
-              onClick={() => handleLinkClient(selectedClient.id)}
-              className="shrink-0 px-3 py-1.5 bg-accent text-bg-primary font-bold text-xs rounded-full hover:bg-accent/90 transition-colors shadow-sm">
+              onClick={() => setClientToLink(selectedClient)}
+              className="shrink-0 px-3 py-1.5 bg-accent text-accent-contrast font-bold text-xs rounded-full hover:bg-accent/90 transition-colors shadow-sm">
               
                   Añadir a Asesoría
                 </button>
@@ -584,7 +800,7 @@ export default function TrainerChats({ onClose }) {
                     )}
                     <div className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
                       <div 
-                        className={`max-w-[75%] rounded-2xl px-3 py-2 relative shadow-sm ${isMe ? 'bg-accent text-bg-primary rounded-tr-sm' : 'glass border border-glass-border text-text-primary rounded-tl-sm'} ${activeMessageOptions === msg.id ? 'ring-2 ring-accent scale-[0.98] transition-transform' : 'transition-transform'}`}
+                        className={`max-w-[75%] rounded-2xl px-3 py-2 relative shadow-sm ${isMe ? 'bg-accent text-accent-contrast rounded-tr-sm' : 'glass border border-glass-border text-text-primary rounded-tl-sm'} ${activeMessageOptions === msg.id ? 'ring-2 ring-accent scale-[0.98] transition-transform' : 'transition-transform'}`}
                         onTouchStart={() => handlePressStart(msg)}
                         onTouchEnd={handlePressEnd}
                         onTouchCancel={handlePressEnd}
@@ -600,7 +816,7 @@ export default function TrainerChats({ onClose }) {
                         {msg.attachment_url && msg.attachment_type?.startsWith('video/') ? (
                           <div className="mb-2 rounded-xl overflow-hidden bg-black/10">
                             <video
-                              src={msg.attachment_url}
+                              src={`${msg.attachment_url}#t=0.001`} preload="metadata"
                               controls
                               className="max-w-full h-auto max-h-[300px] rounded-xl" />
                             <button
@@ -622,7 +838,7 @@ export default function TrainerChats({ onClose }) {
                           {renderMessageContent(msg)}
                         </div>
 
-                        <div className={`text-[9px] mt-0.5 flex items-center justify-end gap-1 ${isMe ? 'text-bg-primary/70' : 'text-text-muted'}`}>
+                        <div className={`text-[9px] mt-0.5 flex items-center justify-end gap-1 ${isMe ? 'text-accent-contrast/70' : 'text-text-muted'}`}>
                           <span>{formatTime(msg.created_at || new Date())}</span>
                           {isMe && (
                             <div className={`flex items-center -space-x-1.5 -mt-0.5 ${msg.read_at ? 'text-blue-500' : 'opacity-70'}`}>
@@ -684,7 +900,7 @@ export default function TrainerChats({ onClose }) {
                 <button
                 type="submit"
                 disabled={!newMessage.trim() || uploading}
-                className="w-12 h-12 shrink-0 rounded-full bg-accent text-bg-primary flex items-center justify-center hover:bg-accent-hover active:scale-95 transition-colors disabled:opacity-50 disabled:grayscale">
+                className="w-12 h-12 shrink-0 rounded-full bg-accent text-accent-contrast flex items-center justify-center hover:bg-accent-hover active:scale-95 transition-colors disabled:opacity-50 disabled:grayscale">
                 
                   <PaperAirplaneIcon className="w-5 h-5 -ml-0.5" />
                 </button>
@@ -745,7 +961,7 @@ export default function TrainerChats({ onClose }) {
               </button>
               <button 
                 onClick={() => handleEditSubmit(editingMessageId)} 
-                className="flex-1 py-4 rounded-[20px] font-bold text-white bg-accent hover:bg-accent-hover active:scale-95 transition-all shadow-lg shadow-accent/20"
+                className="flex-1 py-4 rounded-[20px] font-bold text-accent-contrast bg-accent hover:bg-accent-hover active:scale-95 transition-all shadow-lg shadow-accent/20"
               >
                 Aplicar Cambios
               </button>
@@ -774,6 +990,309 @@ export default function TrainerChats({ onClose }) {
         </div>
       )}
 
+    
+      {/* Modal Confirmacion Anadir a Asesoria */}
+      {clientToLink && (
+        <div className="fixed inset-0 z-[300] flex flex-col justify-end md:justify-center items-center px-0 md:px-4" style={{ animation: 'fadeIn 0.2s ease-out' }}>
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" 
+            onClick={() => setClientToLink(null)} 
+            style={{ opacity: Math.max(0, 1 - dragY / 300) }}
+          />
+          <div 
+            className="relative w-full max-w-sm bg-bg-secondary md:rounded-[24px] rounded-t-3xl p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] md:pb-6 shadow-2xl border-t md:border border-glass-border"
+            style={{
+              transform: `translateY(${dragY}px)`,
+              transition: touchStartY !== null ? 'none' : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)'
+            }}
+            onTouchStart={(e) => setTouchStartY(e.touches[0].clientY)}
+            onTouchMove={(e) => {
+              if (touchStartY === null) return;
+              const diff = e.touches[0].clientY - touchStartY;
+              if (diff > 0) setDragY(diff);
+            }}
+            onTouchEnd={() => {
+              if (dragY > 100) {
+                setClientToLink(null);
+              }
+              setDragY(0);
+              setTouchStartY(null);
+            }}
+          >
+            {/* Drag Handle para móvil */}
+            <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-5 sm:hidden shrink-0" />
+            
+            <h3 className="text-lg font-bold text-text-primary mb-2">Añadir a Asesoría</h3>
+            <p className="text-sm text-text-secondary mb-6 leading-relaxed">
+              ¿Estás seguro de que deseas vincular a <span className="font-bold text-text-primary">{clientToLink.name}</span> a tu asesoría? Podrás asignarle rutinas y hacerle seguimiento detallado.
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setClientToLink(null)}
+                className="flex-1 py-4 bg-black/5 dark:bg-white/5 rounded-2xl font-bold text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => {
+                  handleLinkClient(clientToLink.id);
+                  setClientToLink(null);
+                }}
+                className="flex-1 py-4 bg-accent text-accent-contrast rounded-2xl font-bold shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 transition-all"
+              >
+                Vincular
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+                  {/* BOT SEQUENCE MODAL */}
+      {botModalClient && (
+        <div className="fixed inset-0 z-[200] flex flex-col justify-end md:justify-center items-center px-4 md:px-0">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={() => setBotModalClient(null)} />
+          <div
+            className="relative w-full max-w-md bg-bg-secondary md:rounded-[24px] rounded-t-[32px] p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] md:pb-6 shadow-2xl border-t md:border border-glass-border overflow-hidden flex flex-col max-h-[85vh]"
+            style={{ transform: 'translateY(' + dragY + 'px)', transition: touchStartY !== null ? 'none' : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)' }}
+            onTouchStart={(e) => setTouchStartY(e.touches[0].clientY)}
+            onTouchMove={(e) => {
+              if (touchStartY === null) return;
+              const diff = e.touches[0].clientY - touchStartY;
+              if (diff > 0) setDragY(diff);
+            }}
+            onTouchEnd={() => {
+              if (dragY > 100) setBotModalClient(null);
+              setDragY(0);
+              setTouchStartY(null);
+            }}
+          >
+            <div className="w-12 h-1.5 bg-glass-border rounded-full mx-auto mb-6 md:hidden shrink-0" />
+            
+            <div className="flex items-center gap-4 mb-6 shrink-0">
+              {botModalClient.profile_image_url ? (
+                <img src={getFullImageUrl(botModalClient.profile_image_url)} alt="Profile" className="w-14 h-14 rounded-full object-cover ring-2 ring-accent/20" />
+              ) : (
+                <UserCircleIcon className="w-14 h-14 text-text-secondary" />
+              )}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-lg text-text-primary truncate">{botModalClient.name || botModalClient.username}</h3>
+                <p className="text-sm text-text-secondary">Secuencia de Inactividad</p>
+              </div>
+              <button onClick={() => setBotModalClient(null)} className="p-2 rounded-full bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 transition-colors hidden md:block">
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto no-scrollbar relative mb-6">
+              <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-glass-border z-0"></div>
+              <div className="space-y-6 relative z-10">
+                {(() => {
+                                    const level = botModalClient.lastMessage?.bot_reminder_level || 0;
+                  const lastDate = botModalClient.lastMessage ? new Date(botModalClient.lastMessage.created_at) : new Date();
+                  
+                  const getExactTimeLeft = (requiredDays) => {
+                    const now = new Date();
+                    const targetDate = new Date(lastDate.getTime() + requiredDays * 24 * 60 * 60 * 1000);
+                    const diffMs = targetDate - now;
+                    if (diffMs <= 0) {
+                      const next11AM = new Date();
+                      next11AM.setHours(11, 0, 0, 0);
+                      if (next11AM < now) {
+                        next11AM.setDate(next11AM.getDate() + 1);
+                      }
+                      const waitMs = next11AM - now;
+                      const h = Math.floor(waitMs / (1000 * 60 * 60));
+                      const m = Math.floor((waitMs % (1000 * 60 * 60)) / (1000 * 60));
+                      return `Sale a las 11:00 AM (en ${h}h ${m}m)`;
+                    }
+                    
+                    const h = Math.floor(diffMs / (1000 * 60 * 60));
+                    const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    if (h >= 24) {
+                      const d = Math.floor(h / 24);
+                      const rh = h % 24;
+                      return `Se enviará en ${d}d ${rh}h ${m}m`;
+                    }
+                    return `Se enviará en ${h}h ${m}m`;
+                  };
+                  
+                  const renderStep = (stepLevel, title, description, requiredDays, isFinal = false) => {
+                    const isCompleted = level >= stepLevel;
+                    const isActive = level === stepLevel - 1;
+                    
+                    return (
+                      <div className="flex items-start gap-4">
+                        <div className={'w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm z-10 ' + (isCompleted ? 'bg-green-500 text-white' : isActive ? 'bg-accent text-accent-contrast ring-4 ring-accent/20' : 'bg-black/5 dark:bg-white/5 text-text-tertiary border border-glass-border')}>
+                          {isCompleted ? <CheckCircleIcon className="w-6 h-6" /> : <ClockIcon className="w-5 h-5" />}
+                        </div>
+                        <div className={'flex-1 pt-2 ' + (isActive ? 'opacity-100' : 'opacity-70')}>
+                          <h4 className={'font-bold text-sm ' + (isCompleted ? 'text-green-500' : 'text-text-primary')}>{title}</h4>
+                          <div className="text-xs text-text-secondary mt-0.5 flex items-center gap-1">{description}</div>
+                          {isCompleted ? (
+                            !isFinal && (
+  <div className="flex items-center gap-3 mt-2">
+  {(() => {
+    const pushStatus = botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_push_status || (botModalClient.lastMessage?.bot_reminder_level === stepLevel ? botModalClient.lastMessage?.bot_push_status : null) || 'error';
+    const emailStatus = botModalClient.botReminders?.find(m => m.bot_reminder_level === stepLevel)?.bot_email_status || (botModalClient.lastMessage?.bot_reminder_level === stepLevel ? botModalClient.lastMessage?.bot_email_status : null) || 'error';
+    
+    const isPushOk = pushStatus === 'ok' || pushStatus === 'manual_ok';
+    const isEmailOk = emailStatus === 'ok' || emailStatus === 'manual_ok';
+
+    return (
+      <>
+        <div 
+          className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all " + (!isPushOk ? 'cursor-pointer active:scale-95 hover:brightness-95' : 'cursor-default')}
+          style={!isPushOk ? { color: '#dc2626', backgroundColor: 'rgba(220,38,38,0.1)' } : { color: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)' }}
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            if (!isPushOk) setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'push' }); 
+          }}
+          title={!isPushOk ? "Toca para reenviar solo el Push" : (pushStatus === 'manual_ok' ? "Push reenviado manualmente" : "Push enviado correctamente")}
+        >
+          {!isPushOk ? (
+            <><BellAlertIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Push Error ✕</span></>
+          ) : (
+            <><BellAlertIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">{pushStatus === 'manual_ok' ? 'Push Manual ✓' : 'Push ✓'}</span></>
+          )}
+        </div>
+        <div 
+          className={"flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all " + (!isEmailOk ? 'cursor-pointer active:scale-95 hover:brightness-95' : 'cursor-default')}
+          style={!isEmailOk ? { color: '#dc2626', backgroundColor: 'rgba(220,38,38,0.1)' } : { color: '#16a34a', backgroundColor: 'rgba(22,163,74,0.1)' }}
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            if (!isEmailOk) setResendConfirmData({ client: botModalClient, level: stepLevel, type: 'email' }); 
+          }}
+          title={!isEmailOk ? "Toca para reenviar solo el Correo" : (emailStatus === 'manual_ok' ? "Correo reenviado manualmente" : "Correo enviado correctamente")}
+        >
+          {!isEmailOk ? (
+            <><EnvelopeIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Email Error ✕</span></>
+          ) : (
+            <><EnvelopeIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">{emailStatus === 'manual_ok' ? 'Email Manual ✓' : 'Email ✓'}</span></>
+          )}
+        </div>
+      </>
+    );
+  })()}
+</div>
+)
+                          ) : isActive ? (
+                            <div className="mt-2 text-xs font-bold text-accent bg-accent/10 px-3 py-1.5 rounded-lg inline-block">
+                              {getExactTimeLeft(requiredDays)}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  };
+
+                  return (
+                    <>
+                      {renderStep(1, "Aviso 1", "¿Continuamos con tu cambio?", 3)}
+                      {renderStep(2, "Aviso 2", <><span className="mr-1">Aún estás a tiempo de empezar</span> <FireIcon className="w-4 h-4 text-orange-500 shrink-0"/></>, level === 0 ? 5 : 2)}
+                      {renderStep(3, "Aviso 3", <><span className="mr-1">Último aviso antes de cerrar</span> <ArchiveBoxXMarkIcon className="w-4 h-4 text-red-500 shrink-0"/></>, level === 0 ? 6 : level === 1 ? 3 : 1)}
+                      {renderStep(4, "Cierre", "Se bloqueará la conversación", level === 0 ? 7 : level === 1 ? 4 : level === 2 ? 2 : 1, true)}
+                    </>
+                  );
+
+                })()}
+              </div>
+            </div>
+
+            <div className="flex gap-3 shrink-0">
+              <button 
+                onClick={() => {
+                  setBotModalClient(null);
+                  openChat(botModalClient);
+                }}
+                className="flex-1 py-3.5 bg-black/5 dark:bg-white/5 rounded-[16px] font-bold text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+              >
+                Abrir Chat
+              </button>
+              {(botModalClient.lastMessage?.bot_reminder_level || 0) < 3 && (
+                <button 
+                  onClick={(e) => {
+                    executeBotReminder(e, botModalClient);
+                  }}
+                  className="flex-1 py-3.5 bg-accent text-accent-contrast rounded-[16px] font-bold shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <PaperAirplaneIcon className="w-4 h-4" />
+                  Forzar Aviso {(botModalClient.lastMessage?.bot_reminder_level || 0) + 1}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {resendConfirmData && (
+        <div className="fixed inset-0 z-[210] flex flex-col justify-end md:justify-center items-center px-4 md:px-0">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={() => setResendConfirmData(null)} />
+          <div
+            className="relative w-full max-w-sm bg-bg-secondary md:rounded-[24px] rounded-t-[32px] p-6 pb-[calc(max(env(safe-area-inset-bottom,0px),24px))] md:pb-6 shadow-2xl border-t md:border border-glass-border overflow-hidden flex flex-col"
+            style={{ transform: 'translateY(' + resendDragY + 'px)', transition: resendTouchStartY !== null ? 'none' : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)' }}
+            onTouchStart={(e) => setResendTouchStartY(e.touches[0].clientY)}
+            onTouchMove={(e) => {
+              if (resendTouchStartY === null) return;
+              const diff = e.touches[0].clientY - resendTouchStartY;
+              if (diff > 0) setResendDragY(diff);
+            }}
+            onTouchEnd={() => {
+              if (resendDragY > 100) setResendConfirmData(null);
+              setResendDragY(0);
+              setResendTouchStartY(null);
+            }}
+          >
+            <div className="w-12 h-1.5 bg-glass-border rounded-full mx-auto mb-6 md:hidden shrink-0" />
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                {resendConfirmData.type === 'push' ? (
+                  <BellAlertIcon className="w-8 h-8 text-accent" />
+                ) : (
+                  <EnvelopeIcon className="w-8 h-8 text-accent" />
+                )}
+              </div>
+              <h3 className="text-xl font-black text-text-primary mb-2">
+                {resendConfirmData.type === 'push' ? '¿Reenviar Push?' : '¿Reenviar Correo?'}
+              </h3>
+              <p className="text-sm text-text-secondary">
+                Se volverá a enviar {resendConfirmData.type === 'push' ? 'la notificación push' : 'el correo electrónico'} del <strong>Aviso {resendConfirmData.level}</strong> a <strong>{resendConfirmData.client.name}</strong>.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setResendConfirmData(null)}
+                className="flex-1 py-3.5 bg-black/5 dark:bg-white/5 rounded-[16px] font-bold text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                disabled={isResending}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleResendNotification}
+                className="flex-1 py-3.5 bg-accent text-accent-contrast rounded-[16px] font-bold shadow-lg shadow-accent/20 hover:shadow-accent/40 active:scale-95 transition-all flex items-center justify-center"
+                disabled={isResending}
+              >
+                {isResending ? 'Enviando...' : 'Sí, Reenviar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

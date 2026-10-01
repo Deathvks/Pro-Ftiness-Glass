@@ -19,6 +19,7 @@ import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getS
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -77,7 +78,7 @@ const LoginMethodBadge = ({ user }) => {
   return (
     <div title={`Registrado vía ${method.type}`} className={`w-5 h-5 flex items-center justify-center rounded-full overflow-hidden shrink-0 ${method.bg} ring-2 ring-bg-primary relative group`}>
       {method.isApp ? (
-        <span className="text-white text-[10px] font-bold">@</span>
+        <span className="text-accent-contrast text-[10px] font-bold">@</span>
       ) : (
         <img src={method.icon} alt={method.type} className="w-3 h-3 object-contain" />
       )}
@@ -103,7 +104,7 @@ const PlatformBadge = ({ user }) => {
     title = 'Web App (PWA)';
   } else if (deviceType === 'mobile' || deviceType === 'tablet') {
     icon = <Globe size={10} className="text-white" />;
-    bg = 'bg-orange-500';
+    bg = 'bg-slate-700';
     title = 'Web (Móvil)';
   }
 
@@ -161,11 +162,11 @@ const StatusIndicator = ({ lastSeen }) => {
 
 const AdminPanel = ({ onCancel }) => {
   const { showToast: addToast } = useToast();
-  const { userProfile, setUserProfile, setGamificationData } = useAppStore(state => ({
+  const { userProfile, setUserProfile, setGamificationData } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     setUserProfile: state.setUserProfile,
     setGamificationData: state.setGamificationData
-  }));
+  })));
 
   // Recuperar la pestaña activa de localStorage o usar default 'users'
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('admin_active_tab') || 'users');
@@ -472,7 +473,7 @@ const AdminPanel = ({ onCancel }) => {
           <button 
             onClick={handleFreeMemory} 
             disabled={isUpdating}
-            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-accent text-white font-bold hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 active:scale-95 whitespace-nowrap disabled:opacity-50 text-xs sm:text-base w-fit"
+            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-accent text-accent-contrast font-bold hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 active:scale-95 whitespace-nowrap disabled:opacity-50 text-xs sm:text-base w-fit"
             title="Forzar al servidor a liberar memoria RAM no utilizada"
           >
               <RefreshCw size={16} className={isUpdating ? "animate-spin" : ""} />
@@ -485,7 +486,7 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('users')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'users'
-            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
@@ -495,7 +496,7 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('reports')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'reports'
-            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
@@ -508,7 +509,7 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('exercises')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'exercises'
-            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
@@ -518,7 +519,7 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('notifications')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'notifications'
-            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
@@ -528,7 +529,7 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('emails')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'emails'
-            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
@@ -538,7 +539,7 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('uploads')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'uploads'
-            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
         >
@@ -615,10 +616,10 @@ const AdminPanel = ({ onCancel }) => {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 flex items-center justify-center rounded-full bg-orange-500 ring-2 ring-bg-primary text-white">
-                    <Globe size={10} />
-                  </div>
-                  <span className="text-sm font-medium text-text-primary">Web (Móvil)</span>
+                  <div className="w-5 h-5 flex items-center justify-center rounded-full bg-slate-700 ring-2 ring-bg-primary text-white">
+                      <Globe size={10} />
+                    </div>
+                    <span className="text-sm font-medium text-text-primary">Web (Móvil)</span>
                 </div>
                 
                 <div className="flex items-center gap-2">
@@ -666,7 +667,7 @@ const AdminPanel = ({ onCancel }) => {
                   </button>
                   <button
                     onClick={() => setIsCreatingUser(true)}
-                    className="flex items-center justify-center gap-1.5 px-5 py-3 rounded-full bg-accent text-white font-bold transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap shadow-lg shadow-accent/20"
+                    className="flex items-center justify-center gap-1.5 px-5 py-3 rounded-full bg-accent text-accent-contrast font-bold transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap shadow-lg shadow-accent/20"
                   >
                     <Plus size={18} strokeWidth={2.5} />
                     <span className="hidden sm:inline">Nuevo Usuario</span>
@@ -799,7 +800,7 @@ const AdminPanel = ({ onCancel }) => {
                           {/* 2. Detalles (Rol + Verificado + Nivel) */}
                           <td className="p-4 align-middle">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md ${user.role === 'admin' ? 'bg-accent/10 text-accent ring-1 ring-accent/30' : user.role === 'trainer' ? 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
+                              <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md ${user.role === 'admin' ? 'bg-accent text-accent-contrast ring-1 ring-accent/30' : user.role === 'trainer' ? 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
                                 {user.role}
                               </span>
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10">
@@ -854,7 +855,7 @@ const AdminPanel = ({ onCancel }) => {
                           {/* 5. Acciones */}
                           <td className="p-4 pr-6 align-middle text-right">
                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => setUserToEdit(user)} className="p-2 rounded-xl bg-black/5 dark:bg-white/5 text-text-secondary hover:text-accent hover:bg-accent/10 transition-all active:scale-95">
+                              <button onClick={() => setUserToEdit(user)} className="p-2 rounded-xl bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-accent hover:text-accent-contrast transition-all active:scale-95">
                                 <Edit size={16} />
                               </button>
                               <button onClick={() => setUserToDelete(user)} className="p-2 rounded-xl bg-black/5 dark:bg-white/5 text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95">
@@ -893,7 +894,7 @@ const AdminPanel = ({ onCancel }) => {
                           </div>
                         </div>
                         <div className="flex flex-col gap-2 shrink-0">
-                          <button onClick={() => setUserToEdit(user)} className="p-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary hover:text-accent hover:bg-accent/10 transition-all active:scale-95"><Edit size={16} /></button>
+                          <button onClick={() => setUserToEdit(user)} className="p-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary hover:bg-accent hover:text-accent-contrast transition-all active:scale-95"><Edit size={16} /></button>
                           <button onClick={() => setUserToDelete(user)} className="p-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95"><Trash2 size={16} /></button>
                         </div>
                       </div>
@@ -903,7 +904,7 @@ const AdminPanel = ({ onCancel }) => {
                         
                         <div className="flex items-center justify-between">
                            <div className="flex items-center gap-2">
-                             <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md ${user.role === 'admin' ? 'bg-accent/10 text-accent ring-1 ring-accent/30' : user.role === 'trainer' ? 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
+                             <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md ${user.role === 'admin' ? 'bg-accent text-accent-contrast ring-1 ring-accent/30' : user.role === 'trainer' ? 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/30' : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10'}`}>
                                {user.role}
                              </span>
                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10">
@@ -1004,7 +1005,7 @@ const AdminPanel = ({ onCancel }) => {
                       <div className="flex flex-col md:flex-row gap-5 justify-between items-start">
                         <div className="flex-1 space-y-4">
                           <div className="flex flex-wrap items-center gap-3">
-                            <span className="px-3 py-1 bg-accent/10 text-accent ring-1 ring-accent/30 text-[10px] font-black rounded-md uppercase tracking-widest">
+                            <span className="px-3 py-1 bg-accent text-accent-contrast ring-1 ring-accent/30 text-[10px] font-black rounded-md uppercase tracking-widest">
                               {REPORT_CATEGORY_LABELS[report.category] || report.category}
                             </span>
                             <span className="text-xs font-mono font-medium text-text-muted">{formatDateSafe(report.created_at)}</span>
@@ -1069,7 +1070,7 @@ const AdminPanel = ({ onCancel }) => {
                     <button
                       onClick={() => setReportPage(p => Math.max(1, p - 1))}
                       disabled={reportPage === 1}
-                      className="p-3 rounded-[16px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary disabled:opacity-30 hover:bg-accent hover:text-white hover:ring-accent transition-all active:scale-95 shadow-sm"
+                      className="p-3 rounded-[16px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary disabled:opacity-30 hover:bg-accent hover:text-accent-contrast hover:ring-accent transition-all active:scale-95 shadow-sm"
                     >
                       <ChevronLeft size={20} strokeWidth={2.5} />
                     </button>
@@ -1079,7 +1080,7 @@ const AdminPanel = ({ onCancel }) => {
                     <button
                       onClick={() => setReportPage(p => Math.min(totalPages, p + 1))}
                       disabled={reportPage === totalPages}
-                      className="p-3 rounded-[16px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary disabled:opacity-30 hover:bg-accent hover:text-white hover:ring-accent transition-all active:scale-95 shadow-sm"
+                      className="p-3 rounded-[16px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-primary disabled:opacity-30 hover:bg-accent hover:text-accent-contrast hover:ring-accent transition-all active:scale-95 shadow-sm"
                     >
                       <ChevronRight size={20} strokeWidth={2.5} />
                     </button>
@@ -1183,4 +1184,6 @@ const AdminPanel = ({ onCancel }) => {
 };
 
 export default AdminPanel;
+
+
 

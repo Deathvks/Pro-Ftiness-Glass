@@ -9,6 +9,7 @@ import ConfirmationModal from './ConfirmationModal';
 import socialService from '../services/socialService';
 import { forkRoutine } from '../services/routineService';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '../hooks/useToast';
 import { getSocket } from '../services/socket';
 
@@ -49,7 +50,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [commentToDelete, setCommentToDelete] = useState(null);
     
-    const { userProfile, exercises } = useAppStore();
+    const { userProfile, exercises } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, exercises: state.exercises })));
     const { showToast } = useToast();
     const { t } = useTranslation('exercise_names');
 
@@ -352,7 +353,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                     <button 
                                         type="submit" 
                                         disabled={!activeCommentInput[log.id]?.trim() || isActionLoading} 
-                                        className="p-3.5 bg-accent text-white rounded-full hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 transition-all shadow-lg shadow-accent/20 shrink-0 outline-none focus:outline-none active:scale-95"
+                                        className="p-3.5 bg-accent text-accent-contrast rounded-full hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 transition-all shadow-lg shadow-accent/20 shrink-0 outline-none focus:outline-none active:scale-95"
                                     >
                                         <Send size={18} className="ml-0.5" />
                                     </button>

@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Flame, Beef, Wheat, Salad, Copy, ArrowLeft, Plu
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '../hooks/useToast';
 import * as templateDietService from '../services/templateDietService';
 import * as nutritionService from '../services/nutritionService';
@@ -18,12 +19,12 @@ const GOAL_LABELS = {
 
 const TemplateDiets = ({ setView }) => {
     const { addToast } = useToast();
-    const { userProfile, selectedDate, fetchDataForDate, bodyWeightLog } = useAppStore(state => ({
+    const { userProfile, selectedDate, fetchDataForDate, bodyWeightLog } = useAppStore(useShallow(state => ({
         userProfile: state.userProfile,
         selectedDate: state.selectedDate,
         fetchDataForDate: state.fetchDataForDate,
         bodyWeightLog: state.bodyWeightLog,
-    }));
+    })));
 
     const [selectedGoal, setSelectedGoal] = useState(() => userProfile?.goal || 'all');
     const [diets, setDiets] = useState([]);
@@ -265,7 +266,7 @@ const TemplateDiets = ({ setView }) => {
                         key={key}
                         onClick={() => setSelectedGoal(key)}
                         className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all shrink-0 ${selectedGoal === key
-                            ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
                             : 'bg-bg-secondary text-text-secondary hover:bg-bg-secondary/80'
                             }`}
                     >
@@ -294,7 +295,7 @@ const TemplateDiets = ({ setView }) => {
                             >
                                 <div className="p-5 md:p-6 bg-bg-secondary/30 relative">
                                     {isRecommended && (
-                                        <div className="absolute top-0 right-0 bg-accent text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 shadow-sm z-10">
+                                        <div className="absolute top-0 right-0 bg-accent text-accent-contrast text-[10px] font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 shadow-sm z-10">
                                             <CheckCircle size={12} />
                                             MEJOR OPCIÓN
                                         </div>
@@ -414,7 +415,7 @@ const TemplateDiets = ({ setView }) => {
                                     <button
                                         onClick={() => handleCopyDiet(diet)}
                                         disabled={processingId === `diet-${diet.id}`}
-                                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-bold bg-accent text-white hover:brightness-110 transition-all disabled:opacity-50 shadow-md shadow-accent/20"
+                                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-bold bg-accent text-accent-contrast hover:brightness-110 transition-all disabled:opacity-50 shadow-md shadow-accent/20"
                                     >
                                         {processingId === `diet-${diet.id}` ? <Spinner size={16} color="text-white" /> : <Copy size={16} />}
                                         <span>Copiar Todo</span>

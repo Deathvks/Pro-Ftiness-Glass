@@ -154,6 +154,15 @@ export const getChatHistory = async (req, res, next) => {
       }
     }
 
+    if (requestor && requestor.role === 'user') {
+      whereCondition = {
+        [Op.and]: [
+          whereCondition,
+          { [Op.or]: [{ is_closed: false }, { is_closed: null }] }
+        ]
+      };
+    }
+
     const messages = await Message.findAll({
       where: whereCondition,
       order: [['created_at', 'ASC']],
@@ -428,10 +437,33 @@ export const getTrainerClientsChats = async (req, res, next) => {
         });
       }
 
+      let botReminders = [];
+      if (isAdmin) {
+        botReminders = await Message.findAll({
+          where: {
+            [Op.or]: [
+              { sender_id: client.id, receiver_id: { [Op.in]: trainerAdminIds } },
+              { sender_id: { [Op.in]: trainerAdminIds }, receiver_id: client.id }
+            ],
+            bot_reminder_level: { [Op.gt]: 0 }
+          }
+        });
+      } else {
+        botReminders = await Message.findAll({
+          where: {
+            [Op.or]: [
+              { sender_id: client.id, receiver_id: userId },
+              { sender_id: userId, receiver_id: client.id }
+            ],
+            bot_reminder_level: { [Op.gt]: 0 }
+          }
+        });
+      }
       return {
         ...client.toJSON(),
         trainer_name: trainerMap[client.trainer_id] || null,
         lastMessage: lastMessage ? lastMessage.toJSON() : null,
+        botReminders: botReminders.map(m => m.toJSON()),
         unreadCount
       };
     }));
@@ -624,6 +656,171 @@ export const getUnreadCount = async (req, res, next) => {
   }
 };
 
+
+export const resendBotReminder = async (req, res) => {
+  try {
+    const { prospectId, level } = req.params;
+    const parsedLevel = parseInt(level, 10);
+    const models = (await import('../models/index.js')).default;
+    const { User } = models;
+    const prospect = await User.findByPk(prospectId);
+    if (!prospect) return res.status(404).json({ error: 'Cliente no encontrado' });
+
+    let title = '';
+    let text = '';
+    if (parsedLevel === 1) {
+      title = '¿Continuamos con tu cambio?';
+      text = 'Hola, he visto que dejaste el chat abierto. Si tienes cualquier duda sobre la asesoría o quieres empezar, escríbeme por aquí y nos ponemos a ello!';
+    } else if (parsedLevel === 2) {
+      title = 'Aún estás a tiempo de empezar 🔥';
+      text = 'Solo te escribo para recordarte que sigo por aquí si necesitas ayuda para dar el primer paso. Si no estás interesado, no te preocupes.';
+    } else if (parsedLevel === 3) {
+      title = 'Último aviso antes de cerrar el chat ❌';
+      text = 'Si no recibo respuesta en 1 día, cerraré esta conversación para mantener el buzón limpio. Siempre podrás volver a solicitar asesoría más adelante.';
+    } else {
+      return res.status(400).json({ error: 'Nivel inválido' });
+    }
+
+    const type = req.query.type || 'all';
+    const status = { push: 'skipped', notification: 'skipped', email: 'skipped' };
+
+    if (type === 'push' || type === 'all') {
+      try {
+        const { createNotification } = await import('../services/notificationService.js');
+        await createNotification(prospect.id, {
+          type: 'chat_message',
+          title: title,
+          message: text,
+          data: { url: '/social' }
+        });
+        status.notification = 'ok';
+        status.push = 'ok';
+      } catch (e) {
+        console.error('Error push/notif:', e);
+        status.push = 'error';
+        status.notification = 'error';
+      }
+    }
+
+    if (type === 'email' || type === 'all') {
+      try {
+        const { sendBotReminderEmail } = await import('../services/emailService.js');
+        await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, parsedLevel);
+        status.email = 'ok';
+      } catch (e) {
+        console.error('Error email:', e);
+        status.email = 'error';
+      }
+    }
+
+    const lastMsg = await models.Message.findOne({ where: { receiver_id: prospect.id, bot_reminder_level: parsedLevel }, order: [['created_at', 'DESC']] });
+    if (lastMsg) {
+      if (type === 'push' || type === 'all') lastMsg.bot_push_status = status.push === 'ok' ? 'manual_ok' : 'error';
+      if (type === 'email' || type === 'all') lastMsg.bot_email_status = status.email === 'ok' ? 'manual_ok' : 'error';
+      await lastMsg.save();
+    }
+
+    res.json({ message: 'Recordatorio reenviado', status });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+};
+
+export const sendManualBotReminder = async (req, res) => {
+  try {
+    const { prospectId, level } = req.params;
+    const trainerId = req.user.userId;
+    const parsedLevel = parseInt(level, 10);
+
+    const { User, Message, Sequelize } = models;
+    const prospect = await User.findByPk(prospectId);
+    if (!prospect) return res.status(404).json({ error: 'Cliente no encontrado' });
+
+    // PREVENCIN DE DUPLICADOS (Evita doble click en UI o envos simultneos)
+    const Op = Sequelize.Op;
+    const lastMsg = await Message.findOne({
+      where: {
+        [Op.or]: [
+          { sender_id: prospect.id, receiver_id: trainerId },
+          { sender_id: trainerId, receiver_id: prospect.id }
+        ]
+      },
+      order: [['created_at', 'DESC']]
+    });
+
+    if (lastMsg && (lastMsg.bot_reminder_level || 0) >= parsedLevel) {
+      return res.status(400).json({ error: 'Ya se envi este aviso (posible doble click detectado).' });
+    }
+    if (lastMsg && lastMsg.is_closed) {
+      return res.status(400).json({ error: 'El chat ya est cerrado.' });
+    }
+
+    let title = '';
+    let text = '';
+    if (parsedLevel === 1) {
+      title = '¿Continuamos con tu cambio?';
+      text = 'Hola, he visto que dejaste el chat abierto. Si tienes cualquier duda sobre la asesoría o quieres empezar, escríbeme por aquí y nos ponemos a ello!';
+    } else if (parsedLevel === 2) {
+      title = 'Aún estás a tiempo de empezar 🔥';
+      text = 'Solo te escribo para recordarte que sigo por aquí si necesitas ayuda para dar el primer paso. Si no estás interesado, no te preocupes.';
+    } else if (parsedLevel === 3) {
+      title = 'Último aviso antes de cerrar el chat ❌';
+      text = 'Si no recibo respuesta en 1 día, cerraré esta conversación para mantener el buzón limpio. Siempre podrás volver a solicitar asesoría más adelante.';
+    } else {
+      return res.status(400).json({ error: 'Nivel invlido' });
+    }
+
+    const newMessage = await Message.create({
+      sender_id: trainerId,
+      receiver_id: prospect.id,
+      content: text,
+      bot_reminder_level: parsedLevel,
+      attachment_type: 'bot_reply',
+      created_at: new Date()
+    });
+
+    const status = { push: 'error', notification: 'error', email: 'error' };
+
+    try {
+      // In-app notification and push
+      await createNotification(prospect.id, {
+        type: 'chat_message',
+        title: title,
+        message: text,
+        data: { url: '/social' } // Adjust URL if needed
+      });
+      status.notification = 'ok';
+      status.push = 'ok';
+    } catch (e) {
+      console.error('Error push/notif:', e);
+    }
+
+    try {
+      const { sendBotReminderEmail } = await import('../services/emailService.js');
+      await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, parsedLevel);
+      status.email = 'ok';
+    } catch (e) {
+      console.error('Error email:', e);
+    }
+
+    newMessage.bot_push_status = status.push === 'ok' ? 'manual_ok' : 'error';
+    newMessage.bot_email_status = status.email === 'ok' ? 'manual_ok' : 'error';
+    await newMessage.save();
+
+    if (io) {
+      io.to(prospect.id.toString()).emit('chat_message', { type: 'refresh' });
+      io.to(trainerId.toString()).emit('chat_message', { type: 'refresh' });
+    }
+
+    res.json({ message: 'Recordatorio enviado', status, newMessage });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
+
 export const runRetroactiveBotReplies = async () => {
   try {
     const requestMessages = await Message.findAll({
@@ -681,7 +878,17 @@ const chatController = {
   uploadAttachment,
   getUnreadCount,
   editMessage,
-  runRetroactiveBotReplies
+  runRetroactiveBotReplies,
+sendManualBotReminder,
+  resendBotReminder
 };
 
 export default chatController;
+
+
+
+
+
+
+
+

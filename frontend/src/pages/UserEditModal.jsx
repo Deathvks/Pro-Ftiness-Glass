@@ -88,7 +88,7 @@ const UserEditModal = ({ user, onSave, onCancel, isLoading }) => {
                 type="submit"
                 form="editUserForm"
                 disabled={isLoading}
-                className="w-full flex items-center justify-center gap-2 p-4 rounded-[20px] bg-accent text-white font-bold text-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20 disabled:opacity-70 disabled:hover:scale-100"
+                className="w-full flex items-center justify-center gap-2 p-4 rounded-[20px] bg-accent text-accent-contrast font-bold text-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20 disabled:opacity-70 disabled:hover:scale-100"
             >
                 {isLoading ? <Spinner className="w-6 h-6" /> : 'Guardar Cambios'}
             </button>

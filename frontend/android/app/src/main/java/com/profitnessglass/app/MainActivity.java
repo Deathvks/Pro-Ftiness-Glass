@@ -5,6 +5,7 @@ import androidx.activity.EdgeToEdge;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // Forzamos el tema sin barra ANTES de que Android dibuje la pantalla

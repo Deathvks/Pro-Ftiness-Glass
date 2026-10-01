@@ -97,6 +97,11 @@ export const createDataSlice = (set, get) => ({
 
       set({ userProfile: profileData, isAuthenticated: true });
 
+      // Obtener el conteo de chats no leídos
+      if (get().fetchUnreadChats) {
+        get().fetchUnreadChats();
+      }
+
       if (profileData && get().setGamificationData) {
         get().setGamificationData({
           xp: profileData.xp,
@@ -163,10 +168,18 @@ export const createDataSlice = (set, get) => ({
           personalRecords: safePRs
         });
       }
-    } catch (error) {
-      console.error("Error de autenticación o carga de datos:", error);
-      get().handleLogout();
-    } finally {
+        } catch (error) {
+        console.error("Error al cargar datos iniciales (posiblemente de red):", error);
+        if (error?.message?.includes('fetch') || error?.message?.includes('network') || error?.name === 'TypeError' || error?.isMaintenance) {
+          console.log('[fetchInitialData] Error de red detectado, reintentando en 3s...');
+          setTimeout(() => { get().fetchInitialData(); }, 3000);
+        } else {
+          console.log('[fetchInitialData] Error no recuperable, forzando cierre de sesión preventivo.');
+          if (get().handleSessionExpiry) {
+            get().handleSessionExpiry();
+          }
+        }
+      } finally {
       set({ isLoading: false });
     }
   },

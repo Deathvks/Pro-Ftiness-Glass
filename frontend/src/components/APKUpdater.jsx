@@ -75,7 +75,7 @@ const APKUpdater = () => {
 
                     <button
             onClick={handleUpdate}
-            className="w-full py-3 px-4 bg-accent text-white dark:text-bg-secondary font-bold rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg shadow-accent/20">
+            className="w-full py-3 px-4 bg-accent text-accent-contrast dark:text-bg-secondary font-bold rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg shadow-accent/20">
             
                         <Download size={20} /> Actualizar Ahora
                     </button>

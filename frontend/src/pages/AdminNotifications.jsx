@@ -164,7 +164,7 @@ const AdminNotifications = () => {
           onClick={() => setActiveTab('history')}
           className={`flex-1 min-w-[120px] py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all whitespace-nowrap snap-center ${
             activeTab === 'history' 
-            ? 'bg-accent shadow-lg shadow-accent/20 text-white' 
+            ? 'bg-accent shadow-lg shadow-accent/20 text-accent-contrast' 
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
           }`}
         >
@@ -174,7 +174,7 @@ const AdminNotifications = () => {
           onClick={() => setActiveTab('send')}
           className={`flex-1 min-w-[140px] py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all whitespace-nowrap snap-center ${
             activeTab === 'send' 
-            ? 'bg-accent shadow-lg shadow-accent/20 text-white' 
+            ? 'bg-accent shadow-lg shadow-accent/20 text-accent-contrast' 
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
           }`}
         >
@@ -184,7 +184,7 @@ const AdminNotifications = () => {
           onClick={() => setActiveTab('cron')}
           className={`flex-1 min-w-[140px] py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all whitespace-nowrap snap-center ${
             activeTab === 'cron' 
-            ? 'bg-accent shadow-lg shadow-accent/20 text-white' 
+            ? 'bg-accent shadow-lg shadow-accent/20 text-accent-contrast' 
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
           }`}
         >
@@ -238,7 +238,7 @@ const AdminNotifications = () => {
                   role="button"
                   tabIndex={0}
                   onClick={() => { setTimeRange(days); setPage(1); }}
-                  className={"px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ring-1 flex items-center justify-center cursor-pointer " + (timeRange === days ? 'bg-accent text-white ring-accent shadow-lg shadow-accent/20' : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10')}
+                  className={"px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ring-1 flex items-center justify-center cursor-pointer " + (timeRange === days ? 'bg-accent text-accent-contrast ring-accent shadow-lg shadow-accent/20' : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10')}
                 >
                   {days === 1 ? 'Últimas 24h' : `Últimos ${days} Días`}
                 </div>
@@ -454,7 +454,7 @@ const AdminNotifications = () => {
                         e.stopPropagation();
                         handleTestCron(job.id);
                       }}
-                      className="bg-accent text-white shadow-md shadow-accent/20 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all"
+                      className="bg-accent text-accent-contrast shadow-md shadow-accent/20 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all"
                     >
                       <Play size={14} fill="currentColor" /> Probar Tarea
                     </button>

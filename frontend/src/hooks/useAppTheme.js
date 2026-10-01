@@ -214,11 +214,13 @@ export const useAppTheme = () => {
         root.classList.add('dark');
       }
 
-      // Inyección obligatoria en los 3 nodos principales para evitar fragmentación visual
-      root.style.setProperty('background-color', headerColorStr, 'important');
-      body.style.setProperty('background-color', headerColorStr, 'important');
+      // Dejamos que CSS (variables) controle el fondo del root y body. 
+      // Modificar el style.backgroundColor del documentElement causa un bug en iOS PWA donde 
+      // se pinta un bloque sólido en el notch inferior y "sube" el contenido.
+      root.style.removeProperty('background-color');
+      body.style.setProperty('background-color', 'var(--bg-primary)', 'important');
       if (appRootDiv) {
-        appRootDiv.style.setProperty('background-color', headerColorStr, 'important');
+        appRootDiv.style.setProperty('background-color', 'var(--bg-primary)', 'important');
       }
 
       const metaColor = document.getElementById('dynamic-theme-color');

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import ExerciseMedia from '../components/ExerciseMedia';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { normalizeText } from '../utils/helpers';
 import { askTrainerAI } from '../services/aiService';
 import ModalPortal from '../components/ModalPortal';
@@ -12,9 +13,9 @@ import ModalPortal from '../components/ModalPortal';
 const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
   const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_descriptions', 'exercise_muscles']);
 
-  const { getOrFetchAllExercises } = useAppStore(state => ({
+  const { getOrFetchAllExercises } = useAppStore(useShallow(state => ({
     getOrFetchAllExercises: state.getOrFetchAllExercises,
-  }));
+  })));
 
   const [localDetails, setLocalDetails] = useState(exercise.exercise_details || {});
 

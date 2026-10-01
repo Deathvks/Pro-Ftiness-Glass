@@ -3,6 +3,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { Helmet } from 'react-helmet-async';
 import { ChevronLeft, Clock, Flame, Play, X, Save, Search, Filter, MapPin, BookCopy, Compass } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { CARDIO_ACTIVITIES } from '../data/cardioLibrary';
 import { useToast } from '../hooks/useToast';
 import GlassCard from '../components/GlassCard';
@@ -21,7 +22,7 @@ const INTENSITY_OPTIONS = [
 // --- FUNCIONES PARA AÑADIR SEGURIDAD A LOS TABS ---
 const getTabClass = (isActive) => `mx-1.5 my-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap outline-none flex items-center gap-2 flex-shrink-0 ${
     isActive
-        ? 'bg-accent text-white shadow-md shadow-accent/30 scale-105'
+        ? 'bg-accent text-accent-contrast shadow-md shadow-accent/30 scale-105'
         : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
 }`;
 
@@ -81,7 +82,7 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
             <div className="space-y-4">
               <button
                 onClick={() => onStartGPS(activity)}
-                className="w-full py-4 rounded-[20px] font-bold text-base sm:text-lg bg-accent text-white hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20"
+                className="w-full py-4 rounded-[20px] font-bold text-base sm:text-lg bg-accent text-accent-contrast hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-accent/20"
               >
                 <MapPin size={22} strokeWidth={2.5} />
                 Iniciar Ruta GPS
@@ -166,7 +167,7 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
               className={`w-full py-4 rounded-[20px] font-bold text-base sm:text-lg flex items-center justify-center gap-2 transition-all shadow-lg hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed
                 ${activity.hasGPS
                   ? 'bg-black/5 dark:bg-white/5 text-text-primary ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10 shadow-none'
-                  : 'bg-accent text-white shadow-accent/20'
+                  : 'bg-accent text-accent-contrast shadow-accent/20'
                 }`}
             >
               {isSubmitting ? <Spinner size={24} color={activity.hasGPS ? 'text-accent' : 'white'} /> : (
@@ -185,12 +186,12 @@ const ConfigModal = ({ activity, currentWeight, onClose, onSave, onStartGPS }) =
 
 const QuickCardio = ({ onBack, setView }) => {
   const { addToast } = useToast();
-  const { userProfile, bodyWeightLog, fetchInitialData, logWorkout } = useAppStore(state => ({
+  const { userProfile, bodyWeightLog, fetchInitialData, logWorkout } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     bodyWeightLog: state.bodyWeightLog,
     fetchInitialData: state.fetchInitialData,
     logWorkout: state.logWorkout
-  }));
+  })));
 
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');

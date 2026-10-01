@@ -6,6 +6,7 @@ import {
   Coffee, Footprints, Dumbbell, Trophy, Loader2
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 import { createRoutine } from '../services/routineService';
@@ -160,7 +161,7 @@ const BigOptionButton = ({ selected, onClick, icon: Icon, title, desc, delay = "
     onClick={onClick}
     className={`w-full p-5 rounded-2xl border transition-all duration-300 flex items-center gap-4 group text-left relative overflow-hidden animate-slide-right ${delay}
     ${selected
-        ? 'bg-accent text-white border-accent shadow-[0_10px_30px_-10px_var(--accent)] scale-[1.02]'
+        ? 'bg-accent text-accent-contrast border-accent shadow-[0_10px_30px_-10px_var(--accent)] scale-[1.02]'
         : 'bg-bg-secondary/40 border-white/10 hover:bg-bg-secondary hover:border-glass-highlight text-text-secondary hover:text-text-primary hover:scale-[1.01]'
       } active:scale-[0.98]`}
   >
@@ -212,7 +213,7 @@ const BottomActionBar = ({ step, totalSteps, handleBack, handleNext, handleCompl
       <button
         onClick={step === totalSteps ? handleComplete : handleNext}
         disabled={disabled || isLoading}
-        className="bg-accent text-white px-8 py-4 rounded-full font-bold shadow-[0_10px_40px_-10px_var(--accent)] flex items-center gap-3 transition-all hover:scale-110 active:scale-90 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none text-lg hover:shadow-[0_20px_50px_-15px_var(--accent)]"
+        className="bg-accent text-accent-contrast px-8 py-4 rounded-full font-bold shadow-[0_10px_40px_-10px_var(--accent)] flex items-center gap-3 transition-all hover:scale-110 active:scale-90 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none text-lg hover:shadow-[0_20px_50px_-15px_var(--accent)]"
       >
         {isLoading ? (
           <>
@@ -232,10 +233,10 @@ const BottomActionBar = ({ step, totalSteps, handleBack, handleNext, handleCompl
 // --- COMPONENTE PRINCIPAL ---
 
 const OnboardingScreen = () => {
-  const { updateUserProfile, userProfile } = useAppStore(state => ({
+  const { updateUserProfile, userProfile } = useAppStore(useShallow(state => ({
     updateUserProfile: state.updateUserProfile,
     userProfile: state.userProfile
-  }));
+  })));
   const { addToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('');
@@ -511,7 +512,7 @@ const OnboardingScreen = () => {
                       : 'border-glass-border bg-bg-secondary/30 text-text-secondary hover:border-glass-highlight hover:bg-bg-secondary'
                       }`}
                   >
-                    <div className={`p-4 rounded-full transition-colors ${formData.gender === g ? 'bg-accent text-white' : 'bg-bg-primary'}`}>
+                    <div className={`p-4 rounded-full transition-colors ${formData.gender === g ? 'bg-accent text-accent-contrast' : 'bg-bg-primary'}`}>
                       <User size={32} strokeWidth={formData.gender === g ? 3 : 2} />
                     </div>
                     <span className="font-bold text-lg">{g === 'male' ? 'Hombre' : 'Mujer'}</span>
@@ -715,7 +716,7 @@ const OnboardingScreen = () => {
         <StoryProgress total={totalSteps} current={step} />
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden w-full relative z-10">
-          <div className="min-h-full flex flex-col items-center justify-center p-6 md:p-12 max-w-2xl mx-auto pt-20 pb-[calc(var(--safe-bottom)+7rem)]">
+          <div className="min-h-full flex flex-col items-center justify-center px-6 md:px-12 max-w-2xl mx-auto pt-20 md:pt-28 pb-[calc(var(--safe-bottom)+8rem)] md:pb-[10rem]">
             <div className="w-full">
               {renderContent()}
             </div>

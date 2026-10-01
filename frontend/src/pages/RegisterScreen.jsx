@@ -19,7 +19,7 @@ import { Capacitor } from '@capacitor/core';
 import { useLocation } from 'react-router-dom';
 
 const SplitLayout = ({ children, onShowPolicy }) => (
-    <div className="flex flex-col lg:flex-row w-full h-[100dvh] bg-bg-primary overflow-hidden">
+    <div className="auth-container flex flex-col lg:flex-row w-full h-[100dvh] bg-bg-primary overflow-hidden">
 
         {/* Panel Izquierdo - Fijo en PC */}
         <div className="hidden lg:flex flex-col justify-center items-center w-[30%] h-full relative border-r border-glass-border p-6 lg:p-8 overflow-hidden z-20 shrink-0 bg-bg-primary">
@@ -496,7 +496,7 @@ const RegisterScreen = ({ showLogin }) => {
         { id: 'length', label: 'Al menos 12 caracteres', valid: password.length >= 12 },
         { id: 'upper', label: 'Una mayúscula', valid: /[A-Z]/.test(password) },
         { id: 'lower', label: 'Una minúscula', valid: /[a-z]/.test(password) },
-        { id: 'special', label: 'Un carácter especial (!@#$...)', valid: /[!@#$%^&*(),.?":{}|<>\-_+=\[\]\\/'`]/.test(password) },
+        { id: 'special', label: 'Un carácter especial (!@#$...)', valid: /[!@#$%^&*(),.?":{}|<>\-_+=\x5B\x5D\x2F\x5C'`]/.test(password) },
         { id: 'digits', label: 'No más de 3 números seguidos', valid: !/\d{4,}/.test(password) && password.length > 0 }
     ];
     const isValidPassword = reqs.every(r => r.valid);
@@ -778,7 +778,7 @@ const RegisterScreen = ({ showLogin }) => {
 
                     <div
                         onClick={() => setShowQuiz(true)}
-                        className="mt-5 sm:mt-6 lg:mt-5 relative group overflow-hidden rounded-[20px] lg:rounded-[24px] cursor-pointer shadow-lg transform transition-all duration-300 hover:scale-[1.03] hover:shadow-accent/40 border-2 border-transparent hover:border-accent/30"
+                        className="mt-5 sm:mt-6 lg:mt-5 relative group overflow-hidden rounded-[20px] lg:rounded-[24px] cursor-pointer shadow-lg transform transition-all duration-300 hover:shadow-accent/40 border border-transparent hover:border-accent/30"
                     >
                         <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent z-30 pointer-events-none" />
                         <div className="absolute inset-0 bg-gradient-to-br from-accent to-purple-700 dark:from-gray-900 dark:to-black opacity-90 dark:opacity-85 z-10 transition-opacity" />
@@ -823,8 +823,8 @@ const RegisterScreen = ({ showLogin }) => {
                 </GlassCard>
 
                 <div className="mt-2 sm:mt-4 lg:mt-2 text-center">
-                    <button onClick={showLogin} className="text-xs sm:text-sm font-medium text-text-secondary hover:text-accent transition-colors">
-                        ¿Ya tienes cuenta? Inicia sesión
+                    <button onClick={showLogin} className="text-xs sm:text-sm font-medium text-text-secondary hover:opacity-80 transition-opacity">
+                        ¿Ya tienes cuenta? <span className="text-accent font-bold">Inicia sesión</span>
                     </button>
                 </div>
             </SplitLayout>

@@ -485,7 +485,7 @@ const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
                 <button type="button" onClick={onCancel} className="text-text-secondary font-bold px-4 py-3 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors">
                     Cancelar
                 </button>
-                <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-white font-bold px-8 py-3 rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg shadow-accent/20">
+                <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-accent-contrast font-bold px-8 py-3 rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg shadow-accent/20">
                     Recortar
                 </button>
             </div>

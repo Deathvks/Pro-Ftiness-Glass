@@ -11,6 +11,7 @@ import { NavigationBar } from '@capgo/capacitor-navigation-bar';
 import { App as CapApp } from '@capacitor/app';
 import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom'; 
 import useAppStore from './store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 
 import { useAppNavigation } from './hooks/useAppNavigation';
 import { useAppTheme } from './hooks/useAppTheme';
@@ -123,13 +124,14 @@ export default function App() {
     isResting,
     restTimerMode,
     myStories,
+    unreadChats,
     sessionExpired,
     cookieConsent,
     showWelcomeModal,
     show2FAPromo,
     setShow2FAPromo,
     checkWelcomeModal,
-  } = useAppStore(state => ({
+  } = useAppStore(useShallow(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
     isLoading: state.isLoading,
@@ -138,13 +140,14 @@ export default function App() {
     isResting: state.isResting,
     restTimerMode: state.restTimerMode,
     myStories: state.myStories,
+    unreadChats: state.unreadChats,
     sessionExpired: state.sessionExpired,
     cookieConsent: state.cookieConsent,
     showWelcomeModal: state.showWelcomeModal,
     show2FAPromo: state.show2FAPromo,
     setShow2FAPromo: state.setShow2FAPromo,
     checkWelcomeModal: state.checkWelcomeModal,
-  }));
+  })));
 
   useEffect(() => {
     if (userProfile?.id) {
@@ -401,8 +404,8 @@ export default function App() {
     { id: 'social', label: t('Comunidad', { defaultValue: 'Comunidad' }), icon: (active) => active ? <UsersSolid className="w-6 h-6" /> : <UsersOutline className="w-6 h-6" /> },
     { id: 'nutrition', label: t('Nutrición', { defaultValue: 'Nutrición' }), icon: (active) => active ? <FireSolid className="w-6 h-6" /> : <FireOutline className="w-6 h-6" /> },
     { id: 'routines', label: t('Rutinas', { defaultValue: 'Rutinas' }), icon: (active) => active ? <BoltSolid className="w-6 h-6" /> : <BoltOutline className="w-6 h-6" /> },
-    { id: 'hub', label: t('Menú', { defaultValue: 'Menú' }), badge: !visitedHub, icon: (active) => active ? <SquaresSolid className="w-6 h-6" /> : <SquaresOutline className="w-6 h-6" /> },
-  ], [t, visitedHub]);
+    { id: 'hub', label: t('Menú', { defaultValue: 'Menú' }), badge: !visitedHub || (unreadChats > 0), icon: (active) => active ? <SquaresSolid className="w-6 h-6" /> : <SquaresOutline className="w-6 h-6" /> },
+  ], [t, visitedHub, unreadChats]);
 
     const mainViews = useMemo(() => ({
       dashboard: <Dashboard setView={navigateInternal} />,
@@ -535,7 +538,7 @@ export default function App() {
         <meta property="og:site_name" content="Pro Fitness Glass" />
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
-        <meta name="theme-color" content={headerColor} />
+        
       </Helmet>
 
       <VersionUpdater />
@@ -554,7 +557,7 @@ export default function App() {
             </p>
             <button 
               onClick={() => window.location.reload()}
-              className="w-full bg-accent text-white font-bold py-3.5 px-4 rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-md shadow-accent/20"
+              className="w-full bg-accent text-accent-contrast font-bold py-3.5 px-4 rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-md shadow-accent/20"
             >
               Recargar Aplicación
             </button>

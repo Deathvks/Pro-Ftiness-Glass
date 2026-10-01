@@ -59,7 +59,8 @@ const ExerciseListItem = ({
       <div className="w-full aspect-square bg-transparent flex items-center justify-center transition-transform duration-500 group-hover:scale-105 overflow-hidden rounded-t-[24px]">
         <ExerciseMedia 
           details={exercise}
-          fitMode="contain"
+          fitMode="cover"
+          forceAuto={false}
           disableAnimation={false}
           className="w-full h-full"
         />
@@ -104,7 +105,7 @@ const ExerciseListItem = ({
                 className={`w-full flex items-center justify-center gap-2 p-3 rounded-[16px] transition-all duration-300 active:scale-95 shadow-sm font-bold ${
                   isStaged
                     ? 'bg-green-500/10 text-green-500 ring-1 ring-green-500/30'
-                    : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10 hover:bg-accent hover:text-white hover:ring-accent'
+                    : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-1 ring-black/5 dark:ring-white/10 hover:bg-accent hover:text-accent-contrast hover:ring-accent'
                 }`}
               >
                 {isStaged ? (

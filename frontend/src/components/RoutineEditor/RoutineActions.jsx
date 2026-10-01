@@ -44,7 +44,7 @@ const RoutineActions = ({
         <button
           onClick={onAnalyze}
           /* CAMBIO: Usamos bg-accent para coincidir con el tema, y shadow-accent */
-          className="w-full relative overflow-hidden group flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-accent text-white font-bold shadow-lg shadow-accent/25 transition-all hover:scale-[1.01] active:scale-[0.98] border border-white/10"
+          className="w-full relative overflow-hidden group flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-accent text-accent-contrast font-bold shadow-lg shadow-accent/25 transition-all hover:scale-[1.01] active:scale-[0.98] border border-white/10"
         >
           {/* Efecto de brillo al pasar el mouse (un poco más sutil/blanco para que se note sobre cualquier color) */}
           <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
@@ -58,7 +58,7 @@ const RoutineActions = ({
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
         <button
           onClick={onShowSearch}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-accent text-white font-semibold hover:scale-105 transition animate-pulse-accent shadow-lg shadow-accent/30"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-accent text-accent-contrast font-semibold hover:scale-105 transition animate-pulse-accent shadow-lg shadow-accent/30"
         >
           <Library size={20} />
           <span>Añadir desde Biblioteca</span>
@@ -90,7 +90,7 @@ const RoutineActions = ({
         <button
           onClick={onSave}
           disabled={isSaving}
-          className="w-full sm:w-auto sm:px-8 sm:py-4 px-5 py-3 rounded-xl bg-accent text-white font-bold sm:text-lg text-base transition hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-accent/30"
+          className="w-full sm:w-auto sm:px-8 sm:py-4 px-5 py-3 rounded-xl bg-accent text-accent-contrast font-bold sm:text-lg text-base transition hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-accent/30"
         >
           {isSaving ? <Spinner size={24} /> : <Save size={24} />}
           <span className="whitespace-nowrap">{id ? 'Guardar Cambios' : 'Crear Rutina'}</span>

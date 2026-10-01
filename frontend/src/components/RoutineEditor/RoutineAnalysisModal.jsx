@@ -156,7 +156,7 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
         {/* Header - Fijo */}
         <div className={`p-5 border-b flex justify-between items-center shrink-0 backdrop-blur-md ${isOled ? 'bg-black/80 border-white/10' : `bg-bg-secondary/95 ${isDark ? 'border-white/5' : 'border-border'}`}`}>
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-accent text-white shadow-lg shadow-accent/20">
+            <div className="p-2 rounded-xl bg-accent text-accent-contrast shadow-lg shadow-accent/20">
               <Activity className="w-5 h-5" />
             </div>
             <div>

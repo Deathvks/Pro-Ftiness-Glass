@@ -77,7 +77,7 @@ const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
         <button type="button" onClick={onCancel} className="text-text-secondary font-bold px-6 py-3.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-[16px] transition-colors active:scale-95">
           Cancelar
         </button>
-        <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-white font-bold px-8 py-3.5 rounded-[20px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20">
+        <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-accent-contrast font-bold px-8 py-3.5 rounded-[20px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20">
           Recortar
         </button>
       </div>
@@ -140,9 +140,11 @@ const SortableImageItem = ({ img, idx, onRemove, onCrop }) => {
   );
 };
 
-// Componente para animar múltiples fotos
+// Componente para animar múltiples fotos (Optimizado)
 const ImageSlideshow = ({ ex, isShort }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const containerRef = useRef(null);
   
   let images = [];
   if (ex.images && Array.isArray(ex.images) && ex.images.length > 0) {
@@ -156,13 +158,24 @@ const ImageSlideshow = ({ ex, isShort }) => {
   const delayMs = Math.max(1500, 3000 - (images.length * 200)); 
 
   useEffect(() => {
-    if (images.length > 1) {
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsVisible(entry.isIntersecting);
+    }, { rootMargin: '100px' });
+    
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (images.length > 1 && isVisible) {
       const interval = setInterval(() => {
         setCurrentIndex(prev => (prev + 1) % images.length);
       }, delayMs);
       return () => clearInterval(interval);
     }
-  }, [images.length, delayMs]);
+  }, [images.length, delayMs, isVisible]);
 
   if (images.length === 0) {
     if (ex.video_url && (ex.video_url.includes('youtube') || ex.video_url?.includes('youtu.be'))) {
@@ -200,7 +213,7 @@ const ImageSlideshow = ({ ex, isShort }) => {
   };
 
   return (
-    <div className="absolute inset-0 w-full h-full">
+    <div ref={containerRef} className="absolute inset-0 w-full h-full">
       {images.map((url, idx) => (
         <img 
           key={idx}
@@ -1094,7 +1107,7 @@ const AdminExercises = ({ isTrainerMode = false }) => {
                       className="flex-1 py-3.5 bg-accent font-bold rounded-[16px] transition-all active:scale-95 flex justify-center items-center gap-2 shadow-lg shadow-accent/20 disabled:opacity-50"
                     >
                       {isUpdating ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                      Guardar Cambios
+                      <span className="hidden sm:inline">Guardar Cambios</span><span className="sm:hidden">Guardar</span>
                     </button>
                   </div>
                 </div>
@@ -1118,6 +1131,7 @@ const AdminExercises = ({ isTrainerMode = false }) => {
 };
 
 export default AdminExercises;
+
 
 
 

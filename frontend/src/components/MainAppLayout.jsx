@@ -3,6 +3,7 @@ import React, { Suspense, useEffect, useState, useRef, startTransition } from 'r
 import { SparklesIcon, BellIcon, Cog8ToothIcon as SettingsIcon, UserIcon, ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { BoltIcon as Zap, CheckCircleIcon } from '@heroicons/react/24/solid';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { APP_VERSION } from '../config/version';
 import { useToast } from '../hooks/useToast';
 import { useOfflineSync } from '../hooks/useOfflineSync';
@@ -12,6 +13,8 @@ import * as userService from '../services/userService';
 
 // Componentes UI
 import Sidebar from './Sidebar';
+import ModalPortal from './ModalPortal';
+import { Palette } from 'lucide-react';
 import Spinner from './Spinner';
 import PRToast from './PRToast';
 import ConfirmationModal from './ConfirmationModal';
@@ -96,7 +99,7 @@ export default function MainAppLayout({
     subscribeToSocialEvents,
     show2FAPromo,
     tourActive,
-  } = useAppStore(state => ({
+  } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     prNotification: state.prNotification,
     showWelcomeModal: state.showWelcomeModal,
@@ -118,9 +121,11 @@ export default function MainAppLayout({
     subscribeToSocialEvents: state.subscribeToSocialEvents,
     show2FAPromo: state.show2FAPromo,
     tourActive: state.tourActive,
-  }));
+  })));
 
   const [showAIModal, setShowAIModal] = useState(false);
+  const [showAccentUnlockModal, setShowAccentUnlockModal] = useState(false);
+  const [accentUnlockLevel, setAccentUnlockLevel] = useState(null);
   const [aiRemaining, setAiRemaining] = useState(() => localStorage.getItem('ai_remaining_uses') || '5');
   const [aiLimit, setAiLimit] = useState(() => localStorage.getItem('ai_daily_limit') || '5');
   const [viewResetKey, setViewResetKey] = useState(0);
@@ -657,7 +662,12 @@ export default function MainAppLayout({
           addToast(`+${event.amount} XP: ${event.reason}`, 'success');
         } else if (event.type === 'badge') {
           addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
-        } else if (event.type === 'challenge_completed') {
+        } else if (event.type === 'level_up') {
+            let extraStr = '';
+            if (event.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
+            if (event.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
+            addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel} 🚀${extraStr}`, 'success', 6000);
+          } else if (event.type === 'challenge_completed') {
           addToast(`¡Reto completado! ${event.message} (+${event.xpAdded} XP)`, 'success');
           if (event.leveledUp) {
             addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel} 🏆`, 'success', 6000);
@@ -668,6 +678,48 @@ export default function MainAppLayout({
     }
   }, [gamificationEvents, clearGamificationEvents, addToast]);
 
+  // --- MODAL DE DESBLOQUEO DE ACENTOS PARA USUARIOS EXISTENTES ---
+  useEffect(() => {
+    if (!userProfile || !gamification) return;
+    const level = gamification.level || 1;
+    const userId = userProfile.id;
+    if (!userId) return;
+    
+    // Si hay otros modales bloqueantes, no hacer nada aún
+    if (showWelcomeModal || show2FAPromo || tourActive || cookieConsent === null || showEmailVerificationModal || showCodeVerificationModal || isGlobalModalOpen) return;
+
+    const key5 = `accent_unlock_notified_5_${userId}`;
+    const key10 = `accent_unlock_notified_10_${userId}`;
+
+    // Priorizar nivel 10 sobre nivel 5
+    if (level >= 10 && localStorage.getItem(key10) !== 'true') {
+      const timer = setTimeout(() => {
+        setAccentUnlockLevel(10);
+        setShowAccentUnlockModal(true);
+        localStorage.setItem(key10, 'true');
+        localStorage.setItem(key5, 'true');
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else if (level >= 5 && localStorage.getItem(key5) !== 'true') {
+      const timer = setTimeout(() => {
+        setAccentUnlockLevel(5);
+        setShowAccentUnlockModal(true);
+        localStorage.setItem(key5, 'true');
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    userProfile?.id, 
+    gamification?.level, 
+    showWelcomeModal, 
+    show2FAPromo, 
+    tourActive, 
+    cookieConsent, 
+    showEmailVerificationModal, 
+    showCodeVerificationModal,
+    isGlobalModalOpen
+  ]);
+
   useEffect(() => {
     if (!userProfile) return;
     
@@ -677,7 +729,12 @@ export default function MainAppLayout({
     const handleGamificationEvent = async (data) => {
       if (data.type === 'referral_success') {
         useAppStore.getState().addReferralAnimation(data);
-      } else if (data.type === 'challenge_completed') {
+      } else if (data.type === 'level_up') {
+          let extraStr = '';
+          if (data.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
+          if (data.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
+          addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel} 🚀${extraStr}`, 'success', 6000);
+        } else if (data.type === 'challenge_completed') {
         addToast(`¡Reto completado! ${data.message} (+${data.xpAdded} XP)`, 'success');
         if (data.leveledUp) {
           addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel} 🏆`, 'success', 6000);
@@ -703,9 +760,19 @@ export default function MainAppLayout({
       }
     };
 
-    socket.on('GAMIFICATION_EVENT', handleGamificationEvent);
-    return () => socket.off('GAMIFICATION_EVENT', handleGamificationEvent);
-  }, [userProfile, addToast, setGamificationData]);
+      const handleChatEvent = () => {
+        const fetchUnreadChats = useAppStore.getState().fetchUnreadChats;
+        if (fetchUnreadChats) fetchUnreadChats();
+      };
+
+      socket.on('GAMIFICATION_EVENT', handleGamificationEvent);
+      socket.on('chat_message', handleChatEvent);
+      
+      return () => {
+        socket.off('GAMIFICATION_EVENT', handleGamificationEvent);
+        socket.off('chat_message', handleChatEvent);
+      };
+    }, [userProfile, addToast, setGamificationData]);
 
   useEffect(() => {
     if (userProfile && userProfile.email && userProfile.email.endsWith('@x-auth.local')) {
@@ -841,7 +908,7 @@ export default function MainAppLayout({
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold transition-all outline-none focus:outline-none ${
                       isAILimitReached 
                         ? 'bg-bg-secondary text-text-muted border border-glass-border opacity-70' 
-                        : 'bg-gradient-to-r from-accent to-accent/80 text-accent-contrast shadow-sm dark:shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-105 border border-black/10 dark:border-accent'
+                        : 'bg-accent text-accent-contrast shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-105 border border-transparent'
                     }`}
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                     title="Créditos IA"
@@ -860,7 +927,7 @@ export default function MainAppLayout({
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <BellIcon className="w-6 h-6" />
-                  {unreadCount > 0 && <span className="absolute top-1.5 right-2 w-3 h-3 bg-accent rounded-full z-10 border-2 border-black/10 dark:border-[--glass-bg] shadow-sm"></span>}
+                  {unreadCount > 0 && <span className="absolute top-1.5 right-2 w-3 h-3 bg-accent rounded-full z-10 border-2 border-[--glass-bg]"></span>}
                 </button>
               </div>
 
@@ -963,7 +1030,7 @@ export default function MainAppLayout({
                 >
                   <div className={`transition-transform duration-300 ${isVisuallyActive ? 'scale-125' : 'group-hover:scale-110'} relative`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
                     {typeof item.icon === 'function' ? item.icon(isVisuallyActive) : item.icon}
-                    {pendingCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-black/10 dark:border-[--glass-bg] shadow-sm"></span>}
+                    {pendingCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>}
                     {pendingCount === 0 && item.badge && <span className="absolute -top-1 -right-2 w-2 h-2 bg-accent rounded-full animate-pulse shadow-[0_0_8px_var(--color-accent-transparent)]"></span>}
                   </div>
                 </button>
@@ -1030,6 +1097,73 @@ export default function MainAppLayout({
 
       <AndroidDownloadPrompt />
       <APKUpdater />
+      {showAccentUnlockModal && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]" onClick={() => setShowAccentUnlockModal(false)}>
+            <div className="bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-t-[32px] sm:rounded-[32px] w-full max-w-md flex flex-col shadow-2xl overflow-hidden animate-[slide-up_0.3s_ease-out] mt-auto sm:mt-0" onClick={e => e.stopPropagation()}>
+
+              {/* Header con drag handle */}
+              <div className="shrink-0 p-5 sm:p-6 pb-0 flex flex-col items-center">
+                <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
+                <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mb-4">
+                  <Palette className="text-accent" size={28} />
+                </div>
+                <h3 className="text-xl font-black mb-2 text-text-primary">
+                  {accentUnlockLevel === 10 ? '¡10 Nuevos Colores!' : '¡5 Nuevos Colores!'}
+                </h3>
+              </div>
+
+              {/* Contenido */}
+              <div className="px-5 sm:px-6 pb-6 pt-2 text-center">
+                <p className="text-text-secondary mb-2 text-sm">
+                  {accentUnlockLevel === 10
+                    ? 'Al alcanzar el Nivel 10 has desbloqueado 5 colores pastel adicionales. ¡Junto con los del Nivel 5, ya tienes los 10 disponibles!'
+                    : 'Al alcanzar el Nivel 5 has desbloqueado 5 nuevos colores pastel para personalizar tu app.'}
+                </p>
+                <p className="text-text-muted text-xs mb-5">
+                  Ve a <strong>Hub → Personalización</strong> para aplicarlos.
+                </p>
+                <div className="flex gap-2.5 justify-center mb-6 flex-wrap">
+                  {accentUnlockLevel >= 5 && (
+                    <>
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#a8e6cf' }} title="Menta Suave" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffd3b6' }} title="Melocotón" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffaaa5' }} title="Agua de Rosas" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#c5a3ff' }} title="Lavanda" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#a2cffe' }} title="Azul Bebé" />
+                    </>
+                  )}
+                  {accentUnlockLevel >= 10 && (
+                    <>
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ff9a9e' }} title="Rosa Atardecer" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#c5e1a5' }} title="Pistacho" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffbe76' }} title="Mango" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fdfd96' }} title="Limonada" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fccbcf' }} title="Flor de Cerezo" />
+                    </>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setShowAccentUnlockModal(false);
+                    navigate('appearance');
+                  }}
+                  className="w-full py-3.5 px-4 bg-accent text-accent-contrast font-bold rounded-2xl hover:bg-accent/90 transition-all mb-2 active:scale-[0.97]"
+                >
+                  Ir a Personalización
+                </button>
+                <button
+                  onClick={() => setShowAccentUnlockModal(false)}
+                  className="w-full py-2.5 px-4 text-text-muted font-medium text-sm active:scale-[0.97]"
+                >
+                  Ahora no
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
       <ReferralSuccessAnimation />
     </div>
   );

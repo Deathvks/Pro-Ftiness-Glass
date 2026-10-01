@@ -267,7 +267,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                   
                                         <button
                     onClick={activeTab === 'search' ? executeSearch : undefined}
-                    className={`absolute right-3 p-2 rounded-[12px] transition-all active:scale-95 ${activeTab === 'search' ? 'bg-accent/10 text-accent hover:bg-accent hover:text-white cursor-pointer' : 'text-text-muted cursor-default'}`}
+                    className={`absolute right-3 p-2 rounded-[12px] transition-all active:scale-95 ${activeTab === 'search' ? 'bg-accent/10 text-accent hover:bg-accent hover:text-accent-contrast cursor-pointer' : 'text-text-muted cursor-default'}`}
                     title="Buscar">
                     
                                             <Search size={18} strokeWidth={2.5} />
@@ -328,7 +328,7 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
                   cancelMealReminder();
                 }}
                 disabled={isLoading}
-                className={`w-full flex items-center justify-center py-3.5 rounded-[16px] bg-accent text-white font-bold text-base hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20 ${isLoading ? 'opacity-60 cursor-not-allowed' : 'disabled:opacity-60'}`}>
+                className={`w-full flex items-center justify-center py-3.5 rounded-[16px] bg-accent text-accent-contrast font-bold text-base hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20 ${isLoading ? 'opacity-60 cursor-not-allowed' : 'disabled:opacity-60'}`}>
                 
                                 {isLoading ? <Spinner size={20} color="white" className="mr-2" /> : <Plus size={20} strokeWidth={2.5} className="mr-2" />}
                                 {isLoading ? 'Guardando...' : `Añadir Todo al Registro`}

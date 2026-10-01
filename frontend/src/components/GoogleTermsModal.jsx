@@ -94,7 +94,7 @@ const GoogleTermsModal = ({ isOpen, onClose, onAccept, onShowPolicy }) => {
           <div className="flex flex-col gap-3 mt-2">
             <button
               onClick={handleContinue}
-              className="w-full h-12 bg-accent text-white rounded-xl flex items-center justify-center gap-3 font-bold shadow-lg transition hover:scale-[1.02] hover:shadow-accent/25">
+              className="w-full h-12 bg-accent text-accent-contrast rounded-xl flex items-center justify-center gap-3 font-bold shadow-lg transition hover:scale-[1.02] hover:shadow-accent/25">
               
                 <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
                     <FcGoogle size={20} />

@@ -3,6 +3,7 @@ import ModalPortal from './ModalPortal';
 import React, { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react';
 import { X, Heart, Download, Loader2, ImageOff, Volume2, VolumeX, Trash2, ChevronLeft, Film } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import UserAvatar from './UserAvatar';
 import ConfirmationModal from './ConfirmationModal';
 
@@ -176,14 +177,14 @@ const FloatingHearts = ({ active }) => {
 };
 
 const StoryViewer = ({ userId, onClose }) => {
-  const {
+  const { 
     stories,
     myStories,
     userProfile,
     markStoryAsViewed,
     likeStory,
     deleteMyStory
-  } = useAppStore();
+   } = useAppStore(useShallow(state => ({ stories: state.stories, myStories: state.myStories, userProfile: state.userProfile, markStoryAsViewed: state.markStoryAsViewed, likeStory: state.likeStory, deleteMyStory: state.deleteMyStory })));
 
   const [viewingUserId, setViewingUserId] = useState(userId);
   const isMyStory = viewingUserId === userProfile?.id;
@@ -607,7 +608,7 @@ const StoryViewer = ({ userId, onClose }) => {
 
             <button
             onClick={animateAndClose}
-            className="w-full py-3.5 px-6 bg-accent hover:bg-accent/90 text-white font-bold rounded-xl transition-all transform active:scale-[0.98] shadow-lg shadow-accent/20 relative z-10">
+            className="w-full py-3.5 px-6 bg-accent hover:bg-accent/90 text-accent-contrast font-bold rounded-xl transition-all transform active:scale-[0.98] shadow-lg shadow-accent/20 relative z-10">
             
                 Volver al Feed
             </button>

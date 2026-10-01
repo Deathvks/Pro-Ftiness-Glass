@@ -2,6 +2,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
+import { useToast } from '../hooks/useToast';
+import { useShallow } from 'zustand/react/shallow';
 import Spinner from '../components/Spinner';
 import { isToday, isYesterday, parseISO } from 'date-fns';
 import {
@@ -250,7 +252,7 @@ const LoginDetailsModal = ({ notification, onClose, timeZone }) => {
 
 const NotificationsScreen = ({ setView }) => {
   const navigate = useNavigate();
-  const {
+  const { 
     notifications,
     unreadCount,
     notificationsLoading,
@@ -262,10 +264,11 @@ const NotificationsScreen = ({ setView }) => {
     removeNotification,
     clearAllNotifications,
     userProfile
-  } = useAppStore();
+   } = useAppStore(useShallow(state => ({ notifications: state.notifications, unreadCount: state.unreadCount, notificationsLoading: state.notificationsLoading, notificationPage: state.notificationPage, notificationTotalPages: state.notificationTotalPages, fetchNotifications: state.fetchNotifications, markNotificationAsRead: state.markNotificationAsRead, markAllNotificationsAsRead: state.markAllNotificationsAsRead, removeNotification: state.removeNotification, clearAllNotifications: state.clearAllNotifications, userProfile: state.userProfile })));
 
   const { scheduleEngagementNotifications, scheduleDailyReminders } = useLocalNotifications();
 
+  const { addToast } = useToast();
   const [activeFilter, setActiveFilter] = useState('all');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
@@ -331,8 +334,10 @@ const NotificationsScreen = ({ setView }) => {
 
     if (deleteAction.type === 'all') {
       await clearAllNotifications();
+      addToast('Todas las notificaciones borradas', 'success');
     } else if (deleteAction.type === 'single' && deleteAction.id) {
       await removeNotification(deleteAction.id);
+      addToast('Notificación borrada', 'success');
     }
     setDeleteAction(null);
   };
@@ -509,7 +514,7 @@ const NotificationsScreen = ({ setView }) => {
               onClick={() => setActiveFilter(f.id)}
               className={`px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap outline-none flex items-center gap-2 ${
                   activeFilter === f.id
-                      ? 'bg-accent text-white shadow-md shadow-accent/30 scale-105'
+                      ? 'bg-accent text-accent-contrast shadow-md shadow-accent/30 scale-105'
                       : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
               }`}
             >

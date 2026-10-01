@@ -128,7 +128,7 @@ const WorkoutReviewModal = ({ onClose, onConfirm, isSaving }) => {
                     <button
             onClick={onConfirm}
             disabled={isSaving}
-            className="w-full py-3.5 bg-accent text-white rounded-xl font-bold text-lg hover:bg-accent/90 transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            className="w-full py-3.5 bg-accent text-accent-contrast rounded-xl font-bold text-lg hover:bg-accent/90 transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
             
                         {isSaving ?
             <>{t('exercise_ui:saving', 'Guardando...')}</> :

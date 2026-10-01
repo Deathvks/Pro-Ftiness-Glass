@@ -75,7 +75,7 @@ const VersionUpdater = () => {
 
                 <button
           onClick={handleUpdate}
-          className="w-full py-3 px-4 bg-accent text-white font-bold rounded-xl hover:bg-accent/90 transition-all flex items-center justify-center gap-2">
+          className="w-full py-3 px-4 bg-accent text-accent-contrast font-bold rounded-xl hover:bg-accent/90 transition-all flex items-center justify-center gap-2">
           
                     <RefreshCw size={18} />
                     Actualizar ahora

@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { Lightbulb, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
 
 import DailyDetailView from '../components/progress/DailyDetailView';
@@ -43,12 +44,12 @@ const TABS = [
 const Progress = ({ darkMode, setView }) => {
     const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_muscles']);
 
-    const { workoutLog, bodyWeightLog, exercises, getOrFetchAllExercises } = useAppStore(state => ({
+    const { workoutLog, bodyWeightLog, exercises, getOrFetchAllExercises } = useAppStore(useShallow(state => ({
         workoutLog: state.workoutLog,
         bodyWeightLog: state.bodyWeightLog,
         exercises: state.allExercises || [],
         getOrFetchAllExercises: state.getOrFetchAllExercises
-    }));
+    })));
 
     const tabsRef = React.useRef(null);
 
@@ -168,6 +169,10 @@ const Progress = ({ darkMode, setView }) => {
             .filter(Boolean)
             .sort((a, b) => a.timestamp - b.timestamp);
     }, [bodyWeightLog]);
+
+    const allExercisesNames = useMemo(() => {
+        return (exercises || []).map(ex => ex.name).sort((a, b) => a.localeCompare(b));
+    }, [exercises]);
 
     const executedExercisesList = useMemo(() => {
         const exerciseSet = new Set(
@@ -399,7 +404,7 @@ const Progress = ({ darkMode, setView }) => {
                             }}
                             className={`px-5 py-2.5 text-sm font-bold rounded-[20px] transition-all duration-300 whitespace-nowrap outline-none ${
                                 viewType === tab.id 
-                                    ? 'bg-accent text-white shadow-lg shadow-accent/20 scale-[1.02] active-tab' 
+                                    ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02] active-tab' 
                                     : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'
                             }`}
                         >

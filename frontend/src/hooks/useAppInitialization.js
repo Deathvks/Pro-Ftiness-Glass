@@ -159,6 +159,11 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
         // Volvemos a comprobar los permisos (silenciosamente) por si los activó en ajustes
         if (isAuthenticated) {
             checkAndRequestPermissions();
+            // Refetch unread counts just in case we received messages while in the background
+            const state = useAppStore.getState();
+            if (state.fetchUnreadChats) {
+              state.fetchUnreadChats();
+            }
         }
       }
     };

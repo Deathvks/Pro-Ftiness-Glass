@@ -29,47 +29,6 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        buttonRef.current && !buttonRef.current.contains(event.target) &&
-        dropdownRef.current && !dropdownRef.current.contains(event.target)
-      ) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    // En iOS, el autoFocus del input despliega el teclado y hace que el navegador
-    // haga scroll automáticamente para centrarlo. Ignoramos los scrolls en el primer medio segundo.
-    let justOpened = true;
-    const timer = setTimeout(() => { justOpened = false; }, 500);
-
-    const handleScroll = (event) => {
-      if (isOpen && !justOpened) {
-        if (
-          (dropdownRef.current && dropdownRef.current.contains(event.target)) ||
-          (buttonRef.current && buttonRef.current.contains(event.target))
-        ) {
-          return;
-        }
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('scroll', handleScroll, true);
-    }
-    
-    return () => {
-      document.removeEventListener('scroll', handleScroll, true);
-      clearTimeout(timer);
-    };
-  }, [isOpen]);
-
   const selectedValues = multiple ? (typeof value === 'string' && value ? value.split(',').map(v => v.trim()) : []) : [];
   const selectedOption = !multiple ? options.find(opt => opt.value === value && !opt.isHeader) : null;
 
@@ -110,7 +69,16 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
   });
 
   const DropdownPortal = () => createPortal(
-    <div
+    <>
+      <div 
+        className="fixed inset-0 z-[9998]" 
+        onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
+        onTouchStart={(e) => { e.stopPropagation(); setIsOpen(false); }}
+      />
+      <div
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
       ref={dropdownRef}
       style={{
         position: 'fixed',
@@ -119,7 +87,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
         left: `${position.left}px`,
         minWidth: `${position.width}px`,
       }}
-      className={`bg-bg-secondary border border-transparent dark:border dark:border-white/10 rounded-xl shadow-lg z-[9999] flex flex-col ${
+      className={`no-swipe bg-bg-secondary border border-transparent dark:border dark:border-white/10 rounded-xl shadow-lg z-[9999] flex flex-col ${
         position.bottom !== undefined ? 'animate-[fade-in-down_0.2s_ease_out]' : 'animate-[fade-in-up_0.2s_ease_out]'
       }`}
     >
@@ -131,8 +99,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-black/5 dark:bg-white/5 rounded-lg px-3 py-2 text-sm outline-none text-text-primary focus:ring-1 focus:ring-accent"
-            autoFocus
-          />
+            />
         </div>
       )}
       
@@ -160,7 +127,8 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
           ))
         )}
       </div>
-    </div>,
+    </div>
+    </>,
     document.body
   );
 

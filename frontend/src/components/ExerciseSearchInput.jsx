@@ -37,7 +37,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
   // Al no depender de isSearching, cerramos el teclado (y perdemos foco)
   // sin borrar el texto que el usuario había escrito.
   useEffect(() => {
-    setInputValue(String(initialQuery || ''));
+    // setInputValue(String(initialQuery || '')); // Don't clear text so user doesn't lose it when scrolling/dismissing keyboard
   }, [initialQuery]);
 
   // Maneja el clic fuera para cerrar el dropdown en lugar de usar onBlur
@@ -53,21 +53,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
         const currentVal = inputValue.trim();
         const initialVal = String(initialQuery || '').trim();
 
-        if (currentVal && currentVal !== initialVal && !disableManualAdd) {
-          const fakeExercise = {
-            id: null, 
-            name: currentVal,
-            muscle_group: tMuscle('unknown', { defaultValue: 'N/A' }), 
-            image_url: null, 
-            video_url: null,
-            image_url_start: null,
-            image_url_end: null,
-            is_manual: true 
-          };
-          onExerciseSelect(fakeExercise);
-        } else {
-          setInputValue(String(initialQuery || ''));
-        }
+        setInputValue(String(initialQuery || ''));
       }
     };
 
@@ -157,7 +143,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
     };
 
     onExerciseSelect(normalizedExercise); 
-    setInputValue('');
+    setInputValue(exercise.name || '');
     setIsSearching(false); 
   };
 
@@ -188,11 +174,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
     return (
       <div className="border-t border-black/5 dark:border-white/10 mt-1">
         <button
-          onClick={(e) => {
-            e.preventDefault(); 
-            e.stopPropagation();
-            handleAddManualClick();
-          }}
+          onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleAddManualClick(); }}
           className="flex items-center w-full gap-3 p-4 text-left text-accent font-bold hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
         >
           <div className="p-2 bg-accent/10 rounded-full">
@@ -238,11 +220,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
             {filteredExercises.map(exercise => (
               <li key={exercise.id}>
                 <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleSelect(exercise);
-                  }}
+                  onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleSelect(exercise); }}
                   className="flex items-center w-full gap-4 px-4 py-3 text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
                 >
                   <div className="w-12 h-12 rounded-[14px] overflow-hidden shrink-0 ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-black/5 dark:bg-white/5 p-1">
@@ -327,3 +305,4 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
 };
 
 export default ExerciseSearchInput;
+

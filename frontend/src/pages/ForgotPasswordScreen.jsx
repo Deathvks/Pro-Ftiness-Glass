@@ -40,7 +40,7 @@ const ForgotPasswordScreen = ({ showLogin }) => {
                 route="forgot-password"
             />
 
-            <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
+            <div className="auth-container flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
                 <div className="w-full max-w-md text-center">
                     
                     {!isSubmitted ? (
@@ -71,7 +71,7 @@ const ForgotPasswordScreen = ({ showLogin }) => {
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="flex items-center justify-center gap-2 w-full rounded-[20px] bg-accent text-white font-bold text-lg py-4 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-accent/20"
+                                        className="flex items-center justify-center gap-2 w-full rounded-[20px] bg-accent text-accent-contrast font-bold text-lg py-4 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-lg shadow-accent/20"
                                     >
                                         {isLoading ? <Spinner size={24} color="white" /> : (
                                             <>

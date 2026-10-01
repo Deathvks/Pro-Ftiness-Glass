@@ -26,7 +26,7 @@ const NoActiveWorkout = ({ setView, onStartQuickCardio }) => {
         <div className="flex flex-col sm:flex-row gap-4 w-full">
           <button
             onClick={() => setView('routines')}
-            className="flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-[20px] bg-accent text-white font-bold text-base transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-accent/20"
+            className="flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-[20px] bg-accent text-accent-contrast font-bold text-base transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-accent/20"
           >
             <Dumbbell size={20} strokeWidth={2.5} />
             Ir a Rutinas

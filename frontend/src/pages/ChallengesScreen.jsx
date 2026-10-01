@@ -156,19 +156,19 @@ const ChallengesScreen = ({ setView }) => {
                     {/* Tabs */}
                     <div className="flex gap-3 mb-8">
                         <button 
-                            className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'daily' ? 'bg-accent text-white shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
+                            className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'daily' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
                             onClick={() => setActiveTab('daily')}
                         >
                             Diarios
                         </button>
                         <button 
-                            className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'general' ? 'bg-accent text-white shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
+                            className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'general' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
                             onClick={() => setActiveTab('general')}
                         >
                             Generales
                         </button>
                         <button 
-                            className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'completed' ? 'bg-accent text-white shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
+                            className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'completed' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
                             onClick={() => setActiveTab('completed')}
                         >
                             Completados

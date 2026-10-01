@@ -272,6 +272,7 @@ html.galaxy-theme #root::after {
   --color-accent: #84cc16;
   --color-accent-transparent: rgba(132, 204, 22, 0.12);
   --color-accent-border: rgba(132, 204, 22, 0.28);
+  --btn-accent-text: #000000;
 }
 
 .accent-fuchsia {
@@ -314,6 +315,7 @@ html.galaxy-theme #root::after {
   --color-accent: #eab308;
   --color-accent-transparent: rgba(234, 179, 8, 0.12);
   --color-accent-border: rgba(234, 179, 8, 0.28);
+  --btn-accent-text: #000000;
 }
 
 .accent-sky {
@@ -339,6 +341,79 @@ html.galaxy-theme #root::after {
   --color-accent-transparent: rgba(120, 113, 108, 0.12);
   --color-accent-border: rgba(120, 113, 108, 0.28);
 }
+
+/* 4.1) NUEVOS ACENTOS PASTEL */
+.accent-mint {
+  --color-accent: #a8e6cf;
+  --color-accent-transparent: rgba(168, 230, 207, 0.12);
+  --color-accent-border: rgba(168, 230, 207, 0.28);
+  --btn-accent-text: #000000;
+}
+
+.accent-peach {
+  --color-accent: #ffd3b6;
+  --color-accent-transparent: rgba(255, 211, 182, 0.12);
+  --color-accent-border: rgba(255, 211, 182, 0.28);
+  --btn-accent-text: #000000;
+}
+
+.accent-rose-water {
+  --color-accent: #ffaaa5;
+  --color-accent-transparent: rgba(255, 170, 165, 0.12);
+  --color-accent-border: rgba(255, 170, 165, 0.28);
+  --btn-accent-text: #000000;
+}
+
+.accent-lavender {
+  --color-accent: #c5a3ff;
+  --color-accent-transparent: rgba(197, 163, 255, 0.12);
+  --color-accent-border: rgba(197, 163, 255, 0.28);
+  --btn-accent-text: #000000;
+}
+
+.accent-baby-blue {
+  --color-accent: #a2cffe;
+  --color-accent-transparent: rgba(162, 207, 254, 0.12);
+  --color-accent-border: rgba(162, 207, 254, 0.28);
+  --btn-accent-text: #000000;
+}
+
+.accent-sunset-pink {
+  --color-accent: #ff9a9e;
+  --color-accent-transparent: rgba(255, 154, 158, 0.12);
+  --color-accent-border: rgba(255, 154, 158, 0.28);
+  --btn-accent-text: #000000;
+}
+
+.accent-pistachio {
+  --color-accent: #c5e1a5;
+  --color-accent-transparent: rgba(197, 225, 165, 0.12);
+  --color-accent-border: rgba(197, 225, 165, 0.28);
+  --btn-accent-text: #000000;
+}
+
+.accent-mango {
+  --color-accent: #ffbe76;
+  --color-accent-transparent: rgba(255, 190, 118, 0.12);
+  --color-accent-border: rgba(255, 190, 118, 0.28);
+  --btn-accent-text: #000000;
+}
+
+.accent-lemonade {
+  --color-accent: #fdfd96;
+  --color-accent-transparent: rgba(253, 253, 150, 0.12);
+  --color-accent-border: rgba(253, 253, 150, 0.28);
+  --btn-accent-text: #000000;
+}
+
+.accent-cherry-blossom {
+  --color-accent: #fccbcf;
+  --color-accent-transparent: rgba(252, 203, 207, 0.12);
+  --color-accent-border: rgba(252, 203, 207, 0.28);
+  --btn-accent-text: #000000;
+}
+
+
 
 .accent-neutral {
   --color-accent: #737373;
@@ -552,7 +627,7 @@ html.galaxy-theme #root::after {
 
   .light-theme input[type="checkbox"]:checked {
     background-color: var(--color-accent) !important;
-    border-color: rgba(0, 0, 0, 0.3) !important;
+    border-color: var(--color-accent) !important;
   }
   .light-theme input[type="checkbox"]:checked::before {
     color: var(--btn-accent-text, #ffffff);
@@ -1072,12 +1147,26 @@ body .driver-popover .driver-popover-close-btn:hover {
   display: none !important;
 }
 
-/* Correcciones de contraste para temas pastel en Light Mode */
-:root { --text-accent: var(--color-accent); }
-/* Para que los iconos activos en pastel se vean sobre fondo blanco sin cambiar su color */
-html.light-theme .text-accent {
-  filter: drop-shadow(0.5px 0 0 rgba(0,0,0,0.4)) 
-          drop-shadow(-0.5px 0 0 rgba(0,0,0,0.4)) 
-          drop-shadow(0 0.5px 0 rgba(0,0,0,0.4)) 
-          drop-shadow(0 -0.5px 0 rgba(0,0,0,0.4));
+.text-accent-contrast {
+  color: var(--btn-accent-text, #ffffff) !important;
 }
+
+:root { --text-accent: var(--color-accent); }
+
+
+
+/* 4.2) MEJORAS DE CONTRASTE PARA TEXTO EN MODO CLARO */
+/* Los colores pastel y amarillos tienen muy bajo contraste sobre fondo blanco.
+   Sobrescribimos --text-accent para oscurecer el texto sin cambiar los botones. */
+html.light-theme.accent-yellow main, html.light-theme.accent-yellow .auth-container { --text-accent: #a16207; }
+html.light-theme.accent-lemonade main, html.light-theme.accent-lemonade .auth-container { --text-accent: #a16207; }
+html.light-theme.accent-mango main, html.light-theme.accent-mango .auth-container { --text-accent: #c2410c; }
+html.light-theme.accent-mint main, html.light-theme.accent-mint .auth-container { --text-accent: #0f766e; }
+html.light-theme.accent-peach main, html.light-theme.accent-peach .auth-container { --text-accent: #c2410c; }
+html.light-theme.accent-rose-water main, html.light-theme.accent-rose-water .auth-container { --text-accent: #be123c; }
+html.light-theme.accent-lavender main, html.light-theme.accent-lavender .auth-container { --text-accent: #6d28d9; }
+html.light-theme.accent-baby-blue main, html.light-theme.accent-baby-blue .auth-container { --text-accent: #1d4ed8; }
+html.light-theme.accent-sunset-pink main, html.light-theme.accent-sunset-pink .auth-container { --text-accent: #be123c; }
+html.light-theme.accent-pistachio main, html.light-theme.accent-pistachio .auth-container { --text-accent: #4d7c0f; }
+html.light-theme.accent-cherry-blossom main, html.light-theme.accent-cherry-blossom .auth-container { --text-accent: #be123c; }
+html.light-theme.accent-sky main, html.light-theme.accent-sky .auth-container { --text-accent: #0284c7; }

@@ -131,7 +131,7 @@ const SecurityDashboard = ({ onBack }) => {
               role="button"
               tabIndex={0}
               onClick={() => setTimeRange(days)}
-              className={"px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ring-1 flex items-center justify-center cursor-pointer " + (timeRange === days ? 'bg-accent text-white ring-accent' : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10')}
+              className={"px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ring-1 flex items-center justify-center cursor-pointer " + (timeRange === days ? 'bg-accent text-accent-contrast ring-accent' : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10')}
             >
               {days === 1 ? '24h' : days + ' Días'}
             </div>
@@ -192,13 +192,13 @@ const SecurityDashboard = ({ onBack }) => {
         </button>
         <button
           onClick={() => setActiveTab('success')}
-          className={"flex-1 py-2 rounded-full text-sm font-bold transition-all " + (activeTab === 'success' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'text-text-secondary hover:text-text-primary')}
+          className={"flex-1 py-2 rounded-full text-sm font-bold transition-all " + (activeTab === 'success' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20' : 'text-text-secondary hover:text-text-primary')}
         >
           Auditoría
         </button>
         <button
           onClick={() => setActiveTab('blacklist')}
-          className={"flex-1 py-2 rounded-full text-sm font-bold transition-all " + (activeTab === 'blacklist' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'text-text-secondary hover:text-text-primary')}
+          className={"flex-1 py-2 rounded-full text-sm font-bold transition-all " + (activeTab === 'blacklist' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20' : 'text-text-secondary hover:text-text-primary')}
         >
           Lista Negra
         </button>

@@ -21,7 +21,7 @@ export const checkBlacklist = async (req, res, next) => {
 
     if (blocked) {
       // Registramos que intentó entrar estando bloqueado
-      console.log(`[SECURITY LOG] Registrando evento: ${eventType} para el usuario: ${userId}, IP: ${ipAddress}`);
+      console.log(`[SECURITY LOG] Intento de acceso de IP bloqueada: ${ip}`);
     await SecurityLog.create({
         eventType: 'BLOCKED_ACCESS_ATTEMPT',
         ipAddress: ip,
@@ -111,4 +111,49 @@ export const logSecurityEvent = async ({ eventType, ipAddress, userId, userAgent
   } catch (error) {
     console.error('Error guardando security log:', error);
   }
+};
+
+// Middleware para detectar y bloquear intentos de acceso a archivos sensibles (Sniffing/Honeypot)
+export const sniffingDetector = async (req, res, next) => {
+  const sensitivePaths = [
+    '/.env', '/.git', '/.git/config', '/wp-config.php', '/wp-admin', 
+    '/config.json', '/docker-compose.yml', '/package.json', 
+    '/.aws/credentials', '/phpinfo.php', '/.htaccess'
+  ];
+
+  // Convert to lower case for case-insensitive check
+  const url = req.originalUrl.toLowerCase();
+  
+  const isSensitive = sensitivePaths.some(path => url.includes(path));
+
+  if (isSensitive) {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    if (!ip) return res.status(403).end();
+    
+    // Auto-ban IP permanently
+    try {
+      await IpBlacklist.findOrCreate({
+        where: { ipAddress: ip },
+        defaults: {
+          reason: 'Autobloqueo: Intento de Sniffing a archivo sensible (' + url + ')',
+          expiresAt: null
+        }
+      });
+
+      await logSecurityEvent({
+        eventType: 'AUTO_BAN_SNIFFING',
+        ipAddress: ip,
+        userId: null,
+        userAgent: req.headers['user-agent'] || 'Unknown',
+        details: 'IP bloqueada automaticamente por intentar acceder a ruta restringida: ' + req.originalUrl
+      });
+      
+      return res.status(403).json({ error: 'Acceso denegado. IP bloqueada por politicas de ciberseguridad.' });
+    } catch (error) {
+      console.error('Error in sniffingDetector:', error);
+      return res.status(403).end();
+    }
+  }
+
+  next();
 };

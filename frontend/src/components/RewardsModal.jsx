@@ -142,7 +142,7 @@ export default function RewardsModal({ isOpen, onClose }) {
                       disabled={isActive}
                       className={`w-full py-2.5 rounded-xl font-bold text-sm transition-all ${
                       isActive ?
-                      'bg-accent text-white shadow-md cursor-default' :
+                      'bg-accent text-accent-contrast shadow-md cursor-default' :
                       'bg-black/5 dark:bg-white/5 text-text-primary hover:bg-black/10 dark:hover:bg-white/10'}`
                       }>
                       

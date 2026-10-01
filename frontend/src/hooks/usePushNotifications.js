@@ -111,8 +111,12 @@ export const usePushNotifications = () => {
     checkSubscription();
 
     // --- NUEVO: Listeners Nativos de Firebase ---
+    let registrationListener;
+    let errorListener;
+
     if (isNative) {
       PushNotifications.addListener('registration', async (token) => {
+        console.log('[PUSH NATIVO] ¡Evento registration recibido!', token.value);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         try {
           // Guardamos el token FCM con formato especial para identificarlo en el backend
@@ -130,22 +134,22 @@ export const usePushNotifications = () => {
           addToast('Error al vincular con el servidor.', 'error');
         }
         setIsLoading(false);
-      });
+      }).then(listener => registrationListener = listener);
 
       PushNotifications.addListener('registrationError', (err) => {
+        console.error('[PUSH NATIVO] ¡Evento registrationError recibido!', err);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         console.error('Error en el registro nativo:', err);
         setError('Error al registrar dispositivo.');
         setIsLoading(false);
-      });
+      }).then(listener => errorListener = listener);
     }
 
     // Limpiamos los listeners al desmontar
     return () => {
       isMounted = false;
-      if (isNative) {
-        PushNotifications.removeAllListeners();
-      }
+      if (registrationListener) registrationListener.remove();
+      if (errorListener) errorListener.remove();
     };
   }, [isSupported, getServiceWorkerRegistration, isNative, addToast]);
 
@@ -160,21 +164,47 @@ export const usePushNotifications = () => {
 
     setIsLoading(true);
     setError(null);
+    
+    // Fallback timeout global absoluto para asegurar que nunca se quede colgado
+    const globalTimeout = setTimeout(() => {
+       setIsLoading(false);
+       addToast('Tiempo agotado. Comprueba tu conexión o reinicia la app.', 'warning');
+    }, 15000);
 
     try {
       if (isNative) {
         // --- SUSCRIPCIÓN NATIVA (Firebase) ---
+        console.log('[PUSH NATIVO] Solicitando permisos...');
         const perm = await PushNotifications.requestPermissions();
+        console.log('[PUSH NATIVO] Permisos concedidos:', perm.receive);
         if (perm.receive === 'granted') {
           // Esto dispara el listener 'registration' que configuramos en el useEffect
           timeoutRef.current = setTimeout(() => {
              setIsLoading(false);
+             clearTimeout(globalTimeout);
              addToast('Tiempo agotado. Revisa tus servicios de Google Play o la conexión.', 'warning');
           }, 10000);
-          await PushNotifications.register(); 
+          console.log('[PUSH NATIVO] Llamando a PushNotifications.register()...');
+          await PushNotifications.register();
+          console.log('[PUSH NATIVO] PushNotifications.register() ejecutado correctamente (esperando eventos).'); 
         } else {
-          addToast('No se ha concedido el permiso para las notificaciones.', 'warning');
+          addToast('Permiso denegado. Se abrirán los ajustes para activarlo.', 'warning');
+          setTimeout(async () => {
+              try {
+                const { NativeSettings, AndroidSettings, IOSSettings } = require('capacitor-native-settings');
+                if (Capacitor.getPlatform() === 'android') {
+                    // AppNotification abre directamente la pestaña de notificaciones de la app
+                    await NativeSettings.openAndroid({ option: AndroidSettings.AppNotification });
+                } else if (Capacitor.getPlatform() === 'ios') {
+                    // AppNotification también existe en iOS para ir directo (IOSSettings.AppNotification)
+                    await NativeSettings.openIOS({ option: IOSSettings.AppNotification });
+                }
+             } catch(e) {
+                 console.log("Error al abrir settings:", e);
+             }
+          }, 1500);
           setIsLoading(false);
+          clearTimeout(globalTimeout);
         }
       } else {
         // --- SUSCRIPCIÓN WEB (VAPID) ---
@@ -183,6 +213,7 @@ export const usePushNotifications = () => {
         if (permission === 'denied') {
           addToast('Has bloqueado las notificaciones. Debes activarlas en los ajustes de tu navegador.', 'error');
           setIsLoading(false);
+          clearTimeout(globalTimeout);
           return;
         }
 
@@ -192,6 +223,7 @@ export const usePushNotifications = () => {
           if (newPermission !== 'granted') {
             addToast('No se ha concedido el permiso para las notificaciones.', 'warning');
             setIsLoading(false);
+            clearTimeout(globalTimeout);
             return;
           }
         }
@@ -202,7 +234,11 @@ export const usePushNotifications = () => {
         const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
 
         // 4. Suscribir el PushManager
-        const registration = await getServiceWorkerRegistration();
+        const registration = await Promise.race([
+            getServiceWorkerRegistration(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Service Worker timeout')), 5000))
+        ]);
+        
         const newSubscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey,
@@ -215,9 +251,11 @@ export const usePushNotifications = () => {
         setIsSubscribed(true);
         addToast('¡Notificaciones activadas!', 'success');
         setIsLoading(false);
+        clearTimeout(globalTimeout);
       }
 
     } catch (err) {
+      clearTimeout(globalTimeout);
       // --- INICIO DE LA MODIFICACIÓN: Detección de error específico de Brave ---
       const errorMessage = err.message || '';
       

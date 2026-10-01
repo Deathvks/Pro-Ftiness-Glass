@@ -8,6 +8,7 @@ import {
   Clock, Flame, Footprints, ChevronLeft
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { 
   calculateDistance, 
   calculatePace, 
@@ -60,12 +61,12 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
   const navigate = useNavigate();
   const { addToast } = useToast();
 
-  const { userProfile, bodyWeightLog, fetchInitialData, logWorkout } = useAppStore(state => ({
+  const { userProfile, bodyWeightLog, fetchInitialData, logWorkout } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     bodyWeightLog: state.bodyWeightLog,
     fetchInitialData: state.fetchInitialData,
     logWorkout: state.logWorkout
-  }));
+  })));
 
   // --- TEMA PARA EL MAPA Y ACENTOS ---
   const { theme, accent } = useAppTheme();
@@ -371,7 +372,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
             <button onClick={goBack} className="px-6 py-3 bg-bg-secondary rounded-full font-bold text-text-primary transition hover:scale-105">
               Volver
             </button>
-            <button onClick={() => setShowPermissionModal(true)} className="px-6 py-3 bg-accent rounded-full font-bold text-white transition hover:scale-105">
+            <button onClick={() => setShowPermissionModal(true)} className="px-6 py-3 bg-accent rounded-full font-bold text-accent-contrast transition hover:scale-105">
               ¿Cómo activar?
             </button>
           </div>
@@ -438,7 +439,7 @@ const ActiveCardioSession = ({ activityId: propActivityId, setView: propSetView 
           <activity.icon size={16} className={activity.color} />
           <span className="font-bold text-white text-sm">{activity.name}</span>
         </div>
-        <button onClick={() => setFollowUser(!followUser)} className={`p-3 backdrop-blur-md rounded-full transition ${followUser ? 'bg-accent text-bg-primary' : 'bg-black/40 text-white'}`}>
+        <button onClick={() => setFollowUser(!followUser)} className={`p-3 backdrop-blur-md rounded-full transition ${followUser ? 'bg-accent text-bg-primary' : 'bg-black/40 text-accent-contrast'}`}>
           <Navigation size={24} fill={followUser ? "currentColor" : "none"} />
         </button>
       </div>

@@ -14,6 +14,7 @@ import { normalizeText } from "../../../utils/helpers";
 import { askTrainerAI } from "../../../services/aiService";
 import ExerciseMedia from "../../ExerciseMedia";
 import CustomSelect from "../../CustomSelect";
+import { useTranslation } from "react-i18next";
 
 const REP_OPTIONS = [
   { isHeader: true, label: "Repeticiones" },
@@ -71,7 +72,6 @@ const ExerciseDetailView = ({
   onBack,
   onAdd,
   isStaged,
-  t,
   isReplacing = false,
   isReadOnly = false,
 }) => {
@@ -79,6 +79,13 @@ const ExerciseDetailView = ({
   const [reps, setReps] = useState("8-12");
   const [rest, setRest] = useState(60);
   const { theme } = useAppTheme();
+  const { t } = useTranslation([
+    "exercise_names",
+    "exercise_muscles",
+    "exercise_equipment",
+    "exercise_descriptions",
+    "exercise_ui",
+  ]);
 
   // --- LOG PARA CAPTURAR LA CLAVE EXACTA DE CUALQUIER EJERCICIO ---
   useEffect(() => {
@@ -135,16 +142,11 @@ const ExerciseDetailView = ({
     defaultValue: exercise.name,
   });
 
-  const rawMuscleGroup =
-    exercise.muscle_group ||
-    exercise.muscles ||
-    exercise.target ||
-    exercise.category ||
-    "Other";
-  const translatedMuscle = rawMuscleGroup
-    .split(",")
+  const rawMuscleGroup = exercise.muscle_group || exercise.muscles || exercise.target || exercise.category || "Other";
+  const muscleArray = Array.isArray(rawMuscleGroup) ? rawMuscleGroup : (typeof rawMuscleGroup === 'string' ? rawMuscleGroup.split(",") : ["Other"]);
+  const translatedMuscle = muscleArray
     .map((m) => {
-      const trimmed = m.trim();
+      const trimmed = String(m).trim();
       return t(trimmed, {
         ns: "exercise_muscles",
         defaultValue: trimmed,
@@ -153,10 +155,10 @@ const ExerciseDetailView = ({
     .join(", ");
 
   const rawEquipment = exercise.equipment || "None";
-  const translatedEquipment = rawEquipment
-    .split(",")
+  const equipmentArray = Array.isArray(rawEquipment) ? rawEquipment : (typeof rawEquipment === 'string' ? rawEquipment.split(",") : ["None"]);
+  const translatedEquipment = equipmentArray
     .map((e) => {
-      const trimmed = e.trim();
+      const trimmed = String(e).trim();
       return t(trimmed, {
         ns: "exercise_equipment",
         defaultValue: trimmed,
@@ -227,11 +229,17 @@ const ExerciseDetailView = ({
   const inputClasses =
     "w-full text-center px-4 py-3.5 rounded-[16px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 focus:ring-2 focus:ring-accent/50 outline-none transition-all font-bold text-text-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 
-  const currentReps = String(reps || "10");
+   const currentReps = String(reps || "10");
   const hasCurrentRep = REP_OPTIONS.some((opt) => opt.value === currentReps);
   const repOptionsToUse = hasCurrentRep
     ? REP_OPTIONS
     : [{ value: currentReps, label: currentReps }, ...REP_OPTIONS];
+
+  const currentRest = String(rest || "60");
+  const hasCurrentRest = REST_OPTIONS.some((opt) => opt.value === currentRest);
+  const restOptionsToUse = hasCurrentRest
+    ? REST_OPTIONS
+    : [{ value: currentRest, label: `${currentRest}s` }, ...REST_OPTIONS];
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -406,9 +414,9 @@ const ExerciseDetailView = ({
                 {t("exercise_ui:rest_s", "Desc. (s)")}
               </label>
               <div>
-                <CustomSelect
-                  value={currentRest}
-                  onChange={(val) => setRest(Number(val))}
+                  <CustomSelect
+                    value={rest}
+                    onChange={(val) => setRest(Number(val))}
                   options={restOptionsToUse}
                   className="w-full bg-black/5 dark:bg-white/5 rounded-[16px] ring-1 ring-black/5 dark:ring-white/10"
                   triggerClassName={
@@ -429,7 +437,7 @@ const ExerciseDetailView = ({
         {isReplacing ? (
           <button
             onClick={handleAddClick}
-            className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-[20px] font-bold text-base sm:text-lg transition-all hover:scale-[1.02] active:scale-95 bg-accent text-white shadow-lg shadow-accent/20"
+            className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-[20px] font-bold text-base sm:text-lg transition-all hover:scale-[1.02] active:scale-95 bg-accent text-accent-contrast shadow-lg shadow-accent/20"
           >
             <Repeat size={24} />
             {t("exercise_ui:replace_exercise", "Reemplazar Ejercicio")}
@@ -441,7 +449,7 @@ const ExerciseDetailView = ({
             className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-[20px] font-bold text-base sm:text-lg transition-all hover:scale-[1.02] active:scale-95 ${
               isStaged
                 ? "bg-green-500/20 text-green-500 ring-1 ring-green-500/30"
-                : "bg-accent text-white shadow-lg shadow-accent/20"
+                : "bg-accent text-accent-contrast shadow-lg shadow-accent/20"
             }`}
           >
             {isStaged ? (

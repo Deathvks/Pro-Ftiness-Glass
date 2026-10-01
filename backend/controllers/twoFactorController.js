@@ -253,7 +253,11 @@ export const verifyLogin2FA = async (req, res, next) => {
     });
 
     const payload = { userId: user.id, role: user.role };
-    const jwtToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+    const platform = req.headers['x-app-platform'] || 'web';
+    const rememberMe = req.body.rememberMe === true || req.body.rememberMe === 'true';
+    let expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
+    if (rememberMe) expiresIn = '3650d';
+    const jwtToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn });
 
     // --- CREAR O ACTUALIZAR SESIÓN (CORREGIDO) ---
     const parser = new UAParser(userAgent);

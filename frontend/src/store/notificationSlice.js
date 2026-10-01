@@ -1,4 +1,3 @@
-/* frontend/src/store/notificationSlice.js */
 import {
   getNotifications,
   markAsRead,
@@ -6,14 +5,25 @@ import {
   deleteNotification,
   deleteAllNotifications
 } from '../services/notificationService';
+import apiClient from '../services/apiClient';
 
 export const createNotificationSlice = (set, get) => ({
   notifications: [],
   unreadCount: 0,
+  unreadChats: 0,
   notificationsLoading: false,
   notificationsError: null,
   notificationPage: 1,
   notificationTotalPages: 1,
+
+  fetchUnreadChats: async () => {
+    try {
+      const res = await apiClient('/chat/unread-count');
+      set({ unreadChats: res.unreadCount || 0 });
+    } catch (error) {
+      console.error('Error fetching unread chats:', error);
+    }
+  },
 
   fetchNotifications: async (page = 1) => {
     if (page === 1) set({ notificationsLoading: true, notificationsError: null });

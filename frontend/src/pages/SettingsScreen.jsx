@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6'; 
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { APP_VERSION } from '../config/version';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import Spinner from '../components/Spinner';
@@ -130,11 +131,11 @@ export default function SettingsScreen({
     userProfile,
     resetCookieConsent,
     setUserProfile
-  } = useAppStore(state => ({
+  } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     resetCookieConsent: state.resetCookieConsent,
     setUserProfile: state.setUserProfile
-  }));
+  })));
 
   const { addToast } = useToast();
 
@@ -286,7 +287,7 @@ export default function SettingsScreen({
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2.5 px-5 py-3 md:p-4 rounded-[20px] transition-all duration-300 font-bold whitespace-nowrap outline-none shrink-0
                 ${activeTab === tab.id
-                  ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                  ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
                   : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'
                 }
                 ${tab.danger && activeTab !== tab.id ? 'hover:text-red-500' : ''}

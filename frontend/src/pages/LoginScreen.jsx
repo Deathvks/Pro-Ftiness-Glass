@@ -18,7 +18,7 @@ import { Capacitor } from '@capacitor/core';
 import { useLocation } from 'react-router-dom';
 
 const SplitLayout = ({ children, onShowPolicy }) => (
-    <div className="flex flex-col lg:flex-row w-full h-[100dvh] bg-bg-primary overflow-hidden">
+    <div className="auth-container flex flex-col lg:flex-row w-full h-[100dvh] bg-bg-primary overflow-hidden">
         
         {/* Panel Izquierdo (PC) */}
         <div className="hidden lg:flex flex-col justify-center items-center w-[30%] h-full relative border-r border-glass-border p-8 overflow-hidden shrink-0 bg-bg-primary">
@@ -119,6 +119,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(true);
     const [verificationCode, setVerificationCode] = useState('');
 
     const [otp, setOtp] = useState(new Array(6).fill(""));
@@ -456,7 +457,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
             // Si hace un login normal con su cuenta correctamente, podemos borrar el ref
             localStorage.removeItem('pending_ref');
 
-            await handleLogin({ email, password });
+            await handleLogin({ email, password, rememberMe });
             setIsLoading(false);
         } catch (err) {
             // Manejar específicamente el error de "Cuenta no verificada"
@@ -517,6 +518,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                 method: twoFactorPending.method,
                 token: twoFactorPending.method === 'app' ? verificationCode : undefined,
                 code: twoFactorPending.method === 'email' ? verificationCode : undefined,
+                rememberMe: twoFactorPending.rememberMe,
             };
             await handleVerify2FA(payload);
         } catch (err) {
@@ -669,20 +671,29 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                                 onChange={(e) => setPassword(e.target.value)}
                             />
 
-                            <div className="flex justify-between items-start mt-2 px-2">
-                                <div className="flex-1">
-                                    {errors.password && <p className="form-error-text text-left text-xs font-medium">{errors.password}</p>}
+                            <div className="flex flex-col mt-2 px-2 gap-2">
+                                {errors.password && <p className="form-error-text text-left text-xs font-medium">{errors.password}</p>}
+                                <div className="flex flex-wrap justify-between items-center gap-y-3 gap-x-2 w-full mt-2">
+                                    <label className="flex items-center gap-2 cursor-pointer group">
+                                        <input 
+                                            type="checkbox" 
+                                            className="h-4 w-4 text-accent rounded border-glass-border bg-black/10 dark:bg-white/10 focus:ring-accent focus:ring-offset-bg-primary transition-all cursor-pointer"
+                                            checked={rememberMe}
+                                            onChange={(e) => setRememberMe(e.target.checked)}
+                                        />
+                                        <span className="text-xs font-semibold text-text-secondary group-hover:text-text-primary transition-colors">Recordar sesión</span>
+                                    </label>
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            showForgotPassword();
+                                        }}
+                                        type="button"
+                                        className="text-xs font-semibold text-text-secondary hover:text-accent transition-colors shrink-0"
+                                    >
+                                        ¿Olvidaste tu contraseña?
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        showForgotPassword();
-                                    }}
-                                    type="button"
-                                    className="text-xs font-semibold text-text-secondary hover:text-accent transition-colors ml-2 shrink-0"
-                                >
-                                    ¿Olvidaste tu contraseña?
-                                </button>
                             </div>
                         </div>
 
