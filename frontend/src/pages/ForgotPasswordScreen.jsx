@@ -40,7 +40,7 @@ const ForgotPasswordScreen = ({ showLogin }) => {
                 route="forgot-password"
             />
 
-            <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
+            <div className="auth-container flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
                 <div className="w-full max-w-md text-center">
                     
                     {!isSubmitted ? (

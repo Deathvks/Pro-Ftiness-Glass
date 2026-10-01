@@ -19,7 +19,7 @@ import { Capacitor } from '@capacitor/core';
 import { useLocation } from 'react-router-dom';
 
 const SplitLayout = ({ children, onShowPolicy }) => (
-    <div className="flex flex-col lg:flex-row w-full h-[100dvh] bg-bg-primary overflow-hidden">
+    <div className="auth-container flex flex-col lg:flex-row w-full h-[100dvh] bg-bg-primary overflow-hidden">
 
         {/* Panel Izquierdo - Fijo en PC */}
         <div className="hidden lg:flex flex-col justify-center items-center w-[30%] h-full relative border-r border-glass-border p-6 lg:p-8 overflow-hidden z-20 shrink-0 bg-bg-primary">

@@ -83,7 +83,7 @@ const ResetPasswordScreen = ({ showLogin }) => {
                     route="reset-password/success"
                     noIndex={true}
                 />
-                <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
+                <div className="auth-container flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
                     <div className="w-full max-w-md text-center">
                         <GlassCard className="glass p-8 sm:p-12 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 shadow-2xl bg-bg-primary/50">
                             <div className="w-24 h-24 bg-green-500/10 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-green ring-1 ring-green-500/30 shadow-sm">
@@ -113,7 +113,7 @@ const ResetPasswordScreen = ({ showLogin }) => {
                 route="reset-password"
                 noIndex={true}
             />
-            <div className="flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
+            <div className="auth-container flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
                 <div className="w-full max-w-md text-center">
                     <div className="w-20 h-20 bg-accent/10 rounded-[24px] flex items-center justify-center mx-auto mb-6 text-accent ring-1 ring-accent/30 shadow-sm">
                         <Dumbbell size={40} strokeWidth={1.5} />

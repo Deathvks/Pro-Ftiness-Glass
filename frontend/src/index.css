@@ -1158,15 +1158,15 @@ body .driver-popover .driver-popover-close-btn:hover {
 /* 4.2) MEJORAS DE CONTRASTE PARA TEXTO EN MODO CLARO */
 /* Los colores pastel y amarillos tienen muy bajo contraste sobre fondo blanco.
    Sobrescribimos --text-accent para oscurecer el texto sin cambiar los botones. */
-html.light-theme.accent-yellow main { --text-accent: #a16207; }
-html.light-theme.accent-lemonade main { --text-accent: #a16207; }
-html.light-theme.accent-mango main { --text-accent: #c2410c; }
-html.light-theme.accent-mint main { --text-accent: #0f766e; }
-html.light-theme.accent-peach main { --text-accent: #c2410c; }
-html.light-theme.accent-rose-water main { --text-accent: #be123c; }
-html.light-theme.accent-lavender main { --text-accent: #6d28d9; }
-html.light-theme.accent-baby-blue main { --text-accent: #1d4ed8; }
-html.light-theme.accent-sunset-pink main { --text-accent: #be123c; }
-html.light-theme.accent-pistachio main { --text-accent: #4d7c0f; }
-html.light-theme.accent-cherry-blossom main { --text-accent: #be123c; }
-html.light-theme.accent-sky main { --text-accent: #0284c7; }
+html.light-theme.accent-yellow main, html.light-theme.accent-yellow .auth-container { --text-accent: #a16207; }
+html.light-theme.accent-lemonade main, html.light-theme.accent-lemonade .auth-container { --text-accent: #a16207; }
+html.light-theme.accent-mango main, html.light-theme.accent-mango .auth-container { --text-accent: #c2410c; }
+html.light-theme.accent-mint main, html.light-theme.accent-mint .auth-container { --text-accent: #0f766e; }
+html.light-theme.accent-peach main, html.light-theme.accent-peach .auth-container { --text-accent: #c2410c; }
+html.light-theme.accent-rose-water main, html.light-theme.accent-rose-water .auth-container { --text-accent: #be123c; }
+html.light-theme.accent-lavender main, html.light-theme.accent-lavender .auth-container { --text-accent: #6d28d9; }
+html.light-theme.accent-baby-blue main, html.light-theme.accent-baby-blue .auth-container { --text-accent: #1d4ed8; }
+html.light-theme.accent-sunset-pink main, html.light-theme.accent-sunset-pink .auth-container { --text-accent: #be123c; }
+html.light-theme.accent-pistachio main, html.light-theme.accent-pistachio .auth-container { --text-accent: #4d7c0f; }
+html.light-theme.accent-cherry-blossom main, html.light-theme.accent-cherry-blossom .auth-container { --text-accent: #be123c; }
+html.light-theme.accent-sky main, html.light-theme.accent-sky .auth-container { --text-accent: #0284c7; }
