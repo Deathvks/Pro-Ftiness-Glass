@@ -15,12 +15,12 @@ const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, 
       isRed
         ? 'text-text-secondary hover:bg-red-500/10 hover:text-red-500'
         : isActive
-        ? 'glass shadow-sm text-accent translate-x-1'
+        ? 'glass shadow-sm translate-x-1 text-text-primary'
         : 'text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 hover:translate-x-1'
     }`}
   >
     <div 
-        className={`relative flex items-center justify-center shrink-0 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110 active:scale-95'}`}
+        className={`relative flex items-center justify-center shrink-0 transition-transform duration-300 ${isActive ? 'scale-110 text-accent-pure' : 'group-hover:scale-110 active:scale-95 group-hover:text-accent-pure'}`}
         onClick={(e) => {
             if (onIconClick) {
                 e.stopPropagation();
@@ -251,3 +251,6 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
 };
 
 export default Sidebar;
+
+
+

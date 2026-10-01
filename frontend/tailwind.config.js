@@ -36,6 +36,7 @@ export default {
       },
       textColor: {
         'accent': 'var(--text-accent, var(--color-accent))',
+        'accent-pure': 'var(--color-accent)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
