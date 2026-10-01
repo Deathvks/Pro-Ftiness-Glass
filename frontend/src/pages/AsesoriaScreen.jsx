@@ -6,6 +6,7 @@ import { useToast } from '../hooks/useToast';
 import { initSocket } from '../services/socket';
 import useAppStore from '../store/useAppStore';
 import { usePushNotifications } from '../hooks/usePushNotifications';
+import TrainerProfileModal from '../components/TrainerProfileModal';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'; 
 const SERVER_URL = API_URL.replace('/api', '');
@@ -44,6 +45,7 @@ export default function AsesoriaScreen({ onBack }) {
   const { subscribe, isSubscribed } = usePushNotifications();
   const [trainer, setTrainer] = useState(null);
   const [messages, setMessages] = useState([]);
+    const [showTrainerProfile, setShowTrainerProfile] = useState(false);
   const [newMessage, setNewMessage] = useState('');
   const [fullscreenVideo, setFullscreenVideo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -406,6 +408,7 @@ export default function AsesoriaScreen({ onBack }) {
             <p className="text-sm text-text-secondary font-medium max-w-[250px]">
               Comienza tu asesoría personal con {trainer?.name}.
             </p>
+            <button onClick={() => setShowTrainerProfile(true)} className="mt-2 text-accent text-sm font-bold underline underline-offset-4 hover:brightness-110 active:scale-95 transition-all">Ver perfil</button>
           </div>
         ) : (
           messages.map((msg, index) => {
@@ -554,7 +557,12 @@ export default function AsesoriaScreen({ onBack }) {
           />
         </div>
       )}
-    </div>
-  );
+    
+        <TrainerProfileModal 
+          visible={showTrainerProfile} 
+          onClose={() => setShowTrainerProfile(false)} 
+          trainer={trainer}
+        />
+      </div>
+    );
 }
-
