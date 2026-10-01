@@ -376,12 +376,28 @@
           } : { r: 34, g: 197, b: 94 };
         }
 
-        var rgb = hexToRgb(hexColor);
+                        var rgb = hexToRgb(hexColor);
         var root = document.documentElement;
         root.style.setProperty('--app-accent', hexColor);
         root.style.setProperty('--accent-r', rgb.r);
         root.style.setProperty('--accent-g', rgb.g);
         root.style.setProperty('--accent-b', rgb.b);
+
+        var isLightTheme = ['light', 'ocean', 'desert'].indexOf(effectiveTheme) !== -1;
+        var luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+        if (isLightTheme) {
+          root.style.setProperty('--text-accent', luminance > 0.6 ? '#111827' : hexColor);
+        } else {
+          root.style.setProperty('--text-accent', luminance < 0.3 ? '#FFFFFF' : hexColor);
+        }
+
+        var isLightTheme = ['light', 'ocean', 'desert'].indexOf(effectiveTheme) !== -1;
+        var luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+        if (isLightTheme) {
+          root.style.setProperty('--text-accent', luminance > 0.6 ? '#111827' : hexColor);
+        } else {
+          root.style.setProperty('--text-accent', luminance < 0.3 ? '#FFFFFF' : hexColor);
+        }
 
         var bgColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814', desert: '#f0dec5', 'desert-dark': '#2c1e16', ocean: '#e0f2fe', 'ocean-dark': '#0f172a' };
         var headerColors = { light: '#f8fafc', dark: '#0f172a', oled: '#000000', galaxy: '#080814', desert: '#f0dec5', 'desert-dark': '#2c1e16', ocean: '#e0f2fe', 'ocean-dark': '#0f172a' };

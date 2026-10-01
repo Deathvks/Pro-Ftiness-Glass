@@ -39,6 +39,33 @@ const notifyThemeListeners = () => {
   listeners.forEach(listener => listener());
 };
 
+const getSafeTextAccent = (hexColor, isLightTheme) => {
+    let r = 0, g = 0, b = 0;
+    if (hexColor.startsWith('#')) hexColor = hexColor.substring(1);
+    if (hexColor.length === 6) {
+        r = parseInt(hexColor.substring(0, 2), 16);
+        g = parseInt(hexColor.substring(2, 4), 16);
+        b = parseInt(hexColor.substring(4, 6), 16);
+    }
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    if (isLightTheme) {
+        return luminance > 0.6 ? '#111827' : '#' + hexColor;
+    } else {
+        return luminance < 0.3 ? '#FFFFFF' : '#' + hexColor;
+    }
+};
+
+const ACCENT_MAP = {
+  'green': '#22c55e', 'blue': '#3b82f6', 'violet': '#8b5cf6', 'amber': '#f59e0b',
+  'rose': '#f43f5e', 'teal': '#14b8a6', 'cyan': '#06b6d4', 'orange': '#f97316',
+  'lime': '#84cc16', 'fuchsia': '#d946ef', 'emerald': '#10b981', 'indigo': '#6366f1',
+  'purple': '#a855f7', 'pink': '#ec4899', 'red': '#ef4444', 'yellow': '#eab308',
+  'sky': '#0ea5e9', 'slate': '#64748b', 'zinc': '#71717a', 'stone': '#78716c',
+  'mint': '#a8e6cf', 'peach': '#ffd3b6', 'rose-water': '#ffaaa5', 'lavender': '#c5a3ff',
+  'baby-blue': '#a2cffe', 'sunset-pink': '#ff9a9e', 'pistachio': '#c5e1a5', 'mango': '#ffbe76',
+  'lemonade': '#fdfd96', 'cherry-blossom': '#fccbcf', 'neutral': '#737373'
+};
+
 export const useAppTheme = () => {
   const cookieConsent = useAppStore(state => state.cookieConsent);
 
@@ -263,7 +290,10 @@ export const useAppTheme = () => {
     const root = document.documentElement;
     const classes = root.className.split(' ').filter(c => !c.startsWith('accent-'));
     root.className = classes.join(' ') + ` accent-${accent}`;
-  }, [accent]);
+    const isLightTheme = ['light', 'ocean', 'desert'].includes(resolvedTheme);
+    const hex = ACCENT_MAP[accent] || '#22c55e';
+    root.style.setProperty('--text-accent', getSafeTextAccent(hex, isLightTheme));
+  }, [accent, resolvedTheme]);
 
   const themeColor = useMemo(() => {
     if (resolvedTheme === 'galaxy') return THEME_COLORS.galaxy;
@@ -298,3 +328,5 @@ export const useAppTheme = () => {
     testTimeLeft
   };
 };
+
+
