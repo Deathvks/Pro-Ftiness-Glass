@@ -518,6 +518,7 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
                 method: twoFactorPending.method,
                 token: twoFactorPending.method === 'app' ? verificationCode : undefined,
                 code: twoFactorPending.method === 'email' ? verificationCode : undefined,
+                rememberMe: twoFactorPending.rememberMe,
             };
             await handleVerify2FA(payload);
         } catch (err) {
