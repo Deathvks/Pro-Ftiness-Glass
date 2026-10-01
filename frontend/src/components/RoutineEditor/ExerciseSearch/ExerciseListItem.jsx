@@ -92,7 +92,7 @@ const ExerciseListItem = ({
             {isReplacing ? (
               <button
                 onClick={handleAddClick}
-                className="w-full flex items-center justify-center gap-2 p-3 rounded-[16px] transition-all duration-300 bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-accent hover:text-white ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent active:scale-95 shadow-sm font-bold"
+                className="w-full flex items-center justify-center gap-2 p-3 rounded-[16px] transition-all duration-300 bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-accent hover:text-accent-contrast ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent active:scale-95 shadow-sm font-bold"
                 title={t('exercise_ui:replace_with_this', 'Reemplazar con este')}
               >
                 <Repeat size={18} strokeWidth={2.5} />

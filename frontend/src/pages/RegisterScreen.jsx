@@ -813,7 +813,7 @@ const RegisterScreen = ({ showLogin }) => {
                                 >
                                     <Info size={16} className="sm:w-5 sm:h-5 lg:w-4 lg:h-4" />
                                 </button>
-                                <div className="bg-white dark:bg-gray-800 text-accent dark:text-white p-2 sm:p-2.5 lg:p-2 rounded-[12px] sm:rounded-[14px] shadow-lg transform group-hover:translate-x-1 group-hover:bg-accent group-hover:text-white dark:group-hover:bg-gray-700 transition-all duration-300">
+                                <div className="bg-white dark:bg-gray-800 text-accent dark:text-white p-2 sm:p-2.5 lg:p-2 rounded-[12px] sm:rounded-[14px] shadow-lg transform group-hover:translate-x-1 group-hover:bg-accent group-hover:text-accent-contrast dark:group-hover:bg-gray-700 transition-all duration-300">
                                     <ArrowRight size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px] lg:w-4 lg:h-4" />
                                 </div>
                             </div>

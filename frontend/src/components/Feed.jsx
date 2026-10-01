@@ -198,7 +198,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                     <button 
                                         onClick={() => handleImportRoutine(log.routine_id)}
                                         disabled={isActionLoading}
-                                        className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-accent/10 text-accent rounded-[14px] hover:bg-accent hover:text-white transition-all text-[10px] sm:text-xs font-bold disabled:opacity-50 hover:shadow-md"
+                                        className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-accent/10 text-accent rounded-[14px] hover:bg-accent hover:text-accent-contrast transition-all text-[10px] sm:text-xs font-bold disabled:opacity-50 hover:shadow-md"
                                         title="Importar Rutina"
                                     >
                                         <Download size={14} />
@@ -377,3 +377,4 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
         </div>
     );
 }
+

@@ -43,7 +43,7 @@ const FavoritesList = ({
                     <div className="flex items-center gap-4 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 px-4 py-2 rounded-full backdrop-blur-md shadow-sm">
                         <button
                             type="button"
-                            className="p-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-accent hover:text-white text-text-secondary disabled:opacity-30 disabled:hover:bg-black/5 disabled:hover:text-text-secondary transition-all active:scale-95"
+                            className="p-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-accent hover:text-accent-contrast text-text-secondary disabled:opacity-30 disabled:hover:bg-black/5 disabled:hover:text-text-secondary transition-all active:scale-95"
                             onClick={() => onPageChange(currentPage - 1)}
                             disabled={currentPage === 1}
                         >
@@ -56,7 +56,7 @@ const FavoritesList = ({
                         
                         <button
                             type="button"
-                            className="p-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-accent hover:text-white text-text-secondary disabled:opacity-30 disabled:hover:bg-black/5 disabled:hover:text-text-secondary transition-all active:scale-95"
+                            className="p-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-accent hover:text-accent-contrast text-text-secondary disabled:opacity-30 disabled:hover:bg-black/5 disabled:hover:text-text-secondary transition-all active:scale-95"
                             onClick={() => onPageChange(currentPage + 1)}
                             disabled={currentPage === totalPages}
                         >

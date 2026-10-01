@@ -237,7 +237,7 @@ const FeatureCard = ({ icon: Icon, title, desc, delay }) => (
     <ScrollRevealCard delay={delay} className="h-full">
         <div className="h-full p-6 sm:p-8 rounded-[32px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl flex flex-col items-center text-center hover:ring-accent/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
             <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform-gpu" />
-            <div className="relative z-10 p-4 rounded-[20px] bg-accent/10 text-accent mb-6 group-hover:bg-accent group-hover:text-white transition-all duration-500 group-hover:scale-110 ring-1 ring-accent/30 shadow-sm transform-gpu">
+            <div className="relative z-10 p-4 rounded-[20px] bg-accent/10 text-accent mb-6 group-hover:bg-accent group-hover:text-accent-contrast transition-all duration-500 group-hover:scale-110 ring-1 ring-accent/30 shadow-sm transform-gpu">
                 <Icon size={32} strokeWidth={1.5} />
             </div>
             <h3 className="relative z-10 font-bold text-text-primary text-xl mb-3">{title}</h3>
@@ -826,7 +826,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                     </ul>
 
                                     <div className="relative z-10">
-                                        <a href="/privacy" className="inline-flex items-center gap-2 text-accent font-bold px-6 py-3.5 bg-accent/10 hover:bg-accent hover:text-white rounded-[20px] transition-all active:scale-95">
+                                        <a href="/privacy" className="inline-flex items-center gap-2 text-accent font-bold px-6 py-3.5 bg-accent/10 hover:bg-accent hover:text-accent-contrast rounded-[20px] transition-all active:scale-95">
                                             Leer la Política de Privacidad <ChevronRight size={18} strokeWidth={2.5} />
                                         </a>
                                     </div>
@@ -933,3 +933,4 @@ const LandingPage = ({ onLogin, onRegister }) => {
 };
 
 export default LandingPage;
+

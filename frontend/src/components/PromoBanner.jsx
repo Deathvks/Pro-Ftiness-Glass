@@ -44,7 +44,7 @@ const PromoBanner = ({ type, onClick }) => {
             <span className="text-xs font-bold text-accent uppercase tracking-wider bg-accent/10 px-3 py-1 rounded-full transition-colors group-hover:bg-accent/20">Chat Asesoría</span>
           </div>
 
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-accent flex items-center justify-center shrink-0 text-white shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-300">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-accent flex items-center justify-center shrink-0 text-accent-contrast shadow-lg shadow-accent/40 group-hover:scale-110 transition-transform duration-300">
             <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
           </div>
         </div>
@@ -53,3 +53,4 @@ const PromoBanner = ({ type, onClick }) => {
 };
 
 export default PromoBanner;
+

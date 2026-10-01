@@ -353,13 +353,13 @@ export default function SettingsScreen({
                   <div className="flex gap-2 shrink-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleExport('json'); }}
-                      className="px-3 py-2 rounded-[12px] bg-black/5 dark:bg-white/5 text-text-secondary text-[10px] font-bold hover:bg-accent hover:text-white transition-all hover:scale-105 hover:shadow-md"
+                      className="px-3 py-2 rounded-[12px] bg-black/5 dark:bg-white/5 text-text-secondary text-[10px] font-bold hover:bg-accent hover:text-accent-contrast transition-all hover:scale-105 hover:shadow-md"
                     >
                       JSON
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleExport('csv'); }}
-                      className="px-3 py-2 rounded-[12px] bg-black/5 dark:bg-white/5 text-text-secondary text-[10px] font-bold hover:bg-accent hover:text-white transition-all hover:scale-105 hover:shadow-md"
+                      className="px-3 py-2 rounded-[12px] bg-black/5 dark:bg-white/5 text-text-secondary text-[10px] font-bold hover:bg-accent hover:text-accent-contrast transition-all hover:scale-105 hover:shadow-md"
                     >
                       CSV
                     </button>
@@ -482,3 +482,4 @@ export default function SettingsScreen({
     </div>
   );
 }
+
