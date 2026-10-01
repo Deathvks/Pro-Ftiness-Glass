@@ -48,7 +48,7 @@ export const createAuthSlice = (set, get) => ({
                 twoFactorPending: {
                     userId: response.userId,
                     method: response.method,
-                    email: credentials.email // Útil para mostrar "enviado a...",
+                    email: credentials.email,
                     rememberMe: credentials.rememberMe
                 }
             });
