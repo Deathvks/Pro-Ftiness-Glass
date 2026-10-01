@@ -2,8 +2,11 @@ import React from 'react';
 import { Sparkles, ChevronRight } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import GlassCard from './GlassCard';
+import TrainerProfileModal from './TrainerProfileModal';
+import { useState } from 'react';
 
 const PromoBanner = ({ type, onClick }) => {
+    const [showProfile, setShowProfile] = useState(false);
     const userProfile = useAppStore(state => state.userProfile);
 
     // If user is already in asesoria, don't show the banner
@@ -38,6 +41,9 @@ const PromoBanner = ({ type, onClick }) => {
             <p className="text-xs sm:text-sm text-text-secondary leading-snug pr-2 sm:pr-0">
               {content.desc}
             </p>
+            <button onClick={(e) => { e.stopPropagation(); setShowProfile(true); }} className="text-xs font-bold text-accent underline underline-offset-2 self-start mt-1 hover:brightness-110 active:scale-95 transition-all outline-none focus:outline-none">
+              Conócelo
+            </button>
           </div>
           
           <div className="hidden sm:flex items-center shrink-0 pr-2">
@@ -49,8 +55,11 @@ const PromoBanner = ({ type, onClick }) => {
           </div>
         </div>
       </GlassCard>
+      <TrainerProfileModal visible={showProfile} onClose={() => setShowProfile(false)} />
     );
 };
 
 export default PromoBanner;
+
+
 
