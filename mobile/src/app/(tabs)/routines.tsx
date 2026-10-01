@@ -209,7 +209,7 @@ export default function RoutinesScreen() {
           >
             <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />
             <Plus size={20} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 6 }} />
-            <Text style={[styles.createButtonText, { color: colors.tint }]} numberOfLines={1} adjustsFontSizeToFit>Crear Rutina</Text>
+            <Text style={[styles.createButtonText, { color: getContrastColor(colors.tint, theme) }]} numberOfLines={1} adjustsFontSizeToFit>Crear Rutina</Text>
           </GlassButton>
         </View>
 

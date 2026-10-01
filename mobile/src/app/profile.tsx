@@ -211,7 +211,7 @@ export default function ProfileScreen() {
                 {/* Contraseña */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8, marginTop: 32 }}>
                     <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.tint + '20', alignItems: 'center', justifyContent: 'center' }}>
-                        <Shield size={20} color={colors.tint} />
+                        <Shield size={20} color={getContrastColor(colors.tint, theme)} />
                     </View>
                     <Text style={{ fontSize: 18, fontWeight: '900', color: colors.text }}>Restablecer Contraseña</Text>
                 </View>
@@ -251,7 +251,7 @@ export default function ProfileScreen() {
             <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                     <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.tint + '20', alignItems: 'center', justifyContent: 'center' }}>
-                        <Eye size={20} color={colors.tint} />
+                        <Eye size={20} color={getContrastColor(colors.tint, theme)} />
                     </View>
                     <Text style={{ fontSize: 18, fontWeight: '900', color: colors.text }}>Perfil Social Público</Text>
                 </View>
@@ -274,7 +274,7 @@ export default function ProfileScreen() {
             <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 }}>
                     <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.tint + '20', alignItems: 'center', justifyContent: 'center' }}>
-                        <Trophy size={20} color={colors.tint} />
+                        <Trophy size={20} color={getContrastColor(colors.tint, theme)} />
                     </View>
                     <Text style={{ fontSize: 18, fontWeight: '900', color: colors.text }}>Mis Insignias</Text>
                 </View>
@@ -409,6 +409,6 @@ const styles = (colors) => StyleSheet.create({
         fontSize: 14,
     },
     chipTextActive: {
-        color: colors.tint,
+        color: getContrastColor(colors.tint, theme),
     }
 });

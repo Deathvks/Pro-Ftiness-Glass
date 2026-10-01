@@ -109,7 +109,7 @@ export default function AppearanceScreen() {
         <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 }}>
             <View style={{ padding: 10, borderRadius: 16, backgroundColor: colors.tint + '15' }}>
-              <Palette size={24} color={colors.tint} />
+              <Palette size={24} color={getContrastColor(colors.tint, theme)} />
             </View>
             <Text style={{ fontSize: 24, fontWeight: '900', color: colors.text }}>Apariencia de la App</Text>
           </View>
@@ -247,7 +247,7 @@ export default function AppearanceScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
               <View style={{ padding: 10, borderRadius: 14, backgroundColor: colors.tint + '15' }}>
-                <Vibrate size={20} color={colors.tint} />
+                <Vibrate size={20} color={getContrastColor(colors.tint, theme)} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 15, fontWeight: 'bold', color: colors.text }}>Vibración y Hápticos</Text>
@@ -281,7 +281,7 @@ export default function AppearanceScreen() {
         <View style={{ backgroundColor: colors.card, borderRadius: 32, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
             <View style={{ padding: 10, borderRadius: 16, backgroundColor: colors.tint + '15' }}>
-              <Sparkles size={24} color={colors.tint} />
+              <Sparkles size={24} color={getContrastColor(colors.tint, theme)} />
             </View>
             <Text style={{ fontSize: 24, fontWeight: '900', color: colors.text }}>Mis Temas</Text>
           </View>

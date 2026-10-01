@@ -1,3 +1,4 @@
+import { getContrastColor } from '@/utils/colorUtils';
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions } from 'react-native';
 import { X, Check } from 'lucide-react-native';
@@ -54,7 +55,7 @@ export function SelectModal({ visible, onClose, options, value, onSelect, title,
             {options.map((opt, i) => {
               if (opt.isHeader) {
                 return (
-                  <Text key={`header-${i}`} style={{ color: colors.tint, fontWeight: 'bold', fontSize: 12, textTransform: 'uppercase', marginTop: i > 0 ? 16 : 0, marginBottom: 8, paddingHorizontal: 8 }}>
+                  <Text key={`header-${i}`} style={{ color: getContrastColor(colors.tint, theme), fontWeight: 'bold', fontSize: 12, textTransform: 'uppercase', marginTop: i > 0 ? 16 : 0, marginBottom: 8, paddingHorizontal: 8 }}>
                     {opt.label}
                   </Text>
                 );
@@ -85,7 +86,7 @@ export function SelectModal({ visible, onClose, options, value, onSelect, title,
                   <Text style={{ fontSize: 16, fontWeight: isSelected ? 'bold' : '500', color: isSelected ? colors.tint : colors.text }}>
                     {opt.label}
                   </Text>
-                  {isSelected && <Check size={18} color={colors.tint} />}
+                  {isSelected && <Check size={18} color={getContrastColor(colors.tint, theme)} />}
                 </TouchableOpacity>
               );
             })}
@@ -95,3 +96,4 @@ export function SelectModal({ visible, onClose, options, value, onSelect, title,
     </Modal>
   );
 }
+

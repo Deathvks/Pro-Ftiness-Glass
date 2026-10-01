@@ -20,7 +20,7 @@ export default function NotificationsScreen() {
     const markAllNotificationsAsRead = useAppStore(state => state.markAllNotificationsAsRead);
 
     const getIcon = (type, subType) => {
-        if (subType === 'friend_request') return <UserPlus size={20} color={colors.tint} />;
+        if (subType === 'friend_request') return <UserPlus size={20} color={getContrastColor(colors.tint, theme)} />;
         if (subType === 'friend_accept') return <Users size={20} color="#10b981" />;
         if (subType === 'xp' || subType === 'level_up') return <Zap size={20} color="#fbbf24" fill="#fbbf24" />;
         if (subType === 'badge') return <Award size={20} color="#f59e0b" />;
@@ -29,7 +29,7 @@ export default function NotificationsScreen() {
             case 'success': return <CheckCircle size={20} color="#10b981" />;
             case 'warning': return <AlertTriangle size={20} color="#eab308" />;
             case 'alert': return <AlertCircle size={20} color="#ef4444" />;
-            default: return <Info size={20} color={colors.tint} />;
+            default: return <Info size={20} color={getContrastColor(colors.tint, theme)} />;
         }
     };
 
@@ -76,7 +76,7 @@ export default function NotificationsScreen() {
                         onPress={() => { if(markAllNotificationsAsRead) markAllNotificationsAsRead(); }}
                         style={{ backgroundColor: colors.tint + '20', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 }}
                     >
-                        <CheckCheck size={20} color={colors.tint} />
+                        <CheckCheck size={20} color={getContrastColor(colors.tint, theme)} />
                     </TouchableOpacity>
                 )}
             </View>

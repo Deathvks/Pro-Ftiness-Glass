@@ -1,3 +1,4 @@
+import { getContrastColor } from '@/utils/colorUtils';
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, FlatList, TouchableOpacity, TextInput, ActivityIndicator, Image, Platform, Linking, ScrollView, Animated, Easing } from 'react-native';
 import { useSafeAreaInsets as useSafeAreaInsetsNative } from 'react-native-safe-area-context';
@@ -212,8 +213,8 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
                 {stagedIds.has(item.id) && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />}
                 {stagedIds.has(item.id) ? (
                   <>
-                    <Check size={18} color={colors.tint} />
-                    <Text style={{ color: colors.tint, fontWeight: 'bold' }}>Añadido</Text>
+                    <Check size={18} color={getContrastColor(colors.tint, theme)} />
+                    <Text style={{ color: getContrastColor(colors.tint, theme), fontWeight: 'bold' }}>Añadido</Text>
                   </>
                 ) : (
                   <>
@@ -303,7 +304,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
             <View style={{ width: 40 }} />
           ) : (
             <GlassButton noShadow theme={theme} onPress={() => setView('summary')} style={{ width: 'auto', paddingHorizontal: 16, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: colors.tint, fontWeight: 'bold', fontSize: 13 }}>
+              <Text style={{ color: getContrastColor(colors.tint, theme), fontWeight: 'bold', fontSize: 13 }}>
                 Ver ({stagedExercises.length})
               </Text>
             </GlassButton>
@@ -313,7 +314,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
         {view === 'list' && (
           <View style={{ flex: 1 }}>
             {isLoading ? (
-              <View style={[styles.centerContainer, { paddingTop: headerHeight }]}><ActivityIndicator size="large" color={colors.tint} /></View>
+              <View style={[styles.centerContainer, { paddingTop: headerHeight }]}><ActivityIndicator size="large" color={getContrastColor(colors.tint, theme)} /></View>
             ) : (
               <Animated.FlatList
                 data={filteredExercises}
@@ -428,11 +429,11 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
                 }}
               >
                 {isAiLoading ? (
-                  <ActivityIndicator color={colors.tint} size="small" />
+                  <ActivityIndicator color={getContrastColor(colors.tint, theme)} size="small" />
                 ) : (
-                  <Sparkles size={20} color={colors.tint} />
+                  <Sparkles size={20} color={getContrastColor(colors.tint, theme)} />
                 )}
-                <Text style={{ color: colors.tint, fontWeight: 'bold', fontSize: 16 }}>
+                <Text style={{ color: getContrastColor(colors.tint, theme), fontWeight: 'bold', fontSize: 16 }}>
                   {isAiLoading ? "Generando explicación..." : "Explicación por IA (Coach)"}
                 </Text>
               </TouchableOpacity>
@@ -441,8 +442,8 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
               {aiExplanation && (
                 <View style={{ backgroundColor: colors.tint + '10', borderColor: colors.tint + '30', borderWidth: 1, padding: 16, borderRadius: 16, marginBottom: 24 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                    <Sparkles size={16} color={colors.tint} />
-                    <Text style={{ color: colors.tint, fontWeight: 'bold' }}>Pro-Fitness Coach</Text>
+                    <Sparkles size={16} color={getContrastColor(colors.tint, theme)} />
+                    <Text style={{ color: getContrastColor(colors.tint, theme), fontWeight: 'bold' }}>Pro-Fitness Coach</Text>
                   </View>
                   <Text style={{ color: colors.text, lineHeight: 24, fontSize: 15 }}>
                     {aiExplanation}
@@ -454,7 +455,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
             <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background, position: 'absolute', bottom: 0, left: 0, right: 0 }]}>
                             <GlassButton noShadow theme={theme} colors={colors} style={{ width: '100%', height: 50, borderRadius: 16, overflow: 'hidden' }} onPress={() => { toggleStaged(selectedExercise); setView('list'); }}>
                 <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />
-                <Text style={{ color: colors.tint, fontWeight: 'bold', fontSize: 16 }}>
+                <Text style={{ color: getContrastColor(colors.tint, theme), fontWeight: 'bold', fontSize: 16 }}>
                   {stagedIds.has(selectedExercise.id) ? 'Quitar del carrito' : 'Añadir al carrito'}
                 </Text>
               </GlassButton>
@@ -569,7 +570,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
               <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background }]}>
                                 <GlassButton noShadow theme={theme} colors={colors} style={{ width: '100%', height: 50, borderRadius: 16, overflow: 'hidden' }} onPress={handleConfirm}>
                   <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />
-                  <Text style={{ color: colors.tint, fontWeight: 'bold', fontSize: 16 }}>
+                  <Text style={{ color: getContrastColor(colors.tint, theme), fontWeight: 'bold', fontSize: 16 }}>
                     Confirmar {stagedExercises.length} Ejercicios
                   </Text>
                 </GlassButton>
@@ -678,6 +679,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   }
 });
+
 
 
 

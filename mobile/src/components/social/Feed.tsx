@@ -4,6 +4,7 @@ import { Heart, MessageCircle, Clock, Zap, Dumbbell, Download, Trash2, Activity 
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getContrastColor } from '@/utils/colorUtils';
 import apiClient from '@/services/apiClient';
 
 const timeAgo = (dateString: string) => {
@@ -59,7 +60,7 @@ export function Feed() {
     if (isLoading) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
-                <ActivityIndicator size="large" color={colors.tint} />
+                <ActivityIndicator size="large" color={getContrastColor(colors.tint, theme)} />
             </View>
         );
     }
@@ -91,7 +92,7 @@ export function Feed() {
                             <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} />
                         ) : (
                             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                                <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.tint }}>{displayUsername.charAt(0).toUpperCase()}</Text>
+                                <Text style={{ fontSize: 18, fontWeight: 'bold', color: getContrastColor(colors.tint, theme) }}>{displayUsername.charAt(0).toUpperCase()}</Text>
                             </View>
                         )}
                     </View>
@@ -123,7 +124,7 @@ export function Feed() {
                                 </Text>
                             ))}
                             {log.exercises.length > 3 && (
-                                <Text style={{ fontSize: 14, color: colors.tint, fontWeight: 'bold', marginTop: 2 }}>
+                                <Text style={{ fontSize: 14, color: getContrastColor(colors.tint, theme), fontWeight: 'bold', marginTop: 2 }}>
                                     + {log.exercises.length - 3} ejercicios más
                                 </Text>
                             )}
@@ -136,8 +137,8 @@ export function Feed() {
                         onPress={() => handleToggleLike(log.id)}
                         style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 16, backgroundColor: log.hasLiked ? colors.tint + '15' : 'transparent' }}
                     >
-                        <Heart size={20} color={log.hasLiked ? colors.tint : colors.textSecondary} fill={log.hasLiked ? colors.tint : 'transparent'} />
-                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: log.hasLiked ? colors.tint : colors.textSecondary }}>{log.likesCount || 0}</Text>
+                        <Heart size={20} color={log.hasLiked ? getContrastColor(colors.tint, theme) : colors.textSecondary} fill={log.hasLiked ? getContrastColor(colors.tint, theme) : 'transparent'} />
+                        <Text style={{ fontSize: 14, fontWeight: 'bold', color: log.hasLiked ? getContrastColor(colors.tint, theme) : colors.textSecondary }}>{log.likesCount || 0}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 16 }}>
                         <MessageCircle size={20} color={colors.textSecondary} />
@@ -164,4 +165,6 @@ export function Feed() {
         />
     );
 }
+
+
 

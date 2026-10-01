@@ -135,7 +135,7 @@ export default function Dashboard() {
                 <Text style={{ fontSize: 32, fontWeight: '900', color: colors.text }}>Dashboard</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
                     <Text style={{ fontSize: 18, color: colors.textSecondary }}>Hola, </Text>
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.tint }}>{userProfile?.username || 'Atleta'}</Text>
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: getContrastColor(colors.tint, theme) }}>{userProfile?.username || 'Atleta'}</Text>
                 </View>
             </View>
         </View>
@@ -147,7 +147,7 @@ export default function Dashboard() {
                 
                 <View style={{ marginLeft: 16, flex: 1 }}>
                     <Text style={{ fontSize: 20, fontWeight: '900', color: colors.text }}>Nivel {gamification?.level || 1}</Text>
-                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: colors.tint, marginTop: 4 }}>{levelData.currentXp} / {levelData.nextLevelXp} XP</Text>
+                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: getContrastColor(colors.tint, theme), marginTop: 4 }}>{levelData.currentXp} / {levelData.nextLevelXp} XP</Text>
                     <View style={{ height: 8, backgroundColor: colors.background, borderRadius: 4, overflow: 'hidden', marginTop: 8 }}>
                         <View style={{ height: '100%', backgroundColor: colors.tint, borderRadius: 4, width: `${levelData.progressPercent}%` }} />
                     </View>
@@ -198,7 +198,7 @@ export default function Dashboard() {
                 {/* Card: Tiempo Activo */}
                 <View style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 20, shadowColor: '#000', shadowOffset: {width:0, height:4}, shadowOpacity: 0.08, shadowRadius: 12, elevation: 2 }}>
                     <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: colors.tint + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-                        <Clock size={18} color={colors.tint} />
+                        <Clock size={18} color={getContrastColor(colors.tint, theme)} />
                     </View>
                     <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 }}>Tiempo Activo</Text>
                     <Text style={{ fontSize: 26, fontWeight: '900', color: colors.text, letterSpacing: -1 }}>{weeklyStats.time}</Text>
@@ -222,7 +222,7 @@ export default function Dashboard() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                 <Text style={{ fontSize: 20, fontWeight: '900', color: colors.text }}>Nutrición</Text>
                 <TouchableOpacity onPress={() => router.push('/nutrition')}>
-                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: colors.tint }}>Ver Diario</Text>
+                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: getContrastColor(colors.tint, theme) }}>Ver Diario</Text>
                 </TouchableOpacity>
             </View>
             
@@ -257,7 +257,7 @@ export default function Dashboard() {
         <View style={{ marginBottom: 24 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Dumbbell size={22} color={colors.tint} />
+                    <Dumbbell size={22} color={getContrastColor(colors.tint, theme)} />
                     <Text style={{ fontSize: 20, fontWeight: '900', color: colors.text }}>Mis Rutinas</Text>
                 </View>
                 <TouchableOpacity onPress={() => router.push('/routines')} style={{ padding: 8, borderRadius: 20, backgroundColor: colors.card }}>
@@ -286,7 +286,7 @@ export default function Dashboard() {
                         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 }}>
                                 <View style={{ width: 48, height: 48, borderRadius: 20, backgroundColor: isActive ? colors.tint + '20' : colors.background, alignItems: 'center', justifyContent: 'center' }}>
-                                    {isActive ? <Clock size={24} color={colors.tint} /> : (isCompleted ? <CheckCircle size={24} color={colors.success || '#22c55e'} /> : <Play size={24} color={colors.tint} />)}
+                                    {isActive ? <Clock size={24} color={getContrastColor(colors.tint, theme)} /> : (isCompleted ? <CheckCircle size={24} color={colors.success || '#22c55e'} /> : <Play size={24} color={getContrastColor(colors.tint, theme)} />)}
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={{ fontSize: 16, fontWeight: '800', color: isActive ? colors.tint : colors.text }} numberOfLines={1}>{routine.name}</Text>
@@ -303,7 +303,7 @@ export default function Dashboard() {
                 <View style={{ backgroundColor: colors.card, borderRadius: 28, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
                     <Text style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 12 }}>Sin rutinas creadas.</Text>
                     <TouchableOpacity onPress={() => router.push('/routines')} style={{ backgroundColor: colors.tint + '15', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 }}>
-                        <Text style={{ fontSize: 13, fontWeight: '800', color: colors.tint }}>Crear primera rutina</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '800', color: getContrastColor(colors.tint, theme) }}>Crear primera rutina</Text>
                     </TouchableOpacity>
                 </View>
             )}
@@ -313,7 +313,7 @@ export default function Dashboard() {
         <View style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 32, padding: 24, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 2 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Target size={22} color={colors.tint} />
+                    <Target size={22} color={getContrastColor(colors.tint, theme)} />
                     <Text style={{ fontSize: 20, fontWeight: '900', color: colors.text }}>Peso</Text>
                 </View>
             </View>
@@ -366,13 +366,13 @@ export default function Dashboard() {
             <View style={{ flexDirection: 'row', gap: 16 }}>
                 <TouchableOpacity style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 24, alignItems: 'center' }}>
                     <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: colors.tint + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                        <Footprints size={32} color={colors.tint} />
+                        <Footprints size={32} color={getContrastColor(colors.tint, theme)} />
                     </View>
                     <Text style={{ fontSize: 16, fontWeight: '900', color: colors.text }}>Correr</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 24, alignItems: 'center' }}>
                     <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: colors.tint + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                        <ActivityIcon size={32} color={colors.tint} />
+                        <ActivityIcon size={32} color={getContrastColor(colors.tint, theme)} />
                     </View>
                     <Text style={{ fontSize: 16, fontWeight: '900', color: colors.text }}>Bicicleta</Text>
                 </TouchableOpacity>

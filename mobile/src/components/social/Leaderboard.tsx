@@ -4,6 +4,7 @@ import { Trophy, Medal } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getContrastColor } from '@/utils/colorUtils';
 import apiClient from '@/services/apiClient';
 import LevelBadge from '@/components/LevelBadge';
 
@@ -32,7 +33,7 @@ export function Leaderboard() {
     if (isLoading) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
-                <ActivityIndicator size="large" color={colors.tint} />
+                <ActivityIndicator size="large" color={getContrastColor(colors.tint, theme)} />
             </View>
         );
     }
@@ -47,7 +48,7 @@ export function Leaderboard() {
                     <Text style={{ fontSize: 18, fontWeight: '900', color: colors.text }}>Ranking Global</Text>
                 </View>
                 <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, backgroundColor: colors.tint + '15' }}>
-                    <Text style={{ fontSize: 9, fontWeight: 'bold', color: colors.tint, textTransform: 'uppercase', letterSpacing: 1 }}>Top 50</Text>
+                    <Text style={{ fontSize: 9, fontWeight: 'bold', color: getContrastColor(colors.tint, theme), textTransform: 'uppercase', letterSpacing: 1 }}>Top 50</Text>
                 </View>
             </View>
             
@@ -90,11 +91,11 @@ export function Leaderboard() {
                             <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} />
                         ) : (
                             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                                <Text style={{ fontSize: 13, fontWeight: 'bold', color: colors.tint }}>{displayUsername.charAt(0).toUpperCase()}</Text>
+                                <Text style={{ fontSize: 13, fontWeight: 'bold', color: getContrastColor(colors.tint, theme) }}>{displayUsername.charAt(0).toUpperCase()}</Text>
                             </View>
                         )}
                     </View>
-                    <Text style={{ flexShrink: 1, fontSize: 13, fontWeight: isMe ? '900' : 'bold', color: isMe ? colors.tint : colors.text }} numberOfLines={1}>
+                    <Text style={{ flexShrink: 1, fontSize: 13, fontWeight: isMe ? '900' : 'bold', color: isMe ? getContrastColor(colors.tint, theme) : colors.text }} numberOfLines={1}>
                         {displayUsername} {isMe && '(Tú)'}
                     </Text>
                 </View>
@@ -133,4 +134,5 @@ export function Leaderboard() {
         </View>
     );
 }
+
 

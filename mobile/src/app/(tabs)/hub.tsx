@@ -40,14 +40,14 @@ const HubButton = ({ icon: Icon, title, description, onPress, badge = false, isC
   >
     <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
       <View style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}>
-        <Icon size={28} color={colors.tint} />
+        <Icon size={28} color={getContrastColor(colors.tint, theme)} />
       </View>
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Text style={{ fontSize: 17, fontWeight: 'bold', color: colors.text }}>{title}</Text>
           {isComingSoon && (
             <View style={{ backgroundColor: colors.tint + '20', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 }}>
-              <Text style={{ fontSize: 10, fontWeight: 'bold', color: colors.tint, textTransform: 'uppercase' }}>Pronto</Text>
+              <Text style={{ fontSize: 10, fontWeight: 'bold', color: getContrastColor(colors.tint, theme), textTransform: 'uppercase' }}>Pronto</Text>
             </View>
           )}
           {badge && !isComingSoon && (

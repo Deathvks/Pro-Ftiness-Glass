@@ -79,7 +79,7 @@ export function AiInfoModal({ visible, onClose }: AiInfoModalProps) {
               <View style={{ padding: 24, paddingTop: 8 }}>
                 <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
                   <View style={{ flex: 1, alignItems: 'center', padding: 16, borderRadius: 20, borderWidth: 1, backgroundColor: isAILimitReached ? '#ef444415' : colors.tint + '15', borderColor: isAILimitReached ? '#ef444450' : colors.border }}>
-                    <Zap size={20} color={isAILimitReached ? '#ef4444' : colors.tint} style={{ marginBottom: 4 }} />
+                    <Zap size={20} color={isAILimitReached ? '#ef4444' : getContrastColor(colors.tint, theme)} style={{ marginBottom: 4 }} />
                     <Text style={{ fontSize: 10, fontWeight: 'bold', marginBottom: 4, color: colors.textSecondary }}>USOS RESTANTES</Text>
                     <Text style={{ fontSize: 24, fontWeight: '900', color: isAILimitReached ? '#ef4444' : colors.text }}>
                       {aiRemaining} <Text style={{ fontSize: 14, opacity: 0.5 }}>/ {aiLimit}</Text>
@@ -116,6 +116,7 @@ export function AiInfoModal({ visible, onClose }: AiInfoModalProps) {
     </Modal>
   );
 }
+
 
 
 

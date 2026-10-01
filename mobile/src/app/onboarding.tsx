@@ -212,7 +212,7 @@ export default function Onboarding() {
               {userProfile?.profile_picture ? (
                 <Image source={{ uri: userProfile.profile_picture }} style={{ width: 96, height: 96, borderRadius: 48 }} />
               ) : (
-                <Sparkles size={40} color={colors.tint} />
+                <Sparkles size={40} color={getContrastColor(colors.tint, theme)} />
               )}
             </View>
             <Text style={[styles.bigTitle, { color: colors.text }]}>¡Hola, {userProfile?.username || 'Atleta'}!</Text>
@@ -258,8 +258,8 @@ export default function Onboarding() {
           <View style={{ alignItems: 'center', gap: 40 }}>
             <View style={{ alignItems: 'center' }}>
               <View style={[styles.badge, { backgroundColor: colors.tint + '20' }]}>
-                <ArrowUp size={14} color={colors.tint} style={{ marginRight: 6 }} />
-                <Text style={[styles.badgeText, { color: colors.tint }]}>ALTURA</Text>
+                <ArrowUp size={14} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 6 }} />
+                <Text style={[styles.badgeText, { color: getContrastColor(colors.tint, theme) }]}>ALTURA</Text>
               </View>
               <GiantInput
                 value={formData.height}
@@ -276,8 +276,8 @@ export default function Onboarding() {
 
             <View style={{ alignItems: 'center' }}>
               <View style={[styles.badge, { backgroundColor: colors.tint + '20' }]}>
-                <Scale size={14} color={colors.tint} style={{ marginRight: 6 }} />
-                <Text style={[styles.badgeText, { color: colors.tint }]}>PESO ACTUAL</Text>
+                <Scale size={14} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 6 }} />
+                <Text style={[styles.badgeText, { color: getContrastColor(colors.tint, theme) }]}>PESO ACTUAL</Text>
               </View>
               <GiantInput
                 value={formData.weight}
@@ -332,7 +332,7 @@ export default function Onboarding() {
                 <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>PERFIL</Text>
                 <Text style={[styles.summaryVal, { color: colors.text }]}>{formData.gender === 'male' ? 'Hombre' : 'Mujer'}, {formData.age} años</Text>
               </View>
-              <Edit size={18} color={colors.tint} style={{ position: 'absolute', right: 24 }} />
+              <Edit size={18} color={getContrastColor(colors.tint, theme)} style={{ position: 'absolute', right: 24 }} />
             </TouchableOpacity>
             
             <View style={{ height: 1, backgroundColor: colors.border + '40' }} />
@@ -342,7 +342,7 @@ export default function Onboarding() {
                 <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>MEDIDAS</Text>
                 <Text style={[styles.summaryVal, { color: colors.text }]}>{formData.height} cm   •   {formData.weight} kg</Text>
               </View>
-              <Edit size={18} color={colors.tint} style={{ position: 'absolute', right: 24 }} />
+              <Edit size={18} color={getContrastColor(colors.tint, theme)} style={{ position: 'absolute', right: 24 }} />
             </TouchableOpacity>
 
             <View style={{ height: 1, backgroundColor: colors.border + '40' }} />
@@ -352,7 +352,7 @@ export default function Onboarding() {
                 <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>ACTIVIDAD</Text>
                 <Text style={[styles.summaryVal, { color: colors.text }]}>{ACTIVITY_LEVELS.find(a => a.v === formData.activityLevel)?.t}</Text>
               </View>
-              <Edit size={18} color={colors.tint} style={{ position: 'absolute', right: 24 }} />
+              <Edit size={18} color={getContrastColor(colors.tint, theme)} style={{ position: 'absolute', right: 24 }} />
             </TouchableOpacity>
 
             <View style={{ height: 1, backgroundColor: colors.border + '40' }} />
@@ -360,9 +360,9 @@ export default function Onboarding() {
             <TouchableOpacity onPress={() => { setDirection('left'); setStep(4); }} style={styles.summaryRow}>
               <View style={{ alignItems: 'center', flex: 1 }}>
                 <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>OBJETIVO</Text>
-                <Text style={[styles.summaryVal, { color: colors.tint, textTransform: 'uppercase' }]}>{getGoalLabel(formData.goal)}</Text>
+                <Text style={[styles.summaryVal, { color: getContrastColor(colors.tint, theme), textTransform: 'uppercase' }]}>{getGoalLabel(formData.goal)}</Text>
               </View>
-              <Edit size={18} color={colors.tint} style={{ position: 'absolute', right: 24 }} />
+              <Edit size={18} color={getContrastColor(colors.tint, theme)} style={{ position: 'absolute', right: 24 }} />
             </TouchableOpacity>
           </BlurView>
           </View>
@@ -386,7 +386,7 @@ export default function Onboarding() {
           
           <GlassButton
             theme={colorScheme}
-            color={colors.tint}
+            color={getContrastColor(colors.tint, theme)}
             onPress={isStepValid ? (step === 5 ? handleSubmit : handleNext) : handleNext}
             style={[styles.footerBtnNext, { flex: step > 1 ? 2 : 1, opacity: isStepValid ? 1 : 0.4 }]}
           >

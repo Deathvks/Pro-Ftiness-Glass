@@ -1,3 +1,4 @@
+import { getContrastColor } from '@/utils/colorUtils';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, FlatList, Image, ActivityIndicator, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -100,7 +101,7 @@ export const PixabayModal: React.FC<PixabayModalProps> = ({ visible, onClose, on
             {/* Images Grid */}
             {isLoading ? (
               <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color={colors.tint} />
+                <ActivityIndicator size="large" color={getContrastColor(colors.tint, theme)} />
               </View>
             ) : images.length > 0 ? (
               <FlatList
@@ -179,3 +180,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   }
 });
+
