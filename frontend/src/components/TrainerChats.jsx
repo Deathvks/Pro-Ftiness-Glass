@@ -45,6 +45,7 @@ export default function TrainerChats({ onClose }) {
   const [resendDragY, setResendDragY] = useState(0);
   const [resendTouchStartY, setResendTouchStartY] = useState(null);
   const [isResending, setIsResending] = useState(false);
+  const [isExecutingBot, setIsExecutingBot] = useState(false);
   const [selectedClient, setSelectedClient] = useState(() => {
     const saved = sessionStorage.getItem('trainer_chats_selected_client');
     return saved ? JSON.parse(saved) : null;
@@ -273,6 +274,8 @@ export default function TrainerChats({ onClose }) {
 
   const executeBotReminder = async (e, client) => {
     e.stopPropagation();
+    if (isExecutingBot) return;
+    setIsExecutingBot(true);
     try {
       const levelToExecute = (client.lastMessage?.bot_reminder_level || 0) + 1;
       if (levelToExecute > 3) {
