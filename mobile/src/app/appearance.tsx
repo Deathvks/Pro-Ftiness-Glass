@@ -148,6 +148,42 @@ export default function AppearanceScreen() {
             </View>
           </View>
 
+          {/* Temas Especiales */}
+          <View style={{ marginBottom: 32 }}>
+            <Text style={{ fontSize: 12, fontWeight: 'bold', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16, marginLeft: 4 }}>Temas Especiales (Líquidos)</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 }}>
+              {[
+                { id: 'galaxy', icon: Sparkles, label: 'Galaxia' },
+                { id: 'ocean', icon: Droplet, label: 'Océano' },
+                { id: 'ocean-dark', icon: Droplet, label: 'Océano Oscuro' },
+                { id: 'desert', icon: Sun, label: 'Desierto' },
+                { id: 'desert-dark', icon: Moon, label: 'Desierto Oscuro' }
+              ].map((mode) => {
+                const isActive = theme === mode.id;
+                const ModeIcon = mode.icon;
+                return (
+                  <View key={mode.id} style={{ width: '33.33%', paddingHorizontal: 6, marginBottom: 12 }}>
+                    <TouchableOpacity
+                      onPress={() => handleThemeChange(mode.id)}
+                      style={{
+                        backgroundColor: isActive ? colors.tint + '15' : colors.background,
+                        borderWidth: 2,
+                        borderColor: isActive ? colors.tint : colors.border,
+                        borderRadius: 20,
+                        padding: 16,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <ModeIcon size={24} color={isActive ? colors.tint : colors.textSecondary} style={{ marginBottom: 8 }} />
+                      <Text style={{ fontSize: 11, fontWeight: 'bold', color: isActive ? colors.tint : colors.textSecondary, textAlign: 'center' }}>{mode.label}</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
           {/* Color de Acento */}
           <View style={{ marginBottom: 16 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
