@@ -393,7 +393,17 @@ export const getCronJobs = async (req, res, next) => {
         description: 'Avisa a los amigos si un usuario está a punto de perder su racha de entrenamiento.',
         status: 'active'
       }
-    ];
+    },
+        {
+          id: 6,
+          name: 'Valoración Semanal de la App',
+          schedule: 'Lunes a partir de 10:00',
+          frequency: 'Semanal (Hasta votar)',
+          pushTitle: 'N/A (In-App)',
+          description: 'Abre el modal de Google Play o Web para valorar. Se repite si lo ignoran, desaparece para siempre si votan.',
+          status: 'active'
+        }
+      ];
 
     const enrichedCronJobs = await Promise.all(cronJobs.map(async (job) => {
       const lastLog = await db.PushDeliveryLog.findOne({
@@ -580,4 +590,5 @@ export const getUploadLogs = async (req, res, next) => {
     next(error);
   }
 };
+
 
