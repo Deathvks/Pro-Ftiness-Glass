@@ -3,7 +3,7 @@ import apiClient from './apiClient';
 export const submitAppRating = async (rating, comment) => {
     return await apiClient('/ratings', {
         method: 'POST',
-        body: JSON.stringify({ rating, comment })
+        body: { rating, comment }
     });
 };
 

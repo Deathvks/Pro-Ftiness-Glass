@@ -78,7 +78,7 @@ export default function AdminRatings() {
                         return (
                             <div key={star} className="flex items-center gap-3 text-xs font-bold text-text-secondary">
                                 <span>{star}</span>
-                                <StarIcon className="w-3 h-3 text-text-muted" />
+                                <StarIcon className="w-3 h-3 text-accent" />
                                 <div className="flex-1 h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
                                     <div className="h-full bg-accent rounded-full" style={{ width: `${percentage}%` }}></div>
                                 </div>
