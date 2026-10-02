@@ -94,7 +94,7 @@ const AndroidDownloadPrompt = () => {
                     <X size={18} />
                 </button>
 
-                <div className="flex gap-4 items-start pr-6">
+                <div className="flex gap-4 items-start pr-6 mb-4">
                     <div className="p-3 bg-accent/10 rounded-xl flex-shrink-0 text-accent">
                         <Smartphone size={28} />
                     </div>
@@ -103,29 +103,29 @@ const AndroidDownloadPrompt = () => {
                         <h4 className="font-bold text-text-primary text-base mb-1">
                             ¿Usas Android?
                         </h4>
-                        <p className="text-sm text-text-secondary leading-relaxed mb-3">
+                        <p className="text-sm text-text-secondary leading-relaxed">
                             Descarga nuestra App nativa para una mejor experiencia.
                             <span className="block mt-1 text-xs opacity-70 italic">
                                 (Siempre puedes descargarla más tarde desde Ajustes)
                             </span>
                         </p>
-
-                        <div className="flex flex-row flex-nowrap items-center gap-2 sm:gap-3 mt-2 w-full">
-                            <a
-                                href={downloadUrl}
-                                onClick={handleDownload}
-                                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 sm:px-4 bg-accent text-accent-contrast dark:text-bg-primary rounded-lg font-bold text-sm hover:scale-[1.02] transition-transform shadow-md no-underline whitespace-nowrap"
-                            >
-                                <Download size={16} className="shrink-0" /> Descargar
-                            </a>
-                            <button
-                                onClick={handleDismiss}
-                                className="shrink-0 px-3 sm:px-4 py-2 text-text-secondary font-medium text-sm hover:text-text-primary transition-colors whitespace-nowrap"
-                            >
-                                Ahora no
-                            </button>
-                        </div>
                     </div>
+                </div>
+
+                <div className="flex flex-row flex-nowrap items-center gap-2 sm:gap-3 w-full">
+                    <a
+                        href={downloadUrl}
+                        onClick={handleDownload}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 sm:px-4 bg-accent text-accent-contrast dark:text-bg-primary rounded-xl font-bold text-sm hover:scale-[1.02] transition-transform shadow-md no-underline whitespace-nowrap"
+                    >
+                        <Download size={16} className="shrink-0" /> Descargar App
+                    </a>
+                    <button
+                        onClick={handleDismiss}
+                        className="shrink-0 px-4 py-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary font-bold text-sm hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors whitespace-nowrap"
+                    >
+                        Ahora no
+                    </button>
                 </div>
             </div>
         </div>
