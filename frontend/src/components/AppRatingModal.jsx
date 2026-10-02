@@ -84,7 +84,7 @@ const AppRatingModal = ({ visible, onClose, onFinish }) => {
                     ))}
                 </div>
 
-                <div className={w-full overflow-hidden transition-all duration-300 \}>
+                <div className={`w-full overflow-hidden transition-all duration-300 ${rating > 0 ? 'max-h-32 opacity-100 mb-6' : 'max-h-0 opacity-0'}`}>
                     <textarea
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
@@ -112,3 +112,4 @@ const AppRatingModal = ({ visible, onClose, onFinish }) => {
 };
 
 export default AppRatingModal;
+
