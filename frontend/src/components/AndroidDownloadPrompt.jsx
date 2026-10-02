@@ -112,17 +112,17 @@ const AndroidDownloadPrompt = () => {
                     </div>
                 </div>
 
-                <div className="flex flex-row flex-nowrap items-center gap-2 sm:gap-3 w-full">
+                <div className="flex flex-wrap items-stretch gap-2 sm:gap-3 w-full">
                     <a
                         href={downloadUrl}
                         onClick={handleDownload}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 sm:px-4 bg-accent text-accent-contrast dark:text-bg-primary rounded-xl font-bold text-sm hover:scale-[1.02] transition-transform shadow-md no-underline whitespace-nowrap"
+                        className="flex-auto min-w-[140px] flex items-center justify-center gap-1.5 py-2.5 px-3 sm:px-4 bg-accent text-accent-contrast dark:text-bg-primary rounded-xl font-bold text-sm hover:scale-[1.02] transition-transform shadow-md no-underline"
                     >
                         <Download size={16} className="shrink-0" /> Descargar App
                     </a>
                     <button
                         onClick={handleDismiss}
-                        className="shrink-0 px-4 py-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary font-bold text-sm hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors whitespace-nowrap"
+                        className="flex-auto min-w-[100px] px-4 py-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary font-bold text-sm hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                     >
                         Ahora no
                     </button>
