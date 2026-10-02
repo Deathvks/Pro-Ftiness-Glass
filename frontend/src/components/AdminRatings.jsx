@@ -3,6 +3,7 @@ import { getAppRatings } from '../services/ratingService';
 import Spinner from './Spinner';
 import { StarIcon } from '@heroicons/react/24/solid';
 import { StarIcon as StarOutline } from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -21,6 +22,8 @@ export default function AdminRatings() {
 
     const [ratings, setRatings] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
 
     useEffect(() => {
         const fetchRatings = async () => {
@@ -41,6 +44,8 @@ export default function AdminRatings() {
     }
 
     const averageRating = ratings.length ? (ratings.reduce((acc, r) => acc + r.rating, 0) / ratings.length).toFixed(1) : 0;
+    const totalPages = Math.ceil(ratings.length / ITEMS_PER_PAGE);
+    const currentRatings = ratings.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     return (
         <div className="w-full text-left">
@@ -89,37 +94,59 @@ export default function AdminRatings() {
                 </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {ratings.length === 0 ? (
-                    <div className="text-center py-12 text-text-muted bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
+                    <div className="col-span-full text-center py-12 text-text-muted bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
                         <p className="font-bold text-lg">No hay valoraciones todavía.</p>
                     </div>
                 ) : (
-                    ratings.map(rating => (
-                        <div key={rating.id} className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] p-5 flex flex-col sm:flex-row gap-4">
-                            <div className="flex items-center gap-3 sm:w-1/4 sm:flex-col sm:items-start">
-                                {getAvatarUrl(rating.User) ? (
-                                    <img src={getAvatarUrl(rating.User)} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-black/5 dark:ring-white/10 shadow-sm bg-bg-primary" />
-                                ) : (
-                                    <div className="w-10 h-10 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center font-bold">{rating.User?.username?.charAt(0).toUpperCase() || 'U'}</div>
-                                )}
-                                <div>
-                                    <div className="font-bold text-sm text-text-primary">@{rating.User?.username || 'Usuario'}</div>
-                                    <div className="text-[10px] text-text-muted font-mono">{formatDistanceToNow(new Date(rating.createdAt), { addSuffix: true, locale: es })}</div>
+                    currentRatings.map(rating => (
+                        <div key={rating.id} className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] p-5 flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    {getAvatarUrl(rating.User) ? (
+                                        <img src={getAvatarUrl(rating.User)} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-black/5 dark:ring-white/10 shadow-sm bg-bg-primary" />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center font-bold">{rating.User?.username?.charAt(0).toUpperCase() || 'U'}</div>
+                                    )}
+                                    <div>
+                                        <div className="font-bold text-sm text-text-primary">@{rating.User?.username || 'Usuario'}</div>
+                                        <div className="text-[10px] text-text-muted font-mono">{formatDistanceToNow(new Date(rating.createdAt), { addSuffix: true, locale: es })}</div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex-1">
-                                <div className="flex text-accent mb-2">
+                                <div className="flex text-accent shrink-0">
                                     {[1,2,3,4,5].map(s => s <= rating.rating ? <StarIcon key={s} className="w-4 h-4" /> : <StarOutline key={s} className="w-4 h-4 text-text-muted" />)}
                                 </div>
-                                {rating.comment && (
-                                    <p className="text-sm text-text-secondary bg-bg-primary/50 p-3 rounded-2xl ring-1 ring-black/5 dark:ring-white/10">{rating.comment}</p>
-                                )}
                             </div>
+                            {rating.comment && (
+                                <p className="text-sm text-text-secondary bg-bg-primary/50 p-3 rounded-2xl ring-1 ring-black/5 dark:ring-white/10">{rating.comment}</p>
+                            )}
                         </div>
                     ))
                 )}
             </div>
+
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] p-2 mt-6">
+                    <button 
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="p-3 rounded-xl hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                    >
+                        <ChevronLeftIcon className="w-5 h-5 text-text-primary" />
+                    </button>
+                    <span className="text-sm font-bold text-text-secondary">
+                        Página {currentPage} de {totalPages}
+                    </span>
+                    <button 
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="p-3 rounded-xl hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                    >
+                        <ChevronRightIcon className="w-5 h-5 text-text-primary" />
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
