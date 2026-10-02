@@ -43,6 +43,7 @@ const AppRatingModal = ({ visible, onClose, onFinish }) => {
     };
 
     const handleRemindLater = () => {
+        addToast('¡Lo entendemos! Te preguntaremos más adelante. ¡Sigue así!', 'info');
         onClose();
     };
 
