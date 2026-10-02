@@ -1059,7 +1059,7 @@ const AdminPanel = ({ onCancel }) => {
 
                         <button
                           onClick={() => setReportToDelete(report)}
-                          className="flex items-center gap-2 px-5 py-3.5 bg-green-500/10 text-green-600 dark:text-green-500 hover:bg-green-500 hover:text-white ring-1 ring-green-500/30 hover:ring-green-500 rounded-[20px] font-bold transition-all active:scale-95 shrink-0 mt-2 md:mt-0 w-full md:w-auto justify-center shadow-sm"
+                          className="flex items-center gap-2 px-5 py-3.5 bg-accent/10 text-accent hover:bg-accent hover:text-accent-contrast ring-1 ring-accent/30 hover:ring-accent rounded-[20px] font-bold transition-all active:scale-95 shrink-0 mt-2 md:mt-0 w-full md:w-auto justify-center shadow-sm"
                         >
                           <CheckSquare size={20} strokeWidth={2.5} />
                           Resolver
@@ -1150,7 +1150,7 @@ const AdminPanel = ({ onCancel }) => {
           onCancel={() => setReportToDelete(null)}
           isLoading={isUpdating}
           confirmText="Resolver"
-          confirmColor="bg-green-600 hover:bg-green-700"
+          confirmColor="bg-accent text-accent-contrast hover:opacity-90"
         />
       )}
 
@@ -1188,6 +1188,8 @@ const AdminPanel = ({ onCancel }) => {
 };
 
 export default AdminPanel;
+
+
 
 
 
