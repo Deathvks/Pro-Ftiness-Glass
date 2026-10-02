@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { StarIcon, XMarkIcon } from '@heroicons/react/24/solid';
 import { StarIcon as StarOutline } from '@heroicons/react/24/outline';
-import { submitAppRating } from '../services/ratingService';
+import { submitAppRating, getMyRating } from '../services/ratingService';
 import { useToast } from '../hooks/useToast';
 
 const AppRatingModal = ({ visible, onClose, onFinish, bottomSheet = false }) => {
@@ -31,6 +31,13 @@ const AppRatingModal = ({ visible, onClose, onFinish, bottomSheet = false }) => 
     useEffect(() => {
         if (visible) {
             document.body.style.overflow = 'hidden';
+            // Fetch existing rating
+            getMyRating().then(data => {
+                if (data && data.rating > 0) {
+                    setRating(data.rating);
+                    setComment(data.comment || '');
+                }
+            }).catch(err => console.error("Error fetching rating:", err));
         } else {
             document.body.style.overflow = 'unset';
         }
