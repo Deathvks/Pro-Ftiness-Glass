@@ -195,7 +195,8 @@ const PORT = process.env.PORT || 3001;
 
 import chatController from './controllers/chatController.js';
 
-db.sequelize.sync()
+const isProductionDB = process.env.NODE_ENV === 'production' || !!process.env.MYSQL_HOST;
+(isProductionDB ? db.sequelize.authenticate() : db.sequelize.sync())
   .then(() => {
     
     if (process.env.NODE_ENV === 'production' || process.env.MYSQL_HOST) {
@@ -221,6 +222,7 @@ db.sequelize.sync()
   });
 
 export { io };
+
 
 
 
