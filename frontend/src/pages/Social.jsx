@@ -1307,21 +1307,21 @@ export default function Social({ setView }) {
             {/* --- Pestañas Horizontales --- */}
             <div id="social-tabs" className="flex overflow-x-auto no-scrollbar gap-2.5 mb-8 py-2 px-1 -mx-1 md:justify-center mask-linear-fade">
                 <TabButton id="feed" icon={Activity} label="Muro" isActive={activeTab === 'feed'} onClick={changeTab} />
+                <TabButton id="leaderboard" icon={Trophy} label="Ranking" isActive={activeTab === 'leaderboard'} onClick={changeTab} />
                 <TabButton id="friends" icon={Users} label="Amigos" isActive={activeTab === 'friends'} onClick={changeTab} />
                 <TabButton id="squads" icon={Shield} label="Grupos" isActive={activeTab === 'squads'} onClick={changeTab} />
                 <TabButton id="requests" icon={UserPlus} label="Solicitudes" badge={socialRequests?.received?.length || 0} isActive={activeTab === 'requests'} onClick={changeTab} />
                 <TabButton id="search" icon={Search} label="Buscar" isActive={activeTab === 'search'} onClick={changeTab} />
-                <TabButton id="leaderboard" icon={Trophy} label="Ranking" isActive={activeTab === 'leaderboard'} onClick={changeTab} />
             </div>
 
             {/* --- Contenido Principal --- */}
             <div className="min-h-[400px] max-w-3xl mx-auto w-full">
                 {activeTab === 'feed' && <Feed setView={setView} visibleStories={visibleStories} myStories={myStories} />}
+                {activeTab === 'leaderboard' && renderLeaderboard()}
                 {activeTab === 'friends' && renderFriends()}
                 {activeTab === 'squads' && renderSquads()}
                 {activeTab === 'requests' && renderRequests()}
                 {activeTab === 'search' && renderSearch()}
-                {activeTab === 'leaderboard' && renderLeaderboard()}
             </div>
         </div>
     );
