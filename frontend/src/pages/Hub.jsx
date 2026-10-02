@@ -14,7 +14,7 @@ import {
   ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 import AppRatingModal from '../components/AppRatingModal';
-import { StarIcon } from '@heroicons/react/24/solid';
+import { HeartIcon } from '@heroicons/react/24/solid';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
 import HubTourGuide from '../components/HubTourGuide';
@@ -212,7 +212,7 @@ export default function Hub({ setView }) {
             <span className="text-sm font-medium opacity-90 mt-1">Danos feedback. Prometemos leerlo mientras descansamos entre series 🏋️‍♂️</span>
           </div>
           <div className="bg-black/10 p-3 rounded-full group-hover:scale-110 transition-transform relative z-10 shrink-0">
-            <StarIcon className="w-6 h-6 sm:w-8 sm:h-8" />
+            <HeartIcon className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
         </button>
 
