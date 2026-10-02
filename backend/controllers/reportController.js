@@ -4,6 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
+import { createNotification } from '../services/notificationService.js';
+import { sendBugReportResolvedEmail } from '../services/emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -102,6 +104,30 @@ export const deleteReport = async (req, res) => {
                 const fullPath = path.join(PUBLIC_DIR, imgUrl);
                 if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
             });
+        }
+
+        // --- NEW LOGIC: Send notifications ---
+        if (report.user_id) {
+            try {
+                const user = await User.findByPk(report.user_id);
+                if (user) {
+                    const userName = user.username || user.name || 'Usuario';
+                    // Send Email
+                    if (user.email) {
+                        await sendBugReportResolvedEmail(user.email, userName, report.subject);
+                    }
+                    
+                    // Send In-App & Push Notification
+                    await createNotification(user.id, {
+                        type: 'success',
+                        title: 'Reporte Resuelto ✅',
+                        message: `Tu reporte "${report.subject}" ha sido solucionado. ¡Gracias por avisarnos!`,
+                        data: { reportId: report.id }
+                    });
+                }
+            } catch (notifError) {
+                console.error("Error notificaciones:", notifError);
+            }
         }
 
         await report.destroy();

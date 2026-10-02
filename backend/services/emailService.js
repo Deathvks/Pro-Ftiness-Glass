@@ -287,3 +287,32 @@ export const sendBotReminderEmail = async (email, userName, level) => {
   return sendMailAndLog(mailOptions);
 };
 
+
+export const sendBugReportResolvedEmail = async (email, userName, reportSubject) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: Tu reporte ha sido resuelto - Pro Fitness Glass,
+    html: 
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+        <h2 style="color: #4F46E5;">Reporte Resuelto ✅</h2>
+        <p>Hola \,</p>
+        <p>Te escribimos para informarte que el problema que nos reportaste (<strong>\</strong>) ha sido analizado y resuelto por nuestro equipo técnico.</p>
+        <p>Muchas gracias por ayudarnos a mejorar la aplicación.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="\" style="background: #4F46E5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+            Volver a la App
+          </a>
+        </div>
+        <p style="font-size: 12px; color: #888; text-align: center;">Este es un correo automático, por favor no respondas a este mensaje.</p>
+      </div>
+    
+  };
+
+  try {
+    await sendMailAndLog(mailOptions);
+    console.log('Correo de reporte resuelto enviado a:', email);
+  } catch (error) {
+    console.error('Error enviando correo de reporte resuelto:', error);
+  }
+};
