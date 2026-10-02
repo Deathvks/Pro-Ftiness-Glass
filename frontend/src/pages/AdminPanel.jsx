@@ -502,9 +502,13 @@ const AdminPanel = ({ onCancel }) => {
         >
           <Bug className="w-4 h-4 sm:w-5 sm:h-5" />
           Reportes
-          {reports.length > 0 && activeTab !== 'reports' && (
-            <span className="bg-red text-white text-[10px] font-black px-1.5 sm:px-2 py-0.5 rounded-full ml-1 sm:ml-0">{reports.length}</span>
-          )}
+          {reports.length > 0 && (
+              <span className={`min-w-[20px] h-[20px] px-1.5 flex items-center justify-center text-[11px] font-black rounded-full ml-0.5 ${
+                activeTab === 'reports' ? 'bg-black/20 dark:bg-white/20 text-inherit' : 'bg-red text-white shadow-sm'
+              }`}>
+                {reports.length > 99 ? '99+' : reports.length}
+              </span>
+            )}
         </button>
         <button
           onClick={() => setActiveTab('exercises')}
@@ -1184,6 +1188,7 @@ const AdminPanel = ({ onCancel }) => {
 };
 
 export default AdminPanel;
+
 
 
 
