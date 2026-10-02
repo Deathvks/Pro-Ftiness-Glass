@@ -495,9 +495,13 @@ export const testCronJob = async (req, res, next) => {
         simulateCount++;
       }
       message = `Test: IGNORANDO LA HORA.\nHay ${simulateCount} usuario(s) con racha activa que aún no han entrenado hoy (racha en peligro).`;
-    } else {
-      message = "Esta tarea no tiene test implementado o es un mantenimiento automático interno.";
-    }
+          } else if (id === '6') {
+        const activeUsers = allUsers.filter(u => u.last_activity_date && new Date(u.last_activity_date) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+        simulateCount = activeUsers.length;
+        message = `Test: SISTEMA NATIVO/FRONT-END.\n\nEsta petición NO depende del servidor de notificaciones Push. Se dispara instantáneamente de forma local cuando el usuario entra a la app.\n\nAproximadamente ${simulateCount} usuarios activos tienen programado recibir este modal el próximo Lunes a las 10:00 (si no la han valorado ya).\n\nEl porcentaje de entrega es del 100% para los usuarios que abran la aplicación.`;
+      } else {
+        message = "Esta tarea no tiene test implementado o es un mantenimiento automático interno.";
+      }
 
     res.json({ success: true, message });
   } catch (error) {
