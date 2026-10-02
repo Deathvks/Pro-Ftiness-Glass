@@ -19,27 +19,6 @@ const getFullImageUrl = (path) => {
     return `${SERVER_URL}${cleanPath}`;
 };
 
-const formatLastSeen = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  
-  const diffMs = today - date;
-  if (diffMs < 2 * 60 * 1000) {
-    return 'En línea';
-  }
-
-  let timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  if (date.toDateString() === today.toDateString()) {
-    return `hoy a las ${timeStr}`;
-  } else if (date.toDateString() === yesterday.toDateString()) {
-    return `ayer a las ${timeStr}`;
-  } else {
-    return `${date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit' })} a las ${timeStr}`;
-  }
-};
 
 export default function AsesoriaScreen({ onBack }) {
   const { subscribe, isSubscribed } = usePushNotifications();
@@ -380,17 +359,17 @@ export default function AsesoriaScreen({ onBack }) {
             </div>
           </div>
         ) : trainer ? (
-          <div className="flex items-center gap-3">
-            {trainer.profile_image_url ? (
+          <div className="flex items-center gap-3 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 p-1.5 -ml-1.5 rounded-2xl transition-all active:scale-95" onClick={() => setShowTrainerProfile(true)}>
+              {trainer.profile_image_url ? (
               <img src={getFullImageUrl(trainer.profile_image_url)} alt={trainer.name} className="w-10 h-10 rounded-full object-cover border border-accent/30" referrerPolicy="no-referrer" />
             ) : (
               <UserCircleIcon className="w-10 h-10 text-text-secondary" />
             )}
             <div>
               <h2 className="font-bold text-text-primary text-sm leading-tight">{trainer.name}</h2>
-              <p className={`text-[11px] ${trainer.lastSeen && (new Date() - new Date(trainer.lastSeen) < 2 * 60 * 1000) ? 'text-accent font-medium' : 'text-text-secondary'}`}>
-                {trainer.lastSeen ? formatLastSeen(trainer.lastSeen) : `@${trainer.username}`}
-              </p>
+              <p className="text-[11px] text-text-secondary">
+                  @{trainer.username}
+                </p>
             </div>
           </div>
         ) : null}
@@ -566,3 +545,5 @@ export default function AsesoriaScreen({ onBack }) {
       </div>
     );
 }
+
+
