@@ -22,7 +22,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
             <img 
               src="/trainer-profile.jpg" 
               alt="Perfil del Entrenador" 
-              className="w-full h-full object-cover object-top"
+              className="w-full h-full object-cover object-center"
             />
             {/* Gradiente inferor para la transicion suave */}
             <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-bg-primary to-transparent" />
@@ -104,3 +104,4 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
     </ModalPortal>
   );
 }
+

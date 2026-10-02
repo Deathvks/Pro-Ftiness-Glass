@@ -23,6 +23,7 @@ const PromoBanner = ({ type, onClick }) => {
         };
 
     return (
+      <>
       <GlassCard 
         onClick={onClick} 
         className="mb-6 relative cursor-pointer group active:scale-[0.98] transition-transform p-0 !border-[--glass-border]"
@@ -56,10 +57,13 @@ const PromoBanner = ({ type, onClick }) => {
         </div>
       </GlassCard>
       <TrainerProfileModal visible={showProfile} onClose={() => setShowProfile(false)} />
+      </>
     );
 };
 
 export default PromoBanner;
+
+
 
 
 

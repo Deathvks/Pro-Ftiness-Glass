@@ -543,14 +543,14 @@ export default function MainAppLayout({
       buttons.forEach((btn, idx) => {
         const iconDiv = btn.querySelector('div');
         if (idx === nearestIndex) {
-          btn.classList.add('text-accent-pure');
+          btn.style.color = 'var(--color-accent)';
           btn.classList.remove('text-text-secondary');
           if (iconDiv) {
             iconDiv.classList.add('scale-125');
             iconDiv.classList.remove('group-hover:scale-110');
           }
         } else {
-          btn.classList.remove('text-accent-pure');
+          btn.style.color = '';
           btn.classList.add('text-text-secondary');
           if (iconDiv) {
             iconDiv.classList.remove('scale-125');
@@ -1025,8 +1025,8 @@ export default function MainAppLayout({
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-colors duration-300 ease-out active:scale-90 outline-none focus:outline-none ring-0 ${isVisuallyActive ? 'text-accent-pure' : 'text-text-secondary'}`}
-                  style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'both', WebkitTapHighlightColor: 'transparent' }}
+                  className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-colors duration-300 ease-out active:scale-90 outline-none focus:outline-none ring-0 ${isVisuallyActive ? '' : 'text-text-secondary'}`}
+                  style={{ color: isVisuallyActive ? 'var(--color-accent)' : undefined, animationDelay: `${index * 100}ms`, animationFillMode: 'both', WebkitTapHighlightColor: 'transparent' }}
                 >
                   <div className={`transition-transform duration-300 ${isVisuallyActive ? 'scale-125' : 'group-hover:scale-110'} relative`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
                     {typeof item.icon === 'function' ? item.icon(isVisuallyActive) : item.icon}
@@ -1168,6 +1168,9 @@ export default function MainAppLayout({
     </div>
   );
 }
+
+
+
 
 
 

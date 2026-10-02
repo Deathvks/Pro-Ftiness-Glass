@@ -20,7 +20,7 @@ const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, 
     }`}
   >
     <div 
-        className={`relative flex items-center justify-center shrink-0 transition-transform duration-300 ${isActive ? 'scale-110 text-accent-pure' : 'group-hover:scale-110 active:scale-95 group-hover:text-accent-pure'}`}
+        className={`relative flex items-center justify-center shrink-0 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110 active:scale-95'}`}
         onClick={(e) => {
             if (onIconClick) {
                 e.stopPropagation();
@@ -251,6 +251,10 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
 };
 
 export default Sidebar;
+
+
+
+
 
 
 
