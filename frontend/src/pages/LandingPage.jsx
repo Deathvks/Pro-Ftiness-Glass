@@ -755,6 +755,36 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             </ScrollRevealCard>
                         </div>
 
+                        {/* --- ENTRENADOR SECTION --- */}
+                    <div className="relative z-20 px-4 sm:px-6 mb-32 mt-12 max-w-6xl mx-auto w-full">
+                        <ScrollRevealCard>
+                            <div className="flex flex-col md:flex-row items-center gap-10 bg-black/5 dark:bg-white/5 p-8 md:p-12 rounded-[40px] ring-1 ring-black/5 dark:ring-white/10 shadow-xl overflow-hidden relative">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                                
+                                <div className="shrink-0 relative group">
+                                    <div className="w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden ring-4 ring-accent/20 bg-accent/5 shadow-2xl relative z-10 transition-transform duration-700 group-hover:scale-[1.03]">
+                                        <img src="/trainer-profile.jpg" alt="Entrenador" className="w-full h-full object-cover rounded-full" />
+                                    </div>
+                                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-accent text-accent-contrast px-6 py-2 rounded-full font-black text-sm tracking-widest uppercase shadow-lg whitespace-nowrap z-20 flex items-center gap-2">
+                                        <ShieldCheck size={16} /> Preparador Oficial
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 text-center md:text-left z-10">
+                                    <h2 className="text-4xl md:text-5xl font-black text-text-primary mb-4 tracking-tight uppercase">Conoce al Entrenador</h2>
+                                    <p className="text-text-secondary text-lg leading-relaxed mb-6 font-medium">
+                                        Especialista en hipertrofia y composición corporal. Te guiaré paso a paso con rutinas adaptadas, nutrición científica y motivación constante para que alcances tu mejor versión sin dietas extremas ni entrenamientos sin sentido.
+                                    </p>
+                                    <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+                                        <span className="px-4 py-2 bg-black/5 dark:bg-white/10 rounded-xl text-sm font-bold flex items-center gap-2 text-text-primary"><Trophy size={16} className="text-accent"/> Años de Experiencia</span>
+                                        <span className="px-4 py-2 bg-black/5 dark:bg-white/10 rounded-xl text-sm font-bold flex items-center gap-2 text-text-primary"><Users size={16} className="text-accent"/> Cientos de Asesorados</span>
+                                        <span className="px-4 py-2 bg-black/5 dark:bg-white/10 rounded-xl text-sm font-bold flex items-center gap-2 text-text-primary"><Activity size={16} className="text-accent"/> Certificado Oficial</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </ScrollRevealCard>
+                    </div>
+
                         {/* --- SECCIÓN 2: CARACTERÍSTICAS TÉCNICAS --- */}
                         <div className="w-full mt-32 relative z-10">
                             <ScrollRevealCard>
@@ -888,35 +918,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                     </main>
 
-                    {/* --- ENTRENADOR SECTION --- */}
-                    <section className="relative z-20 px-4 sm:px-6 mb-24 max-w-6xl mx-auto w-full">
-                        <ScrollRevealCard>
-                            <div className="flex flex-col md:flex-row items-center gap-10 bg-black/5 dark:bg-white/5 p-8 md:p-12 rounded-[40px] ring-1 ring-black/5 dark:ring-white/10 shadow-xl overflow-hidden relative">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-                                
-                                <div className="shrink-0 relative group">
-                                    <div className="w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden ring-4 ring-accent/20 bg-accent/5 shadow-2xl relative z-10 transition-transform duration-700 group-hover:scale-[1.03]">
-                                        <img src="/trainer-profile.jpg" alt="Entrenador" className="w-full h-full object-cover rounded-full" />
-                                    </div>
-                                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-accent text-accent-contrast px-6 py-2 rounded-full font-black text-sm tracking-widest uppercase shadow-lg whitespace-nowrap z-20 flex items-center gap-2">
-                                        <ShieldCheck size={16} /> Preparador Oficial
-                                    </div>
-                                </div>
-
-                                <div className="flex-1 text-center md:text-left z-10">
-                                    <h2 className="text-4xl md:text-5xl font-black text-text-primary mb-4 tracking-tight uppercase">Conoce al Entrenador</h2>
-                                    <p className="text-text-secondary text-lg leading-relaxed mb-6 font-medium">
-                                        Especialista en hipertrofia y composición corporal. Te guiaré paso a paso con rutinas adaptadas, nutrición científica y motivación constante para que alcances tu mejor versión sin dietas extremas ni entrenamientos sin sentido.
-                                    </p>
-                                    <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                                        <span className="px-4 py-2 bg-black/5 dark:bg-white/10 rounded-xl text-sm font-bold flex items-center gap-2 text-text-primary"><Trophy size={16} className="text-accent"/> Años de Experiencia</span>
-                                        <span className="px-4 py-2 bg-black/5 dark:bg-white/10 rounded-xl text-sm font-bold flex items-center gap-2 text-text-primary"><Users size={16} className="text-accent"/> Cientos de Asesorados</span>
-                                        <span className="px-4 py-2 bg-black/5 dark:bg-white/10 rounded-xl text-sm font-bold flex items-center gap-2 text-text-primary"><Activity size={16} className="text-accent"/> Certificado Oficial</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </ScrollRevealCard>
-                    </section>
+                    
 
                     {/* --- FOOTER LEGAL Y SOCIAL --- */}
                     <footer className="p-10 pb-16 text-center border-t border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 backdrop-blur-xl relative z-20 transform-gpu">
@@ -963,5 +965,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
 };
 
 export default LandingPage;
+
+
 
 
