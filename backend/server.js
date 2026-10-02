@@ -35,6 +35,7 @@ import twoFactorRoutes from './routes/twoFactor.js';
 import sessionRoutes from './routes/sessionRoutes.js';
 import socialRoutes from './routes/social.js';
 import reportRoutes from './routes/reports.js';
+import ratingRoutes from './routes/ratings.js';
 import gamificationRoutes from './routes/gamificationRoutes.js';
 import storyRoutes from './routes/stories.js';
 import squadRoutes from './routes/squads.js';
@@ -179,6 +180,7 @@ app.use('/api/2fa', twoFactorRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/ratings', ratingRoutes);
 app.use('/api/gamification', gamificationRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/squads', squadRoutes);
@@ -219,5 +221,6 @@ db.sequelize.sync()
   });
 
 export { io };
+
 
 
