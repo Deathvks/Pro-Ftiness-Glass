@@ -392,17 +392,8 @@ export const getCronJobs = async (req, res, next) => {
         pushTitle: '🔥 ¡Racha en peligro!',
         description: 'Avisa a los amigos si un usuario está a punto de perder su racha de entrenamiento.',
         status: 'active'
-      },
-      {
-        id: 6,
-        name: 'Valoración Semanal de la App',
-          schedule: 'Lunes a partir de 10:00',
-          frequency: 'Semanal (Hasta votar)',
-          pushTitle: 'N/A (In-App)',
-          description: 'Abre el modal de Google Play o Web para valorar. Se repite si lo ignoran, desaparece para siempre si votan.',
-          status: 'active'
-        }
-      ];
+      }
+    ];
 
     const enrichedCronJobs = await Promise.all(cronJobs.map(async (job) => {
       const lastLog = await db.PushDeliveryLog.findOne({
@@ -494,12 +485,7 @@ export const testCronJob = async (req, res, next) => {
       for (const dangerUser of targetUsers) {
         simulateCount++;
       }
-      message = `Test: IGNORANDO LA HORA.\nHay ${simulateCount} usuario(s) con racha activa que aún no han entrenado hoy (racha en peligro).`;
-          } else if (id === '6') {
-        const activeUsers = allUsers.filter(u => u.last_activity_date && new Date(u.last_activity_date) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
-        simulateCount = activeUsers.length;
-        message = `Test: SISTEMA NATIVO/FRONT-END.\n\nEsta petición NO depende del servidor de notificaciones Push. Se dispara instantáneamente de forma local cuando el usuario entra a la app.\n\nAproximadamente ${simulateCount} usuarios activos tienen programado recibir este modal el próximo Lunes a las 10:00 (si no la han valorado ya).\n\nEl porcentaje de entrega es del 100% para los usuarios que abran la aplicación.`;
-      } else {
+      message = `Test: IGNORANDO LA HORA.\nHay ${simulateCount} usuario(s) con racha activa que aún no han entrenado hoy (racha en peligro).`;      } else {
         message = "Esta tarea no tiene test implementado o es un mantenimiento automático interno.";
       }
 
@@ -593,5 +579,6 @@ export const getUploadLogs = async (req, res, next) => {
     next(error);
   }
 };
+
 
 
