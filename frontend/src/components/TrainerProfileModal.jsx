@@ -52,7 +52,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
 
         {/* Contenedor Principal */}
         <div 
-          className="relative w-full h-[95vh] sm:h-[90vh] sm:w-[540px] sm:max-w-full bg-bg-primary sm:rounded-[36px] rounded-t-[36px] shadow-[0_0_80px_rgba(var(--accent-rgb, 234,179,8),0.15)] flex flex-col overflow-hidden animate-slide-up-ios border border-white/5"
+          className="relative w-full h-[calc(100dvh-4.5rem)] sm:h-[90vh] sm:w-[540px] sm:max-w-full bg-bg-primary sm:rounded-[36px] rounded-t-[36px] shadow-[0_0_80px_rgba(var(--accent-rgb, 234,179,8),0.15)] flex flex-col overflow-hidden animate-slide-up-ios border border-white/5"
         >
           {/* Header Pegajoso (Aparece al scrollear) */}
           <div 
@@ -212,6 +212,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
     </ModalPortal>
   );
 }
+
 
 
 
