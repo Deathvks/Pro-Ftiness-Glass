@@ -110,17 +110,17 @@ const AndroidDownloadPrompt = () => {
                             </span>
                         </p>
 
-                        <div className="flex gap-3 mt-2">
+                        <div className="flex flex-row flex-nowrap items-center gap-2 sm:gap-3 mt-2 w-full">
                             <a
                                 href={downloadUrl}
                                 onClick={handleDownload}
-                                className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-accent text-accent-contrast dark:text-bg-primary rounded-lg font-bold text-sm hover:scale-[1.02] transition-transform shadow-md no-underline"
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 sm:px-4 bg-accent text-accent-contrast dark:text-bg-primary rounded-lg font-bold text-sm hover:scale-[1.02] transition-transform shadow-md no-underline whitespace-nowrap"
                             >
-                                <Download size={16} /> Descargar
+                                <Download size={16} className="shrink-0" /> Descargar
                             </a>
                             <button
                                 onClick={handleDismiss}
-                                className="px-4 py-2 text-text-secondary font-medium text-sm hover:text-text-primary transition-colors"
+                                className="shrink-0 px-3 sm:px-4 py-2 text-text-secondary font-medium text-sm hover:text-text-primary transition-colors whitespace-nowrap"
                             >
                                 Ahora no
                             </button>
