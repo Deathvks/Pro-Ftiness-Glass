@@ -135,6 +135,8 @@ PushDeliveryLog.belongsTo(User, { foreignKey: 'user_id' });
 User.hasMany(UserSession, { foreignKey: 'user_id', onDelete: 'CASCADE', as: 'Sessions' });
 UserSession.belongsTo(User, { foreignKey: 'user_id' });
 
+User.hasMany(AppRating, { foreignKey: 'user_id' });
+AppRating.belongsTo(User, { foreignKey: 'user_id' });
 User.hasMany(BugReport, { foreignKey: 'user_id', as: 'reports' });
 BugReport.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
@@ -215,6 +217,7 @@ const models = {
   UserSession,
   Friendship,
   BugReport,
+    AppRating,
   Story,
   StoryLike,
   StoryView,
@@ -232,3 +235,4 @@ const models = {
 };
 
 export default models;
+

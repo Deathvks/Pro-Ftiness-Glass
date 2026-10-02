@@ -3,6 +3,7 @@ import express from 'express';
 import { body } from 'express-validator';
 import * as adminController from '../controllers/adminController.js';
 import * as reportController from '../controllers/reportController.js';
+import * as ratingController from '../controllers/ratingController.js';
 import authenticateToken from '../middleware/authenticateToken.js';
 import authorizeAdmin from '../middleware/authorizeAdmin.js';
 
@@ -36,6 +37,9 @@ router.delete('/users/:userId', adminController.deleteUser);
 router.get('/reports', reportController.getReports);
 router.delete('/reports/:id', reportController.deleteReport);
 
+  // Rutas de valoraciones
+  router.get('/ratings', ratingController.getRatings);
+
 // Rutas de configuración global
 router.get('/settings/:key', adminController.getSetting);
 router.post('/settings/:key', adminController.updateSetting);
@@ -61,3 +65,4 @@ router.post('/reset-milestones', adminController.resetMilestoneBadges);
 router.get('/upload-logs', adminController.getUploadLogs);
 
 export default router;
+
