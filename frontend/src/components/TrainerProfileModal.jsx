@@ -167,11 +167,11 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
 
               {/* Sección Especialidades Épica */}
               <section className={`w-full relative transition-all duration-700 delay-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-blue-500/5 rounded-full blur-[80px] -z-10 pointer-events-none" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-accent/5 rounded-full blur-[80px] -z-10 pointer-events-none" />
                 
                 <div className="flex items-center gap-4 mb-8 justify-center">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-500/40 flex items-center justify-center shadow-lg shadow-blue-500/20 -rotate-3">
-                    <StarIcon className="w-6 h-6 text-white fill-white" />
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-accent/40 flex items-center justify-center shadow-lg shadow-accent/20">
+                    <CheckBadgeIcon className="w-7 h-7 text-accent-contrast" />
                   </div>
                   <h3 className="text-3xl font-black text-text-primary uppercase tracking-tight">Especialidades</h3>
                 </div>
@@ -202,4 +202,6 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
     </ModalPortal>
   );
 }
+
+
 
