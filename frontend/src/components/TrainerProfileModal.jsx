@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import ModalPortal from './ModalPortal';
 import { 
   AcademicCapIcon, 
-  SparklesIcon, 
+  StarIcon, 
   ShieldCheckIcon, 
   TrophyIcon, 
   FireIcon, 
@@ -171,7 +171,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
                 
                 <div className="flex items-center gap-4 mb-8 justify-center">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-500/40 flex items-center justify-center shadow-lg shadow-blue-500/20 -rotate-3">
-                    <SparklesIcon className="w-6 h-6 text-white fill-white" />
+                    <StarIcon className="w-6 h-6 text-white fill-white" />
                   </div>
                   <h3 className="text-3xl font-black text-text-primary uppercase tracking-tight">Especialidades</h3>
                 </div>
@@ -202,3 +202,4 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
     </ModalPortal>
   );
 }
+
