@@ -4,12 +4,27 @@ import { StarIcon as StarOutline } from '@heroicons/react/24/outline';
 import { submitAppRating } from '../services/ratingService';
 import { useToast } from '../hooks/useToast';
 
-const AppRatingModal = ({ visible, onClose, onFinish }) => {
+const AppRatingModal = ({ visible, onClose, onFinish, bottomSheet = false }) => {
     const [rating, setRating] = useState(0);
     const [hover, setHover] = useState(0);
     const [comment, setComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { addToast } = useToast();
+    const [touchStart, setTouchStart] = useState(null);
+    const [swipeOffset, setSwipeOffset] = useState(0);
+
+    const handleTouchStart = (e) => setTouchStart(e.touches[0].clientY);
+    const handleTouchMove = (e) => {
+        if (touchStart === null) return;
+        const diff = e.touches[0].clientY - touchStart;
+        if (diff > 0) setSwipeOffset(diff);
+    };
+    const handleTouchEnd = () => {
+        if (swipeOffset > 100) handleRemindLater();
+        setTouchStart(null);
+        setSwipeOffset(0);
+    };
+
 
     // Prevent background scroll
     useEffect(() => {
@@ -48,9 +63,18 @@ const AppRatingModal = ({ visible, onClose, onFinish }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className={`fixed inset-0 z-50 flex justify-center p-0 sm:p-4 ${bottomSheet ? "items-end sm:items-center" : "items-center p-4"}`}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleRemindLater}></div>
-            <div className="relative bg-bg-secondary w-full max-w-md rounded-[32px] shadow-2xl p-6 sm:p-8 animate-[scale-in_0.3s_ease-out] ring-1 ring-white/10 flex flex-col items-center text-center">
+            <div 
+    className={`relative bg-bg-secondary w-full max-w-md shadow-2xl p-6 sm:p-8 ring-1 ring-white/10 flex flex-col items-center text-center ${bottomSheet ? "rounded-t-[32px] sm:rounded-[32px] animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out]" : "rounded-[32px] animate-[scale-in_0.3s_ease-out]"}`}
+    style={bottomSheet ? { transform: swipeOffset > 0 ? `translateY(${swipeOffset}px)` : undefined, transition: touchStart !== null ? "none" : "transform 0.3s ease-out" } : undefined}
+    onTouchStart={bottomSheet ? handleTouchStart : undefined}
+    onTouchMove={bottomSheet ? handleTouchMove : undefined}
+    onTouchEnd={bottomSheet ? handleTouchEnd : undefined}
+>
+    {bottomSheet && (
+        <div className="w-12 h-1.5 bg-black/20 dark:bg-white/20 rounded-full mb-6 sm:hidden cursor-pointer" />
+    )}
                 
                 <button 
                     onClick={handleRemindLater}

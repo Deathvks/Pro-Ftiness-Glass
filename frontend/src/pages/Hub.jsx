@@ -13,6 +13,8 @@ import {
   ChatBubbleLeftRightIcon,
   ShieldCheckIcon
 } from '@heroicons/react/24/outline';
+import AppRatingModal from '../components/AppRatingModal';
+import { StarIcon } from '@heroicons/react/24/solid';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
 import HubTourGuide from '../components/HubTourGuide';
@@ -61,6 +63,7 @@ export default function Hub({ setView }) {
   const [visitedChallenges, setVisitedChallenges] = React.useState(true);
   const [visitedAsesoria, setVisitedAsesoria] = React.useState(true);
   const [showCoachingPromo, setShowCoachingPromo] = useState(false);
+  const [showRating, setShowRating] = useState(false);
 
   React.useEffect(() => {
     if (userProfile?.id) {
@@ -198,6 +201,28 @@ export default function Hub({ setView }) {
           )}
 
         </div>
+
+        <button 
+          onClick={() => setShowRating(true)}
+          className="w-full mt-6 bg-gradient-to-r from-accent to-purple-500 text-accent-contrast p-5 rounded-[24px] flex items-center justify-between transition-all active:scale-95 shadow-[0_8px_30px_var(--color-accent-transparent)] group relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className="flex flex-col text-left relative z-10">
+            <span className="font-black text-lg md:text-xl">¿Te gusta Pro Fitness Glass?</span>
+            <span className="text-sm font-medium opacity-90 mt-1">Valora la app y ayúdanos a mejorar ❤️</span>
+          </div>
+          <div className="bg-black/10 p-3 rounded-full group-hover:scale-110 transition-transform relative z-10 shrink-0">
+            <StarIcon className="w-6 h-6 sm:w-8 sm:h-8" />
+          </div>
+        </button>
+
+        {showRating && (
+          <AppRatingModal 
+            visible={showRating} 
+            onClose={() => setShowRating(false)} 
+            bottomSheet={true}
+          />
+        )}
         
         {showCoachingPromo && (
           <Suspense fallback={null}>
