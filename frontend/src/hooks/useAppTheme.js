@@ -288,11 +288,21 @@ export const useAppTheme = () => {
 
   useLayoutEffect(() => {
     const root = document.documentElement;
-    const classes = root.className.split(' ').filter(c => !c.startsWith('accent-'));
-    root.className = classes.join(' ') + ` accent-${accent}`;
-    const isLightTheme = ['light', 'ocean', 'desert'].includes(resolvedTheme);
-    const hex = ACCENT_MAP[accent] || '#22c55e';
-    root.style.setProperty('--text-accent', getSafeTextAccent(hex, isLightTheme));
+    let classes = root.className.split(' ').filter(c => !c.startsWith('accent-'));
+    
+    // Si el tema es estructural y tiene su propio acento, no aplicamos el acento personalizado
+    const isSpecialTheme = ['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(resolvedTheme);
+    
+    if (isSpecialTheme) {
+      root.className = classes.join(' ').trim();
+      root.style.removeProperty('--text-accent');
+    } else {
+      classes.push(`accent-${accent}`);
+      root.className = classes.join(' ').trim();
+      const isLightTheme = ['light'].includes(resolvedTheme);
+      const hex = ACCENT_MAP[accent] || '#22c55e';
+      root.style.setProperty('--text-accent', getSafeTextAccent(hex, isLightTheme));
+    }
   }, [accent, resolvedTheme]);
 
   const themeColor = useMemo(() => {
