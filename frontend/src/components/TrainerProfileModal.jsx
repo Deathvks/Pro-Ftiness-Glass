@@ -1,15 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ModalPortal from './ModalPortal';
-import { X, GraduationCap, Star, ShieldCheck, Award, Flame, CheckCircle2 } from 'lucide-react';
+import { X, GraduationCap, Star, ShieldCheck, Award, Flame, CheckCircle2, ChevronDown } from 'lucide-react';
 
 export default function TrainerProfileModal({ visible, onClose, trainer }) {
   const [scrollPos, setScrollPos] = useState(0);
   const scrollRef = useRef(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (visible && scrollRef.current) {
-      scrollRef.current.scrollTop = 0;
-      setScrollPos(0);
+    if (visible) {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = 0;
+        setScrollPos(0);
+      }
+      setTimeout(() => setIsLoaded(true), 50);
+    } else {
+      setIsLoaded(false);
     }
   }, [visible]);
 
@@ -19,35 +25,35 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
     setScrollPos(e.target.scrollTop);
   };
 
-  const imageScale = Math.max(1, 1 - (scrollPos * 0.002));
-  const imageOpacity = Math.max(0, 1 - (scrollPos * 0.003));
-  const headerOpacity = Math.min(1, scrollPos / 200);
+  const imageScale = Math.max(1, 1 + (scrollPos * 0.0015));
+  const imageOpacity = Math.max(0, 1 - (scrollPos * 0.0025));
+  const headerOpacity = Math.min(1, scrollPos / 150);
+  const showScrollHint = scrollPos < 50;
 
   return (
     <ModalPortal>
       <div className="fixed inset-0 z-[100] flex flex-col justify-end sm:items-center sm:justify-center p-0 sm:p-4 animate-fade-in">
-        {/* Backdrop animado */}
+        {/* Backdrop Épico */}
         <div 
-          className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-500"
+          className="absolute inset-0 bg-black/80 backdrop-blur-xl transition-opacity duration-500"
           onClick={onClose}
         />
 
-        {/* Contenedor Principal Épico */}
+        {/* Contenedor Principal */}
         <div 
-          className="relative w-full h-[95vh] sm:h-[85vh] sm:w-[500px] sm:max-w-full bg-bg-primary sm:rounded-[32px] rounded-t-[32px] shadow-2xl flex flex-col overflow-hidden animate-slide-up-ios"
-          style={{ boxShadow: '0 -20px 60px rgba(0,0,0,0.5), 0 0 100px rgba(var(--accent-rgb, 234, 179, 8), 0.15)' }}
+          className="relative w-full h-[95vh] sm:h-[90vh] sm:w-[540px] sm:max-w-full bg-bg-primary sm:rounded-[36px] rounded-t-[36px] shadow-[0_0_80px_rgba(var(--accent-rgb, 234,179,8),0.15)] flex flex-col overflow-hidden animate-slide-up-ios border border-white/5"
         >
           {/* Header Pegajoso (Aparece al scrollear) */}
           <div 
-            className="absolute top-0 left-0 right-0 h-16 sm:h-20 bg-bg-primary/90 backdrop-blur-xl z-50 flex items-center justify-between px-4 sm:px-6 border-b border-glass-border transition-opacity duration-300"
+            className="absolute top-0 left-0 right-0 h-16 sm:h-20 bg-bg-primary/80 backdrop-blur-2xl z-50 flex items-center justify-between px-4 sm:px-6 border-b border-glass-border transition-opacity duration-300"
             style={{ opacity: headerOpacity }}
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-accent/20 border-2 border-accent">
+              <div className="w-9 h-9 rounded-full overflow-hidden bg-accent/20 border-2 border-accent shadow-[0_0_15px_var(--color-accent-transparent)]">
                 <img src="/trainer-profile.jpg" alt="Mini" className="w-full h-full object-cover object-center" />
               </div>
-              <span className="font-black text-text-primary text-sm sm:text-base">
-                {trainer?.name || 'Entrenador Personal'}
+              <span className="font-black text-text-primary text-sm sm:text-base tracking-wide uppercase">
+                {trainer?.name || 'ENTRENADOR'}
               </span>
             </div>
             <button 
@@ -61,58 +67,75 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
           {/* Boton Cerrar Superior Fijo (Antes del scroll) */}
           <button 
             onClick={onClose}
-            style={{ opacity: 1 - headerOpacity }}
-            className="absolute top-4 right-4 sm:top-6 sm:right-6 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95 z-50"
+            style={{ opacity: 1 - headerOpacity, pointerEvents: headerOpacity > 0.5 ? 'none' : 'auto' }}
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 w-11 h-11 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95 z-50 border border-white/10"
           >
-            <X size={20} strokeWidth={3} />
+            <X size={22} strokeWidth={2.5} />
           </button>
 
           {/* Area de Scroll */}
           <div 
             ref={scrollRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth"
+            className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth bg-bg-primary"
           >
-            {/* Imagen Hero Parallax */}
-            <div className="relative h-[50vh] sm:h-[350px] w-full shrink-0 origin-bottom" style={{ transform: `scale(${imageScale})`, opacity: imageOpacity }}>
+            {/* Imagen Hero Parallax - Corregido el corte */}
+            <div className="relative h-[60vh] sm:h-[450px] w-full shrink-0 origin-top overflow-hidden bg-bg-primary" style={{ transform: `scale(${imageScale})`, opacity: imageOpacity }}>
               <img 
                 src="/trainer-profile.jpg" 
                 alt="Perfil del Entrenador" 
                 className="absolute inset-0 w-full h-full object-cover object-center"
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-bg-primary" />
-              <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/60 to-transparent h-48 bottom-0" />
+              
+              {/* Overlay oscuro para legibilidad superior */}
+              <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/40 to-transparent" />
+              
+              {/* Degradado suave infinito hacia abajo para fundirse con bg-primary */}
+              <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-bg-primary via-bg-primary/80 to-transparent" />
             </div>
 
-            {/* Contenido Épico */}
-            <div className="relative z-10 px-6 sm:px-8 -mt-24 sm:-mt-32 pb-24">
+            {/* Contenido Épico con animaciones escalonadas */}
+            <div className="relative z-10 px-6 sm:px-8 -mt-32 sm:-mt-40 pb-32 flex flex-col items-center">
               
               {/* Título y Verificación */}
-              <div className="flex flex-col items-center text-center mb-10">
-                <div className="relative">
-                  <h2 className="text-4xl sm:text-5xl font-black text-text-primary tracking-tight mb-2 uppercase drop-shadow-md">
+              <div className={`flex flex-col items-center text-center mb-12 transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                
+                {/* Scroll Hint */}
+                <div className={`flex flex-col items-center gap-1 mb-8 text-white/70 transition-opacity duration-300 ${showScrollHint ? 'opacity-100' : 'opacity-0'}`}>
+                   <span className="text-[10px] uppercase tracking-widest font-bold">Descubre más</span>
+                   <ChevronDown size={16} className="animate-bounce" />
+                </div>
+
+                <div className="relative inline-block">
+                  <h2 className="text-5xl sm:text-6xl font-black text-text-primary tracking-tighter mb-3 uppercase drop-shadow-xl" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
                     {trainer?.name || 'ENTRENADOR'}
                   </h2>
-                  <div className="absolute -right-6 -top-2 text-accent animate-pulse">
-                    <ShieldCheck size={28} />
+                  <div className="absolute -right-8 -top-4 sm:-top-6 text-accent animate-pulse drop-shadow-[0_0_15px_var(--color-accent)]">
+                    <ShieldCheck size={36} className="fill-accent/20" />
                   </div>
                 </div>
                 
-                <span className="px-5 py-2 rounded-full bg-accent text-accent-contrast text-sm sm:text-base font-black uppercase tracking-widest shadow-lg shadow-accent/30 flex items-center gap-2 mt-2">
-                  <Flame size={18} strokeWidth={3} />
-                  Preparador Oficial
-                </span>
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-accent rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity duration-300"></div>
+                  <span className="relative px-6 py-2.5 rounded-full bg-accent text-accent-contrast text-sm sm:text-base font-black uppercase tracking-[0.2em] shadow-xl flex items-center gap-2">
+                    <Flame size={20} strokeWidth={3} className="animate-pulse" />
+                    PREPARADOR OFICIAL
+                  </span>
+                </div>
               </div>
 
-              {/* Grid de Estudios (Efecto Tarjetas Glassmorphism) */}
-              <section className="mb-12 relative">
-                <div className="absolute -inset-4 bg-accent/5 rounded-[32px] blur-2xl -z-10" />
-                <div className="flex items-center gap-3 mb-6 justify-center">
-                  <GraduationCap size={28} className="text-accent" />
-                  <h3 className="text-2xl font-black text-text-primary uppercase tracking-wide">Mis Estudios</h3>
+              {/* Grid de Estudios (Efecto Tarjetas Épicas) */}
+              <section className={`w-full mb-14 relative transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-accent/5 rounded-full blur-[80px] -z-10 pointer-events-none" />
+                
+                <div className="flex items-center gap-4 mb-8 justify-center">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent to-accent/40 flex items-center justify-center shadow-lg shadow-accent/20 rotate-3">
+                    <GraduationCap size={24} className="text-accent-contrast" />
+                  </div>
+                  <h3 className="text-3xl font-black text-text-primary uppercase tracking-tight">Mis Estudios</h3>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
                     'Grado superior de acondicionamiento físico',
                     'Grado universitario de CAFyD',
@@ -122,24 +145,26 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
                   ].map((item, idx) => (
                     <div 
                       key={idx} 
-                      className="flex items-center gap-3 p-4 rounded-[20px] bg-black/5 dark:bg-white/5 border border-glass-border hover:border-accent/50 transition-all hover:bg-accent/10 group"
-                      style={{ animationDelay: `${idx * 100}ms` }}
+                      className="group flex items-center gap-4 p-5 rounded-[24px] bg-bg-secondary/50 backdrop-blur-sm border border-glass-border hover:border-accent/40 transition-all duration-300 hover:shadow-[0_8px_30px_var(--color-accent-transparent)] hover:-translate-y-1"
                     >
-                      <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:scale-110 transition-all duration-300">
-                        <Award size={20} className="text-accent group-hover:text-accent-contrast" />
+                      <div className="w-12 h-12 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:scale-110 transition-all duration-300 border border-transparent group-hover:border-accent-contrast/20">
+                        <Award size={22} className="text-text-secondary group-hover:text-accent-contrast transition-colors" />
                       </div>
-                      <span className="text-sm font-bold text-text-primary leading-snug">{item}</span>
+                      <span className="text-sm font-extrabold text-text-primary leading-tight">{item}</span>
                     </div>
                   ))}
                 </div>
               </section>
 
               {/* Sección Especialidades Épica */}
-              <section className="relative">
-                <div className="absolute -inset-4 bg-blue-500/5 rounded-[32px] blur-2xl -z-10" />
-                <div className="flex items-center gap-3 mb-6 justify-center">
-                  <Star size={28} className="text-accent fill-accent" />
-                  <h3 className="text-2xl font-black text-text-primary uppercase tracking-wide">Especialidades</h3>
+              <section className={`w-full relative transition-all duration-700 delay-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-blue-500/5 rounded-full blur-[80px] -z-10 pointer-events-none" />
+                
+                <div className="flex items-center gap-4 mb-8 justify-center">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-500/40 flex items-center justify-center shadow-lg shadow-blue-500/20 -rotate-3">
+                    <Star size={24} className="text-white fill-white" />
+                  </div>
+                  <h3 className="text-3xl font-black text-text-primary uppercase tracking-tight">Especialidades</h3>
                 </div>
                 
                 <div className="space-y-4">
@@ -150,11 +175,11 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
                   ].map((item, idx) => (
                     <div 
                       key={idx} 
-                      className="relative overflow-hidden flex items-center gap-4 p-5 rounded-[24px] bg-gradient-to-r from-accent/10 to-transparent border border-accent/20 group hover:from-accent/20 transition-all"
+                      className="relative overflow-hidden flex items-center gap-5 p-6 rounded-[24px] bg-gradient-to-r from-accent/10 to-transparent border border-accent/20 group hover:from-accent/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_var(--color-accent-transparent)]"
                     >
-                      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-accent rounded-l-[24px]" />
-                      <CheckCircle2 size={24} className="text-accent shrink-0" />
-                      <span className="text-sm sm:text-base font-extrabold text-text-primary leading-tight">{item}</span>
+                      <div className="absolute left-0 top-0 bottom-0 w-2 bg-accent rounded-l-[24px] group-hover:w-3 transition-all duration-300 shadow-[0_0_15px_var(--color-accent)]" />
+                      <CheckCircle2 size={28} className="text-accent shrink-0 group-hover:scale-110 transition-transform duration-300" />
+                      <span className="text-base sm:text-lg font-black text-text-primary leading-snug">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -168,3 +193,4 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
     </ModalPortal>
   );
 }
+
