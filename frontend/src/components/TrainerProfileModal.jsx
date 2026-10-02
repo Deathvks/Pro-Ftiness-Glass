@@ -1,6 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ModalPortal from './ModalPortal';
-import { X, GraduationCap, Star, ShieldCheck, Award, Flame, CheckCircle2, ChevronDown } from 'lucide-react';
+import { 
+  AcademicCapIcon, 
+  SparklesIcon, 
+  ShieldCheckIcon, 
+  TrophyIcon, 
+  FireIcon, 
+  BoltIcon,
+  CheckBadgeIcon
+} from '@heroicons/react/24/solid';
+import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 export default function TrainerProfileModal({ visible, onClose, trainer }) {
   const [scrollPos, setScrollPos] = useState(0);
@@ -60,7 +69,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
               onClick={onClose}
               className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary flex items-center justify-center transition-all active:scale-95"
             >
-              <X size={20} strokeWidth={3} />
+              <XMarkIcon className="w-6 h-6" strokeWidth={2.5} />
             </button>
           </div>
 
@@ -70,7 +79,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
             style={{ opacity: 1 - headerOpacity, pointerEvents: headerOpacity > 0.5 ? 'none' : 'auto' }}
             className="absolute top-4 right-4 sm:top-6 sm:right-6 w-11 h-11 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95 z-50 border border-white/10"
           >
-            <X size={22} strokeWidth={2.5} />
+            <XMarkIcon className="w-6 h-6" strokeWidth={2.5} />
           </button>
 
           {/* Area de Scroll */}
@@ -101,9 +110,9 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
               <div className={`flex flex-col items-center text-center mb-12 transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                 
                 {/* Scroll Hint */}
-                <div className={`flex flex-col items-center gap-1 mb-8 text-white/70 transition-opacity duration-300 ${showScrollHint ? 'opacity-100' : 'opacity-0'}`}>
-                   <span className="text-[10px] uppercase tracking-widest font-bold">Descubre más</span>
-                   <ChevronDown size={16} className="animate-bounce" />
+                <div className={`flex flex-col items-center gap-1 mb-8 text-text-primary/50 transition-opacity duration-300 ${showScrollHint ? 'opacity-100' : 'opacity-0'}`}>
+                   <span className="text-[10px] uppercase tracking-[0.3em] font-black">Descubre más</span>
+                   <ChevronDownIcon className="w-5 h-5 animate-bounce" strokeWidth={2.5} />
                 </div>
 
                 <div className="relative inline-block">
@@ -111,14 +120,14 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
                     {trainer?.name || 'ENTRENADOR'}
                   </h2>
                   <div className="absolute -right-8 -top-4 sm:-top-6 text-accent animate-pulse drop-shadow-[0_0_15px_var(--color-accent)]">
-                    <ShieldCheck size={36} className="fill-accent/20" />
+                    <ShieldCheckIcon className="w-10 h-10 fill-accent/20 text-accent" />
                   </div>
                 </div>
                 
                 <div className="relative group">
                   <div className="absolute -inset-1 bg-accent rounded-full blur opacity-40 group-hover:opacity-70 transition-opacity duration-300"></div>
                   <span className="relative px-6 py-2.5 rounded-full bg-accent text-accent-contrast text-sm sm:text-base font-black uppercase tracking-[0.2em] shadow-xl flex items-center gap-2">
-                    <Flame size={20} strokeWidth={3} className="animate-pulse" />
+                    <FireIcon className="w-5 h-5 animate-pulse" />
                     PREPARADOR OFICIAL
                   </span>
                 </div>
@@ -130,7 +139,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
                 
                 <div className="flex items-center gap-4 mb-8 justify-center">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent to-accent/40 flex items-center justify-center shadow-lg shadow-accent/20 rotate-3">
-                    <GraduationCap size={24} className="text-accent-contrast" />
+                    <AcademicCapIcon className="w-6 h-6 text-accent-contrast" />
                   </div>
                   <h3 className="text-3xl font-black text-text-primary uppercase tracking-tight">Mis Estudios</h3>
                 </div>
@@ -148,7 +157,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
                       className="group flex items-center gap-4 p-5 rounded-[24px] bg-bg-secondary/50 backdrop-blur-sm border border-glass-border hover:border-accent/40 transition-all duration-300 hover:shadow-[0_8px_30px_var(--color-accent-transparent)] hover:-translate-y-1"
                     >
                       <div className="w-12 h-12 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:scale-110 transition-all duration-300 border border-transparent group-hover:border-accent-contrast/20">
-                        <Award size={22} className="text-text-secondary group-hover:text-accent-contrast transition-colors" />
+                        <TrophyIcon className="w-5 h-5 text-text-secondary group-hover:text-accent-contrast transition-colors" />
                       </div>
                       <span className="text-sm font-extrabold text-text-primary leading-tight">{item}</span>
                     </div>
@@ -162,7 +171,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
                 
                 <div className="flex items-center gap-4 mb-8 justify-center">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-500/40 flex items-center justify-center shadow-lg shadow-blue-500/20 -rotate-3">
-                    <Star size={24} className="text-white fill-white" />
+                    <SparklesIcon className="w-6 h-6 text-white fill-white" />
                   </div>
                   <h3 className="text-3xl font-black text-text-primary uppercase tracking-tight">Especialidades</h3>
                 </div>
@@ -178,7 +187,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
                       className="relative overflow-hidden flex items-center gap-5 p-6 rounded-[24px] bg-gradient-to-r from-accent/10 to-transparent border border-accent/20 group hover:from-accent/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_var(--color-accent-transparent)]"
                     >
                       <div className="absolute left-0 top-0 bottom-0 w-2 bg-accent rounded-l-[24px] group-hover:w-3 transition-all duration-300 shadow-[0_0_15px_var(--color-accent)]" />
-                      <CheckCircle2 size={28} className="text-accent shrink-0 group-hover:scale-110 transition-transform duration-300" />
+                      <BoltIcon className="w-7 h-7 text-accent shrink-0 group-hover:scale-110 transition-transform duration-300" />
                       <span className="text-base sm:text-lg font-black text-text-primary leading-snug">{item}</span>
                     </div>
                   ))}
@@ -193,4 +202,3 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
     </ModalPortal>
   );
 }
-
