@@ -134,7 +134,7 @@ const AppRatingModal = ({ visible, onClose, onFinish, bottomSheet = false }) => 
                 </button>
             </div>
         </div>
-    ), document.body);
+    , document.body);
 };
 
 export default AppRatingModal;
