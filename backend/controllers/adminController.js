@@ -392,11 +392,10 @@ export const getCronJobs = async (req, res, next) => {
         pushTitle: '🔥 ¡Racha en peligro!',
         description: 'Avisa a los amigos si un usuario está a punto de perder su racha de entrenamiento.',
         status: 'active'
-      }
-    },
-        {
-          id: 6,
-          name: 'Valoración Semanal de la App',
+      },
+      {
+        id: 6,
+        name: 'Valoración Semanal de la App',
           schedule: 'Lunes a partir de 10:00',
           frequency: 'Semanal (Hasta votar)',
           pushTitle: 'N/A (In-App)',
