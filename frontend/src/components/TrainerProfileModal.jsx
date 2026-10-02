@@ -74,7 +74,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
             className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth"
           >
             {/* Imagen Hero Parallax */}
-            <div className="relative h-[50vh] sm:h-[350px] w-full shrink-0 origin-bottom" style={{ transform: \scale(\)\, opacity: imageOpacity }}>
+            <div className="relative h-[50vh] sm:h-[350px] w-full shrink-0 origin-bottom" style={{ transform: `scale(${imageScale})`, opacity: imageOpacity }}>
               <img 
                 src="/trainer-profile.jpg" 
                 alt="Perfil del Entrenador" 
@@ -123,7 +123,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
                     <div 
                       key={idx} 
                       className="flex items-center gap-3 p-4 rounded-[20px] bg-black/5 dark:bg-white/5 border border-glass-border hover:border-accent/50 transition-all hover:bg-accent/10 group"
-                      style={{ animationDelay: \\ms\ }}
+                      style={{ animationDelay: `${idx * 100}ms` }}
                     >
                       <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:scale-110 transition-all duration-300">
                         <Award size={20} className="text-accent group-hover:text-accent-contrast" />
