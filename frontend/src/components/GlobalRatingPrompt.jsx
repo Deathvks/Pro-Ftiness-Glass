@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { InAppReview } from '@capgo/capacitor-in-app-review';
+import { CapgoInAppReview } from '@capgo/capacitor-in-app-review';
 import AppRatingModal from './AppRatingModal';
 import { submitAppRating } from '../services/ratingService';
 
@@ -42,7 +42,7 @@ const GlobalRatingPrompt = () => {
 
                 if (Capacitor.isNativePlatform()) {
                     try {
-                        await InAppReview.requestReview();
+                        await CapgoInAppReview.requestReview();
                         // Assume they rated, so we don't bother them again. Native API handles its own quotas anyway.
                         localStorage.setItem('has_rated_app', 'true');
                         // Optionally record it in DB as an anonymous/store rating
@@ -71,3 +71,4 @@ const GlobalRatingPrompt = () => {
 };
 
 export default GlobalRatingPrompt;
+
