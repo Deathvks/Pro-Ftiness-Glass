@@ -27,6 +27,7 @@ import APKUpdater from './APKUpdater';
 import AIInfoModal from './AIInfoModal';
 import MilestoneLevelUpModal from './MilestoneLevelUpModal';
 import ReferralSuccessAnimation from './ReferralSuccessAnimation';
+import GlobalRatingPrompt from './GlobalRatingPrompt';
 
 // Constantes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -835,6 +836,8 @@ export default function MainAppLayout({
   return (
     <div className="relative flex flex-1 w-full h-full overflow-hidden bg-transparent">
       
+      <GlobalRatingPrompt />
+      
       <Sidebar
         view={view}
         navigate={handleNavClick}
@@ -1168,6 +1171,8 @@ export default function MainAppLayout({
     </div>
   );
 }
+
+
 
 
 

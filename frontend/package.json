@@ -26,6 +26,7 @@
     "@capacitor/push-notifications": "^8.0.3",
     "@capacitor/share": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
+    "@capgo/capacitor-in-app-review": "^8.2.4",
     "@capgo/capacitor-navigation-bar": "^8.0.25",
     "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "@headlessui/react": "^2.2.9",
