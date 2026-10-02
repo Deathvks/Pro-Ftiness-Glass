@@ -1,6 +1,6 @@
 /* frontend/src/pages/AdminPanel.jsx */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
+import { Star,
   ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle, Check,
   Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw, ShieldAlert, Bell, Mail, Cloud
 } from 'lucide-react';
@@ -10,6 +10,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import UserEditModal from './UserEditModal';
 import UserCreateModal from './UserCreateModal';
 import AdminExercises from './AdminExercises';
+import AdminRatings from '../components/AdminRatings';
 import AdminNotifications from './AdminNotifications';
 import AdminEmails from './AdminEmails';
 import SecurityDashboard from './SecurityDashboard';
