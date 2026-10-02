@@ -44,9 +44,23 @@ export default function AdminRatings() {
 
     return (
         <div className="w-full text-left">
-            <div className="mb-8">
+            <div className="mb-6">
                 <h2 className="text-2xl font-extrabold text-text-primary mb-2">Valoraciones de la App</h2>
                 <p className="text-text-secondary font-medium text-sm">Feedback general de los usuarios.</p>
+            </div>
+
+            <div className="bg-accent/10 border border-accent/20 rounded-2xl p-5 mb-8 text-sm text-text-primary">
+                <h4 className="font-bold text-accent mb-2 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    ¿Cómo funciona el sistema de valoraciones?
+                </h4>
+                <ul className="list-disc pl-5 space-y-1.5 opacity-90">
+                    <li>Se dispara automáticamente <b>todos los lunes a partir de las 10:00 AM</b> al abrir la app.</li>
+                    <li>Si el usuario usa la <b>App Nativa</b>, se le mostrará la ventana oficial de Google Play (In-App Review).</li>
+                    <li>Si usa la <b>Web o PWA</b>, le aparecerá nuestro modal de 1 a 5 estrellas.</li>
+                    <li>Si la <b>valora</b>, el sistema lo recordará y <b>nunca más se le volverá a preguntar</b>.</li>
+                    <li>Si la <b>rechaza o la cierra</b>, se le dejará en paz durante esa semana y se le volverá a pedir 7 días después.</li>
+                </ul>
             </div>
 
             <div className="bg-black/5 dark:bg-white/5 rounded-3xl p-6 ring-1 ring-black/5 dark:ring-white/10 mb-8 flex items-center gap-6">
