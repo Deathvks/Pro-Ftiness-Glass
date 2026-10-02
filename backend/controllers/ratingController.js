@@ -5,7 +5,7 @@ const { AppRating, User } = db;
 export const createRating = async (req, res) => {
     try {
         const { rating, comment } = req.body;
-        const userId = req.user.id;
+        const userId = req.user.userId;
 
         if (!rating || rating < 1 || rating > 5) {
             return res.status(400).json({ error: 'La valoración debe estar entre 1 y 5.' });

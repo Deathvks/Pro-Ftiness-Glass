@@ -1,6 +1,6 @@
 {
   "name": "pro-ftiness-glass-backend",
-  "version": "7.2.73",
+  "version": "7.2.76",
   "description": "Backend for Pro Ftiness Glass",
   "main": "server.js",
   "type": "module",
@@ -54,3 +54,4 @@
     "sequelize-cli": "^6.6.2"
   }
 }
+
