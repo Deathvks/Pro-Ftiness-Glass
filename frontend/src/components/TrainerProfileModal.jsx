@@ -72,7 +72,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
           {/* Boton Cerrar ÚNICO y Fijo */}
           <button 
             onClick={onClose}
-            className="absolute top-3 right-4 sm:top-5 sm:right-6 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all active:scale-95 z-[60] border"
+            className="hidden sm:flex absolute top-3 right-4 sm:top-5 sm:right-6 w-10 h-10 rounded-full items-center justify-center backdrop-blur-md transition-all active:scale-95 z-[60] border"
             style={{
               backgroundColor: scrollPos > 100 ? 'rgba(0,0,0,0.05)' : 'rgba(0,0,0,0.2)',
               borderColor: scrollPos > 100 ? 'transparent' : 'rgba(255,255,255,0.1)',
@@ -81,6 +81,14 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
           >
             <XMarkIcon className="w-6 h-6" strokeWidth={2.5} />
           </button>
+
+          {/* Barra de móvil para cerrar */}
+          <div 
+            onClick={onClose}
+            className="absolute top-0 inset-x-0 h-10 z-[70] sm:hidden flex items-center justify-center cursor-pointer"
+          >
+            <div className="w-12 h-1.5 bg-white/50 backdrop-blur-md rounded-full" />
+          </div>
 
           {/* Area de Scroll */}
           <div 
@@ -202,6 +210,8 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
     </ModalPortal>
   );
 }
+
+
 
 
 
