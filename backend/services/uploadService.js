@@ -1,0 +1,190 @@
+/* backend/services/uploadService.js */
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import sharp from 'sharp';
+import { createRequire } from 'module';
+import * as tf from '@tensorflow/tfjs';
+
+const require = createRequire(import.meta.url);
+const nsfw = require('nsfwjs');
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const PUBLIC_DIR = path.resolve(__dirname, '../public');
+const UPLOADS_DIR = path.join(PUBLIC_DIR, 'images');
+
+const ensureDir = (dir) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+};
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    let folder = 'others';
+    if (req.baseUrl.includes('stories')) folder = 'stories';
+    else if (req.baseUrl.includes('users')) folder = 'profiles';
+    else if (req.baseUrl.includes('nutrition')) folder = 'nutrition';
+    else if (req.baseUrl.includes('exercise')) folder = 'exercises';
+
+    const finalPath = path.join(UPLOADS_DIR, folder);
+    ensureDir(finalPath);
+    cb(null, finalPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Formato de archivo no soportado'), false);
+  }
+};
+
+export const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 50 * 1024 * 1024 }
+});
+
+export const uploadMemory = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: fileFilter,
+  limits: { fileSize: 150 * 1024 * 1024 } // 150MB limit para vídeos
+});
+
+// --- OPTIMIZACIÓN DE MEMORIA RAM ---
+let model = null;
+let activeUploads = 0; // Evita borrar el modelo si hay subidas simultáneas
+
+const getModel = async () => {
+  if (!model) {
+    try {
+      console.log("🧠 [IA] Cargando modelo NSFWJS en RAM...");
+      model = await nsfw.load();
+    } catch (err) {
+      console.error("Error cargando modelo NSFWJS:", err);
+    }
+  }
+  return model;
+};
+
+// Se ejecuta al terminar cada procesamiento de imagen
+const releaseModelSafely = () => {
+  if (activeUploads <= 0 && model) {
+    console.log("🧹 [IA] Liberando memoria RAM: Destruyendo modelo TensorFlow.");
+    model = null; // Eliminamos la referencia del objeto
+    tf.disposeVariables(); // Destruimos los pesos de la IA de la memoria del servidor
+  }
+};
+
+export const processUploadedFile = async (file, isHDRRequested = false) => {
+  if (!file) throw new Error("No file provided");
+
+  if (file.mimetype.startsWith('video/')) {
+    const relativePath = path.relative(PUBLIC_DIR, file.path);
+    return {
+      url: '/' + relativePath.split(path.sep).join('/'),
+      isHDR: isHDRRequested 
+    };
+  }
+
+  activeUploads++; // Registramos que un proceso está usando la IA
+
+  try {
+    const dir = path.dirname(file.path);
+    const isExercisePic = dir.includes('exercises');
+
+    if (!isExercisePic) {
+      const { data, info } = await sharp(file.path)
+        .resize(224, 224, { fit: 'cover' })
+        .removeAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+
+      const tfImage = tf.tensor3d(new Uint8Array(data), [info.height, info.width, 3], 'int32');
+      const loadedModel = await getModel();
+
+      if (loadedModel) {
+        const predictions = await loadedModel.classify(tfImage);
+        tfImage.dispose(); 
+
+        const nsfwFound = predictions.find(p =>
+          (p.className === 'Porn' || p.className === 'Hentai') && p.probability > 0.60
+        );
+
+        if (nsfwFound) {
+          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+          const nsfwError = new Error("Contenido inapropiado detectado (NSFW).");
+          nsfwError.code = "NSFW_DETECTED";
+          throw nsfwError;
+        }
+      } else {
+        if (tfImage) tfImage.dispose();
+      }
+    }
+
+    const name = path.parse(file.filename).name;
+    const newFilename = `${name}.webp`;
+    const newPath = path.join(dir, newFilename);
+
+    const isProfilePic = dir.includes('profiles');
+    const imagePipeline = sharp(file.path);
+    const metadata = await imagePipeline.metadata();
+    
+    const isSourceHighDepth = metadata.depth === 'ushort' || metadata.depth === 'float';
+    const shouldProcessAsHDR = isHDRRequested && isSourceHighDepth;
+
+    let finalPipeline = sharp(file.path).rotate();
+
+    if (isProfilePic) {
+      finalPipeline = finalPipeline.resize(300, 300, {
+        fit: 'cover'
+      });
+    } else {
+      finalPipeline = finalPipeline.resize(1080, 1920, { 
+        fit: 'inside', 
+        withoutEnlargement: true 
+      });
+    }
+
+    if (shouldProcessAsHDR && !isProfilePic) {
+      finalPipeline.withMetadata().webp({ quality: 85, effort: 4 });
+    } else {
+      finalPipeline
+        .toColourspace('srgb')
+        .webp({ quality: 75, effort: 3 }); 
+    }
+
+    await finalPipeline.toFile(newPath);
+
+    if (file.path !== newPath && fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
+    }
+
+    const relativePath = path.relative(PUBLIC_DIR, newPath);
+    
+    return {
+      url: '/' + relativePath.split(path.sep).join('/'),
+      isHDR: shouldProcessAsHDR && !isProfilePic
+    };
+
+  } catch (error) {
+    if (file && file.path && fs.existsSync(file.path)) {
+      try { fs.unlinkSync(file.path); } catch (e) { }
+    }
+    throw error;
+  } finally {
+    // El bloque finally se asegura de que la RAM se libere siempre, 
+    // incluso si hubo un error (como la detección NSFW)
+    activeUploads--;
+    releaseModelSafely();
+  }
+};
