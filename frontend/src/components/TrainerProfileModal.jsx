@@ -10,8 +10,10 @@ import {
   CheckBadgeIcon
 } from '@heroicons/react/24/solid';
 import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import useModalLock from '../hooks/useModalLock';
 
 export default function TrainerProfileModal({ visible, onClose, trainer }) {
+  useModalLock(visible);
   const [scrollPos, setScrollPos] = useState(0);
   const scrollRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -210,6 +212,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
     </ModalPortal>
   );
 }
+
 
 
 
