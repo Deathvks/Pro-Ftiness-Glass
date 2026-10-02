@@ -27,6 +27,7 @@ import EmailDeliveryLog from './emailDeliveryLogModel.js';
 import UserSession from './userSessionModel.js';
 import Friendship from './friendshipModel.js';
 import BugReport from './bugReportModel.js';
+import AppRating from './appRatingModel.js';
 import UserChallenge from './userChallengeModel.js';
 import Message from './messageModel.js';
 import UploadLog from './uploadLogModel.js';
@@ -235,4 +236,5 @@ const models = {
 };
 
 export default models;
+
 
