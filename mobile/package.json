@@ -1,7 +1,7 @@
 {
   "name": "mobile",
   "main": "expo-router/entry",
-  "version": "7.1.11",
+  "version": "7.2.76",
   "dependencies": {
     "@expo/ui": "~57.0.18",
     "@expo/vector-icons": "^15.0.2",
@@ -62,3 +62,4 @@
   },
   "private": true
 }
+
