@@ -520,8 +520,15 @@ const AdminPanel = ({ onCancel }) => {
           <Monitor className="w-4 h-4 sm:w-5 sm:h-5" />
           Ejercicios
         </button>
-        <button
-          onClick={() => setActiveTab('notifications')}
+                  <button
+            onClick={() => setActiveTab('ratings')}
+            className={lex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base }
+          >
+            <Star className="w-4 h-4 sm:w-5 sm:h-5" />
+            Valoraciones
+          </button>
+          <button
+            onClick={() => setActiveTab('notifications')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'notifications'
             ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
@@ -1095,7 +1102,9 @@ const AdminPanel = ({ onCancel }) => {
           </>
         ) : activeTab === 'exercises' ? (
           <AdminExercises />
-        ) : activeTab === 'notifications' ? (
+        ) : activeTab === 'ratings' ? (
+            <AdminRatings />
+          ) : activeTab === 'notifications' ? (
           <AdminNotifications />
         ) : activeTab === 'emails' ? (
           <AdminEmails />
@@ -1188,6 +1197,7 @@ const AdminPanel = ({ onCancel }) => {
 };
 
 export default AdminPanel;
+
 
 
 
