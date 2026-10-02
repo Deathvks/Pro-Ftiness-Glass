@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import ModalPortal from './ModalPortal';
 import { 
   AcademicCapIcon, 
-  StarIcon, 
+  SparklesIcon, 
   ShieldCheckIcon, 
   TrophyIcon, 
   FireIcon, 
@@ -18,12 +18,17 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
   const scrollRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Swipe to close logic
+  const [touchStart, setTouchStart] = useState(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+
   useEffect(() => {
     if (visible) {
       if (scrollRef.current) {
         scrollRef.current.scrollTop = 0;
         setScrollPos(0);
       }
+      setSwipeOffset(0);
       setTimeout(() => setIsLoaded(true), 50);
     } else {
       setIsLoaded(false);
@@ -36,9 +41,36 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
     setScrollPos(e.target.scrollTop);
   };
 
-  const imageScale = Math.max(1, 1 + (scrollPos * 0.0015));
+  const handleTouchStart = (e) => {
+    // Solo permitir deslizar para cerrar si estamos arriba del todo
+    if (scrollRef.current && scrollRef.current.scrollTop <= 0) {
+      setTouchStart(e.touches[0].clientY);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (touchStart === null) return;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - touchStart;
+    
+    if (diff > 0) {
+      setSwipeOffset(diff);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (swipeOffset > 100) {
+      onClose();
+    }
+    setTouchStart(null);
+    setSwipeOffset(0);
+  };
+
+  // Si scrollPos es negativo (overscroll en iOS), la imagen crece para que no se vea una franja blanca
+  const isPullDown = scrollPos < 0;
+  const imageScale = isPullDown ? 1 + Math.abs(scrollPos) * 0.005 : Math.max(1, 1 + (scrollPos * 0.0015));
   const imageOpacity = Math.max(0, 1 - (scrollPos * 0.0025));
-  const headerOpacity = Math.min(1, scrollPos / 150);
+  const headerOpacity = Math.min(1, Math.max(0, scrollPos) / 150);
   const showScrollHint = scrollPos < 50;
 
   return (
@@ -53,6 +85,13 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
         {/* Contenedor Principal */}
         <div 
           className="relative w-full h-[calc(100dvh-4.5rem)] sm:h-[90vh] sm:w-[540px] sm:max-w-full bg-bg-primary sm:rounded-[36px] rounded-t-[36px] shadow-[0_0_80px_rgba(var(--accent-rgb, 234,179,8),0.15)] flex flex-col overflow-hidden animate-slide-up-ios border border-white/5"
+          style={{
+            transform: swipeOffset > 0 ? `translateY(${swipeOffset}px)` : undefined,
+            transition: touchStart !== null ? 'none' : 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)'
+          }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           {/* Header Pegajoso (Aparece al scrollear) */}
           <div 
@@ -96,7 +135,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
           <div 
             ref={scrollRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth bg-bg-primary"
+            className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth bg-bg-primary overscroll-none"
           >
             {/* Imagen Hero Parallax */}
             <div className="relative h-[60vh] sm:h-[450px] w-full shrink-0 origin-top overflow-hidden bg-bg-primary" style={{ transform: `scale(${imageScale})`, opacity: imageOpacity }}>
@@ -212,10 +251,3 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
     </ModalPortal>
   );
 }
-
-
-
-
-
-
-
