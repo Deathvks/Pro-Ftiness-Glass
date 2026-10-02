@@ -137,10 +137,10 @@ const FloatingHeroElements = () => (
 const GymBot = ({ isDocked }) => (
     <div
         aria-hidden="true"
-        className={`fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-right transform-gpu will-change-transform
+        className={`fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-top sm:origin-right transform-gpu will-change-transform
             ${isDocked
-                ? 'top-1/2 -translate-y-1/2 right-8 sm:right-10 lg:right-10 scale-[0.25] sm:scale-[0.40] opacity-20 sm:opacity-40' // MODIFICADO: right-8 para dar más margen al brazo
-                : 'top-[22%] sm:top-[25%] right-16 sm:right-16 lg:right-24 scale-75 sm:scale-100 opacity-100'
+                ? 'top-1/2 -translate-y-1/2 right-8 sm:right-10 lg:right-10 scale-[0.25] sm:scale-[0.40] opacity-20 sm:opacity-40 translate-x-0' 
+                : 'top-20 sm:top-[25%] right-1/2 translate-x-1/2 sm:translate-x-0 sm:right-16 lg:right-24 scale-50 sm:scale-100 opacity-100'
             }
         `}
     >
