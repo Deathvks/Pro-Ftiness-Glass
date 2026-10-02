@@ -5,12 +5,12 @@ class AppRating extends Model {}
 
 AppRating.init({
     id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
+        type: DataTypes.INTEGER,
         primaryKey: true,
+        autoIncrement: true
     },
     user_id: {
-        type: DataTypes.UUID,
+        type: DataTypes.INTEGER,
         allowNull: false
     },
     rating: {
