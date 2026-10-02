@@ -55,7 +55,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
           {/* Header Pegajoso (Aparece al scrollear) */}
           <div 
             className="absolute top-0 left-0 right-0 h-16 sm:h-20 bg-bg-primary/80 backdrop-blur-2xl z-50 flex items-center justify-between px-4 sm:px-6 border-b border-glass-border transition-opacity duration-300"
-            style={{ opacity: headerOpacity }}
+            style={{ opacity: headerOpacity, pointerEvents: headerOpacity > 0.1 ? 'auto' : 'none' }}
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full overflow-hidden bg-accent/20 border-2 border-accent shadow-[0_0_15px_var(--color-accent-transparent)]">
@@ -65,19 +65,19 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
                 {trainer?.name || 'ENTRENADOR'}
               </span>
             </div>
-            <button 
-              onClick={onClose}
-              className="w-10 h-10 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary flex items-center justify-center transition-all active:scale-95"
-            >
-              <XMarkIcon className="w-6 h-6" strokeWidth={2.5} />
-            </button>
+            {/* Espaciador para el botón X */}
+            <div className="w-10 h-10" />
           </div>
 
-          {/* Boton Cerrar Superior Fijo (Antes del scroll) */}
+          {/* Boton Cerrar ÚNICO y Fijo */}
           <button 
             onClick={onClose}
-            style={{ opacity: 1 - headerOpacity, pointerEvents: headerOpacity > 0.5 ? 'none' : 'auto' }}
-            className="absolute top-4 right-4 sm:top-6 sm:right-6 w-11 h-11 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-95 z-50 border border-white/10"
+            className="absolute top-3 right-4 sm:top-5 sm:right-6 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all active:scale-95 z-[60] border"
+            style={{
+              backgroundColor: scrollPos > 100 ? 'rgba(0,0,0,0.05)' : 'rgba(0,0,0,0.2)',
+              borderColor: scrollPos > 100 ? 'transparent' : 'rgba(255,255,255,0.1)',
+              color: scrollPos > 100 ? 'var(--text-primary)' : 'white'
+            }}
           >
             <XMarkIcon className="w-6 h-6" strokeWidth={2.5} />
           </button>
@@ -88,7 +88,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
             onScroll={handleScroll}
             className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth bg-bg-primary"
           >
-            {/* Imagen Hero Parallax - Corregido el corte */}
+            {/* Imagen Hero Parallax */}
             <div className="relative h-[60vh] sm:h-[450px] w-full shrink-0 origin-top overflow-hidden bg-bg-primary" style={{ transform: `scale(${imageScale})`, opacity: imageOpacity }}>
               <img 
                 src="/trainer-profile.jpg" 
