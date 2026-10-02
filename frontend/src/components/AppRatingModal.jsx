@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StarIcon, XMarkIcon } from '@heroicons/react/24/solid';
 import { StarIcon as StarOutline } from '@heroicons/react/24/outline';
 import { submitAppRating } from '../services/ratingService';
-import { useToast } from '../contexts/ToastContext';
+import { useToast } from '../hooks/useToast';
 
 const AppRatingModal = ({ visible, onClose, onFinish }) => {
     const [rating, setRating] = useState(0);
@@ -112,4 +112,5 @@ const AppRatingModal = ({ visible, onClose, onFinish }) => {
 };
 
 export default AppRatingModal;
+
 
