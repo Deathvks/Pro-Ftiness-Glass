@@ -14,7 +14,8 @@ export const createRating = async (req, res) => {
         // Check if user already rated
         const existing = await AppRating.findOne({ where: { user_id: userId } });
         if (existing) {
-            return res.status(400).json({ error: 'Ya has enviado una valoración.' });
+            await existing.update({ rating, comment });
+            return res.status(200).json({ message: 'Valoración actualizada correctamente.' });
         }
 
         await AppRating.create({
@@ -40,5 +41,16 @@ export const getRatings = async (req, res) => {
     } catch (error) {
         console.error("Error fetching ratings:", error);
         res.status(500).json({ error: 'Error al obtener valoraciones.' });
+    }
+};
+
+export const getMyRating = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const rating = await AppRating.findOne({ where: { user_id: userId } });
+        res.json(rating || { rating: 0, comment: '' });
+    } catch (error) {
+        console.error('Error fetching my rating:', error);
+        res.status(500).json({ error: 'Error al obtener tu valoración.' });
     }
 };

@@ -5,6 +5,7 @@ import authenticateToken from '../middleware/authenticateToken.js';
 const router = express.Router();
 
 router.post('/', authenticateToken, ratingController.createRating);
+router.get('/me', authenticateToken, ratingController.getMyRating);
 router.get('/admin', authenticateToken, ratingController.getRatings); // Actually this should be in admin routes or protected
 
 export default router;
