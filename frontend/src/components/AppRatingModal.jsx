@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { StarIcon, XMarkIcon } from '@heroicons/react/24/solid';
 import { StarIcon as StarOutline } from '@heroicons/react/24/outline';
 import { submitAppRating } from '../services/ratingService';
@@ -62,8 +63,8 @@ const AppRatingModal = ({ visible, onClose, onFinish, bottomSheet = false }) => 
         onClose();
     };
 
-    return (
-        <div className={`fixed inset-0 z-50 flex justify-center p-0 sm:p-4 ${bottomSheet ? "items-end sm:items-center" : "items-center p-4"}`}>
+    return createPortal(
+        <div className={`fixed inset-0 z-[9999] flex justify-center p-0 sm:p-4 ${bottomSheet ? "items-end sm:items-center" : "items-center p-4"}`}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleRemindLater}></div>
             <div 
     className={`relative bg-bg-secondary w-full max-w-md shadow-2xl p-6 sm:p-8 ring-1 ring-white/10 flex flex-col items-center text-center ${bottomSheet ? "rounded-t-[32px] sm:rounded-[32px] animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out]" : "rounded-[32px] animate-[scale-in_0.3s_ease-out]"}`}
@@ -133,7 +134,7 @@ const AppRatingModal = ({ visible, onClose, onFinish, bottomSheet = false }) => 
                 </button>
             </div>
         </div>
-    );
+    ), document.body);
 };
 
 export default AppRatingModal;
