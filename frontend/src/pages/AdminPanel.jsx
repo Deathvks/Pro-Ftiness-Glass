@@ -370,14 +370,7 @@ const AdminPanel = ({ onCancel }) => {
       return user.createdAt || user.created_at || new Date().toISOString();
   };
 
-  const getAvatarUrl = (user) => {
-    const path = user.profile_image_url;
-    if (!path) return null;
-    if (path.startsWith('http')) return path;
-    if (path.startsWith('blob:')) return path;
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    return `${SERVER_URL}${cleanPath}`;
-  };
+  
 
   const getTime = (dateString) => {
     if (!dateString) return 0;
@@ -789,13 +782,7 @@ const AdminPanel = ({ onCancel }) => {
                           <td className="p-4 pl-6 align-middle">
                             <div className="flex items-center gap-4">
                               <div className="relative shrink-0">
-                                {getAvatarUrl(user) ? (
-                                  <img src={getAvatarUrl(user)} alt={user.username || user.name} className="w-12 h-12 rounded-full object-cover ring-2 ring-black/5 dark:ring-white/10 shadow-sm" />
-                                ) : (
-                                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent font-extrabold text-lg uppercase ring-2 ring-black/5 dark:ring-white/10 shadow-sm">
-                                    {(user.username || user.name || '?').charAt(0)}
-                                  </div>
-                                )}
+                                <UserAvatar user={user} size={12} className="ring-2 ring-black/5 dark:ring-white/10 shadow-sm" />
                                 <div className="absolute -bottom-1 -right-2 flex items-center gap-0.5">
                                   <LoginMethodBadge user={user} />
                                   <PlatformBadge user={user} />
@@ -891,13 +878,7 @@ const AdminPanel = ({ onCancel }) => {
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex-1 min-w-0 pr-2 flex items-center gap-4">
                           <div className="relative shrink-0">
-                            {getAvatarUrl(user) ? (
-                              <img src={getAvatarUrl(user)} alt={user.username || user.name} className="w-14 h-14 rounded-full object-cover ring-2 ring-black/5 dark:ring-white/10 bg-bg-primary shadow-sm" />
-                            ) : (
-                              <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center text-accent font-extrabold text-lg uppercase ring-2 ring-black/5 dark:ring-white/10 shadow-sm">
-                                {(user.username || user.name || '?').charAt(0)}
-                              </div>
-                            )}
+                            <UserAvatar user={user} size={14} className="ring-2 ring-black/5 dark:ring-white/10 shadow-sm" />
                             <div className="absolute -bottom-1 -right-2 flex items-center gap-0.5">
                               <LoginMethodBadge user={user} />
                               <PlatformBadge user={user} />

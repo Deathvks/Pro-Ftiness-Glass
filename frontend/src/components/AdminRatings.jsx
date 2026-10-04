@@ -5,19 +5,17 @@ import { StarIcon } from '@heroicons/react/24/solid';
 import { StarIcon as StarOutline } from '@heroicons/react/24/outline';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 import { formatDistanceToNow } from 'date-fns';
+import UserAvatar from './UserAvatar';
 import { es } from 'date-fns/locale';
 
-const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function AdminRatings() {
-    const getAvatarUrl = (user) => {
         if (!user) return null;
         const path = user.profile_image_url;
         if (!path) return null;
         if (path.startsWith('http')) return path;
         if (path.startsWith('blob:')) return path;
         const cleanPath = path.startsWith('/') ? path : `/${path}`;
-        return `${SERVER_URL}${cleanPath}`;
     };
 
     const [ratings, setRatings] = useState([]);
@@ -104,11 +102,7 @@ export default function AdminRatings() {
                         <div key={rating.id} className="bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] p-5 flex flex-col gap-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    {getAvatarUrl(rating.User) ? (
-                                        <img src={getAvatarUrl(rating.User)} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-black/5 dark:ring-white/10 shadow-sm bg-bg-primary" />
-                                    ) : (
-                                        <div className="w-10 h-10 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center font-bold">{rating.User?.username?.charAt(0).toUpperCase() || 'U'}</div>
-                                    )}
+                                    <UserAvatar user={rating.User} size={10} className="ring-2 ring-black/5 dark:ring-white/10 shadow-sm" />
                                     <div>
                                         <div className="font-bold text-sm text-text-primary">@{rating.User?.username || 'Usuario'}</div>
                                         <div className="text-[10px] text-text-muted font-mono">{formatDistanceToNow(new Date(rating.createdAt), { addSuffix: true, locale: es })}</div>
