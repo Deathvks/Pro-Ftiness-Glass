@@ -10,13 +10,6 @@ import { es } from 'date-fns/locale';
 
 
 export default function AdminRatings() {
-        if (!user) return null;
-        const path = user.profile_image_url;
-        if (!path) return null;
-        if (path.startsWith('http')) return path;
-        if (path.startsWith('blob:')) return path;
-        const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    };
 
     const [ratings, setRatings] = useState([]);
     const [loading, setLoading] = useState(true);
