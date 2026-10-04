@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { CapgoInAppReview } from '@capgo/capacitor-in-app-review';
 import AppRatingModal from './AppRatingModal';
-import { submitAppRating } from '../services/ratingService';
 
 const GlobalRatingPrompt = () => {
     const [showWebModal, setShowWebModal] = useState(false);
@@ -45,8 +44,6 @@ const GlobalRatingPrompt = () => {
                         await CapgoInAppReview.requestReview();
                         // Assume they rated, so we don't bother them again. Native API handles its own quotas anyway.
                         localStorage.setItem('has_rated_app', 'true');
-                        // Optionally record it in DB as an anonymous/store rating
-                        await submitAppRating(5, 'Valoración nativa de la tienda');
                     } catch (error) {
                         console.error('InAppReview error:', error);
                         // Fallback to our custom modal just in case
