@@ -304,8 +304,7 @@ export default function RoutineEditorScreen() {
 
       <View style={{ gap: 12, width: '100%' }}>
         {/* AI Analizer */}
-        <GlassButton noShadow theme={theme} colors={colors} onPress={() => Alert.alert('IA', 'Próximamente')} style={[styles.aiButton, { overflow: 'hidden' }]}>
-          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />
+        <GlassButton noShadow color={colors.tint} theme={theme} colors={colors} onPress={() => Alert.alert('IA', 'Próximamente')} style={[styles.aiButton, { overflow: 'hidden' }]}>
           <Sparkles size={20} color={getContrastColor(colors.tint, theme)} />
           <Text style={[styles.aiButtonText, { color: getContrastColor(colors.tint, theme) }]}>Analizar Rutina con IA</Text>
         </GlassButton>
@@ -323,8 +322,7 @@ export default function RoutineEditorScreen() {
         </GlassButton>
 
         {/* Save */}
-        <GlassButton noShadow theme={theme} colors={colors} onPress={handleSave} style={[styles.libraryBtn, { marginTop: 12, overflow: 'hidden' }]}>
-          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />
+        <GlassButton color={colors.tint} noShadow theme={theme} colors={colors} onPress={handleSave} style={[styles.libraryBtn, { marginTop: 12, overflow: 'hidden' }]}>
           <Save size={20} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 8 }} />
           <Text style={{ color: getContrastColor(colors.tint, theme), fontWeight: 'bold', fontSize: 16 }}>
             {routineId ? 'Guardar Cambios' : 'Crear Rutina'}

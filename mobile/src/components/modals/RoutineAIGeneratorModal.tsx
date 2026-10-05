@@ -110,7 +110,8 @@ export function RoutineAIGeneratorModal({ visible, onClose, onGenerate }: Routin
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
           <Pressable style={StyleSheet.absoluteFill} onPress={isLoading ? undefined : onClose} />
           
-          <GlassView glassEffectStyle="regular" colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} style={{ borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 40, maxHeight: '90%' }}>
+          <View style={{ borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 40, maxHeight: '90%', overflow: 'hidden', borderWidth: 1, borderColor: colors.border, borderBottomWidth: 0 }}>
+            <GlassView glassEffectStyle="regular" colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} style={StyleSheet.absoluteFill} />
             {/* Header */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -176,8 +177,7 @@ export function RoutineAIGeneratorModal({ visible, onClose, onGenerate }: Routin
               )}
 
               <GlassButton
-                theme={theme}
-                style={{ height: 56, borderRadius: 16, opacity: (isLoading || !userPrompt.trim() || isLimitReached) ? 0.5 : 1 }}
+                noShadow theme={theme} color={colors.tint} style={{ height: 56, borderRadius: 16, opacity: (isLoading || !userPrompt.trim() || isLimitReached) ? 0.5 : 1 }}
                 disabled={isLoading || !userPrompt.trim() || isLimitReached}
                 onPress={handleGenerate}
               >
@@ -193,14 +193,13 @@ export function RoutineAIGeneratorModal({ visible, onClose, onGenerate }: Routin
                   </View>
                 ) : (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />
                     <Sparkles size={20} color={getContrastColor(colors.tint, theme)} />
                     <Text style={{ fontSize: 16, fontWeight: 'bold', color: getContrastColor(colors.tint, theme) }}>Generar Rutina</Text>
                   </View>
                 )}
               </GlassButton>
             </ScrollView>
-          </GlassView>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>

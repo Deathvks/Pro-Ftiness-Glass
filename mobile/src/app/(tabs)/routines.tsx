@@ -178,10 +178,9 @@ export default function RoutinesScreen() {
           <GlassButton noShadow theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => setShowPrivacyModal(true)}>
             <Globe size={20} color={colors.textSecondary} />
           </GlassButton>
-          <GlassButton noShadow theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => setShowAIGenerator(true)}>
-            <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15, borderRadius: 22 }]} />
-            <Sparkles size={20} color={getContrastColor(colors.tint, theme)} />
-          </GlassButton>
+          <GlassButton noShadow theme={theme} color={colors.tint} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => setShowAIGenerator(true)}>
+              <Sparkles size={20} color={getContrastColor(colors.tint, theme)} />
+            </GlassButton>
           <GlassButton 
             noShadow
             theme={theme} 
@@ -210,7 +209,6 @@ export default function RoutinesScreen() {
                 }
               }}
           >
-            <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />
             <Plus size={20} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 6 }} />
             <Text style={[styles.createButtonText, { color: getContrastColor(colors.tint, theme) }]} numberOfLines={1} adjustsFontSizeToFit>Crear Rutina</Text>
           </GlassButton>
