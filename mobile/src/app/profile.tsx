@@ -189,7 +189,7 @@ export default function ProfileScreen() {
                     <View>
                         <Text style={{ fontSize: 12, fontWeight: 'bold', color: colors.textSecondary, marginBottom: 8, textTransform: 'uppercase' }}>Nombre de usuario</Text>
                         <TextInput 
-                            style={styles(colors).input} 
+                            style={styles(colors, theme).input} 
                             value={username} 
                             onChangeText={setUsername} 
                             placeholder="Tu nombre"
@@ -200,7 +200,7 @@ export default function ProfileScreen() {
                     <View>
                         <Text style={{ fontSize: 12, fontWeight: 'bold', color: colors.textSecondary, marginBottom: 8, textTransform: 'uppercase' }}>Correo Electrónico</Text>
                         <TextInput 
-                            style={styles(colors).input} 
+                            style={styles(colors, theme).input} 
                             value={userProfile?.email} 
                             editable={false}
                             placeholder="Tu correo"
@@ -224,7 +224,7 @@ export default function ProfileScreen() {
                     <View>
                         <Text style={{ fontSize: 12, fontWeight: 'bold', color: colors.textSecondary, marginBottom: 8, textTransform: 'uppercase' }}>Contraseña Nueva</Text>
                         <TextInput 
-                            style={styles(colors).input} 
+                            style={styles(colors, theme).input} 
                             value={newPassword}
                             onChangeText={setNewPassword}
                             placeholder="Escribe una nueva contraseña"
@@ -379,7 +379,7 @@ export default function ProfileScreen() {
     );
 }
 
-const styles = (colors) => StyleSheet.create({
+const styles = (colors: any, theme: string) => StyleSheet.create({
     input: {
         backgroundColor: colors.background,
         borderWidth: 1,
