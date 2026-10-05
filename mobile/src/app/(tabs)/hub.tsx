@@ -22,8 +22,10 @@ import {
   ChevronRight 
 } from 'lucide-react-native';
 
-const HubButton = ({ icon: Icon, title, description, onPress, badge = false, isComingSoon = false, colors }: any) => (
-  <TouchableOpacity
+const HubButton = ({ icon: Icon, title, description, onPress, badge = false, isComingSoon = false, colors }: any) => {
+  const theme = useAppStore(state => state.theme) || 'oled';
+  return (
+    <TouchableOpacity
     activeOpacity={0.7}
     onPress={isComingSoon ? undefined : onPress}
     style={{
@@ -62,7 +64,8 @@ const HubButton = ({ icon: Icon, title, description, onPress, badge = false, isC
     </View>
     <ChevronRight size={20} color={colors.textSecondary} style={{ opacity: 0.5 }} />
   </TouchableOpacity>
-);
+  );
+};
 
 export default function Hub() {
   const setTheme = useAppStore(state => state.setTheme);

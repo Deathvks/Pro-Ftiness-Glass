@@ -118,6 +118,7 @@ export default function Onboarding() {
   
   const baseColors = useTheme();
   const rawColorScheme = useDeviceColorScheme();
+    const theme = useAppStore(state => state.theme) || 'oled';
   
   const colors = { ...baseColors, ...(storeAccent ? { tint: storeAccent } : {}) };
   const colorScheme = rawColorScheme === 'light' ? 'light' : 'dark';
