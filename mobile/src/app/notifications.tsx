@@ -7,6 +7,7 @@ import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
+import { getContrastColor } from '@/utils/colorUtils';
 
 export default function NotificationsScreen() {
     const router = useRouter();

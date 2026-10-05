@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platfo
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
+import { getContrastColor } from '@/utils/colorUtils';
   ArrowDown, Minus, ArrowUp, Edit, ChevronRight, 
   Check, Activity, Scale, User, ChevronLeft, Sparkles,
   Coffee, Footprints, Dumbbell, Trophy 
@@ -16,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as userService from '@/services/userService';
 import Animated, { FadeInRight, FadeInLeft, FadeOut } from 'react-native-reanimated';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { getContrastColor } from '@/utils/colorUtils';
 
 const ACTIVITY_LEVELS = [
   { v: 1.2, t: 'Sedentario', d: 'Poco o nada de ejercicio.', icon: Coffee },

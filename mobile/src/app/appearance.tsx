@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getContrastColor } from '@/utils/colorUtils';
 import { Colors } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import { 
