@@ -3,6 +3,8 @@ import { ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { BookCopy, Compass, Dumbbell, Zap } from 'lucide-react-native';
+import { GlassButton } from '@/components/ui/GlassButton';
+import { getContrastColor } from '@/utils/colorUtils';
 
 export type TabKey = 'myRoutines' | 'explore' | 'manualExercises' | 'quickCardio';
 
@@ -13,6 +15,7 @@ interface RoutinesTabsProps {
 
 export function RoutinesTabs({ activeTab, onChangeTab }: RoutinesTabsProps) {
   const colors = useAppColors();
+  const theme = useAppStore(state => state.theme) || 'oled';
   const accentColor = colors.tint; 
 
   const tabs = [
@@ -32,54 +35,41 @@ export function RoutinesTabs({ activeTab, onChangeTab }: RoutinesTabsProps) {
         const Icon = tab.icon;
         
         return (
-          <TouchableOpacity
+          <GlassButton
             key={tab.key}
             onPress={() => onChangeTab(tab.key as TabKey)}
-            style={[
-              styles.tab,
-              {
-                backgroundColor: isActive ? accentColor + '20' : colors.card,
-                borderColor: isActive ? accentColor : colors.border,
-                borderWidth: 1,
-              }
-            ]}
-          >
-            <Icon size={16} color={isActive ? accentColor : colors.textSecondary} style={{ marginRight: 6 }} />
+            theme={theme}
+            color={isActive ? accentColor : undefined}
+            style={[styles.tab, { borderColor: isActive ? accentColor : colors.border + '60' }]} >
+            <Icon size={16} color={isActive ? getContrastColor(accentColor, theme) : colors.textSecondary} style={{ marginRight: 6 }} />
             <Text
               style={[
                 styles.tabText,
-                { color: isActive ? accentColor : colors.textSecondary, fontWeight: isActive ? '700' : '500' }
+                { color: isActive ? getContrastColor(accentColor, theme) : colors.textSecondary, fontWeight: isActive ? '700' : '500' }
               ]}
             >
               {tab.label}
             </Text>
-          </TouchableOpacity>
+          </GlassButton>
         );
       })}
 
       {/* Quick Cardio Tab / Button */}
-      <TouchableOpacity
+      <GlassButton
         onPress={() => onChangeTab('quickCardio')}
-        style={[
-          styles.tab,
-          {
-            backgroundColor: activeTab === 'quickCardio' ? accentColor + '20' : colors.card,
-            borderColor: activeTab === 'quickCardio' ? accentColor : colors.border,
-            borderWidth: 1,
-            marginLeft: 8,
-          }
-        ]}
-      >
-        <Zap size={16} color={activeTab === 'quickCardio' ? accentColor : colors.textSecondary} style={{ marginRight: 6 }} />
+        theme={theme}
+        color={activeTab === 'quickCardio' ? accentColor : undefined}
+        style={[styles.tab, { marginLeft: 8, borderColor: activeTab === 'quickCardio' ? accentColor : colors.border + '60' }]}>
+        <Zap size={16} color={activeTab === 'quickCardio' ? getContrastColor(accentColor, theme) : colors.textSecondary} style={{ marginRight: 6 }} />
         <Text
           style={[
             styles.tabText,
-            { color: activeTab === 'quickCardio' ? accentColor : colors.textSecondary, fontWeight: activeTab === 'quickCardio' ? '700' : '500' }
+            { color: activeTab === 'quickCardio' ? getContrastColor(accentColor, theme) : colors.textSecondary, fontWeight: activeTab === 'quickCardio' ? '700' : '500' }
           ]}
         >
           Cardio Rápido
         </Text>
-      </TouchableOpacity>
+      </GlassButton>
     </ScrollView>
   );
 }
