@@ -77,14 +77,14 @@ export function RoutinesTabs({ activeTab, onChangeTab }: RoutinesTabsProps) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    height: 40,
     gap: 8,
   },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    height: 40,
     borderRadius: 20,
     marginRight: 8,
   },
