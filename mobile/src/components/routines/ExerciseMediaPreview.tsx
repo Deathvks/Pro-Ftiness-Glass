@@ -87,7 +87,10 @@ export const ExerciseMediaPreview = ({ item, getImageUrl, staticOnly = false }) 
     );
   }
 
-  const thumbUri = yid && images.length === 1 && images[0].includes('placeholder') 
+    // Si tiene video de youtube y no tiene imgenes reales (es un placeholder o una genrica de msculo), usamos la miniatura de youtube
+  const isGenericImage = images.length === 1 && (images[0]?.includes('placeholder') || images[0]?.includes('muscle') || images[0]?.startsWith('/assets/'));
+  
+  const thumbUri = yid && (images.length === 0 || isGenericImage)
     ? `https://img.youtube.com/vi/${yid}/hqdefault.jpg` 
     : (images[currentIndex] || images[0]);
 
