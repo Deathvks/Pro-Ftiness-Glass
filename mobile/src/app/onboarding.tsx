@@ -3,7 +3,6 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Platfo
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
-import { getContrastColor } from '@/utils/colorUtils';
   ArrowDown, Minus, ArrowUp, Edit, ChevronRight, 
   Check, Activity, Scale, User, ChevronLeft, Sparkles,
   Coffee, Footprints, Dumbbell, Trophy 
