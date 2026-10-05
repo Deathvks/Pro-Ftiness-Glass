@@ -11,6 +11,7 @@ import UserEditModal from './UserEditModal';
 import UserCreateModal from './UserCreateModal';
 import AdminExercises from './AdminExercises';
 import AdminRatings from '../components/AdminRatings';
+import UserAvatar from '../components/UserAvatar';
 import AdminNotifications from './AdminNotifications';
 import AdminEmails from './AdminEmails';
 import SecurityDashboard from './SecurityDashboard';
