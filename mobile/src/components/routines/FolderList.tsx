@@ -3,6 +3,8 @@ import { ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { Folder } from 'lucide-react-native';
+import { GlassButton } from '@/components/ui/GlassButton';
+import { getContrastColor } from '@/utils/colorUtils';
 
 interface FolderListProps {
   folders: string[];
@@ -12,6 +14,7 @@ interface FolderListProps {
 
 export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderListProps) {
   const colors = useAppColors();
+  const theme = useAppStore(state => state.theme) || 'oled';
   const accentColor = colors.tint; 
 
   const allOptions = ['Todas', ...folders, 'Sin Carpeta'];
@@ -26,30 +29,24 @@ export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderLi
         const isActive = selectedFolder === folder;
         
         return (
-          <TouchableOpacity
+          <GlassButton
             key={index}
             onPress={() => onSelectFolder(folder)}
-            style={[
-              styles.tab,
-              {
-                backgroundColor: isActive ? accentColor + '20' : colors.card,
-                borderColor: isActive ? accentColor : colors.border,
-                borderWidth: 1,
-              }
-            ]}
-          >
+            theme={theme}
+            color={isActive ? accentColor : undefined}
+            style={[styles.tab, { borderColor: isActive ? accentColor : colors.border + '60' }]} >
             {folder !== 'Todas' && folder !== 'Sin Carpeta' && (
-              <Folder size={14} color={isActive ? accentColor : colors.textSecondary} style={{ marginRight: 6 }} />
+              <Folder size={14} color={isActive ? getContrastColor(accentColor, theme) : colors.textSecondary} style={{ marginRight: 6 }} />
             )}
             <Text
               style={[
                 styles.tabText,
-                { color: isActive ? accentColor : colors.textSecondary, fontWeight: isActive ? '600' : '500' }
+                { color: isActive ? getContrastColor(accentColor, theme) : colors.textSecondary, fontWeight: isActive ? '600' : '500' }
               ]}
             >
               {folder}
             </Text>
-          </TouchableOpacity>
+          </GlassButton>
         );
       })}
     </ScrollView>
