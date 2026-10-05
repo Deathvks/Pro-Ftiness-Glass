@@ -19,7 +19,7 @@ export const askTrainerAI = async (prompt, context = '') => {
       localStorage.setItem('ai_last_date', todayStr);
       
       // Disparamos un evento global para que el Sidebar y Header se enteren inmediatamente
-      window.dispatchEvent(new Event('ai_limit_updated'));
+      // window.dispatchEvent(new Event('ai_limit_updated')); // REMOVED for React Native compatibility
     }
     // --- FIN MODIFICACIÓN ---
 

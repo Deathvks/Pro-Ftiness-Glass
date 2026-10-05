@@ -12,6 +12,7 @@ import GlobalHeader from '@/components/GlobalHeader';
 import ThemeBackground from '@/components/ThemeBackground';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { PrivacyModal } from '@/components/modals/PrivacyModal';
+import { RoutineAIGeneratorModal } from '@/components/modals/RoutineAIGeneratorModal';
 import { getContrastColor } from '@/utils/colorUtils';
 import { useRouter } from 'expo-router';
 
@@ -29,6 +30,8 @@ export default function RoutinesScreen() {
   // Local State
   const [activeTab, setActiveTab] = useState<TabKey>('myRoutines');
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const setRoutineEditorState = useAppStore(state => state.setRoutineEditorState);
   const [selectedFolder, setSelectedFolder] = useState<string>('Todas');
   const [query, setQuery] = useState('');
 
@@ -175,7 +178,7 @@ export default function RoutinesScreen() {
           <GlassButton noShadow theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => setShowPrivacyModal(true)}>
             <Globe size={20} color={colors.textSecondary} />
           </GlassButton>
-          <GlassButton noShadow theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => Alert.alert('TODO', 'Generador IA')}>
+          <GlassButton noShadow theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => setShowAIGenerator(true)}>
             <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15, borderRadius: 22 }]} />
             <Sparkles size={20} color={getContrastColor(colors.tint, theme)} />
           </GlassButton>
@@ -309,7 +312,22 @@ export default function RoutinesScreen() {
         />
       )}
       
-      <PrivacyModal visible={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
+            <PrivacyModal visible={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
+      <RoutineAIGeneratorModal
+        visible={showAIGenerator}
+        onClose={() => setShowAIGenerator(false)}
+        onGenerate={(generatedRoutine) => {
+          setRoutineEditorState({
+            routineId: null,
+            routineName: generatedRoutine.name,
+            description: generatedRoutine.description,
+            imageUrl: null,
+            folder: generatedRoutine.folder || 'IA',
+            exercises: generatedRoutine.exercises,
+          });
+          router.push('/routine-editor');
+        }}
+      />
     </View>
   );
 }
