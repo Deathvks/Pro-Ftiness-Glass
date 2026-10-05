@@ -39,6 +39,7 @@ export function RoutinesTabs({ activeTab, onChangeTab }: RoutinesTabsProps) {
             key={tab.key}
             onPress={() => onChangeTab(tab.key as TabKey)}
             theme={theme}
+            noShadow={true}
             color={isActive ? accentColor : undefined}
             style={[styles.tab, { borderColor: isActive ? accentColor : colors.border + '60' }]} >
             <Icon size={16} color={isActive ? getContrastColor(accentColor, theme) : colors.textSecondary} style={{ marginRight: 6 }} />
@@ -58,6 +59,7 @@ export function RoutinesTabs({ activeTab, onChangeTab }: RoutinesTabsProps) {
       <GlassButton
         onPress={() => onChangeTab('quickCardio')}
         theme={theme}
+            noShadow={true}
         color={activeTab === 'quickCardio' ? accentColor : undefined}
         style={[styles.tab, { marginLeft: 8, borderColor: activeTab === 'quickCardio' ? accentColor : colors.border + '60' }]}>
         <Zap size={16} color={activeTab === 'quickCardio' ? getContrastColor(accentColor, theme) : colors.textSecondary} style={{ marginRight: 6 }} />

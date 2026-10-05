@@ -33,6 +33,7 @@ export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderLi
             key={index}
             onPress={() => onSelectFolder(folder)}
             theme={theme}
+            noShadow={true}
             color={isActive ? accentColor : undefined}
             style={[styles.tab, { borderColor: isActive ? accentColor : colors.border + '60' }]} >
             {folder !== 'Todas' && folder !== 'Sin Carpeta' && (
