@@ -38,16 +38,22 @@ export function RoutineAIGeneratorModal({ visible, onClose, onGenerate }: Routin
       const dbNames = allExercises.map(e => e.name).join(', ');
 
       const aiPrompt = `
-      Genera una rutina de entrenamiento de un día según lo que te pide el usuario.
+      PASO 1: Evalúa si el mensaje tiene sentido para crear una rutina deportiva (ej. menciona músculos, objetivos, días, etc.).
+      - Si el mensaje es un saludo ("hola"), es ambiguo, o NO está relacionado con fitness, DEBES RECHAZARLO.
+      - Si el usuario pide MÁS DE UNA rutina o una rutina de varios días que no se pueda unificar en una sola sesión, DEBES RECHAZARLO explicando que solo puedes crear una rutina por consulta.
+      
       El usuario dice: "${userPrompt}"
 
-      PASO 1: Evalúa si el mensaje es razonable para una rutina de gimnasio. 
-      Si no tiene sentido o pide una dieta/fisioterapia, devuelve isValid: false con el mensaje de error.
-
-      PASO 2: Selecciona los ejercicios de esta lista (y SOLO de esta lista, usando EXACTAMENTE los nombres):
+      PASO 2: Si es VÁLIDO, crea UNA rutina de UN DÍA usando SOLO los ejercicios de esta lista:
       ${dbNames}
 
       PASO 3: Devuelve SOLO un objeto JSON válido (sin texto extra ni markdown).
+      FORMATO SI ES RECHAZADO:
+      {
+        "isValid": false,
+        "error": "El mensaje no es válido o has pedido más de una rutina. Solo puedo generar una rutina de un día por petición. Por favor, sé más específico sobre tu objetivo para esta rutina."
+      }
+
       FORMATO SI ES VÁLIDO:
       {
         "isValid": true,
