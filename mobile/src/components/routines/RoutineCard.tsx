@@ -53,8 +53,7 @@ export function RoutineCard({ routine, onPressStart, onPressOptions, isCompleted
             </Text>
           )}
         </View>
-        
-      <GlassButton
+              <GlassButton
         onPress={onPressStart}
         theme={theme}
         color={isCompletedToday ? colors.success + '20' : colors.tint}
