@@ -53,7 +53,42 @@ export function RoutineCard({ routine, onPressStart, onPressOptions, isCompleted
             </Text>
           )}
         </View>
-              <GlassButton
+        <TouchableOpacity onPress={onPressOptions} style={styles.optionsButton}>
+          <MoreHorizontal size={20} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.statsRow}>
+        <View style={styles.statItem}>
+          <Clock size={14} color={colors.textSecondary} />
+          <Text style={[styles.statText, { color: colors.textSecondary }]}>{estimatedTime} min</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Dumbbell size={14} color={colors.textSecondary} />
+          <Text style={[styles.statText, { color: colors.textSecondary }]}>{exercisesCount} ej</Text>
+        </View>
+        <View style={styles.statItem}>
+          {renderVisibilityIcon()}
+        </View>
+      </View>
+
+      {/* Simple preview of exercises */}
+      {exercises.length > 0 && (
+        <View style={[styles.previewContainer, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
+          {exercises.slice(0, 3).map((ex: any, idx: number) => (
+            <Text key={idx} style={[styles.previewText, { color: colors.textSecondary }]} numberOfLines={1}>
+              • {ex.exercise?.name || ex.name || 'Ejercicio'}
+            </Text>
+          ))}
+          {exercises.length > 3 && (
+            <Text style={[styles.previewText, { color: colors.textSecondary, fontStyle: 'italic' }]}>
+              + {exercises.length - 3} más...
+            </Text>
+          )}
+        </View>
+      )}
+
+            <GlassButton
         onPress={onPressStart}
         theme={theme}
         color={isCompletedToday ? colors.success + '20' : colors.tint}

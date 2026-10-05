@@ -12,9 +12,10 @@ interface GlassButtonProps {
     color?: string;
     colors?: any;
     noShadow?: boolean;
+    disabled?: boolean;
 }
 
-export function GlassButton({ onPress, children, theme, style, color, noShadow }: GlassButtonProps) {
+export function GlassButton({ onPress, children, theme, style, color, noShadow, disabled }: GlassButtonProps) {
     const scaleAnim = useRef(new Animated.Value(1)).current;
     
     const isLight = ['light', 'ocean', 'desert'].includes(theme);
