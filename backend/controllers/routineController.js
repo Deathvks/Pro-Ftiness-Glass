@@ -79,6 +79,7 @@ export const getAllRoutines = async (req, res, next) => {
             if (!ex.image_url_start) ex.image_url_start = ex.ExerciseList.image_url_start;
             ex.image_url_end = ex.ExerciseList.image_url_end;
             ex.images = ex.ExerciseList.images;
+            if (!ex.video_url) ex.video_url = ex.ExerciseList.video_url;
             delete ex.ExerciseList;
           }
           return ex;
@@ -171,6 +172,7 @@ export const getRoutineById = async (req, res, next) => {
           if (!ex.image_url_start) ex.image_url_start = ex.ExerciseList.image_url_start;
           ex.image_url_end = ex.ExerciseList.image_url_end;
           ex.images = ex.ExerciseList.images;
+            if (!ex.video_url) ex.video_url = ex.ExerciseList.video_url;
           delete ex.ExerciseList;
         }
         return ex;
@@ -705,6 +707,7 @@ export const getPublicRoutineById = async (req, res, next) => {
           if (!ex.video_url) ex.video_url = ex.ExerciseList.video_url; 
           ex.image_url_end = ex.ExerciseList.image_url_end; 
           ex.images = ex.ExerciseList.images;
+            if (!ex.video_url) ex.video_url = ex.ExerciseList.video_url;
       }
       // <-- AÑADIDO: Ocultar recordatorios privados de la vista social
       delete ex.reminder; 
