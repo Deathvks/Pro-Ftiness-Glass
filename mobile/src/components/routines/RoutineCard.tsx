@@ -2,6 +2,10 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
+import { useAppColors } from '@/hooks/useAppColors';
+import { GlassView } from 'expo-glass-effect';
+import { GlassButton } from '@/components/ui/GlassButton';
+import { getContrastColor } from '@/utils/colorUtils';
 import { Play, MoreHorizontal, Globe, Users, Lock, Clock, Dumbbell } from 'lucide-react-native';
 
 interface RoutineCardProps {
@@ -13,7 +17,7 @@ interface RoutineCardProps {
 
 export function RoutineCard({ routine, onPressStart, onPressOptions, isCompletedToday }: RoutineCardProps) {
   const theme = useAppStore(state => state.theme);
-  const colors = Colors[theme as keyof typeof Colors] || Colors.oled;
+  const colors = useAppColors();
   const accentColor = colors.tint; 
   
   const exercises = routine.exercises || routine.RoutineExercises || [];
@@ -33,7 +37,8 @@ export function RoutineCard({ routine, onPressStart, onPressOptions, isCompleted
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <View style={[styles.card, { overflow: 'hidden', borderColor: colors.border, backgroundColor: 'transparent' }]}>
+      <GlassView glassEffectStyle="regular" colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} style={StyleSheet.absoluteFill} />
       <View style={styles.header}>
         <View style={styles.titleContainer}>
           {routine.folder && (
@@ -48,59 +53,24 @@ export function RoutineCard({ routine, onPressStart, onPressOptions, isCompleted
             </Text>
           )}
         </View>
-        <TouchableOpacity onPress={onPressOptions} style={styles.optionsButton}>
-          <MoreHorizontal size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.statsRow}>
-        <View style={styles.statItem}>
-          <Clock size={14} color={colors.textSecondary} />
-          <Text style={[styles.statText, { color: colors.textSecondary }]}>{estimatedTime} min</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Dumbbell size={14} color={colors.textSecondary} />
-          <Text style={[styles.statText, { color: colors.textSecondary }]}>{exercisesCount} ej</Text>
-        </View>
-        <View style={styles.statItem}>
-          {renderVisibilityIcon()}
-        </View>
-      </View>
-
-      {/* Simple preview of exercises */}
-      {exercises.length > 0 && (
-        <View style={[styles.previewContainer, { backgroundColor: colors.background }]}>
-          {exercises.slice(0, 3).map((ex: any, idx: number) => (
-            <Text key={idx} style={[styles.previewText, { color: colors.textSecondary }]} numberOfLines={1}>
-              • {ex.exercise?.name || ex.name || 'Ejercicio'}
-            </Text>
-          ))}
-          {exercises.length > 3 && (
-            <Text style={[styles.previewText, { color: colors.textSecondary, fontStyle: 'italic' }]}>
-              + {exercises.length - 3} más...
-            </Text>
-          )}
-        </View>
-      )}
-
-      <TouchableOpacity
+        
+      <GlassButton
         onPress={onPressStart}
-        style={[
-          styles.startButton,
-          { 
-            backgroundColor: isCompletedToday ? colors.success + '20' : accentColor,
-            borderColor: isCompletedToday ? colors.success : accentColor,
-          }
-        ]}
+        theme={theme}
+        color={isCompletedToday ? colors.success + '20' : colors.tint}
+        style={{ height: 48, borderRadius: 16, width: '100%' }}
+        noShadow
       >
-        {!isCompletedToday && <Play size={16} color="#fff" style={{ marginRight: 8 }} />}
-        <Text style={[
-          styles.startButtonText,
-          { color: isCompletedToday ? colors.success : '#fff' }
-        ]}>
-          {isCompletedToday ? 'Completada Hoy' : 'Iniciar'}
-        </Text>
-      </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          {!isCompletedToday && <Play size={16} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 8 }} />}
+          <Text style={[
+            styles.startButtonText,
+            { color: isCompletedToday ? colors.success : getContrastColor(colors.tint, theme) }
+          ]}>
+            {isCompletedToday ? 'Completada Hoy' : 'Iniciar'}
+          </Text>
+        </View>
+      </GlassButton>
     </View>
   );
 }
