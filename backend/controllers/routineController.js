@@ -58,7 +58,7 @@ export const getAllRoutines = async (req, res, next) => {
             model: sequelize.models.ExerciseList,
             as: 'ExerciseList',
             required: false,
-            attributes: ['image_url_start', 'image_url_end', 'images', 'video_url', 'youtube_id', 'muscle_group_image_url']
+            attributes: ['image_url_start', 'image_url_end', 'images', 'video_url']
           }
         ]
       },
@@ -139,7 +139,7 @@ export const getRoutineById = async (req, res, next) => {
               model: sequelize.models.ExerciseList,
               as: 'ExerciseList',
               required: false,
-              attributes: ['image_url_start', 'image_url_end', 'images', 'video_url', 'youtube_id', 'muscle_group_image_url']
+              attributes: ['image_url_start', 'image_url_end', 'images', 'video_url']
             }
           ]
         },
@@ -667,7 +667,7 @@ export const getPublicRoutineById = async (req, res, next) => {
           include: [
             {
               model: sequelize.models.ExerciseList,
-              attributes: ['image_url_start', 'image_url_end', 'images', 'video_url', 'youtube_id', 'muscle_group_image_url']
+              attributes: ['image_url_start', 'image_url_end', 'images', 'video_url']
             }
           ]
         },
