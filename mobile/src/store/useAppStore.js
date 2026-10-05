@@ -34,6 +34,28 @@ const useAppStore = create((set, get) => ({
         if (routineDraft) {
             try { set({ routineEditorState: JSON.parse(routineDraft) }); } catch(e){}
         }
+        
+        // Hydrate AI queries
+        const lastDate = localStorage.getItem('ai_last_date');
+        const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+        let aiRemaining = localStorage.getItem('ai_remaining_uses');
+        let aiLimit = localStorage.getItem('ai_daily_limit');
+        
+        if (lastDate !== today) {
+            localStorage.removeItem('ai_remaining_uses');
+            localStorage.setItem('ai_last_date', today);
+            aiRemaining = null;
+        }
+        
+        if (aiRemaining !== null) {
+            set(state => ({
+                gamification: {
+                    ...state.gamification,
+                    ai_queries_remaining: parseInt(aiRemaining, 10),
+                    ai_queries_limit: aiLimit ? parseInt(aiLimit, 10) : 5
+                }
+            }));
+        }
     },
     theme: (typeof localStorage !== 'undefined' && (typeof localStorage !== 'undefined' ? localStorage.getItem('theme') : null)) || 'oled',
     setTheme: (theme) => {
