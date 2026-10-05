@@ -8,7 +8,7 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { getExerciseList } from '@/services/exerciseService';
-import apiClient from '@/services/apiClient';
+import apiClient, { API_BASE_URL } from '@/services/apiClient';
 import { SelectModal, SelectOption } from '@/components/ui/SelectModal';
 import { SETS_OPTIONS, REPS_OPTIONS, REST_OPTIONS } from '@/constants/exerciseOptions';
 import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview';
@@ -168,7 +168,12 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
       return `https://img.youtube.com/vi/${youtubeId}/0.jpg`;
     }
     
-    return item.muscle_group_image_url || 'https://via.placeholder.com/400';
+    let finalUrl = item.muscle_group_image_url || 'https://via.placeholder.com/400';
+    if (finalUrl && finalUrl.startsWith('/')) {
+      const baseUrl = API_BASE_URL.replace('/api', '');
+      return baseUrl + finalUrl;
+    }
+    return finalUrl;
   };
 
   const renderExerciseItem = ({ item }: { item: any }) => {

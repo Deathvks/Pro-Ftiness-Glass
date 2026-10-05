@@ -11,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { Colors } from '@/constants/theme';
+import { API_BASE_URL } from '@/services/apiClient';
 import { GlassButton } from '@/components/ui/GlassButton';
 import GlobalHeader from '@/components/GlobalHeader';
 import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
@@ -81,13 +82,19 @@ export default function RoutineEditorScreen() {
   }, [routines]);
 
   const getImageUrl = (item: any) => {
-    if (item.image_url_start) return item.image_url_start;
-    if (item.image_url) return item.image_url;
-    if (item.images && Array.isArray(item.images) && item.images.length > 0) return item.images[0];
-    if (item.images && typeof item.images === 'string') {
-      try { const parsed = JSON.parse(item.images); if (parsed.length > 0) return parsed[0]; } catch(e) {}
+    let url = item.muscle_group_image_url || 'https://via.placeholder.com/400';
+    if (item.image_url_start) url = item.image_url_start;
+    else if (item.image_url) url = item.image_url;
+    else if (item.images && Array.isArray(item.images) && item.images.length > 0) url = item.images[0];
+    else if (item.images && typeof item.images === 'string') {
+      try { const parsed = JSON.parse(item.images); if (parsed.length > 0) url = parsed[0]; } catch(e) {}
     }
-    return item.muscle_group_image_url || 'https://via.placeholder.com/400';
+    
+    if (url && url.startsWith('/')) {
+      const baseUrl = API_BASE_URL.replace('/api', '');
+      return baseUrl + url;
+    }
+    return url;
   };
 
   const removeExercise = (id: string) => {

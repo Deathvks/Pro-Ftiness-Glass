@@ -1,5 +1,6 @@
 /* frontend/src/services/aiService.js */
 import apiClient from './apiClient';
+import useAppStore from '../store/useAppStore';
 
 export const askTrainerAI = async (prompt, context = '') => {
   try {
@@ -19,7 +20,13 @@ export const askTrainerAI = async (prompt, context = '') => {
       localStorage.setItem('ai_last_date', todayStr);
       
       // Disparamos un evento global para que el Sidebar y Header se enteren inmediatamente
-      // window.dispatchEvent(new Event('ai_limit_updated')); // REMOVED for React Native compatibility
+      useAppStore.setState(state => ({
+        gamification: {
+          ...state.gamification,
+          ai_queries_remaining: data.remaining,
+          ai_queries_limit: data.limit || 5
+        }
+      }));
     }
     // --- FIN MODIFICACIÓN ---
 

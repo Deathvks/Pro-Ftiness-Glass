@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Image, StyleSheet, TouchableOpacity, Text } from "react-native";
 import { WebView } from "react-native-webview";
 import { Play } from 'lucide-react-native';
+import { API_BASE_URL } from '../../services/apiClient';
 
 export const ExerciseMediaPreview = ({ item, getImageUrl, staticOnly = false }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -90,9 +91,15 @@ export const ExerciseMediaPreview = ({ item, getImageUrl, staticOnly = false }) 
     // Si tiene video de youtube y no tiene imgenes reales (es un placeholder o una genrica de msculo), usamos la miniatura de youtube
   const isGenericImage = images.length === 1 && (images[0]?.includes('placeholder') || images[0]?.includes('muscle') || images[0]?.startsWith('/assets/'));
   
-  const thumbUri = yid && (images.length === 0 || isGenericImage)
+    let thumbUri = yid && (images.length === 0 || isGenericImage)
     ? `https://img.youtube.com/vi/${yid}/hqdefault.jpg` 
     : (images[currentIndex] || images[0]);
+
+  // Fix relative URLs for React Native Image component
+  if (thumbUri && thumbUri.startsWith('/')) {
+    const baseUrl = API_BASE_URL.replace('/api', '');
+    thumbUri = baseUrl + thumbUri;
+  }
 
   return (
     <TouchableOpacity 

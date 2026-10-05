@@ -11,7 +11,7 @@ if (!Constants.isDevice) {
   localhost = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
 }
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || `http://${localhost}:3001/api`;
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || `http://${localhost}:3001/api`;
 
 const apiClient = async (endpoint, options = {}) => {
     const token = useAppStore.getState().token;
