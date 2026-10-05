@@ -37,15 +37,15 @@ export function RoutineAIGeneratorModal({ visible, onClose, onGenerate }: Routin
       const allExercises = await useAppStore.getState().getOrFetchAllExercises();
       const dbNames = allExercises.map(e => e.name).join(', ');
 
-      const aiPrompt = 
+      const aiPrompt = `
       Genera una rutina de entrenamiento de un día según lo que te pide el usuario.
-      El usuario dice: ""
+      El usuario dice: "${userPrompt}"
 
       PASO 1: Evalúa si el mensaje es razonable para una rutina de gimnasio. 
       Si no tiene sentido o pide una dieta/fisioterapia, devuelve isValid: false con el mensaje de error.
 
       PASO 2: Selecciona los ejercicios de esta lista (y SOLO de esta lista, usando EXACTAMENTE los nombres):
-      
+      ${dbNames}
 
       PASO 3: Devuelve SOLO un objeto JSON válido (sin texto extra ni markdown).
       FORMATO SI ES VÁLIDO:
@@ -56,7 +56,7 @@ export function RoutineAIGeneratorModal({ visible, onClose, onGenerate }: Routin
         "folder": "IA",
         "exercises": [{ "name": "ID_EXACTO_EJERCICIO", "sets": 3, "reps": "8-12", "rest_seconds": 90, "ai_reason": "Por qué se eligió" }]
       }
-      ;
+      `;
 
       const systemContext = "Eres un entrenador personal estricto. Tu única salida debe ser un JSON válido siguiendo el formato exacto requerido. Nunca añadas explicaciones fuera del JSON.";
 
