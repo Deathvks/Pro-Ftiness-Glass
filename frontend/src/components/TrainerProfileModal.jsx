@@ -14,8 +14,12 @@ import useModalLock from '../hooks/useModalLock';
 
 export default function TrainerProfileModal({ visible, onClose, trainer }) {
   useModalLock(visible);
-  const [scrollPos, setScrollPos] = useState(0);
+  
   const scrollRef = useRef(null);
+  const imageRef = useRef(null);
+  const headerRef = useRef(null);
+  const hintRef = useRef(null);
+  const closeBtnRef = useRef(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Swipe to close logic
@@ -26,7 +30,9 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
     if (visible) {
       if (scrollRef.current) {
         scrollRef.current.scrollTop = 0;
-        setScrollPos(0);
+        if (imageRef.current) { imageRef.current.style.transform='scale(1)'; imageRef.current.style.opacity=1; }
+        if (headerRef.current) { headerRef.current.style.opacity=0; }
+        if (hintRef.current) { hintRef.current.style.opacity=1; }
       }
       setSwipeOffset(0);
       setTimeout(() => setIsLoaded(true), 50);
@@ -38,7 +44,27 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
   if (!visible) return null;
 
   const handleScroll = (e) => {
-    setScrollPos(e.target.scrollTop);
+    const y = e.target.scrollTop;
+    if (imageRef.current) {
+      const isPullDown = y < 0;
+      const imageScale = isPullDown ? 1 + Math.abs(y) * 0.005 : Math.max(1, 1 + (y * 0.0015));
+      const imageOpacity = Math.max(0, 1 - (y * 0.0025));
+      imageRef.current.style.transform = `scale(${imageScale})`;
+      imageRef.current.style.opacity = imageOpacity;
+    }
+    if (headerRef.current) {
+      const headerOpacity = Math.min(1, Math.max(0, y) / 150);
+      headerRef.current.style.opacity = headerOpacity;
+      headerRef.current.style.pointerEvents = headerOpacity > 0.1 ? 'auto' : 'none';
+    }
+    if (hintRef.current) {
+      hintRef.current.style.opacity = y < 50 ? 1 : 0;
+    }
+    if (closeBtnRef.current) {
+      closeBtnRef.current.style.backgroundColor = y > 100 ? 'rgba(0,0,0,0.05)' : 'rgba(0,0,0,0.2)';
+      closeBtnRef.current.style.borderColor = y > 100 ? 'transparent' : 'rgba(255,255,255,0.1)';
+      closeBtnRef.current.style.color = y > 100 ? 'var(--text-primary)' : 'white';
+    }
   };
 
   const handleTouchStart = (e) => {
@@ -67,15 +93,11 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
   };
 
   // Si scrollPos es negativo (overscroll en iOS), la imagen crece para que no se vea una franja blanca
-  const isPullDown = scrollPos < 0;
-  const imageScale = isPullDown ? 1 + Math.abs(scrollPos) * 0.005 : Math.max(1, 1 + (scrollPos * 0.0015));
-  const imageOpacity = Math.max(0, 1 - (scrollPos * 0.0025));
-  const headerOpacity = Math.min(1, Math.max(0, scrollPos) / 150);
-  const showScrollHint = scrollPos < 50;
+  
 
   return (
     <ModalPortal>
-      <div className="fixed inset-0 z-[100] flex flex-col justify-end sm:items-center sm:justify-center p-0 sm:p-4 animate-fade-in">
+      <div className="fixed inset-0 z-[100] flex flex-col justify-end sm:items-center sm:justify-center p-0 sm:p-4 animate-fade-in isolate text-left">
         {/* Backdrop Épico */}
         <div 
           className="absolute inset-0 bg-black/80 backdrop-blur-xl transition-opacity duration-500"
@@ -94,10 +116,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
           onTouchEnd={handleTouchEnd}
         >
           {/* Header Pegajoso (Aparece al scrollear) */}
-          <div 
-            className="absolute top-0 left-0 right-0 h-16 sm:h-20 bg-bg-primary/80 backdrop-blur-2xl z-50 flex items-center justify-between px-4 sm:px-6 border-b border-glass-border transition-opacity duration-300"
-            style={{ opacity: headerOpacity, pointerEvents: headerOpacity > 0.1 ? 'auto' : 'none' }}
-          >
+          <div ref={headerRef} className="absolute top-0 left-0 right-0 h-16 sm:h-20 bg-bg-primary/80 backdrop-blur-2xl z-50 flex items-center justify-between px-4 sm:px-6 border-b border-glass-border transition-opacity duration-300" style={{ opacity: 0, pointerEvents: 'none' }}>
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full overflow-hidden bg-accent/20 border-2 border-accent shadow-[0_0_15px_var(--color-accent-transparent)]">
                 <img src="/trainer-profile.jpg" alt="Mini" className="w-full h-full object-cover object-center" />
@@ -111,15 +130,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
           </div>
 
           {/* Boton Cerrar ÚNICO y Fijo */}
-          <button 
-            onClick={onClose}
-            className="hidden sm:flex absolute top-3 right-4 sm:top-5 sm:right-6 w-10 h-10 rounded-full items-center justify-center backdrop-blur-md transition-all active:scale-95 z-[60] border"
-            style={{
-              backgroundColor: scrollPos > 100 ? 'rgba(0,0,0,0.05)' : 'rgba(0,0,0,0.2)',
-              borderColor: scrollPos > 100 ? 'transparent' : 'rgba(255,255,255,0.1)',
-              color: scrollPos > 100 ? 'var(--text-primary)' : 'white'
-            }}
-          >
+          <button ref={closeBtnRef} onClick={onClose} className="hidden sm:flex absolute top-3 right-4 sm:top-5 sm:right-6 w-10 h-10 rounded-full items-center justify-center backdrop-blur-md transition-all active:scale-95 z-[60] border" style={{ backgroundColor: 'rgba(0,0,0,0.2)', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}>
             <XMarkIcon className="w-6 h-6" strokeWidth={2.5} />
           </button>
 
@@ -138,7 +149,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
             className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth bg-bg-primary overscroll-none"
           >
             {/* Imagen Hero Parallax */}
-            <div className="relative h-[60vh] sm:h-[450px] w-full shrink-0 origin-top overflow-hidden bg-bg-primary" style={{ transform: `scale(${imageScale})`, opacity: imageOpacity }}>
+            <div ref={imageRef} className="relative h-[60vh] sm:h-[450px] w-full shrink-0 origin-top overflow-hidden bg-bg-primary" style={{ transform: 'scale(1)', opacity: 1 }}>
               <img 
                 src="/trainer-profile.jpg" 
                 alt="Perfil del Entrenador" 
@@ -159,7 +170,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
               <div className={`flex flex-col items-center text-center mb-12 transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                 
                 {/* Scroll Hint */}
-                <div className={`flex flex-col items-center gap-1 mb-8 text-text-primary/50 transition-opacity duration-300 ${showScrollHint ? 'opacity-100' : 'opacity-0'}`}>
+                <div ref={hintRef} className="flex flex-col items-center gap-1 mb-8 text-text-primary/50 transition-opacity duration-300 opacity-100">
                    <span className="text-[10px] uppercase tracking-[0.3em] font-black">Descubre más</span>
                    <ChevronDownIcon className="w-5 h-5 animate-bounce" strokeWidth={2.5} />
                 </div>
