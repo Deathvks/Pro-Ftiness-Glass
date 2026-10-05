@@ -6,6 +6,7 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/theme';
+import { getContrastColor } from '@/utils/colorUtils';
 
 import LevelBadge from '@/components/LevelBadge';
 import CircularProgress from '@/components/CircularProgress';
