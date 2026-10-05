@@ -179,7 +179,7 @@ export function RoutineAIGeneratorModal({ visible, onClose, onGenerate }: Routin
                   )}
 
                   <GlassButton
-                    noShadow theme={theme} color={colors.tint} style={{ height: 56, borderRadius: 16, opacity: (isLoading || !userPrompt.trim() || isLimitReached) ? 0.5 : 1 }}
+                    noShadow theme={theme} color={colors.tint} style={{ width: '100%', height: 56, borderRadius: 16, opacity: (isLoading || !userPrompt.trim() || isLimitReached) ? 0.5 : 1 }}
                     disabled={isLoading || !userPrompt.trim() || isLimitReached}
                     onPress={handleGenerate}
                   >
