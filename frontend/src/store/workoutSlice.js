@@ -322,7 +322,17 @@ export const createWorkoutSlice = (set, get) => ({
     const newExercises = JSON.parse(JSON.stringify(session.exercises));
     const targetExercise = newExercises[exIndex];
     const parentSet = targetExercise.setsDone[setIndex];
-    targetExercise.setsDone.splice(setIndex + 1, 0, {
+    
+    let insertIndex = setIndex + 1;
+    while (
+      insertIndex < targetExercise.setsDone.length && 
+      targetExercise.setsDone[insertIndex].set_number === parentSet.set_number && 
+      targetExercise.setsDone[insertIndex].is_dropset
+    ) {
+      insertIndex++;
+    }
+
+    targetExercise.setsDone.splice(insertIndex, 0, {
       set_number: parentSet.set_number,
       reps: '',
       weight_kg: '',
