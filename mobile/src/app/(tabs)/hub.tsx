@@ -9,6 +9,7 @@ import { getContrastColor } from '@/utils/colorUtils';
 import { Colors } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import ThemeBackground from '@/components/ThemeBackground';
+import { GlassButton } from '@/components/ui/GlassButton';
 import { 
   BarChart2, 
   MessageCircle, 
@@ -25,22 +26,23 @@ import {
 const HubButton = ({ icon: Icon, title, description, onPress, badge = false, isComingSoon = false, colors }: any) => {
   const theme = useAppStore(state => state.theme) || 'oled';
   return (
-    <TouchableOpacity
-    activeOpacity={0.7}
-    onPress={isComingSoon ? undefined : onPress}
-    style={{
+    <GlassButton
+      theme={theme}
+      noShadow={true}
+      onPress={isComingSoon ? undefined : onPress}
+      style={{
+
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       padding: 16,
-      backgroundColor: colors.card,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: colors.border,
+              borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.border,
       marginBottom: 12,
       opacity: isComingSoon ? 0.6 : 1,
-    }}
-  >
+          }}
+    >
     <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
       <View style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}>
         <Icon size={28} color={getContrastColor(colors.tint, theme)} />
@@ -63,7 +65,7 @@ const HubButton = ({ icon: Icon, title, description, onPress, badge = false, isC
       </View>
     </View>
     <ChevronRight size={20} color={colors.textSecondary} style={{ opacity: 0.5 }} />
-  </TouchableOpacity>
+  </GlassButton>
   );
 };
 
