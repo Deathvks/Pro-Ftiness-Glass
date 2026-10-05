@@ -104,104 +104,108 @@ export function RoutineAIGeneratorModal({ visible, onClose, onGenerate }: Routin
     }
   };
 
+  
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={isLoading ? undefined : onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={isLoading ? undefined : onClose} />
-          
-          <View style={{ borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 40, maxHeight: '90%', overflow: 'hidden', borderWidth: 1, borderColor: colors.border, borderBottomWidth: 0 }}>
-            <GlassView glassEffectStyle="regular" colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} style={StyleSheet.absoluteFill} />
-            {/* Header */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.tint, alignItems: 'center', justifyContent: 'center' }}>
-                  <Sparkles size={20} color={getContrastColor(colors.tint, theme)} />
-                </View>
-                <View>
-                  <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.text }}>Generar con IA</Text>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>Crea tu sesión ideal</Text>
-                </View>
-              </View>
-              <TouchableOpacity onPress={onClose} disabled={isLoading} style={{ padding: 8, opacity: isLoading ? 0.5 : 1 }}>
-                <X size={24} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
-              <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                Describe tu objetivo, equipo disponible o nivel de experiencia.
-              </Text>
-
-              <TextInput
-                value={userPrompt}
-                onChangeText={setUserPrompt}
-                editable={!isLoading && !isLimitReached}
-                placeholder="Ej: Rutina de hipertrofia para espalda y bíceps con mancuernas."
-                placeholderTextColor={colors.textSecondary}
-                multiline
-                style={{
-                  backgroundColor: colors.card,
-                  borderColor: isLimitReached ? colors.border : colors.tint + '50',
-                  borderWidth: 1,
-                  borderRadius: 16,
-                  padding: 16,
-                  color: colors.text,
-                  minHeight: 120,
-                  textAlignVertical: 'top',
-                  opacity: isLimitReached ? 0.5 : 1,
-                }}
-              />
-
-              {error && (
-                <View style={{ flexDirection: 'row', padding: 12, backgroundColor: '#ef444420', borderRadius: 12, borderColor: '#ef444450', borderWidth: 1, alignItems: 'center', gap: 8 }}>
-                  <AlertCircle size={20} color="#ef4444" />
-                  <Text style={{ flex: 1, color: '#ef4444', fontSize: 13 }}>{error}</Text>
-                </View>
-              )}
-
-              {remainingUses !== null && !error && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: remainingUses === 0 ? '#ef444410' : colors.tint + '10', borderRadius: 16, borderWidth: 1, borderColor: remainingUses === 0 ? '#ef444430' : colors.tint + '30' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <Zap size={24} color={remainingUses === 0 ? '#ef4444' : colors.tint} />
-                    <View>
-                      <Text style={{ fontSize: 14, fontWeight: 'bold', color: remainingUses === 0 ? '#ef4444' : colors.text }}>Créditos IA</Text>
-                      <Text style={{ fontSize: 11, color: colors.textSecondary }}>Recarga a medianoche</Text>
-                    </View>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 2 }}>
-                    <Text style={{ fontSize: 24, fontWeight: 'bold', color: remainingUses === 0 ? '#ef4444' : colors.tint }}>{remainingUses}</Text>
-                    <Text style={{ fontSize: 14, color: colors.textSecondary }}>/{dailyLimit}</Text>
-                  </View>
-                </View>
-              )}
-
-              <GlassButton
-                noShadow theme={theme} color={colors.tint} style={{ height: 56, borderRadius: 16, opacity: (isLoading || !userPrompt.trim() || isLimitReached) ? 0.5 : 1 }}
-                disabled={isLoading || !userPrompt.trim() || isLimitReached}
-                onPress={handleGenerate}
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={isLoading ? undefined : onClose}>
+      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+          <Pressable style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center', padding: 20 }]} onPress={isLoading ? undefined : onClose}>
+            <Pressable onPress={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 400 }}>
+              <GlassView 
+                glassEffectStyle="regular"
+                colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'}
+                style={{ width: '100%', backgroundColor: 'transparent', borderColor: colors.border, borderWidth: 1, borderRadius: 32, overflow: 'hidden' }}
               >
-                {isLoading ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <ActivityIndicator color={colors.text} size="small" />
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.text }}>Diseñando...</Text>
+                {/* Header Centered */}
+                <View style={{ padding: 24, paddingBottom: 16, alignItems: 'center' }}>
+                  <TouchableOpacity onPress={onClose} disabled={isLoading} style={{ position: 'absolute', top: 24, right: 24, width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', opacity: isLoading ? 0.5 : 1 }}>
+                    <GlassView glassEffectStyle="regular" colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} style={StyleSheet.absoluteFill} />
+                    <X size={20} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                  <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: colors.tint + '15', borderWidth: 2, borderColor: colors.tint + '30', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                    <Sparkles size={32} color={getContrastColor(colors.tint, theme)} />
                   </View>
-                ) : isLimitReached ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <AlertCircle size={20} color={colors.text} />
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.text }}>Límite Alcanzado</Text>
-                  </View>
-                ) : (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Sparkles size={20} color={getContrastColor(colors.tint, theme)} />
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: getContrastColor(colors.tint, theme) }}>Generar Rutina</Text>
-                  </View>
-                )}
-              </GlassButton>
-            </ScrollView>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
+                  <Text style={{ fontSize: 22, fontWeight: 'bold', color: colors.text, marginBottom: 8 }}>Generar con IA</Text>
+                  <Text style={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 16 }}>Crea tu sesión ideal</Text>
+                </View>
+
+                {/* Content */}
+                <ScrollView bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 16, padding: 24, paddingTop: 8 }}>
+                  <Text style={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center' }}>
+                    Describe tu objetivo, equipo disponible o nivel de experiencia.
+                  </Text>
+
+                  <TextInput
+                    value={userPrompt}
+                    onChangeText={setUserPrompt}
+                    editable={!isLoading && !isLimitReached}
+                    placeholder="Ej: Rutina de hipertrofia para espalda y bíceps con mancuernas."
+                    placeholderTextColor={colors.textSecondary}
+                    multiline
+                    style={{
+                      backgroundColor: colors.card,
+                      borderColor: isLimitReached ? colors.border : colors.tint + '50',
+                      borderWidth: 1,
+                      borderRadius: 16,
+                      padding: 16,
+                      color: colors.text,
+                      minHeight: 120,
+                      textAlignVertical: 'top',
+                      opacity: isLimitReached ? 0.5 : 1,
+                    }}
+                  />
+
+                  {error && (
+                    <View style={{ flexDirection: 'row', padding: 12, backgroundColor: '#ef444420', borderRadius: 12, borderColor: '#ef444450', borderWidth: 1, alignItems: 'center', gap: 8 }}>
+                      <AlertCircle size={20} color="#ef4444" />
+                      <Text style={{ flex: 1, color: '#ef4444', fontSize: 13 }}>{error}</Text>
+                    </View>
+                  )}
+
+                  {remainingUses !== null && !error && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, backgroundColor: remainingUses === 0 ? '#ef444410' : colors.tint + '10', borderRadius: 16, borderWidth: 1, borderColor: remainingUses === 0 ? '#ef444430' : colors.tint + '30' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <Zap size={24} color={remainingUses === 0 ? '#ef4444' : colors.tint} />
+                        <View>
+                          <Text style={{ fontSize: 14, fontWeight: 'bold', color: remainingUses === 0 ? '#ef4444' : colors.text }}>Créditos IA</Text>
+                          <Text style={{ fontSize: 11, color: colors.textSecondary }}>Recarga a medianoche</Text>
+                        </View>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 2 }}>
+                        <Text style={{ fontSize: 24, fontWeight: 'bold', color: remainingUses === 0 ? '#ef4444' : colors.tint }}>{remainingUses}</Text>
+                        <Text style={{ fontSize: 14, color: colors.textSecondary }}>/{dailyLimit}</Text>
+                      </View>
+                    </View>
+                  )}
+
+                  <GlassButton
+                    noShadow theme={theme} color={colors.tint} style={{ height: 56, borderRadius: 16, opacity: (isLoading || !userPrompt.trim() || isLimitReached) ? 0.5 : 1 }}
+                    disabled={isLoading || !userPrompt.trim() || isLimitReached}
+                    onPress={handleGenerate}
+                  >
+                    {isLoading ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <ActivityIndicator color={getContrastColor(colors.tint, theme)} size="small" />
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: getContrastColor(colors.tint, theme) }}>Diseñando...</Text>
+                      </View>
+                    ) : isLimitReached ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <AlertCircle size={20} color={colors.text} />
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.text }}>Límite Alcanzado</Text>
+                      </View>
+                    ) : (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Sparkles size={20} color={getContrastColor(colors.tint, theme)} />
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: getContrastColor(colors.tint, theme) }}>Generar Rutina</Text>
+                      </View>
+                    )}
+                  </GlassButton>
+                </ScrollView>
+              </GlassView>
+            </Pressable>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </GlassView>
     </Modal>
   );
 }
