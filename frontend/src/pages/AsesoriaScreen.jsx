@@ -366,8 +366,8 @@ export default function AsesoriaScreen({ onBack }) {
               <UserCircleIcon className="w-10 h-10 text-text-secondary" />
             )}
             <div>
-              <h2 className="font-bold text-text-primary text-sm leading-tight">Entrenador</h2>
-              <p className="text-[11px] text-text-secondary">@entrenador</p>
+              <h2 className="font-bold text-text-primary text-sm leading-tight">{trainer.name}</h2>
+              <p className="text-[11px] text-text-secondary">@{trainer.username}</p>
             </div>
           </div>
         ) : null}
@@ -383,7 +383,7 @@ export default function AsesoriaScreen({ onBack }) {
           <div className={`${showPromo ? 'pt-4 pb-2' : 'h-full justify-center'} flex flex-col items-center text-center px-4 space-y-3 opacity-60`}>
             <UserCircleIcon className="w-16 h-16 text-text-muted" />
             <p className="text-sm text-text-secondary font-medium max-w-[250px]">
-              Comienza tu asesoría personal con tu Entrenador.
+              Comienza tu asesoría personal con {trainer?.name}.
             </p>
             <button onClick={() => setShowTrainerProfile(true)} className="mt-2 text-accent text-sm font-bold underline underline-offset-4 hover:brightness-110 active:scale-95 transition-all">Ver perfil</button>
           </div>
