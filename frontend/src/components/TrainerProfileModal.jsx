@@ -121,9 +121,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
               <div className="w-9 h-9 rounded-full overflow-hidden bg-accent/20 border-2 border-accent shadow-[0_0_15px_var(--color-accent-transparent)]">
                 <img src="/trainer-profile.jpg" alt="Mini" className="w-full h-full object-cover object-center" />
               </div>
-              <span className="font-black text-text-primary text-sm sm:text-base tracking-wide uppercase">
-                {trainer?.name || 'ENTRENADOR'}
-              </span>
+              <span className="font-black text-text-primary text-sm sm:text-base tracking-wide uppercase">ENTRENADOR</span>
             </div>
             {/* Espaciador para el botón X */}
             <div className="w-10 h-10" />
@@ -176,9 +174,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
                 </div>
 
                 <div className="relative inline-block">
-                  <h2 className="text-5xl sm:text-6xl font-black text-text-primary tracking-tighter mb-3 uppercase drop-shadow-xl" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
-                    {trainer?.name || 'ENTRENADOR'}
-                  </h2>
+                  <h2 className="text-5xl sm:text-6xl font-black text-text-primary tracking-tighter mb-3 uppercase drop-shadow-xl" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>ENTRENADOR</h2>
                   <div className="absolute -right-8 -top-4 sm:-top-6 text-accent animate-pulse drop-shadow-[0_0_15px_var(--color-accent)]">
                     <ShieldCheckIcon className="w-10 h-10 fill-accent/20 text-accent" />
                   </div>
