@@ -108,10 +108,9 @@ export default function ForgotPassword() {
                 style={[
                   styles.submitButton, 
                   { 
-                    borderColor: theme.tint,
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.65)',
                     borderWidth: 1,
                     backgroundColor: 'transparent',
-                    shadowColor: theme.tint,
                     overflow: 'hidden',
                     opacity: isLoading ? 0.7 : 1,
                   }
@@ -234,10 +233,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    elevation: 5,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
   },
   submitButtonText: {
     fontSize: 16,

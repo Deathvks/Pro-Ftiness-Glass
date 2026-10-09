@@ -373,10 +373,9 @@ export default function Register() {
                     style={[
                       styles.loginButton, 
                       { 
-                        borderColor: theme.tint,
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.65)',
                         borderWidth: 1,
                         backgroundColor: 'transparent',
-                        shadowColor: theme.tint,
                         marginTop: 12, 
                         overflow: 'hidden',
                         opacity: code.some(d => d === '') || isLoading ? 0.7 : 1 
@@ -572,10 +571,9 @@ export default function Register() {
                     style={[
                       styles.loginButton,
                       {
-                        borderColor: theme.tint,
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.65)',
                         borderWidth: 1,
                         backgroundColor: 'transparent',
-                        shadowColor: theme.tint,
                         overflow: 'hidden',
                         opacity: isLoading ? 0.7 : 1,
                       }
@@ -770,10 +768,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
     marginTop: 8,
   },
   loginButtonText: {
