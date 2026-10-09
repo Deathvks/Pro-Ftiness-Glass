@@ -2,6 +2,30 @@
 import useAppStore from '../store/useAppStore';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import * as Device from 'expo-device';
+
+const getMetroIp = () => {
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    const ip = hostUri.split(':')[0];
+    if (ip && ip !== 'localhost' && ip !== '127.0.0.1') return ip;
+  }
+  const linkingUri = Constants.linkingUri;
+  if (linkingUri) {
+    const match = linkingUri.match(/:\/\/(.*?)(:\d+)?(\/|$)/);
+    if (match && match[1] && match[1] !== 'localhost' && match[1] !== '127.0.0.1') {
+      return match[1];
+    }
+  }
+  const expUrl = Constants.experienceUrl;
+  if (expUrl) {
+    const match = expUrl.match(/:\/\/(.*?)(:\d+)?(\/|$)/);
+    if (match && match[1] && match[1] !== 'localhost' && match[1] !== '127.0.0.1') {
+      return match[1];
+    }
+  }
+  return null;
+};
 
 const resolveBaseUrl = () => {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -11,21 +35,24 @@ const resolveBaseUrl = () => {
     return envUrl;
   }
 
-  if (__DEV__) {
-    // Si estamos en un emulador/simulador, forzamos loopbacks locales
-    if (!Constants.isDevice) {
-      const host = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
-      return `http://${host}:3001/api`;
+  // 1. En dispositivo físico (iPhone/Android real)
+  if (Device.isDevice) {
+    const metroIp = getMetroIp();
+    if (metroIp) {
+      return `http://${metroIp}:3001/api`;
     }
+    // Si la variable de entorno tiene una IP de red válida
+    if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+      return envUrl;
+    }
+    // Fallback con la IP local de desarrollo
+    return 'http://192.168.1.18:3001/api';
+  }
 
-    // En dispositivo físico, obtenemos dinámicamente la IP de la máquina donde corre Metro
-    const debuggerHost = Constants.expoConfig?.hostUri;
-    if (debuggerHost) {
-      const ip = debuggerHost.split(':')[0];
-      if (ip) {
-        return `http://${ip}:3001/api`;
-      }
-    }
+  // 2. En emulador o simulador local
+  if (__DEV__) {
+    const host = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
+    return `http://${host}:3001/api`;
   }
 
   return envUrl || 'http://127.0.0.1:3001/api';
