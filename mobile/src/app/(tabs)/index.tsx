@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { 
   Flame, Play, Target, Clock, Droplet, Beef, Zap, Footprints, 
   Activity as ActivityIcon, Dumbbell, User, Sparkles, Check, ChevronRight, 
   Plus, ArrowUp, ArrowDown, Minus, CheckCircle, XCircle, IceCream,
-  LayoutGrid, ListFilter, Trophy, PieChart, Scale
+  LayoutGrid, ListFilter, Trophy, PieChart, Scale, Lock
 } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -19,6 +19,9 @@ import BentoStatCard from '@/components/BentoStatCard';
 import DashboardInsights from '@/components/DashboardInsights';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
+import { PRShareModal } from '@/components/modals/PRShareModal';
+import { PRListModal } from '@/components/modals/PRListModal';
+import { WeeklyRecapModal } from '@/components/modals/WeeklyRecapModal';
 
 const getXpRequiredForLevel = (level) => level <= 1 ? 0 : 50 * Math.pow(level, 2) + 350 * level - 400;
 const getLevelProgress = (currentXp, currentLevel) => {
@@ -50,12 +53,92 @@ export default function Dashboard() {
   const waterLog = useAppStore(state => state.waterLog);
   const todaysCreatineLog = useAppStore(state => state.todaysCreatineLog);
 
-  const latestPR = useMemo(() => {
-    if (!Array.isArray(personalRecords) || personalRecords.length === 0) return null;
+  const [timeUntilSunday, setTimeUntilSunday] = useState<string | null>(null);
+  const [showWeeklyRecap, setShowWeeklyRecap] = useState(false);
+  const [showPRModal, setShowPRModal] = useState(false);
+  const [showPRList, setShowPRList] = useState(false);
+  const [selectedPR, setSelectedPR] = useState<any>(null);
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date();
+      const day = now.getDay();
+
+      if (day === 0) {
+        setTimeUntilSunday(null);
+        return;
+      }
+
+      const target = new Date(now);
+      target.setDate(now.getDate() + (7 - day));
+      target.setHours(0, 0, 0, 0);
+
+      const diff = target.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        setTimeUntilSunday(null);
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+      setTimeUntilSunday(`${days}d ${hours}h ${minutes}m`);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const latestPRs = useMemo(() => {
+    if (!Array.isArray(personalRecords) || personalRecords.length === 0) return [];
     const valid = personalRecords.filter(r => r.date);
-    if (valid.length === 0) return null;
-    return [...valid].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+    if (valid.length === 0) return [];
+    const sorted = [...valid].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const latestDate = sorted[0].date.split('T')[0];
+    return sorted.filter(r => r.date.split('T')[0] === latestDate);
   }, [personalRecords]);
+
+  const prShareData = useMemo(() => {
+    const targetPR = selectedPR || (latestPRs.length === 1 ? latestPRs[0] : null);
+    if (!targetPR) return null;
+
+    const previousRecord = personalRecords.find(r =>
+      (r.exercise_name || r.exerciseName) === (targetPR.exercise_name || targetPR.exerciseName) &&
+      r.id !== targetPR.id &&
+      new Date(r.date).getTime() < new Date(targetPR.date).getTime()
+    );
+
+    return {
+      exerciseName: targetPR.exercise_name || targetPR.exerciseName || 'Ejercicio',
+      newWeight: parseFloat(String(targetPR.weight_kg || targetPR.weight || 0)),
+      oldWeight: previousRecord ? parseFloat(String(previousRecord.weight_kg || previousRecord.weight || 0)) : 0,
+      date: targetPR.date
+    };
+  }, [selectedPR, latestPRs, personalRecords]);
+
+  const handlePRCardClick = () => {
+    if (latestPRs.length === 0) return;
+    if (latestPRs.length === 1) {
+      setSelectedPR(latestPRs[0]);
+      setShowPRModal(true);
+    } else {
+      setShowPRList(true);
+    }
+  };
+
+  const handleSelectPRFromList = (record: any) => {
+    setSelectedPR(record);
+    setShowPRList(false);
+    setShowPRModal(true);
+  };
+
+  const handleSwitchPR = () => {
+    setShowPRModal(false);
+    setShowPRList(true);
+  };
 
   const [aiLimit] = useState(5);
   const [aiRemaining] = useState(5);
@@ -131,18 +214,35 @@ export default function Dashboard() {
 
         const seconds = logs.reduce((acc, log) => acc + (log.duration_seconds || 0), 0);
         const calories = Math.round(logs.reduce((acc, log) => acc + (log.calories_burned || 0), 0));
+        const volume = logs.reduce((acc, log) => acc + (log.total_volume || 0), 0);
         const totalMinutes = Math.floor(seconds / 60);
 
         return {
             time: seconds < 3600 ? `${totalMinutes}m` : `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`,
             calories: calories,
             days: daysArray,
-            sessions: logs.length
+            sessions: logs.length,
+            recapData: {
+              totalVolume: volume,
+              totalWorkouts: logs.length,
+              totalDuration: seconds,
+              totalCalories: calories,
+            }
         };
       } catch (e) {
-        return { time: '0m', calories: 0, days: [false,false,false,false,false,false,false], sessions: 0 };
+        return { 
+          time: '0m', 
+          calories: 0, 
+          days: [false,false,false,false,false,false,false], 
+          sessions: 0,
+          recapData: { totalVolume: 0, totalWorkouts: 0, totalDuration: 0, totalCalories: 0 }
+        };
       }
   }, [workoutLog]);
+
+  const hasWeeklyData = weeklyStats.sessions > 0;
+  const isWeeklyRecapUnlocked = timeUntilSunday === null;
+  const canOpenWeeklyRecap = hasWeeklyData && isWeeklyRecapUnlocked;
 
   return (
     <AnimatedScreen header={<GlobalHeader />}>
@@ -179,29 +279,105 @@ export default function Dashboard() {
 
         {/* 3.1 RESUMEN SEMANAL & RÉCORD */}
         <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
-            <View style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 88, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }}>
-                <View style={{ width: 44, height: 44, borderRadius: 18, backgroundColor: iconBadgeBg, alignItems: 'center', justifyContent: 'center' }}>
-                    <PieChart size={22} color={colors.tint} />
+            {/* Card Resumen Semanal */}
+            <TouchableOpacity 
+                activeOpacity={canOpenWeeklyRecap ? 0.7 : 1}
+                onPress={() => {
+                  if (canOpenWeeklyRecap) {
+                    setShowWeeklyRecap(true);
+                  }
+                }}
+                style={{ 
+                  flex: 1, 
+                  backgroundColor: colors.card, 
+                  borderColor: colors.border, 
+                  borderWidth: 1, 
+                  borderRadius: 28, 
+                  padding: 18, 
+                  flexDirection: 'row', 
+                  alignItems: 'center', 
+                  gap: 14, 
+                  minHeight: 88, 
+                  opacity: canOpenWeeklyRecap ? 1 : 0.75,
+                  shadowColor: '#000', 
+                  shadowOffset: { width: 0, height: 4 }, 
+                  shadowOpacity: 0.06, 
+                  shadowRadius: 10, 
+                  elevation: 2 
+                }}
+            >
+                <View style={{ 
+                  width: 44, 
+                  height: 44, 
+                  borderRadius: 18, 
+                  backgroundColor: isWeeklyRecapUnlocked ? (colors.tint + '15') : iconBadgeBg, 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}>
+                    {isWeeklyRecapUnlocked ? (
+                      <PieChart size={22} color={colors.tint} />
+                    ) : (
+                      <Lock size={20} color={colors.textSecondary} />
+                    )}
                 </View>
                 <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 13, fontWeight: '800', color: colors.text }}>Resumen Semanal</Text>
                     <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textSecondary, marginTop: 2 }} numberOfLines={1}>
-                        {weeklyStats.sessions > 0 ? `${weeklyStats.sessions} sesiones completadas` : 'Sin actividad reciente'}
+                        {!isWeeklyRecapUnlocked 
+                          ? `disponible en: ${timeUntilSunday}`
+                          : (!hasWeeklyData 
+                            ? 'Sin actividad reciente' 
+                            : 'Mira tus logros visuales')}
                     </Text>
                 </View>
-            </View>
+            </TouchableOpacity>
 
-            <View style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 88, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }}>
-                <View style={{ width: 44, height: 44, borderRadius: 18, backgroundColor: 'rgba(234, 179, 8, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Trophy size={22} color="#eab308" />
+            {/* Card Último Récord */}
+            <TouchableOpacity 
+                activeOpacity={latestPRs.length > 0 ? 0.7 : 1}
+                onPress={handlePRCardClick}
+                style={{ 
+                  flex: 1, 
+                  backgroundColor: colors.card, 
+                  borderColor: colors.border, 
+                  borderWidth: 1, 
+                  borderRadius: 28, 
+                  padding: 18, 
+                  flexDirection: 'row', 
+                  alignItems: 'center', 
+                  gap: 14, 
+                  minHeight: 88, 
+                  opacity: latestPRs.length > 0 ? 1 : 0.75,
+                  shadowColor: '#000', 
+                  shadowOffset: { width: 0, height: 4 }, 
+                  shadowOpacity: 0.06, 
+                  shadowRadius: 10, 
+                  elevation: 2 
+                }}
+            >
+                <View style={{ 
+                  width: 44, 
+                  height: 44, 
+                  borderRadius: 18, 
+                  backgroundColor: latestPRs.length > 0 ? 'rgba(234, 179, 8, 0.15)' : iconBadgeBg, 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}>
+                    <Trophy size={22} color={latestPRs.length > 0 ? '#eab308' : colors.textSecondary} />
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 13, fontWeight: '800', color: colors.text }}>Último Récord</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: colors.text }}>
+                        {latestPRs.length > 1 ? `¡${latestPRs.length} Nuevos Récords!` : 'Último Récord'}
+                    </Text>
                     <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textSecondary, marginTop: 2 }} numberOfLines={1}>
-                        {latestPR ? (latestPR.exercise_name || latestPR.exerciseName || `${latestPR.weight_kg || latestPR.weight} kg`) : 'Aún sin récords'}
+                        {latestPRs.length > 1 
+                          ? 'Pulsa para verlos todos'
+                          : (latestPRs.length === 1 
+                            ? (latestPRs[0].exercise_name || latestPRs[0].exerciseName || `${latestPRs[0].weight_kg || latestPRs[0].weight} kg`)
+                            : 'Aún sin récords')}
                     </Text>
                 </View>
-            </View>
+            </TouchableOpacity>
         </View>
 
         {/* 4. DASHBOARD INSIGHTS (Asistente) */}
@@ -480,6 +656,28 @@ export default function Dashboard() {
                 </TouchableOpacity>
             </View>
         </View>
+
+        {/* MODALES DE COMPARTIR Y SELECCIÓN */}
+        <WeeklyRecapModal
+          visible={showWeeklyRecap}
+          onClose={() => setShowWeeklyRecap(false)}
+          weeklyData={weeklyStats.recapData}
+        />
+
+        <PRListModal
+          visible={showPRList}
+          onClose={() => setShowPRList(false)}
+          records={latestPRs}
+          onSelectRecord={handleSelectPRFromList}
+        />
+
+        <PRShareModal
+          visible={showPRModal}
+          onClose={() => setShowPRModal(false)}
+          prData={prShareData}
+          onSwitchPR={handleSwitchPR}
+          hasMultiplePRs={latestPRs.length > 1}
+        />
 
       </AnimatedScreen>
     );
