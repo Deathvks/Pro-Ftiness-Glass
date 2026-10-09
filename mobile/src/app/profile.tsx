@@ -10,6 +10,7 @@ import { Colors } from '@/constants/theme';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
 import { getContrastColor } from '@/utils/colorUtils';
+import { BACKEND_BASE_URL } from '@/services/apiClient';
 
 const AnimatedGlassBackground = Animated.createAnimatedComponent(View);
 
@@ -123,9 +124,6 @@ export default function ProfileScreen() {
     const [currentBadgeIndex, setCurrentBadgeIndex] = useState(0);
     
     const gamification = useAppStore(state => state.gamification);
-
-    const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api';
-    const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
     
     const imageUrl = userProfile?.profile_image_url ? 
         (userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`) 

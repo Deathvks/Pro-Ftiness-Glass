@@ -1,5 +1,4 @@
-/* frontend/src/services/nutritionService.js */
-import apiClient from './apiClient';
+import apiClient, { API_BASE_URL } from './apiClient';
 import useAppStore from '../store/useAppStore';
 
 /**
@@ -141,8 +140,6 @@ export const uploadFoodImage = (imageFile) => {
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-
-  const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.100:3001/api');
 
   return fetch(`${API_BASE_URL}/nutrition/food/image`, {
     method: 'POST',

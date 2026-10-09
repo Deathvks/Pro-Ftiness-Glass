@@ -3,15 +3,40 @@ import useAppStore from '../store/useAppStore';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
-const debuggerHost = Constants.expoConfig?.hostUri;
-let localhost = debuggerHost ? debuggerHost.split(':')[0] : '192.168.1.100';
+const resolveBaseUrl = () => {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
 
-// Si estamos en un emulador/simulador, forzamos las IPs locales de loopback para evitar problemas de Firewall
-if (!Constants.isDevice) {
-  localhost = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
+  // Si hay una URL HTTPS configurada explícitamente (túnel ngrok, dominio remoto o producción)
+  if (envUrl && envUrl.startsWith('https://')) {
+    return envUrl;
+  }
+
+  if (__DEV__) {
+    // Si estamos en un emulador/simulador, forzamos loopbacks locales
+    if (!Constants.isDevice) {
+      const host = Platform.OS === 'android' ? '10.0.2.2' : '127.0.0.1';
+      return `http://${host}:3001/api`;
+    }
+
+    // En dispositivo físico, obtenemos dinámicamente la IP de la máquina donde corre Metro
+    const debuggerHost = Constants.expoConfig?.hostUri;
+    if (debuggerHost) {
+      const ip = debuggerHost.split(':')[0];
+      if (ip) {
+        return `http://${ip}:3001/api`;
+      }
+    }
+  }
+
+  return envUrl || 'http://127.0.0.1:3001/api';
+};
+
+export const API_BASE_URL = resolveBaseUrl();
+export const BACKEND_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, '');
+
+if (__DEV__) {
+  console.log('🌐 [API] Conectando a:', API_BASE_URL);
 }
-
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || `http://${localhost}:3001/api`;
 
 const apiClient = async (endpoint, options = {}) => {
     const token = useAppStore.getState().token;
@@ -126,9 +151,13 @@ const apiClient = async (endpoint, options = {}) => {
         const isNetworkFailure = 
             error.name === 'AbortError' || 
             errMessage.includes('failed to fetch') || 
+            errMessage.includes('fetch failed') ||
             errMessage.includes('load failed') || 
             errMessage.includes('networkerror') ||
-            errMessage.includes('network request failed');
+            errMessage.includes('network request failed') ||
+            errMessage.includes('fetchrequestcanceledexception') ||
+            errMessage.includes('timed out') ||
+            errMessage.includes('could not connect');
 
         // Interceptamos fallos de red (Offline o Timeout por red lentísima) para peticiones de escritura (POST, PUT, DELETE, etc.)
         if (isNetworkFailure && config.method !== 'GET') {
@@ -147,7 +176,7 @@ const apiClient = async (endpoint, options = {}) => {
             if (error.name === 'AbortError') {
                 throw new Error('La conexión es muy lenta. Revisa tu internet.');
             }
-            throw new Error('No se pudo conectar con el servidor. Revisa tu conexión a internet.');
+            throw new Error(`No se pudo conectar con el servidor (${API_BASE_URL}). Verifica que tu PC y el móvil estén en la misma red Wi-Fi y el backend esté encendido.`);
         }
         
         // Si ya hemos procesado el mensaje, simplemente lo volvemos a lanzar.

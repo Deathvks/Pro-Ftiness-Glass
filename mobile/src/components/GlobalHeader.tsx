@@ -9,6 +9,7 @@ import { Colors } from '@/constants/theme';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { AiInfoModal } from '@/components/modals/AiInfoModal';
 import { GlassView } from 'expo-glass-effect';
+import { BACKEND_BASE_URL } from '@/services/apiClient';
 
 export default function GlobalHeader({ title, scrollY, showBackButton, hideRightButtons }: { title?: string, scrollY?: Animated.Value, showBackButton?: boolean, hideRightButtons?: boolean }) {
         const [showAiModal, setShowAiModal] = React.useState(false);
@@ -59,8 +60,6 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
     const insets = useSafeAreaInsets();
     
     const userProfile = useAppStore(state => state.userProfile);
-    const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api';
-    const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
     const imageUrl = userProfile?.profile_image_url ? 
         (userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`) 
         : null;

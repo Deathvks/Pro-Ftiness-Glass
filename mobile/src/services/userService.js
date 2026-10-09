@@ -1,5 +1,4 @@
-/* frontend/src/services/userService.js */
-import apiClient from './apiClient';
+import apiClient, { API_BASE_URL } from './apiClient';
 import useAppStore from '../store/useAppStore';
 
 export const getMyProfile = () => {
@@ -46,7 +45,6 @@ export const deleteMyAccount = (password) => {
  */
 export const exportMyData = async (format = 'json') => {
   const token = useAppStore.getState().token;
-  const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.100:3001/api');
 
   // Usamos fetch directamente para manejar la respuesta como Blob (archivo)
   const response = await fetch(`${API_BASE_URL}/users/me/export?format=${format}`, {
