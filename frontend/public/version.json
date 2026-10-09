@@ -1,6 +1,6 @@
 {
-  "version": "7.2.78",
+  "version": "7.2.79",
   "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.2.1/app-release.apk",
-  "notes": "Mejoras en navegación profunda de notificaciones, corrección de notch en iOS y actualización en vivo del estado de los chats."
+  "notes": "Mejora en la visualización de vídeos de ejercicios: soporte fluido para pantalla completa y gestos de cierre sin cerrar el modal."
 }
 
