@@ -126,7 +126,6 @@ export default function Login() {
   const theme = colors;
   const currentStoreTheme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(currentStoreTheme);
-  const contrastTextColor = getContrastTextColor(theme.tint);
   const contrastColor = getContrastColor(theme.tint, currentStoreTheme);
   
   // Expo BlurView tint
@@ -370,11 +369,12 @@ export default function Login() {
                     style={[
                       styles.loginButton, 
                       { 
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.6)',
+                        borderColor: theme.tint,
                         borderWidth: 1,
                         backgroundColor: 'transparent',
                         shadowColor: theme.tint,
                         marginTop: 12, 
+                        overflow: 'hidden',
                         opacity: code.some(d => d === '') || isLoading ? 0.7 : 1 
                       }
                     ]}
@@ -393,15 +393,15 @@ export default function Login() {
                         StyleSheet.absoluteFill,
                         {
                           backgroundColor: theme.tint,
-                          opacity: isDark ? 0.82 : 0.88,
+                          opacity: isDark ? 0.32 : 0.22,
                           borderRadius: 20,
                         }
                       ]}
                     />
                     {isLoading ? (
-                      <ActivityIndicator color={contrastTextColor} />
+                      <ActivityIndicator color={theme.tint} />
                     ) : (
-                      <Text style={[styles.loginButtonText, { color: contrastTextColor }]}>Verificar Código</Text>
+                      <Text style={[styles.loginButtonText, { color: theme.tint }]}>Verificar Código</Text>
                     )}
                   </TouchableOpacity>
 
@@ -510,10 +510,11 @@ export default function Login() {
                     style={[
                       styles.loginButton,
                       {
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.6)',
+                        borderColor: theme.tint,
                         borderWidth: 1,
                         backgroundColor: 'transparent',
                         shadowColor: theme.tint,
+                        overflow: 'hidden',
                         opacity: isLoading ? 0.7 : 1,
                       }
                     ]}
@@ -532,17 +533,17 @@ export default function Login() {
                         StyleSheet.absoluteFill,
                         {
                           backgroundColor: theme.tint,
-                          opacity: isDark ? 0.82 : 0.88,
+                          opacity: isDark ? 0.32 : 0.22,
                           borderRadius: 20,
                         }
                       ]}
                     />
                     {isLoading ? (
-                      <ActivityIndicator color={contrastTextColor} />
+                      <ActivityIndicator color={theme.tint} />
                     ) : (
                       <>
-                        <LogIn color={contrastTextColor} size={18} style={{ marginRight: 8 }} />
-                        <Text style={[styles.loginButtonText, { color: contrastTextColor }]}>Iniciar Sesión</Text>
+                        <LogIn color={theme.tint} size={18} style={{ marginRight: 8 }} />
+                        <Text style={[styles.loginButtonText, { color: theme.tint }]}>Iniciar Sesión</Text>
                       </>
                     )}
                   </TouchableOpacity>
@@ -716,6 +717,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 4,
+    overflow: 'hidden',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,

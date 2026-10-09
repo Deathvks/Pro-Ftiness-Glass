@@ -22,7 +22,6 @@ export default function ForgotPassword() {
   const currentStoreTheme = useAppStore(state => state.theme);
   const isDark = !['light', 'ocean', 'desert'].includes(currentStoreTheme);
   const contrastColor = getContrastColor(theme.tint, currentStoreTheme);
-  const contrastTextColor = getContrastTextColor(theme.tint);
   const insets = useSafeAreaInsets();
   
   const colorScheme = useDeviceColorScheme();
@@ -109,10 +108,11 @@ export default function ForgotPassword() {
                 style={[
                   styles.submitButton, 
                   { 
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.6)',
+                    borderColor: theme.tint,
                     borderWidth: 1,
                     backgroundColor: 'transparent',
                     shadowColor: theme.tint,
+                    overflow: 'hidden',
                     opacity: isLoading ? 0.7 : 1,
                   }
                 ]}
@@ -131,17 +131,17 @@ export default function ForgotPassword() {
                     StyleSheet.absoluteFill,
                     {
                       backgroundColor: theme.tint,
-                      opacity: isDark ? 0.82 : 0.88,
+                      opacity: isDark ? 0.32 : 0.22,
                       borderRadius: 20,
                     }
                   ]}
                 />
                 {isLoading ? (
-                  <ActivityIndicator color={contrastTextColor} />
+                  <ActivityIndicator color={theme.tint} />
                 ) : (
                   <>
-                    <Mail color={contrastTextColor} size={20} style={{ marginRight: 8 }} />
-                    <Text style={[styles.submitButtonText, { color: contrastTextColor }]}>Enviar Enlace</Text>
+                    <Mail color={theme.tint} size={20} style={{ marginRight: 8 }} />
+                    <Text style={[styles.submitButtonText, { color: theme.tint }]}>Enviar Enlace</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -233,6 +233,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
     elevation: 5,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
