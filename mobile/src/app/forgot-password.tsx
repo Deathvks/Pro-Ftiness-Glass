@@ -10,6 +10,7 @@ import useAppStore from '@/store/useAppStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { forgotPassword } from '@/services/authService';
+import ThemeBackground from '@/components/ThemeBackground';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -48,42 +49,18 @@ export default function ForgotPassword() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Orbes de brillo ambiental para difracción de Liquid Glass */}
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <LinearGradient
-          colors={[theme.tint + (isDark ? '35' : '22'), 'transparent']}
-          style={{
-            position: 'absolute',
-            top: -40,
-            left: -60,
-            width: 320,
-            height: 320,
-            borderRadius: 160,
-          }}
-        />
-        <LinearGradient
-          colors={[isDark ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.18)', 'transparent']}
-          style={{
-            position: 'absolute',
-            top: 250,
-            right: -80,
-            width: 340,
-            height: 340,
-            borderRadius: 170,
-          }}
-        />
-        <LinearGradient
-          colors={[isDark ? 'rgba(168, 85, 247, 0.20)' : 'rgba(168, 85, 247, 0.14)', 'transparent']}
-          style={{
-            position: 'absolute',
-            bottom: 40,
-            left: -40,
-            width: 280,
-            height: 280,
-            borderRadius: 140,
-          }}
-        />
-      </View>
+      {/* Background entero con Liquid Glass igual que en los modales de IA */}
+      <ThemeBackground />
+      <GlassView
+        glassEffectStyle="regular"
+        colorScheme={isDark ? 'dark' : 'light'}
+        style={StyleSheet.absoluteFill}
+      />
+      <BlurView
+        intensity={Platform.OS === 'ios' ? 70 : 40}
+        tint={blurTint}
+        style={StyleSheet.absoluteFill}
+      />
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -113,50 +90,27 @@ export default function ForgotPassword() {
           </View>
 
           {!isSubmitted && (
-            <View style={[styles.glassCard, { 
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.25)', 
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.75)',
-              borderTopColor: isDark ? 'rgba(255, 255, 255, 0.40)' : 'rgba(255, 255, 255, 0.95)',
-              borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-              borderWidth: 1.5,
-              overflow: 'hidden',
-            }]}>
-              <BlurView
-                intensity={Platform.OS === 'ios' ? 70 : 45}
-                tint={blurTint}
-                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-              />
+            <View style={{ width: '100%', borderRadius: 32, overflow: 'hidden' }}>
               <GlassView
                 glassEffectStyle="regular"
                 colorScheme={isDark ? 'dark' : 'light'}
                 style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
               />
-              <LinearGradient
-                colors={
-                  isDark
-                    ? ['rgba(255, 255, 255, 0.10)', 'rgba(255, 255, 255, 0.01)']
-                    : ['rgba(255, 255, 255, 0.65)', 'rgba(255, 255, 255, 0.12)']
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+              <BlurView
+                intensity={Platform.OS === 'ios' ? 70 : 45}
+                tint={blurTint}
                 style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-                pointerEvents="none"
               />
-              <View
-                pointerEvents="none"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 20,
-                  right: 20,
-                  height: 1,
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.40)' : 'rgba(255, 255, 255, 0.95)',
-                }}
-              />
-              <View style={[styles.inputContainer, { 
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)', 
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.07)' 
+              <View style={[styles.glassCard, { 
+                backgroundColor: 'transparent', 
+                borderColor: theme.border,
+                borderWidth: 1,
+                borderRadius: 32,
               }]}>
+                <View style={[styles.inputContainer, { 
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)', 
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.07)' 
+                }]}>
                 <TextInput
                   style={[styles.input, { color: theme.text }]}
                   placeholder="Tu correo electrónico"
@@ -209,6 +163,7 @@ export default function ForgotPassword() {
                   </>
                 )}
               </TouchableOpacity>
+              </View>
             </View>
           )}
 

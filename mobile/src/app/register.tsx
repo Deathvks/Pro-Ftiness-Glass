@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import useAppStore from '@/store/useAppStore';
 import { registerUser, verifyEmail, resendVerificationEmail } from '@/services/authService';
 import { useColorScheme as useDeviceColorScheme } from 'react-native';
+import ThemeBackground from '@/components/ThemeBackground';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -270,42 +271,18 @@ export default function Register() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
       style={[styles.container, { backgroundColor: theme.background }]}
     >
-      {/* AMBIENT GLOW ORBS FOR LIQUID GLASS REFRACTION */}
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <LinearGradient
-          colors={[theme.tint + (isDark ? '35' : '22'), 'transparent']}
-          style={{
-            position: 'absolute',
-            top: -40,
-            left: -60,
-            width: 320,
-            height: 320,
-            borderRadius: 160,
-          }}
-        />
-        <LinearGradient
-          colors={[isDark ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.18)', 'transparent']}
-          style={{
-            position: 'absolute',
-            top: 250,
-            right: -80,
-            width: 340,
-            height: 340,
-            borderRadius: 170,
-          }}
-        />
-        <LinearGradient
-          colors={[isDark ? 'rgba(168, 85, 247, 0.20)' : 'rgba(168, 85, 247, 0.14)', 'transparent']}
-          style={{
-            position: 'absolute',
-            bottom: 40,
-            left: -40,
-            width: 280,
-            height: 280,
-            borderRadius: 140,
-          }}
-        />
-      </View>
+      {/* Background entero con Liquid Glass igual que en los modales de IA */}
+      <ThemeBackground />
+      <GlassView
+        glassEffectStyle="regular"
+        colorScheme={isDark ? 'dark' : 'light'}
+        style={StyleSheet.absoluteFill}
+      />
+      <BlurView
+        intensity={Platform.OS === 'ios' ? 70 : 40}
+        tint={blurTint}
+        style={StyleSheet.absoluteFill}
+      />
       <ScrollView 
         style={{ flex: 1, width: '100%' }}
         contentContainerStyle={[
@@ -363,46 +340,23 @@ export default function Register() {
               </Text>
             </View>
             <View style={styles.glassCardWrapper}>
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
+              />
+              <BlurView
+                intensity={Platform.OS === 'ios' ? 70 : 45}
+                tint={blurTint}
+                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
+              />
               <View style={[styles.glassCard, { 
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.25)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.75)',
-                borderTopColor: isDark ? 'rgba(255, 255, 255, 0.40)' : 'rgba(255, 255, 255, 0.95)',
-                borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                borderWidth: 1.5,
+                backgroundColor: 'transparent',
+                borderColor: theme.border,
+                borderWidth: 1,
+                borderRadius: 32,
                 overflow: 'hidden',
               }]}>
-                <BlurView
-                  intensity={Platform.OS === 'ios' ? 70 : 45}
-                  tint={blurTint}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-                />
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-                />
-                <LinearGradient
-                  colors={
-                    isDark
-                      ? ['rgba(255, 255, 255, 0.10)', 'rgba(255, 255, 255, 0.01)']
-                      : ['rgba(255, 255, 255, 0.65)', 'rgba(255, 255, 255, 0.12)']
-                  }
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-                  pointerEvents="none"
-                />
-                <View
-                  pointerEvents="none"
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 20,
-                    right: 20,
-                    height: 1,
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.40)' : 'rgba(255, 255, 255, 0.95)',
-                  }}
-                />
                 <View style={[styles.form, { paddingHorizontal: 16 }]}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, gap: 8 }}>
                     {code.map((digit, index) => (
@@ -508,46 +462,23 @@ export default function Register() {
 
             {/* GLASSCARD WRAPPER PARA SOMBRA */}
             <View style={styles.glassCardWrapper}>
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
+              />
+              <BlurView
+                intensity={Platform.OS === 'ios' ? 70 : 45}
+                tint={blurTint}
+                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
+              />
               <View style={[styles.glassCard, { 
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.25)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.75)',
-                borderTopColor: isDark ? 'rgba(255, 255, 255, 0.40)' : 'rgba(255, 255, 255, 0.95)',
-                borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                borderWidth: 1.5,
+                backgroundColor: 'transparent',
+                borderColor: theme.border,
+                borderWidth: 1,
+                borderRadius: 32,
                 overflow: 'hidden',
               }]}>
-                <BlurView
-                  intensity={Platform.OS === 'ios' ? 70 : 45}
-                  tint={blurTint}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-                />
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-                />
-                <LinearGradient
-                  colors={
-                    isDark
-                      ? ['rgba(255, 255, 255, 0.10)', 'rgba(255, 255, 255, 0.01)']
-                      : ['rgba(255, 255, 255, 0.65)', 'rgba(255, 255, 255, 0.12)']
-                  }
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-                  pointerEvents="none"
-                />
-                <View
-                  pointerEvents="none"
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 20,
-                    right: 20,
-                    height: 1,
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.40)' : 'rgba(255, 255, 255, 0.95)',
-                  }}
-                />
                 <View style={styles.form}>
                   
                   {/* USERNAME INPUT */}
