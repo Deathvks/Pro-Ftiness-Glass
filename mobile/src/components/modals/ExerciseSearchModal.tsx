@@ -16,12 +16,18 @@ import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview
 interface ExerciseSearchModalProps {
   visible: boolean;
   onClose: () => void;
-  onAddExercises: (exercises: any[]) => void;
+  onAddExercises?: (exercises: any[]) => void;
+  isReadOnly?: boolean;
 }
 
 import { WebView } from 'react-native-webview';
 
-export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visible, onClose, onAddExercises }) => {
+export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ 
+  visible, 
+  onClose, 
+  onAddExercises = () => {},
+  isReadOnly = false 
+}) => {
   const insets = useSafeAreaInsetsNative();
   const theme = useAppStore(state => state.theme);
   const colors = useAppColors();
@@ -208,7 +214,8 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
             </Text>
           ) : null}
           
-                                  <View style={{ marginTop: 12, alignItems: 'stretch' }}>
+          {!isReadOnly && (
+            <View style={{ marginTop: 12, alignItems: 'stretch' }}>
               <GlassButton 
                 noShadow 
                 theme={theme} 
@@ -229,6 +236,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
                 )}
               </GlassButton>
             </View>
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -236,7 +244,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
 
   const headerHeight = 56 + insets.top;
   
-  const getYoutubeId = (url) => {
+  const getYoutubeId = (url: any) => {
     if (!url) return null;
     if (url.includes('v=')) return url.split('v=')[1]?.split('&')[0];
     if (url.includes('shorts/')) return url.split('shorts/')[1]?.split('?')[0];
@@ -305,7 +313,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
             {view === 'list' ? 'Biblioteca' : view === 'summary' ? 'Carrito' : selectedExercise?.name}
           </Text>
 
-          {view === 'summary' || view === 'detail' ? (
+          {isReadOnly || view === 'summary' || view === 'detail' ? (
             <View style={{ width: 40 }} />
           ) : (
             <GlassButton noShadow theme={theme} onPress={() => setView('summary')} style={{ width: 'auto', paddingHorizontal: 16, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
@@ -409,7 +417,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
               </TouchableOpacity>
             )}
             
-            <View style={{ padding: 24, flex: 1, paddingBottom: 100 }}>
+            <View style={{ padding: 24, flex: 1, paddingBottom: isReadOnly ? 40 : 100 }}>
               <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.text, marginBottom: 8 }}>{selectedExercise.name}</Text>
               <Text style={{ color: colors.textSecondary, marginBottom: 16 }}>Músculo: {selectedExercise.muscle_group}</Text>
               <Text style={{ color: colors.text, lineHeight: 22, marginBottom: 24 }}>
@@ -457,14 +465,16 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({ visibl
               )}
             </View>
 
-            <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background, position: 'absolute', bottom: 0, left: 0, right: 0 }]}>
-                            <GlassButton noShadow theme={theme} colors={colors} style={{ width: '100%', height: 50, borderRadius: 16, overflow: 'hidden' }} onPress={() => { toggleStaged(selectedExercise); setView('list'); }}>
-                <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />
-                <Text style={{ color: getContrastColor(colors.tint, theme), fontWeight: 'bold', fontSize: 16 }}>
-                  {stagedIds.has(selectedExercise.id) ? 'Quitar del carrito' : 'Añadir al carrito'}
-                </Text>
-              </GlassButton>
-            </View>
+            {!isReadOnly && (
+              <View style={[styles.footer, { borderTopColor: colors.border, backgroundColor: colors.background, position: 'absolute', bottom: 0, left: 0, right: 0 }]}>
+                <GlassButton noShadow theme={theme} colors={colors} style={{ width: '100%', height: 50, borderRadius: 16, overflow: 'hidden' }} onPress={() => { toggleStaged(selectedExercise); setView('list'); }}>
+                  <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.15 }]} />
+                  <Text style={{ color: getContrastColor(colors.tint, theme), fontWeight: 'bold', fontSize: 16 }}>
+                    {stagedIds.has(selectedExercise.id) ? 'Quitar del carrito' : 'Añadir al carrito'}
+                  </Text>
+                </GlassButton>
+              </View>
+            )}
           </Animated.ScrollView>
         )}
 

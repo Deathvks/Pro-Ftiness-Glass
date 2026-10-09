@@ -22,6 +22,7 @@ import GlobalHeader from '@/components/GlobalHeader';
 import { PRShareModal } from '@/components/modals/PRShareModal';
 import { PRListModal } from '@/components/modals/PRListModal';
 import { WeeklyRecapModal } from '@/components/modals/WeeklyRecapModal';
+import { ExerciseSearchModal } from '@/components/modals/ExerciseSearchModal';
 
 const getXpRequiredForLevel = (level) => level <= 1 ? 0 : 50 * Math.pow(level, 2) + 350 * level - 400;
 const getLevelProgress = (currentXp, currentLevel) => {
@@ -58,6 +59,7 @@ export default function Dashboard() {
   const [showPRModal, setShowPRModal] = useState(false);
   const [showPRList, setShowPRList] = useState(false);
   const [selectedPR, setSelectedPR] = useState<any>(null);
+  const [showExerciseLibrary, setShowExerciseLibrary] = useState(false);
 
   useEffect(() => {
     const updateTimer = () => {
@@ -546,7 +548,7 @@ export default function Dashboard() {
 
             {/* BOTON BIBLIOTECA EJERCICIOS */}
             <TouchableOpacity
-                onPress={() => router.push('/routines')}
+                onPress={() => setShowExerciseLibrary(true)}
                 style={{
                     backgroundColor: colors.card,
                     borderColor: colors.border,
@@ -677,6 +679,13 @@ export default function Dashboard() {
           prData={prShareData}
           onSwitchPR={handleSwitchPR}
           hasMultiplePRs={latestPRs.length > 1}
+        />
+
+        {/* MODAL BIBLIOTECA DE EJERCICIOS */}
+        <ExerciseSearchModal
+          visible={showExerciseLibrary}
+          onClose={() => setShowExerciseLibrary(false)}
+          isReadOnly={true}
         />
 
       </AnimatedScreen>
