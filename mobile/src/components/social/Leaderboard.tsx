@@ -1,138 +1,269 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Trophy, Medal } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastColor } from '@/utils/colorUtils';
 import apiClient from '@/services/apiClient';
 import LevelBadge from '@/components/LevelBadge';
+import { SocialUserAvatar } from './SocialUserAvatar';
 
-export function Leaderboard() {
-    const theme = useAppStore(state => state.theme);
-    const colors = useAppColors();
-    const userProfile = useAppStore(state => state.userProfile);
-    const [leaderboard, setLeaderboard] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId: any) => void }) {
+  const theme = useAppStore(state => state.theme) || 'oled';
+  const colors = useAppColors();
+  const userProfile = useAppStore(state => state.userProfile);
+  const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
-    const loadLeaderboard = async () => {
-        try {
-            const data = await apiClient('/social/leaderboard');
-            setLeaderboard(data || []);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        loadLeaderboard();
-    }, []);
-
-    if (isLoading) {
-        return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
-                <ActivityIndicator size="large" color={getContrastColor(colors.tint, theme)} />
-            </View>
-        );
+  const loadLeaderboard = async () => {
+    try {
+      const data = await apiClient('/social/leaderboard');
+      setLeaderboard(data || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    const renderHeader = () => (
-        <View style={{ marginBottom: 8 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: '#EAB30820', alignItems: 'center', justifyContent: 'center' }}>
-                        <Trophy size={18} color="#EAB308" />
-                    </View>
-                    <Text style={{ fontSize: 18, fontWeight: '900', color: colors.text }}>Ranking Global</Text>
-                </View>
-                <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, backgroundColor: colors.tint + '15' }}>
-                    <Text style={{ fontSize: 9, fontWeight: 'bold', color: getContrastColor(colors.tint, theme), textTransform: 'uppercase', letterSpacing: 1 }}>Top 50</Text>
-                </View>
-            </View>
-            
-            <View style={{ flexDirection: 'row', paddingHorizontal: 4, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                <Text style={{ width: 28, textAlign: 'center', fontSize: 9, fontWeight: 'bold', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1 }}>#</Text>
-                <Text style={{ flex: 1, paddingLeft: 6, fontSize: 9, fontWeight: 'bold', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1 }}>Atleta</Text>
-                <Text style={{ width: 50, textAlign: 'right', fontSize: 9, fontWeight: 'bold', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1 }}>Nivel</Text>
-                <Text style={{ width: 64, textAlign: 'right', fontSize: 9, fontWeight: 'bold', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1 }}>XP</Text>
-            </View>
-        </View>
+  useEffect(() => {
+    loadLeaderboard();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.tint} />
+      </View>
     );
+  }
 
-    const renderItem = ({ item: user, index }: { item: any, index: number }) => {
-        const isMe = user.id === userProfile?.id;
-        const displayUsername = user.username?.includes('@') ? user.username.split('@')[0] : (user.username || 'Usuario');
-        const avatarUrl = user.profile_image_url || user.avatar;
-        
-        let rankIcon = null;
-        if (index === 0) rankIcon = <Medal size={18} color="#FBBF24" />;
-        else if (index === 1) rankIcon = <Medal size={18} color="#9CA3AF" />;
-        else if (index === 2) rankIcon = <Medal size={18} color="#B45309" />;
-        else rankIcon = <Text style={{ fontSize: 11, fontWeight: 'bold', color: colors.textSecondary, opacity: 0.6 }}>#{index + 1}</Text>;
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <View style={styles.headerTop}>
+        <View style={styles.titleGroup}>
+          <View style={styles.trophyBadge}>
+            <Trophy size={20} color="#f59e0b" />
+          </View>
+          <Text style={[styles.title, { color: colors.text }]}>Ranking Global</Text>
+        </View>
+        <View style={[styles.topPill, { backgroundColor: colors.tint + '18' }]}>
+          <Text style={[styles.topPillText, { color: colors.tint }]}>Top 50</Text>
+        </View>
+      </View>
 
-        return (
-            <TouchableOpacity 
-                activeOpacity={0.7}
-                style={{ 
-                    flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 8, borderRadius: 16, marginBottom: 4,
-                    backgroundColor: isMe ? colors.tint + '15' : 'transparent',
-                    borderWidth: 1, borderColor: isMe ? colors.tint + '30' : 'transparent'
-                }}
-            >
-                <View style={{ width: 28, alignItems: 'center', justifyContent: 'center' }}>
-                    {rankIcon}
-                </View>
-                
-                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingLeft: 4, gap: 8 }}>
-                    <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.card, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>
-                        {avatarUrl ? (
-                            <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} />
-                        ) : (
-                            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                                <Text style={{ fontSize: 13, fontWeight: 'bold', color: getContrastColor(colors.tint, theme) }}>{displayUsername.charAt(0).toUpperCase()}</Text>
-                            </View>
-                        )}
-                    </View>
-                    <Text style={{ flexShrink: 1, fontSize: 13, fontWeight: isMe ? '900' : 'bold', color: isMe ? getContrastColor(colors.tint, theme) : colors.text }} numberOfLines={1}>
-                        {displayUsername} {isMe && '(Tú)'}
-                    </Text>
-                </View>
-                
-                <View style={{ width: 50, alignItems: 'flex-end', justifyContent: 'center' }}>
-                    <View style={{ transform: [{ scale: 0.45 }], transformOrigin: 'right center' }}>
-                        <LevelBadge level={user.level || 1} size="sm" bgTheme={colors.background} />
-                    </View>
-                </View>
-                
-                <View style={{ width: 64, alignItems: 'flex-end', justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 12, fontWeight: 'bold', fontFamily: 'monospace', color: colors.text }}>
-                        {user.xp?.toLocaleString()}
-                    </Text>
-                </View>
-            </TouchableOpacity>
-        );
-    };
+      <View style={[styles.tableColumns, { borderBottomColor: colors.border }]}>
+        <Text style={[styles.colHeader, { width: 34, textAlign: 'center' }]}>#</Text>
+        <Text style={[styles.colHeader, { flex: 1, paddingLeft: 8 }]}>Atleta</Text>
+        <Text style={[styles.colHeader, { width: 56, textAlign: 'right' }]}>Nivel</Text>
+        <Text style={[styles.colHeader, { width: 72, textAlign: 'right' }]}>XP</Text>
+      </View>
+    </View>
+  );
+
+  const renderItem = ({ item: user, index }: { item: any; index: number }) => {
+    const isMe = String(user.id) === String(userProfile?.id);
+    const displayName = user.username?.includes('@')
+      ? user.username.split('@')[0]
+      : user.username || 'Usuario';
+
+    let rankIcon = null;
+    if (index === 0) rankIcon = <Medal size={20} color="#f59e0b" />;
+    else if (index === 1) rankIcon = <Medal size={20} color="#9ca3af" />;
+    else if (index === 2) rankIcon = <Medal size={20} color="#b45309" />;
+    else (
+      rankIcon = (
+        <Text style={[styles.rankNum, { color: colors.textSecondary }]}>
+          #{index + 1}
+        </Text>
+      )
+    );
 
     return (
-        <View style={{ flex: 1, padding: 16, paddingBottom: 100 }}>
-            <GlassView 
-                glassEffectStyle="regular" 
-                colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} 
-                style={{ flex: 1, borderRadius: 32, overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}
-            >
-                <FlatList
-                    data={leaderboard}
-                    keyExtractor={item => item.id.toString()}
-                    renderItem={renderItem}
-                    ListHeaderComponent={renderHeader}
-                    contentContainerStyle={{ padding: 16 }}
-                    showsVerticalScrollIndicator={false}
-                />
-            </GlassView>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => onNavigateProfile && onNavigateProfile(user.id)}
+        style={[
+          styles.row,
+          {
+            backgroundColor: isMe
+              ? colors.tint + '15'
+              : isDark
+              ? 'rgba(255, 255, 255, 0.03)'
+              : 'rgba(0, 0, 0, 0.02)',
+            borderColor: isMe ? colors.tint + '40' : 'transparent',
+          },
+        ]}
+      >
+        <View style={styles.rankCol}>{rankIcon}</View>
+
+        <View style={styles.athleteCol}>
+          <SocialUserAvatar user={user} size={34} />
+          <Text
+            style={[
+              styles.athleteName,
+              {
+                color: isMe ? colors.tint : colors.text,
+                fontWeight: isMe ? '800' : '600',
+              },
+            ]}
+            numberOfLines={1}
+          >
+            {displayName} {isMe && '(Tú)'}
+          </Text>
         </View>
+
+        <View style={styles.levelCol}>
+          <View style={styles.levelScale}>
+            <LevelBadge level={user.level || 1} size="sm" bgTheme={colors.card} />
+          </View>
+        </View>
+
+        <View style={styles.xpCol}>
+          <Text style={[styles.xpText, { color: colors.text }]}>
+            {user.xp?.toLocaleString() || 0}
+          </Text>
+        </View>
+      </TouchableOpacity>
     );
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={[styles.card, { borderColor: colors.border }]}>
+        <GlassView
+          glassEffectStyle="regular"
+          colorScheme={isDark ? 'dark' : 'light'}
+          style={StyleSheet.absoluteFill}
+        />
+
+        <FlatList
+          data={leaderboard}
+          keyExtractor={item => item.id.toString()}
+          renderItem={renderItem}
+          ListHeaderComponent={renderHeader}
+          contentContainerStyle={{ padding: 18, paddingBottom: 30 }}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
+    </View>
+  );
 }
 
-
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+    flex: 1,
+  },
+  loadingContainer: {
+    padding: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  card: {
+    borderRadius: 28,
+    borderWidth: 1,
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
+    flex: 1,
+  },
+  header: {
+    marginBottom: 10,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  titleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  trophyBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  topPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  topPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  tableColumns: {
+    flexDirection: 'row',
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+  },
+  colHeader: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: '#9ca3af',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 18,
+    borderWidth: 1,
+    marginBottom: 4,
+  },
+  rankCol: {
+    width: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rankNum: {
+    fontSize: 12,
+    fontWeight: '700',
+    opacity: 0.6,
+  },
+  athleteCol: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 6,
+    gap: 8,
+  },
+  athleteName: {
+    fontSize: 13,
+    flexShrink: 1,
+  },
+  levelCol: {
+    width: 56,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  levelScale: {
+    transform: [{ scale: 0.44 }],
+  },
+  xpCol: {
+    width: 72,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  xpText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+});
