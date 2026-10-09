@@ -185,8 +185,13 @@ export default function SocialScreen() {
         <GlobalHeader title="Comunidad" scrollY={scrollY} />
       </View>
 
-      <ScrollView
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
         contentContainerStyle={{
           paddingTop: insets.top + 70,
           paddingBottom: insets.bottom + 100,
@@ -194,12 +199,7 @@ export default function SocialScreen() {
       >
         {/* Page Subtitle Header */}
         <View style={styles.header}>
-          <View style={styles.titleRow}>
-            <Text style={[styles.mainTitle, { color: colors.text }]}>Comunidad</Text>
-            <View style={[styles.betaBadge, { backgroundColor: colors.tint + '18' }]}>
-              <Text style={[styles.betaText, { color: colors.tint }]}>BETA</Text>
-            </View>
-          </View>
+          <Text style={[styles.mainTitle, { color: colors.text }]}>Comunidad</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Conecta y compite con otros atletas
           </Text>
@@ -343,7 +343,7 @@ export default function SocialScreen() {
         {activeTab === 'search' && (
           <SearchTab onNavigateProfile={navigateToProfile} />
         )}
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* MODALS */}
       <PrivacyModal
@@ -380,25 +380,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 16,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   mainTitle: {
     fontSize: 28,
     fontWeight: '900',
     letterSpacing: -0.5,
-  },
-  betaBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  betaText: {
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 1,
   },
   subtitle: {
     fontSize: 14,

@@ -442,13 +442,13 @@ export function Feed({ onNavigateProfile }: { onNavigateProfile?: (userId: any) 
   };
 
   return (
-    <FlatList
-      data={feed}
-      keyExtractor={item => item.id.toString()}
-      renderItem={renderItem}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 60 }}
-      showsVerticalScrollIndicator={false}
-    />
+    <View style={{ paddingHorizontal: 16, paddingBottom: 60, gap: 16 }}>
+      {feed.map(item => (
+        <View key={item.id.toString()}>
+          {renderItem({ item })}
+        </View>
+      ))}
+    </View>
   );
 }
 

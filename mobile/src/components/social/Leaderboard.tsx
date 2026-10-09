@@ -139,14 +139,12 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
           style={StyleSheet.absoluteFill}
         />
 
-        <FlatList
-          data={leaderboard}
-          keyExtractor={item => item.id.toString()}
-          renderItem={renderItem}
-          ListHeaderComponent={renderHeader}
-          contentContainerStyle={{ padding: 18, paddingBottom: 30 }}
-          showsVerticalScrollIndicator={false}
-        />
+        <View style={{ padding: 18, paddingBottom: 30 }}>
+          {renderHeader()}
+          <View style={{ gap: 4 }}>
+            {leaderboard.map((item, index) => renderItem({ item, index }))}
+          </View>
+        </View>
       </View>
     </View>
   );
