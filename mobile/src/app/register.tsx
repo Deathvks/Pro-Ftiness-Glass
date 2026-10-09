@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, ScrollView, Image } from 'react-native';
 import { useRouter, Link } from 'expo-router';
-import { BlurView } from 'expo-blur';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { GlassView } from 'expo-glass-effect';
 import { Sparkles, UserPlus, Info, ArrowRight, CheckCircle2, Eye, EyeOff, Mail } from 'lucide-react-native';
@@ -278,11 +277,6 @@ export default function Register() {
         colorScheme={isDark ? 'dark' : 'light'}
         style={StyleSheet.absoluteFill}
       />
-      <BlurView
-        intensity={Platform.OS === 'ios' ? 70 : 40}
-        tint={blurTint}
-        style={StyleSheet.absoluteFill}
-      />
       <ScrollView 
         style={{ flex: 1, width: '100%' }}
         contentContainerStyle={[
@@ -339,25 +333,12 @@ export default function Register() {
                 Hemos enviado un código de 6 dígitos a <Text style={{ color: theme.text, fontWeight: 'bold' }}>{email}</Text>
               </Text>
             </View>
-            <View style={styles.glassCardWrapper}>
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-              />
-              <BlurView
-                intensity={Platform.OS === 'ios' ? 70 : 45}
-                tint={blurTint}
-                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-              />
-              <View style={[styles.glassCard, { 
-                backgroundColor: 'transparent',
-                borderColor: theme.border,
-                borderWidth: 1,
-                borderRadius: 32,
-                overflow: 'hidden',
-              }]}>
-                <View style={[styles.form, { paddingHorizontal: 16 }]}>
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[styles.glassCard, { borderColor: theme.border }]}
+            >
+              <View style={[styles.form, { paddingHorizontal: 16 }]}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, gap: 8 }}>
                     {code.map((digit, index) => (
                       <TextInput 
@@ -449,8 +430,7 @@ export default function Register() {
                     <Text style={{ color: theme.textSecondary, fontSize: 14 }}>Volver al registro</Text>
                   </TouchableOpacity>
                 </View>
-              </View>
-            </View>
+            </GlassView>
           </>
         ) : (
           <>
@@ -460,26 +440,12 @@ export default function Register() {
               <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Crea tu cuenta gratis para empezar.</Text>
             </View>
 
-            {/* GLASSCARD WRAPPER PARA SOMBRA */}
-            <View style={styles.glassCardWrapper}>
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-              />
-              <BlurView
-                intensity={Platform.OS === 'ios' ? 70 : 45}
-                tint={blurTint}
-                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-              />
-              <View style={[styles.glassCard, { 
-                backgroundColor: 'transparent',
-                borderColor: theme.border,
-                borderWidth: 1,
-                borderRadius: 32,
-                overflow: 'hidden',
-              }]}>
-                <View style={styles.form}>
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[styles.glassCard, { borderColor: theme.border }]}
+            >
+              <View style={styles.form}>
                   
                   {/* USERNAME INPUT */}
                   <View style={styles.inputWrapper}>
@@ -712,8 +678,7 @@ export default function Register() {
                     </TouchableOpacity>
                   </View>
                 </View>
-              </View>
-            </View>
+            </GlassView>
           </>
         )}
 
@@ -776,10 +741,12 @@ const styles = StyleSheet.create({
   },
   glassCard: {
     width: '100%',
+    maxWidth: 400,
     borderRadius: 32,
     padding: 24,
     overflow: 'hidden',
     borderWidth: 1,
+    backgroundColor: 'transparent',
   },
   form: {
     gap: 20,

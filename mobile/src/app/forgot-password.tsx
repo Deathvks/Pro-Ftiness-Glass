@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Image, useColorScheme as useDeviceColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BlurView } from 'expo-blur';
 import { Dumbbell, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react-native';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor, getContrastTextColor } from '@/utils/colorUtils';
@@ -56,11 +55,6 @@ export default function ForgotPassword() {
         colorScheme={isDark ? 'dark' : 'light'}
         style={StyleSheet.absoluteFill}
       />
-      <BlurView
-        intensity={Platform.OS === 'ios' ? 70 : 40}
-        tint={blurTint}
-        style={StyleSheet.absoluteFill}
-      />
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -90,23 +84,11 @@ export default function ForgotPassword() {
           </View>
 
           {!isSubmitted && (
-            <View style={{ width: '100%', borderRadius: 32, overflow: 'hidden' }}>
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-              />
-              <BlurView
-                intensity={Platform.OS === 'ios' ? 70 : 45}
-                tint={blurTint}
-                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-              />
-              <View style={[styles.glassCard, { 
-                backgroundColor: 'transparent', 
-                borderColor: theme.border,
-                borderWidth: 1,
-                borderRadius: 32,
-              }]}>
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[styles.glassCard, { borderColor: theme.border }]}
+            >
                 <View style={[styles.inputContainer, { 
                   backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)', 
                   borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.07)' 
@@ -163,8 +145,7 @@ export default function ForgotPassword() {
                   </>
                 )}
               </TouchableOpacity>
-              </View>
-            </View>
+            </GlassView>
           )}
 
           <TouchableOpacity 
@@ -225,9 +206,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   glassCard: {
+    width: '100%',
+    maxWidth: 400,
     borderRadius: 32,
     padding: 24,
     borderWidth: 1,
+    backgroundColor: 'transparent',
     overflow: 'hidden',
   },
   inputContainer: {
