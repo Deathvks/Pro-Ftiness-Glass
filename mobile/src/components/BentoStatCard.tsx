@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Info } from 'lucide-react-native';
+import { GlassView } from 'expo-glass-effect';
 
 export default function BentoStatCard({ 
     title, 
@@ -22,21 +23,22 @@ export default function BentoStatCard({
             onPress={onPress}
             activeOpacity={0.8}
             style={{ 
-                backgroundColor: themeColors?.card, 
+                backgroundColor: 'transparent', 
                 borderRadius: 28, 
                 padding: 20, 
                 flex: 1, 
                 minHeight: 160, 
                 justifyContent: 'space-between', 
                 borderWidth: 1, 
-                borderColor: themeColors?.border,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.08,
-                shadowRadius: 12,
-                elevation: 2
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                overflow: 'hidden',
             }}
         >
+            <GlassView 
+                glassEffectStyle="regular" 
+                colorScheme={isDark ? 'dark' : 'light'} 
+                style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} 
+            />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <View style={{ 
                     width: 48, 

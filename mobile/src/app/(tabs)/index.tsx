@@ -12,6 +12,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/theme';
 import { getContrastColor } from '@/utils/colorUtils';
+import { GlassView } from 'expo-glass-effect';
 
 import LevelBadge from '@/components/LevelBadge';
 import CircularProgress from '@/components/CircularProgress';
@@ -260,19 +261,32 @@ export default function Dashboard() {
         </View>
 
         {/* 3. GAMIFICACION */}
-        <TouchableOpacity style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 32, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: {width:0, height:6}, shadowOpacity: 0.08, shadowRadius: 14, elevation: 2 }}>
+        <TouchableOpacity style={{ 
+            backgroundColor: 'transparent', 
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', 
+            borderWidth: 1, 
+            borderRadius: 32, 
+            padding: 20, 
+            marginBottom: 16, 
+            overflow: 'hidden' 
+        }}>
+            <GlassView 
+                glassEffectStyle="regular" 
+                colorScheme={isDark ? 'dark' : 'light'} 
+                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]} 
+            />
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <LevelBadge level={gamification?.level || 1} bgTheme={colors.card} />
+                <LevelBadge level={gamification?.level || 1} bgTheme={isDark ? '#111111' : '#FFFFFF'} />
                 
                 <View style={{ marginLeft: 16, flex: 1 }}>
                     <Text style={{ fontSize: 20, fontWeight: '900', color: colors.text }}>Nivel {gamification?.level || 1}</Text>
                     <Text style={{ fontSize: 12, fontWeight: 'bold', color: getContrastColor(colors.tint, theme), marginTop: 4 }}>{levelData.currentXp} / {levelData.nextLevelXp} XP</Text>
-                    <View style={{ height: 8, backgroundColor: colors.background, borderRadius: 4, overflow: 'hidden', marginTop: 8 }}>
+                    <View style={{ height: 8, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)', borderRadius: 4, overflow: 'hidden', marginTop: 8 }}>
                         <View style={{ height: '100%', backgroundColor: colors.tint, borderRadius: 4, width: `${levelData.progressPercent}%` }} />
                     </View>
                 </View>
 
-                <View style={{ alignItems: 'center', justifyContent: 'center', paddingLeft: 16, borderLeftWidth: 1, borderLeftColor: colors.border, marginLeft: 16 }}>
+                <View style={{ alignItems: 'center', justifyContent: 'center', paddingLeft: 16, borderLeftWidth: 1, borderLeftColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', marginLeft: 16 }}>
                     <Flame size={26} color={(gamification?.streak || 0) > 0 ? colors.tint : colors.textSecondary} fill={(gamification?.streak || 0) > 0 ? colors.tint : 'transparent'} style={{ opacity: (gamification?.streak || 0) > 0 ? 1 : 0.3 }} />
                     <Text style={{ fontSize: 10, fontWeight: '900', color: colors.textSecondary, marginTop: 4 }}>{gamification?.streak || 0} DÍAS</Text>
                 </View>
@@ -291,23 +305,24 @@ export default function Dashboard() {
                 }}
                 style={{ 
                   flex: 1, 
-                  backgroundColor: colors.card, 
-                  borderColor: colors.border, 
+                  backgroundColor: 'transparent', 
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', 
                   borderWidth: 1, 
                   borderRadius: 28, 
                   padding: 16, 
+                  overflow: 'hidden',
                   flexDirection: 'row', 
                   alignItems: 'center', 
                   gap: 12, 
                   minHeight: 88, 
                   opacity: canOpenWeeklyRecap ? 1 : 0.75,
-                  shadowColor: '#000', 
-                  shadowOffset: { width: 0, height: 4 }, 
-                  shadowOpacity: 0.06, 
-                  shadowRadius: 10, 
-                  elevation: 2 
                 }}
             >
+                <GlassView 
+                    glassEffectStyle="regular" 
+                    colorScheme={isDark ? 'dark' : 'light'} 
+                    style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} 
+                />
                 <View style={{ 
                   width: 44, 
                   height: 44, 
@@ -347,23 +362,24 @@ export default function Dashboard() {
                 onPress={handlePRCardClick}
                 style={{ 
                   flex: 1, 
-                  backgroundColor: colors.card, 
-                  borderColor: colors.border, 
+                  backgroundColor: 'transparent', 
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', 
                   borderWidth: 1, 
                   borderRadius: 28, 
                   padding: 16, 
+                  overflow: 'hidden',
                   flexDirection: 'row', 
                   alignItems: 'center', 
                   gap: 12, 
                   minHeight: 88, 
                   opacity: latestPRs.length > 0 ? 1 : 0.75,
-                  shadowColor: '#000', 
-                  shadowOffset: { width: 0, height: 4 }, 
-                  shadowOpacity: 0.06, 
-                  shadowRadius: 10, 
-                  elevation: 2 
                 }}
             >
+                <GlassView 
+                    glassEffectStyle="regular" 
+                    colorScheme={isDark ? 'dark' : 'light'} 
+                    style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} 
+                />
                 <View style={{ 
                   width: 44, 
                   height: 44, 
@@ -397,7 +413,22 @@ export default function Dashboard() {
             {/* Fila 1 */}
             <View style={{ flexDirection: 'row', gap: 12 }}>
                 {/* Card 1: Sesiones Semanales */}
-                <View style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 20, minHeight: 160, justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 2, borderWidth: 1 }}>
+                <View style={{ 
+                    flex: 1, 
+                    backgroundColor: 'transparent', 
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', 
+                    borderWidth: 1, 
+                    borderRadius: 28, 
+                    padding: 20, 
+                    minHeight: 160, 
+                    justifyContent: 'space-between', 
+                    overflow: 'hidden' 
+                }}>
+                    <GlassView 
+                        glassEffectStyle="regular" 
+                        colorScheme={isDark ? 'dark' : 'light'} 
+                        style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} 
+                    />
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <View style={{ width: 48, height: 48, borderRadius: 20, backgroundColor: iconBadgeBg, alignItems: 'center', justifyContent: 'center' }}>
                             <Dumbbell size={24} color={colors.tint} />
@@ -458,7 +489,20 @@ export default function Dashboard() {
         </View>
 
         {/* 6. NUTRICION */}
-        <View style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 32, padding: 22, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 2 }}>
+        <View style={{ 
+            backgroundColor: 'transparent', 
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', 
+            borderWidth: 1, 
+            borderRadius: 32, 
+            padding: 22, 
+            marginBottom: 24, 
+            overflow: 'hidden' 
+        }}>
+            <GlassView 
+                glassEffectStyle="regular" 
+                colorScheme={isDark ? 'dark' : 'light'} 
+                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]} 
+            />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <View style={{ width: 48, height: 48, borderRadius: 20, backgroundColor: iconBadgeBg, alignItems: 'center', justifyContent: 'center' }}>
@@ -522,12 +566,21 @@ export default function Dashboard() {
                             if (!isCompleted && startWorkout) { await startWorkout(routine); router.push('/workout'); }
                         }}
                         style={{ 
-                            backgroundColor: colors.card, borderColor: isActive ? colors.tint : colors.border, borderWidth: 1, 
-                            borderRadius: 28, padding: 18, marginBottom: 12,
+                            backgroundColor: 'transparent', 
+                            borderColor: isActive ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'), 
+                            borderWidth: 1, 
+                            borderRadius: 28, 
+                            padding: 18, 
+                            marginBottom: 12,
+                            overflow: 'hidden',
                             opacity: isCompleted ? 0.7 : 1,
-                            shadowColor: isActive ? colors.tint : '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: isActive ? 0.3 : 0.08, shadowRadius: 12, elevation: 2
                         }}
                     >
+                        <GlassView 
+                            glassEffectStyle="regular" 
+                            colorScheme={isDark ? 'dark' : 'light'} 
+                            style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} 
+                        />
                         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 }}>
                                 <View style={{ width: 48, height: 48, borderRadius: 20, backgroundColor: isActive ? colors.tint + '20' : iconBadgeBg, alignItems: 'center', justifyContent: 'center' }}>
@@ -545,7 +598,20 @@ export default function Dashboard() {
                     </TouchableOpacity>
                 );
             }) : (
-                <View style={{ backgroundColor: colors.card, borderRadius: 28, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
+                <View style={{ 
+                    backgroundColor: 'transparent', 
+                    borderRadius: 28, 
+                    padding: 32, 
+                    alignItems: 'center', 
+                    borderWidth: 1, 
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                    overflow: 'hidden' 
+                }}>
+                    <GlassView 
+                        glassEffectStyle="regular" 
+                        colorScheme={isDark ? 'dark' : 'light'} 
+                        style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} 
+                    />
                     <Text style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 12 }}>Sin rutinas creadas.</Text>
                     <TouchableOpacity onPress={() => router.push('/routines')} style={{ backgroundColor: colors.tint + '15', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 }}>
                         <Text style={{ fontSize: 13, fontWeight: '800', color: colors.tint }}>Crear primera rutina</Text>
@@ -557,8 +623,8 @@ export default function Dashboard() {
             <TouchableOpacity
                 onPress={() => setShowExerciseLibrary(true)}
                 style={{
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
+                    backgroundColor: 'transparent',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
                     borderWidth: 1,
                     borderRadius: 28,
                     padding: 18,
@@ -566,13 +632,14 @@ export default function Dashboard() {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     marginTop: 4,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 12,
-                    elevation: 2
+                    overflow: 'hidden'
                 }}
             >
+                <GlassView 
+                    glassEffectStyle="regular" 
+                    colorScheme={isDark ? 'dark' : 'light'} 
+                    style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} 
+                />
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 }}>
                     <View style={{ width: 48, height: 48, borderRadius: 20, backgroundColor: iconBadgeBg, alignItems: 'center', justifyContent: 'center' }}>
                         <ListFilter size={24} color={colors.tint} />
@@ -587,7 +654,20 @@ export default function Dashboard() {
         </View>
 
         {/* 8. PESO */}
-        <View style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 32, padding: 22, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 2 }}>
+        <View style={{ 
+            backgroundColor: 'transparent', 
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', 
+            borderWidth: 1, 
+            borderRadius: 32, 
+            padding: 22, 
+            marginBottom: 24, 
+            overflow: 'hidden' 
+        }}>
+            <GlassView 
+                glassEffectStyle="regular" 
+                colorScheme={isDark ? 'dark' : 'light'} 
+                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]} 
+            />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Scale size={24} color={colors.tint} />
@@ -645,19 +725,67 @@ export default function Dashboard() {
                 <Text style={{ fontSize: 20, fontWeight: '900', color: colors.text }}>Cardio Rápido</Text>
             </View>
             <View style={{ flexDirection: 'row', gap: 12 }}>
-                <TouchableOpacity onPress={() => router.push('/workout')} style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 24, paddingVertical: 20, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }}>
+                <TouchableOpacity onPress={() => router.push('/workout')} style={{ 
+                    flex: 1, 
+                    backgroundColor: 'transparent', 
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', 
+                    borderWidth: 1, 
+                    borderRadius: 24, 
+                    paddingVertical: 20, 
+                    paddingHorizontal: 10, 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    overflow: 'hidden' 
+                }}>
+                    <GlassView 
+                        glassEffectStyle="regular" 
+                        colorScheme={isDark ? 'dark' : 'light'} 
+                        style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} 
+                    />
                     <View style={{ width: 52, height: 52, borderRadius: 20, backgroundColor: iconBadgeBg, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
                         <Footprints size={26} color={colors.tint} />
                     </View>
                     <Text style={{ fontSize: 13, fontWeight: '800', color: colors.textSecondary }}>Cinta</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => router.push('/workout')} style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 24, paddingVertical: 20, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }}>
+                <TouchableOpacity onPress={() => router.push('/workout')} style={{ 
+                    flex: 1, 
+                    backgroundColor: 'transparent', 
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', 
+                    borderWidth: 1, 
+                    borderRadius: 24, 
+                    paddingVertical: 20, 
+                    paddingHorizontal: 10, 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    overflow: 'hidden' 
+                }}>
+                    <GlassView 
+                        glassEffectStyle="regular" 
+                        colorScheme={isDark ? 'dark' : 'light'} 
+                        style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} 
+                    />
                     <View style={{ width: 52, height: 52, borderRadius: 20, backgroundColor: iconBadgeBg, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
                         <ActivityIcon size={26} color={colors.tint} />
                     </View>
                     <Text style={{ fontSize: 13, fontWeight: '800', color: colors.textSecondary }}>Bici</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => router.push('/workout')} style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 24, paddingVertical: 20, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }}>
+                <TouchableOpacity onPress={() => router.push('/workout')} style={{ 
+                    flex: 1, 
+                    backgroundColor: 'transparent', 
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', 
+                    borderWidth: 1, 
+                    borderRadius: 24, 
+                    paddingVertical: 20, 
+                    paddingHorizontal: 10, 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    overflow: 'hidden' 
+                }}>
+                    <GlassView 
+                        glassEffectStyle="regular" 
+                        colorScheme={isDark ? 'dark' : 'light'} 
+                        style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} 
+                    />
                     <View style={{ width: 52, height: 52, borderRadius: 20, backgroundColor: colors.tint + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
                         <LayoutGrid size={26} color={colors.tint} />
                     </View>

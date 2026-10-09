@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Lightbulb, Flame, Scale, Dumbbell, AlertTriangle, TrendingUp } from 'lucide-react-native';
+import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
 
 export default function DashboardInsights({ workoutLog, bodyWeightLog, colors }) {
   const theme = useAppStore(state => state.theme);
+  const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
   const insights = useMemo(() => {
     const alerts = [];
@@ -72,16 +74,19 @@ export default function DashboardInsights({ workoutLog, bodyWeightLog, colors })
         const Icon = insight.icon;
         return (
           <View key={insight.id} style={{ 
-            backgroundColor: colors.card, 
             borderRadius: 24, 
             marginBottom: 12,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.1,
-            shadowRadius: 16,
-            elevation: 2
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+            overflow: 'hidden',
+            backgroundColor: 'transparent',
           }}>
-            <View style={{ backgroundColor: insight.color + '15', borderColor: insight.color + '30', borderWidth: 1, borderRadius: 24, padding: 20 }}>
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+            />
+            <View style={{ backgroundColor: insight.color + '12', padding: 20 }}>
               <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                 <Icon size={24} color={insight.color} style={{ marginRight: 16, marginTop: 2 }} />
                 <View style={{ flex: 1 }}>
