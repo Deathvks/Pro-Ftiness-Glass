@@ -2,13 +2,11 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
-export default function CircularProgress({ value, maxValue, label, icon: Icon, color, displayText, themeColors }) {
+export default function CircularProgress({ value, maxValue, label, icon: Icon, color, displayText, themeColors, size = 80, strokeWidth = 7 }: any) {
     const validValue = isNaN(value) ? 0 : value;
     const validMax = isNaN(maxValue) || maxValue === 0 ? 1 : maxValue;
     const percentage = Math.min((validValue / validMax) * 100, 100);
     
-    const size = 96;
-    const strokeWidth = 8;
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
     const offset = circumference - (percentage / 100) * circumference;

@@ -1,7 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
-import { Flame, Play, Target, Clock, Droplet, Beef, Zap, Footprints, Activity as ActivityIcon, Dumbbell, User, Sparkles, Check, ChevronRight, Plus, ArrowUp, ArrowDown, Minus, CheckCircle, XCircle, IceCream } from 'lucide-react-native';
+import { 
+  Flame, Play, Target, Clock, Droplet, Beef, Zap, Footprints, 
+  Activity as ActivityIcon, Dumbbell, User, Sparkles, Check, ChevronRight, 
+  Plus, ArrowUp, ArrowDown, Minus, CheckCircle, XCircle, IceCream,
+  LayoutGrid, ListFilter, Trophy, PieChart, Scale
+} from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { useRouter } from 'expo-router';
@@ -28,9 +33,12 @@ export default function Dashboard() {
   const router = useRouter();
   const theme = useAppStore(state => state.theme);
   const colors = useAppColors();
+  const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const iconBadgeBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
   
   const userProfile = useAppStore(state => state.userProfile || state.user);
   const gamification = useAppStore(state => state.gamification) || {};
+  const personalRecords = useAppStore(state => state.personalRecords) || [];
   const bodyWeightLog = useAppStore(state => state.bodyWeightLog) || [];
   const routines = useAppStore(state => state.routines) || [];
   const activeWorkout = useAppStore(state => state.activeWorkout);
@@ -41,6 +49,13 @@ export default function Dashboard() {
   const nutritionLog = useAppStore(state => state.nutritionLog) || [];
   const waterLog = useAppStore(state => state.waterLog);
   const todaysCreatineLog = useAppStore(state => state.todaysCreatineLog);
+
+  const latestPR = useMemo(() => {
+    if (!Array.isArray(personalRecords) || personalRecords.length === 0) return null;
+    const valid = personalRecords.filter(r => r.date);
+    if (valid.length === 0) return null;
+    return [...valid].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+  }, [personalRecords]);
 
   const [aiLimit] = useState(5);
   const [aiRemaining] = useState(5);
@@ -121,10 +136,11 @@ export default function Dashboard() {
         return {
             time: seconds < 3600 ? `${totalMinutes}m` : `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`,
             calories: calories,
-            days: daysArray
+            days: daysArray,
+            sessions: logs.length
         };
       } catch (e) {
-        return { time: '0m', calories: 0, days: [false,false,false,false,false,false,false] };
+        return { time: '0m', calories: 0, days: [false,false,false,false,false,false,false], sessions: 0 };
       }
   }, [workoutLog]);
 
@@ -142,7 +158,7 @@ export default function Dashboard() {
         </View>
 
         {/* 3. GAMIFICACION */}
-        <TouchableOpacity style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 32, padding: 20, marginBottom: 24, shadowColor: '#000', shadowOffset: {width:0, height:8}, shadowOpacity: 0.1, shadowRadius: 16, elevation: 2 }}>
+        <TouchableOpacity style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 32, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: {width:0, height:6}, shadowOpacity: 0.08, shadowRadius: 14, elevation: 2 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <LevelBadge level={gamification?.level || 1} bgTheme={colors.card} />
                 
@@ -155,11 +171,38 @@ export default function Dashboard() {
                 </View>
 
                 <View style={{ alignItems: 'center', justifyContent: 'center', paddingLeft: 16, borderLeftWidth: 1, borderLeftColor: colors.border, marginLeft: 16 }}>
-                    <Flame size={28} color={(gamification?.streak || 0) > 0 ? colors.tint : colors.textSecondary} fill={(gamification?.streak || 0) > 0 ? colors.tint : 'transparent'} style={{ opacity: (gamification?.streak || 0) > 0 ? 1 : 0.3 }} />
+                    <Flame size={26} color={(gamification?.streak || 0) > 0 ? colors.tint : colors.textSecondary} fill={(gamification?.streak || 0) > 0 ? colors.tint : 'transparent'} style={{ opacity: (gamification?.streak || 0) > 0 ? 1 : 0.3 }} />
                     <Text style={{ fontSize: 10, fontWeight: '900', color: colors.textSecondary, marginTop: 4 }}>{gamification?.streak || 0} DÍAS</Text>
                 </View>
             </View>
         </TouchableOpacity>
+
+        {/* 3.1 RESUMEN SEMANAL & RÉCORD */}
+        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
+            <View style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 88, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 18, backgroundColor: iconBadgeBg, alignItems: 'center', justifyContent: 'center' }}>
+                    <PieChart size={22} color={colors.tint} />
+                </View>
+                <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: colors.text }}>Resumen Semanal</Text>
+                    <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textSecondary, marginTop: 2 }} numberOfLines={1}>
+                        {weeklyStats.sessions > 0 ? `${weeklyStats.sessions} sesiones completadas` : 'Sin actividad reciente'}
+                    </Text>
+                </View>
+            </View>
+
+            <View style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 88, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 18, backgroundColor: 'rgba(234, 179, 8, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                    <Trophy size={22} color="#eab308" />
+                </View>
+                <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: colors.text }}>Último Récord</Text>
+                    <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textSecondary, marginTop: 2 }} numberOfLines={1}>
+                        {latestPR ? (latestPR.exercise_name || latestPR.exerciseName || `${latestPR.weight_kg || latestPR.weight} kg`) : 'Aún sin récords'}
+                    </Text>
+                </View>
+            </View>
+        </View>
 
         {/* 4. DASHBOARD INSIGHTS (Asistente) */}
         <DashboardInsights workoutLog={workoutLog} bodyWeightLog={bodyWeightLog} colors={colors} />
@@ -168,79 +211,95 @@ export default function Dashboard() {
         <View style={{ marginBottom: 24, gap: 12 }}>
             {/* Fila 1 */}
             <View style={{ flexDirection: 'row', gap: 12 }}>
-                {/* Card: Esta Semana */}
-                <View style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 20, shadowColor: '#000', shadowOffset: {width:0, height:4}, shadowOpacity: 0.08, shadowRadius: 12, elevation: 2 }}>
-                    <Text style={{ fontSize: 14, fontWeight: '900', color: colors.text, marginBottom: 14 }}>Esta Semana</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                {/* Card 1: Sesiones Semanales */}
+                <View style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 20, minHeight: 160, justifyContent: 'space-between', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 2, borderWidth: 1 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <View style={{ width: 48, height: 48, borderRadius: 20, backgroundColor: iconBadgeBg, alignItems: 'center', justifyContent: 'center' }}>
+                            <Dumbbell size={24} color={colors.tint} />
+                        </View>
+                        <Text style={{ fontSize: 28, fontWeight: '900', color: colors.text, letterSpacing: -0.5 }}>{weeklyStats.sessions}</Text>
+                    </View>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
                         {dayLetters.map((letter, i) => (
-                            <View key={i} style={{ alignItems: 'center' }}>
-                                <Text style={{ fontSize: 9, fontWeight: 'bold', color: todayIndex === i ? colors.tint : colors.textSecondary, marginBottom: 6 }}>{letter}</Text>
-                                <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 1, borderColor: weeklyStats.days[i] ? colors.tint : colors.border, backgroundColor: weeklyStats.days[i] ? colors.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-                                    {weeklyStats.days[i] && <Check size={12} color={((['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') && colors.tint === '#d2b48c') ? '#451a03' : '#fff'} strokeWidth={4} />}
+                            <View key={i} style={{ alignItems: 'center', gap: 4, flex: 1 }}>
+                                <Text style={{ fontSize: 9, fontWeight: 'bold', color: todayIndex === i ? colors.tint : colors.textSecondary }}>{letter}</Text>
+                                <View style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 1, borderColor: weeklyStats.days[i] ? colors.tint : colors.border, backgroundColor: weeklyStats.days[i] ? colors.tint : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                                    {weeklyStats.days[i] && <Check size={10} color="#fff" strokeWidth={4} />}
                                 </View>
                             </View>
                         ))}
-                    </ScrollView>
+                    </View>
                 </View>
 
-                {/* Card: Meta Calórica */}
-                <View style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 20, shadowColor: '#000', shadowOffset: {width:0, height:4}, shadowOpacity: 0.08, shadowRadius: 12, elevation: 2 }}>
-                    <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: ((['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24') + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-                        <Target size={18} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24'} />
-                    </View>
-                    <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 }}>Meta Diaria</Text>
-                    <Text style={{ fontSize: 26, fontWeight: '900', color: colors.text, letterSpacing: -1 }}>{targets.calories}</Text>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>kcal</Text>
-                </View>
+                {/* Card 2: Meta Calórica */}
+                <BentoStatCard
+                    title="META CALÓRICA"
+                    value={targets.calories.toLocaleString('es-ES')}
+                    unit="kcal"
+                    icon={Target}
+                    subtext="Objetivo diario"
+                    iconColor={colors.tint}
+                    themeColors={colors}
+                    isDark={isDark}
+                />
             </View>
 
             {/* Fila 2 */}
             <View style={{ flexDirection: 'row', gap: 12 }}>
-                {/* Card: Tiempo Activo */}
-                <View style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 20, shadowColor: '#000', shadowOffset: {width:0, height:4}, shadowOpacity: 0.08, shadowRadius: 12, elevation: 2 }}>
-                    <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: colors.tint + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-                        <Clock size={18} color={getContrastColor(colors.tint, theme)} />
-                    </View>
-                    <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 }}>Tiempo Activo</Text>
-                    <Text style={{ fontSize: 26, fontWeight: '900', color: colors.text, letterSpacing: -1 }}>{weeklyStats.time}</Text>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>semanal</Text>
-                </View>
+                {/* Card 3: Tiempo Activo */}
+                <BentoStatCard
+                    title="TIEMPO ACTIVO"
+                    value={weeklyStats.time}
+                    icon={Clock}
+                    subtext="Total semanal"
+                    iconColor={colors.tint}
+                    themeColors={colors}
+                    isDark={isDark}
+                />
 
-                {/* Card: Quemadas */}
-                <View style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 20, shadowColor: '#000', shadowOffset: {width:0, height:4}, shadowOpacity: 0.08, shadowRadius: 12, elevation: 2 }}>
-                    <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: (colors.warning || '#f59e0b') + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-                        <Flame size={18} color={colors.warning || '#f59e0b'} />
-                    </View>
-                    <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 }}>Quemadas</Text>
-                    <Text style={{ fontSize: 26, fontWeight: '900', color: colors.text, letterSpacing: -1 }}>{weeklyStats.calories}</Text>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textSecondary }}>kcal estimadas</Text>
-                </View>
+                {/* Card 4: Quemadas */}
+                <BentoStatCard
+                    title="QUEMADAS"
+                    value={weeklyStats.calories.toLocaleString('es-ES')}
+                    unit="kcal"
+                    icon={Flame}
+                    subtext="Total estimado"
+                    iconColor={colors.warning || '#fbbf24'}
+                    themeColors={colors}
+                    isDark={isDark}
+                />
             </View>
         </View>
 
         {/* 6. NUTRICION */}
-        <View style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 32, padding: 24, marginBottom: 32, shadowColor: '#000', shadowOffset: {width:0, height:8}, shadowOpacity: 0.1, shadowRadius: 16, elevation: 2 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <Text style={{ fontSize: 20, fontWeight: '900', color: colors.text }}>Nutrición</Text>
-                <TouchableOpacity onPress={() => router.push('/nutrition')}>
-                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: getContrastColor(colors.tint, theme) }}>Ver Diario</Text>
+        <View style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 32, padding: 22, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 2 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={{ width: 48, height: 48, borderRadius: 20, backgroundColor: iconBadgeBg, alignItems: 'center', justifyContent: 'center' }}>
+                        <ActivityIcon size={24} color={colors.tint} />
+                    </View>
+                    <View>
+                        <Text style={{ fontSize: 20, fontWeight: '900', color: colors.text }}>Nutrición</Text>
+                        <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary, marginTop: 2 }}>Resumen del día</Text>
+                    </View>
+                </View>
+                <TouchableOpacity onPress={() => router.push('/nutrition')} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: iconBadgeBg }}>
+                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: colors.text }}>Ver Diario</Text>
+                    <ChevronRight size={14} color={colors.textSecondary} />
                 </TouchableOpacity>
             </View>
             
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', rowGap: 24 }}>
-                <View style={{ width: '45%', alignItems: 'center' }}>
-                    <CircularProgress value={nutritionTotals.calories} maxValue={targets.calories} label="Calorías" icon={Flame} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24'} themeColors={colors} size={80} />
+            <View style={{ gap: 20 }}>
+                {/* Fila superior: Calorías, Proteína, Azúcar */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
+                    <CircularProgress value={nutritionTotals.calories} maxValue={targets.calories} label="Calorías" icon={Flame} color="#fbbf24" themeColors={colors} size={76} />
+                    <CircularProgress value={nutritionTotals.protein} maxValue={targets.protein} label="Proteína" icon={Beef} color="#fb7185" themeColors={colors} size={76} />
+                    <CircularProgress value={nutritionTotals.sugar} maxValue={targets.sugar} label="Azúcar" icon={IceCream} color="#f472b6" themeColors={colors} size={76} />
                 </View>
-                <View style={{ width: '45%', alignItems: 'center' }}>
-                    <CircularProgress value={nutritionTotals.protein} maxValue={targets.protein} label="Proteína" icon={Beef} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#e11d48' : '#fb7185'} themeColors={colors} size={80} />
-                </View>
-                <View style={{ width: '45%', alignItems: 'center' }}>
-                    <CircularProgress value={nutritionTotals.sugar} maxValue={targets.sugar} label="Azúcar" icon={IceCream} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#db2777' : '#f472b6'} themeColors={colors} size={80} />
-                </View>
-                <View style={{ width: '45%', alignItems: 'center' }}>
-                    <CircularProgress value={nutritionTotals.water} maxValue={targets.water} label="Agua" icon={Droplet} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#0284c7' : '#38bdf8'} themeColors={colors} size={80} />
-                </View>
-                <View style={{ width: '100%', alignItems: 'center', marginTop: 8 }}>
+                {/* Fila inferior: Agua, Creatina */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' }}>
+                    <CircularProgress value={nutritionTotals.water} maxValue={targets.water} label="Agua" icon={Droplet} color="#38bdf8" themeColors={colors} size={76} />
                     <CircularProgress 
                         value={nutritionTotals.creatine} 
                         maxValue={targets.creatine} 
@@ -248,7 +307,7 @@ export default function Dashboard() {
                         icon={nutritionTotals.creatine > 0 ? CheckCircle : XCircle} 
                         color={nutritionTotals.creatine > 0 ? '#a78bfa' : colors.textSecondary} 
                         themeColors={colors} 
-                        size={80} 
+                        size={76} 
                     />
                 </View>
             </View>
@@ -256,12 +315,12 @@ export default function Dashboard() {
 
         {/* 7. MIS RUTINAS */}
         <View style={{ marginBottom: 24 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Dumbbell size={22} color={getContrastColor(colors.tint, theme)} />
+                    <Dumbbell size={24} color={colors.tint} />
                     <Text style={{ fontSize: 20, fontWeight: '900', color: colors.text }}>Mis Rutinas</Text>
                 </View>
-                <TouchableOpacity onPress={() => router.push('/routines')} style={{ padding: 8, borderRadius: 20, backgroundColor: colors.card }}>
+                <TouchableOpacity onPress={() => router.push('/routines')} style={{ width: 38, height: 38, borderRadius: 16, backgroundColor: iconBadgeBg, alignItems: 'center', justifyContent: 'center' }}>
                     <ChevronRight size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
             </View>
@@ -279,15 +338,15 @@ export default function Dashboard() {
                         }}
                         style={{ 
                             backgroundColor: colors.card, borderColor: isActive ? colors.tint : colors.border, borderWidth: 1, 
-                            borderRadius: 28, padding: 20, marginBottom: 12,
+                            borderRadius: 28, padding: 18, marginBottom: 12,
                             opacity: isCompleted ? 0.7 : 1,
                             shadowColor: isActive ? colors.tint : '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: isActive ? 0.3 : 0.08, shadowRadius: 12, elevation: 2
                         }}
                     >
                         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 }}>
-                                <View style={{ width: 48, height: 48, borderRadius: 20, backgroundColor: isActive ? colors.tint + '20' : colors.background, alignItems: 'center', justifyContent: 'center' }}>
-                                    {isActive ? <Clock size={24} color={getContrastColor(colors.tint, theme)} /> : (isCompleted ? <CheckCircle size={24} color={colors.success || '#22c55e'} /> : <Play size={24} color={getContrastColor(colors.tint, theme)} />)}
+                                <View style={{ width: 48, height: 48, borderRadius: 20, backgroundColor: isActive ? colors.tint + '20' : iconBadgeBg, alignItems: 'center', justifyContent: 'center' }}>
+                                    {isActive ? <Clock size={24} color={colors.tint} /> : (isCompleted ? <CheckCircle size={24} color={colors.success || '#22c55e'} /> : <Play size={24} color={colors.tint} fill={colors.tint} />)}
                                 </View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={{ fontSize: 16, fontWeight: '800', color: isActive ? colors.tint : colors.text }} numberOfLines={1}>{routine.name}</Text>
@@ -304,27 +363,62 @@ export default function Dashboard() {
                 <View style={{ backgroundColor: colors.card, borderRadius: 28, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: colors.border }}>
                     <Text style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 12 }}>Sin rutinas creadas.</Text>
                     <TouchableOpacity onPress={() => router.push('/routines')} style={{ backgroundColor: colors.tint + '15', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 }}>
-                        <Text style={{ fontSize: 13, fontWeight: '800', color: getContrastColor(colors.tint, theme) }}>Crear primera rutina</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '800', color: colors.tint }}>Crear primera rutina</Text>
                     </TouchableOpacity>
                 </View>
             )}
+
+            {/* BOTON BIBLIOTECA EJERCICIOS */}
+            <TouchableOpacity
+                onPress={() => router.push('/routines')}
+                style={{
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                    borderWidth: 1,
+                    borderRadius: 28,
+                    padding: 18,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginTop: 4,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 12,
+                    elevation: 2
+                }}
+            >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 }}>
+                    <View style={{ width: 48, height: 48, borderRadius: 20, backgroundColor: iconBadgeBg, alignItems: 'center', justifyContent: 'center' }}>
+                        <ListFilter size={24} color={colors.tint} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text }}>Biblioteca de Ejercicios</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary, marginTop: 2 }}>Explorar y filtrar todos los ejercicios</Text>
+                    </View>
+                </View>
+                <ChevronRight size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
         </View>
 
         {/* 8. PESO */}
-        <View style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 32, padding: 24, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 2 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <View style={{ backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 32, padding: 22, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 14, elevation: 2 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Target size={22} color={getContrastColor(colors.tint, theme)} />
+                    <Scale size={24} color={colors.tint} />
                     <Text style={{ fontSize: 20, fontWeight: '900', color: colors.text }}>Peso</Text>
+                </View>
+                <View style={{ width: 38, height: 38, borderRadius: 16, backgroundColor: iconBadgeBg, alignItems: 'center', justifyContent: 'center' }}>
+                    <Plus size={20} color={colors.textSecondary} />
                 </View>
             </View>
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
                 <View>
-                    <Text style={{ fontSize: 11, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6 }}>Peso Actual</Text>
+                    <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 4 }}>Peso Actual</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
-                        <Text style={{ fontSize: 48, fontWeight: '900', color: colors.text, letterSpacing: -2 }}>{latestWeight ? latestWeight.toFixed(1) : '--'}</Text>
-                        <Text style={{ fontSize: 20, fontWeight: '800', color: colors.textSecondary }}>kg</Text>
+                        <Text style={{ fontSize: 44, fontWeight: '900', color: colors.text, letterSpacing: -1.5 }}>{latestWeight ? latestWeight.toFixed(1) : '--'}</Text>
+                        <Text style={{ fontSize: 16, fontWeight: '800', color: colors.textSecondary, marginLeft: 2 }}>kg</Text>
                     </View>
                 </View>
                 {sortedWeightLog.length >= 2 && (() => {
@@ -332,8 +426,8 @@ export default function Dashboard() {
                     const isUp = diff > 0;
                     const isDown = diff < 0;
                     return (
-                        <View style={{ backgroundColor: isUp ? ((['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#d9770620' : '#fbbf2420') : isDown ? ((['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#16a34a20' : '#22c55e20') : colors.background, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16 }}>
-                            {isUp ? <ArrowUp size={22} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24'} /> : isDown ? <ArrowDown size={22} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#16a34a' : '#22c55e'} /> : <Minus size={22} color={colors.textSecondary} />}
+                        <View style={{ backgroundColor: isUp ? 'rgba(239,68,68,0.12)' : isDown ? 'rgba(34,197,94,0.12)' : iconBadgeBg, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 16 }}>
+                            {isUp ? <ArrowUp size={20} color="#ef4444" /> : isDown ? <ArrowDown size={20} color="#22c55e" /> : <Minus size={20} color={colors.textSecondary} />}
                         </View>
                     );
                 })()}
@@ -343,13 +437,13 @@ export default function Dashboard() {
                 {sortedWeightLog.length > 0 ? sortedWeightLog.slice(0, 3).map((log, index) => {
                     const diff = sortedWeightLog[index + 1] ? parseFloat(log.weight_kg) - parseFloat(sortedWeightLog[index + 1].weight_kg) : 0;
                     return (
-                        <View key={log.id || index} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 20, backgroundColor: colors.background }}>
+                        <View key={log.id || index} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 20, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }}>
                             <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
                                 {new Date(log.log_date).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })}
                             </Text>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                 <Text style={{ fontSize: 14, fontWeight: '800', color: colors.text }}>{parseFloat(log.weight_kg).toFixed(1)}</Text>
-                                {diff !== 0 && (diff > 0 ? <ArrowUp size={12} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#d97706' : '#fbbf24'} /> : <ArrowDown size={12} color={(['light', 'ocean', 'desert'].includes(theme) || theme === 'ocean' || theme === 'desert') ? '#16a34a' : '#22c55e'} />)}
+                                {diff !== 0 && (diff > 0 ? <ArrowUp size={12} color="#ef4444" /> : <ArrowDown size={12} color="#22c55e" />)}
                             </View>
                         </View>
                     );
@@ -361,21 +455,28 @@ export default function Dashboard() {
 
         {/* 9. CARDIO RAPIDO */}
         <View style={{ marginBottom: 32 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+                <Zap size={24} color={colors.tint} />
                 <Text style={{ fontSize: 20, fontWeight: '900', color: colors.text }}>Cardio Rápido</Text>
             </View>
-            <View style={{ flexDirection: 'row', gap: 16 }}>
-                <TouchableOpacity style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 24, alignItems: 'center' }}>
-                    <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: colors.tint + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                        <Footprints size={32} color={getContrastColor(colors.tint, theme)} />
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity onPress={() => router.push('/workout')} style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 24, paddingVertical: 20, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }}>
+                    <View style={{ width: 52, height: 52, borderRadius: 20, backgroundColor: iconBadgeBg, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                        <Footprints size={26} color={colors.tint} />
                     </View>
-                    <Text style={{ fontSize: 16, fontWeight: '900', color: colors.text }}>Correr</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: colors.textSecondary }}>Cinta</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 28, padding: 24, alignItems: 'center' }}>
-                    <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: colors.tint + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                        <ActivityIcon size={32} color={getContrastColor(colors.tint, theme)} />
+                <TouchableOpacity onPress={() => router.push('/workout')} style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 24, paddingVertical: 20, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }}>
+                    <View style={{ width: 52, height: 52, borderRadius: 20, backgroundColor: iconBadgeBg, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                        <ActivityIcon size={26} color={colors.tint} />
                     </View>
-                    <Text style={{ fontSize: 16, fontWeight: '900', color: colors.text }}>Bicicleta</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: colors.textSecondary }}>Bici</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push('/workout')} style={{ flex: 1, backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 24, paddingVertical: 20, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2 }}>
+                    <View style={{ width: 52, height: 52, borderRadius: 20, backgroundColor: colors.tint + '15', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                        <LayoutGrid size={26} color={colors.tint} />
+                    </View>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: colors.tint }}>Explorar</Text>
                 </TouchableOpacity>
             </View>
         </View>
