@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Search, UserPlus, Check, Clock } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
+import { GlassButton } from '@/components/ui/GlassButton';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { SocialUserAvatar } from './SocialUserAvatar';
@@ -86,17 +87,19 @@ export function SearchTab({
           placeholderTextColor={colors.textSecondary + '80'}
           style={[styles.searchInput, { color: colors.text }]}
         />
-        <TouchableOpacity
+        <GlassButton
           onPress={handleManualSearch}
-          activeOpacity={0.85}
-          style={[styles.searchBtn, { backgroundColor: colors.tint }]}
+          theme={theme}
+          noShadow={true}
+          color={colors.tint}
+          style={[styles.searchBtn, { borderColor: colors.tint }]}
         >
           {isSocialLoading ? (
             <ActivityIndicator size="small" color={accentTextColor} />
           ) : (
             <Text style={[styles.searchBtnText, { color: accentTextColor }]}>Buscar</Text>
           )}
-        </TouchableOpacity>
+        </GlassButton>
       </View>
 
       {/* Results Card */}

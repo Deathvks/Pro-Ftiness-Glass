@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Users, UserX, ChevronLeft, ChevronRight, Search } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
+import { GlassButton } from '@/components/ui/GlassButton';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { SocialUserAvatar } from './SocialUserAvatar';
@@ -107,19 +108,21 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
               Conecta con otros atletas y comparte tu progreso
             </Text>
 
-            <TouchableOpacity
+            <GlassButton
               onPress={onSwitchToSearch}
-              activeOpacity={0.85}
+              theme={theme}
+              noShadow={true}
+              color={colors.tint}
               style={[
                 styles.searchPeopleBtn,
-                { backgroundColor: colors.tint + '15', borderColor: colors.tint + '30' },
+                { borderColor: colors.tint },
               ]}
             >
               <Search size={16} color={colors.tint} style={{ marginRight: 8 }} />
               <Text style={[styles.searchPeopleText, { color: colors.tint }]}>
                 Buscar personas
               </Text>
-            </TouchableOpacity>
+            </GlassButton>
           </View>
         ) : (
           <View style={styles.list}>
@@ -256,7 +259,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     height: 44,
     borderRadius: 22,
-    borderWidth: 1,
   },
   searchPeopleText: {
     fontSize: 14,

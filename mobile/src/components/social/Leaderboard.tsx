@@ -101,6 +101,7 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
               : isDark
               ? 'rgba(255, 255, 255, 0.03)'
               : 'rgba(0, 0, 0, 0.02)',
+            borderWidth: isMe ? 1 : 0,
             borderColor: isMe ? colors.tint + '40' : 'transparent',
           },
         ]}
@@ -231,7 +232,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 8,
     borderRadius: 18,
-    borderWidth: 1,
     marginBottom: 4,
   },
   rankCol: {

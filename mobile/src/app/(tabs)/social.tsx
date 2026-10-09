@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GlassView } from 'expo-glass-effect';
+import { GlassButton } from '@/components/ui/GlassButton';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -312,10 +313,12 @@ export default function SocialScreen() {
                 const Icon = tab.icon;
 
                 return (
-                  <TouchableOpacity
+                  <GlassButton
                     key={tab.id}
                     onPress={() => handleTabChange(tab.id)}
-                    activeOpacity={0.8}
+                    theme={theme}
+                    noShadow={true}
+                    color={isActive ? colors.tint : undefined}
                     style={[
                       styles.tabPill,
                       {
@@ -324,28 +327,9 @@ export default function SocialScreen() {
                           : isDark
                           ? 'rgba(255, 255, 255, 0.12)'
                           : 'rgba(0, 0, 0, 0.08)',
-                        backgroundColor: 'transparent',
                       },
                     ]}
                   >
-                    <GlassView
-                      glassEffectStyle="regular"
-                      colorScheme={isDark ? 'dark' : 'light'}
-                      style={StyleSheet.absoluteFill}
-                    />
-
-                    {isActive && (
-                      <View
-                        style={[
-                          StyleSheet.absoluteFill,
-                          {
-                            backgroundColor: colors.tint,
-                            opacity: isDark ? 0.28 : 0.22,
-                          },
-                        ]}
-                      />
-                    )}
-
                     <Icon
                       size={16}
                       color={isActive ? colors.tint : colors.textSecondary}
@@ -369,7 +353,7 @@ export default function SocialScreen() {
                         <Text style={styles.tabBadgeText}>{tab.badge}</Text>
                       </View>
                     ) : null}
-                  </TouchableOpacity>
+                  </GlassButton>
                 );
               })}
             </ScrollView>
@@ -466,8 +450,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 40,
     borderRadius: 20,
-    borderWidth: 1,
-    overflow: 'hidden',
   },
   tabText: {
     fontSize: 13,

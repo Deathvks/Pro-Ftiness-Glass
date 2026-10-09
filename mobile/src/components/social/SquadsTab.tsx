@@ -23,6 +23,7 @@ import {
   X,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
+import { GlassButton } from '@/components/ui/GlassButton';
 import * as Clipboard from 'expo-clipboard';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -345,9 +346,11 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
     <View style={styles.container}>
       {/* Top 2 Buttons: Crear Grupo & Unirse a Grupo */}
       <View style={styles.topButtonsRow}>
-        <TouchableOpacity
+        <GlassButton
           onPress={() => setShowCreateModal(true)}
-          activeOpacity={0.8}
+          theme={theme}
+          noShadow={true}
+          color={colors.tint}
           style={[
             styles.actionBtn,
             {
@@ -355,30 +358,16 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-          />
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                backgroundColor: colors.tint,
-                opacity: isDark ? 0.3 : 0.22,
-                borderRadius: 24,
-              },
-            ]}
-          />
           <PlusCircle size={18} color={colors.tint} style={{ marginRight: 6 }} />
           <Text style={[styles.actionBtnText, { color: colors.tint, fontWeight: '800' }]}>
             Crear Grupo
           </Text>
-        </TouchableOpacity>
+        </GlassButton>
 
-        <TouchableOpacity
+        <GlassButton
           onPress={() => setShowJoinModal(true)}
-          activeOpacity={0.8}
+          theme={theme}
+          noShadow={true}
           style={[
             styles.actionBtn,
             {
@@ -386,16 +375,11 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-          />
           <Hash size={18} color={colors.text} style={{ marginRight: 6 }} />
           <Text style={[styles.actionBtnText, { color: colors.text, fontWeight: '700' }]}>
             Unirse a Grupo
           </Text>
-        </TouchableOpacity>
+        </GlassButton>
       </View>
 
       <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
@@ -660,12 +644,9 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     borderRadius: 24,
-    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-    backgroundColor: 'transparent',
   },
   actionBtnText: {
     fontSize: 14,

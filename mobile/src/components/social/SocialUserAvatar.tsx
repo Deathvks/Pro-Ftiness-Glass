@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image } from 'react-native';
 import { User } from 'lucide-react-native';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 import { useAppColors } from '@/hooks/useAppColors';
+import useAppStore from '@/store/useAppStore';
 
 interface SocialUserAvatarProps {
   user?: {
@@ -17,6 +18,8 @@ interface SocialUserAvatarProps {
 
 export function SocialUserAvatar({ user, size = 44, style }: SocialUserAvatarProps) {
   const colors = useAppColors();
+  const theme = useAppStore(state => state.theme) || 'oled';
+  const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const [hasError, setHasError] = useState(false);
 
   const rawPath = user?.profile_image_url || user?.avatar;
@@ -45,7 +48,10 @@ export function SocialUserAvatar({ user, size = 44, style }: SocialUserAvatarPro
       style={[
         styles.container,
         containerStyle,
-        { backgroundColor: colors.tint + '20', borderColor: colors.border },
+        {
+          backgroundColor: colors.tint + '20',
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+        },
         style,
       ]}
     >
