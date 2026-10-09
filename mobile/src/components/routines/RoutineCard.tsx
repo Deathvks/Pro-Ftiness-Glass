@@ -8,6 +8,8 @@ import {
   Play, Globe, Users, Lock, Clock, Dumbbell, CalendarClock, 
   CheckCircle, Edit, Copy, Trash2, Share2, Folder, Link2 
 } from 'lucide-react-native';
+import { GlassView } from 'expo-glass-effect';
+import { GlassButton } from '@/components/ui/GlassButton';
 import { calculateRoutineEstimatedTime, groupExercises, getDisplayImageUrl } from '@/utils/routineHelpers';
 
 interface RoutineCardProps {
@@ -85,11 +87,24 @@ export function RoutineCard({
     <View style={[
       styles.card, 
       { 
-        backgroundColor: colors.card, 
-        borderColor: isActive ? colors.tint : colors.border,
+        borderColor: isActive ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
         borderWidth: isActive ? 2 : 1,
       }
     ]}>
+      <GlassView 
+        glassEffectStyle="regular" 
+        colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} 
+        style={StyleSheet.absoluteFill} 
+      />
+      <View 
+        style={[
+          StyleSheet.absoluteFill, 
+          { 
+            backgroundColor: isDark ? 'rgba(20, 20, 25, 0.5)' : 'rgba(255, 255, 255, 0.65)' 
+          }
+        ]} 
+      />
+
       {/* 1. IMAGEN DE CABECERA (SI TIENE) */}
       {imageSrc && (
         <View style={styles.imageContainer}>
@@ -100,6 +115,17 @@ export function RoutineCard({
           />
           {routine.folder ? (
             <View style={styles.floatingFolderTag}>
+              <GlassView 
+                glassEffectStyle="regular" 
+                colorScheme="dark" 
+                style={StyleSheet.absoluteFill} 
+              />
+              <View 
+                style={[
+                  StyleSheet.absoluteFill, 
+                  { backgroundColor: 'rgba(0, 0, 0, 0.45)', borderRadius: 12 }
+                ]} 
+              />
               <Folder size={11} color="#ffffff" style={{ marginRight: 4 }} />
               <Text style={styles.floatingFolderText} numberOfLines={1}>{routine.folder}</Text>
             </View>
@@ -171,53 +197,59 @@ export function RoutineCard({
         {/* BARRA DE ACCIONES INLINE (PRIVACIDAD, COMPARTIR, EDITAR, DUPLICAR, ELIMINAR) */}
         <View style={styles.actionsBar}>
           {/* Privacidad */}
-          <TouchableOpacity 
-            style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
+          <GlassButton 
+            theme={theme}
             onPress={onPressPrivacy}
-            activeOpacity={0.7}
+            noShadow
+            style={styles.actionBtn}
           >
             <Globe size={16} color={colors.textSecondary} />
-          </TouchableOpacity>
+          </GlassButton>
 
           {/* Compartir entreno (si completada hoy) */}
           {isCompletedToday && onPressShare ? (
-            <TouchableOpacity 
-              style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
+            <GlassButton 
+              theme={theme}
               onPress={onPressShare}
-              activeOpacity={0.7}
+              noShadow
+              style={styles.actionBtn}
             >
               <Share2 size={16} color={colors.textSecondary} />
-            </TouchableOpacity>
+            </GlassButton>
           ) : null}
 
           {/* Editar */}
-          <TouchableOpacity 
-            style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
+          <GlassButton 
+            theme={theme}
             onPress={onPressEdit}
-            activeOpacity={0.7}
+            noShadow
+            style={styles.actionBtn}
           >
             <Edit size={16} color={colors.textSecondary} />
-          </TouchableOpacity>
+          </GlassButton>
 
           {/* Duplicar */}
-          <TouchableOpacity 
-            style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
+          <GlassButton 
+            theme={theme}
             onPress={onPressDuplicate}
-            activeOpacity={0.7}
+            noShadow
+            style={styles.actionBtn}
           >
             <Copy size={16} color={colors.textSecondary} />
-          </TouchableOpacity>
+          </GlassButton>
 
           <View style={{ flex: 1 }} />
 
           {/* Eliminar */}
-          <TouchableOpacity 
-            style={[styles.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]} 
+          <GlassButton 
+            theme={theme}
+            color="rgba(239, 68, 68, 0.15)"
             onPress={onPressDelete}
-            activeOpacity={0.7}
+            noShadow
+            style={styles.actionBtn}
           >
             <Trash2 size={16} color="#ef4444" />
-          </TouchableOpacity>
+          </GlassButton>
         </View>
 
         {/* LISTA PREVIA DE EJERCICIOS CON SUPERSERIES */}
@@ -256,58 +288,57 @@ export function RoutineCard({
         )}
 
         {/* BOTÓN GRANDE PRINCIPAL (INICIAR / CONTINUAR / BLOQUEADO / COMPLETADO) */}
-        <TouchableOpacity
+        <GlassButton
           onPress={onPressStart}
+          theme={theme}
+          color={
+            isCompletedToday || isBlockedByOtherWorkout
+              ? (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)')
+              : colors.tint
+          }
           disabled={isCompletedToday || isBlockedByOtherWorkout}
-          activeOpacity={0.85}
           style={[
             styles.mainButton,
-            {
-              backgroundColor: isCompletedToday || isBlockedByOtherWorkout
-                ? iconBadgeBg
-                : colors.tint,
-              shadowColor: !isCompletedToday && !isBlockedByOtherWorkout ? colors.tint : 'transparent',
-              shadowOpacity: !isCompletedToday && !isBlockedByOtherWorkout ? 0.35 : 0,
-              shadowRadius: 10,
-              elevation: !isCompletedToday && !isBlockedByOtherWorkout ? 4 : 0,
-            }
+            { width: '100%' }
           ]}
         >
-          {isCompletedToday ? (
-            <>
-              <CheckCircle size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
-              <Text style={[styles.mainButtonText, { color: colors.textSecondary }]}>
-                Entrenamiento Completado
-              </Text>
-            </>
-          ) : isActive ? (
-            <>
-              <Clock size={18} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 8 }} />
-              <Text style={[styles.mainButtonText, { color: getContrastColor(colors.tint, theme) }]}>
-                Continuar Entrenamiento
-              </Text>
-            </>
-          ) : isBlockedByOtherWorkout ? (
-            <>
-              <Lock size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
-              <Text style={[styles.mainButtonText, { color: colors.textSecondary }]}>
-                Entrenamiento en Curso
-              </Text>
-            </>
-          ) : (
-            <>
-              <Play 
-                size={18} 
-                color={getContrastColor(colors.tint, theme)} 
-                fill={getContrastColor(colors.tint, theme)} 
-                style={{ marginRight: 8 }} 
-              />
-              <Text style={[styles.mainButtonText, { color: getContrastColor(colors.tint, theme) }]}>
-                Empezar Entrenamiento
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
+          <View style={styles.mainButtonContent}>
+            {isCompletedToday ? (
+              <>
+                <CheckCircle size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <Text style={[styles.mainButtonText, { color: colors.textSecondary }]}>
+                  Entrenamiento Completado
+                </Text>
+              </>
+            ) : isActive ? (
+              <>
+                <Clock size={18} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 8 }} />
+                <Text style={[styles.mainButtonText, { color: getContrastColor(colors.tint, theme) }]}>
+                  Continuar Entrenamiento
+                </Text>
+              </>
+            ) : isBlockedByOtherWorkout ? (
+              <>
+                <Lock size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <Text style={[styles.mainButtonText, { color: colors.textSecondary }]}>
+                  Entrenamiento en Curso
+                </Text>
+              </>
+            ) : (
+              <>
+                <Play 
+                  size={18} 
+                  color={getContrastColor(colors.tint, theme)} 
+                  fill={getContrastColor(colors.tint, theme)} 
+                  style={{ marginRight: 8 }} 
+                />
+                <Text style={[styles.mainButtonText, { color: getContrastColor(colors.tint, theme) }]}>
+                  Empezar Entrenamiento
+                </Text>
+              </>
+            )}
+          </View>
+        </GlassButton>
 
       </View>
     </View>
@@ -472,11 +503,16 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   mainButton: {
+    height: 50,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  mainButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 50,
-    borderRadius: 20,
+    width: '100%',
+    height: '100%',
   },
   mainButtonText: {
     fontSize: 15,

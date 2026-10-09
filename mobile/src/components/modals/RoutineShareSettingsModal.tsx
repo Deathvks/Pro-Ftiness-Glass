@@ -8,7 +8,8 @@ import { Share2, Lock, Users, Globe, CheckCircle, Copy, Link2, X } from 'lucide-
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
-import * as Sharing from 'expo-sharing';
+import { GlassView } from 'expo-glass-effect';
+import { GlassButton } from '@/components/ui/GlassButton';
 
 interface RoutineShareSettingsModalProps {
   visible: boolean;
@@ -26,6 +27,7 @@ export const RoutineShareSettingsModal: React.FC<RoutineShareSettingsModalProps>
   const theme = useAppStore(state => state.theme);
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const iconBadgeBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
 
   const [visibility, setVisibility] = useState<string>(routine?.visibility || 'private');
   const [isUpdating, setIsUpdating] = useState(false);
@@ -58,7 +60,6 @@ export const RoutineShareSettingsModal: React.FC<RoutineShareSettingsModalProps>
 
   const copyLink = async () => {
     try {
-      // Usamos el diálogo nativo de compartir para copiar o enviar
       await NativeShare.share({
         title: `Rutina: ${routine.name}`,
         message: `¡Echa un vistazo a mi rutina "${routine.name}" en Pro Fitness Glass!\n${shareUrl}`,
@@ -92,101 +93,137 @@ export const RoutineShareSettingsModal: React.FC<RoutineShareSettingsModalProps>
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} activeOpacity={1} />
+      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
+        <Pressable 
+          style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center', padding: 20 }]} 
+          onPress={onClose}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 420 }}>
+            <View style={[
+              styles.dialog, 
+              { 
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                overflow: 'hidden',
+              }
+            ]}>
+              <GlassView 
+                glassEffectStyle="regular" 
+                colorScheme={isDark ? 'dark' : 'light'} 
+                style={StyleSheet.absoluteFill} 
+              />
+              <View 
+                style={[
+                  StyleSheet.absoluteFill, 
+                  { backgroundColor: isDark ? 'rgba(20, 20, 25, 0.65)' : 'rgba(255, 255, 255, 0.75)' }
+                ]} 
+              />
 
-        <View style={[styles.dialog, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          
-          {/* BOTÓN CERRAR */}
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <X size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
+              {/* BOTÓN CERRAR */}
+              <GlassButton 
+                theme={theme}
+                onPress={onClose}
+                noShadow
+                style={styles.closeBtn}
+              >
+                <X size={18} color={colors.textSecondary} />
+              </GlassButton>
 
-          {/* CABECERA */}
-          <View style={styles.header}>
-            <View style={[styles.iconWrapper, { backgroundColor: colors.tint + '15', borderColor: colors.tint + '30' }]}>
-              <Share2 size={28} color={getContrastColor(colors.tint, theme)} />
-            </View>
-            <Text style={[styles.title, { color: colors.text }]}>Compartir Rutina</Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Configura la privacidad para <Text style={{ color: colors.text, fontWeight: 'bold' }}>{routine.name}</Text>
-            </Text>
-          </View>
-
-          {/* OPCIONES DE VISIBILIDAD */}
-          <View style={styles.optionsList}>
-            {options.map((opt) => {
-              const isSelected = visibility === opt.id;
-              const Icon = opt.icon;
-
-              return (
-                <TouchableOpacity
-                  key={opt.id}
-                  onPress={() => handleVisibilityChange(opt.id)}
-                  activeOpacity={0.8}
-                  style={[
-                    styles.optionRow,
-                    {
-                      backgroundColor: isSelected ? colors.tint + '12' : (isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)'),
-                      borderColor: isSelected ? colors.tint + '60' : colors.border,
-                    }
-                  ]}
-                >
-                  <View style={[styles.optionIconBox, { backgroundColor: isSelected ? colors.tint + '20' : colors.card }]}>
-                    <Icon size={18} color={isSelected ? colors.tint : colors.textSecondary} />
-                  </View>
-
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.optionTitle, { color: isSelected ? colors.tint : colors.text }]}>
-                      {opt.title}
-                    </Text>
-                    <Text style={[styles.optionDesc, { color: colors.textSecondary }]}>
-                      {opt.desc}
-                    </Text>
-                  </View>
-
-                  {isSelected && (
-                    <CheckCircle size={20} color={colors.tint} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* CAJA DE ENLACE SI NO ES PRIVADA */}
-          {visibility !== 'private' && (
-            <View style={[styles.linkBox, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)', borderColor: colors.border }]}>
-              <View style={styles.linkLabelRow}>
-                <Link2 size={12} color={colors.tint} />
-                <Text style={[styles.linkLabel, { color: colors.tint }]}>ENLACE PARA COMPARTIR</Text>
-              </View>
-
-              <View style={styles.linkRow}>
-                <Text style={[styles.linkUrl, { color: colors.textSecondary }]} numberOfLines={1}>
-                  {shareUrl}
+              {/* CABECERA */}
+              <View style={styles.header}>
+                <View style={[styles.iconWrapper, { backgroundColor: colors.tint + '18', borderColor: colors.tint + '35' }]}>
+                  <Share2 size={26} color={getContrastColor(colors.tint, theme)} />
+                </View>
+                <Text style={[styles.title, { color: colors.text }]}>Compartir Rutina</Text>
+                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                  Configura la privacidad para <Text style={{ color: colors.text, fontWeight: 'bold' }}>{routine.name}</Text>
                 </Text>
-
-                <TouchableOpacity 
-                  onPress={copyLink} 
-                  style={[styles.copyBtn, { backgroundColor: colors.tint }]}
-                  activeOpacity={0.85}
-                >
-                  <Copy size={16} color={getContrastColor(colors.tint, theme)} />
-                </TouchableOpacity>
               </View>
+
+              {/* OPCIONES DE VISIBILIDAD */}
+              <View style={styles.optionsList}>
+                {options.map((opt) => {
+                  const isSelected = visibility === opt.id;
+                  const Icon = opt.icon;
+
+                  return (
+                    <TouchableOpacity
+                      key={opt.id}
+                      onPress={() => handleVisibilityChange(opt.id)}
+                      activeOpacity={0.8}
+                      style={[
+                        styles.optionRow,
+                        {
+                          backgroundColor: isSelected ? colors.tint + '12' : (isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)'),
+                          borderColor: isSelected ? colors.tint + '60' : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'),
+                        }
+                      ]}
+                    >
+                      <View style={[styles.optionIconBox, { backgroundColor: isSelected ? colors.tint + '20' : iconBadgeBg }]}>
+                        <Icon size={18} color={isSelected ? colors.tint : colors.textSecondary} />
+                      </View>
+
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.optionTitle, { color: isSelected ? colors.tint : colors.text }]}>
+                          {opt.title}
+                        </Text>
+                        <Text style={[styles.optionDesc, { color: colors.textSecondary }]}>
+                          {opt.desc}
+                        </Text>
+                      </View>
+
+                      {isSelected && (
+                        <CheckCircle size={20} color={colors.tint} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* CAJA DE ENLACE SI NO ES PRIVADA */}
+              {visibility !== 'private' && (
+                <View style={[
+                  styles.linkBox, 
+                  { 
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)', 
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' 
+                  }
+                ]}>
+                  <View style={styles.linkLabelRow}>
+                    <Link2 size={12} color={colors.tint} />
+                    <Text style={[styles.linkLabel, { color: colors.tint }]}>ENLACE PARA COMPARTIR</Text>
+                  </View>
+
+                  <View style={styles.linkRow}>
+                    <Text style={[styles.linkUrl, { color: colors.textSecondary }]} numberOfLines={1}>
+                      {shareUrl}
+                    </Text>
+
+                    <GlassButton 
+                      theme={theme}
+                      color={colors.tint}
+                      onPress={copyLink} 
+                      style={styles.copyBtn}
+                    >
+                      <Copy size={16} color={getContrastColor(colors.tint, theme)} />
+                    </GlassButton>
+                  </View>
+                </View>
+              )}
+
+              {/* BOTÓN CERRAR */}
+              <GlassButton 
+                theme={theme}
+                onPress={onClose}
+                noShadow
+                style={styles.closeBottomBtn}
+              >
+                <Text style={[styles.closeBottomText, { color: colors.text }]}>Cerrar</Text>
+              </GlassButton>
+
             </View>
-          )}
-
-          {/* BOTÓN CERRAR */}
-          <TouchableOpacity 
-            style={[styles.closeBottomBtn, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' }]}
-            onPress={onClose}
-          >
-            <Text style={[styles.closeBottomText, { color: colors.text }]}>Cerrar</Text>
-          </TouchableOpacity>
-
-        </View>
-      </View>
+          </Pressable>
+        </Pressable>
+      </GlassView>
     </Modal>
   );
 };
@@ -218,7 +255,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,

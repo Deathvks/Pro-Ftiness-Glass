@@ -4,6 +4,7 @@ import { ScrollView, TouchableOpacity, Text, StyleSheet, View } from 'react-nati
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { BookCopy, Compass, Dumbbell, Flame } from 'lucide-react-native';
+import { GlassView } from 'expo-glass-effect';
 import { getContrastColor } from '@/utils/colorUtils';
 
 export type TabKey = 'myRoutines' | 'explore' | 'manualExercises' | 'quickCardio';
@@ -45,15 +46,34 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
             style={[
               styles.tab,
               {
-                backgroundColor: isActive ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)'),
-                borderColor: isActive ? colors.tint : colors.border,
+                borderColor: isActive ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'),
                 shadowColor: isActive ? colors.tint : 'transparent',
-                shadowOpacity: isActive ? 0.3 : 0,
-                shadowRadius: 8,
+                shadowOpacity: isActive ? 0.35 : 0,
+                shadowRadius: 10,
                 elevation: isActive ? 3 : 0,
               }
             ]}
           >
+            {isActive ? (
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, borderRadius: 22 }]} />
+            ) : (
+              <>
+                <GlassView 
+                  glassEffectStyle="regular" 
+                  colorScheme={isDark ? 'dark' : 'light'} 
+                  style={StyleSheet.absoluteFill} 
+                />
+                <View 
+                  style={[
+                    StyleSheet.absoluteFill, 
+                    { 
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+                      borderRadius: 22 
+                    }
+                  ]} 
+                />
+              </>
+            )}
             <Icon 
               size={18} 
               color={isActive ? getContrastColor(colors.tint, theme) : colors.textSecondary} 
@@ -74,7 +94,7 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
         );
       })}
 
-      {/* Cardio Rápido (Icono Flame idéntico al frontend) */}
+      {/* Cardio Rápido (Icono Flame con Liquid Glass) */}
       <TouchableOpacity
         onPress={() => {
           if (onQuickCardio) {
@@ -87,11 +107,34 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
         style={[
           styles.tab,
           {
-            backgroundColor: activeTab === 'quickCardio' ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)'),
-            borderColor: activeTab === 'quickCardio' ? colors.tint : colors.border,
+            borderColor: activeTab === 'quickCardio' ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'),
+            shadowColor: activeTab === 'quickCardio' ? colors.tint : 'transparent',
+            shadowOpacity: activeTab === 'quickCardio' ? 0.35 : 0,
+            shadowRadius: 10,
+            elevation: activeTab === 'quickCardio' ? 3 : 0,
           }
         ]}
       >
+        {activeTab === 'quickCardio' ? (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, borderRadius: 22 }]} />
+        ) : (
+          <>
+            <GlassView 
+              glassEffectStyle="regular" 
+              colorScheme={isDark ? 'dark' : 'light'} 
+              style={StyleSheet.absoluteFill} 
+            />
+            <View 
+              style={[
+                StyleSheet.absoluteFill, 
+                { 
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+                  borderRadius: 22 
+                }
+              ]} 
+            />
+          </>
+        )}
         <Flame 
           size={18} 
           color={activeTab === 'quickCardio' ? getContrastColor(colors.tint, theme) : colors.textSecondary} 
@@ -127,6 +170,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: 1,
     marginRight: 8,
+    overflow: 'hidden',
   },
   tabText: {
     fontSize: 13,

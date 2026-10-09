@@ -1,9 +1,10 @@
 /* mobile/src/components/routines/FolderList.tsx */
 import React from 'react';
-import { ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { ScrollView, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { Folder, FolderOpen } from 'lucide-react-native';
+import { GlassView } from 'expo-glass-effect';
 import { getContrastColor } from '@/utils/colorUtils';
 
 interface FolderListProps {
@@ -41,8 +42,7 @@ export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderLi
             style={[
               styles.tab,
               {
-                backgroundColor: isActive ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)'),
-                borderColor: isActive ? colors.tint : colors.border,
+                borderColor: isActive ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'),
                 shadowColor: isActive ? colors.tint : 'transparent',
                 shadowOpacity: isActive ? 0.3 : 0,
                 shadowRadius: 8,
@@ -50,6 +50,27 @@ export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderLi
               }
             ]}
           >
+            {isActive ? (
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, borderRadius: 20 }]} />
+            ) : (
+              <>
+                <GlassView 
+                  glassEffectStyle="regular" 
+                  colorScheme={isDark ? 'dark' : 'light'} 
+                  style={StyleSheet.absoluteFill} 
+                />
+                <View 
+                  style={[
+                    StyleSheet.absoluteFill, 
+                    { 
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+                      borderRadius: 20 
+                    }
+                  ]} 
+                />
+              </>
+            )}
+
             {isNamedFolder && (
               isActive ? (
                 <FolderOpen 
@@ -97,6 +118,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     marginRight: 8,
+    overflow: 'hidden',
   },
   tabText: {
     fontSize: 13,
