@@ -3,10 +3,11 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingVi
 import { useRouter, Link } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { GlassView } from 'expo-glass-effect';
 import { Sparkles, UserPlus, Info, ArrowRight, CheckCircle2, Eye, EyeOff, Mail } from 'lucide-react-native';
 import { FontAwesome5, FontAwesome6 } from '@expo/vector-icons';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastColor, getContrastTextColor } from '@/utils/colorUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import * as WebBrowser from 'expo-web-browser';
@@ -70,7 +71,7 @@ export default function Register() {
 
   // Handle cooldown timer
   React.useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
     if (resendCooldown > 0 && needsVerification) {
       timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
     }
@@ -109,7 +110,9 @@ export default function Register() {
   const colors = useAppColors();
   const theme = colors;
   const currentStoreTheme = useAppStore(state => state.theme);
+  const isDark = !['light', 'ocean', 'desert'].includes(currentStoreTheme);
   const contrastColor = getContrastColor(theme.tint, currentStoreTheme);
+  const contrastTextColor = getContrastTextColor(theme.tint);
   const colorScheme = useDeviceColorScheme();
   const blurTint = colorScheme === 'light' ? 'light' : 'dark';
   const insets = useSafeAreaInsets();
@@ -125,12 +128,28 @@ export default function Register() {
 
   const redirectUri = AuthSession.makeRedirectUri({ scheme: 'mobile' });
 
+  const startAsync = async ({ authUrl, returnUrl }: { authUrl: string, returnUrl: string }): Promise<{ type: 'success'; params: Record<string, string>; url: string } | WebBrowser.WebBrowserAuthSessionResult> => {
+    const result = await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
+    if (result.type === 'success' && result.url) {
+      const params: Record<string, string> = {};
+      const queryPart = result.url.includes('#') ? result.url.split('#')[1] : result.url.split('?')[1];
+      if (queryPart) {
+        queryPart.split('&').forEach(pair => {
+          const [key, value] = pair.split('=');
+          if (key) params[key] = decodeURIComponent(value || '');
+        });
+      }
+      return { type: 'success', params, url: result.url };
+    }
+    return result;
+  };
+
   const handleGoogleClick = async () => {
     try {
       const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=email%20profile&state=google`;
-      const result = await AuthSession.startAsync({ authUrl, returnUrl: redirectUri });
-      if (result.type === 'success' && result.params.access_token) {
+      const result = await startAsync({ authUrl, returnUrl: redirectUri });
+      if (result.type === 'success' && 'params' in result && result.params.access_token) {
         setIsLoading(true);
         await handleGoogleLogin({ token: result.params.access_token });
       }
@@ -145,8 +164,8 @@ export default function Register() {
     try {
       const DISCORD_CLIENT_ID = process.env.EXPO_PUBLIC_DISCORD_CLIENT_ID;
       const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify%20email&state=discord`;
-      const result = await AuthSession.startAsync({ authUrl, returnUrl: redirectUri });
-      if (result.type === 'success' && result.params.access_token) {
+      const result = await startAsync({ authUrl, returnUrl: redirectUri });
+      if (result.type === 'success' && 'params' in result && result.params.access_token) {
         setIsLoading(true);
         await handleDiscordLogin({ token: result.params.access_token });
       }
@@ -161,8 +180,8 @@ export default function Register() {
     try {
       const X_CLIENT_ID = process.env.EXPO_PUBLIC_X_CLIENT_ID;
       const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${X_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=tweet.read%20users.read&state=x&code_challenge=challenge&code_challenge_method=plain`;
-      const result = await AuthSession.startAsync({ authUrl, returnUrl: redirectUri });
-      if (result.type === 'success' && result.params.code) {
+      const result = await startAsync({ authUrl, returnUrl: redirectUri });
+      if (result.type === 'success' && 'params' in result && result.params.code) {
         setIsLoading(true);
         await handleXLogin({ code: result.params.code, redirectUri, codeVerifier: 'challenge' });
       }
@@ -177,8 +196,8 @@ export default function Register() {
     try {
       const GITHUB_CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
       const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user:email&state=github`;
-      const result = await AuthSession.startAsync({ authUrl, returnUrl: redirectUri });
-      if (result.type === 'success' && result.params.code) {
+      const result = await startAsync({ authUrl, returnUrl: redirectUri });
+      if (result.type === 'success' && 'params' in result && result.params.code) {
         setIsLoading(true);
         await handleGithubLogin({ code: result.params.code });
       }
@@ -253,7 +272,7 @@ export default function Register() {
     >
       <LinearGradient
         colors={[theme.tint + '15', 'transparent']}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
       <ScrollView 
         style={{ flex: 1, width: '100%' }}
@@ -314,7 +333,7 @@ export default function Register() {
                     {code.map((digit, index) => (
                       <TextInput 
                         key={index}
-                        ref={(el) => inputRefs.current[index] = el}
+                        ref={(el) => { inputRefs.current[index] = el; }}
                         style={[
                           styles.input, 
                           { 
@@ -345,7 +364,9 @@ export default function Register() {
                     style={[
                       styles.loginButton, 
                       { 
-                        backgroundColor: theme.tint,
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.6)',
+                        borderWidth: 1,
+                        backgroundColor: 'transparent',
                         shadowColor: theme.tint,
                         marginTop: 12, 
                         opacity: code.some(d => d === '') || isLoading ? 0.7 : 1 
@@ -355,10 +376,26 @@ export default function Register() {
                     disabled={isLoading || code.some(d => d === '')}
                     activeOpacity={0.85}
                   >
+                    <GlassView
+                      glassEffectStyle="regular"
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                    />
+                    <View
+                      pointerEvents="none"
+                      style={[
+                        StyleSheet.absoluteFill,
+                        {
+                          backgroundColor: theme.tint,
+                          opacity: isDark ? 0.82 : 0.88,
+                          borderRadius: 20,
+                        }
+                      ]}
+                    />
                     {isLoading ? (
-                      <ActivityIndicator color={contrastColor} />
+                      <ActivityIndicator color={contrastTextColor} />
                     ) : (
-                      <Text style={[styles.loginButtonText, { color: contrastColor }]}>Verificar Código</Text>
+                      <Text style={[styles.loginButtonText, { color: contrastTextColor }]}>Verificar Código</Text>
                     )}
                   </TouchableOpacity>
 
@@ -527,7 +564,9 @@ export default function Register() {
                     style={[
                       styles.loginButton,
                       {
-                        backgroundColor: theme.tint,
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.6)',
+                        borderWidth: 1,
+                        backgroundColor: 'transparent',
                         shadowColor: theme.tint,
                         opacity: isLoading ? 0.7 : 1,
                       }
@@ -536,12 +575,28 @@ export default function Register() {
                     disabled={isLoading}
                     activeOpacity={0.85}
                   >
+                    <GlassView
+                      glassEffectStyle="regular"
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                    />
+                    <View
+                      pointerEvents="none"
+                      style={[
+                        StyleSheet.absoluteFill,
+                        {
+                          backgroundColor: theme.tint,
+                          opacity: isDark ? 0.82 : 0.88,
+                          borderRadius: 20,
+                        }
+                      ]}
+                    />
                     {isLoading ? (
-                      <ActivityIndicator color={contrastColor} />
+                      <ActivityIndicator color={contrastTextColor} />
                     ) : (
                       <>
-                        <UserPlus color={contrastColor} size={18} style={{ marginRight: 8 }} />
-                        <Text style={[styles.loginButtonText, { color: contrastColor }]}>Registrarse</Text>
+                        <UserPlus color={contrastTextColor} size={18} style={{ marginRight: 8 }} />
+                        <Text style={[styles.loginButtonText, { color: contrastTextColor }]}>Registrarse</Text>
                       </>
                     )}
                   </TouchableOpacity>

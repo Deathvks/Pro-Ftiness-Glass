@@ -1,5 +1,6 @@
 import '@/utils/localStoragePolyfill';
 import { create } from 'zustand';
+import { Appearance } from 'react-native';
 import { createAuthSlice } from './authSlice';
 import { createDataSlice } from './dataSlice';
 import { createWorkoutSlice } from './workoutSlice';
@@ -10,12 +11,30 @@ import { createSyncSlice } from './syncSlice';
 import { createStorySlice } from './storySlice';
 import { createRoutineEditorSlice } from './routineEditorSlice';
 
+// 'system' es una preferencia del usuario; el resto de la app trabaja siempre con el tema resuelto
+export const resolveTheme = (pref) => {
+    if (pref === 'system') {
+        return Appearance.getColorScheme() === 'light' ? 'light' : 'dark';
+    }
+    return pref || 'oled';
+};
+
+let themeTestInterval = null;
+const clearThemeTestInterval = () => {
+    if (themeTestInterval) {
+        clearInterval(themeTestInterval);
+        themeTestInterval = null;
+    }
+};
+
+const initialThemePref = (typeof localStorage !== 'undefined' ? localStorage.getItem('theme') : null) || 'oled';
+
 const useAppStore = create((set, get) => ({
     hydrateFromStorage: () => {
         if (typeof localStorage === 'undefined') return;
         
         const theme = localStorage.getItem('theme');
-        if (theme) set({ theme });
+        if (theme) set({ themePreference: theme, theme: resolveTheme(theme) });
         
         const accent = localStorage.getItem('accent');
         if (accent) set({ accent });
@@ -57,10 +76,44 @@ const useAppStore = create((set, get) => ({
             }));
         }
     },
-    theme: (typeof localStorage !== 'undefined' && (typeof localStorage !== 'undefined' ? localStorage.getItem('theme') : null)) || 'oled',
-    setTheme: (theme) => {
-        set({ theme });
-        if (typeof localStorage !== 'undefined') if (typeof localStorage !== 'undefined') localStorage.setItem('theme', theme);
+    themePreference: initialThemePref,
+    theme: resolveTheme(initialThemePref),
+    setTheme: (pref) => {
+        clearThemeTestInterval();
+        set({ themePreference: pref, theme: resolveTheme(pref), themeTest: null });
+        if (typeof localStorage !== 'undefined') localStorage.setItem('theme', pref);
+    },
+    // Re-sincroniza el tema cuando el usuario usa "Sistema" y cambia el modo del dispositivo
+    syncSystemTheme: () => {
+        const { themePreference, themeTest } = get();
+        if (themePreference === 'system' && !themeTest) {
+            set({ theme: resolveTheme('system') });
+        }
+    },
+
+    // --- Prueba temporal de temas bloqueados (igual que la web) ---
+    themeTest: null, // { name, timeLeft }
+    startThemeTest: (name = 'galaxy', durationSecs = 10) => {
+        clearThemeTestInterval();
+        set({ theme: name, themeTest: { name, timeLeft: durationSecs } });
+        themeTestInterval = setInterval(() => {
+            const current = get().themeTest;
+            if (!current) {
+                clearThemeTestInterval();
+                return;
+            }
+            const left = current.timeLeft - 1;
+            if (left <= 0) {
+                clearThemeTestInterval();
+                set({ themeTest: null, theme: resolveTheme(get().themePreference) });
+            } else {
+                set({ themeTest: { ...current, timeLeft: left } });
+            }
+        }, 1000);
+    },
+    cancelThemeTest: () => {
+        clearThemeTestInterval();
+        set({ themeTest: null, theme: resolveTheme(get().themePreference) });
     },
     accent: (typeof localStorage !== 'undefined' && (typeof localStorage !== 'undefined' ? localStorage.getItem('accent') : null)) || '#3b82f6',
     setAccent: (accent) => {

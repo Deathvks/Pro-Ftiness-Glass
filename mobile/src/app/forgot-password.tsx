@@ -4,7 +4,8 @@ import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Dumbbell, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react-native';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastColor, getContrastTextColor } from '@/utils/colorUtils';
+import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +20,9 @@ export default function ForgotPassword() {
   const colors = useAppColors();
   const theme = colors;
   const currentStoreTheme = useAppStore(state => state.theme);
+  const isDark = !['light', 'ocean', 'desert'].includes(currentStoreTheme);
   const contrastColor = getContrastColor(theme.tint, currentStoreTheme);
+  const contrastTextColor = getContrastTextColor(theme.tint);
   const insets = useSafeAreaInsets();
   
   const colorScheme = useDeviceColorScheme();
@@ -47,7 +50,7 @@ export default function ForgotPassword() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <LinearGradient
         colors={[theme.tint + '15', 'transparent']}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -93,16 +96,42 @@ export default function ForgotPassword() {
               </View>
 
               <TouchableOpacity 
-                style={[styles.submitButton, { backgroundColor: theme.tint, shadowColor: theme.tint }]}
+                style={[
+                  styles.submitButton, 
+                  { 
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.6)',
+                    borderWidth: 1,
+                    backgroundColor: 'transparent',
+                    shadowColor: theme.tint,
+                    opacity: isLoading ? 0.7 : 1,
+                  }
+                ]}
                 onPress={handleSubmit}
                 disabled={isLoading}
+                activeOpacity={0.85}
               >
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                />
+                <View
+                  pointerEvents="none"
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      backgroundColor: theme.tint,
+                      opacity: isDark ? 0.82 : 0.88,
+                      borderRadius: 20,
+                    }
+                  ]}
+                />
                 {isLoading ? (
-                  <ActivityIndicator color={contrastColor} />
+                  <ActivityIndicator color={contrastTextColor} />
                 ) : (
                   <>
-                    <Mail color={contrastColor} size={20} style={{ marginRight: 8 }} />
-                    <Text style={[styles.submitButtonText, { color: contrastColor }]}>Enviar Enlace</Text>
+                    <Mail color={contrastTextColor} size={20} style={{ marginRight: 8 }} />
+                    <Text style={[styles.submitButtonText, { color: contrastTextColor }]}>Enviar Enlace</Text>
                   </>
                 )}
               </TouchableOpacity>

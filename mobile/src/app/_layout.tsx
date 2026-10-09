@@ -1,12 +1,12 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, Appearance } from 'react-native';
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments, usePathname } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { initLocalStorage } from '@/utils/localStoragePolyfill';
-import useAppStore from '@/store/useAppStore';
+import useAppStore, { resolveTheme } from '@/store/useAppStore';
 import ThemeBackground from '@/components/ThemeBackground';
 import { useAppColors } from '@/hooks/useAppColors';
 
@@ -36,7 +36,7 @@ export default function RootLayout() {
         useAppStore.setState({ 
           isAuthenticated: !!token, 
           token: token || null,
-          ...(savedTheme ? { theme: savedTheme } : {}),
+          ...(savedTheme ? { themePreference: savedTheme, theme: resolveTheme(savedTheme) } : {}),
           ...(savedAccent ? { accent: savedAccent } : {})
         });
       }
@@ -47,6 +47,14 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
     prepare();
+  }, []);
+
+  // Si la preferencia es "Sistema", seguimos los cambios de modo claro/oscuro del dispositivo
+  useEffect(() => {
+    const sub = Appearance.addChangeListener(() => {
+      useAppStore.getState().syncSystemTheme();
+    });
+    return () => sub.remove();
   }, []);
 
   // Save last path for reload persistence - only save stable tab paths

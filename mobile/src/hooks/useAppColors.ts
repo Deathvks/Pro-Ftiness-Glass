@@ -19,10 +19,13 @@ export function useAppColors() {
     // Obtenemos la paleta de colores del tema
     const baseColors = Colors[activeTheme as keyof typeof Colors] || Colors.dark;
 
+    // Los temas especiales usan su propio acento (igual que en la web): ignoramos el acento manual
+    const isSpecialTheme = ['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(activeTheme);
+
     // Retornamos los colores, sobreescribiendo el color de acento (tint) si existe en el store
     return {
       ...baseColors,
-      ...(storeAccent ? { tint: storeAccent } : {})
+      ...(storeAccent && !isSpecialTheme ? { tint: storeAccent } : {})
     };
   }, [storeTheme, storeAccent, systemScheme]);
 }
