@@ -3,14 +3,17 @@ import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastColor } from '@/utils/colorUtils';
 import { 
   Play, Globe, Users, Lock, Clock, Dumbbell, CalendarClock, 
   CheckCircle, Edit, Copy, Trash2, Share2, Folder, Link2 
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
-import { GlassButton } from '@/components/ui/GlassButton';
-import { calculateRoutineEstimatedTime, groupExercises, getDisplayImageUrl } from '@/utils/routineHelpers';
+import { 
+  getContrastTextColor, 
+  calculateRoutineEstimatedTime, 
+  groupExercises, 
+  getDisplayImageUrl 
+} from '@/utils/routineHelpers';
 
 interface RoutineCardProps {
   routine: any;
@@ -44,6 +47,7 @@ export function RoutineCard({
   const userProfile = useAppStore(state => state.userProfile || (state as any).user);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const iconBadgeBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
+  const startTextColor = getContrastTextColor(colors.tint);
 
   const exercises = routine.exercises || routine.RoutineExercises || [];
   const totalExercises = exercises.length;
@@ -87,7 +91,9 @@ export function RoutineCard({
     <View style={[
       styles.card, 
       { 
-        borderColor: isActive ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+        overflow: 'hidden',
+        borderColor: isActive ? colors.tint : colors.border,
+        backgroundColor: 'transparent',
         borderWidth: isActive ? 2 : 1,
       }
     ]}>
@@ -95,14 +101,6 @@ export function RoutineCard({
         glassEffectStyle="regular" 
         colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} 
         style={StyleSheet.absoluteFill} 
-      />
-      <View 
-        style={[
-          StyleSheet.absoluteFill, 
-          { 
-            backgroundColor: isDark ? 'rgba(20, 20, 25, 0.5)' : 'rgba(255, 255, 255, 0.65)' 
-          }
-        ]} 
       />
 
       {/* 1. IMAGEN DE CABECERA (SI TIENE) */}
@@ -115,17 +113,6 @@ export function RoutineCard({
           />
           {routine.folder ? (
             <View style={styles.floatingFolderTag}>
-              <GlassView 
-                glassEffectStyle="regular" 
-                colorScheme="dark" 
-                style={StyleSheet.absoluteFill} 
-              />
-              <View 
-                style={[
-                  StyleSheet.absoluteFill, 
-                  { backgroundColor: 'rgba(0, 0, 0, 0.45)', borderRadius: 12 }
-                ]} 
-              />
               <Folder size={11} color="#ffffff" style={{ marginRight: 4 }} />
               <Text style={styles.floatingFolderText} numberOfLines={1}>{routine.folder}</Text>
             </View>
@@ -197,59 +184,53 @@ export function RoutineCard({
         {/* BARRA DE ACCIONES INLINE (PRIVACIDAD, COMPARTIR, EDITAR, DUPLICAR, ELIMINAR) */}
         <View style={styles.actionsBar}>
           {/* Privacidad */}
-          <GlassButton 
-            theme={theme}
+          <TouchableOpacity 
+            style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
             onPress={onPressPrivacy}
-            noShadow
-            style={styles.actionBtn}
+            activeOpacity={0.7}
           >
             <Globe size={16} color={colors.textSecondary} />
-          </GlassButton>
+          </TouchableOpacity>
 
           {/* Compartir entreno (si completada hoy) */}
           {isCompletedToday && onPressShare ? (
-            <GlassButton 
-              theme={theme}
+            <TouchableOpacity 
+              style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
               onPress={onPressShare}
-              noShadow
-              style={styles.actionBtn}
+              activeOpacity={0.7}
             >
               <Share2 size={16} color={colors.textSecondary} />
-            </GlassButton>
+            </TouchableOpacity>
           ) : null}
 
           {/* Editar */}
-          <GlassButton 
-            theme={theme}
+          <TouchableOpacity 
+            style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
             onPress={onPressEdit}
-            noShadow
-            style={styles.actionBtn}
+            activeOpacity={0.7}
           >
             <Edit size={16} color={colors.textSecondary} />
-          </GlassButton>
+          </TouchableOpacity>
 
           {/* Duplicar */}
-          <GlassButton 
-            theme={theme}
+          <TouchableOpacity 
+            style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
             onPress={onPressDuplicate}
-            noShadow
-            style={styles.actionBtn}
+            activeOpacity={0.7}
           >
             <Copy size={16} color={colors.textSecondary} />
-          </GlassButton>
+          </TouchableOpacity>
 
           <View style={{ flex: 1 }} />
 
           {/* Eliminar */}
-          <GlassButton 
-            theme={theme}
-            color="rgba(239, 68, 68, 0.15)"
+          <TouchableOpacity 
+            style={[styles.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]} 
             onPress={onPressDelete}
-            noShadow
-            style={styles.actionBtn}
+            activeOpacity={0.7}
           >
             <Trash2 size={16} color="#ef4444" />
-          </GlassButton>
+          </TouchableOpacity>
         </View>
 
         {/* LISTA PREVIA DE EJERCICIOS CON SUPERSERIES */}
@@ -288,57 +269,54 @@ export function RoutineCard({
         )}
 
         {/* BOTÓN GRANDE PRINCIPAL (INICIAR / CONTINUAR / BLOQUEADO / COMPLETADO) */}
-        <GlassButton
+        <TouchableOpacity
           onPress={onPressStart}
-          theme={theme}
-          color={
-            isCompletedToday || isBlockedByOtherWorkout
-              ? (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)')
-              : colors.tint
-          }
           disabled={isCompletedToday || isBlockedByOtherWorkout}
+          activeOpacity={0.85}
           style={[
             styles.mainButton,
-            { width: '100%' }
+            {
+              backgroundColor: isCompletedToday || isBlockedByOtherWorkout
+                ? iconBadgeBg
+                : colors.tint,
+            }
           ]}
         >
-          <View style={styles.mainButtonContent}>
-            {isCompletedToday ? (
-              <>
-                <CheckCircle size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
-                <Text style={[styles.mainButtonText, { color: colors.textSecondary }]}>
-                  Entrenamiento Completado
-                </Text>
-              </>
-            ) : isActive ? (
-              <>
-                <Clock size={18} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 8 }} />
-                <Text style={[styles.mainButtonText, { color: getContrastColor(colors.tint, theme) }]}>
-                  Continuar Entrenamiento
-                </Text>
-              </>
-            ) : isBlockedByOtherWorkout ? (
-              <>
-                <Lock size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
-                <Text style={[styles.mainButtonText, { color: colors.textSecondary }]}>
-                  Entrenamiento en Curso
-                </Text>
-              </>
-            ) : (
-              <>
-                <Play 
-                  size={18} 
-                  color={getContrastColor(colors.tint, theme)} 
-                  fill={getContrastColor(colors.tint, theme)} 
-                  style={{ marginRight: 8 }} 
-                />
-                <Text style={[styles.mainButtonText, { color: getContrastColor(colors.tint, theme) }]}>
-                  Empezar Entrenamiento
-                </Text>
-              </>
-            )}
-          </View>
-        </GlassButton>
+          {isCompletedToday ? (
+            <>
+              <CheckCircle size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+              <Text style={[styles.mainButtonText, { color: colors.textSecondary }]}>
+                Entrenamiento Completado
+              </Text>
+            </>
+          ) : isActive ? (
+            <>
+              <Clock size={18} color={startTextColor} style={{ marginRight: 8 }} />
+              <Text style={[styles.mainButtonText, { color: startTextColor }]}>
+                Continuar Entrenamiento
+              </Text>
+            </>
+          ) : isBlockedByOtherWorkout ? (
+            <>
+              <Lock size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+              <Text style={[styles.mainButtonText, { color: colors.textSecondary }]}>
+                Entrenamiento en Curso
+              </Text>
+            </>
+          ) : (
+            <>
+              <Play 
+                size={18} 
+                color={startTextColor} 
+                fill={startTextColor} 
+                style={{ marginRight: 8 }} 
+              />
+              <Text style={[styles.mainButtonText, { color: startTextColor }]}>
+                Empezar Entrenamiento
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
 
       </View>
     </View>
@@ -347,14 +325,10 @@ export function RoutineCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 28,
+    borderRadius: 24,
+    borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 2,
   },
   imageContainer: {
     height: 140,
@@ -503,16 +477,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   mainButton: {
-    height: 50,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  mainButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
-    height: '100%',
+    height: 50,
+    borderRadius: 20,
+    marginTop: 4,
   },
   mainButtonText: {
     fontSize: 15,

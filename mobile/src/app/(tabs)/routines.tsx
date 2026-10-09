@@ -20,7 +20,7 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { PrivacyModal } from '@/components/modals/PrivacyModal';
 import { RoutineShareSettingsModal } from '@/components/modals/RoutineShareSettingsModal';
 import { RoutineAIGeneratorModal } from '@/components/modals/RoutineAIGeneratorModal';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/routineHelpers';
 import { useRouter } from 'expo-router';
 
 export default function RoutinesScreen() {
@@ -305,15 +305,15 @@ export default function RoutinesScreen() {
         </Text>
       </View>
 
-      {/* 2. BOTONES DE ACCIÓN (BORRAR TODAS, MURO, IA, CREAR RUTINA) CON LIQUID GLASS */}
+      {/* 2. BOTONES DE ACCIÓN (BORRAR TODAS, MURO, IA, CREAR RUTINA) */}
       <View style={styles.actionsRow}>
         {/* Borrar todas */}
         {routines.length > 0 && (
           <GlassButton 
+            noShadow={true}
             theme={theme}
             color="rgba(239, 68, 68, 0.15)"
             onPress={handleDeleteAll}
-            noShadow
             style={styles.trashAllBtn}
           >
             <Trash2 size={18} color="#ef4444" />
@@ -322,41 +322,42 @@ export default function RoutinesScreen() {
 
         {/* Muro (Privacidad global) */}
         <GlassButton 
+          noShadow={true}
           theme={theme}
           onPress={() => setShowPrivacyModal(true)}
-          noShadow
           style={styles.actionPillBtn}
         >
           <View style={styles.actionPillInner}>
-            <Globe size={16} color={colors.text} style={{ marginRight: 6 }} />
+            <Globe size={18} color={colors.textSecondary} style={{ marginRight: 6 }} />
             <Text style={[styles.actionPillBtnText, { color: colors.text }]}>Muro</Text>
           </View>
         </GlassButton>
 
         {/* IA */}
         <GlassButton 
+          noShadow={true}
           theme={theme}
           color={colors.tint + '20'}
           onPress={() => setShowAIGenerator(true)}
-          noShadow
           style={styles.actionPillBtn}
         >
           <View style={styles.actionPillInner}>
-            <Sparkles size={16} color={colors.tint} style={{ marginRight: 6 }} />
+            <Sparkles size={18} color={colors.tint} style={{ marginRight: 6 }} />
             <Text style={[styles.actionPillBtnText, { color: colors.tint }]}>IA</Text>
           </View>
         </GlassButton>
 
         {/* Crear Rutina */}
         <GlassButton 
+          noShadow={true}
           theme={theme}
           color={colors.tint}
           onPress={handleCreateRoutineClick}
           style={styles.createRoutineBtn}
         >
           <View style={styles.createRoutineInner}>
-            <Plus size={18} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 6 }} />
-            <Text style={[styles.createRoutineBtnText, { color: getContrastColor(colors.tint, theme) }]} numberOfLines={1}>
+            <Plus size={18} color={getContrastTextColor(colors.tint)} style={{ marginRight: 6 }} />
+            <Text style={[styles.createRoutineBtnText, { color: getContrastTextColor(colors.tint) }]} numberOfLines={1}>
               Crear Rutina
             </Text>
           </View>
@@ -375,24 +376,8 @@ export default function RoutinesScreen() {
       {/* 4. CONTENIDO SEGÚN LA PESTAÑA ACTIVA */}
       {activeTab === 'myRoutines' && (
         <>
-          {/* Barra de búsqueda con Liquid Glass */}
-          <View style={[
-            styles.searchContainer, 
-            { 
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-            }
-          ]}>
-            <GlassView 
-              glassEffectStyle="regular" 
-              colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} 
-              style={StyleSheet.absoluteFill} 
-            />
-            <View 
-              style={[
-                StyleSheet.absoluteFill, 
-                { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.45)' }
-              ]} 
-            />
+          {/* Barra de búsqueda */}
+          <View style={[styles.searchContainer, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)', borderColor: colors.border }]}>
             <Search size={18} color={colors.textSecondary} style={{ marginRight: 10 }} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
@@ -441,24 +426,8 @@ export default function RoutinesScreen() {
                 );
               })
             ) : (
-              /* ESTADO VACÍO CON LIQUID GLASS */
-              <View style={[
-                styles.emptyCard, 
-                { 
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-                }
-              ]}>
-                <GlassView 
-                  glassEffectStyle="regular" 
-                  colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} 
-                  style={StyleSheet.absoluteFill} 
-                />
-                <View 
-                  style={[
-                    StyleSheet.absoluteFill, 
-                    { backgroundColor: isDark ? 'rgba(20, 20, 25, 0.45)' : 'rgba(255, 255, 255, 0.65)' }
-                  ]} 
-                />
+              /* ESTADO VACÍO */
+              <View style={[styles.emptyCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderColor: colors.border }]}>
                 <View style={[styles.emptyIconBox, { backgroundColor: iconBadgeBg }]}>
                   <Folder size={32} color={colors.textSecondary} />
                 </View>
@@ -478,25 +447,9 @@ export default function RoutinesScreen() {
         </>
       )}
 
-      {/* PESTAÑA EXPLORAR CON LIQUID GLASS */}
+      {/* PESTAÑA EXPLORAR */}
       {activeTab === 'explore' && (
-        <View style={[
-          styles.tabContentCard, 
-          { 
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-          }
-        ]}>
-          <GlassView 
-            glassEffectStyle="regular" 
-            colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} 
-            style={StyleSheet.absoluteFill} 
-          />
-          <View 
-            style={[
-              StyleSheet.absoluteFill, 
-              { backgroundColor: isDark ? 'rgba(20, 20, 25, 0.45)' : 'rgba(255, 255, 255, 0.65)' }
-            ]} 
-          />
+        <View style={[styles.tabContentCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderColor: colors.border }]}>
           <View style={[styles.emptyIconBox, { backgroundColor: colors.tint + '15' }]}>
             <Compass size={32} color={colors.tint} />
           </View>
@@ -507,25 +460,9 @@ export default function RoutinesScreen() {
         </View>
       )}
 
-      {/* PESTAÑA EJERCICIOS MANUALES CON LIQUID GLASS */}
+      {/* PESTAÑA EJERCICIOS MANUALES */}
       {activeTab === 'manualExercises' && (
-        <View style={[
-          styles.tabContentCard, 
-          { 
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-          }
-        ]}>
-          <GlassView 
-            glassEffectStyle="regular" 
-            colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} 
-            style={StyleSheet.absoluteFill} 
-          />
-          <View 
-            style={[
-              StyleSheet.absoluteFill, 
-              { backgroundColor: isDark ? 'rgba(20, 20, 25, 0.45)' : 'rgba(255, 255, 255, 0.65)' }
-            ]} 
-          />
+        <View style={[styles.tabContentCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderColor: colors.border }]}>
           <View style={[styles.emptyIconBox, { backgroundColor: colors.tint + '15' }]}>
             <Dumbbell size={32} color={colors.tint} />
           </View>

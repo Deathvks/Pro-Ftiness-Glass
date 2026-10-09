@@ -1,11 +1,11 @@
 /* mobile/src/components/routines/FolderList.tsx */
 import React from 'react';
-import { ScrollView, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { ScrollView, Text, StyleSheet } from 'react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { Folder, FolderOpen } from 'lucide-react-native';
-import { GlassView } from 'expo-glass-effect';
-import { getContrastColor } from '@/utils/colorUtils';
+import { GlassButton } from '@/components/ui/GlassButton';
+import { getContrastTextColor } from '@/utils/routineHelpers';
 
 interface FolderListProps {
   folders: string[];
@@ -15,10 +15,10 @@ interface FolderListProps {
 
 export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderListProps) {
   const colors = useAppColors();
-  const theme = useAppStore(state => state.theme);
-  const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const theme = useAppStore(state => state.theme) || 'oled';
+  const accentColor = colors.tint; 
 
-  const options = [
+  const allOptions = [
     { id: 'all', label: 'Todas' },
     ...folders.map(f => ({ id: f, label: f })),
     { id: 'uncategorized', label: 'Otros' },
@@ -30,57 +30,32 @@ export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderLi
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}
     >
-      {options.map((opt) => {
+      {allOptions.map((opt) => {
         const isActive = selectedFolder === opt.id;
         const isNamedFolder = opt.id !== 'all' && opt.id !== 'uncategorized';
         
         return (
-          <TouchableOpacity
+          <GlassButton
             key={opt.id}
             onPress={() => onSelectFolder(opt.id)}
-            activeOpacity={0.8}
+            theme={theme}
+            noShadow={true}
+            color={isActive ? accentColor : undefined}
             style={[
-              styles.tab,
-              {
-                borderColor: isActive ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'),
-                shadowColor: isActive ? colors.tint : 'transparent',
-                shadowOpacity: isActive ? 0.3 : 0,
-                shadowRadius: 8,
-                elevation: isActive ? 2 : 0,
-              }
+              styles.tab, 
+              { borderColor: isActive ? accentColor : colors.border + '60' }
             ]}
           >
-            {isActive ? (
-              <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, borderRadius: 20 }]} />
-            ) : (
-              <>
-                <GlassView 
-                  glassEffectStyle="regular" 
-                  colorScheme={isDark ? 'dark' : 'light'} 
-                  style={StyleSheet.absoluteFill} 
-                />
-                <View 
-                  style={[
-                    StyleSheet.absoluteFill, 
-                    { 
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-                      borderRadius: 20 
-                    }
-                  ]} 
-                />
-              </>
-            )}
-
             {isNamedFolder && (
               isActive ? (
                 <FolderOpen 
-                  size={15} 
-                  color={getContrastColor(colors.tint, theme)} 
+                  size={14} 
+                  color={getContrastTextColor(accentColor)} 
                   style={{ marginRight: 6 }} 
                 />
               ) : (
                 <Folder 
-                  size={15} 
+                  size={14} 
                   color={colors.textSecondary} 
                   style={{ marginRight: 6 }} 
                 />
@@ -90,14 +65,14 @@ export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderLi
               style={[
                 styles.tabText,
                 { 
-                  color: isActive ? getContrastColor(colors.tint, theme) : colors.textSecondary, 
-                  fontWeight: isActive ? '800' : '600' 
+                  color: isActive ? getContrastTextColor(accentColor) : colors.textSecondary, 
+                  fontWeight: isActive ? '700' : '500' 
                 }
               ]}
             >
               {opt.label}
             </Text>
-          </TouchableOpacity>
+          </GlassButton>
         );
       })}
     </ScrollView>
@@ -106,8 +81,8 @@ export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderLi
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 2,
-    paddingVertical: 4,
+    paddingHorizontal: 20,
+    paddingVertical: 6,
     gap: 8,
   },
   tab: {
@@ -115,10 +90,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     height: 38,
-    borderRadius: 20,
-    borderWidth: 1,
+    borderRadius: 19,
     marginRight: 8,
-    overflow: 'hidden',
   },
   tabText: {
     fontSize: 13,

@@ -111,3 +111,20 @@ export const getDisplayImageUrl = (path: string | null | undefined): string | nu
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   return `${BACKEND_BASE_URL}${cleanPath}`;
 };
+
+/**
+ * Retorna texto de alto contraste (#000000 o #ffffff) para botones con fondo de color.
+ */
+export const getContrastTextColor = (hexColor: string | null | undefined): string => {
+  if (!hexColor) return '#ffffff';
+  let clean = hexColor.replace('#', '');
+  if (clean.length === 3) clean = clean.split('').map(c => c + c).join('');
+  if (clean.length >= 6) {
+    const r = parseInt(clean.substring(0, 2), 16) || 0;
+    const g = parseInt(clean.substring(2, 4), 16) || 0;
+    const b = parseInt(clean.substring(4, 6), 16) || 0;
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.65 ? '#000000' : '#ffffff';
+  }
+  return '#ffffff';
+};
