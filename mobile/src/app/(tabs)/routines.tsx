@@ -1,316 +1,488 @@
+/* mobile/src/app/(tabs)/routines.tsx */
 import React, { useState, useMemo } from 'react';
-import { View, FlatList, TextInput, StyleSheet, Alert, TouchableOpacity, Text, Animated } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search, Plus, Trash2, Globe, Sparkles } from 'lucide-react-native';
+import { 
+  View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, 
+  Dimensions, Share as NativeShare 
+} from 'react-native';
+import { 
+  Search, Plus, Trash2, Globe, Sparkles, Folder, Dumbbell, 
+  BookCopy, Compass, Flame 
+} from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { Colors } from '@/constants/theme';
 import { RoutinesTabs, TabKey } from '@/components/routines/RoutinesTabs';
 import { FolderList } from '@/components/routines/FolderList';
 import { RoutineCard } from '@/components/routines/RoutineCard';
 import GlobalHeader from '@/components/GlobalHeader';
-import ThemeBackground from '@/components/ThemeBackground';
-import { GlassButton } from '@/components/ui/GlassButton';
+import AnimatedScreen from '@/components/AnimatedScreen';
 import { PrivacyModal } from '@/components/modals/PrivacyModal';
+import { RoutineShareSettingsModal } from '@/components/modals/RoutineShareSettingsModal';
 import { RoutineAIGeneratorModal } from '@/components/modals/RoutineAIGeneratorModal';
 import { getContrastColor } from '@/utils/colorUtils';
 import { useRouter } from 'expo-router';
 
 export default function RoutinesScreen() {
+  const router = useRouter();
   const theme = useAppStore(state => state.theme);
   const colors = useAppColors();
-  const router = useRouter();
-  
-  // Zustand state
+  const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const iconBadgeBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
+
+  // Zustand Store
   const routines = useAppStore(state => state.routines || []);
+  const workoutLog = useAppStore(state => state.workoutLog || []);
   const completedRoutineIdsToday = useAppStore(state => state.completedRoutineIdsToday || []);
+  const activeWorkout = useAppStore(state => state.activeWorkout);
   const startWorkout = useAppStore(state => state.startWorkout);
-  // Add other actions like deleteRoutine, createRoutine when needed
+  const deleteRoutine = useAppStore(state => state.deleteRoutine);
+  const deleteAllRoutines = useAppStore(state => state.deleteAllRoutines);
+  const createRoutine = useAppStore(state => state.createRoutine);
+  const updateRoutine = useAppStore(state => state.updateRoutine);
+  const setRoutineEditorState = useAppStore(state => state.setRoutineEditorState);
 
   // Local State
   const [activeTab, setActiveTab] = useState<TabKey>('myRoutines');
+  const [selectedFolder, setSelectedFolder] = useState<string>('all');
+  const [query, setQuery] = useState('');
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
-  const setRoutineEditorState = useAppStore(state => state.setRoutineEditorState);
-  const [selectedFolder, setSelectedFolder] = useState<string>('Todas');
-  const [query, setQuery] = useState('');
+  const [sharingRoutine, setSharingRoutine] = useState<any | null>(null);
 
-  // Derived State
-  const uniqueFolders = useMemo(() => {
-    const folders = new Set<string>();
-    routines.forEach((r: any) => {
-      if (r.folder) folders.add(r.folder);
+  const isAnyWorkoutActive = activeWorkout !== null && activeWorkout !== undefined;
+
+  // Mapa de última fecha de uso por rutina (idéntico al frontend)
+  const lastUsedMap = useMemo(() => {
+    const map = new Map<string | number, Date>();
+    (workoutLog || []).forEach((log: any) => {
+      if (log && log.routine_id) {
+        const d = new Date(log.workout_date);
+        const prev = map.get(log.routine_id);
+        if (!prev || d > prev) map.set(log.routine_id, d);
+      }
     });
-    return Array.from(folders).sort();
+    return map;
+  }, [workoutLog]);
+
+  // Carpetas únicas existentes
+  const uniqueFolders = useMemo(() => {
+    if (!routines) return [];
+    const folders = (routines as any[])
+      .map((r: any) => r.folder)
+      .filter((f: any) => f && f.trim() !== '');
+    return Array.from(new Set(folders)).sort();
   }, [routines]);
 
-  const filteredRoutines = useMemo(() => {
-    return routines.filter((r: any) => {
-      const matchesSearch = r.name?.toLowerCase().includes(query.toLowerCase()) || 
-                            r.description?.toLowerCase().includes(query.toLowerCase());
-      
-      const inFolder = selectedFolder === 'Todas' ? true :
-                       selectedFolder === 'Sin Carpeta' ? !r.folder :
-                       r.folder === selectedFolder;
-      
-      return matchesSearch && inFolder;
-    });
-  }, [routines, query, selectedFolder]);
+  // Rutinas filtradas y ordenadas por último uso (idéntico al frontend)
+  const filteredSorted = useMemo(() => {
+    const q = query.trim().toLowerCase();
 
-  const handleStartWorkout = (routine: any) => {
-    if (completedRoutineIdsToday.includes(routine.id)) {
-      Alert.alert('Rutina ya completada', 'Ya has completado esta rutina hoy. ¿Quieres iniciarla de nuevo?', [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Iniciar', onPress: () => {
-          if (startWorkout) startWorkout(routine);
-          else Alert.alert('Error', 'No se pudo iniciar el entrenamiento');
-        }}
-      ]);
+    let list = (routines || []).filter((r: any) => {
+      if (!r) return false;
+      const matchesQuery = !q ||
+        r.name?.toLowerCase().includes(q) ||
+        r.description?.toLowerCase().includes(q);
+      
+      let matchesFolder = true;
+      if (selectedFolder === 'uncategorized') {
+        matchesFolder = !r.folder || r.folder.trim() === '';
+      } else if (selectedFolder !== 'all') {
+        matchesFolder = r.folder === selectedFolder;
+      }
+
+      return matchesQuery && matchesFolder;
+    });
+
+    list.sort((a: any, b: any) => {
+      const da = a ? lastUsedMap.get(a.id)?.getTime() || 0 : 0;
+      const db = b ? lastUsedMap.get(b.id)?.getTime() || 0 : 0;
+      return db - da;
+    });
+
+    return list;
+  }, [routines, query, lastUsedMap, selectedFolder]);
+
+  // Iniciar entrenamiento
+  const handleStartWorkout = async (routine: any) => {
+    if (activeWorkout && activeWorkout.routineId === routine.id) {
+      router.push('/workout');
+      return;
+    }
+
+    if (isAnyWorkoutActive && activeWorkout.routineId !== routine.id) {
+      Alert.alert(
+        'Entrenamiento en curso',
+        'Ya tienes un entrenamiento en curso. Finalízalo o descártalo para empezar uno nuevo.'
+      );
+      return;
+    }
+
+    const isCompleted = completedRoutineIdsToday.includes(routine.id);
+    if (isCompleted) {
+      Alert.alert(
+        'Rutina ya completada',
+        'Ya has completado esta rutina hoy. ¿Deseas iniciarla de nuevo?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Iniciar',
+            onPress: async () => {
+              if (startWorkout) await startWorkout(routine);
+              router.push('/workout');
+            }
+          }
+        ]
+      );
     } else {
-      if (startWorkout) startWorkout(routine);
-      else Alert.alert('Error', 'No se pudo iniciar el entrenamiento');
+      if (startWorkout) await startWorkout(routine);
+      router.push('/workout');
     }
   };
 
-  const handleRoutineOptions = (routine: any) => {
-    Alert.alert(
-      'Opciones',
-      routine.name,
-      [
-        { text: 'Editar', onPress: () => {
-          const setRoutineEditorState = useAppStore.getState().setRoutineEditorState;
-          const exercises = routine.exercises || routine.RoutineExercises || [];
-          const normalizedRoutine = {
-            routineId: routine.id,
-            routineName: routine.name,
-            description: routine.description || '',
-            folder: routine.folder || '',
-            imageUrl: routine.image_url || null,
-            exercises: exercises.map((ex: any) => ({
-              ...ex,
-              exercise_id: ex.exercise_list_id || ex.exercise_id || null,
-              is_manual: ex.is_manual || (ex.exercise_list_id === null)
-            }))
-          };
-          setRoutineEditorState(normalizedRoutine);
-          router.push('/routine-editor');
-        } },
-        { text: 'Compartir', onPress: () => Alert.alert('TODO', 'Abrir modal de compartir') },
-        { text: 'Duplicar', onPress: async () => {
-          const exercises = routine.exercises || routine.RoutineExercises || [];
-          const copy = {
-            name: `${routine.name} (Copia)`,
-            description: routine.description || '',
-            folder: routine.folder || null,
-            image_url: routine.image_url || null,
-            is_trainer_template: false,
-            exercises: exercises.map((ex: any, index: number) => {
-              const isManual = ex.is_manual || (ex.exercise_list_id === null);
-              return {
-                exercise_list_id: isManual ? null : (ex.exercise_list_id || ex.exercise_id || ex.id),
-                name: ex.name,
-                muscle_group: isManual ? ex.muscle_group : undefined,
-                sets: parseInt(String(ex.sets), 10) || 3,
-                reps: String(ex.reps),
-                rest_seconds: parseInt(String(ex.rest_seconds), 10) || 60,
-                exercise_order: index,
-              };
-            })
-          };
+  // Editar rutina
+  const handleEditRoutine = (routine: any) => {
+    if (isAnyWorkoutActive && activeWorkout.routineId === routine.id) {
+      Alert.alert(
+        'Rutina en curso',
+        'No puedes editar la rutina que está en curso. Finaliza o descarta el entrenamiento primero.'
+      );
+      return;
+    }
 
-          const result = await useAppStore.getState().createRoutine(copy);
-          if (result && !result.success) {
-            Alert.alert('Error', result.message || 'No se pudo duplicar la rutina');
-          } else {
-            Alert.alert('Éxito', 'Rutina duplicada correctamente');
+    const exercises = routine.exercises || routine.RoutineExercises || [];
+    const normalizedRoutine = {
+      routineId: routine.id,
+      routineName: routine.name,
+      description: routine.description || '',
+      folder: routine.folder || '',
+      imageUrl: routine.image_url || routine.imageUrl || null,
+      exercises: exercises.map((ex: any) => ({
+        ...ex,
+        exercise_id: ex.exercise_list_id || ex.exercise_id || ex.id || null,
+        is_manual: ex.is_manual || (ex.exercise_list_id === null)
+      }))
+    };
+
+    setRoutineEditorState(normalizedRoutine);
+    router.push('/routine-editor');
+  };
+
+  // Duplicar rutina
+  const handleDuplicateRoutine = async (routine: any) => {
+    try {
+      const exercises = routine.exercises || routine.RoutineExercises || [];
+      const copy = {
+        name: `${routine.name} (Copia)`,
+        description: routine.description || '',
+        folder: routine.folder || null,
+        image_url: routine.image_url || routine.imageUrl || null,
+        is_trainer_template: false,
+        exercises: exercises.map((ex: any, index: number) => {
+          const isManual = ex.is_manual || (ex.exercise_list_id === null);
+          return {
+            exercise_list_id: isManual ? null : (ex.exercise_list_id || ex.exercise_id || ex.id),
+            name: ex.name,
+            muscle_group: isManual ? ex.muscle_group : undefined,
+            sets: parseInt(String(ex.sets), 10) || 3,
+            reps: String(ex.reps),
+            rest_seconds: parseInt(String(ex.rest_seconds), 10) || 60,
+            exercise_order: index,
+          };
+        })
+      };
+
+      const result = await createRoutine(copy);
+      if (result && !result.success) {
+        Alert.alert('Error', result.message || 'No se pudo duplicar la rutina.');
+      } else {
+        Alert.alert('Éxito', 'Rutina duplicada correctamente.');
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'No se pudo duplicar la rutina.');
+    }
+  };
+
+  // Eliminar rutina
+  const handleDeleteRoutine = (routineId: string | number) => {
+    Alert.alert(
+      'Eliminar Rutina',
+      '¿Estás seguro de que deseas eliminar esta rutina? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            const res = await deleteRoutine(routineId);
+            if (res && !res.success) {
+              Alert.alert('Error', res.message || 'No se pudo eliminar la rutina.');
+            }
           }
-        } },
-        { text: 'Eliminar', onPress: () => {
-          Alert.alert(
-            'Eliminar Rutina',
-            '¿Estás seguro de que deseas eliminar esta rutina? Esta acción no se puede deshacer.',
-            [
-              { text: 'Cancelar', style: 'cancel' },
-              { text: 'Eliminar', style: 'destructive', onPress: async () => {
-                const result = await useAppStore.getState().deleteRoutine(routine.id);
-                if (result && !result.success) {
-                  Alert.alert('Error', result.message || 'No se pudo eliminar la rutina');
-                }
-              }}
-            ]
-          );
-        }, style: 'destructive' },
-        { text: 'Cancelar', style: 'cancel' }
+        }
       ]
     );
   };
 
-  const insets = useSafeAreaInsets();
-
-  const renderHeader = () => {
-    return (
-      <View style={{ paddingTop: insets.top + 70 }}>
-        {/* Tabs */}
-        <View style={[styles.tabsWrapper, { marginTop: 16 }]}>
-          <RoutinesTabs activeTab={activeTab} onChangeTab={setActiveTab} />
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.actionsRow}>
-          <GlassButton noShadow theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => {
-            if (routines.length === 0) return;
-            Alert.alert(
-              'Eliminar Todas las Rutinas',
-              '¿Estás súper seguro? Perderás todas tus rutinas y esta acción NO se puede deshacer.',
-              [
-                { text: 'Cancelar', style: 'cancel' },
-                { text: 'Eliminar Todas', style: 'destructive', onPress: async () => {
-                  const result = await useAppStore.getState().deleteAllRoutines();
-                  if (result && !result.success) {
-                    Alert.alert('Error', result.message || 'No se pudieron eliminar las rutinas');
-                  }
-                }}
-              ]
-            );
-          }}>
-            <Trash2 size={20} color={routines.length > 0 ? '#ef4444' : colors.textSecondary} />
-          </GlassButton>
-          <GlassButton noShadow theme={theme} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => setShowPrivacyModal(true)}>
-            <Globe size={20} color={colors.textSecondary} />
-          </GlassButton>
-          <GlassButton noShadow theme={theme} color={colors.tint} style={{ width: 44, height: 44, borderRadius: 22 }} onPress={() => setShowAIGenerator(true)}>
-              <Sparkles size={20} color={getContrastColor(colors.tint, theme)} />
-            </GlassButton>
-          <GlassButton 
-            noShadow
-            theme={theme} 
-            style={{ flex: 1, height: 44, paddingHorizontal: 12, borderRadius: 22, flexDirection: 'row', justifyContent: 'center', overflow: 'hidden' }} 
-                          onPress={() => {
-                const editorState = useAppStore.getState().routineEditorState;
-                if ((editorState.exercises && editorState.exercises.length > 0) || editorState.routineName) {
-                  Alert.alert(
-                    "Borrador encontrado",
-                    "Tienes una rutina en proceso. ¿Deseas continuarla o empezar de cero?",
-                    [
-                      { text: "Continuar", onPress: () => router.push('/routine-editor') },
-                      { 
-                        text: "Empezar de cero", 
-                        style: "destructive", 
-                        onPress: () => {
-                          useAppStore.getState().clearRoutineEditorState();
-                          router.push('/routine-editor');
-                        }
-                      }
-                    ]
-                  );
-                } else {
-                  useAppStore.getState().clearRoutineEditorState();
-                  router.push('/routine-editor');
-                }
-              }}
-          >
-            <Plus size={20} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 6 }} />
-            <Text style={[styles.createButtonText, { color: getContrastColor(colors.tint, theme) }]} numberOfLines={1} adjustsFontSizeToFit>Crear Rutina</Text>
-          </GlassButton>
-        </View>
-
-        {activeTab === 'myRoutines' && (
-          <View style={styles.listHeader}>
-            <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Search size={20} color={colors.textSecondary} />
-              <TextInput
-                style={[styles.searchInput, { color: colors.text }]}
-                placeholder="Buscar rutinas..."
-                placeholderTextColor={colors.textSecondary}
-                value={query}
-                onChangeText={setQuery}
-              />
-            </View>
-            <FolderList
-              folders={uniqueFolders}
-              selectedFolder={selectedFolder}
-              onSelectFolder={setSelectedFolder}
-            />
-          </View>
-        )}
-      </View>
+  // Borrar todas las rutinas
+  const handleDeleteAll = () => {
+    if (routines.length === 0) return;
+    Alert.alert(
+      'Eliminar Todas las Rutinas',
+      '¿Estás seguro? Perderás todas tus rutinas y esta acción NO se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar Todas',
+          style: 'destructive',
+          onPress: async () => {
+            if (deleteAllRoutines) {
+              await deleteAllRoutines();
+            }
+          }
+        }
+      ]
     );
   };
 
-  const renderEmptyComponent = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-        No se encontraron rutinas.
-      </Text>
-    </View>
-  );
+  // Crear rutina nueva
+  const handleCreateRoutineClick = () => {
+    const editorState = useAppStore.getState().routineEditorState;
+    if ((editorState.exercises && editorState.exercises.length > 0) || editorState.routineName) {
+      Alert.alert(
+        'Borrador encontrado',
+        'Tienes una rutina en proceso. ¿Deseas continuarla o empezar de cero?',
+        [
+          { text: 'Continuar', onPress: () => router.push('/routine-editor') },
+          { 
+            text: 'Empezar de cero', 
+            style: 'destructive', 
+            onPress: () => {
+              useAppStore.getState().clearRoutineEditorState();
+              router.push('/routine-editor');
+            }
+          }
+        ]
+      );
+    } else {
+      useAppStore.getState().clearRoutineEditorState();
+      router.push('/routine-editor');
+    }
+  };
 
-  const scrollY = React.useRef(new Animated.Value(0)).current;
+  // Compartir rutina nativo
+  const handleShareRoutine = async (routine: any) => {
+    try {
+      const shareUrl = `https://pro-fitness-glass.zeabur.app/share/routine/${routine.id}`;
+      await NativeShare.share({
+        title: `Rutina: ${routine.name}`,
+        message: `¡Mira mi rutina "${routine.name}" en Pro Fitness Glass!\n${shareUrl}`,
+        url: shareUrl,
+      });
+    } catch (e) {}
+  };
+
+  // Actualizar visibilidad de rutina
+  const handleUpdateVisibility = async (routineId: string | number, newVisibility: string) => {
+    const target = routines.find((r: any) => r.id === routineId);
+    if (!target) return;
+    const exercises = target.exercises || target.RoutineExercises || [];
+    await updateRoutine(routineId, {
+      ...target,
+      visibility: newVisibility,
+      exercises: exercises.map((ex: any) => ({ ...ex }))
+    });
+  };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ThemeBackground />
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }}>
-        <GlobalHeader title="Rutinas" scrollY={scrollY} />
+    <AnimatedScreen header={<GlobalHeader />}>
+      
+      {/* 1. TÍTULO Y SUBTÍTULO */}
+      <View style={styles.headerTitleContainer}>
+        <Text style={[styles.mainTitle, { color: colors.text }]}>Rutinas</Text>
+        <Text style={[styles.mainSubtitle, { color: colors.textSecondary }]}>
+          Crea, edita y gestiona tus rutinas de entrenamiento.
+        </Text>
       </View>
 
+      {/* 2. BOTONES DE ACCIÓN (BORRAR TODAS, MURO, IA, CREAR RUTINA) */}
+      <View style={styles.actionsRow}>
+        {/* Borrar todas */}
+        {routines.length > 0 && (
+          <TouchableOpacity 
+            style={styles.trashAllBtn}
+            onPress={handleDeleteAll}
+            activeOpacity={0.8}
+          >
+            <Trash2 size={18} color="#ef4444" />
+          </TouchableOpacity>
+        )}
+
+        {/* Muro (Privacidad global) */}
+        <TouchableOpacity 
+          style={[styles.actionPillBtn, { backgroundColor: iconBadgeBg, borderColor: colors.border }]}
+          onPress={() => setShowPrivacyModal(true)}
+          activeOpacity={0.8}
+        >
+          <Globe size={18} color={colors.text} style={{ marginRight: 6 }} />
+          <Text style={[styles.actionPillBtnText, { color: colors.text }]}>Muro</Text>
+        </TouchableOpacity>
+
+        {/* IA */}
+        <TouchableOpacity 
+          style={[
+            styles.actionPillBtn, 
+            { 
+              backgroundColor: colors.tint + '18', 
+              borderColor: colors.tint + '40',
+            }
+          ]}
+          onPress={() => setShowAIGenerator(true)}
+          activeOpacity={0.8}
+        >
+          <Sparkles size={18} color={colors.tint} style={{ marginRight: 6 }} />
+          <Text style={[styles.actionPillBtnText, { color: colors.tint }]}>IA</Text>
+        </TouchableOpacity>
+
+        {/* Crear Rutina */}
+        <TouchableOpacity 
+          style={[
+            styles.createRoutineBtn, 
+            { 
+              backgroundColor: colors.tint,
+              shadowColor: colors.tint,
+            }
+          ]}
+          onPress={handleCreateRoutineClick}
+          activeOpacity={0.85}
+        >
+          <Plus size={18} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 6 }} />
+          <Text style={[styles.createRoutineBtnText, { color: getContrastColor(colors.tint, theme) }]} numberOfLines={1}>
+            Crear Rutina
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 3. TABS PRINCIPALES (MIS RUTINAS, EXPLORAR, MANUALES, CARDIO RÁPIDO) */}
+      <View style={styles.tabsRow}>
+        <RoutinesTabs 
+          activeTab={activeTab} 
+          onChangeTab={setActiveTab} 
+          onQuickCardio={() => router.push('/workout')}
+        />
+      </View>
+
+      {/* 4. CONTENIDO SEGÚN LA PESTAÑA ACTIVA */}
       {activeTab === 'myRoutines' && (
-        <Animated.FlatList
-          data={filteredRoutines}
-          keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
-          renderItem={({ item }) => (
-            <RoutineCard
-              routine={item}
-              onPressStart={() => handleStartWorkout(item)}
-              onPressOptions={() => handleRoutineOptions(item)}
-              isCompletedToday={completedRoutineIdsToday.includes(item.id)}
+        <>
+          {/* Barra de búsqueda */}
+          <View style={[styles.searchContainer, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)', borderColor: colors.border }]}>
+            <Search size={18} color={colors.textSecondary} style={{ marginRight: 10 }} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder="Buscar rutinas..."
+              placeholderTextColor={colors.textSecondary}
+              value={query}
+              onChangeText={setQuery}
             />
+          </View>
+
+          {/* Subpestañas de carpetas */}
+          {routines && routines.length > 0 && (
+            <View style={styles.foldersContainer}>
+              <FolderList
+                folders={uniqueFolders}
+                selectedFolder={selectedFolder}
+                onSelectFolder={setSelectedFolder}
+              />
+            </View>
           )}
-          ListHeaderComponent={renderHeader}
-          ListEmptyComponent={renderEmptyComponent}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: true }
-          )}
-          scrollEventThrottle={16}
-        />
+
+          {/* Listado de Rutinas */}
+          <View style={styles.routinesList}>
+            {filteredSorted && filteredSorted.length > 0 ? (
+              filteredSorted.map((routine: any) => {
+                const isCompleted = completedRoutineIdsToday.includes(routine.id);
+                const isActive = activeWorkout && activeWorkout.routineId === routine.id;
+                const isBlocked = isAnyWorkoutActive && !isActive;
+                const lastUsed = lastUsedMap.get(routine.id);
+
+                return (
+                  <RoutineCard
+                    key={routine.id}
+                    routine={routine}
+                    onPressStart={() => handleStartWorkout(routine)}
+                    onPressEdit={() => handleEditRoutine(routine)}
+                    onPressDuplicate={() => handleDuplicateRoutine(routine)}
+                    onPressDelete={() => handleDeleteRoutine(routine.id)}
+                    onPressShare={() => handleShareRoutine(routine)}
+                    onPressPrivacy={() => setSharingRoutine(routine)}
+                    isCompletedToday={isCompleted}
+                    isActive={isActive}
+                    isBlockedByOtherWorkout={isBlocked}
+                    lastUsedDate={lastUsed}
+                  />
+                );
+              })
+            ) : (
+              /* ESTADO VACÍO (IDÉNTICO AL FRONTEND) */
+              <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={[styles.emptyIconBox, { backgroundColor: iconBadgeBg }]}>
+                  <Folder size={32} color={colors.textSecondary} />
+                </View>
+                <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
+                  {routines && routines.length > 0
+                    ? `No hay rutinas en la carpeta "${selectedFolder === 'uncategorized' ? 'Otros' : selectedFolder}".`
+                    : 'Aún no has creado ninguna rutina.'}
+                </Text>
+                <TouchableOpacity onPress={handleCreateRoutineClick} activeOpacity={0.8} style={{ marginTop: 12 }}>
+                  <Text style={[styles.emptyActionText, { color: colors.text }]}>
+                    ¡Haz clic en <Text style={{ color: colors.tint }}>"Crear Rutina"</Text> para empezar!
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </>
       )}
 
+      {/* PESTAÑA EXPLORAR */}
       {activeTab === 'explore' && (
-        <Animated.FlatList
-          data={[]}
-          renderItem={null}
-          ListHeaderComponent={renderHeader}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Explorar plantillas (Próximamente)</Text>
-            </View>
-          }
-          contentContainerStyle={styles.listContent}
-          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
-          scrollEventThrottle={16}
-        />
+        <View style={[styles.tabContentCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.emptyIconBox, { backgroundColor: colors.tint + '15' }]}>
+            <Compass size={32} color={colors.tint} />
+          </View>
+          <Text style={[styles.tabContentTitle, { color: colors.text }]}>Explorar Plantillas</Text>
+          <Text style={[styles.tabContentDesc, { color: colors.textSecondary }]}>
+            Descubre y copia rutinas de entrenamiento prediseñadas creadas por entrenadores expertos.
+          </Text>
+        </View>
       )}
 
+      {/* PESTAÑA EJERCICIOS MANUALES */}
       {activeTab === 'manualExercises' && (
-        <Animated.FlatList
-          data={[]}
-          renderItem={null}
-          ListHeaderComponent={renderHeader}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Ejercicios Manuales (Próximamente)</Text>
-            </View>
-          }
-          contentContainerStyle={styles.listContent}
-          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
-                    scrollEventThrottle={16}
-        />
+        <View style={[styles.tabContentCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.emptyIconBox, { backgroundColor: colors.tint + '15' }]}>
+            <Dumbbell size={32} color={colors.tint} />
+          </View>
+          <Text style={[styles.tabContentTitle, { color: colors.text }]}>Ejercicios Manuales</Text>
+          <Text style={[styles.tabContentDesc, { color: colors.textSecondary }]}>
+            Gestiona tus ejercicios personalizados creados fuera del catálogo general de la biblioteca.
+          </Text>
+        </View>
       )}
-      
-            <PrivacyModal visible={showPrivacyModal} onClose={() => setShowPrivacyModal(false)} />
+
+      {/* MODALES */}
+      <PrivacyModal 
+        visible={showPrivacyModal} 
+        onClose={() => setShowPrivacyModal(false)} 
+      />
+
+      <RoutineShareSettingsModal
+        visible={!!sharingRoutine}
+        routine={sharingRoutine}
+        onClose={() => setSharingRoutine(null)}
+        onUpdateVisibility={handleUpdateVisibility}
+      />
+
       <RoutineAIGeneratorModal
         visible={showAIGenerator}
         onClose={() => setShowAIGenerator(false)}
@@ -326,74 +498,137 @@ export default function RoutinesScreen() {
           router.push('/routine-editor');
         }}
       />
-    </View>
+
+    </AnimatedScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  headerTitleContainer: {
+    marginBottom: 20,
+  },
+  mainTitle: {
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  mainSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 4,
+  },
   actionsRow: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 24, // increased spacing
-    gap: 8,
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    gap: 8,
+    marginBottom: 20,
   },
-  actionButton: {
+  trashAllBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
   },
-  createButton: {
+  actionPillBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    justifyContent: 'center',
     height: 44,
+    paddingHorizontal: 16,
     borderRadius: 22,
-    marginLeft: 'auto',
+    borderWidth: 1,
   },
-  createButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  actionPillBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
-  tabsWrapper: {
-    marginBottom: 24, // increased spacing
+  createRoutineBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    paddingHorizontal: 16,
+    borderRadius: 22,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  listHeader: {
-    marginBottom: 24, // increased spacing
+  createRoutineBtnText: {
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  tabsRow: {
+    marginBottom: 20,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
-    paddingHorizontal: 16,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 22,
     borderWidth: 1,
-    marginBottom: 24, // increased spacing
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: '600',
   },
-  listContent: {
-    paddingBottom: 100,
+  foldersContainer: {
+    marginBottom: 20,
   },
-  emptyContainer: {
-    padding: 40,
+  routinesList: {
+    paddingBottom: 24,
+  },
+  emptyCard: {
+    borderRadius: 32,
+    borderWidth: 1,
+    padding: 32,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
   },
-  emptyText: {
-    fontSize: 16,
-  }
+  emptyIconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyMessage: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  emptyActionText: {
+    fontSize: 14,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  tabContentCard: {
+    borderRadius: 32,
+    borderWidth: 1,
+    padding: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
+  tabContentTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    marginBottom: 8,
+  },
+  tabContentDesc: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 18,
+    maxWidth: 280,
+  },
 });
-
-
-
-
-
-
