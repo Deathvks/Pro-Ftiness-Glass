@@ -299,15 +299,22 @@ export default function Register() {
         
         {/* BADGE "Gratis y Sin Anuncios" */}
         <View style={styles.badgeContainer}>
-          <BlurView intensity={40} tint={blurTint} style={[styles.badge, { 
-            backgroundColor: theme.card + '60',
-            borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)' 
+          <View style={[styles.badge, { 
+            backgroundColor: 'transparent',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.65)',
+            borderWidth: 1,
+            overflow: 'hidden',
           }]}>
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: 9999 }]}
+            />
             <Sparkles color={theme.tint} size={16} style={{ marginRight: 6 }} />
             <Text style={[styles.badgeText, { color: theme.text }]}>
               GRATIS Y SIN ANUNCIOS
             </Text>
-          </BlurView>
+          </View>
         </View>
             </>
           )}
@@ -324,10 +331,27 @@ export default function Register() {
               </Text>
             </View>
             <View style={styles.glassCardWrapper}>
-              <BlurView intensity={50} tint={blurTint} style={[styles.glassCard, { 
-                backgroundColor: theme.card + '40',
-                borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)'
+              <View style={[styles.glassCard, { 
+                backgroundColor: 'transparent',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.7)',
+                borderWidth: 1,
+                overflow: 'hidden',
               }]}>
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
+                />
+                <View
+                  pointerEvents="none"
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.45)',
+                      borderRadius: 32,
+                    }
+                  ]}
+                />
                 <View style={[styles.form, { paddingHorizontal: 16 }]}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, gap: 8 }}>
                     {code.map((digit, index) => (
@@ -337,8 +361,8 @@ export default function Register() {
                         style={[
                           styles.input, 
                           { 
-                            backgroundColor: theme.background + '80',
-                            borderColor: focusedInput === `code${index}` ? theme.tint : theme.border,
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)',
+                            borderColor: focusedInput === `code${index}` ? theme.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
                             color: theme.text,
                             textAlign: 'center',
                             fontSize: 24,
@@ -420,7 +444,7 @@ export default function Register() {
                     <Text style={{ color: theme.textSecondary, fontSize: 14 }}>Volver al registro</Text>
                   </TouchableOpacity>
                 </View>
-              </BlurView>
+              </View>
             </View>
           </>
         ) : (
@@ -433,10 +457,27 @@ export default function Register() {
 
             {/* GLASSCARD WRAPPER PARA SOMBRA */}
             <View style={styles.glassCardWrapper}>
-              <BlurView intensity={50} tint={blurTint} style={[styles.glassCard, { 
-                backgroundColor: theme.card + '40',
-                borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)'
+              <View style={[styles.glassCard, { 
+                backgroundColor: 'transparent',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.7)',
+                borderWidth: 1,
+                overflow: 'hidden',
               }]}>
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
+                />
+                <View
+                  pointerEvents="none"
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.45)',
+                      borderRadius: 32,
+                    }
+                  ]}
+                />
                 <View style={styles.form}>
                   
                   {/* USERNAME INPUT */}
@@ -445,8 +486,8 @@ export default function Register() {
                       style={[
                         styles.input, 
                         { 
-                          backgroundColor: theme.background + '80',
-                          borderColor: focusedInput === 'username' ? theme.tint : theme.border,
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)',
+                          borderColor: focusedInput === 'username' ? theme.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
                           color: theme.text 
                         }
                       ]}
@@ -466,8 +507,8 @@ export default function Register() {
                       style={[
                         styles.input, 
                         { 
-                          backgroundColor: theme.background + '80',
-                          borderColor: focusedInput === 'email' ? theme.tint : theme.border,
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)',
+                          borderColor: focusedInput === 'email' ? theme.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
                           color: theme.text 
                         }
                       ]}
@@ -489,8 +530,8 @@ export default function Register() {
                         style={[
                           styles.input, 
                           { 
-                            backgroundColor: theme.background + '80', 
-                            borderColor: focusedInput === 'password' ? theme.tint : theme.border,
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)', 
+                            borderColor: focusedInput === 'password' ? theme.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
                             color: theme.text,
                             flex: 1,
                             paddingRight: 40
@@ -535,8 +576,8 @@ export default function Register() {
                         style={[
                           styles.input, 
                           { 
-                            backgroundColor: theme.background + '80', 
-                            borderColor: focusedInput === 'confirm' ? theme.tint : theme.border,
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)', 
+                            borderColor: focusedInput === 'confirm' ? theme.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
                             color: theme.text,
                             flex: 1,
                             paddingRight: 40
@@ -608,8 +649,8 @@ export default function Register() {
                       onPress={handleGoogleClick} 
                       disabled={isLoading} 
                       style={[styles.socialButton, { 
-                        backgroundColor: theme.card + '80',
-                        borderColor: theme.border 
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.75)',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' 
                       }]}
                     >
                       <GoogleIcon size={24} />
@@ -670,7 +711,7 @@ export default function Register() {
                     </TouchableOpacity>
                   </View>
                 </View>
-              </BlurView>
+              </View>
             </View>
           </>
         )}

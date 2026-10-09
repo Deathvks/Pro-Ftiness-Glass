@@ -81,8 +81,31 @@ export default function ForgotPassword() {
           </View>
 
           {!isSubmitted && (
-            <BlurView intensity={50} tint={blurTint} style={[styles.glassCard, { backgroundColor: theme.card + '40', borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)' }]}>
-              <View style={[styles.inputContainer, { backgroundColor: theme.background, borderColor: theme.border }]}>
+            <View style={[styles.glassCard, { 
+              backgroundColor: 'transparent', 
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.7)',
+              borderWidth: 1,
+              overflow: 'hidden',
+            }]}>
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
+              />
+              <View
+                pointerEvents="none"
+                style={[
+                  StyleSheet.absoluteFill,
+                  {
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.45)',
+                    borderRadius: 32,
+                  }
+                ]}
+              />
+              <View style={[styles.inputContainer, { 
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)', 
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' 
+              }]}>
                 <TextInput
                   style={[styles.input, { color: theme.text }]}
                   placeholder="Tu correo electrónico"
@@ -135,7 +158,7 @@ export default function ForgotPassword() {
                   </>
                 )}
               </TouchableOpacity>
-            </BlurView>
+            </View>
           )}
 
           <TouchableOpacity 
