@@ -20,7 +20,8 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
   const loadLeaderboard = async () => {
     try {
       const data = await apiClient('/social/leaderboard');
-      setLeaderboard(data || []);
+      const list = Array.isArray(data) ? data : (data?.data || []);
+      setLeaderboard(list);
     } catch (error) {
       console.error(error);
     } finally {
@@ -64,25 +65,32 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
   );
 
   const renderItem = ({ item: user, index }: { item: any; index: number }) => {
+    if (!user) return null;
     const isMe = String(user.id) === String(userProfile?.id);
     const displayName = user.username?.includes('@')
       ? user.username.split('@')[0]
-      : user.username || 'Usuario';
+      : user.username || user.name || 'Usuario';
 
     let rankIcon = null;
-    if (index === 0) rankIcon = <Medal size={20} color="#f59e0b" />;
-    else if (index === 1) rankIcon = <Medal size={20} color="#9ca3af" />;
-    else if (index === 2) rankIcon = <Medal size={20} color="#b45309" />;
-    else (
+    if (index === 0) {
+      rankIcon = <Medal size={20} color="#f59e0b" />;
+    } else if (index === 1) {
+      rankIcon = <Medal size={20} color="#9ca3af" />;
+    } else if (index === 2) {
+      rankIcon = <Medal size={20} color="#b45309" />;
+    } else {
       rankIcon = (
         <Text style={[styles.rankNum, { color: colors.textSecondary }]}>
           #{index + 1}
         </Text>
-      )
-    );
+      );
+    }
+
+    const itemKey = user.id ? String(user.id) : String(index);
 
     return (
       <TouchableOpacity
+        key={itemKey}
         activeOpacity={0.7}
         onPress={() => onNavigateProfile && onNavigateProfile(user.id)}
         style={[
@@ -111,19 +119,19 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
             ]}
             numberOfLines={1}
           >
-            {displayName} {isMe && '(Tú)'}
+            {displayName}{isMe ? ' (Tú)' : ''}
           </Text>
         </View>
 
         <View style={styles.levelCol}>
           <View style={styles.levelScale}>
-            <LevelBadge level={user.level || 1} size="sm" bgTheme={colors.card} />
+            <LevelBadge level={Number(user.level) || 1} size="sm" bgTheme={colors.card} />
           </View>
         </View>
 
         <View style={styles.xpCol}>
           <Text style={[styles.xpText, { color: colors.text }]}>
-            {user.xp?.toLocaleString() || 0}
+            {Number(user.xp || 0).toLocaleString()}
           </Text>
         </View>
       </TouchableOpacity>
@@ -142,7 +150,7 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
         <View style={{ padding: 18, paddingBottom: 30 }}>
           {renderHeader()}
           <View style={{ gap: 4 }}>
-            {leaderboard.map((item, index) => renderItem({ item, index }))}
+            {Array.isArray(leaderboard) && leaderboard.map((item, index) => renderItem({ item, index }))}
           </View>
         </View>
       </View>

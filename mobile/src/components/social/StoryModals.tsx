@@ -54,73 +54,86 @@ export function StoryTermsModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onReject}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.termsCardWrapper}>
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={[styles.termsCard, { borderColor: colors.border }]}>
-            <View style={[styles.shieldIconBox, { backgroundColor: colors.tint + '15', borderColor: colors.tint + '30' }]}>
-              <ShieldAlert size={34} color={colors.tint} />
-            </View>
-
-            <Text style={[styles.termsTitle, { color: colors.text }]}>Historias Efímeras</Text>
-            <Text style={[styles.termsSubtitle, { color: colors.textSecondary }]}>
-              Antes de subir tu primera historia, debes conocer cómo funciona este espacio en nuestra comunidad.
-            </Text>
-
-            <View style={styles.termsList}>
-              <View style={[styles.termsItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }]}>
-                <Clock size={20} color="#3b82f6" style={{ marginTop: 2 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.itemTitle, { color: colors.text }]}>Duración Limitada</Text>
-                  <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>
-                    Todo el contenido se elimina automáticamente de los servidores tras <Text style={{ fontWeight: '700', color: colors.text }}>24 horas</Text>.
-                  </Text>
-                </View>
+      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
+        <Pressable
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 20,
+              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.2)',
+            },
+          ]}
+          onPress={onReject}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()} style={styles.termsCardWrapper}>
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={[styles.termsCard, { borderColor: colors.border, backgroundColor: 'transparent' }]}>
+              <View style={[styles.shieldIconBox, { backgroundColor: colors.tint + '15', borderColor: colors.tint + '30' }]}>
+                <ShieldAlert size={34} color={colors.tint} />
               </View>
 
-              <View style={[styles.termsItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }]}>
-                <Shield size={20} color={colors.tint} style={{ marginTop: 2 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.itemTitle, { color: colors.text }]}>Privacidad</Text>
-                  <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>
-                    Puedes elegir si compartir tu historia con <Text style={{ fontWeight: '700', color: colors.text }}>todos los usuarios</Text> o solo con <Text style={{ fontWeight: '700', color: colors.text }}>tus amigos</Text>.
-                  </Text>
-                </View>
-              </View>
-
-              <View style={[styles.termsItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }]}>
-                <Lock size={20} color="#a855f7" style={{ marginTop: 2 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.itemTitle, { color: colors.text }]}>Responsabilidad</Text>
-                  <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>
-                    No subas contenido ofensivo ni inapropiado. Respeta las normas de la comunidad.
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              onPress={onAccept}
-              activeOpacity={0.85}
-              style={[styles.primaryButton, { backgroundColor: colors.tint }]}
-            >
-              <Text style={[styles.primaryButtonText, { color: accentTextColor }]}>
-                Aceptar y Continuar
+              <Text style={[styles.termsTitle, { color: colors.text }]}>Historias Efímeras</Text>
+              <Text style={[styles.termsSubtitle, { color: colors.textSecondary }]}>
+                Antes de subir tu primera historia, debes conocer cómo funciona este espacio en nuestra comunidad.
               </Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity onPress={onReject} activeOpacity={0.7} style={styles.secondaryButton}>
-              <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>
-                Cancelar
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+              <View style={styles.termsList}>
+                <View style={[styles.termsItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                  <Clock size={20} color="#3b82f6" style={{ marginTop: 2 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.itemTitle, { color: colors.text }]}>Duración Limitada</Text>
+                    <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>
+                      Todo el contenido se elimina automáticamente de los servidores tras <Text style={{ fontWeight: '700', color: colors.text }}>24 horas</Text>.
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={[styles.termsItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                  <Shield size={20} color={colors.tint} style={{ marginTop: 2 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.itemTitle, { color: colors.text }]}>Privacidad</Text>
+                    <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>
+                      Puedes elegir si compartir tu historia con <Text style={{ fontWeight: '700', color: colors.text }}>todos los usuarios</Text> o solo con <Text style={{ fontWeight: '700', color: colors.text }}>tus amigos</Text>.
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={[styles.termsItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                  <Lock size={20} color="#a855f7" style={{ marginTop: 2 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.itemTitle, { color: colors.text }]}>Responsabilidad</Text>
+                    <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>
+                      No subas contenido ofensivo ni inapropiado. Respeta las normas de la comunidad.
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                onPress={onAccept}
+                activeOpacity={0.85}
+                style={[styles.primaryButton, { backgroundColor: colors.tint }]}
+              >
+                <Text style={[styles.primaryButtonText, { color: accentTextColor }]}>
+                  Aceptar y Continuar
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={onReject} activeOpacity={0.7} style={styles.secondaryButton}>
+                <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>
+                  Cancelar
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </GlassView>
     </Modal>
   );
 }
@@ -188,21 +201,33 @@ export function UploadStoryModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.uploadCardWrapper}>
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={[styles.uploadCard, { borderColor: colors.border }]}>
-            {/* Header */}
-            <View style={styles.uploadHeader}>
-              <Text style={[styles.uploadTitle, { color: colors.text }]}>Compartir Historia</Text>
-              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                <X size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
+      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
+        <Pressable
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 20,
+              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.2)',
+            },
+          ]}
+          onPress={onClose}
+        >
+          <Pressable onPress={(e) => e.stopPropagation()} style={styles.uploadCardWrapper}>
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={[styles.uploadCard, { borderColor: colors.border, backgroundColor: 'transparent' }]}>
+              {/* Header */}
+              <View style={styles.uploadHeader}>
+                <Text style={[styles.uploadTitle, { color: colors.text }]}>Compartir Historia</Text>
+                <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                  <X size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
 
             {/* Media Preview or Picker Buttons */}
             {selectedAsset ? (
@@ -319,9 +344,10 @@ export function UploadStoryModal({
               )}
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
-    </Modal>
+        </Pressable>
+      </Pressable>
+    </GlassView>
+  </Modal>
   );
 }
 

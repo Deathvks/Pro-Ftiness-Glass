@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Animated,
   Alert,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import {
   Activity,
@@ -51,6 +53,8 @@ export default function SocialScreen() {
   const colors = useAppColors();
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const tabsScrollRef = useRef<ScrollView>(null);
+  const mainScrollRef = useRef<any>(null);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
   const [activeTab, setActiveTab] = useState<TabKey>('feed');
@@ -94,8 +98,8 @@ export default function SocialScreen() {
 
   // Stories computation
   const visibleStories = useMemo(() => {
-    return stories.filter(storyUser => {
-      const isFriend = socialFriends.some(f => String(f.id) === String(storyUser.userId));
+    return stories.filter((storyUser: any) => {
+      const isFriend = socialFriends.some((f: any) => String(f.id) === String(storyUser.userId));
       const hasPublicStories = storyUser.items?.some((item: any) => item.privacy === 'public');
       return isFriend || hasPublicStories;
     });
@@ -161,21 +165,48 @@ export default function SocialScreen() {
     }
   };
 
-  const TABS = [
-    { id: 'feed' as TabKey, label: 'Muro', icon: Activity },
-    { id: 'leaderboard' as TabKey, label: 'Ranking', icon: Trophy },
-    { id: 'friends' as TabKey, label: 'Amigos', icon: Users },
-    { id: 'squads' as TabKey, label: 'Grupos', icon: Shield },
+  interface TabItem {
+    id: TabKey;
+    label: string;
+    icon: any;
+    badge?: number;
+  }
+
+  const TABS: TabItem[] = [
+    { id: 'feed', label: 'Muro', icon: Activity },
+    { id: 'leaderboard', label: 'Ranking', icon: Trophy },
+    { id: 'friends', label: 'Amigos', icon: Users },
+    { id: 'squads', label: 'Grupos', icon: Shield },
     {
-      id: 'requests' as TabKey,
+      id: 'requests',
       label: 'Solicitudes',
       icon: UserPlus,
       badge: socialRequests?.received?.length || 0,
     },
-    { id: 'search' as TabKey, label: 'Buscar', icon: Search },
-  ] as const;
+    { id: 'search', label: 'Buscar', icon: Search },
+  ];
 
-  const accentTextColor = getContrastTextColor(colors.tint);
+  const handleTabChange = (tabId: TabKey) => {
+    setActiveTab(tabId);
+    const index = TABS.findIndex(t => t.id === tabId);
+    if (index >= 0 && tabsScrollRef.current) {
+      tabsScrollRef.current.scrollTo({
+        x: Math.max(0, index * 88 - 20),
+        animated: true,
+      });
+    }
+  };
+
+  const handleSwitchToSearch = () => {
+    handleTabChange('search');
+    setTimeout(() => {
+      mainScrollRef.current?.scrollTo?.({ y: 240, animated: true });
+    }, 150);
+  };
+
+  const handleFocusSearch = () => {
+    mainScrollRef.current?.scrollTo?.({ y: 260, animated: true });
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -185,165 +216,190 @@ export default function SocialScreen() {
         <GlobalHeader title="Comunidad" scrollY={scrollY} />
       </View>
 
-      <Animated.ScrollView
-        showsVerticalScrollIndicator={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: false }
-        )}
-        scrollEventThrottle={16}
-        contentContainerStyle={{
-          paddingTop: insets.top + 70,
-          paddingBottom: insets.bottom + 100,
-        }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
       >
-        {/* Page Subtitle Header */}
-        <View style={styles.header}>
-          <Text style={[styles.mainTitle, { color: colors.text }]}>Comunidad</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Conecta y compite con otros atletas
-          </Text>
-        </View>
+        <Animated.ScrollView
+          ref={mainScrollRef}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
+          scrollEventThrottle={16}
+          contentContainerStyle={{
+            paddingTop: insets.top + 70,
+            paddingBottom: insets.bottom + 100,
+          }}
+        >
+          {/* Page Subtitle Header */}
+          <View style={styles.header}>
+            <Text style={[styles.mainTitle, { color: colors.text }]}>Comunidad</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Conecta y compite con otros atletas
+            </Text>
+          </View>
 
-        {/* Privacy Banner */}
-        <View style={{ paddingHorizontal: 16 }}>
-          <PrivacyBanner
-            privacy={userProfile?.is_public_profile ? 'public' : 'private'}
-            onNavigate={() => setShowPrivacyModal(true)}
-          />
-        </View>
-
-        {/* Stories Horizontal Bar */}
-        <View style={styles.storiesSection}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.storiesContainer}
-          >
-            {/* My Story Bubble */}
-            <StoryBubble
-              user={{
-                username: userProfile?.username || 'Yo',
-                profile_image_url: userProfile?.profile_image_url,
-                avatar: userProfile?.avatar,
-              }}
-              isMe={true}
-              hasStories={myStories.length > 0}
-              hasUnseen={myStoriesUnseen}
-              onClick={handleMyStoryClick}
-              onAdd={initiateStoryUpload}
+          {/* Privacy Banner */}
+          <View style={{ paddingHorizontal: 16 }}>
+            <PrivacyBanner
+              privacy={userProfile?.is_public_profile ? 'public' : 'private'}
+              onNavigate={() => setShowPrivacyModal(true)}
             />
+          </View>
 
-            {/* Other Users' Stories */}
-            {visibleStories.map(storyUser => {
-              const rawUser = storyUser.user || {};
-              const username = storyUser.username || rawUser.username || 'Usuario';
-              const avatar =
-                storyUser.profile_image_url ||
-                rawUser.profile_image_url ||
-                storyUser.avatar ||
-                rawUser.avatar;
-              const hasUnseen =
-                storyUser.hasUnseen !== undefined
-                  ? storyUser.hasUnseen
-                  : storyUser.items?.some((item: any) => !item.viewed);
+          {/* Stories Horizontal Bar */}
+          <View style={styles.storiesSection}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.storiesContainer}
+            >
+              {/* My Story Bubble */}
+              <StoryBubble
+                user={{
+                  username: userProfile?.username || 'Yo',
+                  profile_image_url: userProfile?.profile_image_url,
+                  avatar: userProfile?.avatar,
+                }}
+                isMe={true}
+                hasStories={myStories.length > 0}
+                hasUnseen={myStoriesUnseen}
+                onClick={handleMyStoryClick}
+                onAdd={initiateStoryUpload}
+              />
 
-              return (
-                <StoryBubble
-                  key={storyUser.userId}
-                  user={{ username, avatar, profile_image_url: avatar }}
-                  isMe={false}
-                  hasStories={true}
-                  hasUnseen={hasUnseen}
-                  onClick={() => setViewingStoryUserId(storyUser.userId)}
-                />
-              );
-            })}
-          </ScrollView>
-        </View>
+              {/* Other Users' Stories */}
+              {visibleStories.map((storyUser: any) => {
+                const rawUser = storyUser.user || {};
+                const username = storyUser.username || rawUser.username || 'Usuario';
+                const avatar =
+                  storyUser.profile_image_url ||
+                  rawUser.profile_image_url ||
+                  storyUser.avatar ||
+                  rawUser.avatar;
+                const hasUnseen =
+                  storyUser.hasUnseen !== undefined
+                    ? storyUser.hasUnseen
+                    : storyUser.items?.some((item: any) => !item.viewed);
 
-        {/* Horizontal Navigation Tabs */}
-        <View style={styles.tabsSection}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tabsContainer}
-          >
-            {TABS.map(tab => {
-              const isActive = activeTab === tab.id;
-              const Icon = tab.icon;
+                return (
+                  <StoryBubble
+                    key={storyUser.userId}
+                    user={{ username, avatar, profile_image_url: avatar }}
+                    isMe={false}
+                    hasStories={true}
+                    hasUnseen={hasUnseen}
+                    onClick={() => setViewingStoryUserId(storyUser.userId)}
+                  />
+                );
+              })}
+            </ScrollView>
+          </View>
 
-              return (
-                <TouchableOpacity
-                  key={tab.id}
-                  onPress={() => setActiveTab(tab.id)}
-                  activeOpacity={0.8}
-                  style={[
-                    styles.tabPill,
-                    {
-                      borderColor: isActive ? colors.tint : colors.border + '60',
-                      backgroundColor: isActive ? colors.tint : 'transparent',
-                    },
-                  ]}
-                >
-                  {!isActive && (
+          {/* Horizontal Navigation Tabs */}
+          <View style={styles.tabsSection}>
+            <ScrollView
+              ref={tabsScrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tabsContainer}
+            >
+              {TABS.map(tab => {
+                const isActive = activeTab === tab.id;
+                const Icon = tab.icon;
+
+                return (
+                  <TouchableOpacity
+                    key={tab.id}
+                    onPress={() => handleTabChange(tab.id)}
+                    activeOpacity={0.8}
+                    style={[
+                      styles.tabPill,
+                      {
+                        borderColor: isActive
+                          ? colors.tint
+                          : isDark
+                          ? 'rgba(255, 255, 255, 0.12)'
+                          : 'rgba(0, 0, 0, 0.08)',
+                        backgroundColor: 'transparent',
+                      },
+                    ]}
+                  >
                     <GlassView
                       glassEffectStyle="regular"
                       colorScheme={isDark ? 'dark' : 'light'}
                       style={StyleSheet.absoluteFill}
                     />
-                  )}
 
-                  <Icon
-                    size={16}
-                    color={isActive ? accentTextColor : colors.textSecondary}
-                    style={{ marginRight: 6 }}
-                  />
+                    {isActive && (
+                      <View
+                        style={[
+                          StyleSheet.absoluteFill,
+                          {
+                            backgroundColor: colors.tint,
+                            opacity: isDark ? 0.28 : 0.22,
+                          },
+                        ]}
+                      />
+                    )}
 
-                  <Text
-                    style={[
-                      styles.tabText,
-                      {
-                        color: isActive ? accentTextColor : colors.textSecondary,
-                        fontWeight: isActive ? '800' : '600',
-                      },
-                    ]}
-                  >
-                    {tab.label}
-                  </Text>
+                    <Icon
+                      size={16}
+                      color={isActive ? colors.tint : colors.textSecondary}
+                      style={{ marginRight: 6 }}
+                    />
 
-                  {tab.badge && tab.badge > 0 ? (
-                    <View style={styles.tabBadge}>
-                      <Text style={styles.tabBadgeText}>{tab.badge}</Text>
-                    </View>
-                  ) : null}
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+                    <Text
+                      style={[
+                        styles.tabText,
+                        {
+                          color: isActive ? colors.tint : colors.textSecondary,
+                          fontWeight: isActive ? '800' : '600',
+                        },
+                      ]}
+                    >
+                      {tab.label}
+                    </Text>
 
-        {/* Tab Content */}
-        {activeTab === 'feed' && <Feed onNavigateProfile={navigateToProfile} />}
-        {activeTab === 'leaderboard' && (
-          <Leaderboard onNavigateProfile={navigateToProfile} />
-        )}
-        {activeTab === 'friends' && (
-          <FriendsTab
-            onSwitchToSearch={() => setActiveTab('search')}
-            onNavigateProfile={navigateToProfile}
-          />
-        )}
-        {activeTab === 'squads' && (
-          <SquadsTab onNavigateProfile={navigateToProfile} />
-        )}
-        {activeTab === 'requests' && (
-          <RequestsTab onNavigateProfile={navigateToProfile} />
-        )}
-        {activeTab === 'search' && (
-          <SearchTab onNavigateProfile={navigateToProfile} />
-        )}
-      </Animated.ScrollView>
+                    {tab.badge && tab.badge > 0 ? (
+                      <View style={styles.tabBadge}>
+                        <Text style={styles.tabBadgeText}>{tab.badge}</Text>
+                      </View>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Tab Content */}
+          {activeTab === 'feed' && <Feed onNavigateProfile={navigateToProfile} />}
+          {activeTab === 'leaderboard' && (
+            <Leaderboard onNavigateProfile={navigateToProfile} />
+          )}
+          {activeTab === 'friends' && (
+            <FriendsTab
+              onSwitchToSearch={handleSwitchToSearch}
+              onNavigateProfile={navigateToProfile}
+            />
+          )}
+          {activeTab === 'squads' && (
+            <SquadsTab onNavigateProfile={navigateToProfile} />
+          )}
+          {activeTab === 'requests' && (
+            <RequestsTab onNavigateProfile={navigateToProfile} />
+          )}
+          {activeTab === 'search' && (
+            <SearchTab
+              onNavigateProfile={navigateToProfile}
+              onFocusInput={handleFocusSearch}
+            />
+          )}
+        </Animated.ScrollView>
+      </KeyboardAvoidingView>
 
       {/* MODALS */}
       <PrivacyModal

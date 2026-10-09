@@ -15,7 +15,13 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { SocialUserAvatar } from './SocialUserAvatar';
 import { getContrastTextColor } from '@/utils/routineHelpers';
 
-export function SearchTab({ onNavigateProfile }: { onNavigateProfile?: (userId: any) => void }) {
+export function SearchTab({
+  onNavigateProfile,
+  onFocusInput,
+}: {
+  onNavigateProfile?: (userId: any) => void;
+  onFocusInput?: () => void;
+}) {
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
@@ -73,6 +79,7 @@ export function SearchTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
         <TextInput
           value={query}
           onChangeText={setQuery}
+          onFocus={onFocusInput}
           onSubmitEditing={handleManualSearch}
           returnKeyType="search"
           placeholder="Buscar por nombre de usuario..."
