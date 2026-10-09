@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   Modal,
   TextInput,
   ActivityIndicator,
@@ -346,26 +347,53 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
       <View style={styles.topButtonsRow}>
         <TouchableOpacity
           onPress={() => setShowCreateModal(true)}
-          activeOpacity={0.85}
-          style={[styles.primaryActionBtn, { backgroundColor: colors.tint }]}
+          activeOpacity={0.8}
+          style={[
+            styles.actionBtn,
+            {
+              borderColor: colors.tint,
+            },
+          ]}
         >
-          <PlusCircle size={18} color={accentTextColor} style={{ marginRight: 6 }} />
-          <Text style={[styles.primaryActionText, { color: accentTextColor }]}>Crear Grupo</Text>
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: colors.tint,
+                opacity: isDark ? 0.3 : 0.22,
+              },
+            ]}
+          />
+          <PlusCircle size={18} color={colors.tint} style={{ marginRight: 6 }} />
+          <Text style={[styles.actionBtnText, { color: colors.tint, fontWeight: '800' }]}>
+            Crear Grupo
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => setShowJoinModal(true)}
           activeOpacity={0.8}
           style={[
-            styles.secondaryActionBtn,
+            styles.actionBtn,
             {
-              backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-              borderColor: colors.border,
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
           <Hash size={18} color={colors.text} style={{ marginRight: 6 }} />
-          <Text style={[styles.secondaryActionText, { color: colors.text }]}>Unirse a Grupo</Text>
+          <Text style={[styles.actionBtnText, { color: colors.text, fontWeight: '700' }]}>
+            Unirse a Grupo
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -386,11 +414,21 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
           <View
             style={[
               styles.emptyState,
-              { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' },
+              {
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                borderWidth: 1,
+                overflow: 'hidden',
+                backgroundColor: 'transparent',
+              },
             ]}
           >
-            <View style={[styles.emptyIconBox, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)' }]}>
-              <Shield size={32} color={colors.textSecondary} />
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={[styles.emptyIconBox, { backgroundColor: colors.tint + '18' }]}>
+              <Shield size={32} color={colors.tint} />
             </View>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
               No perteneces a ningún grupo
@@ -435,101 +473,173 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
       </View>
 
       {/* CREATE SQUAD MODAL */}
-      <Modal visible={showCreateModal} transparent animationType="slide" onRequestClose={() => setShowCreateModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCardWrapper}>
-            <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-            <View style={[styles.modalCard, { borderColor: colors.border }]}>
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: colors.text }]}>Crear Grupo</Text>
-                <TouchableOpacity onPress={() => setShowCreateModal(false)}>
-                  <X size={20} color={colors.textSecondary} />
+      <Modal visible={showCreateModal} transparent animationType="fade" onRequestClose={() => setShowCreateModal(false)}>
+        <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
+          <Pressable
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: 20,
+                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.2)',
+              },
+            ]}
+            onPress={() => setShowCreateModal(false)}
+          >
+            <Pressable onPress={e => e.stopPropagation()} style={styles.modalCardWrapper}>
+              <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+              <View style={[styles.modalCard, { borderColor: colors.border, backgroundColor: 'transparent' }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={[styles.modalTitle, { color: colors.text }]}>Crear Grupo</Text>
+                  <TouchableOpacity onPress={() => setShowCreateModal(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <X size={20} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Nombre del Grupo</Text>
+                <TextInput
+                  value={squadName}
+                  onChangeText={setSquadName}
+                  placeholder="Escribe el nombre..."
+                  placeholderTextColor={colors.textSecondary + '80'}
+                  style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
+                />
+
+                <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 12 }]}>Descripción (Opcional)</Text>
+                <TextInput
+                  value={squadDesc}
+                  onChangeText={setSquadDesc}
+                  placeholder="¿De qué trata este grupo?"
+                  placeholderTextColor={colors.textSecondary + '80'}
+                  style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
+                />
+
+                <TouchableOpacity
+                  onPress={handleCreateSquad}
+                  disabled={!squadName.trim() || isSubmitting}
+                  activeOpacity={0.85}
+                  style={[
+                    styles.modalSubmitBtn,
+                    {
+                      borderColor: colors.tint,
+                      opacity: !squadName.trim() || isSubmitting ? 0.5 : 1,
+                      overflow: 'hidden',
+                      backgroundColor: 'transparent',
+                      borderWidth: 1,
+                    },
+                  ]}
+                >
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View
+                    style={[
+                      StyleSheet.absoluteFill,
+                      {
+                        backgroundColor: colors.tint,
+                        opacity: isDark ? 0.35 : 0.25,
+                      },
+                    ]}
+                  />
+                  {isSubmitting ? (
+                    <ActivityIndicator size="small" color={colors.tint} />
+                  ) : (
+                    <Text style={[styles.modalSubmitText, { color: colors.tint, fontWeight: '800' }]}>Crear Grupo</Text>
+                  )}
                 </TouchableOpacity>
               </View>
-
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Nombre del Grupo</Text>
-              <TextInput
-                value={squadName}
-                onChangeText={setSquadName}
-                placeholder="Escribe el nombre..."
-                placeholderTextColor={colors.textSecondary + '80'}
-                style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
-              />
-
-              <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 12 }]}>Descripción (Opcional)</Text>
-              <TextInput
-                value={squadDesc}
-                onChangeText={setSquadDesc}
-                placeholder="¿De qué trata este grupo?"
-                placeholderTextColor={colors.textSecondary + '80'}
-                style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
-              />
-
-              <TouchableOpacity
-                onPress={handleCreateSquad}
-                disabled={!squadName.trim() || isSubmitting}
-                activeOpacity={0.85}
-                style={[styles.modalSubmitBtn, { backgroundColor: colors.tint, opacity: !squadName.trim() || isSubmitting ? 0.5 : 1 }]}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator size="small" color={accentTextColor} />
-                ) : (
-                  <Text style={[styles.modalSubmitText, { color: accentTextColor }]}>Crear Grupo</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+            </Pressable>
+          </Pressable>
+        </GlassView>
       </Modal>
 
       {/* JOIN SQUAD MODAL */}
-      <Modal visible={showJoinModal} transparent animationType="slide" onRequestClose={() => setShowJoinModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCardWrapper}>
-            <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-            <View style={[styles.modalCard, { borderColor: colors.border }]}>
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: colors.text }]}>Unirse a un Grupo</Text>
-                <TouchableOpacity onPress={() => setShowJoinModal(false)}>
-                  <X size={20} color={colors.textSecondary} />
+      <Modal visible={showJoinModal} transparent animationType="fade" onRequestClose={() => setShowJoinModal(false)}>
+        <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
+          <Pressable
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: 20,
+                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.2)',
+              },
+            ]}
+            onPress={() => setShowJoinModal(false)}
+          >
+            <Pressable onPress={e => e.stopPropagation()} style={styles.modalCardWrapper}>
+              <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+              <View style={[styles.modalCard, { borderColor: colors.border, backgroundColor: 'transparent' }]}>
+                <View style={styles.modalHeader}>
+                  <Text style={[styles.modalTitle, { color: colors.text }]}>Unirse a un Grupo</Text>
+                  <TouchableOpacity onPress={() => setShowJoinModal(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <X size={20} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Código de Invitación</Text>
+                <TextInput
+                  value={inviteCode}
+                  onChangeText={t => setInviteCode(t.toUpperCase())}
+                  placeholder="Ej: A1B2C3D4"
+                  placeholderTextColor={colors.textSecondary + '80'}
+                  autoCapitalize="characters"
+                  style={[
+                    styles.input,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                      textAlign: 'center',
+                      letterSpacing: 3,
+                      fontWeight: '800',
+                    },
+                  ]}
+                />
+
+                <TouchableOpacity
+                  onPress={handleJoinSquad}
+                  disabled={!inviteCode.trim() || isSubmitting}
+                  activeOpacity={0.85}
+                  style={[
+                    styles.modalSubmitBtn,
+                    {
+                      borderColor: colors.tint,
+                      opacity: !inviteCode.trim() || isSubmitting ? 0.5 : 1,
+                      overflow: 'hidden',
+                      backgroundColor: 'transparent',
+                      borderWidth: 1,
+                    },
+                  ]}
+                >
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View
+                    style={[
+                      StyleSheet.absoluteFill,
+                      {
+                        backgroundColor: colors.tint,
+                        opacity: isDark ? 0.35 : 0.25,
+                      },
+                    ]}
+                  />
+                  {isSubmitting ? (
+                    <ActivityIndicator size="small" color={colors.tint} />
+                  ) : (
+                    <Text style={[styles.modalSubmitText, { color: colors.tint, fontWeight: '800' }]}>Unirse</Text>
+                  )}
                 </TouchableOpacity>
               </View>
-
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Código de Invitación</Text>
-              <TextInput
-                value={inviteCode}
-                onChangeText={t => setInviteCode(t.toUpperCase())}
-                placeholder="Ej: A1B2C3D4"
-                placeholderTextColor={colors.textSecondary + '80'}
-                autoCapitalize="characters"
-                style={[
-                  styles.input,
-                  {
-                    color: colors.text,
-                    borderColor: colors.border,
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                    textAlign: 'center',
-                    letterSpacing: 3,
-                    fontWeight: '800',
-                  },
-                ]}
-              />
-
-              <TouchableOpacity
-                onPress={handleJoinSquad}
-                disabled={!inviteCode.trim() || isSubmitting}
-                activeOpacity={0.85}
-                style={[styles.modalSubmitBtn, { backgroundColor: colors.tint, opacity: !inviteCode.trim() || isSubmitting ? 0.5 : 1 }]}
-              >
-                {isSubmitting ? (
-                  <ActivityIndicator size="small" color={accentTextColor} />
-                ) : (
-                  <Text style={[styles.modalSubmitText, { color: accentTextColor }]}>Unirse</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+            </Pressable>
+          </Pressable>
+        </GlassView>
       </Modal>
     </View>
   );
@@ -545,19 +655,7 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 16,
   },
-  primaryActionBtn: {
-    flex: 1,
-    height: 48,
-    borderRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryActionText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  secondaryActionBtn: {
+  actionBtn: {
     flex: 1,
     height: 48,
     borderRadius: 24,
@@ -565,10 +663,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
   },
-  secondaryActionText: {
+  actionBtnText: {
     fontSize: 14,
-    fontWeight: '700',
   },
   card: {
     borderRadius: 28,

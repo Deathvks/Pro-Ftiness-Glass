@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Pressable, ActivityIndicator } from 'react-native';
 import { AlertTriangle, Trash2, LogOut } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
@@ -34,14 +34,26 @@ export function ConfirmationModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <View style={styles.overlay}>
-        <View style={styles.cardWrapper}>
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
-          <View style={[styles.card, { borderColor: colors.border }]}>
+      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
+        <Pressable
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 24,
+              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.2)',
+            },
+          ]}
+          onPress={onCancel}
+        >
+          <Pressable onPress={e => e.stopPropagation()} style={styles.cardWrapper}>
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={[styles.card, { borderColor: colors.border, backgroundColor: 'transparent' }]}>
             <View
               style={[
                 styles.iconBadge,
@@ -93,9 +105,10 @@ export function ConfirmationModal({
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </View>
-    </Modal>
+        </Pressable>
+      </Pressable>
+    </GlassView>
+  </Modal>
   );
 }
 
