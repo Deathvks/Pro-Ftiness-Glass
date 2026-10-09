@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Animated,
+  Alert,
 } from 'react-native';
 import {
   ShieldAlert,
@@ -23,7 +24,10 @@ import {
   Trash2,
   Globe,
   Users,
+  Sparkles,
+  Zap,
 } from 'lucide-react-native';
+import { WebView } from 'react-native-webview';
 import { GlassView } from 'expo-glass-effect';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -105,11 +109,11 @@ export function StoryTermsModal({
                 </View>
 
                 <View style={[styles.termsItem, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
-                  <Lock size={20} color="#a855f7" style={{ marginTop: 2 }} />
+                  <Sparkles size={20} color="#a855f7" style={{ marginTop: 2 }} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.itemTitle, { color: colors.text }]}>Responsabilidad</Text>
+                    <Text style={[styles.itemTitle, { color: colors.text }]}>Revisión y Moderación con IA</Text>
                     <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>
-                      No subas contenido ofensivo ni inapropiado. Respeta las normas de la comunidad.
+                      Cada imagen o vídeo es analizado automáticamente por nuestra <Text style={{ fontWeight: '700', color: colors.text }}>Inteligencia Artificial</Text> para proteger a la comunidad y bloquear contenido inapropiado o explícito (NSFW).
                     </Text>
                   </View>
                 </View>
@@ -190,7 +194,7 @@ export function UploadStoryModal({
 }: {
   visible: boolean;
   onClose: () => void;
-  onUpload: (fileData: any, privacy: string) => Promise<void>;
+  onUpload: (fileData: any, privacy: string, isHDR: boolean) => Promise<void>;
   isUploading: boolean;
 }) {
   const theme = useAppStore(state => state.theme) || 'oled';
@@ -198,11 +202,15 @@ export function UploadStoryModal({
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const [selectedAsset, setSelectedAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [privacy, setPrivacy] = useState<'friends' | 'public'>('friends');
+  const [isHDR, setIsHDR] = useState(false);
+  const [canUseHDR, setCanUseHDR] = useState(false);
 
   useEffect(() => {
     if (!visible) {
       setSelectedAsset(null);
       setPrivacy('friends');
+      setIsHDR(false);
+      setCanUseHDR(false);
     }
   }, [visible]);
 
@@ -221,7 +229,13 @@ export function UploadStoryModal({
         : await ImagePicker.launchImageLibraryAsync(options);
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setSelectedAsset(result.assets[0]);
+        const asset = result.assets[0];
+        if (asset.duration && asset.duration > 15) {
+          Alert.alert('Vídeo muy largo', 'El vídeo no puede durar más de 15 segundos.');
+          return;
+        }
+        setSelectedAsset(asset);
+        setCanUseHDR(true);
       }
     } catch (err) {
       console.error('Error selecting media:', err);
@@ -235,7 +249,7 @@ export function UploadStoryModal({
       name: selectedAsset.fileName || (selectedAsset.type === 'video' ? 'story.mp4' : 'story.jpg'),
       type: selectedAsset.mimeType || (selectedAsset.type === 'video' ? 'video/mp4' : 'image/jpeg'),
     };
-    await onUpload(fileData, privacy);
+    await onUpload(fileData, privacy, isHDR);
   };
 
   const accentTextColor = getContrastTextColor(colors.tint);
@@ -273,11 +287,20 @@ export function UploadStoryModal({
             {/* Media Preview or Picker Buttons */}
             {selectedAsset ? (
               <View style={styles.previewContainer}>
-                <Image
-                  source={{ uri: selectedAsset.uri }}
-                  style={styles.previewImage}
-                  resizeMode="cover"
-                />
+                {selectedAsset.type === 'video' ? (
+                  <View style={[styles.previewImage, { backgroundColor: '#000000', alignItems: 'center', justifyContent: 'center' }]}>
+                    <View style={{ padding: 14, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center' }}>
+                      <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '700' }}>▶ Vídeo Seleccionado</Text>
+                      <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, marginTop: 4 }}>Máximo 15 segundos</Text>
+                    </View>
+                  </View>
+                ) : (
+                  <Image
+                    source={{ uri: selectedAsset.uri }}
+                    style={styles.previewImage}
+                    resizeMode="cover"
+                  />
+                )}
                 <TouchableOpacity
                   onPress={() => setSelectedAsset(null)}
                   activeOpacity={0.8}
@@ -342,7 +365,24 @@ export function UploadStoryModal({
               </View>
             )}
 
-            {/* Privacy Selector */}
+            {/* AI Moderation Information Banner */}
+            <View
+              style={[
+                styles.aiNoticeBox,
+                {
+                  backgroundColor: isDark ? 'rgba(168, 85, 247, 0.12)' : 'rgba(168, 85, 247, 0.08)',
+                  borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
+                },
+              ]}
+            >
+              <Sparkles size={16} color="#a855f7" style={{ marginTop: 2, marginRight: 8 }} />
+              <Text style={[styles.aiNoticeText, { color: colors.textSecondary }]}>
+                <Text style={{ fontWeight: '700', color: colors.text }}>Revisión con IA: </Text>
+                El archivo se analiza automáticamente para verificar que no incluya material inapropiado (NSFW).
+              </Text>
+            </View>
+
+            {/* Privacy Selector & HDR */}
             <Text style={[styles.privacyLabel, { color: colors.textSecondary }]}>¿Quién puede verla?</Text>
             <View style={styles.privacyRow}>
               <TouchableOpacity
@@ -438,6 +478,55 @@ export function UploadStoryModal({
                   Todo el mundo
                 </Text>
               </TouchableOpacity>
+
+              {canUseHDR && (
+                <TouchableOpacity
+                  onPress={() => setIsHDR(!isHDR)}
+                  activeOpacity={0.8}
+                  style={[
+                    styles.privacyPill,
+                    {
+                      borderColor: isHDR ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                      overflow: 'hidden',
+                      backgroundColor: 'transparent',
+                    },
+                  ]}
+                >
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                  />
+                  {isHDR && (
+                    <View
+                      style={[
+                        StyleSheet.absoluteFill,
+                        {
+                          backgroundColor: colors.tint,
+                          opacity: isDark ? 0.35 : 0.25,
+                          borderRadius: 20,
+                        },
+                      ]}
+                    />
+                  )}
+                  <Zap
+                    size={16}
+                    color={isHDR ? colors.tint : colors.textSecondary}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    style={[
+                      styles.privacyText,
+                      {
+                        color: isHDR ? colors.tint : colors.textSecondary,
+                        fontWeight: isHDR ? '800' : '500',
+                      },
+                    ]}
+                  >
+                    HDR {isHDR ? 'ON' : 'OFF'}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Submit Button */}
@@ -473,7 +562,12 @@ export function UploadStoryModal({
                 ]}
               />
               {isUploading ? (
-                <ActivityIndicator size="small" color={colors.tint} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <ActivityIndicator size="small" color={colors.tint} />
+                  <Text style={[styles.primaryButtonText, { color: colors.tint, fontWeight: '800' }]}>
+                    Revisando con IA y publicando...
+                  </Text>
+                </View>
               ) : (
                 <Text style={[styles.primaryButtonText, { color: colors.tint, fontWeight: '800' }]}>
                   Compartir Historia
@@ -602,20 +696,50 @@ export function StoryViewerModal({
 
   const isLiked = currentStory?.isLiked || (Array.isArray(currentStory?.likes) && currentStory.likes.some((l: any) => String(l.userId || l.id) === String(userProfile?.id)));
   const likesCount = Array.isArray(currentStory?.likes) ? currentStory.likes.length : 0;
+  const isVideo =
+    currentStory?.type === 'video' ||
+    (Boolean(mediaUrl) && (mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.webm') || mediaUrl.endsWith('.mov')));
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.viewerContainer}>
         {/* Story Media */}
         {mediaUrl ? (
-          <Image
-            source={{ uri: mediaUrl }}
-            style={StyleSheet.absoluteFill}
-            resizeMode="cover"
-          />
+          isVideo ? (
+            <WebView
+              source={{
+                html: `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+                    <style>
+                      * { margin: 0; padding: 0; box-sizing: border-box; }
+                      body { background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; width: 100vw; }
+                      video { width: 100vw; height: 100vh; object-fit: cover; }
+                    </style>
+                  </head>
+                  <body>
+                    <video src="${mediaUrl}" autoplay loop playsinline muted></video>
+                  </body>
+                  </html>
+                `,
+              }}
+              style={StyleSheet.absoluteFill}
+              allowsInlineMediaPlayback={true}
+              mediaPlaybackRequiresUserAction={false}
+              scrollEnabled={false}
+            />
+          ) : (
+            <Image
+              source={{ uri: mediaUrl }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+            />
+          )
         ) : (
           <View style={[StyleSheet.absoluteFill, { backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center' }]}>
-            <Text style={{ color: '#9ca3af' }}>No se pudo cargar la imagen</Text>
+            <Text style={{ color: '#9ca3af' }}>No se pudo cargar el archivo</Text>
           </View>
         )}
 
@@ -1029,5 +1153,19 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontSize: 13,
     fontWeight: '700',
+  },
+  aiNoticeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
+    borderWidth: 1,
+    marginTop: 12,
+  },
+  aiNoticeText: {
+    fontSize: 12,
+    lineHeight: 16,
+    flex: 1,
   },
 });

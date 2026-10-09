@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { UserPlus, Check, X, Clock } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
@@ -22,8 +22,14 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
   const handleRespond = async (requestId: string | number, action: 'accept' | 'reject') => {
     try {
       await respondFriendRequest(requestId, action);
+      if (action === 'accept') {
+        Alert.alert('¡Aceptada! 🎉', 'Ahora sois amigos en la comunidad.');
+      } else {
+        Alert.alert('Rechazada', 'Solicitud de amistad rechazada.');
+      }
     } catch (e) {
       console.error(e);
+      Alert.alert('Error', 'No se pudo procesar la solicitud.');
     }
   };
 

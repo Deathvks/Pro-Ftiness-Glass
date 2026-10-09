@@ -7,31 +7,49 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { updateUserProfile } from '@/services/userService';
+
 export function PrivacyModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const theme = useAppStore(state => state.theme);
   const colors = useAppColors();
   const insets = useSafeAreaInsets();
+  const userProfile = useAppStore(state => state.userProfile);
   const [visibility, setVisibility] = useState('friends');
 
   useEffect(() => {
     if (visible) {
-      const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('globalWorkoutVisibility') : null;
-      if (saved) setVisibility(saved);
+      if (userProfile?.is_public_profile === true) {
+        setVisibility('public');
+      } else if (userProfile?.is_public_profile === false) {
+        setVisibility('private');
+      } else {
+        const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('globalWorkoutVisibility') : null;
+        if (saved) setVisibility(saved);
+      }
     }
-  }, [visible]);
+  }, [visible, userProfile?.is_public_profile]);
 
-  const handleSave = (val: string) => {
+  const handleSave = async (val: string) => {
     setVisibility(val);
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('globalWorkoutVisibility', val);
+    }
+    const isPublic = val === 'public';
+    try {
+      await updateUserProfile({ is_public_profile: isPublic });
+      useAppStore.setState((state: any) => ({
+        userProfile: state.userProfile ? { ...state.userProfile, is_public_profile: isPublic } : state.userProfile,
+      }));
+    } catch (e) {
+      console.error('Error updating privacy profile:', e);
     }
     setTimeout(() => onClose(), 200);
   };
 
   const options = [
-    { id: 'private', title: 'No subir', desc: 'Tus entrenamientos no aparecerán en el muro.', icon: Lock },
-    { id: 'friends', title: 'Solo Amigos', desc: 'Tus amigos agregados verán tu actividad.', icon: Users },
-    { id: 'public', title: 'Todo el mundo', desc: 'Cualquier usuario podrá ver tus entrenamientos.', icon: Globe },
+    { id: 'private', title: 'Perfil Privado', desc: 'Solo tus amigos ven tu actividad. Oculto en el ranking global.', icon: Lock },
+    { id: 'friends', title: 'Solo Amigos', desc: 'Tus entrenamientos solo son visibles para amigos agregados.', icon: Users },
+    { id: 'public', title: 'Perfil Público', desc: 'Apareces en el ranking global y cualquier atleta puede ver tu perfil.', icon: Globe },
   ];
 
   return (

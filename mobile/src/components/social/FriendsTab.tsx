@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Users, UserX, ChevronLeft, ChevronRight, Search } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import { GlassButton } from '@/components/ui/GlassButton';
@@ -54,8 +54,10 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
     try {
       await removeFriend(deleteModal.friendId);
       setDeleteModal({ visible: false, friendId: null });
+      Alert.alert('Amigo eliminado', 'El usuario ha sido eliminado de tu lista de amigos.');
     } catch (e) {
       console.error(e);
+      Alert.alert('Error', 'No se pudo eliminar al amigo.');
     } finally {
       setIsDeleting(false);
     }

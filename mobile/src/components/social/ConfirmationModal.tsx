@@ -53,7 +53,7 @@ export function ConfirmationModal({
               colorScheme={isDark ? 'dark' : 'light'}
               style={StyleSheet.absoluteFill}
             />
-            <View style={[styles.card, { borderColor: colors.border, backgroundColor: 'transparent' }]}>
+            <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: 'transparent' }]}>
             <View
               style={[
                 styles.iconBadge,
@@ -81,15 +81,33 @@ export function ConfirmationModal({
                 style={[
                   styles.confirmBtn,
                   {
-                    backgroundColor: isDestructive ? '#ef4444' : colors.tint,
+                    borderColor: isDestructive ? '#ef4444' : colors.tint,
+                    borderWidth: 1,
+                    overflow: 'hidden',
+                    backgroundColor: 'transparent',
                     opacity: isLoading ? 0.6 : 1,
                   },
                 ]}
               >
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                />
+                <View
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      backgroundColor: isDestructive ? '#ef4444' : colors.tint,
+                      opacity: isDark ? 0.35 : 0.25,
+                      borderRadius: 20,
+                    },
+                  ]}
+                />
                 {isLoading ? (
-                  <ActivityIndicator size="small" color="#ffffff" />
+                  <ActivityIndicator size="small" color={isDestructive ? '#ef4444' : colors.tint} />
                 ) : (
-                  <Text style={styles.confirmText}>{confirmText}</Text>
+                  <Text style={[styles.confirmText, { color: isDestructive ? '#ef4444' : colors.tint }]}>{confirmText}</Text>
                 )}
               </TouchableOpacity>
 
@@ -97,8 +115,22 @@ export function ConfirmationModal({
                 onPress={onCancel}
                 disabled={isLoading}
                 activeOpacity={0.7}
-                style={styles.cancelBtn}
+                style={[
+                  styles.cancelBtn,
+                  {
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                    borderWidth: 1,
+                    borderRadius: 20,
+                    overflow: 'hidden',
+                    backgroundColor: 'transparent',
+                  },
+                ]}
               >
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                />
                 <Text style={[styles.cancelText, { color: colors.textSecondary }]}>
                   {cancelText}
                 </Text>

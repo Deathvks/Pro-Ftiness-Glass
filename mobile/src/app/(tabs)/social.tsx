@@ -140,18 +140,42 @@ export default function SocialScreen() {
     }
   };
 
-  const handleUploadStory = async (fileData: any, privacy: string) => {
+  const handleUploadStory = async (fileData: any, privacy: string, isHDR: boolean = false) => {
     setIsUploadingStory(true);
     try {
-      const res = await uploadStory(fileData, privacy, false);
+      const res = await uploadStory(fileData, privacy, isHDR);
       if (res && res.success) {
         setShowUploadModal(false);
-        Alert.alert('¡Éxito!', 'Historia compartida correctamente');
+        Alert.alert('¡Publicada! 🎉', 'Tu historia ha sido revisada por la IA y compartida con éxito.');
       } else {
-        Alert.alert('Error', res?.error || 'No se pudo subir la historia');
+        const errorMsg = res?.error || 'No se pudo subir la historia';
+        if (
+          errorMsg.toLowerCase().includes('inapropiado') ||
+          errorMsg.toLowerCase().includes('nsfw') ||
+          errorMsg.toLowerCase().includes('rechazada')
+        ) {
+          Alert.alert(
+            'Contenido Rechazado por IA ⚠️',
+            'Nuestra inteligencia artificial detectó contenido no permitido (NSFW). Por favor, comparte contenido adecuado a las normas comunitarias.'
+          );
+        } else {
+          Alert.alert('Error al subir historia', errorMsg);
+        }
       }
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Error al subir historia');
+      const errorMsg = err.message || 'Error al subir historia';
+      if (
+        errorMsg.toLowerCase().includes('inapropiado') ||
+        errorMsg.toLowerCase().includes('nsfw') ||
+        errorMsg.toLowerCase().includes('rechazada')
+      ) {
+        Alert.alert(
+          'Contenido Rechazado por IA ⚠️',
+          'Nuestra inteligencia artificial detectó contenido no permitido (NSFW). Por favor, comparte contenido adecuado a las normas comunitarias.'
+        );
+      } else {
+        Alert.alert('Error', errorMsg);
+      }
     } finally {
       setIsUploadingStory(false);
     }
@@ -237,7 +261,6 @@ export default function SocialScreen() {
         >
           {/* Page Subtitle Header */}
           <View style={styles.header}>
-            <Text style={[styles.mainTitle, { color: colors.text }]}>Comunidad</Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               Conecta y compite con otros atletas
             </Text>

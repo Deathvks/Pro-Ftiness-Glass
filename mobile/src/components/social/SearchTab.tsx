@@ -60,10 +60,13 @@ export function SearchTab({
     try {
       const ok = await sendFriendRequest(targetUserId);
       if (ok) {
-        Alert.alert('Éxito', 'Solicitud de amistad enviada');
+        Alert.alert('¡Enviada! 🎉', 'Solicitud de amistad enviada correctamente.');
+      } else {
+        Alert.alert('Error', 'No se pudo enviar la solicitud de amistad.');
       }
     } catch (e) {
       console.error(e);
+      Alert.alert('Error', 'Ocurrió un error al enviar la solicitud.');
     }
   };
 
