@@ -117,15 +117,56 @@ export function StoryTermsModal({
 
               <TouchableOpacity
                 onPress={onAccept}
-                activeOpacity={0.85}
-                style={[styles.primaryButton, { backgroundColor: colors.tint }]}
+                activeOpacity={0.8}
+                style={[
+                  styles.primaryButton,
+                  {
+                    borderColor: colors.tint,
+                    borderWidth: 1,
+                    overflow: 'hidden',
+                    backgroundColor: 'transparent',
+                  },
+                ]}
               >
-                <Text style={[styles.primaryButtonText, { color: accentTextColor }]}>
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                />
+                <View
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      backgroundColor: colors.tint,
+                      opacity: isDark ? 0.35 : 0.25,
+                      borderRadius: 20,
+                    },
+                  ]}
+                />
+                <Text style={[styles.primaryButtonText, { color: colors.tint, fontWeight: '800' }]}>
                   Aceptar y Continuar
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={onReject} activeOpacity={0.7} style={styles.secondaryButton}>
+              <TouchableOpacity
+                onPress={onReject}
+                activeOpacity={0.7}
+                style={[
+                  styles.secondaryButton,
+                  {
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                    borderWidth: 1,
+                    borderRadius: 20,
+                    overflow: 'hidden',
+                    backgroundColor: 'transparent',
+                  },
+                ]}
+              >
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                />
                 <Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>
                   Cancelar
                 </Text>
@@ -239,9 +280,15 @@ export function UploadStoryModal({
                 />
                 <TouchableOpacity
                   onPress={() => setSelectedAsset(null)}
+                  activeOpacity={0.8}
                   style={styles.changeMediaBtn}
                 >
-                  <X size={16} color="#ffffff" />
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme="dark"
+                    style={[StyleSheet.absoluteFill, { borderRadius: 14 }]}
+                  />
+                  <X size={15} color="#ffffff" />
                   <Text style={styles.changeMediaText}>Cambiar</Text>
                 </TouchableOpacity>
               </View>
@@ -250,18 +297,46 @@ export function UploadStoryModal({
                 <TouchableOpacity
                   onPress={() => handlePickMedia(false)}
                   activeOpacity={0.8}
-                  style={[styles.pickButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}
+                  style={[
+                    styles.pickButton,
+                    {
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                      overflow: 'hidden',
+                      backgroundColor: 'transparent',
+                    },
+                  ]}
                 >
-                  <ImageIcon size={28} color={colors.tint} />
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                  />
+                  <View style={[styles.pickIconBox, { backgroundColor: colors.tint + '18' }]}>
+                    <ImageIcon size={26} color={colors.tint} />
+                  </View>
                   <Text style={[styles.pickButtonText, { color: colors.text }]}>Galería</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={() => handlePickMedia(true)}
                   activeOpacity={0.8}
-                  style={[styles.pickButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}
+                  style={[
+                    styles.pickButton,
+                    {
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                      overflow: 'hidden',
+                      backgroundColor: 'transparent',
+                    },
+                  ]}
                 >
-                  <Camera size={28} color={colors.tint} />
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                  />
+                  <View style={[styles.pickIconBox, { backgroundColor: colors.tint + '18' }]}>
+                    <Camera size={26} color={colors.tint} />
+                  </View>
                   <Text style={[styles.pickButtonText, { color: colors.text }]}>Cámara</Text>
                 </TouchableOpacity>
               </View>
@@ -276,18 +351,40 @@ export function UploadStoryModal({
                 style={[
                   styles.privacyPill,
                   {
-                    backgroundColor: privacy === 'friends' ? colors.tint : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
                     borderColor: privacy === 'friends' ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                    overflow: 'hidden',
+                    backgroundColor: 'transparent',
                   },
                 ]}
               >
-                <Users size={16} color={privacy === 'friends' ? accentTextColor : colors.textSecondary} style={{ marginRight: 6 }} />
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                />
+                {privacy === 'friends' && (
+                  <View
+                    style={[
+                      StyleSheet.absoluteFill,
+                      {
+                        backgroundColor: colors.tint,
+                        opacity: isDark ? 0.35 : 0.25,
+                        borderRadius: 20,
+                      },
+                    ]}
+                  />
+                )}
+                <Users
+                  size={16}
+                  color={privacy === 'friends' ? colors.tint : colors.textSecondary}
+                  style={{ marginRight: 6 }}
+                />
                 <Text
                   style={[
                     styles.privacyText,
                     {
-                      color: privacy === 'friends' ? accentTextColor : colors.textSecondary,
-                      fontWeight: privacy === 'friends' ? '700' : '500',
+                      color: privacy === 'friends' ? colors.tint : colors.textSecondary,
+                      fontWeight: privacy === 'friends' ? '800' : '500',
                     },
                   ]}
                 >
@@ -301,18 +398,40 @@ export function UploadStoryModal({
                 style={[
                   styles.privacyPill,
                   {
-                    backgroundColor: privacy === 'public' ? colors.tint : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
                     borderColor: privacy === 'public' ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                    overflow: 'hidden',
+                    backgroundColor: 'transparent',
                   },
                 ]}
               >
-                <Globe size={16} color={privacy === 'public' ? accentTextColor : colors.textSecondary} style={{ marginRight: 6 }} />
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                />
+                {privacy === 'public' && (
+                  <View
+                    style={[
+                      StyleSheet.absoluteFill,
+                      {
+                        backgroundColor: colors.tint,
+                        opacity: isDark ? 0.35 : 0.25,
+                        borderRadius: 20,
+                      },
+                    ]}
+                  />
+                )}
+                <Globe
+                  size={16}
+                  color={privacy === 'public' ? colors.tint : colors.textSecondary}
+                  style={{ marginRight: 6 }}
+                />
                 <Text
                   style={[
                     styles.privacyText,
                     {
-                      color: privacy === 'public' ? accentTextColor : colors.textSecondary,
-                      fontWeight: privacy === 'public' ? '700' : '500',
+                      color: privacy === 'public' ? colors.tint : colors.textSecondary,
+                      fontWeight: privacy === 'public' ? '800' : '500',
                     },
                   ]}
                 >
@@ -329,16 +448,34 @@ export function UploadStoryModal({
               style={[
                 styles.primaryButton,
                 {
-                  backgroundColor: colors.tint,
-                  opacity: !selectedAsset || isUploading ? 0.5 : 1,
-                  marginTop: 16,
+                  borderColor: colors.tint,
+                  borderWidth: 1,
+                  overflow: 'hidden',
+                  backgroundColor: 'transparent',
+                  opacity: !selectedAsset || isUploading ? 0.45 : 1,
+                  marginTop: 18,
                 },
               ]}
             >
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+              />
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  {
+                    backgroundColor: colors.tint,
+                    opacity: isDark ? 0.35 : 0.25,
+                    borderRadius: 20,
+                  },
+                ]}
+              />
               {isUploading ? (
-                <ActivityIndicator size="small" color={accentTextColor} />
+                <ActivityIndicator size="small" color={colors.tint} />
               ) : (
-                <Text style={[styles.primaryButtonText, { color: accentTextColor }]}>
+                <Text style={[styles.primaryButtonText, { color: colors.tint, fontWeight: '800' }]}>
                   Compartir Historia
                 </Text>
               )}
@@ -538,6 +675,21 @@ export function StoryViewerModal({
               activeOpacity={0.8}
               style={styles.deleteStoryBtn}
             >
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme="dark"
+                style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+              />
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  {
+                    backgroundColor: '#ef4444',
+                    opacity: 0.25,
+                    borderRadius: 24,
+                  },
+                ]}
+              />
               <Trash2 size={20} color="#ef4444" />
               <Text style={styles.deleteStoryText}>Eliminar historia</Text>
             </TouchableOpacity>
@@ -547,9 +699,30 @@ export function StoryViewerModal({
               activeOpacity={0.8}
               style={[
                 styles.likeStoryBtn,
-                { backgroundColor: isLiked ? 'rgba(239, 68, 68, 0.25)' : 'rgba(0, 0, 0, 0.4)' },
+                {
+                  borderColor: isLiked ? '#ef4444' : 'rgba(255, 255, 255, 0.2)',
+                  overflow: 'hidden',
+                  backgroundColor: 'transparent',
+                },
               ]}
             >
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme="dark"
+                style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+              />
+              {isLiked && (
+                <View
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      backgroundColor: '#ef4444',
+                      opacity: 0.25,
+                      borderRadius: 24,
+                    },
+                  ]}
+                />
+              )}
               <Heart
                 size={22}
                 color={isLiked ? '#ef4444' : '#ffffff'}
@@ -684,12 +857,19 @@ const styles = StyleSheet.create({
   },
   pickButton: {
     flex: 1,
-    height: 100,
+    height: 104,
     borderRadius: 20,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
+  },
+  pickIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pickButtonText: {
     fontSize: 14,
@@ -710,13 +890,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     right: 10,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   changeMediaText: {
     color: '#ffffff',
@@ -823,6 +1005,8 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
   },
   likeStoryCount: {
     color: '#ffffff',
@@ -833,12 +1017,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 24,
     borderWidth: 1,
     borderColor: '#ef4444',
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
   },
   deleteStoryText: {
     color: '#ef4444',
