@@ -5,7 +5,8 @@ import { BlurView } from 'expo-blur';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { Sparkles, UserPlus, Info, ArrowRight, CheckCircle2, Eye, EyeOff, Mail } from 'lucide-react-native';
 import { FontAwesome5, FontAwesome6 } from '@expo/vector-icons';
-import { useTheme } from '@/hooks/use-theme';
+import { useAppColors } from '@/hooks/useAppColors';
+import { getContrastColor } from '@/utils/colorUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import * as WebBrowser from 'expo-web-browser';
@@ -105,7 +106,10 @@ export default function Register() {
   const handleGithubLogin = useAppStore(state => state.handleGithubLogin);
 
   const router = useRouter();
-  const theme = useTheme();
+  const colors = useAppColors();
+  const theme = colors;
+  const currentStoreTheme = useAppStore(state => state.theme);
+  const contrastColor = getContrastColor(theme.tint, currentStoreTheme);
   const colorScheme = useDeviceColorScheme();
   const blurTint = colorScheme === 'light' ? 'light' : 'dark';
   const insets = useSafeAreaInsets();
@@ -293,7 +297,7 @@ export default function Register() {
           <>
             <View style={styles.headerTextContainer}>
               <View style={{ width: 64, height: 64, backgroundColor: theme.tint, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                <Mail color={theme.background} size={32} />
+                <Mail color={contrastColor} size={32} />
               </View>
               <Text style={[styles.title, { color: theme.text, fontSize: 32, marginBottom: 8 }]}>Verificar Email</Text>
               <Text style={[styles.subtitle, { color: theme.textSecondary, paddingHorizontal: 20 }]}>
@@ -332,22 +336,31 @@ export default function Register() {
                         onBlur={() => setFocusedInput(null)}
                         keyboardType='number-pad'
                         maxLength={1}
+                        selectionColor={theme.tint}
                       />
                     ))}
                   </View>
 
-                  <GlassButton
-                    theme={colorScheme}
-                    color={theme.tint}
-                    style={[styles.loginButton, { marginTop: 12, opacity: code.some(d => d === '') ? 0.7 : 1 }]}
+                  <TouchableOpacity 
+                    style={[
+                      styles.loginButton, 
+                      { 
+                        backgroundColor: theme.tint,
+                        shadowColor: theme.tint,
+                        marginTop: 12, 
+                        opacity: code.some(d => d === '') || isLoading ? 0.7 : 1 
+                      }
+                    ]}
                     onPress={handleVerifySubmit}
+                    disabled={isLoading || code.some(d => d === '')}
+                    activeOpacity={0.85}
                   >
                     {isLoading ? (
-                      <ActivityIndicator color="#0f172a" />
+                      <ActivityIndicator color={contrastColor} />
                     ) : (
-                      <Text style={styles.loginButtonText}>Verificar Código</Text>
+                      <Text style={[styles.loginButtonText, { color: contrastColor }]}>Verificar Código</Text>
                     )}
-                  </GlassButton>
+                  </TouchableOpacity>
 
                   <View style={[styles.footer, { marginTop: 24 }]}>
                     <Text style={[styles.footerText, { color: theme.textSecondary }]}>¿No has recibido el código? </Text>
@@ -510,21 +523,28 @@ export default function Register() {
                   </View>
 
                   {/* SUBMIT BUTTON */}
-                  <GlassButton
-                    theme={colorScheme}
-                    color={theme.tint}
-                    style={styles.loginButton}
+                  <TouchableOpacity
+                    style={[
+                      styles.loginButton,
+                      {
+                        backgroundColor: theme.tint,
+                        shadowColor: theme.tint,
+                        opacity: isLoading ? 0.7 : 1,
+                      }
+                    ]}
                     onPress={handleRegisterSubmit}
+                    disabled={isLoading}
+                    activeOpacity={0.85}
                   >
                     {isLoading ? (
-                      <ActivityIndicator color="#0f172a" />
+                      <ActivityIndicator color={contrastColor} />
                     ) : (
                       <>
-                        <UserPlus color="#0f172a" size={18} style={{ marginRight: 8 }} />
-                        <Text style={styles.loginButtonText}>Registrarse</Text>
+                        <UserPlus color={contrastColor} size={18} style={{ marginRight: 8 }} />
+                        <Text style={[styles.loginButtonText, { color: contrastColor }]}>Registrarse</Text>
                       </>
                     )}
-                  </GlassButton>
+                  </TouchableOpacity>
 
                   {/* SOCIAL BUTTONS */}
                   <View style={styles.socialContainer}>
@@ -691,7 +711,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   loginButtonText: {
-    color: '#0f172a',
     fontSize: 16,
     fontWeight: '700',
   },

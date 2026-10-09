@@ -30,12 +30,14 @@ export default function RootLayout() {
       
       const token = localStorage.getItem('pro_fitness_token');
       const savedTheme = localStorage.getItem('theme');
+      const savedAccent = localStorage.getItem('accent');
       
-      if (token || savedTheme) {
+      if (token || savedTheme || savedAccent) {
         useAppStore.setState({ 
           isAuthenticated: !!token, 
           token: token || null,
-          ...(savedTheme ? { theme: savedTheme } : {})
+          ...(savedTheme ? { theme: savedTheme } : {}),
+          ...(savedAccent ? { accent: savedAccent } : {})
         });
       }
 

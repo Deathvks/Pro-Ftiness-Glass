@@ -3,7 +3,9 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingVi
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Dumbbell, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react-native';
-import { useTheme } from '@/hooks/use-theme';
+import { useAppColors } from '@/hooks/useAppColors';
+import { getContrastColor } from '@/utils/colorUtils';
+import useAppStore from '@/store/useAppStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { forgotPassword } from '@/services/authService';
@@ -14,7 +16,10 @@ export default function ForgotPassword() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   
   const router = useRouter();
-  const theme = useTheme();
+  const colors = useAppColors();
+  const theme = colors;
+  const currentStoreTheme = useAppStore(state => state.theme);
+  const contrastColor = getContrastColor(theme.tint, currentStoreTheme);
   const insets = useSafeAreaInsets();
   
   const colorScheme = useDeviceColorScheme();
@@ -93,11 +98,11 @@ export default function ForgotPassword() {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#0f172a" />
+                  <ActivityIndicator color={contrastColor} />
                 ) : (
                   <>
-                    <Mail color="#0f172a" size={20} style={{ marginRight: 8 }} />
-                    <Text style={styles.submitButtonText}>Enviar Enlace</Text>
+                    <Mail color={contrastColor} size={20} style={{ marginRight: 8 }} />
+                    <Text style={[styles.submitButtonText, { color: contrastColor }]}>Enviar Enlace</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -192,7 +197,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   submitButtonText: {
-    color: '#0f172a',
     fontSize: 16,
     fontWeight: 'bold',
   },
