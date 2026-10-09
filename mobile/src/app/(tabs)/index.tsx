@@ -295,10 +295,10 @@ export default function Dashboard() {
                   borderColor: colors.border, 
                   borderWidth: 1, 
                   borderRadius: 28, 
-                  padding: 18, 
+                  padding: 16, 
                   flexDirection: 'row', 
                   alignItems: 'center', 
-                  gap: 14, 
+                  gap: 12, 
                   minHeight: 88, 
                   opacity: canOpenWeeklyRecap ? 1 : 0.75,
                   shadowColor: '#000', 
@@ -324,13 +324,20 @@ export default function Dashboard() {
                 </View>
                 <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 13, fontWeight: '800', color: colors.text }}>Resumen Semanal</Text>
-                    <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textSecondary, marginTop: 2 }} numberOfLines={1}>
-                        {!isWeeklyRecapUnlocked 
-                          ? `disponible en: ${timeUntilSunday}`
-                          : (!hasWeeklyData 
-                            ? 'Sin actividad reciente' 
-                            : 'Mira tus logros visuales')}
-                    </Text>
+                    {!isWeeklyRecapUnlocked ? (
+                      <View style={{ marginTop: 2 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textSecondary }}>Disponible en:</Text>
+                        <Text style={{ fontSize: 10, fontWeight: '700', color: colors.tint, marginTop: 1 }} numberOfLines={2}>
+                          {timeUntilSunday}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textSecondary, marginTop: 2 }} numberOfLines={2}>
+                        {!hasWeeklyData 
+                          ? 'Sin actividad reciente' 
+                          : 'Mira tus logros visuales'}
+                      </Text>
+                    )}
                 </View>
             </TouchableOpacity>
 
@@ -344,10 +351,10 @@ export default function Dashboard() {
                   borderColor: colors.border, 
                   borderWidth: 1, 
                   borderRadius: 28, 
-                  padding: 18, 
+                  padding: 16, 
                   flexDirection: 'row', 
                   alignItems: 'center', 
-                  gap: 14, 
+                  gap: 12, 
                   minHeight: 88, 
                   opacity: latestPRs.length > 0 ? 1 : 0.75,
                   shadowColor: '#000', 
@@ -371,7 +378,7 @@ export default function Dashboard() {
                     <Text style={{ fontSize: 13, fontWeight: '800', color: colors.text }}>
                         {latestPRs.length > 1 ? `¡${latestPRs.length} Nuevos Récords!` : 'Último Récord'}
                     </Text>
-                    <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textSecondary, marginTop: 2 }} numberOfLines={1}>
+                    <Text style={{ fontSize: 10, fontWeight: '600', color: colors.textSecondary, marginTop: 2 }} numberOfLines={2}>
                         {latestPRs.length > 1 
                           ? 'Pulsa para verlos todos'
                           : (latestPRs.length === 1 
