@@ -22,6 +22,8 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
   const userProfile = useAppStore(state => state.userProfile || (state as any).user);
   const isAdmin = userProfile?.role === 'admin';
 
+  const isDark = !['light', 'ocean', 'desert'].includes(theme);
+
   const tabs: { key: TabKey; label: string; icon: any }[] = [
     { key: 'myRoutines', label: 'Mis Rutinas', icon: BookCopy },
     ...(isAdmin ? [{ key: 'explore' as TabKey, label: 'Explorar', icon: Compass }] : []),
@@ -47,7 +49,7 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
             color={isActive ? accentColor : undefined}
             style={[
               styles.tab, 
-              { borderColor: isActive ? accentColor : colors.border + '60' }
+              { borderColor: isActive ? accentColor : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)') }
             ]}
           >
             <Icon 
@@ -81,7 +83,7 @@ export function RoutinesTabs({ activeTab, onChangeTab, onQuickCardio }: Routines
         color={activeTab === 'quickCardio' ? accentColor : undefined}
         style={[
           styles.tab, 
-          { borderColor: activeTab === 'quickCardio' ? accentColor : colors.border + '60' }
+          { borderColor: activeTab === 'quickCardio' ? accentColor : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)') }
         ]}
       >
         <Flame 

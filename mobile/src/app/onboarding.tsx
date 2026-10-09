@@ -85,7 +85,7 @@ const BigOptionButton = ({ selected, onPress, title, desc, icon: Icon, colors, c
     theme={colorScheme}
     color={undefined}
     onPress={onPress}
-    style={[styles.bigOptionBtn, { marginBottom: 16, borderColor: selected ? colors.tint : colors.border + '60' }]}
+    style={[styles.bigOptionBtn, { marginBottom: 16, borderColor: selected ? colors.tint : (colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)') }]}
   >
       {selected && (
         <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: colorScheme === 'light' ? 0.2 : 0.3 }]} />
@@ -228,7 +228,7 @@ export default function Onboarding() {
                 theme={colorScheme}
                 color={formData.gender === g ? colors.tint : undefined}
                 onPress={() => setFormData({ ...formData, gender: g })}
-                style={[styles.genderBtn, { flex: 1, borderColor: formData.gender === g ? colors.tint : colors.border + '60' }]}
+                style={[styles.genderBtn, { flex: 1, borderColor: formData.gender === g ? colors.tint : (colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)') }]}
               >
                   <User size={32} strokeWidth={formData.gender === g ? 3 : 2} color={formData.gender === g ? '#fff' : colors.textSecondary} style={{ marginBottom: 16 }} />
                   <Text style={{ color: formData.gender === g ? '#fff' : colors.text, fontSize: 18, fontWeight: 'bold' }}>
@@ -274,7 +274,7 @@ export default function Onboarding() {
               />
             </View>
 
-            <View style={{ height: 1, width: '100%', backgroundColor: colors.border + '40' }} />
+            <View style={{ height: 1, width: '100%', backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' }} />
 
             <View style={{ alignItems: 'center' }}>
               <View style={[styles.badge, { backgroundColor: colors.tint + '20' }]}>
@@ -328,7 +328,7 @@ export default function Onboarding() {
           </View>
 
           <View style={{ width: '100%', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: colorScheme === 'light' ? 0.15 : 0, shadowRadius: 20, elevation: colorScheme === 'light' ? 5 : 0 }}>
-            <BlurView intensity={colorScheme === 'light' ? 80 : 40} tint={blurTint} style={[styles.summaryCard, { borderColor: colors.border + '60', backgroundColor: colorScheme === 'light' ? 'rgba(255,255,255,0.6)' : 'transparent' }]}>
+            <BlurView intensity={colorScheme === 'light' ? 80 : 40} tint={blurTint} style={[styles.summaryCard, { borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: colorScheme === 'light' ? 'rgba(255,255,255,0.6)' : 'transparent' }]}>
             <TouchableOpacity onPress={() => { setDirection('left'); setStep(1); }} style={styles.summaryRow}>
               <View style={{ alignItems: 'center', flex: 1 }}>
                 <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>PERFIL</Text>
@@ -337,7 +337,7 @@ export default function Onboarding() {
               <Edit size={18} color={getContrastColor(colors.tint, theme)} style={{ position: 'absolute', right: 24 }} />
             </TouchableOpacity>
             
-            <View style={{ height: 1, backgroundColor: colors.border + '40' }} />
+            <View style={{ height: 1, backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' }} />
             
             <TouchableOpacity onPress={() => { setDirection('left'); setStep(2); }} style={styles.summaryRow}>
               <View style={{ alignItems: 'center', flex: 1 }}>
@@ -347,7 +347,7 @@ export default function Onboarding() {
               <Edit size={18} color={getContrastColor(colors.tint, theme)} style={{ position: 'absolute', right: 24 }} />
             </TouchableOpacity>
 
-            <View style={{ height: 1, backgroundColor: colors.border + '40' }} />
+            <View style={{ height: 1, backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' }} />
             
             <TouchableOpacity onPress={() => { setDirection('left'); setStep(3); }} style={styles.summaryRow}>
               <View style={{ alignItems: 'center', flex: 1 }}>
@@ -357,7 +357,7 @@ export default function Onboarding() {
               <Edit size={18} color={getContrastColor(colors.tint, theme)} style={{ position: 'absolute', right: 24 }} />
             </TouchableOpacity>
 
-            <View style={{ height: 1, backgroundColor: colors.border + '40' }} />
+            <View style={{ height: 1, backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' }} />
             
             <TouchableOpacity onPress={() => { setDirection('left'); setStep(4); }} style={styles.summaryRow}>
               <View style={{ alignItems: 'center', flex: 1 }}>

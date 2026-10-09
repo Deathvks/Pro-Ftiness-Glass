@@ -71,9 +71,9 @@ export function StoryTermsModal({
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFill}
+              style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
             />
-            <View style={[styles.termsCard, { borderColor: colors.border, backgroundColor: 'transparent' }]}>
+            <View style={[styles.termsCard, { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: 'transparent' }]}>
               <View style={[styles.shieldIconBox, { backgroundColor: colors.tint + '15', borderColor: colors.tint + '30' }]}>
                 <ShieldAlert size={34} color={colors.tint} />
               </View>
@@ -218,9 +218,9 @@ export function UploadStoryModal({
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFill}
+              style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
             />
-            <View style={[styles.uploadCard, { borderColor: colors.border, backgroundColor: 'transparent' }]}>
+            <View style={[styles.uploadCard, { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: 'transparent' }]}>
               {/* Header */}
               <View style={styles.uploadHeader}>
                 <Text style={[styles.uploadTitle, { color: colors.text }]}>Compartir Historia</Text>
@@ -250,7 +250,7 @@ export function UploadStoryModal({
                 <TouchableOpacity
                   onPress={() => handlePickMedia(false)}
                   activeOpacity={0.8}
-                  style={[styles.pickButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderColor: colors.border }]}
+                  style={[styles.pickButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}
                 >
                   <ImageIcon size={28} color={colors.tint} />
                   <Text style={[styles.pickButtonText, { color: colors.text }]}>Galería</Text>
@@ -259,7 +259,7 @@ export function UploadStoryModal({
                 <TouchableOpacity
                   onPress={() => handlePickMedia(true)}
                   activeOpacity={0.8}
-                  style={[styles.pickButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderColor: colors.border }]}
+                  style={[styles.pickButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}
                 >
                   <Camera size={28} color={colors.tint} />
                   <Text style={[styles.pickButtonText, { color: colors.text }]}>Cámara</Text>
@@ -277,7 +277,7 @@ export function UploadStoryModal({
                   styles.privacyPill,
                   {
                     backgroundColor: privacy === 'friends' ? colors.tint : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
-                    borderColor: privacy === 'friends' ? colors.tint : colors.border,
+                    borderColor: privacy === 'friends' ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
                   },
                 ]}
               >
@@ -302,7 +302,7 @@ export function UploadStoryModal({
                   styles.privacyPill,
                   {
                     backgroundColor: privacy === 'public' ? colors.tint : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
-                    borderColor: privacy === 'public' ? colors.tint : colors.border,
+                    borderColor: privacy === 'public' ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
                   },
                 ]}
               >

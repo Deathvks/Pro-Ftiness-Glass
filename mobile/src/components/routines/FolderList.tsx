@@ -16,6 +16,7 @@ interface FolderListProps {
 export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderListProps) {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
+  const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const accentColor = colors.tint; 
 
   const allOptions = [
@@ -43,7 +44,7 @@ export function FolderList({ folders, selectedFolder, onSelectFolder }: FolderLi
             color={isActive ? accentColor : undefined}
             style={[
               styles.tab, 
-              { borderColor: isActive ? accentColor : colors.border + '60' }
+              { borderColor: isActive ? accentColor : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)') }
             ]}
           >
             {isNamedFolder && (

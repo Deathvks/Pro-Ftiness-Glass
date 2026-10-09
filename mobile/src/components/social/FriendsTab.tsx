@@ -73,11 +73,11 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
         onCancel={() => setDeleteModal({ visible: false, friendId: null })}
       />
 
-      <View style={[styles.card, { borderColor: colors.border }]}>
+      <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
+          style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
         />
 
         {/* Title */}
@@ -137,7 +137,7 @@ export function FriendsTab({ onSwitchToSearch, onNavigateProfile }: FriendsTabPr
                     styles.userRow,
                     {
                       backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: colors.border + '40',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
                     },
                   ]}
                 >

@@ -30,11 +30,11 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
   return (
     <View style={styles.container}>
       {/* 1. SOLICITUDES RECIBIDAS */}
-      <View style={[styles.card, { borderColor: colors.border, marginBottom: 20 }]}>
+      <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', marginBottom: 20 }]}>
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
+          style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
         />
 
         <View style={styles.headerRow}>
@@ -72,7 +72,7 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
                     styles.userRow,
                     {
                       backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: colors.border + '40',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
                     },
                   ]}
                 >
@@ -118,11 +118,11 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
 
       {/* 2. SOLICITUDES ENVIADAS */}
       {sent.length > 0 && (
-        <View style={[styles.card, { borderColor: colors.border }]}>
+        <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
+            style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
           />
 
           <Text style={[styles.title, { color: colors.text, marginBottom: 12 }]}>
@@ -143,7 +143,7 @@ export function RequestsTab({ onNavigateProfile }: { onNavigateProfile?: (userId
                     styles.userRow,
                     {
                       backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: colors.border + '40',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
                     },
                   ]}
                 >

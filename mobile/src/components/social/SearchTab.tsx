@@ -69,11 +69,11 @@ export function SearchTab({
   return (
     <View style={styles.container}>
       {/* Search Input Card */}
-      <View style={[styles.searchBarWrapper, { borderColor: colors.border }]}>
+      <View style={[styles.searchBarWrapper, { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)' }]}>
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
+          style={[StyleSheet.absoluteFill, { borderRadius: 26 }]}
         />
         <Search size={20} color={colors.textSecondary} style={{ marginLeft: 14 }} />
         <TextInput
@@ -101,11 +101,11 @@ export function SearchTab({
 
       {/* Results Card */}
       {socialSearchResults.length > 0 && (
-        <View style={[styles.card, { borderColor: colors.border, marginTop: 16 }]}>
+        <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', marginTop: 16 }]}>
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
+            style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
           />
 
           <View style={styles.resultsHeader}>
@@ -145,7 +145,7 @@ export function SearchTab({
                     styles.userRow,
                     {
                       backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: colors.border + '40',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
                     },
                   ]}
                 >
@@ -201,7 +201,7 @@ export function SearchTab({
           style={[
             styles.emptyCard,
             {
-              borderColor: colors.border,
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
               backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
             },
           ]}

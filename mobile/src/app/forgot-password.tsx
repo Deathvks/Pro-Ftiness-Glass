@@ -78,7 +78,7 @@ export default function ForgotPassword() {
           </View>
 
           {!isSubmitted && (
-            <BlurView intensity={50} tint={blurTint} style={[styles.glassCard, { backgroundColor: theme.card + '40', borderColor: theme.border + '80' }]}>
+            <BlurView intensity={50} tint={blurTint} style={[styles.glassCard, { backgroundColor: theme.card + '40', borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)' }]}>
               <View style={[styles.inputContainer, { backgroundColor: theme.background, borderColor: theme.border }]}>
                 <TextInput
                   style={[styles.input, { color: theme.text }]}

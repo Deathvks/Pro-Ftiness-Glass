@@ -95,13 +95,8 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
                 height: finalStyle.height || '100%', // Forzamos que llene verticalmente
                 borderRadius: finalBorderRadius, // FIX: Aplica el border radius al contenedor que tiene el borde
                 transform: [{ scale: scaleAnim }],
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: (isLight && !noShadow) ? 0.35 : 0,
-                shadowRadius: 15,
-                borderWidth: isLight ? 1 : 0,
-                borderColor: isLight ? 'rgba(255,255,255,0.7)' : 'transparent',
-                elevation: (isLight && !noShadow) ? 4 : 0,
+                borderWidth: finalStyle.borderWidth !== undefined ? finalStyle.borderWidth : 1,
+                borderColor: finalStyle.borderColor !== undefined ? finalStyle.borderColor : (isLight ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.12)'),
             }]}>
                 <GlassView 
                     glassEffectStyle="regular"

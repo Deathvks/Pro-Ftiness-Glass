@@ -170,11 +170,11 @@ export function Feed({ onNavigateProfile }: { onNavigateProfile?: (userId: any) 
     const commentsList = log.comments || [];
 
     return (
-      <View style={[styles.card, { borderColor: colors.border }]}>
+      <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
+          style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
         />
 
         {/* 1. Header: Avatar + Username + Time */}
@@ -211,7 +211,7 @@ export function Feed({ onNavigateProfile }: { onNavigateProfile?: (userId: any) 
                   backgroundColor: isDark
                     ? 'rgba(255, 255, 255, 0.06)'
                     : 'rgba(0, 0, 0, 0.04)',
-                  borderColor: colors.border + '50',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
                 },
               ]}
             >
@@ -228,7 +228,7 @@ export function Feed({ onNavigateProfile }: { onNavigateProfile?: (userId: any) 
                   backgroundColor: isDark
                     ? 'rgba(255, 255, 255, 0.06)'
                     : 'rgba(0, 0, 0, 0.04)',
-                  borderColor: colors.border + '50',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
                 },
               ]}
             >
@@ -344,7 +344,7 @@ export function Feed({ onNavigateProfile }: { onNavigateProfile?: (userId: any) 
 
         {/* 4. Comments Section (Collapsible) */}
         {areCommentsOpen && (
-          <View style={[styles.commentsSection, { borderTopColor: colors.border + '60' }]}>
+          <View style={[styles.commentsSection, { borderTopColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' }]}>
             {/* Comments List */}
             {commentsList.length === 0 ? (
               <Text style={[styles.noCommentsText, { color: colors.textSecondary }]}>
@@ -405,7 +405,7 @@ export function Feed({ onNavigateProfile }: { onNavigateProfile?: (userId: any) 
                   backgroundColor: isDark
                     ? 'rgba(255, 255, 255, 0.06)'
                     : 'rgba(0, 0, 0, 0.04)',
-                  borderColor: colors.border,
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
                 },
               ]}
             >

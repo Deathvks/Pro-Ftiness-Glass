@@ -21,7 +21,7 @@ export function PrivacyBanner({ privacy, onNavigate }: PrivacyBannerProps) {
       style={[
         styles.container,
         {
-          borderColor: isPublic ? colors.tint + '50' : colors.border,
+          borderColor: isPublic ? colors.tint + '50' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
           borderWidth: 1,
         },
       ]}
@@ -29,7 +29,7 @@ export function PrivacyBanner({ privacy, onNavigate }: PrivacyBannerProps) {
       <GlassView
         glassEffectStyle="regular"
         colorScheme={isDark ? 'dark' : 'light'}
-        style={StyleSheet.absoluteFill}
+        style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
       />
 
       <View style={styles.content}>
@@ -92,7 +92,7 @@ export function PrivacyBanner({ privacy, onNavigate }: PrivacyBannerProps) {
               styles.button,
               {
                 backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                borderColor: colors.border,
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
               },
             ]}
           >

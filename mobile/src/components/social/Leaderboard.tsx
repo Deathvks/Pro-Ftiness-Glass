@@ -55,7 +55,7 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
         </View>
       </View>
 
-      <View style={[styles.tableColumns, { borderBottomColor: colors.border }]}>
+      <View style={[styles.tableColumns, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' }]}>
         <Text style={[styles.colHeader, { width: 34, textAlign: 'center' }]}>#</Text>
         <Text style={[styles.colHeader, { flex: 1, paddingLeft: 8 }]}>Atleta</Text>
         <Text style={[styles.colHeader, { width: 56, textAlign: 'right' }]}>Nivel</Text>
@@ -140,11 +140,11 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
 
   return (
     <View style={styles.container}>
-      <View style={[styles.card, { borderColor: colors.border }]}>
+      <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
+          style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
         />
 
         <View style={{ padding: 18, paddingBottom: 30 }}>

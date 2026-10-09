@@ -377,7 +377,7 @@ export default function RoutinesScreen() {
       {activeTab === 'myRoutines' && (
         <>
           {/* Barra de búsqueda */}
-          <View style={[styles.searchContainer, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)', borderColor: colors.border }]}>
+          <View style={[styles.searchContainer, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)', borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
             <Search size={18} color={colors.textSecondary} style={{ marginRight: 10 }} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
@@ -427,7 +427,7 @@ export default function RoutinesScreen() {
               })
             ) : (
               /* ESTADO VACÍO */
-              <View style={[styles.emptyCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderColor: colors.border }]}>
+              <View style={[styles.emptyCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
                 <View style={[styles.emptyIconBox, { backgroundColor: iconBadgeBg }]}>
                   <Folder size={32} color={colors.textSecondary} />
                 </View>
@@ -449,7 +449,7 @@ export default function RoutinesScreen() {
 
       {/* PESTAÑA EXPLORAR */}
       {activeTab === 'explore' && (
-        <View style={[styles.tabContentCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderColor: colors.border }]}>
+        <View style={[styles.tabContentCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
           <View style={[styles.emptyIconBox, { backgroundColor: colors.tint + '15' }]}>
             <Compass size={32} color={colors.tint} />
           </View>
@@ -462,7 +462,7 @@ export default function RoutinesScreen() {
 
       {/* PESTAÑA EJERCICIOS MANUALES */}
       {activeTab === 'manualExercises' && (
-        <View style={[styles.tabContentCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderColor: colors.border }]}>
+        <View style={[styles.tabContentCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
           <View style={[styles.emptyIconBox, { backgroundColor: colors.tint + '15' }]}>
             <Dumbbell size={32} color={colors.tint} />
           </View>

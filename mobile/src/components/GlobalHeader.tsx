@@ -88,7 +88,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                 style={StyleSheet.absoluteFill}
             />
 
-            <Animated.View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colors.border, opacity: bgOpacity }} />
+            <Animated.View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', opacity: bgOpacity }} />
             <View 
                 style={{ 
                     flexDirection: 'row', 

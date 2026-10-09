@@ -184,11 +184,11 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
           onCancel={() => setDeleteModalVisible(false)}
         />
 
-        <View style={[styles.card, { borderColor: colors.border }]}>
+        <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
+            style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
           />
 
           {/* Top Bar */}
@@ -255,7 +255,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
           </View>
 
           {/* Table Header */}
-          <View style={[styles.tableHeader, { borderBottomColor: colors.border }]}>
+          <View style={[styles.tableHeader, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' }]}>
             <Text style={[styles.colHeader, { width: 32, textAlign: 'center' }]}>#</Text>
             <Text style={[styles.colHeader, { flex: 1, paddingLeft: 8 }]}>Miembro</Text>
             <Text style={[styles.colHeader, { width: 54, textAlign: 'right' }]}>Racha</Text>
@@ -358,7 +358,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
+            style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
           />
           <View
             style={[
@@ -366,6 +366,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
               {
                 backgroundColor: colors.tint,
                 opacity: isDark ? 0.3 : 0.22,
+                borderRadius: 24,
               },
             ]}
           />
@@ -388,7 +389,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
           <GlassView
             glassEffectStyle="regular"
             colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
+            style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
           />
           <Hash size={18} color={colors.text} style={{ marginRight: 6 }} />
           <Text style={[styles.actionBtnText, { color: colors.text, fontWeight: '700' }]}>
@@ -397,11 +398,11 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.card, { borderColor: colors.border }]}>
+      <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
+          style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
         />
 
         <Text style={[styles.title, { color: colors.text }]}>Mis Grupos</Text>
@@ -425,7 +426,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFill}
+              style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
             />
             <View style={[styles.emptyIconBox, { backgroundColor: colors.tint + '18' }]}>
               <Shield size={32} color={colors.tint} />
@@ -448,7 +449,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
                   styles.squadItem,
                   {
                     backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                    borderColor: colors.border + '40',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
                   },
                 ]}
               >
@@ -488,8 +489,8 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
             onPress={() => setShowCreateModal(false)}
           >
             <Pressable onPress={e => e.stopPropagation()} style={styles.modalCardWrapper}>
-              <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-              <View style={[styles.modalCard, { borderColor: colors.border, backgroundColor: 'transparent' }]}>
+              <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} />
+              <View style={[styles.modalCard, { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: 'transparent' }]}>
                 <View style={styles.modalHeader}>
                   <Text style={[styles.modalTitle, { color: colors.text }]}>Crear Grupo</Text>
                   <TouchableOpacity onPress={() => setShowCreateModal(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -503,7 +504,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
                   onChangeText={setSquadName}
                   placeholder="Escribe el nombre..."
                   placeholderTextColor={colors.textSecondary + '80'}
-                  style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
+                  style={[styles.input, { color: colors.text, borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
                 />
 
                 <Text style={[styles.inputLabel, { color: colors.textSecondary, marginTop: 12 }]}>Descripción (Opcional)</Text>
@@ -512,7 +513,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
                   onChangeText={setSquadDesc}
                   placeholder="¿De qué trata este grupo?"
                   placeholderTextColor={colors.textSecondary + '80'}
-                  style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
+                  style={[styles.input, { color: colors.text, borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}
                 />
 
                 <TouchableOpacity
@@ -533,7 +534,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
                   <GlassView
                     glassEffectStyle="regular"
                     colorScheme={isDark ? 'dark' : 'light'}
-                    style={StyleSheet.absoluteFill}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
                   />
                   <View
                     style={[
@@ -572,8 +573,8 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
             onPress={() => setShowJoinModal(false)}
           >
             <Pressable onPress={e => e.stopPropagation()} style={styles.modalCardWrapper}>
-              <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-              <View style={[styles.modalCard, { borderColor: colors.border, backgroundColor: 'transparent' }]}>
+              <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} />
+              <View style={[styles.modalCard, { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: 'transparent' }]}>
                 <View style={styles.modalHeader}>
                   <Text style={[styles.modalTitle, { color: colors.text }]}>Unirse a un Grupo</Text>
                   <TouchableOpacity onPress={() => setShowJoinModal(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -592,7 +593,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
                     styles.input,
                     {
                       color: colors.text,
-                      borderColor: colors.border,
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
                       backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
                       textAlign: 'center',
                       letterSpacing: 3,
@@ -619,7 +620,7 @@ export function SquadsTab({ onNavigateProfile }: { onNavigateProfile?: (userId: 
                   <GlassView
                     glassEffectStyle="regular"
                     colorScheme={isDark ? 'dark' : 'light'}
-                    style={StyleSheet.absoluteFill}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
                   />
                   <View
                     style={[

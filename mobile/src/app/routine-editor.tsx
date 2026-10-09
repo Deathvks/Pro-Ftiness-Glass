@@ -27,6 +27,7 @@ export default function RoutineEditorScreen() {
   const theme = useAppStore(state => state.theme);
   const colors = useAppColors();
   const insets = useSafeAreaInsets();
+  const isDark = !['light', 'ocean', 'desert'].includes(theme || '');
 
   // Global Store State
   const routineEditorState = useAppStore(state => state.routineEditorState);
@@ -359,7 +360,7 @@ export default function RoutineEditorScreen() {
             elevation: isActive ? 8 : 2
           }}>
             {/* Media Area */}
-            <View style={{ width: '100%', aspectRatio: 1, backgroundColor: colors.border + '30', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ width: '100%', aspectRatio: 1, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)', alignItems: 'center', justifyContent: 'center' }}>
               {(!item.is_manual && item.exercise_id !== null && item.exercise_list_id !== null) ? (
                 <ExerciseMediaPreview item={item} getImageUrl={getImageUrl} staticOnly={true} />
               ) : (

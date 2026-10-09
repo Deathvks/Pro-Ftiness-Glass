@@ -293,7 +293,7 @@ export default function Login() {
         <View style={styles.badgeContainer}>
           <BlurView intensity={40} tint={blurTint} style={[styles.badge, { 
             backgroundColor: theme.card + '60', // 40% opacity del color de la tarjeta
-            borderColor: theme.border + '80' 
+            borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)' 
           }]}>
             <Sparkles color={theme.tint} size={16} style={{ marginRight: 6 }} />
             <Text style={[styles.badgeText, { color: theme.text }]}>
@@ -318,7 +318,7 @@ export default function Login() {
             <View style={styles.glassCardWrapper}>
               <BlurView intensity={50} tint={blurTint} style={[styles.glassCard, { 
                 backgroundColor: theme.card + '40',
-                borderColor: theme.border + '80'
+                borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)'
               }]}>
                 <View style={[styles.form, { paddingHorizontal: 16 }]}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, gap: 8 }}>
@@ -409,7 +409,7 @@ export default function Login() {
             <View style={styles.glassCardWrapper}>
               <BlurView intensity={50} tint={blurTint} style={[styles.glassCard, { 
                 backgroundColor: theme.card + '40', // 25% opacity para que se note el blur de fondo
-                borderColor: theme.border + '80'
+                borderColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)'
               }]}>
                 <View style={styles.form}>
                   

@@ -92,7 +92,7 @@ export function RoutineCard({
       styles.card, 
       { 
         overflow: 'hidden',
-        borderColor: isActive ? colors.tint : colors.border,
+        borderColor: isActive ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
         backgroundColor: 'transparent',
         borderWidth: isActive ? 2 : 1,
       }
@@ -100,7 +100,7 @@ export function RoutineCard({
       <GlassView 
         glassEffectStyle="regular" 
         colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} 
-        style={StyleSheet.absoluteFill} 
+        style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} 
       />
 
       {/* 1. IMAGEN DE CABECERA (SI TIENE) */}
@@ -235,7 +235,7 @@ export function RoutineCard({
 
         {/* LISTA PREVIA DE EJERCICIOS CON SUPERSERIES */}
         {exerciseGroups.length > 0 && (
-          <View style={[styles.previewBox, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }]}>
+          <View style={[styles.previewBox, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)', borderWidth: 1 }]}>
             {exerciseGroups.map((group, gIdx) => {
               const isSuperset = group.length > 1;
 
