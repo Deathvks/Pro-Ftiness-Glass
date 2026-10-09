@@ -284,13 +284,15 @@ export default function NutritionScreen() {
       <ThemeBackground />
 
       {/* Sticky Global Header */}
-      <GlobalHeader title="Nutrición" scrollY={scrollY} />
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }}>
+        <GlobalHeader title="Nutrición" scrollY={scrollY} />
+      </View>
 
       <Animated.ScrollView
         contentContainerStyle={[
           styles.scrollContent,
           {
-            paddingTop: insets.top + 70,
+            paddingTop: insets.top + 60,
             paddingBottom: insets.bottom + 100,
           },
         ]}
@@ -321,19 +323,19 @@ export default function NutritionScreen() {
           onOpenSugarModal={() => setModal({ type: 'sugar' })}
         />
 
-        {/* Water & Creatine Row */}
-        <View style={styles.trackersRow}>
-          <WaterTrackerCard
-            currentMl={waterLog?.quantity_ml || 0}
-            targetMl={waterTarget}
-            onPress={() => setModal({ type: 'water' })}
-          />
-          <CreatineTrackerCard
-            creatineTarget={creatineTarget}
-            dosesCount={todaysCreatineLog?.length || 0}
-            onPress={() => setShowCreatineModal(true)}
-          />
-        </View>
+        {/* Water Tracker Card */}
+        <WaterTrackerCard
+          currentMl={waterLog?.quantity_ml || 0}
+          targetMl={waterTarget}
+          onPress={() => setModal({ type: 'water' })}
+        />
+
+        {/* Creatine Tracker Card */}
+        <CreatineTrackerCard
+          creatineTarget={creatineTarget}
+          dosesCount={todaysCreatineLog?.length || 0}
+          onPress={() => setShowCreatineModal(true)}
+        />
 
         {/* 4 Meal Sections */}
         {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(mealKey => (

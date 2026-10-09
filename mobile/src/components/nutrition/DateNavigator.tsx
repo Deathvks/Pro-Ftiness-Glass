@@ -99,7 +99,8 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({ selectedDate, onDa
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginTop: 6,
+    marginBottom: 14,
   },
   glassWrapper: {
     borderRadius: 22,

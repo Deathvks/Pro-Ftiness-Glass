@@ -29,6 +29,106 @@ interface DailySummaryProps {
   onOpenSugarModal: () => void;
 }
 
+interface NutritionStatCardProps {
+  icon: React.ReactNode;
+  iconBg: string;
+  title: string;
+  value: string | number;
+  unit: string;
+  isDanger?: boolean;
+  onPress?: () => void;
+  isDark: boolean;
+  colors: any;
+}
+
+const NutritionStatCard: React.FC<NutritionStatCardProps> = ({
+  icon,
+  iconBg,
+  title,
+  value,
+  unit,
+  isDanger = false,
+  onPress,
+  isDark,
+  colors,
+}) => {
+  const content = (
+    <View
+      style={[
+        styles.statCardWrapper,
+        {
+          backgroundColor: isDanger
+            ? '#ef4444'
+            : isDark
+            ? 'rgba(255, 255, 255, 0.04)'
+            : 'rgba(255, 255, 255, 0.65)',
+          borderColor: isDanger
+            ? '#ef4444'
+            : isDark
+            ? 'rgba(255, 255, 255, 0.1)'
+            : 'rgba(0, 0, 0, 0.06)',
+        },
+      ]}
+    >
+      {/* Icon badge - 48x48 rounded-2xl squircle centered */}
+      <View
+        style={[
+          styles.statIconContainer,
+          {
+            backgroundColor: isDanger ? 'rgba(255, 255, 255, 0.2)' : iconBg,
+          },
+        ]}
+      >
+        {icon}
+      </View>
+
+      {/* Title uppercase tracking */}
+      <Text
+        style={[
+          styles.statCardTitle,
+          { color: isDanger ? 'rgba(255, 255, 255, 0.9)' : colors.textSecondary },
+        ]}
+      >
+        {title}
+      </Text>
+
+      {/* Value & unit */}
+      <View style={styles.statValRow}>
+        <Text
+          style={[
+            styles.statCardValue,
+            { color: isDanger ? '#ffffff' : colors.text },
+          ]}
+        >
+          {value}
+        </Text>
+        <Text
+          style={[
+            styles.statCardUnit,
+            { color: isDanger ? 'rgba(255, 255, 255, 0.8)' : colors.textMuted },
+          ]}
+        >
+          {unit}
+        </Text>
+      </View>
+    </View>
+  );
+
+  if (onPress) {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.8}
+        style={styles.statCardTouch}
+      >
+        {content}
+      </TouchableOpacity>
+    );
+  }
+
+  return <View style={styles.statCardTouch}>{content}</View>;
+};
+
 export const DailySummary: React.FC<DailySummaryProps> = ({
   totals,
   targets,
@@ -209,167 +309,76 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
             </View>
           </View>
 
-          {/* VIEW: GRID */}
+          {/* VIEW: GRID (Exact frontend Bento Grid with large vertical StatCards) */}
           {summaryView === 'grid' ? (
             <View style={styles.gridContainer}>
               {/* Row 1: Calorías & Proteínas */}
               <View style={styles.gridRow}>
-                {/* Calorías */}
-                <View
-                  style={[
-                    styles.statCard,
-                    {
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.6)',
-                      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                    },
-                  ]}
-                >
-                  <View style={styles.statHeader}>
-                    <View style={[styles.statIconBadge, { backgroundColor: 'rgba(249, 115, 22, 0.15)' }]}>
-                      <Flame size={16} color="#f97316" />
-                    </View>
-                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Calorías</Text>
-                  </View>
-                  <Text style={[styles.statValue, { color: colors.text }]}>
-                    {Math.round(totals.calories).toLocaleString('es-ES')}
-                    <Text style={[styles.statUnit, { color: colors.textMuted }]}>
-                      {' '}/ {targets.calories.toLocaleString('es-ES')} kcal
-                    </Text>
-                  </Text>
-                </View>
-
-                {/* Proteínas */}
-                <View
-                  style={[
-                    styles.statCard,
-                    {
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.6)',
-                      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                    },
-                  ]}
-                >
-                  <View style={styles.statHeader}>
-                    <View style={[styles.statIconBadge, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
-                      <Beef size={16} color="#ef4444" />
-                    </View>
-                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Proteínas</Text>
-                  </View>
-                  <Text style={[styles.statValue, { color: colors.text }]}>
-                    {totals.protein.toFixed(1)}
-                    <Text style={[styles.statUnit, { color: colors.textMuted }]}>
-                      {' '}/ {targets.protein} g
-                    </Text>
-                  </Text>
-                </View>
+                <NutritionStatCard
+                  icon={<Flame size={24} color="#f97316" />}
+                  iconBg="rgba(249, 115, 22, 0.15)"
+                  title="Calorías"
+                  value={Math.round(totals.calories).toLocaleString('es-ES')}
+                  unit={`/ ${targets.calories.toLocaleString('es-ES')} kcal`}
+                  isDark={isDark}
+                  colors={colors}
+                />
+                <NutritionStatCard
+                  icon={<Beef size={24} color="#ef4444" />}
+                  iconBg="rgba(239, 68, 68, 0.15)"
+                  title="Proteínas"
+                  value={totals.protein.toFixed(1)}
+                  unit={`/ ${targets.protein} g`}
+                  isDark={isDark}
+                  colors={colors}
+                />
               </View>
 
               {/* Row 2: Carbos & Grasas */}
               <View style={styles.gridRow}>
-                {/* Carbos */}
-                <View
-                  style={[
-                    styles.statCard,
-                    {
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.6)',
-                      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                    },
-                  ]}
-                >
-                  <View style={styles.statHeader}>
-                    <View style={[styles.statIconBadge, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
-                      <Wheat size={16} color="#3b82f6" />
-                    </View>
-                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Carbos</Text>
-                  </View>
-                  <Text style={[styles.statValue, { color: colors.text }]}>
-                    {totals.carbs.toFixed(1)}
-                    <Text style={[styles.statUnit, { color: colors.textMuted }]}>
-                      {' '}/ {targets.carbs} g
-                    </Text>
-                  </Text>
-                </View>
-
-                {/* Grasas */}
-                <View
-                  style={[
-                    styles.statCard,
-                    {
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.6)',
-                      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                    },
-                  ]}
-                >
-                  <View style={styles.statHeader}>
-                    <View style={[styles.statIconBadge, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
-                      <Salad size={16} color="#22c55e" />
-                    </View>
-                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Grasas</Text>
-                  </View>
-                  <Text style={[styles.statValue, { color: colors.text }]}>
-                    {totals.fats.toFixed(1)}
-                    <Text style={[styles.statUnit, { color: colors.textMuted }]}>
-                      {' '}/ {targets.fats} g
-                    </Text>
-                  </Text>
-                </View>
+                <NutritionStatCard
+                  icon={<Wheat size={24} color="#3b82f6" />}
+                  iconBg="rgba(59, 130, 246, 0.15)"
+                  title="Carbos"
+                  value={totals.carbs.toFixed(1)}
+                  unit={`/ ${targets.carbs} g`}
+                  isDark={isDark}
+                  colors={colors}
+                />
+                <NutritionStatCard
+                  icon={<Salad size={24} color="#22c55e" />}
+                  iconBg="rgba(34, 197, 94, 0.15)"
+                  title="Grasas"
+                  value={totals.fats.toFixed(1)}
+                  unit={`/ ${targets.fats} g`}
+                  isDark={isDark}
+                  colors={colors}
+                />
               </View>
 
-              {/* Row 3: Azúcar (Clickable to open SugarTargetModal) */}
-              <TouchableOpacity
+              {/* Row 3: Azúcar (Full-width card, red danger if limit exceeded) */}
+              <NutritionStatCard
+                icon={
+                  isSugarHigh ? (
+                    <AlertTriangle size={24} color="#ffffff" />
+                  ) : (
+                    <IceCream size={24} color="#ec4899" />
+                  )
+                }
+                iconBg="rgba(236, 72, 153, 0.15)"
+                title={isSugarHigh ? 'Azúcar (Límite Superado)' : 'Azúcar'}
+                value={totals.sugar.toFixed(1)}
+                unit={`/ ${targets.sugar} g`}
+                isDanger={isSugarHigh}
                 onPress={() => {
                   try {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   } catch {}
                   onOpenSugarModal();
                 }}
-                activeOpacity={0.8}
-                style={[
-                  styles.statCardFull,
-                  {
-                    backgroundColor: isSugarHigh
-                      ? 'rgba(239, 68, 68, 0.12)'
-                      : isDark
-                      ? 'rgba(255,255,255,0.04)'
-                      : 'rgba(255,255,255,0.6)',
-                    borderColor: isSugarHigh
-                      ? '#ef4444'
-                      : isDark
-                      ? 'rgba(255,255,255,0.08)'
-                      : 'rgba(0,0,0,0.06)',
-                  },
-                ]}
-              >
-                <View style={styles.sugarLeft}>
-                  <View
-                    style={[
-                      styles.statIconBadge,
-                      { backgroundColor: isSugarHigh ? 'rgba(239, 68, 68, 0.2)' : 'rgba(236, 72, 153, 0.15)' },
-                    ]}
-                  >
-                    {isSugarHigh ? (
-                      <AlertTriangle size={16} color="#ef4444" />
-                    ) : (
-                      <IceCream size={16} color="#ec4899" />
-                    )}
-                  </View>
-                  <View>
-                    <Text style={[styles.statLabel, { color: isSugarHigh ? '#ef4444' : colors.textSecondary }]}>
-                      {isSugarHigh ? 'Azúcar (Límite superado)' : 'Azúcar'}
-                    </Text>
-                    <Text style={[styles.statValue, { color: isSugarHigh ? '#ef4444' : colors.text, marginTop: 2 }]}>
-                      {totals.sugar.toFixed(1)}
-                      <Text style={[styles.statUnit, { color: isSugarHigh ? 'rgba(239,68,68,0.8)' : colors.textMuted }]}>
-                        {' '}/ {targets.sugar} g máx OMS
-                      </Text>
-                    </Text>
-                  </View>
-                </View>
-                <View style={[styles.infoBadge, { backgroundColor: isSugarHigh ? '#ef4444' : colors.tint + '20' }]}>
-                  <Text style={[styles.infoBadgeText, { color: isSugarHigh ? '#fff' : colors.tint }]}>
-                    Info
-                  </Text>
-                </View>
-              </TouchableOpacity>
+                isDark={isDark}
+                colors={colors}
+              />
             </View>
           ) : (
             /* VIEW: CHART */
@@ -457,7 +466,6 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
 
               {/* Macro Pills Row */}
               <View style={styles.macroPillsRow}>
-                {/* Proteínas */}
                 <TouchableOpacity
                   onPress={() => handleSelectMacro('protein')}
                   activeOpacity={0.7}
@@ -475,7 +483,6 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
                   <Text style={[styles.macroPillPct, { color: colors.textMuted }]}>{Math.round(pPct)}%</Text>
                 </TouchableOpacity>
 
-                {/* Carbos */}
                 <TouchableOpacity
                   onPress={() => handleSelectMacro('carbs')}
                   activeOpacity={0.7}
@@ -493,7 +500,6 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
                   <Text style={[styles.macroPillPct, { color: colors.textMuted }]}>{Math.round(totalCarbsPct)}%</Text>
                 </TouchableOpacity>
 
-                {/* Grasas */}
                 <TouchableOpacity
                   onPress={() => handleSelectMacro('fats')}
                   activeOpacity={0.7}
@@ -511,7 +517,6 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
                   <Text style={[styles.macroPillPct, { color: colors.textMuted }]}>{Math.round(fPct)}%</Text>
                 </TouchableOpacity>
 
-                {/* Azúcar */}
                 <TouchableOpacity
                   onPress={() => {
                     handleSelectMacro('sugar');
@@ -582,67 +587,50 @@ const styles = StyleSheet.create({
     borderRadius: 9,
   },
   gridContainer: {
-    gap: 10,
+    gap: 12,
   },
   gridRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
   },
-  statCard: {
+  statCardTouch: {
     flex: 1,
-    padding: 12,
-    borderRadius: 18,
+  },
+  statCardWrapper: {
+    borderRadius: 20,
     borderWidth: 1,
-  },
-  statCardFull: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 18,
-    borderWidth: 1,
-  },
-  sugarLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  statHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  statIconBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
   },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  statIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
   },
-  statValue: {
-    fontSize: 18,
+  statCardTitle: {
+    fontSize: 11,
     fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  statValRow: {
+    alignItems: 'center',
+    gap: 2,
+  },
+  statCardValue: {
+    fontSize: 22,
+    fontWeight: '900',
     letterSpacing: -0.5,
   },
-  statUnit: {
+  statCardUnit: {
     fontSize: 12,
-    fontWeight: '500',
-  },
-  infoBadge: {
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  infoBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   chartContainer: {
     alignItems: 'center',

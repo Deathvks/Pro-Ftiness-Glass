@@ -79,16 +79,19 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
         return (
         <View style={{ position: 'relative' }}>
             <GlassView 
-                glassEffectStyle={{
-                    style: isScrolled ? 'regular' : 'none',
-                    animate: true,
-                    animationDuration: 0.15
-                }}
+                glassEffectStyle="regular"
                 colorScheme={colorScheme as any}
                 style={StyleSheet.absoluteFill}
             />
-
-            <Animated.View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', opacity: bgOpacity }} />
+            <View 
+                style={[
+                    StyleSheet.absoluteFill,
+                    {
+                        backgroundColor: colorScheme === 'dark' ? 'rgba(0, 0, 0, 0.35)' : 'rgba(255, 255, 255, 0.45)',
+                    }
+                ]}
+            />
+            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)' }} />
             <View 
                 style={{ 
                     flexDirection: 'row', 

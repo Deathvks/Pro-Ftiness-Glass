@@ -636,39 +636,51 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                       </View>
                     )}
 
+                    {/* FIXED SEARCH BAR (Pinned right under tabs when on search tab) */}
+                    {!selectedFoodForDetail && activeTab === 'search' && !logToEdit && (
+                      <View
+                        style={[
+                          styles.searchBar,
+                          {
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.8)',
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                            marginBottom: 12,
+                          },
+                        ]}
+                      >
+                        <Search size={18} color={colors.textSecondary} />
+                        <TextInput
+                          value={searchTerm}
+                          onChangeText={handleSearch}
+                          onSubmitEditing={() => handleSearch(searchTerm)}
+                          style={[styles.searchInput, { color: colors.text }]}
+                          placeholder="Buscar alimento (ej: Arroz, Huevo, Pollo)..."
+                          placeholderTextColor={colors.textMuted}
+                          returnKeyType="search"
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                        />
+                        {searchTerm.length > 0 && (
+                          <TouchableOpacity
+                            onPress={() => handleSearch('')}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            <X size={16} color={colors.textMuted} />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    )}
+
                     {/* TAB CONTENT */}
-                    <ScrollView style={styles.tabBody} contentContainerStyle={{ paddingBottom: 28 }}>
+                    <ScrollView
+                      style={styles.tabBody}
+                      contentContainerStyle={{ paddingBottom: 36 }}
+                      keyboardShouldPersistTaps="handled"
+                      keyboardDismissMode="on-drag"
+                    >
                       {/* TAB 1: BUSCAR */}
                       {activeTab === 'search' && (
                         <View style={styles.searchSection}>
-                          <View
-                            style={[
-                              styles.searchBar,
-                              {
-                                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.8)',
-                                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                              },
-                            ]}
-                          >
-                            <Search size={18} color={colors.textMuted} />
-                            <TextInput
-                              value={searchTerm}
-                              onChangeText={handleSearch}
-                              style={[styles.searchInput, { color: colors.text }]}
-                              placeholder="Buscar alimento (ej: Arroz, Huevo, Pollo)..."
-                              placeholderTextColor={colors.textMuted}
-                              returnKeyType="search"
-                            />
-                            {searchTerm.length > 0 && (
-                              <TouchableOpacity
-                                onPress={() => handleSearch('')}
-                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                              >
-                                <X size={16} color={colors.textMuted} />
-                              </TouchableOpacity>
-                            )}
-                          </View>
-
                           {isSearching ? (
                             <ActivityIndicator size="small" color={colors.tint} style={{ marginVertical: 24 }} />
                           ) : searchResults.length > 0 ? (
@@ -1143,12 +1155,13 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
 const styles = StyleSheet.create({
   sheetWrapper: {
     width: '100%',
-    maxHeight: '90%',
+    height: '92%',
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
     overflow: 'hidden',
   },
   sheetContent: {
+    flex: 1,
     paddingHorizontal: 20,
     paddingTop: 12,
     borderTopLeftRadius: 36,
@@ -1206,7 +1219,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   tabBody: {
-    maxHeight: 460,
+    flex: 1,
   },
   searchSection: {
     gap: 12,
