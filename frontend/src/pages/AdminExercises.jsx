@@ -256,6 +256,7 @@ const AdminExercises = ({ isTrainerMode = false }) => {
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const [showVideoUI, setShowVideoUI] = useState(true);
   const playerRef = useRef(null);
+  const isClosingRef = useRef(false);
   const [touchStartY, setTouchStartY] = useState(null);
   const [dragY, setDragY] = useState(0);
   const [isClosingFullscreen, setIsClosingFullscreen] = useState(false);
@@ -465,23 +466,31 @@ const AdminExercises = ({ isTrainerMode = false }) => {
     setIsPseudoFullscreen(false);
     setIsClosingFullscreen(false);
     setShowVideoUI(true);
+    setDragY(0);
+    isClosingRef.current = false;
   };
 
   const closeFullscreenSmoothly = () => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
     setIsClosingFullscreen(true);
     setTimeout(() => {
       setIsPseudoFullscreen(false);
       setIsClosingFullscreen(false);
       setDragY(0);
-    }, 300);
+      setShowVideoUI(true);
+      isClosingRef.current = false;
+    }, 250);
   };
 
   const handleTouchStart = (e) => {
+    e.stopPropagation();
     setTouchStartY(e.touches[0].clientY);
     setDragY(0);
   };
 
   const handleTouchMove = (e) => {
+    e.stopPropagation();
     if (touchStartY === null) return;
     const currentY = e.touches[0].clientY;
     const delta = currentY - touchStartY;
@@ -495,13 +504,14 @@ const AdminExercises = ({ isTrainerMode = false }) => {
   };
 
   const handleTouchEnd = (e) => {
+    e.stopPropagation();
     if (touchStartY === null) return;
     const touchEndY = e.changedTouches[0].clientY;
     const deltaY = touchEndY - touchStartY;
     
     if (isPseudoFullscreen) {
-      // Si se desliza hacia abajo más de 120px estando en pantalla completa
-      if (deltaY > 120) {
+      // Si se desliza hacia abajo más de 70px estando en pantalla completa, salir SOLO del vídeo
+      if (deltaY > 70) {
         closeFullscreenSmoothly();
       } else {
         setDragY(0);
@@ -511,6 +521,7 @@ const AdminExercises = ({ isTrainerMode = false }) => {
       if (deltaY < -60) {
         setIsPseudoFullscreen(true);
         setIsOpeningFullscreen(true); // Arranca la animación desde el dragY actual
+        setShowVideoUI(true);
       } else {
         setDragY(0); // Snap back if didn't swipe enough
       }
@@ -768,7 +779,7 @@ const AdminExercises = ({ isTrainerMode = false }) => {
       )}
 
       {selectedExercise && (
-          <ModalPortal>
+        <ModalPortal disableSwipeToClose={isPseudoFullscreen || isClosingFullscreen}>
         <div 
           className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-6 animate-[fade-in_0.3s_ease-out]"
             onClick={closeDetailModal}
@@ -806,13 +817,17 @@ const AdminExercises = ({ isTrainerMode = false }) => {
                     : 'bg-black absolute inset-0 z-10'
                 }`}
               style={isPseudoFullscreen ? {
-                backgroundColor: `rgba(0,0,0,${isClosingFullscreen || isOpeningFullscreen ? 0 : Math.max(0, 1 - dragY / 300)})`,
-                transition: (touchStartY !== null && !isClosingFullscreen && !isOpeningFullscreen) ? 'none' : 'background-color 0.3s ease-out'
+                backgroundColor: `rgba(0,0,0,${isClosingFullscreen ? 0 : Math.max(0, 1 - dragY / 300)})`,
+                opacity: isClosingFullscreen ? 0 : 1,
+                transition: (touchStartY !== null && !isClosingFullscreen && !isOpeningFullscreen) ? 'none' : 'all 0.25s cubic-bezier(0.32, 0.72, 0, 1)'
               } : {
                 transform: `translateY(${dragY}px)`,
                 transition: touchStartY !== null ? 'none' : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)'
               }}
-              onClick={() => setShowVideoUI(!showVideoUI)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowVideoUI(!showVideoUI);
+              }}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -824,8 +839,11 @@ const AdminExercises = ({ isTrainerMode = false }) => {
                   height: '100dvh',
                   overflow: 'hidden',
                   position: 'relative',
-                  transform: `translateY(${isClosingFullscreen ? '100dvh' : (isOpeningFullscreen ? `${Math.min(0, dragY)}px` : `${dragY}px`)})`,
-                  transition: (touchStartY !== null && !isClosingFullscreen && !isOpeningFullscreen) ? 'none' : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)'
+                  transform: isClosingFullscreen 
+                    ? `translateY(${dragY + 20}px) scale(0.92)` 
+                    : (isOpeningFullscreen ? `${Math.min(0, dragY)}px` : `translateY(${dragY}px) scale(${Math.max(0.85, 1 - dragY / 1000)})`),
+                  borderRadius: isPseudoFullscreen && dragY > 0 ? `${Math.min(32, (dragY / 100) * 32)}px` : '0px',
+                  transition: (touchStartY !== null && !isClosingFullscreen && !isOpeningFullscreen) ? 'none' : 'all 0.25s cubic-bezier(0.32, 0.72, 0, 1)'
                 } : { width: '100%', height: '100%', position: 'relative' }}
                 className="flex items-center justify-center"
               >
@@ -864,27 +882,44 @@ const AdminExercises = ({ isTrainerMode = false }) => {
                   <div className={`transition-opacity duration-300 ${showVideoUI ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                     {!isPseudoFullscreen ? (
                       <button 
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setIsPseudoFullscreen(true);
                           setIsOpeningFullscreen(true);
+                          setShowVideoUI(true);
                         }}
-                        className="absolute bottom-3 right-3 p-2.5 bg-black/60 hover:bg-black/90 text-white/90 hover:text-white rounded-[12px] backdrop-blur-md transition-all active:scale-95 shadow-lg z-10"
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onTouchEnd={(e) => {
+                          e.stopPropagation();
+                          setIsPseudoFullscreen(true);
+                          setIsOpeningFullscreen(true);
+                          setShowVideoUI(true);
+                        }}
+                        className="absolute bottom-3 right-3 p-2.5 bg-black/60 hover:bg-black/90 text-white/90 hover:text-white rounded-[12px] backdrop-blur-md transition-all active:scale-95 shadow-lg z-20 pointer-events-auto cursor-pointer"
                         title="Forzar Pantalla Completa"
                       >
                         <Maximize size={18} strokeWidth={2.5} />
                       </button>
                     ) : (
                       <button 
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           closeFullscreenSmoothly();
                         }}
-                        style={{ 
-                          top: 'max(env(safe-area-inset-top, 32px), 32px)', 
-                          right: 'max(env(safe-area-inset-right, 24px), 24px)' 
+                        onTouchStart={(e) => {
+                          e.stopPropagation();
                         }}
-                        className="absolute p-3 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white rounded-full shadow-2xl transition-all active:scale-95 z-20 flex items-center justify-center"
+                        onTouchEnd={(e) => {
+                          e.stopPropagation();
+                          closeFullscreenSmoothly();
+                        }}
+                        style={{ 
+                          top: 'max(env(safe-area-inset-top, 24px), 24px)', 
+                          right: 'max(env(safe-area-inset-right, 20px), 20px)' 
+                        }}
+                        className="absolute p-3 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white rounded-full shadow-2xl transition-all active:scale-90 z-30 flex items-center justify-center cursor-pointer pointer-events-auto"
                         title="Cerrar Pantalla Completa"
                       >
                         <X size={24} strokeWidth={2.5} />
