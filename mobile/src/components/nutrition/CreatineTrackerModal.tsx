@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,33 @@ import {
   TextInput,
   ActivityIndicator,
   ScrollView,
+  Alert,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
-import { X, Zap, Plus, Trash2, Check, Flame } from 'lucide-react-native';
+import {
+  X,
+  Zap,
+  Plus,
+  Trash2,
+  Edit2,
+  Calendar,
+  TrendingUp,
+  ChevronLeft,
+  ChevronRight,
+  Save,
+  Check,
+} from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getContrastTextColor } from '@/utils/colorUtils';
+import {
+  formatDateForDisplay,
+  formatDateToShort,
+  formatDateForQuery,
+} from '@/utils/dateUtils';
 import * as creatinaService from '@/services/creatinaService';
 
 interface CreatineTrackerModalProps {
@@ -36,29 +57,83 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
+  const fetchNotifications = useAppStore(state => state.fetchNotifications);
+  const fetchInitialData = useAppStore(state => state.fetchInitialData);
+
+  // States
   const [grams, setGrams] = useState(String(creatineTarget || '5'));
-  const [logs, setLogs] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [dailyLogs, setDailyLogs] = useState<any[]>([]);
+  const [creatinaLogs, setCreatinaLogs] = useState<any[]>([]);
+  const [stats, setStats] = useState<{
+    totalDays: number;
+    currentStreak: number;
+    averageGrams: number;
+    thisWeekDays: number;
+  }>({
+    totalDays: 0,
+    currentStreak: 0,
+    averageGrams: 0,
+    thisWeekDays: 0,
+  });
+
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Edit Modal State
+  const [editingLog, setEditingLog] = useState<any | null>(null);
+  const [editGrams, setEditGrams] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  // Pagination for Recent History
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
+  const totalPages = Math.max(1, Math.ceil(creatinaLogs.length / itemsPerPage));
+  const paginatedLogs = useMemo(() => {
+    return creatinaLogs.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+  }, [creatinaLogs, currentPage]);
 
   useEffect(() => {
     if (visible) {
       loadCreatineData();
+      setGrams(String(creatineTarget || '5'));
     }
   }, [visible, selectedDate]);
 
   const loadCreatineData = async () => {
     setIsLoading(true);
     try {
-      const [logsRes, statsRes] = await Promise.all([
-        creatinaService.getCreatinaLogs({ startDate: selectedDate, endDate: selectedDate }),
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+      const offset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - offset);
+
+      const startDate = formatDateForQuery(startOfWeek);
+      const endDate = formatDateForQuery(today);
+
+      const [logsRes, statsRes, dailyRes] = await Promise.all([
+        creatinaService.getCreatinaLogs({ limit: 40 }),
         creatinaService.getCreatinaStats().catch(() => null),
+        creatinaService.getCreatinaLogs({ startDate: selectedDate, endDate: selectedDate }),
       ]);
-      setLogs(logsRes?.data || []);
-      if (statsRes?.data) setStats(statsRes.data);
+
+      setCreatinaLogs(logsRes?.data || []);
+      if (statsRes?.data) {
+        setStats({
+          totalDays: statsRes.data.totalDays ?? 0,
+          currentStreak: statsRes.data.currentStreak ?? 0,
+          averageGrams: statsRes.data.averageGrams ?? 0,
+          thisWeekDays: statsRes.data.thisWeekDays ?? 0,
+        });
+      }
+      setDailyLogs(dailyRes?.data || []);
+      setCurrentPage(1);
     } catch (e) {
-      console.warn('Error loading creatine logs:', e);
+      console.warn('Error loading creatine data:', e);
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +141,14 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
 
   const handleAddLog = async () => {
     const num = parseFloat(grams);
-    if (isNaN(num) || num <= 0) return;
+    if (isNaN(num) || num <= 0) {
+      Alert.alert('Valor inválido', 'Por favor ingresa una cantidad válida de gramos.');
+      return;
+    }
+    if (num > 50) {
+      Alert.alert('Límite excedido', 'La cantidad máxima permitida es 50g.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -74,400 +156,1168 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       } catch {}
 
-      await creatinaService.createCreatinaLog({
+      const response = await creatinaService.createCreatinaLog({
         grams: num,
         log_date: selectedDate,
       });
+
+      setGrams(String(creatineTarget || '5'));
       await loadCreatineData();
       onRefresh();
-    } catch (e) {
-      console.error('Error logging creatine:', e);
+
+      if (fetchNotifications) fetchNotifications();
+      if (fetchInitialData) fetchInitialData();
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Error al guardar el registro de creatina.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDeleteLog = async (id: number) => {
+  const handleOpenEdit = (log: any) => {
+    try {
+      Haptics.selectionAsync();
+    } catch {}
+    setEditingLog(log);
+    setEditGrams(String(log.grams));
+    setShowEditModal(true);
+  };
+
+  const handleCloseEdit = () => {
+    setShowEditModal(false);
+    setEditingLog(null);
+    setEditGrams('');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingLog) return;
+    const num = parseFloat(editGrams);
+    if (isNaN(num) || num <= 0) {
+      Alert.alert('Valor inválido', 'Por favor ingresa una cantidad válida de gramos.');
+      return;
+    }
+    if (num > 50) {
+      Alert.alert('Límite excedido', 'La cantidad máxima permitida es 50g.');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       try {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       } catch {}
-      await creatinaService.deleteCreatinaLog(id);
+
+      await creatinaService.updateCreatinaLog(editingLog.id, {
+        grams: num,
+      });
+
+      handleCloseEdit();
       await loadCreatineData();
       onRefresh();
-    } catch (e) {
-      console.error('Error deleting creatine log:', e);
+
+      if (fetchNotifications) fetchNotifications();
+      if (fetchInitialData) fetchInitialData();
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Error al actualizar el registro.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const handleDeleteLog = (log: any) => {
+    Alert.alert(
+      'Eliminar toma',
+      `¿Deseas eliminar el registro de ${log.grams}g?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              } catch {}
+              await creatinaService.deleteCreatinaLog(log.id);
+              await loadCreatineData();
+              onRefresh();
+              if (fetchNotifications) fetchNotifications();
+              if (fetchInitialData) fetchInitialData();
+            } catch (e: any) {
+              Alert.alert('Error', e.message || 'Error al eliminar el registro.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const getStreakColor = (streak: number) => {
+    if (streak >= 30) return '#22c55e';
+    if (streak >= 14) return '#3b82f6';
+    if (streak >= 7) return '#eab308';
+    return colors.textMuted;
+  };
+
+  const formattedSelectedDate = useMemo(() => {
+    const str = formatDateForDisplay(selectedDate);
+    if (!str) return selectedDate;
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }, [selectedDate]);
+
+  const formatLogWeekday = (dateStr: string) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    const day = d.toLocaleDateString('es-ES', { weekday: 'long' });
+    return day.charAt(0).toUpperCase() + day.slice(1);
+  };
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-        <Pressable
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: 20,
-              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.25)',
-            },
-          ]}
-          onPress={onClose}
-        >
-          <Pressable onPress={e => e.stopPropagation()} style={[styles.cardWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFill}
-            />
-            <View style={styles.card}>
-              {/* Close Button */}
-              <TouchableOpacity
-                onPress={onClose}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                style={[
-                  styles.closeButton,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  },
-                ]}
-                activeOpacity={0.7}
-              >
-                <X size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
+    <>
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+        <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
+          <Pressable
+            style={[
+              StyleSheet.absoluteFill,
+              styles.modalOverlay,
+              {
+                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.45)' : 'rgba(255, 255, 255, 0.25)',
+              },
+            ]}
+            onPress={onClose}
+          >
+            <Pressable
+              onPress={e => e.stopPropagation()}
+              style={[
+                styles.cardWrapper,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
+                },
+              ]}
+            >
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={StyleSheet.absoluteFill}
+              />
 
-              {/* Icon badge */}
-              <View
-                style={[
-                  styles.iconBadge,
-                  {
-                    backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                    borderColor: 'rgba(168, 85, 247, 0.3)',
-                  },
-                ]}
-              >
-                <Zap size={30} color="#a855f7" />
-              </View>
-
-              <Text style={[styles.title, { color: colors.text }]}>Control de Creatina</Text>
-              <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                Dosis diaria recomendada: ~{creatineTarget}g
-              </Text>
-
-              {/* Input & Quick Presets */}
-              <View style={styles.inputContainer}>
+              <View style={styles.card}>
+                {/* Header (Liquid Glass) */}
                 <View
                   style={[
-                    styles.inputWrapper,
+                    styles.header,
                     {
-                      borderColor: colors.border,
-                      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 0, 0, 0.04)',
+                      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
                     },
                   ]}
                 >
-                  <TextInput
-                    value={grams}
-                    onChangeText={setGrams}
-                    keyboardType="numeric"
-                    style={[styles.input, { color: colors.text }]}
-                    placeholder="5"
-                    placeholderTextColor={colors.textMuted}
-                  />
-                  <Text style={[styles.inputUnit, { color: colors.textSecondary }]}>gramos</Text>
+                  <View style={styles.headerLeft}>
+                    <View
+                      style={[
+                        styles.headerIconBadge,
+                        {
+                          backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                          borderColor: 'rgba(168, 85, 247, 0.35)',
+                        },
+                      ]}
+                    >
+                      <GlassView
+                        glassEffectStyle="regular"
+                        colorScheme={isDark ? 'dark' : 'light'}
+                        style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                      />
+                      <Zap size={22} color="#a855f7" strokeWidth={2.5} />
+                    </View>
+                    <View>
+                      <Text style={[styles.headerTitle, { color: colors.text }]}>Creatina</Text>
+                      <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+                        Dosis recomendada: ~{creatineTarget}g/día
+                      </Text>
+                    </View>
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={onClose}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    style={[
+                      styles.closeBtn,
+                      {
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                      },
+                    ]}
+                    activeOpacity={0.7}
+                  >
+                    <GlassView
+                      glassEffectStyle="regular"
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
+                    />
+                    <X size={18} color={colors.textSecondary} />
+                  </TouchableOpacity>
                 </View>
 
-                {/* Quick Presets */}
-                <View style={styles.presetsRow}>
-                  {['3', '5', '7'].map(val => (
-                    <TouchableOpacity
-                      key={val}
-                      onPress={() => {
-                        try {
-                          Haptics.selectionAsync();
-                        } catch {}
-                        setGrams(val);
-                      }}
+                {/* Body Content */}
+                <ScrollView
+                  style={styles.scrollBody}
+                  contentContainerStyle={styles.scrollContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {/* 1. STATS BENTO GRID (Identical to Frontend) */}
+                  <View style={styles.statsGrid}>
+                    {/* Días Totales */}
+                    <View
                       style={[
-                        styles.presetChip,
-                        grams === val && {
-                          backgroundColor: '#a855f7',
-                          borderColor: '#a855f7',
+                        styles.statCard,
+                        {
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
                         },
-                        grams !== val && {
+                      ]}
+                    >
+                      <GlassView
+                        glassEffectStyle="regular"
+                        colorScheme={isDark ? 'dark' : 'light'}
+                        style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                      />
+                      <Calendar size={22} color="#3b82f6" strokeWidth={1.7} />
+                      <Text style={[styles.statValue, { color: colors.text }]}>
+                        {stats.totalDays}
+                      </Text>
+                      <Text style={[styles.statLabel, { color: colors.textMuted }]}>
+                        Días totales
+                      </Text>
+                    </View>
+
+                    {/* Racha Actual */}
+                    <View
+                      style={[
+                        styles.statCard,
+                        {
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                        },
+                      ]}
+                    >
+                      <GlassView
+                        glassEffectStyle="regular"
+                        colorScheme={isDark ? 'dark' : 'light'}
+                        style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                      />
+                      <TrendingUp size={22} color={getStreakColor(stats.currentStreak)} strokeWidth={1.7} />
+                      <Text style={[styles.statValue, { color: getStreakColor(stats.currentStreak) }]}>
+                        {stats.currentStreak}
+                      </Text>
+                      <Text style={[styles.statLabel, { color: colors.textMuted }]}>
+                        Racha actual
+                      </Text>
+                    </View>
+
+                    {/* Promedio */}
+                    <View
+                      style={[
+                        styles.statCard,
+                        {
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                        },
+                      ]}
+                    >
+                      <GlassView
+                        glassEffectStyle="regular"
+                        colorScheme={isDark ? 'dark' : 'light'}
+                        style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                      />
+                      <Zap size={22} color="#a855f7" strokeWidth={1.7} />
+                      <Text style={[styles.statValue, { color: colors.text }]}>
+                        {stats.averageGrams ? stats.averageGrams.toFixed(1) : '0.0'}
+                        <Text style={{ fontSize: 14 }}>g</Text>
+                      </Text>
+                      <Text style={[styles.statLabel, { color: colors.textMuted }]}>
+                        Promedio
+                      </Text>
+                    </View>
+
+                    {/* Esta Semana */}
+                    <View
+                      style={[
+                        styles.statCard,
+                        {
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                        },
+                      ]}
+                    >
+                      <GlassView
+                        glassEffectStyle="regular"
+                        colorScheme={isDark ? 'dark' : 'light'}
+                        style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                      />
+                      <Calendar size={22} color="#22c55e" strokeWidth={1.7} />
+                      <Text style={[styles.statValue, { color: colors.text }]}>
+                        {stats.thisWeekDays}/7
+                      </Text>
+                      <Text style={[styles.statLabel, { color: colors.textMuted }]}>
+                        Esta semana
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* 2. FORMULARIO PARA AÑADIR TOMA (Identical to Frontend) */}
+                  <View
+                    style={[
+                      styles.sectionCard,
+                      {
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.6)',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                      },
+                    ]}
+                  >
+                    <GlassView
+                      glassEffectStyle="regular"
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+                    />
+
+                    {/* Header de fecha seleccionada */}
+                    <View style={styles.sectionHeaderRow}>
+                      <Calendar size={18} color="#a855f7" />
+                      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                        {formattedSelectedDate}
+                      </Text>
+                    </View>
+
+                    {dailyLogs.length < 2 ? (
+                      <View style={{ gap: 14 }}>
+                        <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                          Añadir nueva toma ({dailyLogs.length + 1} de 2)
+                        </Text>
+
+                        {/* Input Box Liquid Glass */}
+                        <View
+                          style={[
+                            styles.inputWrapper,
+                            {
+                              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                              borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
+                            },
+                          ]}
+                        >
+                          <TextInput
+                            value={grams}
+                            onChangeText={setGrams}
+                            keyboardType="numeric"
+                            style={[styles.input, { color: colors.text }]}
+                            placeholder="Ej: 5.0"
+                            placeholderTextColor={colors.textMuted}
+                            editable={!isSubmitting}
+                          />
+                          <Text style={[styles.inputUnit, { color: colors.textSecondary }]}>gramos</Text>
+                        </View>
+
+                        {/* Presets Chips Liquid Glass */}
+                        <View style={styles.presetsRow}>
+                          {['3', '5', '7'].map(val => (
+                            <TouchableOpacity
+                              key={val}
+                              onPress={() => {
+                                try {
+                                  Haptics.selectionAsync();
+                                } catch {}
+                                setGrams(val);
+                              }}
+                              style={[
+                                styles.presetChip,
+                                {
+                                  borderColor: grams === val
+                                    ? '#a855f7'
+                                    : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)'),
+                                  backgroundColor: grams === val
+                                    ? '#a855f720'
+                                    : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)'),
+                                },
+                              ]}
+                              activeOpacity={0.7}
+                            >
+                              <GlassView
+                                glassEffectStyle="regular"
+                                colorScheme={isDark ? 'dark' : 'light'}
+                                style={[StyleSheet.absoluteFill, { borderRadius: 14 }]}
+                              />
+                              <Text
+                                style={[
+                                  styles.presetChipText,
+                                  { color: grams === val ? '#a855f7' : colors.textSecondary },
+                                ]}
+                              >
+                                {val}g
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+
+                        {/* Action Button Liquid Glass */}
+                        <TouchableOpacity
+                          onPress={handleAddLog}
+                          disabled={isSubmitting || !grams}
+                          activeOpacity={0.75}
+                          style={[
+                            styles.actionBtn,
+                            {
+                              borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+                              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
+                              opacity: isSubmitting || !grams ? 0.5 : 1,
+                            },
+                          ]}
+                        >
+                          <GlassView
+                            glassEffectStyle="regular"
+                            colorScheme={isDark ? 'dark' : 'light'}
+                            style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                          />
+                          <View
+                            style={[
+                              StyleSheet.absoluteFill,
+                              {
+                                backgroundColor: '#a855f7' + (isDark ? '25' : '18'),
+                                borderRadius: 20,
+                              },
+                            ]}
+                          />
+                          {isSubmitting ? (
+                            <ActivityIndicator size="small" color="#a855f7" />
+                          ) : (
+                            <View style={styles.btnContentRow}>
+                              <Plus size={18} color="#a855f7" strokeWidth={2.5} />
+                              <Text style={[styles.actionBtnText, { color: '#a855f7' }]}>
+                                Añadir Toma
+                              </Text>
+                            </View>
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      /* Límite diario alcanzado */
+                      <View
+                        style={[
+                          styles.dailyLimitBadge,
+                          {
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                          },
+                        ]}
+                      >
+                        <Check size={26} color="#22c55e" strokeWidth={2.5} style={{ marginBottom: 4 }} />
+                        <Text style={[styles.dailyLimitTitle, { color: colors.text }]}>
+                          Límite diario alcanzado
+                        </Text>
+                        <Text style={[styles.dailyLimitSubtitle, { color: colors.textMuted }]}>
+                          Has registrado las 2 tomas de hoy.
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* 3. HISTORIAL RECIENTE (Identical to Frontend) */}
+                  <View
+                    style={[
+                      styles.sectionCard,
+                      {
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.6)',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                      },
+                    ]}
+                  >
+                    <GlassView
+                      glassEffectStyle="regular"
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+                    />
+
+                    <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 14 }]}>
+                      Historial Reciente
+                    </Text>
+
+                    {isLoading ? (
+                      <View style={{ paddingVertical: 30, alignItems: 'center' }}>
+                        <ActivityIndicator size="small" color="#a855f7" />
+                        <Text style={{ marginTop: 8, fontSize: 12, fontWeight: '700', color: colors.textMuted }}>
+                          Cargando...
+                        </Text>
+                      </View>
+                    ) : creatinaLogs.length > 0 ? (
+                      <View style={{ gap: 10 }}>
+                        {paginatedLogs.map((log: any) => (
+                          <View
+                            key={log.id}
+                            style={[
+                              styles.historyItem,
+                              {
+                                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.55)',
+                                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                              },
+                            ]}
+                          >
+                            <GlassView
+                              glassEffectStyle="regular"
+                              colorScheme={isDark ? 'dark' : 'light'}
+                              style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
+                            />
+
+                            {/* Grams Badge */}
+                            <View style={styles.gramsBadge}>
+                              <Text style={styles.gramsBadgeText}>{log.grams}g</Text>
+                            </View>
+
+                            {/* Date info */}
+                            <View style={styles.historyInfo}>
+                              <Text style={[styles.historyDate, { color: colors.text }]}>
+                                {formatDateToShort(log.log_date)}
+                              </Text>
+                              <Text style={[styles.historyWeekday, { color: colors.textMuted }]}>
+                                {formatLogWeekday(log.log_date)}
+                              </Text>
+                            </View>
+
+                            {/* Actions (Edit & Delete) */}
+                            <View style={styles.historyActions}>
+                              <TouchableOpacity
+                                onPress={() => handleOpenEdit(log)}
+                                style={[
+                                  styles.historyActionBtn,
+                                  {
+                                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                                  },
+                                ]}
+                                hitSlop={6}
+                                activeOpacity={0.7}
+                              >
+                                <GlassView
+                                  glassEffectStyle="regular"
+                                  colorScheme={isDark ? 'dark' : 'light'}
+                                  style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
+                                />
+                                <Edit2 size={15} color={colors.textSecondary} />
+                              </TouchableOpacity>
+
+                              <TouchableOpacity
+                                onPress={() => handleDeleteLog(log)}
+                                style={[
+                                  styles.historyActionBtn,
+                                  {
+                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                    borderColor: 'rgba(239, 68, 68, 0.25)',
+                                  },
+                                ]}
+                                hitSlop={6}
+                                activeOpacity={0.7}
+                              >
+                                <GlassView
+                                  glassEffectStyle="regular"
+                                  colorScheme={isDark ? 'dark' : 'light'}
+                                  style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
+                                />
+                                <Trash2 size={15} color="#ef4444" />
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        ))}
+
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                          <View
+                            style={[
+                              styles.paginationRow,
+                              {
+                                borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                              },
+                            ]}
+                          >
+                            <TouchableOpacity
+                              onPress={() => {
+                                try {
+                                  Haptics.selectionAsync();
+                                } catch {}
+                                setCurrentPage(p => Math.max(1, p - 1));
+                              }}
+                              disabled={currentPage === 1}
+                              style={[
+                                styles.pageBtn,
+                                {
+                                  opacity: currentPage === 1 ? 0.35 : 1,
+                                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                                },
+                              ]}
+                              activeOpacity={0.7}
+                            >
+                              <GlassView
+                                glassEffectStyle="regular"
+                                colorScheme={isDark ? 'dark' : 'light'}
+                                style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
+                              />
+                              <ChevronLeft size={18} color={colors.text} />
+                            </TouchableOpacity>
+
+                            <Text style={[styles.pageInfoText, { color: colors.textMuted }]}>
+                              PÁGINA {currentPage} DE {totalPages}
+                            </Text>
+
+                            <TouchableOpacity
+                              onPress={() => {
+                                try {
+                                  Haptics.selectionAsync();
+                                } catch {}
+                                setCurrentPage(p => Math.min(totalPages, p + 1));
+                              }}
+                              disabled={currentPage === totalPages}
+                              style={[
+                                styles.pageBtn,
+                                {
+                                  opacity: currentPage === totalPages ? 0.35 : 1,
+                                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                                },
+                              ]}
+                              activeOpacity={0.7}
+                            >
+                              <GlassView
+                                glassEffectStyle="regular"
+                                colorScheme={isDark ? 'dark' : 'light'}
+                                style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
+                              />
+                              <ChevronRight size={18} color={colors.text} />
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </View>
+                    ) : (
+                      /* Empty state */
+                      <View style={styles.emptyContainer}>
+                        <Zap size={36} color={colors.textMuted} style={{ opacity: 0.4, marginBottom: 8 }} />
+                        <Text style={[styles.emptyTitle, { color: colors.text }]}>No hay registros</Text>
+                        <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+                          ¡Comienza tu seguimiento!
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </ScrollView>
+              </View>
+            </Pressable>
+          </Pressable>
+        </GlassView>
+      </Modal>
+
+      {/* 4. MODAL DE EDICIÓN (Liquid Glass) */}
+      {showEditModal && editingLog && (
+        <Modal visible={true} transparent animationType="fade" onRequestClose={handleCloseEdit}>
+          <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              style={[
+                StyleSheet.absoluteFill,
+                styles.modalOverlay,
+                {
+                  backgroundColor: isDark ? 'rgba(0, 0, 0, 0.55)' : 'rgba(255, 255, 255, 0.35)',
+                },
+              ]}
+            >
+              <Pressable
+                onPress={handleCloseEdit}
+                style={StyleSheet.absoluteFill}
+              />
+              <Pressable
+                onPress={e => e.stopPropagation()}
+                style={[
+                  styles.editModalWrapper,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
+                  },
+                ]}
+              >
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={StyleSheet.absoluteFill}
+                />
+
+                <View style={styles.editModalContent}>
+                  {/* Header */}
+                  <View
+                    style={[
+                      styles.header,
+                      {
+                        borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.headerTitle, { color: colors.text }]}>Editar Registro</Text>
+                    <TouchableOpacity
+                      onPress={handleCloseEdit}
+                      style={[
+                        styles.closeBtn,
+                        {
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
                           backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                          borderColor: colors.border,
                         },
                       ]}
                       activeOpacity={0.7}
                     >
-                      <Text
-                        style={[
-                          styles.presetChipText,
-                          { color: grams === val ? '#ffffff' : colors.textSecondary },
-                        ]}
-                      >
-                        {val}g
-                      </Text>
+                      <GlassView
+                        glassEffectStyle="regular"
+                        colorScheme={isDark ? 'dark' : 'light'}
+                        style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
+                      />
+                      <X size={18} color={colors.textSecondary} />
                     </TouchableOpacity>
-                  ))}
-                </View>
+                  </View>
 
-                {/* Save Button */}
-                <TouchableOpacity
-                  onPress={handleAddLog}
-                  disabled={isSubmitting}
-                  style={[
-                    styles.addBtn,
-                    {
-                      backgroundColor: '#a855f7',
-                      opacity: isSubmitting ? 0.6 : 1,
-                    },
-                  ]}
-                  activeOpacity={0.85}
-                >
-                  {isSubmitting ? (
-                    <ActivityIndicator size="small" color="#ffffff" />
-                  ) : (
-                    <Text style={styles.addBtnText}>Registrar Toma</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-
-              {/* Logs for selectedDate */}
-              <View style={styles.logsSection}>
-                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                  Tomas del Día ({logs.length})
-                </Text>
-
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#a855f7" style={{ marginVertical: 12 }} />
-                ) : logs.length > 0 ? (
-                  <ScrollView style={styles.logsList} contentContainerStyle={{ gap: 8 }}>
-                    {logs.map(log => (
+                  <View style={{ gap: 14 }}>
+                    {/* Fecha (Read-only) */}
+                    <View style={{ gap: 6 }}>
+                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>FECHA</Text>
                       <View
-                        key={log.id}
                         style={[
-                          styles.logItem,
+                          styles.inputWrapper,
                           {
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                            borderColor: colors.border,
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                            opacity: 0.85,
                           },
                         ]}
                       >
-                        <View style={styles.logLeft}>
-                          <View style={styles.logCheckBadge}>
-                            <Check size={14} color="#a855f7" strokeWidth={3} />
-                          </View>
-                          <Text style={[styles.logGrams, { color: colors.text }]}>{log.grams}g</Text>
-                        </View>
-                        <TouchableOpacity
-                          onPress={() => handleDeleteLog(log.id)}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                          activeOpacity={0.7}
-                        >
-                          <Trash2 size={16} color="#ef4444" />
-                        </TouchableOpacity>
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>
+                          {formatDateForDisplay(editingLog.log_date)}
+                        </Text>
                       </View>
-                    ))}
-                  </ScrollView>
-                ) : (
-                  <Text style={[styles.emptyLogs, { color: colors.textMuted }]}>
-                    No hay tomas registradas para este día.
-                  </Text>
-                )}
-              </View>
+                    </View>
 
-              {/* Stats card if available */}
-              {stats && (
-                <View
-                  style={[
-                    styles.statsBox,
-                    {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: colors.border,
-                    },
-                  ]}
-                >
-                  <View style={styles.statCol}>
-                    <Text style={[styles.statVal, { color: colors.text }]}>{stats.currentStreak || 0}</Text>
-                    <Text style={[styles.statSub, { color: colors.textMuted }]}>Racha (días)</Text>
-                  </View>
-                  <View style={styles.statCol}>
-                    <Text style={[styles.statVal, { color: colors.text }]}>{stats.totalDays || 0}</Text>
-                    <Text style={[styles.statSub, { color: colors.textMuted }]}>Total Días</Text>
+                    {/* Gramos de creatina */}
+                    <View style={{ gap: 6 }}>
+                      <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+                        GRAMOS DE CREATINA
+                      </Text>
+                      <View
+                        style={[
+                          styles.inputWrapper,
+                          {
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
+                          },
+                        ]}
+                      >
+                        <TextInput
+                          value={editGrams}
+                          onChangeText={setEditGrams}
+                          keyboardType="numeric"
+                          style={[styles.input, { color: colors.text }]}
+                          autoFocus
+                          editable={!isSubmitting}
+                        />
+                        <Text style={[styles.inputUnit, { color: colors.textSecondary }]}>gramos</Text>
+                      </View>
+                    </View>
+
+                    {/* Action Buttons */}
+                    <View style={styles.editActionButtons}>
+                      <TouchableOpacity
+                        onPress={handleCloseEdit}
+                        disabled={isSubmitting}
+                        style={[
+                          styles.editCancelBtn,
+                          {
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                          },
+                        ]}
+                        activeOpacity={0.7}
+                      >
+                        <GlassView
+                          glassEffectStyle="regular"
+                          colorScheme={isDark ? 'dark' : 'light'}
+                          style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
+                        />
+                        <Text style={[styles.editCancelText, { color: colors.text }]}>Cancelar</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={handleSaveEdit}
+                        disabled={isSubmitting || !editGrams}
+                        style={[
+                          styles.editSaveBtn,
+                          {
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
+                            opacity: isSubmitting || !editGrams ? 0.5 : 1,
+                          },
+                        ]}
+                        activeOpacity={0.75}
+                      >
+                        <GlassView
+                          glassEffectStyle="regular"
+                          colorScheme={isDark ? 'dark' : 'light'}
+                          style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
+                        />
+                        <View
+                          style={[
+                            StyleSheet.absoluteFill,
+                            {
+                              backgroundColor: '#a855f7' + (isDark ? '25' : '18'),
+                              borderRadius: 18,
+                            },
+                          ]}
+                        />
+                        {isSubmitting ? (
+                          <ActivityIndicator size="small" color="#a855f7" />
+                        ) : (
+                          <View style={styles.btnContentRow}>
+                            <Save size={16} color="#a855f7" strokeWidth={2.5} />
+                            <Text style={[styles.actionBtnText, { color: '#a855f7' }]}>
+                              Guardar Cambios
+                            </Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
-              )}
-            </View>
-          </Pressable>
-        </Pressable>
-      </GlassView>
-    </Modal>
+              </Pressable>
+            </KeyboardAvoidingView>
+          </GlassView>
+        </Modal>
+      )}
+    </>
   );
 };
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
   cardWrapper: {
     width: '100%',
-    maxWidth: 360,
+    maxWidth: 440,
+    maxHeight: '90%',
     borderRadius: 32,
     overflow: 'hidden',
+    borderWidth: 1,
   },
   card: {
-    padding: 22,
-    borderRadius: 32,
-    borderWidth: 1,
-    alignItems: 'center',
+    flex: 1,
+    paddingTop: 18,
+    paddingHorizontal: 18,
+    paddingBottom: 16,
   },
-  closeButton: {
-    position: 'absolute',
-    top: 18,
-    right: 18,
-    width: 32,
-    height: 32,
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    marginBottom: 14,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerIconBadge: {
+    width: 44,
+    height: 44,
     borderRadius: 16,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
   },
-  iconBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    marginBottom: 12,
-    marginTop: 4,
-  },
-  title: {
-    fontSize: 19,
+  headerTitle: {
+    fontSize: 20,
     fontWeight: '800',
     letterSpacing: -0.4,
-    marginBottom: 4,
   },
-  subtitle: {
+  headerSubtitle: {
     fontSize: 12,
     fontWeight: '600',
-    marginBottom: 18,
+    marginTop: 2,
   },
-  inputContainer: {
-    width: '100%',
-    gap: 12,
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  scrollBody: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 16,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
     marginBottom: 16,
+  },
+  statCard: {
+    flexBasis: '47%',
+    flexGrow: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  sectionCard: {
+    padding: 16,
+    borderRadius: 24,
+    borderWidth: 1,
+    marginBottom: 16,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  inputLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 18,
     borderWidth: 1,
   },
   input: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     flex: 1,
   },
   inputUnit: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   presetsRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   presetChip: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingVertical: 9,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
   },
   presetChipText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '800',
   },
-  addBtn: {
-    width: '100%',
-    paddingVertical: 13,
-    borderRadius: 18,
+  actionBtn: {
+    height: 50,
+    borderRadius: 20,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
   },
-  addBtnText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: -0.2,
-  },
-  logsSection: {
-    width: '100%',
-    marginTop: 8,
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 8,
-  },
-  logsList: {
-    maxHeight: 120,
-  },
-  logItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  logLeft: {
+  btnContentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  logCheckBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+  actionBtnText: {
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  dailyLimitBadge: {
+    paddingVertical: 18,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  logGrams: {
+  dailyLimitTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  dailyLimitSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  historyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 12,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  gramsBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+  },
+  gramsBadgeText: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#a855f7',
+  },
+  historyInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  historyDate: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  historyWeekday: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  historyActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  historyActionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  paginationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  pageBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  pageInfoText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  emptyTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  emptySubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  editModalWrapper: {
+    width: '100%',
+    maxWidth: 380,
+    borderRadius: 28,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  editModalContent: {
+    padding: 20,
+  },
+  editActionButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
+  editCancelBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  editCancelText: {
     fontSize: 14,
     fontWeight: '700',
   },
-  emptyLogs: {
-    fontSize: 12,
-    textAlign: 'center',
-    paddingVertical: 10,
-  },
-  statsBox: {
-    flexDirection: 'row',
-    width: '100%',
-    borderRadius: 16,
-    paddingVertical: 10,
+  editSaveBtn: {
+    flex: 1.5,
+    height: 48,
+    borderRadius: 18,
     borderWidth: 1,
-    marginTop: 6,
-  },
-  statCol: {
-    flex: 1,
     alignItems: 'center',
-  },
-  statVal: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  statSub: {
-    fontSize: 10,
-    fontWeight: '600',
-    marginTop: 1,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
   },
 });
