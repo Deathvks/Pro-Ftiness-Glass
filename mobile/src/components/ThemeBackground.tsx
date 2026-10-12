@@ -143,15 +143,14 @@ export default function ThemeBackground() {
   const theme = useAppStore(state => state.theme);
 
   if (theme === 'galaxy') {
-    const isDark = true; // Galaxy is always dark in web
     return (
-      <View style={[{ position: 'absolute', top: 0, left: 0, width, height, zIndex: -1 }]} pointerEvents="none">
+      <View style={[StyleSheet.absoluteFill, { zIndex: -1 }]} pointerEvents="none">
         <Image 
           source={require('../../assets/images/galaxy.jpg')} 
-          style={{ position: 'absolute', top: 0, left: 0, width, height }}
+          style={StyleSheet.absoluteFill}
           resizeMode="cover"
         />
-        <View style={[{ position: 'absolute', top: 0, left: 0, width, height }, { backgroundColor: 'rgba(10, 10, 26, 0.5)' }]} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(10, 10, 26, 0.5)' }]} />
         <GalaxyStars />
         <GalaxyMeteor />
       </View>
@@ -161,14 +160,14 @@ export default function ThemeBackground() {
   if (theme.startsWith('ocean')) {
     const isDark = theme === 'ocean-dark';
     return (
-      <View style={[{ position: 'absolute', top: 0, left: 0, width, height, zIndex: -1 }]} pointerEvents="none">
+      <View style={[StyleSheet.absoluteFill, { zIndex: -1 }]} pointerEvents="none">
         <Image 
           source={require('../../assets/images/ocean.jpg')} 
-          style={{ position: 'absolute', top: 0, left: 0, width, height }}
+          style={StyleSheet.absoluteFill}
           resizeMode="cover"
         />
         {isDark ? (
-          <View style={[{ position: 'absolute', top: 0, left: 0, width, height }, { backgroundColor: 'rgba(8, 47, 73, 0.5)' }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(8, 47, 73, 0.5)' }]} />
         ) : null}
       </View>
     );
@@ -177,16 +176,16 @@ export default function ThemeBackground() {
   if (theme.startsWith('desert')) {
     const isDark = theme === 'desert-dark';
     return (
-      <View style={[{ position: 'absolute', top: 0, left: 0, width, height, zIndex: -1 }]} pointerEvents="none">
+      <View style={[StyleSheet.absoluteFill, { zIndex: -1 }]} pointerEvents="none">
         <Image 
           source={require('../../assets/images/desert.jpg')} 
-          style={{ position: 'absolute', top: 0, left: 0, width, height }}
+          style={StyleSheet.absoluteFill}
           resizeMode="cover"
         />
         {isDark ? (
-          <View style={[{ position: 'absolute', top: 0, left: 0, width, height }, { backgroundColor: 'rgba(44, 30, 22, 0.5)' }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(44, 30, 22, 0.5)' }]} />
         ) : (
-          <View style={[{ position: 'absolute', top: 0, left: 0, width, height }, { backgroundColor: 'rgba(253, 248, 245, 0.45)' }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(253, 248, 245, 0.45)' }]} />
         )}
       </View>
     );

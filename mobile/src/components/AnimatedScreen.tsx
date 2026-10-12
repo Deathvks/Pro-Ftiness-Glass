@@ -21,7 +21,7 @@ export default function AnimatedScreen({
     const scrollY = useRef(new Animated.Value(0)).current;
     const insets = useSafeAreaInsets();
     const theme = useAppStore(state => state.theme) || 'oled';
-    const colors = Colors[theme] || Colors.oled;
+    const colors = (Colors as any)[theme] || Colors.oled;
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -31,7 +31,7 @@ export default function AnimatedScreen({
                     showsVerticalScrollIndicator={false}
                     onScroll={Animated.event(
                         [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                        { useNativeDriver: true }
+                        { useNativeDriver: Platform.OS !== 'web' }
                     )}
                     scrollEventThrottle={16}
                     contentContainerStyle={{ 
