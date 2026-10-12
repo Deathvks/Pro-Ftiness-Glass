@@ -89,55 +89,64 @@ export const generateSmartNutritionCoachPlan = ({
 
   // 1. CALORÍAS
   const calPct = Math.round((caloriesConsumed / calorieTarget) * 100);
-  let calStatus = 'optimal';
+  const calRemaining = Math.max(0, calorieTarget - caloriesConsumed);
+  const calSurplus = Math.max(0, caloriesConsumed - calorieTarget);
+  let calStatus = 'in_progress';
   let calMessage = '';
   let calScience = '';
 
   if (goalInfo.key === 'lose') {
-    if (caloriesConsumed > calorieTarget + 150) {
+    if (caloriesConsumed > calorieTarget + 120) {
       calStatus = 'warning';
       warningsCount++;
-      calMessage = `Superávit en definición (+${caloriesConsumed - calorieTarget} kcal sobre la meta).`;
-      calScience = 'En fase de pérdida de grasa, exceder el objetivo calórico detiene la lipólisis (quema de grasa). Ajusta la siguiente comida.';
-    } else if (caloriesConsumed < calorieTarget * 0.45 && foodCount >= 2) {
-      calStatus = 'warning';
-      warningsCount++;
-      calMessage = `Déficit extremo (${calPct}% consumido).`;
-      calScience = 'Un déficit excesivamente agresivo eleva el cortisol y puede inducir catabolismo de masa muscular.';
+      calMessage = `Superávit en definición (+${calSurplus} kcal sobre el límite).`;
+      calScience = 'En fase de pérdida de grasa, superar tu meta calórica detiene la movilización de ácidos grasos (lipólisis). Compensa en tu siguiente comida.';
+    } else if (calPct < 60) {
+      calStatus = 'in_progress';
+      calMessage = `Llevas ${caloriesConsumed} kcal (${calPct}%). Te quedan ${calRemaining} kcal disponibles para hoy manteniendo tu déficit.`;
+      calScience = 'Distribuye las calorías restantes en alimentos con buen volumen y proteína para preservar masa muscular y evitar pasar hambre.';
     } else {
       calStatus = 'optimal';
       optimalCount++;
-      calMessage = `Déficit óptimo para quemar grasa (${calPct}% completado).`;
+      calMessage = `Déficit óptimo para quemar grasa (${caloriesConsumed}/${calorieTarget} kcal - ${calPct}%).`;
       calScience = 'Consistencia calórica ideal: permite la oxidación de ácidos grasos mientras se preserva el tejido magro.';
     }
   } else if (goalInfo.key === 'gain') {
-    if (caloriesConsumed < calorieTarget * 0.65 && foodCount >= 2) {
+    if (calPct < 65) {
+      calStatus = 'in_progress';
+      calMessage = `Llevas ${caloriesConsumed} de ${calorieTarget} kcal (${calPct}%). Te faltan ${calRemaining} kcal para alcanzar el superávit anabólico del día.`;
+      calScience = 'Para construir nuevo tejido muscular (hipertrofia), el organismo requiere un aporte calórico completo. Con un consumo bajo, el cuerpo prioriza funciones basales y no tiene excedente para sintetizar masa muscular.';
+    } else if (calPct >= 65 && calPct < 85) {
+      calStatus = 'in_progress';
+      calMessage = `Buen avance: ${caloriesConsumed}/${calorieTarget} kcal (${calPct}%). Restan ${calRemaining} kcal para tu meta diaria.`;
+      calScience = 'Aprovecha las comidas restantes para cubrir las calorías que faltan con fuentes densas y limpias según lo que tengas en casa.';
+    } else if (caloriesConsumed > calorieTarget * 1.20) {
       calStatus = 'warning';
       warningsCount++;
-      calMessage = `Calorías insuficientes para hipertrofia (${caloriesConsumed}/${calorieTarget} kcal).`;
-      calScience = 'El crecimiento muscular requiere superávit o normocaloría. Con déficit calórico, el anabolismo se frena drásticamente.';
-    } else if (caloriesConsumed > calorieTarget * 1.25) {
-      calStatus = 'warning';
-      warningsCount++;
-      calMessage = `Superávit excesivo (+${caloriesConsumed - calorieTarget} kcal).`;
-      calScience = 'Más de 400-500 kcal de superávit diario suele traducirse en acumulación de tejido adiposo innecesario.';
+      calMessage = `Superávit excesivo (+${calSurplus} kcal sobre la meta).`;
+      calScience = 'Un superávit demasiado elevado (más de 300-500 kcal extra) no aumenta la masa muscular, sino la acumulación de tejido graso.';
     } else {
       calStatus = 'optimal';
       optimalCount++;
-      calMessage = `Aporte calórico perfecto para hipertrofia (${calPct}%).`;
-      calScience = 'Energía suficiente para la síntesis de nuevas proteínas contráctiles y reposición de glucógeno.';
+      calMessage = `Aporte calórico en rango ideal para hipertrofia (${caloriesConsumed}/${calorieTarget} kcal - ${calPct}%).`;
+      calScience = 'Superávit anabólico controlado: energía suficiente para la síntesis de nuevas proteínas contráctiles y reposición de glucógeno sin acumular grasa extra.';
     }
   } else {
-    if (Math.abs(caloriesConsumed - calorieTarget) > 350) {
+    // Recomposición / Mantenimiento
+    if (calPct < 70) {
+      calStatus = 'in_progress';
+      calMessage = `Llevas ${caloriesConsumed} de ${calorieTarget} kcal (${calPct}%). Faltan ${calRemaining} kcal para tu equilibrio calórico.`;
+      calScience = 'Mantenerse cerca de tu gasto energético total promueve la estabilidad metabólica y longevidad.';
+    } else if (caloriesConsumed > calorieTarget * 1.15) {
       calStatus = 'warning';
       warningsCount++;
-      calMessage = caloriesConsumed > calorieTarget ? 'Calorías por encima de mantenimiento.' : 'Calorías por debajo de mantenimiento.';
-      calScience = 'Mantenerse cerca de tu gasto energético total promueve la estabilidad metabólica y longevidad.';
+      calMessage = `Calorías por encima de mantenimiento (+${calSurplus} kcal).`;
+      calScience = 'Consumir por encima del gasto sostenido aumentará gradualmente el porcentaje de grasa corporal.';
     } else {
       calStatus = 'optimal';
       optimalCount++;
-      calMessage = 'Balance calórico equilibrado.';
-      calScience = 'Gasto e ingesta en armonía.';
+      calMessage = `Balance calórico equilibrado (${caloriesConsumed}/${calorieTarget} kcal).`;
+      calScience = 'Gasto e ingesta en armonía metabólica.';
     }
   }
 
@@ -145,32 +154,33 @@ export const generateSmartNutritionCoachPlan = ({
     id: 'calories',
     name: 'Calorías Totales',
     icon: 'Flame',
-    color: calStatus === 'optimal' ? 'emerald' : 'amber',
+    color: calStatus === 'optimal' ? 'emerald' : calStatus === 'warning' ? 'amber' : 'blue',
     consumed: caloriesConsumed,
     target: calorieTarget,
     unit: 'kcal',
     pct: calPct,
     status: calStatus,
-    isWarning: calStatus !== 'optimal',
+    isWarning: calStatus === 'warning',
     message: calMessage,
     science: calScience
   });
 
   // 2. PROTEÍNA
   const proteinPct = Math.round((proteinConsumed / proteinTarget) * 100);
-  let proteinStatus = 'optimal';
+  const proteinRemaining = Math.max(0, proteinTarget - proteinConsumed);
+  let proteinStatus = 'in_progress';
   let proteinMessage = '';
   let proteinScience = '';
 
   if (proteinPct < 70) {
-    proteinStatus = 'warning';
-    warningsCount++;
-    proteinMessage = `Déficit proteico (${proteinConsumed}/${proteinTarget}g). Faltan ${proteinTarget - proteinConsumed}g.`;
-    proteinScience = 'La síntesis proteica muscular (MPS) requiere pulsos regulares de leucina y aminoácidos esenciales para no perder masa.';
+    proteinStatus = foodCount >= 2 ? 'warning' : 'in_progress';
+    if (proteinStatus === 'warning') warningsCount++;
+    proteinMessage = `Llevas ${proteinConsumed}g de ${proteinTarget}g (${proteinPct}%). Faltan ${proteinRemaining}g para el umbral óptimo.`;
+    proteinScience = 'La síntesis proteica muscular (MPS) requiere pulsos regulares de leucina y aminoácidos esenciales para retener o construir músculo.';
   } else if (proteinPct >= 70 && proteinPct < 90) {
-    proteinStatus = 'warning';
-    proteinMessage = `Cerca del objetivo: faltan solo ${proteinTarget - proteinConsumed}g para el óptimo.`;
-    proteinScience = 'Cerrar la meta proteica con un snack o en la cena blindará tu balance de nitrógeno diario.';
+    proteinStatus = 'in_progress';
+    proteinMessage = `Cerca del objetivo: faltan ${proteinRemaining}g de proteína para el rango óptimo.`;
+    proteinScience = 'Completar la meta proteica en tu siguiente comida o cena blindará tu balance de nitrógeno diario.';
   } else {
     proteinStatus = 'optimal';
     optimalCount++;
@@ -182,13 +192,13 @@ export const generateSmartNutritionCoachPlan = ({
     id: 'protein',
     name: 'Proteína',
     icon: 'Beef',
-    color: proteinStatus === 'optimal' ? 'emerald' : 'amber',
+    color: proteinStatus === 'optimal' ? 'emerald' : proteinStatus === 'warning' ? 'amber' : 'blue',
     consumed: proteinConsumed,
     target: proteinTarget,
     unit: 'g',
     pct: proteinPct,
     status: proteinStatus,
-    isWarning: proteinStatus === 'warning' && proteinPct < 70,
+    isWarning: proteinStatus === 'warning',
     message: proteinMessage,
     science: proteinScience
   });
@@ -222,17 +232,17 @@ export const generateSmartNutritionCoachPlan = ({
 
   // 4. AGUA (HIDRATACIÓN)
   const waterPct = Math.round((waterConsumed / waterTarget) * 100);
-  let waterStatus = 'optimal';
+  let waterStatus = 'in_progress';
   let waterMessage = '';
   let waterScience = '';
 
   if (waterPct < 60) {
-    waterStatus = 'warning';
-    warningsCount++;
-    waterMessage = `Hidratación baja (${waterConsumed}/${waterTarget} ml). Faltan ${waterTarget - waterConsumed} ml.`;
+    waterStatus = foodCount >= 2 ? 'warning' : 'in_progress';
+    if (waterStatus === 'warning') warningsCount++;
+    waterMessage = `Llevas ${waterConsumed} de ${waterTarget} ml (${waterPct}%). Faltan ${waterTarget - waterConsumed} ml.`;
     waterScience = 'Una deshidratación del 2% disminuye la potencia muscular hasta un 15% y reduce la tasa de síntesis proteica.';
   } else if (waterPct < 85) {
-    waterStatus = 'good';
+    waterStatus = 'in_progress';
     waterMessage = `Buen avance en hidratación (${waterConsumed} ml). Un vaso más completará la meta.`;
     waterScience = 'Mantener la osmolalidad celular óptima mejora la digestión y el volumen celular muscular.';
   } else {
@@ -246,7 +256,7 @@ export const generateSmartNutritionCoachPlan = ({
     id: 'water',
     name: 'Agua & Hidratación',
     icon: 'Droplet',
-    color: waterStatus === 'optimal' ? 'blue' : 'amber',
+    color: waterStatus === 'optimal' ? 'blue' : waterStatus === 'warning' ? 'amber' : 'blue',
     consumed: waterConsumed,
     target: waterTarget,
     unit: 'ml',
@@ -259,7 +269,7 @@ export const generateSmartNutritionCoachPlan = ({
 
   // 5. CREATINA
   const isCreatineLogged = creatineCount > 0;
-  let creatineStatus = isCreatineLogged ? 'optimal' : 'warning';
+  let creatineStatus = isCreatineLogged ? 'optimal' : 'in_progress';
   let creatineMessage = isCreatineLogged
     ? 'Creatina registrada hoy (depósitos de fosfocreatina cubiertos).'
     : `Toma de creatina pendiente hoy (~${creatineTarget}g).`;
@@ -267,19 +277,19 @@ export const generateSmartNutritionCoachPlan = ({
     ? 'La constancia diaria mantiene al 100% las reservas intramusculares de PCr para esfuerzos de alta intensidad.'
     : 'La creatina no actúa de forma aguda sino por saturación crónica. Tomarla a diario sin saltarse días es lo que maximiza sus beneficios.';
 
-  if (!isCreatineLogged) warningsCount++; else optimalCount++;
+  if (isCreatineLogged) optimalCount++;
 
   pillars.push({
     id: 'creatine',
     name: 'Creatina',
     icon: 'Zap',
-    color: isCreatineLogged ? 'purple' : 'amber',
+    color: isCreatineLogged ? 'purple' : 'blue',
     consumed: isCreatineLogged ? 'Registrada' : 'Pendiente',
     target: `~${creatineTarget}g`,
     unit: 'día',
     pct: isCreatineLogged ? 100 : 0,
     status: creatineStatus,
-    isWarning: !isCreatineLogged,
+    isWarning: false,
     message: creatineMessage,
     science: creatineScience
   });
@@ -289,6 +299,7 @@ export const generateSmartNutritionCoachPlan = ({
   const fatsPct = Math.round((fatsConsumed / fatsTarget) * 100);
   const isFatsLow = fatsConsumed < fatsTarget * 0.5 && foodCount >= 2;
   const macroBalanceStatus = isFatsLow ? 'warning' : 'optimal';
+  if (isFatsLow) warningsCount++; else optimalCount++;
 
   pillars.push({
     id: 'macros_balance',
@@ -302,16 +313,17 @@ export const generateSmartNutritionCoachPlan = ({
     status: macroBalanceStatus,
     isWarning: isFatsLow,
     message: isFatsLow
-      ? 'Grasas excesivamente bajas. Se requiere un mínimo de ácidos grasos para la síntesis hormonal (testosterona/estrógenos).'
+      ? 'Grasas bajas. Se requiere un mínimo de ácidos grasos saludables para la síntesis hormonal.'
       : 'Reparto energético de carbohidratos y grasas en buena proporción.',
     science: 'Las grasas regulan la absorción de vitaminas liposolubles (A, D, E, K) y los carbos rellenan el glucógeno hepático y muscular.'
   });
 
   // --- DETERMINAR ESTADO GLOBAL ---
-  const isWarning = warningsCount >= 2 || (proteinPct < 65 && foodCount >= 2) || (goalInfo.key === 'lose' && caloriesConsumed > calorieTarget + 200);
-  const isOptimal = warningsCount === 0 || (warningsCount === 1 && optimalCount >= 4);
+  const isCaloriesPending = (goalInfo.key === 'gain' && calPct < 80) || (goalInfo.key !== 'gain' && calPct < 60);
+  const isWarning = warningsCount >= 1 || (goalInfo.key === 'lose' && caloriesConsumed > calorieTarget + 120);
+  const isOptimal = !isWarning && !isCaloriesPending && optimalCount >= 3;
 
-  let overallStatus = 'balanced';
+  let overallStatus = 'in_progress';
   let overallBadgeText = 'Balance en curso';
 
   if (isOptimal) {
@@ -319,23 +331,23 @@ export const generateSmartNutritionCoachPlan = ({
     overallBadgeText = '¡Día Nutricional Impecable!';
   } else if (isWarning) {
     overallStatus = 'warning';
-    overallBadgeText = `Aviso: ${warningsCount} alertas detectadas`;
+    overallBadgeText = `Aviso: ${warningsCount} ${warningsCount === 1 ? 'alerta' : 'alertas'}`;
   } else {
-    overallStatus = 'balanced';
-    overallBadgeText = `${optimalCount}/6 metas en rango`;
+    overallStatus = 'in_progress';
+    overallBadgeText = `Día en curso • ${calPct}% calorías`;
   }
 
-  // --- CELEBRACIÓN / FELICITACIÓN ---
+  // --- CELEBRACIÓN / FELICITACIÓN (SOLO SI REALMENTE ESTÁ COMPLETO) ---
   let celebrationData = null;
   if (isOptimal) {
     celebrationData = {
       isCelebrating: true,
-      title: '¡Nutrición Impecable! Estás clavando tus macros 🚀',
+      title: '¡Nutrición Impecable! Estás clavando tus metas 🚀',
       subtitle: `Tus calorías, proteína y micronutrientes están alineados con tu objetivo de ${goalInfo.label}.`,
       tipsToMaintain: [
         'Mantén la misma constancia en los próximos días: los resultados físicos son el reflejo de semanas acumuladas en rango óptimo.',
         'Asegura un sueño reparador de 7-8 horas para que tu cuerpo utilice estos nutrientes durante la fase de regeneración celular.',
-        'Si sientes apetito nocturno, opta por una infusión caliente o agua para no alterar la digestión previa al descanso.'
+        'Si sientes apetito tardío, opta por una infusión caliente o agua para no alterar la digestión previa al descanso.'
       ]
     };
   }
@@ -343,127 +355,126 @@ export const generateSmartNutritionCoachPlan = ({
   // --- MENSAJE MOTIVACIONAL Y CIENCIA ---
   let motivationalMessage = null;
   if (isWarning) {
-    motivationalMessage = `No te castigues: la nutrición no consiste en perfección estricta, sino en saber compensar y tomar decisiones inteligentes. Con un par de ajustes en tu siguiente ingesta, volverás a colocar tu día en balance óptimo.`;
+    motivationalMessage = `No te castigues: la nutrición no consiste en perfección estricta, sino en saber compensar y tomar decisiones inteligentes. Con un par de ajustes en tus siguientes comidas volverás a colocar tu día en balance óptimo.`;
   }
 
-  // --- ESTRATEGIAS RECOMENDADAS SELECCIONABLES ---
+  // --- PAUTAS Y SUGERENCIAS PRÁCTICAS FLEXIBLES (SIN OBLIGAR A COMIDAS FIJAS) ---
   const strategyOptions = [];
 
-  // Estrategia 1: Proteína
+  // Pauta 1: Proteína
   if (proteinConsumed < proteinTarget) {
     const proteinGap = proteinTarget - proteinConsumed;
     strategyOptions.push({
       id: 'boost_protein',
-      title: `Añadir Snack de Proteína Magra (+${Math.min(35, Math.max(20, proteinGap))}g)`,
-      tag: 'Recomendada',
+      title: `Ideas para completar tu proteína (+${Math.min(35, Math.max(20, proteinGap))}g)`,
+      tag: 'Sugerencia Práctica',
       badge: `+${Math.min(35, Math.max(20, proteinGap))}g Proteína`,
-      description: `Consume una fuente rápida de proteína (batido de aislado/whey, 200g de queso fresco batido o 120g de pechuga) para asegurar el estímulo de síntesis proteica muscular.`,
-      actionHint: 'Añadir a la próxima comida o snack antes de dormir.'
+      description: `Elige según lo que tengas en casa: atún, 2-3 huevos/claras, pechuga de pollo/pavo, queso fresco batido o un batido de proteína. Cada opción eleva la síntesis proteica de forma limpia.`,
+      actionHint: 'Añádelo a tu próxima comida o cena según lo que tengas disponible.'
     });
   }
 
-  // Estrategia 2: Calorías en Definición vs Hipertrofia
+  // Pauta 2: Calorías en Definición vs Hipertrofia
   if (goalInfo.key === 'lose') {
-    if (caloriesConsumed >= calorieTarget - 150) {
+    if (caloriesConsumed >= calorieTarget - 200) {
       strategyOptions.push({
         id: 'volumetric_dinner',
-        title: 'Cena Volumétrica de Baja Densidad Calórica',
-        tag: 'Saciedad Total',
+        title: 'Cena ligera de volumen saciante',
+        tag: 'Control Calórico',
         badge: 'Bajo en kcal',
-        description: 'Prioriza verduras de hoja verde, calabacín, espárragos y pescados blancos o claras. Te aportará gran saciedad estomacal con un impacto calórico mínimo.',
-        actionHint: 'Ideal para la cena para no exceder las calorías en definición.'
+        description: 'Si ya estás cerca de tu límite de calorías, prioriza verduras abundantes (ensalada, calabacín, espinacas) con pescado blanco o claras para cenar saciado sin sumar calorías extra.',
+        actionHint: 'Ajusta tu cena con los alimentos que tengas a mano.'
       });
       strategyOptions.push({
         id: 'fasting_window',
-        title: 'Cierre de Ventana Digestiva',
-        tag: 'Control Calórico',
+        title: 'Cierre de ingesta con infusión',
+        tag: 'Saciedad Nocturna',
         badge: 'Hidratación',
-        description: 'Da por cerrado el consumo calórico de hoy. Toma una infusión digestiva o agua fría para evitar antojos emocionales tardíos.',
-        actionHint: 'Cierra tu ingesta 2-3 horas antes de dormir.'
+        description: 'Una infusión digestiva caliente o un vaso grande de agua fría calma los antojos tardíos y facilita un descanso profundo sin digestión pesada.',
+        actionHint: 'Ideal para tomar 1-2 horas antes de dormir.'
       });
     }
   } else if (goalInfo.key === 'gain') {
-    if (caloriesConsumed < calorieTarget - 200) {
-      const calGap = calorieTarget - caloriesConsumed;
+    if (calRemaining > 200) {
       strategyOptions.push({
         id: 'calorie_density',
-        title: `Densidad Calórica Saludable (+${Math.min(500, Math.max(250, calGap))} kcal)`,
-        tag: 'Recomendada',
+        title: `Aporte calórico saludable y fácil (+${Math.min(450, calRemaining)} kcal)`,
+        tag: 'Densidad Nutritiva',
         badge: '+300-400 kcal',
-        description: 'Añade 30g de frutos secos (nueces/almendras), una cucharada de crema de cacahuete pura o aceite de oliva virgen extra. Aumenta calorías sin sobrecargar el estómago.',
-        actionHint: 'Añadir como complemento sin sensación de pesadez.'
+        description: 'Si te cuesta llegar a tus calorías, añade alimentos densos que tengas a mano: un puñado de frutos secos (nueces, almendras), una cucharada de crema de frutos secos o un chorrito extra de aceite de oliva.',
+        actionHint: 'Complemento rápido sin sensación de pesadez estomacal.'
       });
       strategyOptions.push({
-        id: 'anabolic_shake',
-        title: 'Batido Anabólico de Avena y Fruta',
-        tag: 'Energía Rápida',
-        badge: 'Glucógeno & Músculo',
-        description: 'Mezcla leche o bebida vegetal con 40g de copos de avena, un plátano y tu proteína para rellenar los depósitos de glucógeno y apoyar la hipertrofia.',
-        actionHint: 'Consumir post-entrenamiento o entre comidas.'
+        id: 'carb_boost',
+        title: 'Aporte de carbohidratos para energía y glucógeno',
+        tag: 'Energía & Músculo',
+        badge: 'Glucógeno',
+        description: 'Fruta madura (plátano), avena, arroz o patata en tu siguiente comida te darán los carbohidratos necesarios para rendir y reponer glucógeno.',
+        actionHint: 'Consúmelo en tu comida principal o merienda.'
       });
     }
   }
 
-  // Estrategia 3: Azúcar alto
+  // Pauta 3: Azúcar alto
   if (isSugarHigh) {
     strategyOptions.push({
       id: 'post_meal_walk',
-      title: 'Paseo Activo Post-Prandial (15-20 min)',
+      title: 'Paseo activo o movimiento post-comida (15-20 min)',
       tag: 'Control Glucémico',
-      badge: 'Bajar Insulina',
-      description: 'Una caminata suave activa la contracción muscular, permitiendo captar la glucosa en sangre a través de transportadores GLUT4 sin necesidad de secretar exceso de insulina.',
-      actionHint: 'Realizar una caminata ligera después de comer.'
+      badge: 'Sensibilidad Insulina',
+      description: 'Una caminata suave activa la contracción muscular, permitiendo captar la glucosa en sangre de forma natural sin necesidad de secretar exceso de insulina.',
+      actionHint: 'Un paseo ligero después de comer ayuda a regular el azúcar.'
     });
   }
 
-  // Estrategia 4: Hidratación o Creatina
+  // Pauta 4: Hidratación o Creatina
   if (waterConsumed < waterTarget * 0.70) {
     strategyOptions.push({
       id: 'hydration_protocol',
-      title: 'Protocolo de Hidratación Rápida (+500-750 ml)',
+      title: 'Suma hidratación constante',
       tag: 'Hidratación',
-      badge: '+750 ml Agua',
-      description: 'Bebe 2 vasos grandes de agua ahora y mantén una botella a la vista. La reposición hídrica disipa la fatiga y optimiza la función renal.',
-      actionHint: 'Beber a sorbos constantes en la próxima hora.'
+      badge: '+500-750 ml',
+      description: 'Ten un vaso o botella de agua siempre a la vista. Mantenerte hidratado disipa la fatiga y optimiza la función celular muscular.',
+      actionHint: 'Bebe a sorbos regulares en la próxima hora.'
     });
   }
 
   if (!isCreatineLogged) {
     strategyOptions.push({
       id: 'take_creatine',
-      title: `Registrar Toma de Creatina (~${creatineTarget}g)`,
+      title: `Recuerda tu toma diaria de creatina (~${creatineTarget}g)`,
       tag: 'Fuerza Muscular',
       badge: `${creatineTarget}g Creatina`,
-      description: 'Toma tu dosis diaria de creatina con agua o zumo. La creatina celular previene la caída de fuerza durante la semana de entrenamiento.',
-      actionHint: 'Tomar con un vaso de agua antes de finalizar el día.'
+      description: 'Tómala en el momento del día que mejor te encaje con agua o zumo. La constancia diaria es lo que mantiene la saturación intramuscular.',
+      actionHint: 'Tomar con un vaso de agua antes de terminar el día.'
     });
   }
 
-  // Si todo está perfecto, ofrecer estrategias de optimización
+  // Si todo está perfecto
   if (strategyOptions.length === 0) {
     strategyOptions.push({
       id: 'maintain_momentum',
-      title: 'Consolidar Timing Nutricional',
-      tag: 'Recomendada',
-      badge: 'Consistencia',
-      description: 'Tu distribución de hoy es ejemplar. Repite esta estructura de alimentos en tus días de entrenamiento para consolidar tus hábitos a largo plazo.',
-      actionHint: 'Mantener pautas habituales.'
+      title: 'Consolidar este patrón alimentario',
+      tag: 'Consistencia',
+      badge: 'Hábitos Sólidos',
+      description: 'Tu distribución de hoy es ejemplar. Repite esta estructura de alimentos en tus días habituales para consolidar resultados a largo plazo.',
+      actionHint: 'Mantén tus pautas habituales.'
     });
     strategyOptions.push({
       id: 'sleep_prep',
-      title: 'Preparación para el Descanso Anabólico',
+      title: 'Preparación para el descanso y recuperación',
       tag: 'Recuperación',
-      badge: 'Cena Ligera',
-      description: 'Asegura que tu última comida ocurra al menos 90 minutos antes de acostarte para permitir que la hormona de crecimiento se libere sin interferencias de digestión pesada.',
-      actionHint: 'Cenar temprano y relajarse.'
+      badge: 'Descanso Óptimo',
+      description: 'Asegura que tu última comida ocurra al menos 90 minutos antes de acostarte para permitir que los procesos de regeneración muscular actúen sin digestiones pesadas.',
+      actionHint: 'Cenar temprano y favorecer el descanso nocturno.'
     });
   }
 
   // Recomendación de Asesoría Pro Fitness con nutricionista/preparador real
   const asesoriaRecommendation = {
-    show: isWarning,
+    show: isWarning || (!isOptimal && foodCount >= 1),
     headline: '¿Te cuesta cuadrar tus macros o calorías?',
-    description: 'En la Asesoría Pro Fitness, un preparador físico y dietista real diseña tu menú a medida con los alimentos que te gustan, garantizando resultados sin pasar hambre ni estancarte.',
+    description: 'En la Asesoría Pro Fitness, un preparador físico y dietista real diseña tu menú a medida con los alimentos que te gustan y tienes disponibles en casa, sin dietas estrictas ni pasar hambre.',
     buttonText: 'Hablar con mi Nutricionista / Entrenador'
   };
 

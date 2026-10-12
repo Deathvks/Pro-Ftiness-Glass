@@ -197,8 +197,8 @@ const SmartExerciseCoachModal = ({
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
                         followUp.color === 'emerald'
-                          ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
-                          : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                          ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+                          : 'bg-amber-500/20 text-amber-700 dark:text-amber-400'
                       }`}>
                         {followUp.badge}
                       </span>
@@ -217,7 +217,42 @@ const SmartExerciseCoachModal = ({
               </div>
             )}
 
-            {/* 2. CELEBRACIÓN DE PROGRESIÓN (Si está progresando) */}
+            {/* 2. RECOMENDACIÓN DE ASESORÍA CON PREPARADOR REAL (ARRIBA) */}
+            {asesoriaRecommendation?.show && (
+              <div className="p-4 sm:p-5 rounded-[24px] bg-accent/10 border border-accent/25 flex flex-col gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 rounded-[16px] bg-accent/20 text-accent shrink-0">
+                    <Sparkles size={18} />
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <h4 className="text-sm font-black text-text-primary">
+                      {asesoriaRecommendation.headline}
+                    </h4>
+                    <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                      {asesoriaRecommendation.description}
+                    </p>
+                  </div>
+                </div>
+
+                {onNavigateAsesoria && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onNavigateAsesoria();
+                    }}
+                    className="w-full py-3 px-4 rounded-[18px] bg-accent hover:brightness-110 text-accent-contrast font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-accent/20 transition-all active:scale-95"
+                    style={{ color: "var(--btn-accent-text, #000)" }}
+                  >
+                    <UserCheck size={16} strokeWidth={2.5} />
+                    <span>{asesoriaRecommendation.buttonText}</span>
+                    <ArrowRight size={15} />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* 3. CELEBRACIÓN DE PROGRESIÓN (Si está progresando) */}
             {celebrationData?.isCelebrating && (
               <div className="p-4 sm:p-5 rounded-[24px] bg-emerald-500/10 border border-emerald-500/30 space-y-3">
                 <div className="flex items-center gap-2.5">
@@ -543,40 +578,6 @@ const SmartExerciseCoachModal = ({
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* 9. RECOMENDACIÓN DE ASESORÍA CON PREPARADOR REAL */}
-            {asesoriaRecommendation?.show && (
-              <div className="p-4 sm:p-5 rounded-[24px] bg-gradient-to-br from-amber-500/15 via-yellow-500/5 to-transparent border border-amber-500/30 flex flex-col gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="p-2.5 rounded-[16px] bg-amber-500/20 text-amber-500 dark:text-amber-400 ring-1 ring-amber-500/30 shrink-0">
-                    <Sparkles size={18} />
-                  </div>
-                  <div className="space-y-1 min-w-0">
-                    <h4 className="text-sm font-black text-text-primary">
-                      {asesoriaRecommendation.headline}
-                    </h4>
-                    <p className="text-xs text-text-secondary leading-relaxed font-medium">
-                      {asesoriaRecommendation.description}
-                    </p>
-                  </div>
-                </div>
-
-                {onNavigateAsesoria && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      onNavigateAsesoria();
-                    }}
-                    className="w-full py-3 px-4 rounded-[18px] bg-amber-500 hover:bg-amber-400 text-black font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition-all active:scale-95"
-                  >
-                    <UserCheck size={16} strokeWidth={2.5} />
-                    <span>{asesoriaRecommendation.buttonText}</span>
-                    <ArrowRight size={15} />
-                  </button>
-                )}
               </div>
             )}
 

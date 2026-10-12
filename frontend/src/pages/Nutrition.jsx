@@ -631,13 +631,13 @@ const Nutrition = ({ setView }) => {
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
                                                 nutritionPlan.isWarning
-                                                    ? 'bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/40'
+                                                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
                                                     : nutritionPlan.isOptimal
-                                                    ? 'bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/40'
-                                                    : 'bg-accent/20 text-accent ring-1 ring-accent/30'
+                                                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                                                    : 'bg-accent/15 text-accent border border-accent/30'
                                             }`}>
                                                 {nutritionPlan.isWarning 
-                                                    ? `Aviso Nutricional (${nutritionPlan.warningsCount} alertas) !` 
+                                                    ? `Aviso Nutricional (${nutritionPlan.warningsCount} ${nutritionPlan.warningsCount === 1 ? 'alerta' : 'alertas'}) !` 
                                                     : nutritionPlan.isOptimal 
                                                     ? '¡Día Nutricional en Racha! ✓' 
                                                     : 'Objetivo Nutricional'}
@@ -676,10 +676,10 @@ const Nutrition = ({ setView }) => {
                                             onClick={() => setShowNutritionCoachModal(true)}
                                             className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black transition-all active:scale-95 shadow-sm ${
                                                 nutritionPlan.isWarning
-                                                    ? 'bg-amber-500/15 hover:bg-amber-500/25 ring-1 ring-amber-500/40 text-amber-400 animate-pulse'
+                                                    ? 'bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-600 dark:text-amber-400 animate-pulse'
                                                     : nutritionPlan.isOptimal
-                                                    ? 'bg-emerald-500/15 hover:bg-emerald-500/25 ring-1 ring-emerald-500/40 text-emerald-400'
-                                                    : 'bg-accent/15 hover:bg-accent/25 ring-1 ring-accent/30 text-accent'
+                                                    ? 'bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
+                                                    : 'bg-accent/15 hover:bg-accent/25 border border-accent/30 text-accent'
                                             }`}
                                             title="Toca para ver el diagnóstico nutricional y pautas"
                                         >
