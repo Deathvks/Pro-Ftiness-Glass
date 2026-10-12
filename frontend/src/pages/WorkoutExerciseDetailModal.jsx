@@ -1,6 +1,5 @@
-/* frontend/src/pages/WorkoutExerciseDetailModal.jsx */
-import React, { useEffect, useState } from 'react';
-import { X, Dumbbell, Repeat, Clock, FileText, Image as ImageIcon, Target, Sparkles, Loader2, AlertCircle } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { X, Dumbbell, Repeat, Clock, FileText, Image as ImageIcon, Target, Sparkles, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ExerciseMedia from '../components/ExerciseMedia';
 import Spinner from '../components/Spinner';
@@ -171,6 +170,24 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     }
   };
 
+  const [hasScrolled, setHasScrolled] = useState(false);
+  const detailsRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+
+  const handleScroll = (e) => {
+    if (e.currentTarget.scrollTop > 45) {
+      if (!hasScrolled) setHasScrolled(true);
+    } else {
+      if (hasScrolled) setHasScrolled(false);
+    }
+  };
+
+  const scrollToDetails = () => {
+    if (detailsRef.current) {
+      detailsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <ModalPortal>
     <div
@@ -178,12 +195,12 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-xl max-h-[90vh] mt-auto sm:mt-0 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-0 overflow-hidden flex flex-col bg-bg-primary rounded-t-[32px] sm:rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 shadow-2xl animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out]"
+        className="relative w-full max-w-xl max-h-[92vh] mt-auto sm:mt-0 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0 overflow-hidden flex flex-col bg-bg-primary rounded-t-[32px] sm:rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 shadow-2xl animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex flex-col p-6 pt-4 pb-5 sm:p-8 sm:py-6 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px] shrink-0">
-          <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
+        <div className="flex flex-col p-6 pt-4 pb-4 sm:p-8 sm:py-5 border-b border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 rounded-t-[32px] shrink-0">
+          <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-3 sm:hidden shrink-0" />
           <div className="flex justify-between items-center">
           <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-text-primary truncate pr-4">
             {translatedName}
@@ -198,22 +215,49 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="flex-grow overflow-y-auto p-6 sm:p-8 custom-scrollbar">
-          
-          {localIsLoading ? (
-            <div className="aspect-video bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] flex items-center justify-center text-text-muted w-full mx-auto mb-8 shadow-inner">
-              <Spinner size={32} />
-            </div>
-          ) : (
-            <ExerciseMedia
-              details={localDetails}
-              fitMode="contain"
-              playYouTube={true}
-              className="w-full aspect-video mx-auto mb-8 rounded-[24px] overflow-hidden relative"
-            />
-          )}
+        <div 
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="flex-grow overflow-y-auto p-6 sm:p-8 custom-scrollbar"
+        >
+          {/* Contenedor Modo Móvil (Vertical Shorts 9:16) */}
+          <div className="flex flex-col items-center mb-6">
+            <div className="relative mx-auto w-[230px] xs:w-[250px] sm:w-[270px] max-w-full aspect-[9/16] max-h-[46vh] sm:max-h-[50vh] rounded-[32px] overflow-hidden bg-black ring-2 ring-black/10 dark:ring-white/15 shadow-2xl flex items-center justify-center">
+              {/* Decoración superior estilo isla dinámica / notch */}
+              <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-16 h-3.5 bg-black/80 backdrop-blur-md rounded-full z-20 pointer-events-none flex items-center justify-center border border-white/10 shadow-sm">
+                <div className="w-1.5 h-1.5 rounded-full bg-white/20 mr-1" />
+                <div className="w-1 h-1 rounded-full bg-white/10" />
+              </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-8">
+              {localIsLoading ? (
+                <div className="w-full h-full flex items-center justify-center text-text-muted">
+                  <Spinner size={32} />
+                </div>
+              ) : (
+                <ExerciseMedia
+                  details={localDetails}
+                  fitMode="cover"
+                  playYouTube={true}
+                  className="w-full h-full aspect-[9/16] object-cover"
+                />
+              )}
+
+              {/* Borde interior de cristal */}
+              <div className="absolute inset-0 rounded-[32px] ring-1 ring-inset ring-white/15 pointer-events-none z-10" />
+            </div>
+
+            {/* Botón / Indicador de que hay más contenido valioso abajo */}
+            <button
+              type="button"
+              onClick={scrollToDetails}
+              className="mt-4 flex items-center gap-2 py-2 px-4 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-all active:scale-95 group shadow-sm cursor-pointer"
+            >
+              <ChevronDown size={15} className="text-accent group-hover:translate-y-0.5 transition-transform animate-bounce" />
+              <span>Desliza para ver técnica, músculos y consejos IA</span>
+            </button>
+          </div>
+
+          <div ref={detailsRef} className="grid grid-cols-2 gap-3 mb-8 scroll-mt-4">
             <div className="flex items-center gap-3 p-4 bg-black/5 dark:bg-white/5 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 shadow-inner">
               <div className="p-2 bg-accent/10 rounded-[12px] text-accent shrink-0">
                 <Target size={18} strokeWidth={2.5} />
@@ -347,6 +391,17 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           </div>
 
         </div>
+
+        {/* Floating Scroll Indicator flotante en la parte inferior mientras no se haya hecho scroll */}
+        {!hasScrolled && (
+          <div
+            onClick={scrollToDetails}
+            className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 py-2 px-4 rounded-full bg-bg-secondary/95 backdrop-blur-xl border border-glass-border shadow-2xl text-text-primary text-xs font-bold animate-bounce cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95"
+          >
+            <ChevronDown size={14} className="text-accent" />
+            <span>Más info abajo</span>
+          </div>
+        )}
       </div>
     </div>
     </ModalPortal>
