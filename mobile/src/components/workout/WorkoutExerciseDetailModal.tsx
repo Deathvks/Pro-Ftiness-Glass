@@ -216,16 +216,11 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                 style={[
                   styles.closeButton,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.24)' : 'rgba(0, 0, 0, 0.10)',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.05)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
                   },
                 ]}
               >
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={StyleSheet.absoluteFill}
-                />
                 <X size={18} color={colors.text} strokeWidth={2.5} />
               </TouchableOpacity>
             </View>
@@ -235,22 +230,17 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
               contentContainerStyle={styles.scrollBody}
               showsVerticalScrollIndicator={false}
             >
-              {/* 1. Reproductor de Vídeo / Formato Shorts 9:16 con marco Glass */}
+              {/* 1. Reproductor de Vídeo / Formato Shorts 9:16 */}
               <View style={styles.mediaContainerWrapper}>
                 <View
                   style={[
                     styles.mediaHeroCard,
                     {
-                      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.50)' : 'rgba(0, 0, 0, 0.04)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(0, 0, 0, 0.12)',
+                      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.40)' : 'rgba(0, 0, 0, 0.04)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
                     },
                   ]}
                 >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={StyleSheet.absoluteFill}
-                  />
                   {isLoadingDetails ? (
                     <View style={styles.loadingCenter}>
                       <ActivityIndicator size="large" color={colors.tint} />
@@ -266,23 +256,18 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                 </View>
               </View>
 
-              {/* 2. Grid de 4 Métricas Clave Liquid Glass */}
+              {/* 2. Grid de 4 Métricas Clave */}
               <View style={styles.metricsGrid}>
                 {/* Músculo */}
                 <View
                   style={[
                     styles.metricCard,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.65)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.03)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
                     },
                   ]}
                 >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={StyleSheet.absoluteFill}
-                  />
                   <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
                     <Target size={18} color={colors.tint} strokeWidth={2.5} />
                   </View>
@@ -299,16 +284,11 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   style={[
                     styles.metricCard,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.65)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.03)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
                     },
                   ]}
                 >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={StyleSheet.absoluteFill}
-                  />
                   <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
                     <Dumbbell size={18} color={colors.tint} strokeWidth={2.5} />
                   </View>
@@ -325,16 +305,11 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   style={[
                     styles.metricCard,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.65)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.03)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
                     },
                   ]}
                 >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={StyleSheet.absoluteFill}
-                  />
                   <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
                     <Repeat size={18} color={colors.tint} strokeWidth={2.5} />
                   </View>
@@ -351,16 +326,11 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   style={[
                     styles.metricCard,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.65)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.03)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
                     },
                   ]}
                 >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={StyleSheet.absoluteFill}
-                  />
                   <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
                     <Clock size={18} color={colors.tint} strokeWidth={2.5} />
                   </View>
@@ -373,23 +343,18 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                 </View>
               </View>
 
-              {/* Píldora Liquid Glass de Equipamiento */}
+              {/* Píldora de Equipamiento */}
               {mergedDetails.equipment ? (
                 <View style={styles.equipmentRow}>
                   <View
                     style={[
                       styles.equipmentPill,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.65)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.04)',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.06)',
                       },
                     ]}
                   >
-                    <GlassView
-                      glassEffectStyle="regular"
-                      colorScheme={isDark ? 'dark' : 'light'}
-                      style={StyleSheet.absoluteFill}
-                    />
                     <Dumbbell size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
                     <Text style={[styles.equipmentText, { color: colors.textSecondary }]}>
                       Equipamiento: {mergedDetails.equipment}
@@ -398,7 +363,7 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                 </View>
               ) : null}
 
-              {/* 3. Instrucciones de Ejecución / Descripción en Tarjeta Liquid Glass */}
+              {/* 3. Instrucciones de Ejecución / Descripción */}
               <View style={styles.sectionBlock}>
                 <View style={styles.sectionHeaderRow}>
                   <View style={[styles.sectionIconBadge, { backgroundColor: colors.tint + '18' }]}>
@@ -413,16 +378,11 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   style={[
                     styles.descBox,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
                     },
                   ]}
                 >
-                  <GlassView
-                    glassEffectStyle="regular"
-                    colorScheme={isDark ? 'dark' : 'light'}
-                    style={StyleSheet.absoluteFill}
-                  />
                   <Text style={[styles.descBody, { color: colors.text }]}>
                     {cleanDescription}
                   </Text>
@@ -477,16 +437,11 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                     style={[
                       styles.aiLoadingBox,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.06)',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.05)',
                       },
                     ]}
                   >
-                    <GlassView
-                      glassEffectStyle="regular"
-                      colorScheme={isDark ? 'dark' : 'light'}
-                      style={StyleSheet.absoluteFill}
-                    />
                     <ActivityIndicator size="small" color={colors.tint} />
                     <Text style={[styles.aiLoadingText, { color: colors.textSecondary }]}>
                       Analizando biomecánica del ejercicio...
@@ -506,16 +461,11 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                     style={[
                       styles.aiResponseCard,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
-                        borderColor: colors.tint + '45',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)',
+                        borderColor: colors.tint + '40',
                       },
                     ]}
                   >
-                    <GlassView
-                      glassEffectStyle="regular"
-                      colorScheme={isDark ? 'dark' : 'light'}
-                      style={StyleSheet.absoluteFill}
-                    />
                     <Text style={[styles.aiResponseText, { color: colors.text }]}>
                       {aiExplanation}
                     </Text>

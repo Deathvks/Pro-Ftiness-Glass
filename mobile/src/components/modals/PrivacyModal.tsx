@@ -52,62 +52,144 @@ export function PrivacyModal({ visible, onClose }: { visible: boolean; onClose: 
     { id: 'public', title: 'Perfil Público', desc: 'Apareces en el ranking global y cualquier atleta puede ver tu perfil.', icon: Globe },
   ];
 
+  const isDark = !['light', 'ocean', 'desert'].includes(theme);
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-        <Pressable style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center', padding: 20 }]} onPress={onClose}>
-          <Pressable onPress={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 400 }}>
+      <Pressable
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.65)' : 'rgba(0, 0, 0, 0.35)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 20,
+          },
+        ]}
+        onPress={onClose}
+      >
+        <Pressable onPress={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 400 }}>
+          <View 
+            style={{
+              width: '100%',
+              backgroundColor: isDark ? 'rgba(24, 24, 28, 0.82)' : 'rgba(255, 255, 255, 0.88)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.90)',
+              borderWidth: 1.2,
+              borderRadius: 32,
+              overflow: 'hidden',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 12 },
+              shadowOpacity: 0.35,
+              shadowRadius: 28,
+              elevation: 12,
+            }}
+          >
             <GlassView 
               glassEffectStyle="regular"
-              colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'}
-              style={{ width: '100%', backgroundColor: 'transparent', borderColor: colors.border, borderWidth: 1, borderRadius: 32, overflow: 'hidden' }}
-            >
-              {/* Header */}
-              <View style={{ padding: 24, paddingBottom: 16, alignItems: 'center' }}>
-                <TouchableOpacity onPress={onClose} style={{ position: 'absolute', top: 24, right: 24, width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                  <GlassView glassEffectStyle="regular" colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} style={StyleSheet.absoluteFill} />
-                  <X size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
-                <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: colors.tint + '15', borderWidth: 2, borderColor: colors.tint + '30', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                  <Globe size={32} color={getContrastColor(colors.tint, theme)} />
-                </View>
-                <Text style={{ fontSize: 22, fontWeight: 'bold', color: colors.text, marginBottom: 8 }}>Privacidad del Muro</Text>
-                <Text style={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 16 }}>¿Quién puede ver tus entrenamientos al finalizarlos?</Text>
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+
+            {/* Header */}
+            <View style={{ padding: 24, paddingBottom: 16, alignItems: 'center' }}>
+              <TouchableOpacity
+                onPress={onClose}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={{
+                  position: 'absolute',
+                  top: 20,
+                  right: 20,
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  borderWidth: 1,
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 10,
+                }}
+              >
+                <X size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
+
+              <View
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 22,
+                  backgroundColor: colors.tint + '18',
+                  borderWidth: 1.5,
+                  borderColor: colors.tint + '35',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 16,
+                }}
+              >
+                <Globe size={32} color={colors.tint} />
               </View>
 
-              {/* Options */}
-              <View style={{ padding: 24, paddingTop: 8, gap: 12 }}>
-                {options.map((opt) => {
-                  const isSelected = visibility === opt.id;
-                  const Icon = opt.icon;
-                  return (
-                    <TouchableOpacity 
-                      key={opt.id} 
-                      onPress={() => handleSave(opt.id)}
-                      style={{ 
-                        flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, borderWidth: 1, 
-                        borderColor: isSelected ? colors.tint + '50' : colors.border,
-                        overflow: 'hidden'
+              <Text style={{ fontSize: 22, fontWeight: '800', color: colors.text, marginBottom: 8, letterSpacing: -0.4 }}>
+                Privacidad del Muro
+              </Text>
+              <Text style={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 16, lineHeight: 20 }}>
+                ¿Quién puede ver tus entrenamientos al finalizarlos?
+              </Text>
+            </View>
+
+            {/* Options */}
+            <View style={{ padding: 24, paddingTop: 8, gap: 12 }}>
+              {options.map((opt) => {
+                const isSelected = visibility === opt.id;
+                const Icon = opt.icon;
+                return (
+                  <TouchableOpacity 
+                    key={opt.id} 
+                    onPress={() => handleSave(opt.id)}
+                    activeOpacity={0.75}
+                    style={{ 
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 16,
+                      borderRadius: 20,
+                      borderWidth: isSelected ? 1.5 : 1,
+                      borderColor: isSelected
+                        ? colors.tint + '60'
+                        : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                      backgroundColor: isSelected
+                        ? (colors.tint + '18')
+                        : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.60)'),
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 14,
+                        backgroundColor: isSelected ? colors.tint + '20' : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)'),
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: 14,
                       }}
                     >
-                      <GlassView glassEffectStyle="regular" colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} style={StyleSheet.absoluteFill} />
-                      {isSelected && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint, opacity: 0.1 }]} />}
-                      <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: isSelected ? colors.tint + '15' : colors.card, alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
-                        <Icon size={20} color={isSelected ? getContrastColor(colors.tint, theme) : colors.textSecondary} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: isSelected ? colors.tint : colors.text, marginBottom: 2 }}>{opt.title}</Text>
-                        <Text style={{ fontSize: 12, color: colors.textSecondary }}>{opt.desc}</Text>
-                      </View>
-                      {isSelected && <CheckCircle size={20} color={getContrastColor(colors.tint, theme)} style={{ marginLeft: 12 }} />}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </GlassView>
-          </Pressable>
+                      <Icon size={20} color={isSelected ? colors.tint : colors.textSecondary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 16, fontWeight: '800', color: isSelected ? colors.tint : colors.text, marginBottom: 2 }}>
+                        {opt.title}
+                      </Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary, lineHeight: 16 }}>
+                        {opt.desc}
+                      </Text>
+                    </View>
+                    {isSelected && <CheckCircle size={20} color={colors.tint} style={{ marginLeft: 10 }} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
         </Pressable>
-      </GlassView>
+      </Pressable>
     </Modal>
   );
 }
