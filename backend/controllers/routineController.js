@@ -2,7 +2,7 @@
 import { validationResult } from 'express-validator';
 import models from '../models/index.js';
 import { Op } from 'sequelize';
-import { addXp, checkStreak } from '../services/gamificationService.js';
+import { addXp } from '../services/gamificationService.js';
 import { deleteFile } from '../services/imageService.js';
 
 const {
@@ -312,9 +312,7 @@ export const createRoutine = async (req, res, next) => {
     await t.commit();
 
     try {
-      const todayStr = new Date().toISOString().split('T')[0];
       await addXp(userId, 20, 'Rutina creada');
-      await checkStreak(userId, todayStr);
     } catch (gError) {
       console.error('Error gamificación en createRoutine:', gError);
     }

@@ -45,6 +45,7 @@ export const createGamificationSlice = (set, get) => ({
         streak: 0,
         workoutsCount: 0,
         lastActivityDate: null,
+        lastLoginCheckDate: null,
         unlockedBadges: [],
         gamificationEvents: [],
         isCheckingStreak: false,
@@ -171,18 +172,16 @@ export const createGamificationSlice = (set, get) => ({
         const state = get();
         if (state.gamification.isCheckingStreak) return;
 
-        const last = normalizeDate(state.gamification.lastActivityDate);
         const today = normalizeDate(todayDateString);
-
-        if (last === today) return;
+        if (!today) return;
+        if (state.gamification.lastLoginCheckDate === today) return;
 
         set(s => ({ gamification: { ...s.gamification, isCheckingStreak: true } }));
 
         try {
-            // Notificamos actividad. El backend decidirá si suma racha o XP.
+            // Notificamos login diario. El backend sincroniza la racha y otorga XP de login si aplica sin tocar last_activity_date
             const response = await apiClient('/users/me/gamification', {
                 body: {
-                    last_activity_date: today,
                     reason: 'Login Diario'
                 }
             });
@@ -213,6 +212,7 @@ export const createGamificationSlice = (set, get) => ({
                             streak: serverData.streak,
                             workoutsCount: serverData.workouts_count ?? state.gamification.workoutsCount,
                             lastActivityDate: normalizeDate(serverData.last_activity_date),
+                            lastLoginCheckDate: today,
                             unlockedBadges: serverData.unlocked_badges || [],
                             gamificationEvents: newEvents,
                             isCheckingStreak: false
@@ -220,7 +220,7 @@ export const createGamificationSlice = (set, get) => ({
                     };
                 });
             } else {
-                set(s => ({ gamification: { ...s.gamification, isCheckingStreak: false } }));
+                set(s => ({ gamification: { ...s.gamification, lastLoginCheckDate: today, isCheckingStreak: false } }));
             }
 
         } catch (error) {
@@ -228,7 +228,7 @@ export const createGamificationSlice = (set, get) => ({
             set((state) => ({
                 gamification: {
                     ...state.gamification,
-                    lastActivityDate: today,
+                    lastLoginCheckDate: today,
                     isCheckingStreak: false
                 }
             }));

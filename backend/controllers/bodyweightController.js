@@ -2,9 +2,7 @@
 import { validationResult } from 'express-validator';
 import models from '../models/index.js';
 import { Op } from 'sequelize';
-// --- INICIO MODIFICACIÓN ---
-import { addXp, checkStreak } from '../services/gamificationService.js';
-// --- FIN MODIFICACIÓN ---
+import { addXp } from '../services/gamificationService.js';
 
 const { BodyWeightLog } = models;
 
@@ -63,10 +61,8 @@ export const logBodyWeight = async (req, res, next) => {
 
     // --- INICIO MODIFICACIÓN: Gamificación ---
     try {
-      const todayStr = new Date().toISOString().split('T')[0];
       // AÑADIDO: motivo 'Peso registrado' (+10 XP)
       await addXp(userId, 10, 'Peso registrado');
-      await checkStreak(userId, todayStr);
     } catch (gError) {
       console.error('Error gamificación en logBodyWeight:', gError);
     }

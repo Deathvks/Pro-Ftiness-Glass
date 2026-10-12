@@ -382,7 +382,6 @@ const Dashboard = ({ setView }) => {
     try {
       await nutritionService.upsertWaterLog({ log_date: new Date().toISOString().split('T')[0], quantity_ml });
       if (addXp) addXp(5);
-      if (checkStreak) checkStreak(new Date().toISOString().split('T')[0]);
       addToast(t('Registro actualizado.', { defaultValue: 'Registro actualizado.' }), 'success');
       await fetchDataForDate(new Date().toISOString().split('T')[0]);
     } catch (error) {

@@ -298,6 +298,13 @@ const checkStreakWars = () => {
 
       // 3. Obtener redes sociales de estos usuarios y notificar en paralelo
       await Promise.all(targetUsers.map(async (dangerUser) => {
+        // 1. Notificar primero y directamente al propio usuario cuya racha peligra
+        await notifyUser(dangerUser.id, {
+          title: '🔥 ¡Tu racha está en peligro!',
+          body: `Llevas una racha de ${dangerUser.streak} ${dangerUser.streak === 1 ? 'día' : 'días'} y aún no has entrenado hoy. ¡Completa tu entrenamiento antes de que acabe el día para no perderla!`,
+          url: '/routines'
+        });
+
         const [friendships, squadMemberships] = await Promise.all([
           db.Friendship.findAll({
             where: {
@@ -324,13 +331,13 @@ const checkStreakWars = () => {
           squadMateIds = mates.map(m => m.user_id);
         }
 
-        // Set unifica IDs repetidos (por si son amigos y del mismo squad)
-        const usersToNotify = [...new Set([...friendIds, ...squadMateIds])];
+        // Set unifica IDs repetidos (por si son amigos y del mismo squad) y EXCLUYE al propio usuario
+        const usersToNotify = [...new Set([...friendIds, ...squadMateIds])].filter(id => id !== dangerUser.id);
 
         await Promise.all(usersToNotify.map(notifyId =>
           notifyUser(notifyId, {
             title: '🔥 ¡Racha en peligro!',
-            body: `Tu amigo ${dangerUser.username || 'alguien de tu equipo'} está a punto de perder su racha de ${dangerUser.streak} días. ¡Empújale a entrenar!`,
+            body: `Tu amigo ${dangerUser.username || 'alguien de tu equipo'} está a punto de perder su racha de ${dangerUser.streak} ${dangerUser.streak === 1 ? 'día' : 'días'}. ¡Empújale a entrenar!`,
             url: `/social`,
           })
         ));
@@ -357,26 +364,35 @@ const resetInactiveStreaks = () => {
       let resetCount = 0;
 
       await Promise.all(users.map(async (user) => {
-        if (!user.last_activity_date) return;
+        if (!user.last_activity_date) {
+          user.streak = 0;
+          await user.save();
+          resetCount++;
+          return;
+        }
 
         const { date: localDate } = getLocalTime(user.timezone);
 
         // Parseamos las fechas usando formato YYYY-MM-DD para evitar diferencias de horas
-        const lastActiveDate = new Date(user.last_activity_date);
-        const todayDate = new Date(localDate);
+        const lastActiveDate = new Date(user.last_activity_date).toISOString().split('T')[0];
 
         // Calculamos la diferencia exacta en días
-        const diffTime = todayDate.getTime() - lastActiveDate.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffTime = new Date(localDate).getTime() - new Date(lastActiveDate).getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
         // Si han pasado más de 1 día (2 días o más), el usuario ha perdido la racha
         if (diffDays > 1) {
+          const oldStreak = user.streak;
           user.streak = 0;
           await user.save();
           resetCount++;
 
-          // Opcional: podrías notificarle que ha perdido su racha
-          // notifyUser(user.id, { title: 'Racha perdida 💔', body: 'Tu racha ha vuelto a 0. ¡Hoy es un buen día para empezar de nuevo!', url: '/' });
+          // Notificar al usuario que ha perdido su racha
+          notifyUser(user.id, {
+            title: '💔 Racha perdida',
+            body: `Has perdido tu racha de ${oldStreak} ${oldStreak === 1 ? 'día' : 'días'} por no haber entrenado. ¡Hoy es un buen día para empezar de nuevo!`,
+            url: '/routines'
+          }).catch(err => console.error(`[Cron] Error notificando pérdida de racha a ${user.id}:`, err.message));
         }
       }));
 

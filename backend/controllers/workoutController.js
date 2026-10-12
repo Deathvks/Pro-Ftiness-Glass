@@ -259,6 +259,29 @@ export const logWorkoutSession = async (req, res, next) => {
     // Procesamos gamificación fuera de la transacción
     const gamificationEvents = [];
     let xpAdded = 0;
+    let workoutStreak = null;
+
+    try {
+      const workoutGamification = await processWorkoutGamification(userId, finalDate, finalRoutineName);
+      if (workoutGamification) {
+        if (workoutGamification.xpAdded > 0) {
+          xpAdded += workoutGamification.xpAdded;
+        }
+        if (workoutGamification.streak !== undefined) {
+          workoutStreak = workoutGamification.streak;
+        }
+        gamificationEvents.push({
+          type: 'workout_completed',
+          message: `${finalRoutineName} completado`,
+          xpAdded: workoutGamification.xpAdded || 0,
+          leveledUp: workoutGamification.leveledUp,
+          newLevel: workoutGamification.level,
+          streak: workoutGamification.streak
+        });
+      }
+    } catch (wGError) {
+      console.error('Error procesando workout gamification:', wGError);
+    }
 
     try {
       const { trackChallenge } = await import('../services/challengeService.js');
@@ -390,6 +413,7 @@ export const logWorkoutSession = async (req, res, next) => {
       workoutId: newWorkoutLog.id,
       newPRs: newPRs,
       xpAdded: xpAdded,
+      streak: workoutStreak,
       gamification: gamificationEvents,
         gamificationEvents: gamificationEvents
     });

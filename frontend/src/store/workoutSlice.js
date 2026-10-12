@@ -801,8 +801,15 @@ export const createWorkoutSlice = (set, get) => ({
         get().addXp(responseData.xpAdded, 'Entrenamiento guardado');
       }
 
-      const todayStr = formatDateForQuery(new Date());
-      if (get().checkStreak) get().checkStreak(todayStr);
+      if (responseData.streak !== undefined && responseData.streak !== null) {
+        set((s) => ({
+          gamification: {
+            ...s.gamification,
+            streak: responseData.streak,
+            lastActivityDate: formatDateForQuery(new Date())
+          }
+        }));
+      }
       if (get().unlockBadge) get().unlockBadge('first_workout');
 
       if (responseData.newPRs && responseData.newPRs.length > 0) {

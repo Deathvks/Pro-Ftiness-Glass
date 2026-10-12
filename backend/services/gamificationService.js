@@ -64,7 +64,8 @@ const getDailyState = (user, rawDate) => {
             workouts: 0,
             creatina: 0,
             water_xp: 0,
-            progressive_overload: 0
+            progressive_overload: 0,
+            daily_login: false
         };
     } else {
         // Asegurar que existan las propiedades si el día es el mismo pero la estructura cambió
@@ -73,6 +74,7 @@ const getDailyState = (user, rawDate) => {
         if (state.workouts === undefined) state.workouts = 0;
         if (state.food_logs === undefined) state.food_logs = 0;
         if (state.progressive_overload === undefined) state.progressive_overload = 0;
+        if (state.daily_login === undefined) state.daily_login = false;
     }
     return state;
 };
@@ -90,12 +92,14 @@ export const addXp = async (userId, amount, reason = 'Actividad completada', opt
 
         if (!user) throw new Error('Usuario no encontrado');
 
-        if (reason === 'Login Diario') {
-            const today = normalizeDate();
-            if (user.last_activity_date === today) {
+        if (reason === 'Login Diario' || reason === 'Login diario') {
+            const state = getDailyState(user);
+            if (state.daily_login) {
                 return { success: true, xp: user.xp, xpAdded: 0 };
             }
-            user.last_activity_date = today;
+            state.daily_login = true;
+            user.daily_gamification_state = state;
+            user.changed('daily_gamification_state', true);
         }
 
         const oldLevel = user.level;
@@ -211,10 +215,12 @@ export const checkStreak = async (userId, rawDate, opts = {}) => {
         const { transaction, userInstance } = opts;
         let user = userInstance;
         if (!user) user = await User.findByPk(userId, { transaction });
+        if (!user) return { success: false, error: 'Usuario no encontrado' };
 
         const todayDateStr = normalizeDate(rawDate);
-        const lastActivityStr = user.last_activity_date;
+        const lastActivityStr = user.last_activity_date ? normalizeDate(user.last_activity_date) : null;
 
+        // Si ya registró entrenamiento hoy, mantenemos la racha actual sin duplicar
         if (lastActivityStr === todayDateStr) {
             return { success: true, streak: user.streak };
         }
@@ -222,26 +228,61 @@ export const checkStreak = async (userId, rawDate, opts = {}) => {
         if (!lastActivityStr) {
             user.streak = 1;
         } else {
-            const diffDays = Math.ceil(Math.abs(new Date(todayDateStr) - new Date(lastActivityStr)) / (1000 * 60 * 60 * 24));
+            const diffTime = new Date(todayDateStr).getTime() - new Date(lastActivityStr).getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays === 1) {
+                // Entrenó ayer y entrena hoy: racha consecutiva +1
                 user.streak += 1;
                 const badgeId = STREAK_THRESHOLDS[user.streak];
                 if (badgeId) await unlockBadge(userId, badgeId, { transaction, userInstance: user });
-            } else {
+            } else if (diffDays > 1) {
+                // Pasaron 2 o más días sin entrenar: la racha anterior se rompió y empieza en 1 hoy
                 user.streak = 1;
+            } else {
+                // Registro de fecha anterior a la última conocida: no aumentamos racha
+                return { success: true, streak: user.streak };
             }
         }
 
         user.last_activity_date = todayDateStr;
         await user.save({ transaction });
 
-        await addXp(userId, DAILY_LOGIN_XP, 'Login Diario', { transaction, userInstance: user });
-
         return { success: true, streak: user.streak };
     } catch (error) {
         console.error('Error en checkStreak:', error);
         return { success: false, error: error.message };
+    }
+};
+
+/**
+ * Sincroniza y valida la racha del usuario: si ha pasado más de 1 día desde su último entrenamiento (ayer no entrenó),
+ * la racha se reinicia inmediatamente a 0. No altera last_activity_date.
+ */
+export const syncUserStreak = async (userIdOrUser, rawDate = null, opts = {}) => {
+    try {
+        const { transaction } = opts;
+        let user = typeof userIdOrUser === 'object' && userIdOrUser !== null
+            ? userIdOrUser
+            : await User.findByPk(userIdOrUser, { transaction });
+
+        if (!user || !user.streak || !user.last_activity_date) return user?.streak || 0;
+
+        const todayStr = normalizeDate(rawDate);
+        const lastActiveStr = normalizeDate(user.last_activity_date);
+
+        const diffTime = new Date(todayStr).getTime() - new Date(lastActiveStr).getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 1) {
+            user.streak = 0;
+            await user.save({ transaction });
+        }
+
+        return user.streak;
+    } catch (error) {
+        console.error('Error en syncUserStreak:', error);
+        return 0;
     }
 };
 
@@ -315,8 +356,6 @@ export const processFoodGamification = async (userId, logDate) => {
                 await unlockBadge(userId, 'nutrition_master', { transaction: t, userInstance: user });
             }
 
-            await checkStreak(userId, logDate, { transaction: t, userInstance: user });
-
             await t.commit();
             return result;
         }
@@ -351,7 +390,6 @@ export const processCreatinaGamification = async (userId, logDate) => {
                 result.limitReachedNow = true;
             }
 
-            await checkStreak(userId, logDate, { transaction: t, userInstance: user });
             await t.commit();
             return result;
         }
@@ -404,6 +442,7 @@ export default {
     addXp,
     unlockBadge,
     checkStreak,
+    syncUserStreak,
     processWorkoutGamification,
     processFoodGamification,
     processCreatinaGamification,

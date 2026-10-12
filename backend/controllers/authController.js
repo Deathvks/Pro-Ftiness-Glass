@@ -9,7 +9,7 @@ import { UAParser } from 'ua-parser-js';
 import models from '../models/index.js';
 import { generateVerificationCode, sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService.js';
 import { createNotification } from '../services/notificationService.js';
-import { checkStreak, unlockBadge, addXp, DAILY_LOGIN_XP } from '../services/gamificationService.js';
+import { syncUserStreak, unlockBadge, addXp, DAILY_LOGIN_XP } from '../services/gamificationService.js';
 
 const { User, UserSession } = models;
 
@@ -99,15 +99,15 @@ const handleDailyLoginGamification = async (user) => {
 
     await user.update({ lastSeen: now });
 
+    // Sincronizar racha de entrenamiento: si lleva más de 1 día sin entrenar, se pone a 0
+    await syncUserStreak(user, today);
+
     if (lastSeenDate === today) return;
 
     const badgeResult = await unlockBadge(user.id, 'first_login');
 
-    if (badgeResult.unlocked) {
-      await checkStreak(user.id, today);
-    } else {
+    if (!badgeResult.unlocked) {
       await addXp(user.id, DAILY_LOGIN_XP, 'Login diario');
-      await checkStreak(user.id, today);
     }
   } catch (gError) {
     console.error('Error gamificación en login:', gError);
