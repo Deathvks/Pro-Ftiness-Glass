@@ -1,5 +1,5 @@
 {
-  "version": "7.2.81",
+  "version": "7.2.82",
   "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.2.1/app-release.apk",
-  "notes": "Entrenador inteligente de cargas con selección de estrategias, persistencia de seguimiento entre sesiones, avisos de meseta/fatiga, celebración de progreso y anillo de rol en el avatar del header."
+  "notes": "Diagnóstico y recomendador nutricional inteligente sin IA, análisis de los 6 pilares (calorías, proteína, agua, creatina, azúcar, macros), alertas de desbalance o racha y selección interactiva de pautas según objetivo."
 }
