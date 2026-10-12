@@ -389,6 +389,7 @@ export const generateSmartNutritionCoachPlan = ({
       title: `Ideas para completar tu proteína (+${Math.min(35, Math.max(20, proteinGap))}g)`,
       tag: 'Sugerencia Práctica',
       badge: `+${Math.min(35, Math.max(20, proteinGap))}g Proteína`,
+      motive: `Hemos detectado que llevas ${proteinConsumed}g de tus ${proteinTarget}g objetivo (${proteinPct}%). Completar los ${proteinGap}g restantes asegura el balance nitrogenado positivo para la síntesis de nuevas fibras musculares.`,
       description: `Elige según lo que tengas en casa: atún, 2-3 huevos/claras, pechuga de pollo/pavo, queso fresco batido o un batido de proteína. Cada opción eleva la síntesis proteica de forma limpia.`,
       actionHint: 'Añádelo a tu próxima comida o cena según lo que tengas disponible.'
     });
@@ -402,6 +403,7 @@ export const generateSmartNutritionCoachPlan = ({
         title: 'Cena ligera de volumen saciante',
         tag: 'Control Calórico',
         badge: 'Bajo en kcal',
+        motive: `Hemos detectado que ya has alcanzado ${caloriesConsumed} de tus ${calorieTarget} kcal (${calPct}%). Alimentos volumétricos ricos en agua y fibra te sacian por completo sin sobrepasar tu límite de pérdida de grasa.`,
         description: 'Si ya estás cerca de tu límite de calorías, prioriza verduras abundantes (ensalada, calabacín, espinacas) con pescado blanco o claras para cenar saciado sin sumar calorías extra.',
         actionHint: 'Ajusta tu cena con los alimentos que tengas a mano.'
       });
@@ -410,6 +412,7 @@ export const generateSmartNutritionCoachPlan = ({
         title: 'Cierre de ingesta con infusión',
         tag: 'Saciedad Nocturna',
         badge: 'Hidratación',
+        motive: `Hemos detectado que tus calorías del día están cubiertas. Una infusión ayuda a calmar el apetito tardío y favorecer el descanso sin sumar calorías innecesarias.`,
         description: 'Una infusión digestiva caliente o un vaso grande de agua fría calma los antojos tardíos y facilita un descanso profundo sin digestión pesada.',
         actionHint: 'Ideal para tomar 1-2 horas antes de dormir.'
       });
@@ -421,6 +424,7 @@ export const generateSmartNutritionCoachPlan = ({
         title: `Aporte calórico saludable y fácil (+${Math.min(450, calRemaining)} kcal)`,
         tag: 'Densidad Nutritiva',
         badge: '+300-400 kcal',
+        motive: `Hemos detectado que aún te faltan ${calRemaining} kcal para alcanzar tu superávit anabólico (${caloriesConsumed}/${calorieTarget} kcal). Alimentos densos te permiten cerrar la brecha calórica sin sensación de hinchazón estomacal.`,
         description: 'Si te cuesta llegar a tus calorías, añade alimentos densos que tengas a mano: un puñado de frutos secos (nueces, almendras), una cucharada de crema de frutos secos o un chorrito extra de aceite de oliva.',
         actionHint: 'Complemento rápido sin sensación de pesadez estomacal.'
       });
@@ -429,6 +433,7 @@ export const generateSmartNutritionCoachPlan = ({
         title: 'Aporte de carbohidratos para energía y glucógeno',
         tag: 'Energía & Músculo',
         badge: 'Glucógeno',
+        motive: `Hemos detectado que tus carbohidratos están por debajo del objetivo (${carbsConsumed}/${carbsTarget}g). Carbohidratos complejos recargan el glucógeno muscular para mantener la fuerza en tus entrenamientos.`,
         description: 'Fruta madura (plátano), avena, arroz o patata en tu siguiente comida te darán los carbohidratos necesarios para rendir y reponer glucógeno.',
         actionHint: 'Consúmelo en tu comida principal o merienda.'
       });
@@ -442,6 +447,7 @@ export const generateSmartNutritionCoachPlan = ({
       title: 'Paseo activo o movimiento post-comida (15-20 min)',
       tag: 'Control Glucémico',
       badge: 'Sensibilidad Insulina',
+      motive: `Hemos detectado que has superado tu límite de azúcar libre (${sugarConsumed}/${sugarTarget}g). Una caminata ligera activa los transportadores GLUT-4 para absorber glucosa directamente en el músculo sin disparar la insulina.`,
       description: 'Una caminata suave activa la contracción muscular, permitiendo captar la glucosa en sangre de forma natural sin necesidad de secretar exceso de insulina.',
       actionHint: 'Un paseo ligero después de comer ayuda a regular el azúcar.'
     });
@@ -454,6 +460,7 @@ export const generateSmartNutritionCoachPlan = ({
       title: 'Suma hidratación constante',
       tag: 'Hidratación',
       badge: '+500-750 ml',
+      motive: `Hemos detectado que solo llevas ${waterConsumed} de ${waterTarget} ml (${waterPct}%). Una hidratación deficiente reduce el volumen celular y disminuye el rendimiento contráctil muscular.`,
       description: 'Ten un vaso o botella de agua siempre a la vista. Mantenerte hidratado disipa la fatiga y optimiza la función celular muscular.',
       actionHint: 'Bebe a sorbos regulares en la próxima hora.'
     });
@@ -465,6 +472,7 @@ export const generateSmartNutritionCoachPlan = ({
       title: `Recuerda tu toma diaria de creatina (~${creatineTarget}g)`,
       tag: 'Fuerza Muscular',
       badge: `${creatineTarget}g Creatina`,
+      motive: `Hemos detectado que aún no has registrado tu toma de creatina de hoy (~${creatineTarget}g). La creatina funciona por saturación celular crónica y saltarse tomas reduce los depósitos de fosfocreatina.`,
       description: 'Tómala en el momento del día que mejor te encaje con agua o zumo. La constancia diaria es lo que mantiene la saturación intramuscular.',
       actionHint: 'Tomar con un vaso de agua antes de terminar el día.'
     });
@@ -477,6 +485,7 @@ export const generateSmartNutritionCoachPlan = ({
       title: 'Consolidar este patrón alimentario',
       tag: 'Consistencia',
       badge: 'Hábitos Sólidos',
+      motive: 'Hemos detectado un balance óptimo en todos tus pilares nutricionales hoy. La consistencia acumulada a lo largo de semanas es la clave científica del cambio físico.',
       description: 'Tu distribución de hoy es ejemplar. Repite esta estructura de alimentos en tus días habituales para consolidar resultados a largo plazo.',
       actionHint: 'Mantén tus pautas habituales.'
     });
@@ -485,6 +494,7 @@ export const generateSmartNutritionCoachPlan = ({
       title: 'Preparación para el descanso y recuperación',
       tag: 'Recuperación',
       badge: 'Descanso Óptimo',
+      motive: 'Hemos detectado que tus macros del día están cubiertos. Espaciar la última comida del descanso optimiza la secreción de hormona del crecimiento (GH) durante la noche.',
       description: 'Asegura que tu última comida ocurra al menos 90 minutos antes de acostarte para permitir que los procesos de regeneración muscular actúen sin digestiones pesadas.',
       actionHint: 'Cenar temprano y favorecer el descanso nocturno.'
     });

@@ -233,7 +233,7 @@ const SmartExerciseCoachModal = ({
               </div>
             )}
 
-            {/* 3. ¿QUÉ TE OCURRE? (EXPLICACIÓN CLARA DEL ESTADO) */}
+            {/* 3. ¿QUÉ HEMOS DETECTADO EN TU RENDIMIENTO? */}
             <div className={`p-3.5 sm:p-4 rounded-[22px] space-y-2 ${
               trend.isWarning 
                 ? 'bg-amber-500/10' 
@@ -259,16 +259,18 @@ const SmartExerciseCoachModal = ({
                 </div>
                 <div className="min-w-0">
                   <span className="text-[10px] font-black uppercase tracking-wider text-text-muted block">
-                    ¿Qué le ocurre a tu rendimiento?
+                    ¿Qué hemos detectado en tu rendimiento?
                   </span>
                   <h3 className="text-xs sm:text-sm font-black text-text-primary leading-tight">
                     {trend.status === 'stagnant'
-                      ? `Llevas ${trend.weeksStagnant || 2} semanas levantando el mismo peso (${targets.suggestedWeight} kg)`
+                      ? `Meseta detectada: Llevas ${trend.weeksStagnant || 2} semanas levantando ${targets.suggestedWeight} kg`
                       : trend.status === 'decreasing'
-                      ? `Aviso: Fatiga o cansancio detectado (${trend.badgeText})`
+                      ? `Aviso: Fatiga residual detectada (${trend.badgeText})`
                       : trend.isProgressing
                       ? `¡Gran progresión! Has aumentado tu fuerza (${trend.badgeText})`
-                      : `Calibración de carga para ${userGoal.label}`}
+                      : trend.status === 'first_time'
+                      ? `Sin marcas previas: Calibración inicial para ${userGoal.label}`
+                      : `1 sesión previa: Estableciendo base para ${userGoal.label}`}
                   </h3>
                 </div>
               </div>
@@ -309,14 +311,14 @@ const SmartExerciseCoachModal = ({
                 )}
               </div>
 
-              {/* Explicación de por qué se recomienda la opción seleccionada */}
+              {/* Motivo específico de por qué se recomienda la opción seleccionada */}
               {activeStrategy && (
                 <div className="p-2.5 rounded-[14px] bg-bg-secondary space-y-1">
                   <span className="text-[10px] font-black uppercase tracking-wider text-accent block">
-                    Por qué elegimos esta pauta ({activeStrategy.title}):
+                    Motivo por el que te recomendamos ({activeStrategy.title}):
                   </span>
                   <p className="text-xs text-text-secondary leading-relaxed font-medium">
-                    {activeStrategy.description}
+                    {activeStrategy.motive || activeStrategy.description}
                   </p>
                 </div>
               )}
@@ -505,6 +507,11 @@ const SmartExerciseCoachModal = ({
                           <p className="text-xs text-text-secondary font-medium leading-relaxed">
                             {opt.description}
                           </p>
+                          {opt.motive && (
+                            <p className="text-[11px] text-accent font-medium leading-snug pt-0.5">
+                              <strong className="font-bold">Motivo:</strong> {opt.motive}
+                            </p>
+                          )}
                         </div>
                       </div>
                     );

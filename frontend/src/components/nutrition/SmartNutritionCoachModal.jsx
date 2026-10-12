@@ -366,6 +366,11 @@ const SmartNutritionCoachModal = ({
                             </span>
                           )}
                         </div>
+                        {opt.motive && (
+                          <p className="text-[11px] text-accent font-medium leading-snug">
+                            <strong className="font-bold">Motivo:</strong> {opt.motive}
+                          </p>
+                        )}
                         <p className="text-xs text-text-secondary font-medium leading-relaxed">
                           {opt.description}
                         </p>
