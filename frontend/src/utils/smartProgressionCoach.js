@@ -387,7 +387,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
     // Felicitación y celebración según el objetivo
     celebrationData = {
       isCelebrating: true,
-      title: '¡Excelente progreso! Estás superando tus marcas 🚀',
+      title: '¡Excelente progreso! Estás superando tus marcas',
       subtitle: `Tu rendimiento ha aumentado un ${trend.badgeText} respecto a tu sesión anterior.`,
       tipsToMaintain: [
         'No te apresures: los micro-incrementos constantes (1.25 a 2.5 kg) construyen fuerza sólida a largo plazo.',

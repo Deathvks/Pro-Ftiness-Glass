@@ -297,25 +297,45 @@ export const generateSmartNutritionCoachPlan = ({
   // 6. CARBOHIDRATOS & GRASAS (ENERGÍA Y HORMONAS)
   const carbsPct = Math.round((carbsConsumed / carbsTarget) * 100);
   const fatsPct = Math.round((fatsConsumed / fatsTarget) * 100);
-  const isFatsLow = fatsConsumed < fatsTarget * 0.5 && foodCount >= 2;
-  const macroBalanceStatus = isFatsLow ? 'warning' : 'optimal';
-  if (isFatsLow) warningsCount++; else optimalCount++;
+  const carbsRemaining = Math.max(0, carbsTarget - carbsConsumed);
+  const fatsRemaining = Math.max(0, fatsTarget - fatsConsumed);
+
+  let macroBalanceStatus = 'in_progress';
+  let macroMessage = '';
+  let isMacroWarning = false;
+
+  if (fatsPct > 130 || carbsPct > 130) {
+    macroBalanceStatus = 'warning';
+    isMacroWarning = true;
+    warningsCount++;
+    macroMessage = `Exceso en macronutrientes energéticos (${carbsPct}% carbos, ${fatsPct}% grasas). Modera fuentes densas en las siguientes ingestas.`;
+  } else if (fatsConsumed < fatsTarget * 0.4 && foodCount >= 2) {
+    macroBalanceStatus = 'warning';
+    isMacroWarning = true;
+    warningsCount++;
+    macroMessage = `Grasas bajas (${fatsConsumed}/${fatsTarget}g). Tu cuerpo necesita un mínimo de ácidos grasos para la producción hormonal.`;
+  } else if (carbsPct >= 75 && carbsPct <= 115 && fatsPct >= 75 && fatsPct <= 115) {
+    macroBalanceStatus = 'optimal';
+    optimalCount++;
+    macroMessage = 'Reparto energético de carbohidratos y grasas en rango óptimo.';
+  } else {
+    macroBalanceStatus = 'in_progress';
+    macroMessage = `En curso: faltan ${carbsRemaining}g de carbohidratos y ${fatsRemaining}g de grasas para completar tus metas del día.`;
+  }
 
   pillars.push({
     id: 'macros_balance',
     name: 'Carbos & Grasas Saludables',
     icon: 'Wheat',
-    color: macroBalanceStatus === 'optimal' ? 'emerald' : 'amber',
+    color: macroBalanceStatus === 'optimal' ? 'emerald' : macroBalanceStatus === 'warning' ? 'amber' : 'blue',
     consumed: `${carbsConsumed}g C / ${fatsConsumed}g G`,
     target: `${carbsTarget}g C / ${fatsTarget}g G`,
     unit: 'macros',
     pct: Math.round((carbsPct + fatsPct) / 2),
     status: macroBalanceStatus,
-    isWarning: isFatsLow,
-    message: isFatsLow
-      ? 'Grasas bajas. Se requiere un mínimo de ácidos grasos saludables para la síntesis hormonal.'
-      : 'Reparto energético de carbohidratos y grasas en buena proporción.',
-    science: 'Las grasas regulan la absorción de vitaminas liposolubles (A, D, E, K) y los carbos rellenan el glucógeno hepático y muscular.'
+    isWarning: isMacroWarning,
+    message: macroMessage,
+    science: 'Las grasas regulan la absorción de vitaminas liposolubles (A, D, E, K) y síntesis hormonal, mientras los carbos recargan el glucógeno muscular.'
   });
 
   // --- DETERMINAR ESTADO GLOBAL ---
@@ -342,7 +362,7 @@ export const generateSmartNutritionCoachPlan = ({
   if (isOptimal) {
     celebrationData = {
       isCelebrating: true,
-      title: '¡Nutrición Impecable! Estás clavando tus metas 🚀',
+      title: '¡Nutrición Impecable! Estás clavando tus metas',
       subtitle: `Tus calorías, proteína y micronutrientes están alineados con tu objetivo de ${goalInfo.label}.`,
       tipsToMaintain: [
         'Mantén la misma constancia en los próximos días: los resultados físicos son el reflejo de semanas acumuladas en rango óptimo.',

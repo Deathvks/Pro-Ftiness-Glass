@@ -127,34 +127,34 @@ const SmartExerciseCoachModal = ({
         onClick={onClose}
       >
         <div 
-          className="relative w-full max-w-xl max-h-[90vh] flex flex-col bg-bg-secondary dark:bg-[#121214] border-none ring-1 ring-black/5 dark:ring-white/10 rounded-t-[32px] sm:rounded-2xl shadow-2xl overflow-hidden animate-[slide-up_0.25s_cubic-bezier(0.16,1,0.3,1)] sm:animate-[scale-in_0.2s_ease-out]"
+          className="relative w-full max-w-xl max-h-[90vh] flex flex-col bg-bg-secondary dark:bg-[#121214] border-none rounded-t-[32px] sm:rounded-2xl shadow-2xl overflow-hidden animate-[slide-up_0.25s_cubic-bezier(0.16,1,0.3,1)] sm:animate-[scale-in_0.2s_ease-out]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top Grabber en móvil */}
           <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-3 mb-1 sm:hidden shrink-0" />
 
           {/* Header */}
-          <div className="p-4 sm:p-6 pb-3 border-b border-black/5 dark:border-white/10 flex items-start justify-between gap-3 bg-bg-secondary">
+          <div className="p-4 sm:p-6 pb-3 border-b border-black/5 dark:border-transparent flex items-start justify-between gap-3 bg-bg-secondary">
             <div className="space-y-1.5 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent ring-1 ring-accent/30">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent">
                   {getGoalIcon()}
                   <span>{userGoal.label}</span>
                 </span>
 
                 {/* Badge de Diagnóstico */}
                 {trend.isWarning ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/40 animate-pulse">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 animate-pulse">
                     <AlertTriangle size={13} className="shrink-0" />
                     <span>{trend.badgeText}</span>
                   </span>
                 ) : trend.isProgressing ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/40">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 size={13} className="shrink-0" />
                     <span>¡En racha! {trend.badgeText}</span>
                   </span>
                 ) : (
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ring-1 ${trend.colorClass}`}>
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${trend.colorClass}`}>
                     <span>{trend.badgeText}</span>
                   </span>
                 )}
@@ -179,7 +179,7 @@ const SmartExerciseCoachModal = ({
 
             {/* 1. ASESORÍA CON PREPARADOR REAL (SIEMPRE VISIBLE) */}
             {asesoriaRecommendation && (
-              <div className="p-3 sm:p-3.5 rounded-[20px] bg-accent/10 ring-1 ring-accent/25 flex items-center justify-between gap-3">
+              <div className="p-3 sm:p-3.5 rounded-[20px] bg-accent/10 flex items-center justify-between gap-3">
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0 mt-0.5">
                     <UserCheck size={16} strokeWidth={2.5} />
@@ -213,7 +213,7 @@ const SmartExerciseCoachModal = ({
 
             {/* 2. SEGUIMIENTO DE LA SESIÓN ANTERIOR (Si existe) */}
             {followUp && (
-              <div className="p-3 sm:p-3.5 rounded-[18px] bg-accent/10 ring-1 ring-accent/25 flex items-start gap-2.5">
+              <div className="p-3 sm:p-3.5 rounded-[18px] bg-accent/10 flex items-start gap-2.5">
                 <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0 mt-0.5">
                   <Check size={14} strokeWidth={3} />
                 </div>
@@ -234,12 +234,12 @@ const SmartExerciseCoachModal = ({
             )}
 
             {/* 3. ¿QUÉ TE OCURRE? (EXPLICACIÓN CLARA DEL ESTADO) */}
-            <div className={`p-3.5 sm:p-4 rounded-[22px] space-y-2 ring-1 ${
+            <div className={`p-3.5 sm:p-4 rounded-[22px] space-y-2 ${
               trend.isWarning 
-                ? 'bg-amber-500/10 ring-amber-500/30' 
+                ? 'bg-amber-500/10' 
                 : trend.isProgressing 
-                ? 'bg-emerald-500/10 ring-emerald-500/30' 
-                : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10'
+                ? 'bg-emerald-500/10' 
+                : 'bg-black/5 dark:bg-white/5'
             }`}>
               <div className="flex items-center gap-2">
                 <div className={`p-1.5 rounded-[10px] shrink-0 ${
@@ -286,7 +286,7 @@ const SmartExerciseCoachModal = ({
             </div>
 
             {/* 4. ¿PARA QUÉ TE LO RECOMENDAMOS? (OBJETIVO Y PASOS PRÁCTICOS) */}
-            <div className="p-3.5 sm:p-4 rounded-[22px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 space-y-2.5">
+            <div className="p-3.5 sm:p-4 rounded-[22px] bg-black/5 dark:bg-white/5 space-y-2.5">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0">
@@ -303,7 +303,7 @@ const SmartExerciseCoachModal = ({
                 </div>
 
                 {activeStrategy?.badge && (
-                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-accent/15 text-accent ring-1 ring-accent/30">
+                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-accent/15 text-accent">
                     {activeStrategy.badge}
                   </span>
                 )}
@@ -311,7 +311,7 @@ const SmartExerciseCoachModal = ({
 
               {/* Explicación de por qué se recomienda la opción seleccionada */}
               {activeStrategy && (
-                <div className="p-2.5 rounded-[14px] bg-bg-secondary ring-1 ring-black/5 dark:ring-white/10 space-y-1">
+                <div className="p-2.5 rounded-[14px] bg-bg-secondary space-y-1">
                   <span className="text-[10px] font-black uppercase tracking-wider text-accent block">
                     Por qué elegimos esta pauta ({activeStrategy.title}):
                   </span>
@@ -352,7 +352,7 @@ const SmartExerciseCoachModal = ({
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
                 {/* 1. Peso Sugerido */}
-                <div className="bg-accent/10 dark:bg-accent/15 p-3 rounded-[18px] border border-accent/30 flex flex-col justify-between">
+                <div className="bg-accent/10 dark:bg-accent/15 p-3 rounded-[18px] flex flex-col justify-between">
                   <div className="flex items-center justify-between text-accent mb-0.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider">Peso</span>
                     <Dumbbell size={14} />
@@ -368,7 +368,7 @@ const SmartExerciseCoachModal = ({
                 </div>
 
                 {/* 2. Series */}
-                <div className="bg-black/5 dark:bg-white/5 p-3 rounded-[18px] ring-1 ring-black/5 dark:ring-white/10 flex flex-col justify-between">
+                <div className="bg-black/5 dark:bg-white/5 p-3 rounded-[18px] flex flex-col justify-between">
                   <div className="flex items-center justify-between text-text-secondary mb-0.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider">Series</span>
                     <Repeat size={14} />
@@ -384,7 +384,7 @@ const SmartExerciseCoachModal = ({
                 </div>
 
                 {/* 3. Repeticiones */}
-                <div className="bg-black/5 dark:bg-white/5 p-3 rounded-[18px] ring-1 ring-black/5 dark:ring-white/10 flex flex-col justify-between">
+                <div className="bg-black/5 dark:bg-white/5 p-3 rounded-[18px] flex flex-col justify-between">
                   <div className="flex items-center justify-between text-text-secondary mb-0.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider">Reps</span>
                     <Flame size={14} />
@@ -402,7 +402,7 @@ const SmartExerciseCoachModal = ({
                 {/* 4. Intensidad / Esfuerzo */}
                 <div 
                   onClick={() => setShowRirHelp(!showRirHelp)}
-                  className="bg-black/5 dark:bg-white/5 p-3 rounded-[18px] ring-1 ring-black/5 dark:ring-white/10 flex flex-col justify-between cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group"
+                  className="bg-black/5 dark:bg-white/5 p-3 rounded-[18px] flex flex-col justify-between cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group"
                   title="Toca para ver ayuda de intensidad"
                 >
                   <div className="flex items-center justify-between text-text-secondary mb-0.5">
@@ -433,7 +433,7 @@ const SmartExerciseCoachModal = ({
 
             {/* GUÍA DE INTENSIDAD / RIR (SOLO SE DESPLIEGA SI SE TOCA) */}
             {showRirHelp && (
-              <div className="p-3.5 sm:p-4 rounded-[20px] bg-accent/10 border border-accent/25 space-y-2 text-xs text-text-secondary animate-[fade-in_0.15s_ease-out]">
+              <div className="p-3.5 sm:p-4 rounded-[20px] bg-accent/10 space-y-2 text-xs text-text-secondary animate-[fade-in_0.15s_ease-out]">
                 <div className="flex items-center justify-between">
                   <span className="font-black text-text-primary flex items-center gap-1.5">
                     <HelpCircle size={14} className="text-accent" />
@@ -446,9 +446,19 @@ const SmartExerciseCoachModal = ({
                 <p className="leading-relaxed">
                   No hace falta llegar al fallo extremo en cada serie. La ciencia demuestra que parar cuando sientes que te quedaban <strong className="text-text-primary font-bold">1 o 2 repeticiones en reserva</strong> da el mismo crecimiento muscular pero sin agotar tu sistema nervioso ni lesionarte.
                 </p>
-                <div className="p-2.5 rounded-[12px] bg-bg-secondary ring-1 ring-black/5 dark:ring-white/10 space-y-1 text-[11px]">
-                  <p>🟢 <strong className="text-text-primary">1-2 reps antes de no poder más:</strong> Rango ideal para ganar masa y fuerza con seguridad.</p>
-                  <p>🟡 <strong className="text-text-primary">2-3 reps antes:</strong> Si estás cansado o cuidando una articulación.</p>
+                <div className="p-2.5 rounded-[12px] bg-bg-secondary space-y-1.5 text-[11px]">
+                  <p className="flex items-start gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 mt-1 shrink-0" />
+                    <span className="leading-snug">
+                      <strong className="text-text-primary">1-2 reps antes de no poder más:</strong> Rango ideal para ganar masa y fuerza con seguridad.
+                    </span>
+                  </p>
+                  <p className="flex items-start gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 mt-1 shrink-0" />
+                    <span className="leading-snug">
+                      <strong className="text-text-primary">2-3 reps antes:</strong> Si estás cansado o cuidando una articulación.
+                    </span>
+                  </p>
                 </div>
               </div>
             )}
@@ -470,11 +480,11 @@ const SmartExerciseCoachModal = ({
                         className={`p-3 sm:p-3.5 rounded-[20px] transition-all cursor-pointer flex items-start gap-3 select-none ${
                           isSelected
                             ? 'bg-accent/15 ring-2 ring-accent shadow-sm'
-                            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
+                            : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10'
                         }`}
                       >
                         <div className={`mt-0.5 shrink-0 rounded-full w-5 h-5 flex items-center justify-center transition-all ${
-                          isSelected ? 'bg-accent text-accent-contrast' : 'ring-1 ring-black/10 dark:ring-white/20 text-transparent'
+                          isSelected ? 'bg-accent text-accent-contrast' : 'bg-black/10 dark:bg-white/10 text-transparent'
                         }`}>
                           <Check size={12} strokeWidth={3} />
                         </div>
@@ -505,7 +515,7 @@ const SmartExerciseCoachModal = ({
 
             {/* 6. HISTORIAL DE CARGAS PREVIAS (PLEGABLE PARA NO OCUPAR ESPACIO EN MÓVIL) */}
             {sessions && sessions.length > 0 && (
-              <div className="rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
+              <div className="rounded-[20px] bg-black/5 dark:bg-white/5 overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setShowHistory(!showHistory)}
@@ -522,11 +532,11 @@ const SmartExerciseCoachModal = ({
                 </button>
 
                 {showHistory && (
-                  <div className="p-3 pt-0 space-y-1.5 border-t border-black/5 dark:border-white/10 animate-[fade-in_0.15s_ease-out]">
+                  <div className="p-3 pt-0 space-y-1.5 border-t border-black/5 dark:border-transparent animate-[fade-in_0.15s_ease-out]">
                     {sessions.slice(0, 4).map((s, idx) => (
                       <div 
                         key={s.logId || idx}
-                        className="flex items-center justify-between p-2 rounded-[14px] bg-bg-secondary ring-1 ring-black/5 dark:ring-white/10 text-xs font-semibold gap-2"
+                        className="flex items-center justify-between p-2 rounded-[14px] bg-bg-secondary text-xs font-semibold gap-2"
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="w-5 h-5 rounded-full bg-black/5 dark:bg-white/10 text-[10px] flex items-center justify-center font-bold text-text-muted shrink-0">
@@ -561,7 +571,7 @@ const SmartExerciseCoachModal = ({
           </div>
 
           {/* Footer Buttons */}
-          <div className="p-4 sm:p-5 border-t border-black/5 dark:border-white/10 bg-bg-secondary flex items-center gap-3">
+          <div className="p-4 sm:p-5 border-t border-black/5 dark:border-transparent bg-bg-secondary flex items-center gap-3">
             <button
               type="button"
               onClick={handleApplySelection}
