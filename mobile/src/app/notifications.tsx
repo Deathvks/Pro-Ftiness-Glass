@@ -474,20 +474,30 @@ export default function NotificationsScreen() {
                               {n.message}
                             </Text>
 
-                            {/* Píldoras de acción interactiva */}
+                            {/* Píldoras de acción interactiva (Liquid Glass) */}
                             {n.data && (n.data.ip || n.data.userAgent) && (
                               <View style={{
                                 flexDirection: 'row',
                                 alignItems: 'center',
-                                gap: 4,
-                                backgroundColor: colors.tint + '18',
-                                paddingHorizontal: 10,
-                                paddingVertical: 5,
-                                borderRadius: 12,
+                                gap: 6,
+                                paddingHorizontal: 12,
+                                paddingVertical: 6,
+                                borderRadius: 9999,
                                 marginTop: 10,
                                 alignSelf: 'flex-start',
+                                overflow: 'hidden',
+                                position: 'relative',
+                                borderWidth: 1,
+                                borderColor: colors.tint + '35',
                               }}>
-                                <Text style={{ fontSize: 10, fontWeight: '800', color: colors.tint, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                <GlassView 
+                                  glassEffectStyle="regular" 
+                                  colorScheme={isDark ? 'dark' : 'light'} 
+                                  style={[StyleSheet.absoluteFill, { borderRadius: 9999 }]} 
+                                />
+                                <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint + '15' }]} />
+                                <Shield size={12} color={colors.tint} />
+                                <Text style={{ fontSize: 10, fontWeight: '800', color: colors.tint, textTransform: 'uppercase', letterSpacing: 0.6 }}>
                                   Detalles de sesión
                                 </Text>
                                 <ChevronRight size={12} color={colors.tint} />
@@ -498,15 +508,24 @@ export default function NotificationsScreen() {
                               <View style={{
                                 flexDirection: 'row',
                                 alignItems: 'center',
-                                gap: 4,
-                                backgroundColor: colors.tint + '18',
-                                paddingHorizontal: 10,
-                                paddingVertical: 5,
-                                borderRadius: 12,
+                                gap: 6,
+                                paddingHorizontal: 12,
+                                paddingVertical: 6,
+                                borderRadius: 9999,
                                 marginTop: 10,
                                 alignSelf: 'flex-start',
+                                overflow: 'hidden',
+                                position: 'relative',
+                                borderWidth: 1,
+                                borderColor: colors.tint + '35',
                               }}>
-                                <Text style={{ fontSize: 10, fontWeight: '800', color: colors.tint, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                <GlassView 
+                                  glassEffectStyle="regular" 
+                                  colorScheme={isDark ? 'dark' : 'light'} 
+                                  style={[StyleSheet.absoluteFill, { borderRadius: 9999 }]} 
+                                />
+                                <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint + '15' }]} />
+                                <Text style={{ fontSize: 10, fontWeight: '800', color: colors.tint, textTransform: 'uppercase', letterSpacing: 0.6 }}>
                                   Ver contenido
                                 </Text>
                                 <ChevronRight size={12} color={colors.tint} />
@@ -584,199 +603,298 @@ export default function NotificationsScreen() {
         </View>
       )}
 
-      {/* ================= MODAL: DETALLES DE INICIO DE SESIÓN ================= */}
+      {/* ================= MODAL: DETALLES DE INICIO DE SESIÓN (TRUE LIQUID GLASS) ================= */}
       <Modal 
         visible={!!selectedNotification} 
         transparent 
         animationType="fade" 
         onRequestClose={() => setSelectedNotification(null)}
       >
-        <Pressable 
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: 20 }}
-          onPress={() => setSelectedNotification(null)}
-        >
+        <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
           <Pressable 
-            style={{ 
-              width: '100%', 
-              maxWidth: 400, 
-              backgroundColor: isDark ? 'rgba(20, 20, 25, 0.75)' : 'rgba(255, 255, 255, 0.85)', 
-              borderRadius: 32, 
-              padding: 24,
-              borderWidth: 1,
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-              overflow: 'hidden'
-            }}
-            onPress={(e) => e.stopPropagation()}
+            style={[
+              StyleSheet.absoluteFill,
+              { 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                padding: 20,
+                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.45)' : 'rgba(255, 255, 255, 0.25)',
+              }
+            ]}
+            onPress={() => setSelectedNotification(null)}
           >
-            <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-            
-            {/* Botón cerrar */}
-            <TouchableOpacity 
-              onPress={() => setSelectedNotification(null)}
-              style={{ position: 'absolute', top: 20, right: 20, width: 36, height: 36, borderRadius: 18, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}
-            >
-              <X size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
-
-            {/* Encabezado */}
-            <View style={{ alignItems: 'center', marginBottom: 20 }}>
-              <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: colors.tint + '15', borderWidth: 2, borderColor: colors.tint + '30', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                <Shield size={32} color={colors.tint} strokeWidth={1.5} />
-              </View>
-              <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.text }}>Detalles de Inicio</Text>
-              <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4, textAlign: 'center' }}>Información del dispositivo registrado</Text>
-            </View>
-
-            {/* Contenedor de datos */}
-            <View style={{ backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)', borderRadius: 20, padding: 16, gap: 16 }}>
-              {/* Dispositivo */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(59, 130, 246, 0.12)', alignItems: 'center', justifyContent: 'center' }}>
-                  <Smartphone size={20} color="#3b82f6" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textMuted || colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                    Dispositivo / Navegador
-                  </Text>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginTop: 2 }}>
-                    {selectedNotification?.data?.userAgent || 'Desconocido'}
-                  </Text>
-                </View>
-              </View>
-
-              {/* IP */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(168, 85, 247, 0.12)', alignItems: 'center', justifyContent: 'center' }}>
-                  <Globe size={20} color="#a855f7" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textMuted || colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                    Dirección IP
-                  </Text>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginTop: 2, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>
-                    {selectedNotification?.data?.ip || 'Desconocida'}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Fecha */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(34, 197, 94, 0.12)', alignItems: 'center', justifyContent: 'center' }}>
-                  <Clock size={20} color="#22c55e" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textMuted || colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                    Fecha y Hora
-                  </Text>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginTop: 2 }}>
-                    {formatDateFull(parseDateSafe(selectedNotification?.data?.date || selectedNotification?.created_at))}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Botón Entendido */}
-            <TouchableOpacity 
-              onPress={() => setSelectedNotification(null)}
-              style={{
-                height: 50,
-                borderRadius: 18,
-                backgroundColor: colors.tint,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginTop: 20,
+            <Pressable 
+              style={{ 
+                width: '100%', 
+                maxWidth: 400, 
+                borderRadius: 32, 
+                overflow: 'hidden',
+                position: 'relative',
               }}
+              onPress={(e) => e.stopPropagation()}
             >
-              <Text style={{ fontSize: 15, fontWeight: 'bold', color: accentTextColor }}>Entendido</Text>
-            </TouchableOpacity>
+              {/* Capa Liquid Glass de la tarjeta */}
+              <GlassView 
+                glassEffectStyle="regular" 
+                colorScheme={isDark ? 'dark' : 'light'} 
+                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]} 
+              />
+              
+              <View style={{
+                padding: 26,
+                borderRadius: 32,
+                borderWidth: 1,
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)',
+              }}>
+                {/* Botón cerrar Liquid Glass */}
+                <TouchableOpacity 
+                  onPress={() => setSelectedNotification(null)}
+                  style={{ 
+                    position: 'absolute', 
+                    top: 20, 
+                    right: 20, 
+                    width: 36, 
+                    height: 36, 
+                    borderRadius: 18, 
+                    overflow: 'hidden',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    zIndex: 10 
+                  }}
+                >
+                  <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, { borderRadius: 18 }]} />
+                  <X size={18} color={colors.textSecondary} />
+                </TouchableOpacity>
+
+                {/* Encabezado */}
+                <View style={{ alignItems: 'center', marginBottom: 24 }}>
+                  <View style={{ 
+                    width: 64, 
+                    height: 64, 
+                    borderRadius: 22, 
+                    backgroundColor: colors.tint + '18', 
+                    borderWidth: 1.5, 
+                    borderColor: colors.tint + '35', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    marginBottom: 14,
+                    overflow: 'hidden',
+                    position: 'relative',
+                  }}>
+                    <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, { borderRadius: 22 }]} />
+                    <Shield size={32} color={colors.tint} strokeWidth={1.5} />
+                  </View>
+                  <Text style={{ fontSize: 22, fontWeight: '800', color: colors.text, letterSpacing: -0.4 }}>Detalles de Inicio</Text>
+                  <Text style={{ fontSize: 13, fontWeight: '500', color: colors.textSecondary, marginTop: 4, textAlign: 'center' }}>
+                    Información del dispositivo registrado
+                  </Text>
+                </View>
+
+                {/* Contenedor de datos Liquid Glass */}
+                <View style={{ 
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)', 
+                  borderRadius: 24, 
+                  padding: 18, 
+                  gap: 16,
+                  borderWidth: 1,
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                  overflow: 'hidden',
+                  position: 'relative',
+                }}>
+                  <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} />
+
+                  {/* Dispositivo */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                    <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: 'rgba(59, 130, 246, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Smartphone size={20} color="#3b82f6" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textMuted || colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                        Dispositivo / Navegador
+                      </Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginTop: 2 }}>
+                        {selectedNotification?.data?.userAgent || 'Desconocido'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* IP */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                    <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: 'rgba(168, 85, 247, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Globe size={20} color="#a855f7" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textMuted || colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                        Dirección IP
+                      </Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginTop: 2, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>
+                        {selectedNotification?.data?.ip || 'Desconocida'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Fecha */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                    <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: 'rgba(34, 197, 94, 0.15)', alignItems: 'center', justifyContent: 'center' }}>
+                      <Clock size={20} color="#22c55e" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textMuted || colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                        Fecha y Hora
+                      </Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginTop: 2 }}>
+                        {formatDateFull(parseDateSafe(selectedNotification?.data?.date || selectedNotification?.created_at))}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Botón Entendido */}
+                <TouchableOpacity 
+                  onPress={() => setSelectedNotification(null)}
+                  activeOpacity={0.8}
+                  style={{
+                    height: 52,
+                    borderRadius: 20,
+                    backgroundColor: colors.tint,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginTop: 24,
+                    shadowColor: colors.tint,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.35,
+                    shadowRadius: 8,
+                    elevation: 4,
+                  }}
+                >
+                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: accentTextColor }}>Entendido</Text>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
           </Pressable>
-        </Pressable>
+        </GlassView>
       </Modal>
 
-      {/* ================= MODAL: ELIMINAR NOTIFICACIÓN (INDIVIDUAL / TODAS) ================= */}
+      {/* ================= MODAL: ELIMINAR NOTIFICACIÓN (TRUE LIQUID GLASS) ================= */}
       <Modal 
         visible={!!deleteAction} 
         transparent 
         animationType="fade" 
         onRequestClose={() => setDeleteAction(null)}
       >
-        <Pressable 
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: 20 }}
-          onPress={() => setDeleteAction(null)}
-        >
+        <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
           <Pressable 
-            style={{ 
-              width: '100%', 
-              maxWidth: 380, 
-              backgroundColor: isDark ? 'rgba(20, 20, 25, 0.75)' : 'rgba(255, 255, 255, 0.85)', 
-              borderRadius: 32, 
-              padding: 24,
-              alignItems: 'center',
-              borderWidth: 1,
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-              overflow: 'hidden'
-            }}
-            onPress={(e) => e.stopPropagation()}
+            style={[
+              StyleSheet.absoluteFill,
+              { 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                padding: 20,
+                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.45)' : 'rgba(255, 255, 255, 0.25)',
+              }
+            ]}
+            onPress={() => setDeleteAction(null)}
           >
-            <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+            <Pressable 
+              style={{ 
+                width: '100%', 
+                maxWidth: 380, 
+                borderRadius: 32, 
+                overflow: 'hidden',
+                position: 'relative',
+              }}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <GlassView 
+                glassEffectStyle="regular" 
+                colorScheme={isDark ? 'dark' : 'light'} 
+                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]} 
+              />
 
-            <View style={{ 
-              width: 64, 
-              height: 64, 
-              borderRadius: 32, 
-              backgroundColor: 'rgba(239, 68, 68, 0.12)', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              marginBottom: 16 
-            }}>
-              <Trash2 size={32} color="#ef4444" />
-            </View>
+              <View style={{
+                padding: 26,
+                borderRadius: 32,
+                borderWidth: 1,
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.65)',
+                alignItems: 'center',
+              }}>
+                <View style={{ 
+                  width: 64, 
+                  height: 64, 
+                  borderRadius: 22, 
+                  backgroundColor: 'rgba(239, 68, 68, 0.15)', 
+                  borderWidth: 1.5,
+                  borderColor: 'rgba(239, 68, 68, 0.3)',
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  marginBottom: 16,
+                  overflow: 'hidden',
+                  position: 'relative',
+                }}>
+                  <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, { borderRadius: 22 }]} />
+                  <Trash2 size={30} color="#ef4444" />
+                </View>
 
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.text, textAlign: 'center' }}>
-              {deleteAction?.type === 'all' ? '¿Eliminar todas?' : '¿Eliminar notificación?'}
-            </Text>
-
-            <Text style={{ fontSize: 14, color: colors.textSecondary, marginTop: 8, textAlign: 'center', lineHeight: 20 }}>
-              {deleteAction?.type === 'all'
-                ? 'Esta acción borrará permanentemente todas tus notificaciones. No se puede deshacer.'
-                : 'Esta notificación se eliminará permanentemente.'}
-            </Text>
-
-            <View style={{ flexDirection: 'row', gap: 12, marginTop: 24, width: '100%' }}>
-              <TouchableOpacity
-                onPress={() => setDeleteAction(null)}
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'transparent',
-                }}
-              >
-                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Cancelar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={confirmDelete}
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: 16,
-                  backgroundColor: '#ef4444',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#ffffff' }}>
-                  {deleteAction?.type === 'all' ? 'Eliminar todas' : 'Eliminar'}
+                <Text style={{ fontSize: 20, fontWeight: '800', color: colors.text, textAlign: 'center', letterSpacing: -0.3 }}>
+                  {deleteAction?.type === 'all' ? '¿Eliminar todas?' : '¿Eliminar notificación?'}
                 </Text>
-              </TouchableOpacity>
-            </View>
+
+                <Text style={{ fontSize: 14, fontWeight: '500', color: colors.textSecondary, marginTop: 8, textAlign: 'center', lineHeight: 20 }}>
+                  {deleteAction?.type === 'all'
+                    ? 'Esta acción borrará permanentemente todas tus notificaciones. No se puede deshacer.'
+                    : 'Esta notificación se eliminará permanentemente.'}
+                </Text>
+
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 26, width: '100%' }}>
+                  <TouchableOpacity
+                    onPress={() => setDeleteAction(null)}
+                    activeOpacity={0.75}
+                    style={{
+                      flex: 1,
+                      height: 50,
+                      borderRadius: 18,
+                      borderWidth: 1,
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                      overflow: 'hidden',
+                      position: 'relative',
+                    }}
+                  >
+                    <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, { borderRadius: 18 }]} />
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>Cancelar</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={confirmDelete}
+                    activeOpacity={0.8}
+                    style={{
+                      flex: 1,
+                      height: 50,
+                      borderRadius: 18,
+                      backgroundColor: '#ef4444',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      shadowColor: '#ef4444',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.35,
+                      shadowRadius: 8,
+                      elevation: 4,
+                    }}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#ffffff' }}>
+                      {deleteAction?.type === 'all' ? 'Eliminar todas' : 'Eliminar'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Pressable>
           </Pressable>
-        </Pressable>
+        </GlassView>
       </Modal>
     </AnimatedScreen>
   );
