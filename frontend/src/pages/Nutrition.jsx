@@ -602,21 +602,21 @@ const Nutrition = ({ setView }) => {
                             <button
                                 type="button"
                                 onClick={() => setShowNutritionCoachModal(true)}
-                                className={`w-full p-4 sm:p-5 rounded-[28px] flex items-center justify-between gap-4 transition-all active:scale-[0.99] shadow-lg group cursor-pointer text-left ${
+                                className={`w-full p-4 sm:p-5 rounded-[28px] flex items-center justify-between gap-4 transition-all active:scale-[0.99] shadow-lg group cursor-pointer text-left ring-1 ring-black/5 dark:ring-white/10 border-none ${
                                     nutritionPlan.isWarning
-                                        ? 'bg-amber-500/10 hover:bg-amber-500/15 ring-1 ring-amber-500/30 text-text-primary'
+                                        ? 'bg-amber-500/10 hover:bg-amber-500/15 text-text-primary'
                                         : nutritionPlan.isOptimal
-                                        ? 'bg-emerald-500/10 hover:bg-emerald-500/15 ring-1 ring-emerald-500/30 text-text-primary'
-                                        : 'bg-accent/10 hover:bg-accent/15 ring-1 ring-accent/25 text-text-primary'
+                                        ? 'bg-emerald-500/10 hover:bg-emerald-500/15 text-text-primary'
+                                        : 'bg-accent/10 hover:bg-accent/15 text-text-primary'
                                 }`}
                             >
                                 <div className="flex items-center gap-3.5 min-w-0">
                                     <div className={`p-3 rounded-[18px] shrink-0 ${
                                         nutritionPlan.isWarning
-                                            ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/30 animate-pulse'
+                                            ? 'bg-amber-500/20 text-amber-400 animate-pulse'
                                             : nutritionPlan.isOptimal
-                                            ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30'
-                                            : 'bg-accent/20 text-accent ring-1 ring-accent/30'
+                                            ? 'bg-emerald-500/20 text-emerald-400'
+                                            : 'bg-accent/20 text-accent'
                                     }`}>
                                         {nutritionPlan.isWarning ? (
                                             <AlertTriangle size={22} strokeWidth={2.5} />
@@ -629,12 +629,12 @@ const Nutrition = ({ setView }) => {
 
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                                            <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border-none ${
                                                 nutritionPlan.isWarning
-                                                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                                                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
                                                     : nutritionPlan.isOptimal
-                                                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                                                    : 'bg-accent/15 text-accent border border-accent/30'
+                                                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                                    : 'bg-accent/15 text-accent'
                                             }`}>
                                                 {nutritionPlan.isWarning 
                                                     ? `Aviso Nutricional (${nutritionPlan.warningsCount} ${nutritionPlan.warningsCount === 1 ? 'alerta' : 'alertas'}) !` 
@@ -674,12 +674,12 @@ const Nutrition = ({ setView }) => {
                                         <button
                                             type="button"
                                             onClick={() => setShowNutritionCoachModal(true)}
-                                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black transition-all active:scale-95 shadow-sm ${
+                                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black transition-all active:scale-95 shadow-sm ring-1 ring-black/5 dark:ring-white/10 border-none ${
                                                 nutritionPlan.isWarning
-                                                    ? 'bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-600 dark:text-amber-400 animate-pulse'
+                                                    ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 animate-pulse'
                                                     : nutritionPlan.isOptimal
-                                                    ? 'bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
-                                                    : 'bg-accent/15 hover:bg-accent/25 border border-accent/30 text-accent'
+                                                    ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400'
+                                                    : 'bg-accent/15 hover:bg-accent/25 text-accent'
                                             }`}
                                             title="Toca para ver el diagnóstico nutricional y pautas"
                                         >
@@ -854,7 +854,7 @@ const Nutrition = ({ setView }) => {
                                 className="glass p-5 flex flex-col relative overflow-hidden group cursor-pointer hover:-translate-y-1 hover:shadow-xl transition-all duration-300 rounded-[28px] ring-1 ring-black/5 dark:ring-white/10 border-none"
                                 onClick={() => setModal({ type: 'water', data: null })}
                             >
-                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-black/5 dark:border-white/10/50 relative z-10">
+                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-black/5 dark:border-white/10 relative z-10">
                                     <div className="flex items-baseline gap-2">
                                         <h2 className="text-lg font-bold text-text-primary">Agua</h2>
                                         <span className="text-sm font-semibold text-text-muted">
@@ -895,7 +895,7 @@ const Nutrition = ({ setView }) => {
                                 className="glass p-5 flex flex-col relative overflow-hidden group cursor-pointer hover:-translate-y-1 hover:shadow-xl transition-all duration-300 rounded-[28px] ring-1 ring-black/5 dark:ring-white/10 border-none"
                                 onClick={() => setShowCreatinaTracker(true)}
                             >
-                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-black/5 dark:border-white/10/50 relative z-10">
+                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-black/5 dark:border-white/10 relative z-10">
                                     <div className="flex items-baseline gap-2">
                                         <h2 className="text-lg font-bold text-text-primary">Creatina</h2>
                                         <span className="text-sm font-semibold text-text-muted">
@@ -941,7 +941,7 @@ const Nutrition = ({ setView }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                         {Object.entries(meals).map(([mealType, logs]) => (
                             <GlassCard key={mealType} className="glass p-5 sm:p-6 flex flex-col rounded-[28px] hover:shadow-xl transition-all duration-300 group ring-1 ring-black/5 dark:ring-white/10 border-none">
-                                <div className="flex justify-between items-center mb-5 pb-3 border-b border-black/5 dark:border-white/10/50">
+                                <div className="flex justify-between items-center mb-5 pb-3 border-b border-black/5 dark:border-white/10">
                                     <div className="flex items-baseline gap-2">
                                         <h2 className="text-xl font-bold capitalize text-text-primary">
                                             {{ breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks' }[mealType]}
@@ -1108,7 +1108,7 @@ const Nutrition = ({ setView }) => {
                         </div>
 
                         <div className="p-6 overflow-y-auto flex-1 min-h-0 custom-scrollbar bg-bg-primary">
-                            <div className="flex items-center justify-between mb-6 pb-4 border-b border-black/5 dark:border-white/10/50">
+                            <div className="flex items-center justify-between mb-6 pb-4 border-b border-black/5 dark:border-white/10">
                                 <div className="flex flex-col">
                                     <span className="text-sm font-semibold text-text-secondary uppercase tracking-widest">Calorías</span>
                                     <span className="text-4xl font-black text-accent">{viewLog.calories} <span className="text-lg font-medium text-text-muted">kcal</span></span>
@@ -1155,7 +1155,7 @@ const Nutrition = ({ setView }) => {
                             </div>
                         </div>
 
-                        <div className="p-5 border-t border-black/5 dark:border-white/10/50 shrink-0 bg-bg-primary">
+                        <div className="p-5 border-t border-black/5 dark:border-white/10 shrink-0 bg-bg-primary">
                             <button
                                 onClick={() => setViewLog(null)}
                                 className="w-full py-4 rounded-[20px] bg-bg-secondary hover:bg-glass-bg ring-1 ring-black/5 dark:ring-white/10 border-none font-bold text-text-primary transition-colors shadow-sm"

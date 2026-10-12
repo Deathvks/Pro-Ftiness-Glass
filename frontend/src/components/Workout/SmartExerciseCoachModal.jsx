@@ -128,14 +128,14 @@ const SmartExerciseCoachModal = ({
         onClick={onClose}
       >
         <div 
-          className="relative w-full max-w-xl max-h-[90vh] flex flex-col bg-bg-secondary dark:bg-[#121214] border-none rounded-t-[32px] sm:rounded-2xl shadow-2xl overflow-hidden animate-[slide-up_0.25s_cubic-bezier(0.16,1,0.3,1)] sm:animate-[scale-in_0.2s_ease-out]"
+          className="relative w-full max-w-xl max-h-[90vh] flex flex-col bg-bg-secondary dark:bg-[#121214] ring-1 ring-black/5 dark:ring-white/10 border-none rounded-t-[32px] sm:rounded-2xl shadow-2xl overflow-hidden animate-[slide-up_0.25s_cubic-bezier(0.16,1,0.3,1)] sm:animate-[scale-in_0.2s_ease-out]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Top Grabber en móvil */}
           <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-3 mb-1 sm:hidden shrink-0" />
 
           {/* Header */}
-          <div className="p-4 sm:p-6 pb-3 border-b border-black/5 dark:border-transparent flex items-start justify-between gap-3 bg-bg-secondary">
+          <div className="p-4 sm:p-6 pb-3 border-b border-black/5 dark:border-white/10 flex items-start justify-between gap-3 bg-bg-secondary">
             <div className="space-y-1.5 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent">
@@ -180,7 +180,7 @@ const SmartExerciseCoachModal = ({
 
             {/* 1. ASESORÍA CON PREPARADOR REAL (SIEMPRE VISIBLE) */}
             {asesoriaRecommendation && (
-              <div className="p-3 sm:p-3.5 rounded-[20px] bg-accent/10 flex items-center justify-between gap-3">
+              <div className="p-3 sm:p-3.5 rounded-[20px] bg-accent/10 ring-1 ring-black/5 dark:ring-white/10 border-none flex items-center justify-between gap-3">
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0 mt-0.5">
                     <UserCheck size={16} strokeWidth={2.5} />
@@ -214,7 +214,7 @@ const SmartExerciseCoachModal = ({
 
             {/* 2. SEGUIMIENTO DE LA SESIÓN ANTERIOR (Si existe) */}
             {followUp && (
-              <div className="p-3 sm:p-3.5 rounded-[18px] bg-accent/10 flex items-start gap-2.5">
+              <div className="p-3 sm:p-3.5 rounded-[18px] bg-accent/10 ring-1 ring-black/5 dark:ring-white/10 border-none flex items-start gap-2.5">
                 <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0 mt-0.5">
                   <Check size={14} strokeWidth={3} />
                 </div>
@@ -235,7 +235,7 @@ const SmartExerciseCoachModal = ({
             )}
 
             {/* 3. ¿QUÉ HEMOS DETECTADO EN TU RENDIMIENTO? */}
-            <div className={`p-3.5 sm:p-4 rounded-[22px] space-y-2 ${
+            <div className={`p-3.5 sm:p-4 rounded-[22px] space-y-2 ring-1 ring-black/5 dark:ring-white/10 border-none ${
               trend.isWarning 
                 ? 'bg-amber-500/10' 
                 : trend.isProgressing 
@@ -281,7 +281,7 @@ const SmartExerciseCoachModal = ({
               </p>
 
               {motivationalMessage && (
-                <div className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-[11px] text-text-secondary leading-relaxed font-medium flex items-start gap-2">
+                <div className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 border-none text-[11px] text-text-secondary leading-relaxed font-medium flex items-start gap-2">
                   <Lightbulb size={14} className="text-amber-500 shrink-0 mt-0.5" />
                   <span>{motivationalMessage}</span>
                 </div>
@@ -289,7 +289,7 @@ const SmartExerciseCoachModal = ({
             </div>
 
             {/* 4. ¿PARA QUÉ TE LO RECOMENDAMOS? (OBJETIVO Y PASOS PRÁCTICOS) */}
-            <div className="p-3.5 sm:p-4 rounded-[22px] bg-black/5 dark:bg-white/5 space-y-2.5">
+            <div className="p-3.5 sm:p-4 rounded-[22px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 border-none space-y-2.5">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0">
@@ -482,8 +482,8 @@ const SmartExerciseCoachModal = ({
                         onClick={() => setSelectedStrategyId(opt.id)}
                         className={`p-3 sm:p-3.5 rounded-[20px] transition-all cursor-pointer flex items-start gap-3 select-none ${
                           isSelected
-                            ? 'bg-accent/15 ring-2 ring-accent shadow-sm'
-                            : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10'
+                            ? 'bg-accent/15 ring-1 ring-accent shadow-sm border-none'
+                            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 border-none hover:bg-black/10 dark:hover:bg-white/10'
                         }`}
                       >
                         <div className={`mt-0.5 shrink-0 rounded-full w-5 h-5 flex items-center justify-center transition-all ${
@@ -523,7 +523,7 @@ const SmartExerciseCoachModal = ({
 
             {/* 6. HISTORIAL DE CARGAS PREVIAS (PLEGABLE PARA NO OCUPAR ESPACIO EN MÓVIL) */}
             {sessions && sessions.length > 0 && (
-              <div className="rounded-[20px] bg-black/5 dark:bg-white/5 overflow-hidden">
+              <div className="rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 border-none overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setShowHistory(!showHistory)}
@@ -540,7 +540,7 @@ const SmartExerciseCoachModal = ({
                 </button>
 
                 {showHistory && (
-                  <div className="p-3 pt-0 space-y-1.5 border-t border-black/5 dark:border-transparent animate-[fade-in_0.15s_ease-out]">
+                  <div className="p-3 pt-0 space-y-1.5 border-t border-black/5 dark:border-white/10 animate-[fade-in_0.15s_ease-out]">
                     {sessions.slice(0, 4).map((s, idx) => (
                       <div 
                         key={s.logId || idx}
@@ -579,7 +579,7 @@ const SmartExerciseCoachModal = ({
           </div>
 
           {/* Footer Buttons */}
-          <div className="p-4 sm:p-5 border-t border-black/5 dark:border-transparent bg-bg-secondary flex items-center gap-3">
+          <div className="p-4 sm:p-5 border-t border-black/5 dark:border-white/10 bg-bg-secondary flex items-center gap-3">
             <button
               type="button"
               onClick={handleApplySelection}
