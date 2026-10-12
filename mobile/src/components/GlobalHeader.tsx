@@ -23,11 +23,13 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
     const isHiddenRef = React.useRef(false);
     const lastScrollYRef = React.useRef(0);
     const headerTranslateY = React.useRef(new Animated.Value(0)).current;
+    const bgOpacityAnim = React.useRef(new Animated.Value(0)).current;
 
     React.useEffect(() => {
         if (!scrollY) {
             setIsScrolled(true);
             isScrolledRef.current = true;
+            bgOpacityAnim.setValue(1);
             return;
         }
 
@@ -35,13 +37,25 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
             const currentY = value;
             const diff = currentY - lastScrollYRef.current;
 
-            // Detección de fondo / blur scrolled
-            if (currentY > 5 && !isScrolledRef.current) {
+            // Detección de fondo / blur scrolled: transparente arriba del todo (<= 4), visible solo al bajar (> 4)
+            if (currentY > 4 && !isScrolledRef.current) {
                 isScrolledRef.current = true;
                 setIsScrolled(true);
-            } else if (currentY <= 5 && isScrolledRef.current) {
+                Animated.timing(bgOpacityAnim, {
+                    toValue: 1,
+                    duration: 160,
+                    easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+                    useNativeDriver: true,
+                }).start();
+            } else if (currentY <= 4 && isScrolledRef.current) {
                 isScrolledRef.current = false;
                 setIsScrolled(false);
+                Animated.timing(bgOpacityAnim, {
+                    toValue: 0,
+                    duration: 160,
+                    easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+                    useNativeDriver: true,
+                }).start();
             }
 
             // Al estar arriba del todo (zona inicial de 20px o pull-to-refresh), siempre visible
@@ -128,20 +142,30 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                 opacity: headerOpacity,
             }}
         >
-            <GlassView 
-                glassEffectStyle="regular"
-                colorScheme={colorScheme as any}
-                style={StyleSheet.absoluteFill}
-            />
-            <View 
+            {/* Capas de fondo con cristal, tinte y borde inferior (desaparecen al estar arriba del todo, aparecen solo al bajar) */}
+            <Animated.View 
+                pointerEvents="none"
                 style={[
                     StyleSheet.absoluteFill,
-                    {
-                        backgroundColor: colorScheme === 'dark' ? 'rgba(0, 0, 0, 0.35)' : 'rgba(255, 255, 255, 0.45)',
-                    }
+                    { opacity: bgOpacityAnim }
                 ]}
-            />
-            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)' }} />
+            >
+                <GlassView 
+                    glassEffectStyle="regular"
+                    colorScheme={colorScheme as any}
+                    style={StyleSheet.absoluteFill}
+                />
+                <View 
+                    style={[
+                        StyleSheet.absoluteFill,
+                        {
+                            backgroundColor: colorScheme === 'dark' ? 'rgba(0, 0, 0, 0.35)' : 'rgba(255, 255, 255, 0.45)',
+                        }
+                    ]}
+                />
+                <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)' }} />
+            </Animated.View>
+
             <View 
                 style={{ 
                     flexDirection: 'row', 
