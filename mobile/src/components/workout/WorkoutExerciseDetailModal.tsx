@@ -1,5 +1,5 @@
 /* mobile/src/components/workout/WorkoutExerciseDetailModal.tsx */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -41,7 +41,6 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
   const getOrFetchAllExercises = useAppStore(state => state.getOrFetchAllExercises);
-  const allExercises = useAppStore(state => state.allExercises || []);
   const gamification = useAppStore(state => state.gamification || {});
 
   const [localDetails, setLocalDetails] = useState<any>(exercise?.exercise_details || {});
@@ -101,21 +100,17 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
     }
   }, [exercise, getOrFetchAllExercises]);
 
-  if (!exercise) return null;
-
   const mergedDetails = {
-    ...exercise,
-    ...localDetails,
+    ...(exercise || {}),
+    ...(localDetails || {}),
   };
 
   // Limpieza y formateo de descripción (remueve tags html residuales como <p>, </p>, <br>)
-  const cleanDescription = useMemo(() => {
-    const raw =
-      mergedDetails.description_es ||
-      mergedDetails.description ||
-      'Realiza el movimiento controlando la fase excéntrica y manteniendo una técnica sólida en cada repetición.';
-    return raw.replace(/<\/?[^>]+(>|$)/g, '').trim();
-  }, [mergedDetails]);
+  const rawDescription =
+    mergedDetails.description_es ||
+    mergedDetails.description ||
+    'Realiza el movimiento controlando la fase excéntrica y manteniendo una técnica sólida en cada repetición.';
+  const cleanDescription = rawDescription.replace(/<\/?[^>]+(>|$)/g, '').trim();
 
   const muscleLabel =
     mergedDetails.muscle_group ||
@@ -123,12 +118,13 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
     mergedDetails.target ||
     'General';
 
-  const setsCount = exercise.sets || mergedDetails.sets || 3;
-  const repsCount = exercise.reps || mergedDetails.reps || 10;
-  const restTime = exercise.rest_seconds || mergedDetails.rest_seconds || 90;
+  const setsCount = exercise?.sets || mergedDetails.sets || 3;
+  const repsCount = exercise?.reps || mergedDetails.reps || 10;
+  const restTime = exercise?.rest_seconds || mergedDetails.rest_seconds || 90;
 
   // Manejador de Consulta con IA
   const handleAskAI = async () => {
+    if (!exercise?.name) return;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
@@ -160,8 +156,14 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
   };
 
   return (
-    <Modal visible={Boolean(exercise)} transparent animationType="slide">
-      <View style={[styles.overlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.5)' }]}>
+    <Modal
+      visible={Boolean(exercise)}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      {exercise ? (
+        <View style={[styles.overlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.5)' }]}>
         <View
           style={[
             styles.modalSheet,
@@ -464,6 +466,7 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
           </ScrollView>
         </View>
       </View>
+      ) : null}
     </Modal>
   );
 };
