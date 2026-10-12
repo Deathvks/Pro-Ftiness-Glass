@@ -51,6 +51,7 @@ export default function AnimatedScreen({
                 top: 0, 
                 left: 0, 
                 right: 0, 
+                zIndex: 100,
                 pointerEvents: 'box-none'
             }}>
                 {React.isValidElement(header) ? React.cloneElement(header as any, { scrollY }) : header}

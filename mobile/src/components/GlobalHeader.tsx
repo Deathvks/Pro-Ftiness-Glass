@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from 'react';
-import { View, Image, Text, StyleSheet, Animated, Easing, Platform } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Image, Text, StyleSheet, Animated, Platform } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import { User, Sparkles, Bell, ChevronLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,105 +36,78 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
 
     const colorScheme = ['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark';
 
-    // Color translúcido idéntico al 'bg-bg-primary/70' del header web
-    const headerBgColor = React.useMemo(() => {
-        if (theme === 'oled') return 'rgba(0, 0, 0, 0.70)';
-        if (theme === 'galaxy') return 'rgba(8, 8, 20, 0.70)';
-        if (theme === 'ocean-dark') return 'rgba(8, 47, 73, 0.70)';
-        if (theme === 'desert-dark') return 'rgba(44, 30, 22, 0.70)';
-        if (colorScheme === 'dark') return 'rgba(15, 23, 42, 0.70)';
-        if (theme === 'ocean') return 'rgba(240, 249, 255, 0.75)';
-        if (theme === 'desert') return 'rgba(253, 248, 245, 0.75)';
-        return 'rgba(248, 250, 252, 0.75)';
-    }, [theme, colorScheme]);
-
-    const isScrolledRef = React.useRef(false);
-    const bgOpacityAnim = React.useRef(new Animated.Value(scrollY ? 0 : 1)).current;
-
-    React.useEffect(() => {
-        if (!scrollY) {
-            bgOpacityAnim.setValue(1);
-            return;
+    // Interpolación nativa para la opacidad del fondo:
+    // - Arriba del todo (<= 0): 0 (desaparece el fondo, 100% transparente).
+    // - Al descender (> 0): aparece progresivamente hasta 1 en los primeros 20px.
+    // - Por más que baje (> 20px): se mantiene en 1 permanentemente, nunca desaparece el header ni su fondo.
+    // - Si no hay scrollY (ej. modales o pantallas fijas): fondo visible por defecto.
+    const bgOpacity = useMemo(() => {
+        if (scrollY && typeof scrollY.interpolate === 'function') {
+            return scrollY.interpolate({
+                inputRange: [0, 20],
+                outputRange: [0, 1],
+                extrapolate: 'clamp',
+            });
         }
-
-        const listener = scrollY.addListener(({ value }) => {
-            const currentY = value;
-
-            // Desaparece el fondo solo arriba del todo (<= 4).
-            // Al bajar (> 4), aparece el liquid glass y se mantiene por más que baje.
-            if (currentY > 4 && !isScrolledRef.current) {
-                isScrolledRef.current = true;
-                Animated.timing(bgOpacityAnim, {
-                    toValue: 1,
-                    duration: 180,
-                    easing: Easing.bezier(0.28, 0.11, 0.32, 1),
-                    useNativeDriver: true,
-                }).start();
-            } else if (currentY <= 4 && isScrolledRef.current) {
-                isScrolledRef.current = false;
-                Animated.timing(bgOpacityAnim, {
-                    toValue: 0,
-                    duration: 180,
-                    easing: Easing.bezier(0.28, 0.11, 0.32, 1),
-                    useNativeDriver: true,
-                }).start();
-            }
-        });
-
-        return () => {
-            scrollY.removeListener(listener);
-        };
+        return 1;
     }, [scrollY]);
 
+    const blurTint = Platform.OS === 'ios'
+        ? (colorScheme === 'dark' ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight')
+        : (colorScheme === 'dark' ? 'dark' : 'light');
+
+    const ambientTint = colorScheme === 'dark'
+        ? (theme === 'oled' ? 'rgba(0, 0, 0, 0.40)' : theme === 'galaxy' ? 'rgba(8, 8, 20, 0.35)' : 'rgba(15, 23, 42, 0.35)')
+        : 'rgba(255, 255, 255, 0.35)';
+
     return (
-        <View style={{ position: 'relative' }}>
-            {/* Fondo Liquid Glass nativo idéntico al web (desaparece arriba del todo, visible y persistente al bajar) */}
+        <View style={{ position: 'relative', zIndex: 100 }}>
+            {/* Fondo Liquid Glass nativo de Apple (desaparece arriba, permanente al descender) */}
             <Animated.View 
                 pointerEvents="none"
                 style={[
                     StyleSheet.absoluteFill,
                     { 
-                        opacity: bgOpacityAnim,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: colorScheme === 'dark' ? 0.25 : 0.08,
-                        shadowRadius: 8,
-                        elevation: 3,
+                        opacity: bgOpacity,
+                        overflow: 'hidden',
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderBottomColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
                     }
                 ]}
             >
+                {/* 1. BlurView: Apple UIVisualEffectView nativo en iOS y backdrop-filter en Web */}
+                <BlurView 
+                    intensity={Platform.OS === 'ios' ? 85 : 95}
+                    tint={blurTint as any}
+                    style={StyleSheet.absoluteFill}
+                />
+
+                {/* 2. GlassView: UIGlassEffect nativo de Apple vía expo-glass-effect */}
+                <GlassView 
+                    glassEffectStyle="regular"
+                    colorScheme={colorScheme as any}
+                    style={StyleSheet.absoluteFill}
+                />
+
+                {/* 3. Tinte translúcido adaptativo para refracción del tema (True Liquid Glass) */}
                 <View 
                     style={[
-                        StyleSheet.absoluteFill, 
-                        { 
-                            overflow: 'hidden',
-                            borderBottomWidth: StyleSheet.hairlineWidth,
-                            borderBottomColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                        }
-                    ]}
-                >
-                    {/* 1. Backdrop blur de cristal */}
-                    <BlurView 
-                        intensity={Platform.OS === 'ios' ? 80 : 90}
-                        tint={colorScheme === 'dark' ? 'dark' : 'light'}
-                        style={StyleSheet.absoluteFill}
-                    />
+                        StyleSheet.absoluteFill,
+                        { backgroundColor: ambientTint }
+                    ]} 
+                />
 
-                    {/* 2. GlassView nativo de expo-glass-effect */}
-                    <GlassView 
-                        glassEffectStyle="regular"
-                        colorScheme={colorScheme as any}
-                        style={StyleSheet.absoluteFill}
-                    />
-
-                    {/* 3. Tinte translúcido reactivo (bg-bg-primary/70 como en la web) */}
-                    <View 
-                        style={[
-                            StyleSheet.absoluteFill,
-                            { backgroundColor: headerBgColor }
-                        ]}
-                    />
-                </View>
+                {/* 4. Resplandor especular superior de Liquid Glass */}
+                <View 
+                    style={{ 
+                        position: 'absolute', 
+                        top: 0, 
+                        left: 0, 
+                        right: 0, 
+                        height: StyleSheet.hairlineWidth, 
+                        backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.85)' 
+                    }} 
+                />
             </Animated.View>
 
             <View 
