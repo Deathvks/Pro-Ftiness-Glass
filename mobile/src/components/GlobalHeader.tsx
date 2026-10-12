@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Image, Text, StyleSheet, Animated } from 'react-native';
+import { View, Image, Text, StyleSheet, Animated, Platform } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import { User, Sparkles, Bell, ChevronLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -51,43 +51,32 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
 
     return (
         <View style={{ position: 'relative' }}>
-            {/* Fondo Liquid Glass nativo de Apple (desaparece solo arriba del todo, visible y fijo al bajar) */}
+            {/* Fondo Liquid Glass nativo (desaparece solo arriba del todo, visible y fijo al bajar) */}
             <Animated.View 
                 pointerEvents="none"
                 style={[
                     StyleSheet.absoluteFill,
                     { 
                         opacity: bgOpacity,
+                        borderBottomWidth: StyleSheet.hairlineWidth,
+                        borderBottomColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                        overflow: 'hidden',
                     }
                 ]}
             >
-                <View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}>
-                    {/* 1. UIBlurEffect nativo de Apple (systemChromeMaterial) en iOS y blur nativo en Android/Web */}
-                    <BlurView 
-                        intensity={100}
-                        tint={colorScheme === 'dark' ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
-                        style={StyleSheet.absoluteFill}
-                    />
-
-                    {/* 2. Apple Liquid Glass (UIGlassEffect) nativo via expo-glass-effect */}
+                {Platform.OS === 'ios' ? (
                     <GlassView 
                         glassEffectStyle="regular"
                         colorScheme={colorScheme as any}
                         style={StyleSheet.absoluteFill}
                     />
-
-                    {/* 3. Hairline inferior de delimitación nativa Apple */}
-                    <View 
-                        style={{ 
-                            position: 'absolute', 
-                            bottom: 0, 
-                            left: 0, 
-                            right: 0, 
-                            height: StyleSheet.hairlineWidth, 
-                            backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.10)' 
-                        }} 
+                ) : (
+                    <BlurView 
+                        intensity={95}
+                        tint={colorScheme === 'dark' ? 'dark' : 'light'}
+                        style={StyleSheet.absoluteFill}
                     />
-                </View>
+                )}
             </Animated.View>
 
             <View 

@@ -79,6 +79,10 @@ export const createNotificationSlice = (set, get) => ({
     }
   },
 
+  deleteNotification: async (id) => {
+    return get().removeNotification(id);
+  },
+
   clearAllNotifications: async () => {
     set({ notifications: [], unreadCount: 0 });
     try {

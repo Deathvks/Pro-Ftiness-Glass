@@ -17,7 +17,7 @@ export default function NotificationsScreen() {
 
     const notifications = useAppStore(state => state.notifications) || [];
     const markNotificationAsRead = useAppStore(state => state.markNotificationAsRead);
-    const deleteNotification = useAppStore(state => state.deleteNotification);
+    const deleteNotification = useAppStore(state => state.deleteNotification || state.removeNotification);
     const markAllNotificationsAsRead = useAppStore(state => state.markAllNotificationsAsRead);
 
     const getIcon = (type, subType) => {
