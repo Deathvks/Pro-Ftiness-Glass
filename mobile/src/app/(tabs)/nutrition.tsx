@@ -195,38 +195,68 @@ export default function NutritionScreen() {
   const handleSaveFood = async (foodData: any) => {
     setIsSubmitting(true);
     try {
-      // Background favorite saving if enabled
-      if (foodData.saveAsFavorite) {
-        const alreadyExists = favoriteMeals.some(
-          (f: any) => f.name?.toLowerCase().trim() === foodData.description?.toLowerCase().trim()
-        );
-        if (!alreadyExists && addFavoriteMeal) {
-          addFavoriteMeal({
-            name: foodData.description,
-            calories: foodData.calories,
-            protein_g: foodData.protein_g,
-            carbs_g: foodData.carbs_g,
-            fats_g: foodData.fats_g,
-            sugars_g: foodData.sugars_g,
-            weight_g: foodData.weight_g,
-            image_url: foodData.image_url,
-          }).catch(console.warn);
+      if (Array.isArray(foodData)) {
+        for (const item of foodData) {
+          if (item.isFavorite || item.saveAsFavorite) {
+            const alreadyExists = favoriteMeals.some(
+              (f: any) => f.name?.toLowerCase().trim() === (item.description || item.name)?.toLowerCase().trim()
+            );
+            if (!alreadyExists && addFavoriteMeal) {
+              addFavoriteMeal({
+                name: item.description || item.name,
+                calories: item.calories,
+                protein_g: item.protein_g,
+                carbs_g: item.carbs_g,
+                fats_g: item.fats_g,
+                sugars_g: item.sugars_g,
+                weight_g: item.weight_g,
+                image_url: item.image_url,
+              }).catch(console.warn);
+            }
+          }
+          await nutritionService.addFoodLog({
+            ...item,
+            description: item.description || item.name,
+            log_date: selectedDate,
+            meal_type: modal.data?.mealType || item.meal_type,
+          });
         }
-      }
-
-      if (modal.data?.id) {
-        // Update existing food
-        await nutritionService.updateFoodLog(modal.data.id, {
-          ...foodData,
-          meal_type: modal.data.mealType || foodData.meal_type,
-        });
       } else {
-        // Add new food
-        await nutritionService.addFoodLog({
-          ...foodData,
-          log_date: selectedDate,
-          meal_type: modal.data?.mealType || foodData.meal_type,
-        });
+        // Background favorite saving if enabled
+        if (foodData.saveAsFavorite || foodData.isFavorite) {
+          const alreadyExists = favoriteMeals.some(
+            (f: any) => f.name?.toLowerCase().trim() === (foodData.description || foodData.name)?.toLowerCase().trim()
+          );
+          if (!alreadyExists && addFavoriteMeal) {
+            addFavoriteMeal({
+              name: foodData.description || foodData.name,
+              calories: foodData.calories,
+              protein_g: foodData.protein_g,
+              carbs_g: foodData.carbs_g,
+              fats_g: foodData.fats_g,
+              sugars_g: foodData.sugars_g,
+              weight_g: foodData.weight_g,
+              image_url: foodData.image_url,
+            }).catch(console.warn);
+          }
+        }
+
+        if (modal.data?.id) {
+          // Update existing food
+          await nutritionService.updateFoodLog(modal.data.id, {
+            ...foodData,
+            description: foodData.description || foodData.name,
+            meal_type: modal.data.mealType || foodData.meal_type,
+          });
+        } else {
+          // Add new food
+          await nutritionService.addFoodLog({
+            ...foodData,
+            description: foodData.description || foodData.name,
+            log_date: selectedDate,
+            meal_type: modal.data?.mealType || foodData.meal_type,
+          });
+        }
       }
 
       await fetchDataForDate(selectedDate);
