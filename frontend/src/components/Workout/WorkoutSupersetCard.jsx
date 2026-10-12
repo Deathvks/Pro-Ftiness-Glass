@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Flame, Repeat, Sparkles } from 'lucide-react';
+import { Clock, Flame, Repeat, Target } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import GlassCard from '../GlassCard';
 import useAppStore from '../../store/useAppStore';
@@ -217,7 +217,7 @@ const WorkoutSupersetCard = ({
                                         className="p-1.5 text-accent hover:bg-accent/10 rounded-md transition-colors flex items-center justify-center"
                                         title="Guía inteligente según tu objetivo"
                                     >
-                                        <Sparkles size={16} className="animate-pulse" />
+                                        <Target size={16} strokeWidth={2.5} className="text-accent" />
                                     </button>
                                 )}
                                 <button

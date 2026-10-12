@@ -2,7 +2,6 @@
 import React, { useMemo, useState } from 'react';
 import { 
   X, 
-  Sparkles, 
   TrendingUp, 
   TrendingDown, 
   Minus, 
@@ -16,7 +15,8 @@ import {
   HelpCircle,
   Calendar,
   Flame,
-  Info
+  Info,
+  Activity
 } from 'lucide-react';
 import ModalPortal from '../ModalPortal';
 import { generateSmartCoachPlan } from '../../utils/smartProgressionCoach';
@@ -44,14 +44,14 @@ const SmartExerciseCoachModal = ({
     if (trend.status === 'progressing') return <TrendingUp size={18} className="text-emerald-400" strokeWidth={2.5} />;
     if (trend.status === 'decreasing') return <TrendingDown size={18} className="text-amber-400" strokeWidth={2.5} />;
     if (trend.status === 'stagnant') return <Minus size={18} className="text-amber-500" strokeWidth={2.5} />;
-    return <Sparkles size={18} className="text-accent" strokeWidth={2.5} />;
+    return <Target size={18} className="text-accent" strokeWidth={2.5} />;
   };
 
   const getGoalIcon = () => {
-    if (userGoal.key === 'gain') return <Zap size={15} className="text-accent" />;
-    if (userGoal.key === 'lose') return <Target size={15} className="text-emerald-400" />;
-    if (userGoal.key === 'recomp') return <Sparkles size={15} className="text-purple-400" />;
-    return <Shield size={15} className="text-blue-400" />;
+    if (userGoal.key === 'gain') return <Dumbbell size={15} strokeWidth={2.5} className="text-accent" />;
+    if (userGoal.key === 'lose') return <Flame size={15} strokeWidth={2.5} className="text-emerald-400" />;
+    if (userGoal.key === 'recomp') return <Activity size={15} strokeWidth={2.5} className="text-purple-400" />;
+    return <Shield size={15} strokeWidth={2.5} className="text-blue-400" />;
   };
 
   return (
@@ -72,8 +72,8 @@ const SmartExerciseCoachModal = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-accent/10 ring-1 ring-accent/30 text-accent">
-                  <Sparkles size={12} className="animate-pulse" />
-                  Coach Inteligente
+                  <Target size={13} strokeWidth={2.5} />
+                  Coach de Objetivo
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/5 ring-1 ring-white/10 text-text-secondary">
                   {getGoalIcon()}

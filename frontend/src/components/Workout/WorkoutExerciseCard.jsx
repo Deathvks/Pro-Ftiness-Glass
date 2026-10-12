@@ -164,10 +164,10 @@ const WorkoutExerciseCard = ({
                   e.stopPropagation();
                   onShowSmartCoach(exercise);
                 }}
-                className="flex items-center gap-1.5 bg-accent/10 hover:bg-accent/20 ring-1 ring-accent/30 rounded-full px-4 py-2 text-sm font-bold text-accent transition-all active:scale-95 cursor-pointer shadow-sm"
+                className="flex items-center gap-1.5 bg-accent/10 hover:bg-accent/20 ring-1 ring-accent/30 rounded-full px-3.5 py-1.5 text-xs sm:text-sm font-bold text-accent transition-all active:scale-95 cursor-pointer shadow-sm group"
                 title="Consejo inteligente según tu objetivo"
               >
-                <Sparkles size={16} className="text-accent animate-pulse" />
+                <Target size={16} strokeWidth={2.5} className="text-accent group-hover:rotate-45 transition-transform" />
                 <span>Info Objetivo</span>
               </button>
             )}
@@ -199,10 +199,10 @@ const WorkoutExerciseCard = ({
               e.stopPropagation();
               onShowSmartCoach(exercise);
             }}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] text-accent hover:bg-accent/10 hover:shadow-sm transition-all duration-300 active:scale-95 outline-none font-bold"
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] text-accent hover:bg-accent/10 hover:shadow-sm transition-all duration-300 active:scale-95 outline-none font-bold group"
             title="Guía inteligente según tu objetivo"
           >
-            <Sparkles size={20} className="text-accent" />
+            <Target size={20} strokeWidth={2.5} className="text-accent group-hover:scale-110 transition-transform" />
             <span className="text-sm font-bold hidden sm:block">Objetivo</span>
           </button>
         )}

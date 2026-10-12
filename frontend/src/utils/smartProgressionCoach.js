@@ -12,7 +12,7 @@ export const normalizeUserGoal = (rawGoal) => {
       label: 'Ganar Masa Muscular',
       shortLabel: 'Hipertrofia',
       badge: 'Fuerza & Volumen',
-      iconName: 'Zap',
+      iconName: 'Dumbbell',
       color: 'accent',
       description: 'Superávit y sobrecarga progresiva para maximizar la síntesis proteica y crecimiento miofibrilar.'
     };
@@ -23,7 +23,7 @@ export const normalizeUserGoal = (rawGoal) => {
       label: 'Perder Grasa / Definición',
       shortLabel: 'Definición',
       badge: 'Preservación Muscular',
-      iconName: 'Target',
+      iconName: 'Flame',
       color: 'emerald-500',
       description: 'Déficit calórico enfocado en mantener la fuerza mecánica para proteger el músculo ganado.'
     };
@@ -34,7 +34,7 @@ export const normalizeUserGoal = (rawGoal) => {
       label: 'Recomposición Corporal',
       shortLabel: 'Recomposición',
       badge: 'Músculo & Grasa',
-      iconName: 'Sparkles',
+      iconName: 'Activity',
       color: 'purple-500',
       description: 'Equilibrio entre estímulo neuromuscular y optimización de grasa corporal.'
     };
