@@ -130,9 +130,15 @@ export const WorkoutSupersetCard: React.FC<WorkoutSupersetCardProps> = ({
             >
               {/* Miniatura */}
               <TouchableOpacity
-                onPress={() => onSetSelectedExercise && onSetSelectedExercise(ex)}
+                onPress={() => {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  } catch {}
+                  onSetSelectedExercise && onSetSelectedExercise(ex);
+                }}
                 style={styles.miniImgWrapper}
                 activeOpacity={0.8}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 {imgUri ? (
                   <Image source={{ uri: imgUri }} style={styles.miniImg} resizeMode="contain" />
@@ -146,8 +152,14 @@ export const WorkoutSupersetCard: React.FC<WorkoutSupersetCardProps> = ({
               {/* Título y reps */}
               <View style={styles.miniInfoCol}>
                 <TouchableOpacity
-                  onPress={() => onSetSelectedExercise && onSetSelectedExercise(ex)}
+                  onPress={() => {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch {}
+                    onSetSelectedExercise && onSetSelectedExercise(ex);
+                  }}
                   activeOpacity={0.8}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
                   <Text style={[styles.miniTitle, { color: colors.text }]} numberOfLines={1}>
                     {ex.name}

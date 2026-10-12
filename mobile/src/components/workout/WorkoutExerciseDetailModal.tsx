@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
+  Pressable,
 } from 'react-native';
 import {
   X,
@@ -163,309 +164,367 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
       onRequestClose={onClose}
     >
       {exercise ? (
-        <View style={[styles.overlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.5)' }]}>
-        <View
+        <Pressable
           style={[
-            styles.modalSheet,
-            {
-              backgroundColor: isDark ? 'rgba(18, 18, 22, 0.95)' : 'rgba(255, 255, 255, 0.97)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-            },
+            styles.overlay,
+            { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.55)' : 'rgba(0, 0, 0, 0.28)' },
           ]}
+          onPress={onClose}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
-
-          {/* Barra de arrastre superior */}
-          <View style={styles.dragIndicatorWrapper}>
-            <View
-              style={[
-                styles.dragIndicator,
-                { backgroundColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.15)' },
-              ]}
-            />
-          </View>
-
-          {/* Cabecera */}
-          <View style={[styles.modalHeader, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={[styles.exerciseTitle, { color: colors.text }]} numberOfLines={2}>
-                {exercise.name}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              onPress={() => {
-                try {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                } catch {}
-                onClose();
-              }}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              style={[
-                styles.closeButton,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-            >
-              <X size={18} color={colors.text} strokeWidth={2.5} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Contenido en Scroll */}
-          <ScrollView
-            contentContainerStyle={styles.scrollBody}
-            showsVerticalScrollIndicator={false}
+          <Pressable
+            onPress={e => e.stopPropagation()}
+            style={[
+              styles.modalSheet,
+              {
+                backgroundColor: isDark ? 'rgba(22, 22, 28, 0.75)' : 'rgba(255, 255, 255, 0.82)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.88)',
+              },
+            ]}
           >
-            {/* 1. Reproductor de Vídeo / Formato Shorts 9:16 */}
-            <View style={styles.mediaContainerWrapper}>
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+
+            {/* Barra de arrastre superior tipo cápsula Apple */}
+            <View style={styles.dragIndicatorWrapper}>
               <View
                 style={[
-                  styles.mediaHeroCard,
-                  {
-                    backgroundColor: isDark ? '#000000' : 'rgba(0,0,0,0.05)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
-                  },
+                  styles.dragIndicator,
+                  { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.22)' },
                 ]}
-              >
-                {isLoadingDetails ? (
-                  <View style={styles.loadingCenter}>
-                    <ActivityIndicator size="large" color={colors.tint} />
-                  </View>
-                ) : (
-                  <ExerciseMediaPreview
-                    item={mergedDetails}
-                    details={mergedDetails}
-                    fitMode="contain"
-                    playYouTube={true}
-                  />
-                )}
-              </View>
+              />
             </View>
 
-            {/* 2. Grid de 4 Métricas Clave (Músculo, Series, Reps, Descanso) */}
-            <View style={styles.metricsGrid}>
-              {/* Músculo */}
-              <View
-                style={[
-                  styles.metricCard,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  },
-                ]}
-              >
-                <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
-                  <Target size={18} color={colors.tint} strokeWidth={2.5} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.metricLabel}>MÚSCULO</Text>
-                  <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
-                    {muscleLabel}
-                  </Text>
-                </View>
+            {/* Cabecera con efecto Liquid Glass */}
+            <View style={[styles.modalHeader, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.06)' }]}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={[styles.exerciseTitle, { color: colors.text }]} numberOfLines={2}>
+                  {exercise.name}
+                </Text>
               </View>
 
-              {/* Series */}
-              <View
+              <TouchableOpacity
+                onPress={() => {
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  } catch {}
+                  onClose();
+                }}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 style={[
-                  styles.metricCard,
+                  styles.closeButton,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.24)' : 'rgba(0, 0, 0, 0.10)',
                   },
                 ]}
               >
-                <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
-                  <Dumbbell size={18} color={colors.tint} strokeWidth={2.5} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.metricLabel}>SERIES</Text>
-                  <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
-                    {setsCount} series
-                  </Text>
-                </View>
-              </View>
-
-              {/* Reps */}
-              <View
-                style={[
-                  styles.metricCard,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  },
-                ]}
-              >
-                <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
-                  <Repeat size={18} color={colors.tint} strokeWidth={2.5} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.metricLabel}>REPS</Text>
-                  <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
-                    {repsCount} reps
-                  </Text>
-                </View>
-              </View>
-
-              {/* Descanso */}
-              <View
-                style={[
-                  styles.metricCard,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  },
-                ]}
-              >
-                <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
-                  <Clock size={18} color={colors.tint} strokeWidth={2.5} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.metricLabel}>DESCANSO</Text>
-                  <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
-                    {restTime}s
-                  </Text>
-                </View>
-              </View>
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={StyleSheet.absoluteFill}
+                />
+                <X size={18} color={colors.text} strokeWidth={2.5} />
+              </TouchableOpacity>
             </View>
 
-            {/* Píldora de Equipamiento si existe */}
-            {mergedDetails.equipment ? (
-              <View style={styles.equipmentRow}>
+            {/* Contenido en Scroll */}
+            <ScrollView
+              contentContainerStyle={styles.scrollBody}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* 1. Reproductor de Vídeo / Formato Shorts 9:16 con marco Glass */}
+              <View style={styles.mediaContainerWrapper}>
                 <View
                   style={[
-                    styles.equipmentPill,
+                    styles.mediaHeroCard,
                     {
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.50)' : 'rgba(0, 0, 0, 0.04)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(0, 0, 0, 0.12)',
                     },
                   ]}
                 >
-                  <Dumbbell size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
-                  <Text style={[styles.equipmentText, { color: colors.textSecondary }]}>
-                    Equipamiento: {mergedDetails.equipment}
-                  </Text>
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  {isLoadingDetails ? (
+                    <View style={styles.loadingCenter}>
+                      <ActivityIndicator size="large" color={colors.tint} />
+                    </View>
+                  ) : (
+                    <ExerciseMediaPreview
+                      item={mergedDetails}
+                      details={mergedDetails}
+                      fitMode="contain"
+                      playYouTube={true}
+                    />
+                  )}
                 </View>
               </View>
-            ) : null}
 
-            {/* 3. Instrucciones de Ejecución / Descripción */}
-            <View style={styles.sectionBlock}>
-              <View style={styles.sectionHeaderRow}>
-                <View style={[styles.sectionIconBadge, { backgroundColor: colors.tint + '18' }]}>
-                  <FileText size={17} color={colors.tint} strokeWidth={2.5} />
+              {/* 2. Grid de 4 Métricas Clave Liquid Glass */}
+              <View style={styles.metricsGrid}>
+                {/* Músculo */}
+                <View
+                  style={[
+                    styles.metricCard,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.65)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                    },
+                  ]}
+                >
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
+                    <Target size={18} color={colors.tint} strokeWidth={2.5} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.metricLabel}>MÚSCULO</Text>
+                    <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
+                      {muscleLabel}
+                    </Text>
+                  </View>
                 </View>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                  Instrucciones de Ejecución
-                </Text>
+
+                {/* Series */}
+                <View
+                  style={[
+                    styles.metricCard,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.65)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                    },
+                  ]}
+                >
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
+                    <Dumbbell size={18} color={colors.tint} strokeWidth={2.5} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.metricLabel}>SERIES</Text>
+                    <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
+                      {setsCount} series
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Reps */}
+                <View
+                  style={[
+                    styles.metricCard,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.65)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                    },
+                  ]}
+                >
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
+                    <Repeat size={18} color={colors.tint} strokeWidth={2.5} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.metricLabel}>REPS</Text>
+                    <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
+                      {repsCount} reps
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Descanso */}
+                <View
+                  style={[
+                    styles.metricCard,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(255, 255, 255, 0.65)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                    },
+                  ]}
+                >
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
+                    <Clock size={18} color={colors.tint} strokeWidth={2.5} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.metricLabel}>DESCANSO</Text>
+                    <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
+                      {restTime}s
+                    </Text>
+                  </View>
+                </View>
               </View>
 
-              <View
-                style={[
-                  styles.descBox,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  },
-                ]}
-              >
-                <Text style={[styles.descBody, { color: colors.text }]}>
-                  {cleanDescription}
-                </Text>
-              </View>
-            </View>
+              {/* Píldora Liquid Glass de Equipamiento */}
+              {mergedDetails.equipment ? (
+                <View style={styles.equipmentRow}>
+                  <View
+                    style={[
+                      styles.equipmentPill,
+                      {
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.65)',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
+                      },
+                    ]}
+                  >
+                    <GlassView
+                      glassEffectStyle="regular"
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <Dumbbell size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                    <Text style={[styles.equipmentText, { color: colors.textSecondary }]}>
+                      Equipamiento: {mergedDetails.equipment}
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
 
-            {/* 4. Entrenador IA: Técnica y Consejos */}
-            <View style={[styles.sectionBlock, styles.aiSectionTopBorder]}>
-              <View style={styles.aiHeaderRow}>
+              {/* 3. Instrucciones de Ejecución / Descripción en Tarjeta Liquid Glass */}
+              <View style={styles.sectionBlock}>
                 <View style={styles.sectionHeaderRow}>
                   <View style={[styles.sectionIconBadge, { backgroundColor: colors.tint + '18' }]}>
-                    <Sparkles size={17} color={colors.tint} strokeWidth={2.5} />
+                    <FileText size={17} color={colors.tint} strokeWidth={2.5} />
                   </View>
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                    Técnica y Consejos IA
+                    Instrucciones de Ejecución
                   </Text>
                 </View>
 
-                {remainingUses !== null ? (
-                  <View style={styles.aiQuotaTag}>
-                    <Text style={[styles.aiQuotaText, { color: colors.tint }]}>
-                      Usos: {remainingUses}/5
+                <View
+                  style={[
+                    styles.descBox,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                    },
+                  ]}
+                >
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <Text style={[styles.descBody, { color: colors.text }]}>
+                    {cleanDescription}
+                  </Text>
+                </View>
+              </View>
+
+              {/* 4. Entrenador IA: Técnica y Consejos */}
+              <View style={[styles.sectionBlock, styles.aiSectionTopBorder]}>
+                <View style={styles.aiHeaderRow}>
+                  <View style={styles.sectionHeaderRow}>
+                    <View style={[styles.sectionIconBadge, { backgroundColor: colors.tint + '18' }]}>
+                      <Sparkles size={17} color={colors.tint} strokeWidth={2.5} />
+                    </View>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                      Técnica y Consejos IA
+                    </Text>
+                  </View>
+
+                  {remainingUses !== null ? (
+                    <View style={styles.aiQuotaTag}>
+                      <Text style={[styles.aiQuotaText, { color: colors.tint }]}>
+                        Usos: {remainingUses}/5
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                {!aiExplanation && !isAiLoading && (
+                  <TouchableOpacity
+                    onPress={handleAskAI}
+                    activeOpacity={0.82}
+                    style={[
+                      styles.aiAskButton,
+                      {
+                        backgroundColor: colors.tint,
+                        borderColor: 'rgba(255, 255, 255, 0.35)',
+                        shadowColor: colors.tint,
+                        shadowOffset: { width: 0, height: 6 },
+                        shadowOpacity: 0.45,
+                        shadowRadius: 14,
+                        elevation: 6,
+                      },
+                    ]}
+                  >
+                    <Sparkles size={18} color="#ffffff" strokeWidth={2.5} style={{ marginRight: 8 }} />
+                    <Text style={styles.aiAskButtonText}>Pedir explicación experta</Text>
+                  </TouchableOpacity>
+                )}
+
+                {isAiLoading && (
+                  <View
+                    style={[
+                      styles.aiLoadingBox,
+                      {
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.06)',
+                      },
+                    ]}
+                  >
+                    <GlassView
+                      glassEffectStyle="regular"
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <ActivityIndicator size="small" color={colors.tint} />
+                    <Text style={[styles.aiLoadingText, { color: colors.textSecondary }]}>
+                      Analizando biomecánica del ejercicio...
+                    </Text>
+                  </View>
+                )}
+
+                {aiError ? (
+                  <View style={styles.aiErrorBox}>
+                    <AlertCircle size={18} color="#ef4444" strokeWidth={2.5} style={{ marginRight: 8 }} />
+                    <Text style={styles.aiErrorText}>{aiError}</Text>
+                  </View>
+                ) : null}
+
+                {aiExplanation ? (
+                  <View
+                    style={[
+                      styles.aiResponseCard,
+                      {
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
+                        borderColor: colors.tint + '45',
+                      },
+                    ]}
+                  >
+                    <GlassView
+                      glassEffectStyle="regular"
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <Text style={[styles.aiResponseText, { color: colors.text }]}>
+                      {aiExplanation}
                     </Text>
                   </View>
                 ) : null}
               </View>
-
-              {!aiExplanation && !isAiLoading && (
-                <TouchableOpacity
-                  onPress={handleAskAI}
-                  activeOpacity={0.82}
-                  style={[
-                    styles.aiAskButton,
-                    {
-                      backgroundColor: colors.tint,
-                      shadowColor: colors.tint,
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.35,
-                      shadowRadius: 10,
-                      elevation: 4,
-                    },
-                  ]}
-                >
-                  <Sparkles size={18} color="#ffffff" strokeWidth={2.5} style={{ marginRight: 8 }} />
-                  <Text style={styles.aiAskButtonText}>Pedir explicación experta</Text>
-                </TouchableOpacity>
-              )}
-
-              {isAiLoading && (
-                <View
-                  style={[
-                    styles.aiLoadingBox,
-                    {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                    },
-                  ]}
-                >
-                  <ActivityIndicator size="small" color={colors.tint} />
-                  <Text style={[styles.aiLoadingText, { color: colors.textSecondary }]}>
-                    Analizando biomecánica del ejercicio...
-                  </Text>
-                </View>
-              )}
-
-              {aiError ? (
-                <View style={styles.aiErrorBox}>
-                  <AlertCircle size={18} color="#ef4444" strokeWidth={2.5} style={{ marginRight: 8 }} />
-                  <Text style={styles.aiErrorText}>{aiError}</Text>
-                </View>
-              ) : null}
-
-              {aiExplanation ? (
-                <View
-                  style={[
-                    styles.aiResponseCard,
-                    {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: colors.tint + '35',
-                    },
-                  ]}
-                >
-                  <Text style={[styles.aiResponseText, { color: colors.text }]}>
-                    {aiExplanation}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-          </ScrollView>
-        </View>
-      </View>
+            </ScrollView>
+          </Pressable>
+        </Pressable>
       ) : null}
     </Modal>
   );
@@ -519,6 +578,7 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 1,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -563,6 +623,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 18,
     borderWidth: 1,
+    overflow: 'hidden',
     gap: 10,
   },
   metricIconWrap: {
@@ -594,6 +655,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
+    overflow: 'hidden',
   },
   equipmentText: {
     fontSize: 12,
@@ -645,6 +707,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 20,
     borderWidth: 1,
+    overflow: 'hidden',
   },
   descBody: {
     fontSize: 14,
@@ -671,6 +734,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 18,
     borderWidth: 1,
+    overflow: 'hidden',
     gap: 10,
   },
   aiLoadingText: {
@@ -697,6 +761,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 20,
     borderWidth: 1,
+    overflow: 'hidden',
   },
   aiResponseText: {
     fontSize: 14,

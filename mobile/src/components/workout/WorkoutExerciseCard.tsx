@@ -19,6 +19,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  Info,
+  ChevronRight,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
@@ -156,10 +158,8 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
       />
 
       <View style={styles.cardInner}>
-        {/* 1. Imagen / Vídeo grande centrado arriba (idéntico al Frontend) */}
-        <TouchableOpacity
-          onPress={() => onSetSelectedExercise && onSetSelectedExercise(exercise)}
-          activeOpacity={0.9}
+        {/* 1. Imagen / Vídeo grande centrado arriba con acceso directo */}
+        <View
           style={[
             styles.mediaHeroContainer,
             {
@@ -175,8 +175,34 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
             }}
             getImageUrl={getImageUrl}
             fitMode="contain"
+            onPress={() => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch {}
+              onSetSelectedExercise && onSetSelectedExercise(exercise);
+            }}
           />
-        </TouchableOpacity>
+
+          {/* Badge Liquid Glass flotante en la esquina superior para ver técnica y vídeo */}
+          <TouchableOpacity
+            activeOpacity={0.82}
+            onPress={() => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch {}
+              onSetSelectedExercise && onSetSelectedExercise(exercise);
+            }}
+            style={styles.floatingMediaDetailBadge}
+          >
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+            <Info size={12} color="#ffffff" strokeWidth={2.5} style={{ marginRight: 5 }} />
+            <Text style={styles.floatingMediaDetailText}>Técnica y Vídeo</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* 2. Recordatorio Activo / Meta si existe (idéntico al Frontend) */}
         {exercise.reminder ? (
@@ -201,15 +227,35 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
           </View>
         ) : null}
 
-        {/* 3. Textos Principales: Título, Series × Reps y Badges */}
+        {/* 3. Textos Principales: Título con botón directo a Técnica */}
         <View style={styles.textsBlock}>
           <TouchableOpacity
-            onPress={() => onSetSelectedExercise && onSetSelectedExercise(exercise)}
-            activeOpacity={0.8}
+            onPress={() => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch {}
+              onSetSelectedExercise && onSetSelectedExercise(exercise);
+            }}
+            activeOpacity={0.7}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            style={styles.titleRowTouchable}
           >
-            <Text style={[styles.exerciseTitle, { color: colors.text }]} numberOfLines={2}>
+            <Text style={[styles.exerciseTitle, { color: colors.text, flex: 1, paddingRight: 8 }]} numberOfLines={2}>
               {exercise.name}
             </Text>
+            <View
+              style={[
+                styles.headerDetailPill,
+                {
+                  backgroundColor: colors.tint + '18',
+                  borderColor: colors.tint + '38',
+                },
+              ]}
+            >
+              <Info size={12} color={colors.tint} strokeWidth={2.5} style={{ marginRight: 4 }} />
+              <Text style={[styles.headerDetailPillText, { color: colors.tint }]}>Técnica</Text>
+              <ChevronRight size={12} color={colors.tint} strokeWidth={2.5} />
+            </View>
           </TouchableOpacity>
 
           <View style={styles.metaRow}>
@@ -577,6 +623,53 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+  },
+  floatingMediaDetailBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.32)',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  floatingMediaDetailText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  titleRowTouchable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 6,
+  },
+  headerDetailPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  headerDetailPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    marginRight: 2,
   },
   reminderBanner: {
     flexDirection: 'row',

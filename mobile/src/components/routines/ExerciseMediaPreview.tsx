@@ -1,8 +1,8 @@
-/* mobile/src/components/routines/ExerciseMediaPreview.tsx */
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Image, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Play, Image as ImageIcon } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 import { BACKEND_BASE_URL, API_BASE_URL } from '@/services/apiClient';
 
 interface ExerciseMediaPreviewProps {
@@ -12,6 +12,7 @@ interface ExerciseMediaPreviewProps {
   staticOnly?: boolean;
   fitMode?: 'cover' | 'contain';
   playYouTube?: boolean;
+  onPress?: () => void;
 }
 
 export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
@@ -21,6 +22,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   staticOnly = false,
   fitMode = 'cover',
   playYouTube = false,
+  onPress,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(playYouTube);
@@ -212,14 +214,19 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
 
   return (
     <TouchableOpacity
-      activeOpacity={staticOnly ? 1 : 0.88}
+      activeOpacity={onPress ? 0.8 : staticOnly ? 1 : 0.88}
       style={styles.fullContainer}
       onPress={() => {
-        if (!staticOnly && (rawVideo || yid)) {
+        if (onPress) {
+          try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          } catch {}
+          onPress();
+        } else if (!staticOnly && (rawVideo || yid)) {
           setIsPlaying(true);
         }
       }}
-      disabled={staticOnly || !(rawVideo || yid)}
+      disabled={!onPress && (staticOnly || !(rawVideo || yid))}
     >
       <Image
         key={activeImageUri}
