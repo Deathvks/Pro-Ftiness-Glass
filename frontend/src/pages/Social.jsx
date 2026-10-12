@@ -1,5 +1,6 @@
 /* frontend/src/pages/Social.jsx */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import {
     Users, UserPlus, Trophy, Search, UserX, Check, X, Medal,
@@ -210,7 +211,10 @@ const StoryTermsModal = ({ onAccept, onReject }) => {
 
 /// Helper para extraer la imagen recortada en formato 9:16 vertical
 const getCroppedImg = async (imageSrc, pixelCrop) => {
+    if (!pixelCrop) throw new Error('Área de recorte no definida');
+
     const image = new Image();
+    image.crossOrigin = 'anonymous';
     image.src = imageSrc;
     await new Promise((resolve, reject) => {
         image.onload = resolve;
@@ -218,14 +222,14 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
     });
 
     const canvas = document.createElement('canvas');
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
+    canvas.width = Math.round(pixelCrop.width);
+    canvas.height = Math.round(pixelCrop.height);
     const ctx = canvas.getContext('2d');
 
     ctx.drawImage(
         image,
-        pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
-        0, 0, pixelCrop.width, pixelCrop.height
+        Math.round(pixelCrop.x), Math.round(pixelCrop.y), Math.round(pixelCrop.width), Math.round(pixelCrop.height),
+        0, 0, Math.round(pixelCrop.width), Math.round(pixelCrop.height)
     );
 
     return new Promise((resolve, reject) => {
@@ -249,86 +253,82 @@ const StoryCropModal = ({ imageSrc, onComplete, onCancel }) => {
         setCroppedAreaPixels(pixels);
     };
 
-    return (
-        <ModalPortal disableSwipeToClose={true}>
-            <div 
-                className="fixed inset-0 z-[120] bg-black flex flex-col animate-[fade-in_0.2s_ease-out] select-none"
-                onClick={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
-                onTouchMove={(e) => e.stopPropagation()}
-                onTouchEnd={(e) => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div className="p-4 px-6 pt-[calc(1rem+var(--safe-top,env(safe-area-inset-top,0px)))] flex items-center justify-between text-white z-10 shrink-0 bg-gradient-to-b from-black/80 to-transparent">
-                    <button 
-                        type="button" 
-                        onClick={onCancel} 
-                        className="p-2 -ml-2 text-white/80 hover:text-white rounded-full hover:bg-white/10 transition-colors active:scale-95"
-                    >
-                        <X size={24} />
-                    </button>
-                    <span className="font-bold text-base tracking-wide">Ajustar Encuadre (9:16)</span>
-                    <div className="w-8" />
-                </div>
-
-                {/* Cropper Container */}
-                <div 
-                    className="relative flex-1 bg-black overflow-hidden select-none touch-none"
-                    onTouchStart={(e) => e.stopPropagation()}
-                    onTouchMove={(e) => e.stopPropagation()}
-                    onTouchEnd={(e) => e.stopPropagation()}
+    return createPortal(
+        <div 
+            className="fixed inset-0 z-[200] bg-black flex flex-col animate-[fade-in_0.2s_ease-out]"
+            onClick={(e) => e.stopPropagation()}
+        >
+            {/* Header */}
+            <div className="p-4 px-6 pt-[calc(1rem+var(--safe-top,env(safe-area-inset-top,0px)))] flex items-center justify-between text-white z-10 shrink-0 bg-gradient-to-b from-black/80 to-transparent">
+                <button 
+                    type="button" 
+                    onClick={onCancel} 
+                    className="p-2 -ml-2 text-white/80 hover:text-white rounded-full hover:bg-white/10 transition-colors active:scale-95"
                 >
-                    <Cropper
-                        image={imageSrc}
-                        crop={crop}
-                        zoom={zoom}
-                        aspect={9 / 16}
-                        cropShape="rect"
-                        showGrid={true}
-                        onCropChange={setCrop}
-                        onCropComplete={onCropCompleteCallback}
-                        onZoomChange={setZoom}
+                    <X size={24} />
+                </button>
+                <span className="font-bold text-base tracking-wide">Ajustar Encuadre (9:16)</span>
+                <div className="w-8" />
+            </div>
+
+            {/* Cropper Container */}
+            <div className="relative flex-1 bg-black overflow-hidden">
+                <Cropper
+                    image={imageSrc}
+                    crop={crop}
+                    zoom={zoom}
+                    aspect={9 / 16}
+                    cropShape="rect"
+                    showGrid={true}
+                    objectFit="cover"
+                    minZoom={1}
+                    maxZoom={3}
+                    zoomWithScroll={true}
+                    onCropChange={setCrop}
+                    onCropComplete={onCropCompleteCallback}
+                    onZoomChange={setZoom}
+                />
+            </div>
+
+            {/* Controles y Botones de acción */}
+            <div 
+                className="bg-bg-primary/95 dark:bg-[#121214]/95 backdrop-blur-xl border-t border-black/5 dark:border-white/10 p-5 pb-8 flex flex-col gap-4 z-10 shrink-0"
+                style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom,env(safe-area-inset-bottom,0px)))' }}
+            >
+                <div className="flex items-center gap-4 max-w-xs mx-auto w-full px-2">
+                    <span className="text-xs text-text-secondary font-bold shrink-0">Zoom</span>
+                    <input
+                        type="range"
+                        min={1}
+                        max={3}
+                        step={0.05}
+                        value={zoom}
+                        onChange={(e) => setZoom(Number(e.target.value))}
+                        className="w-full accent-accent h-1.5 bg-black/10 dark:bg-white/10 rounded-lg cursor-pointer"
                     />
                 </div>
 
-                {/* Controles y Botones de acción */}
-                <div 
-                    className="bg-bg-primary/95 dark:bg-[#121214]/95 backdrop-blur-xl border-t border-black/5 dark:border-white/10 p-5 pb-8 flex flex-col gap-4 z-10 shrink-0"
-                    style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom,env(safe-area-inset-bottom,0px)))' }}
-                >
-                    <div className="flex items-center gap-4 max-w-xs mx-auto w-full px-2">
-                        <span className="text-xs text-text-secondary font-bold shrink-0">Zoom</span>
-                        <input
-                            type="range"
-                            min={1}
-                            max={3}
-                            step={0.05}
-                            value={zoom}
-                            onChange={(e) => setZoom(Number(e.target.value))}
-                            className="w-full accent-accent h-1.5 bg-black/10 dark:bg-white/10 rounded-lg cursor-pointer"
-                        />
-                    </div>
-
-                    <div className="flex justify-between items-center gap-3 max-w-md mx-auto w-full">
-                        <button 
-                            type="button" 
-                            onClick={onCancel} 
-                            className="flex-1 py-3.5 rounded-[18px] text-text-secondary font-bold hover:bg-black/5 dark:hover:bg-white/5 transition-colors active:scale-95 text-sm"
-                        >
-                            Cancelar
-                        </button>
-                        <button 
-                            type="button" 
-                            onClick={() => onComplete(croppedAreaPixels)} 
-                            className="flex-1 py-3.5 rounded-[18px] bg-accent text-accent-contrast font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20 text-sm flex items-center justify-center gap-2"
-                        >
-                            <Crop size={16} />
-                            Aplicar Encuadre
-                        </button>
-                    </div>
+                <div className="flex justify-between items-center gap-3 max-w-md mx-auto w-full">
+                    <button 
+                        type="button" 
+                        onClick={onCancel} 
+                        className="flex-1 py-3.5 rounded-[18px] text-text-secondary font-bold hover:bg-black/5 dark:hover:bg-white/5 transition-colors active:scale-95 text-sm"
+                    >
+                        Cancelar
+                    </button>
+                    <button 
+                        type="button" 
+                        onClick={() => croppedAreaPixels && onComplete(croppedAreaPixels)} 
+                        disabled={!croppedAreaPixels}
+                        className="flex-1 py-3.5 rounded-[18px] bg-accent text-accent-contrast font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20 text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <Crop size={16} />
+                        Aplicar Encuadre
+                    </button>
                 </div>
             </div>
-        </ModalPortal>
+        </div>,
+        document.body
     );
 };
 
