@@ -177,76 +177,9 @@ const SmartExerciseCoachModal = ({
           {/* Body con Scroll */}
           <div className="p-4 sm:p-6 space-y-3.5 sm:space-y-4 overflow-y-auto max-h-[calc(90vh-140px)]">
 
-            {/* 1. SEGUIMIENTO DE LA SESIÓN ANTERIOR (Si existe, sutil y directo) */}
-            {followUp && (
-              <div className="p-3 sm:p-3.5 rounded-[18px] bg-accent/10 border border-accent/25 flex items-start gap-2.5">
-                <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0 mt-0.5">
-                  <Check size={14} strokeWidth={3} />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-accent">
-                      Sesión anterior
-                    </span>
-                    <span className="text-[10px] font-bold text-text-muted">
-                      {followUp.badge}
-                    </span>
-                  </div>
-                  <p className="text-xs text-text-primary font-semibold mt-0.5">
-                    {followUp.title}: <span className="font-normal text-text-secondary">{followUp.actionHint}</span>
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* 2. DIAGNÓSTICO DIRECTO Y EXPLICADO FÁCIL */}
-            {trend.status === 'stagnant' ? (
-              <div className="p-3.5 sm:p-4 rounded-[22px] bg-amber-500/10 border border-amber-500/25 space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
-                    <AlertTriangle size={15} strokeWidth={2.5} />
-                  </div>
-                  <h3 className="text-xs sm:text-sm font-black text-amber-600 dark:text-amber-400">
-                    Llevas {trend.weeksStagnant || 2} semanas levantando el mismo peso ({targets.suggestedWeight} kg)
-                  </h3>
-                </div>
-                <p className="text-xs text-text-secondary leading-relaxed font-medium pl-7 sm:pl-8">
-                  Esto es normal: tu cuerpo ya domina esta carga. Elige abajo cómo prefieres enfocar tu serie hoy para seguir progresando sin frustrarte.
-                </p>
-              </div>
-            ) : trend.isProgressing ? (
-              <div className="p-3.5 sm:p-4 rounded-[22px] bg-emerald-500/10 border border-emerald-500/25 space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
-                    <Sparkles size={15} />
-                  </div>
-                  <h3 className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400">
-                    ¡Gran progreso! Has ido superando tus marcas
-                  </h3>
-                </div>
-                <p className="text-xs text-text-secondary leading-relaxed font-medium pl-7 sm:pl-8">
-                  Mantén la buena técnica en cada serie para consolidar este avance sin riesgos.
-                </p>
-              </div>
-            ) : trend.status === 'decreasing' ? (
-              <div className="p-3.5 sm:p-4 rounded-[22px] bg-amber-500/10 border border-amber-500/25 space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
-                    <AlertTriangle size={15} strokeWidth={2.5} />
-                  </div>
-                  <h3 className="text-xs sm:text-sm font-black text-amber-600 dark:text-amber-400">
-                    Aviso: Cansancio o fatiga detectada
-                  </h3>
-                </div>
-                <p className="text-xs text-text-secondary leading-relaxed font-medium pl-7 sm:pl-8">
-                  Tu rendimiento ha bajado un poco respecto a tu récord. Ajustamos ligeramente la carga para cuidar articulaciones y recuperar energía.
-                </p>
-              </div>
-            ) : null}
-
-            {/* 3. ASESORÍA CON PREPARADOR REAL (COMPACTA, SI TIENE AVISO) */}
-            {asesoriaRecommendation?.show && (
-              <div className="p-3 sm:p-3.5 rounded-[20px] bg-accent/10 border border-accent/25 flex items-center justify-between gap-3">
+            {/* 1. ASESORÍA CON PREPARADOR REAL (SIEMPRE VISIBLE) */}
+            {asesoriaRecommendation && (
+              <div className="p-3 sm:p-3.5 rounded-[20px] bg-accent/10 ring-1 ring-accent/25 flex items-center justify-between gap-3">
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0 mt-0.5">
                     <UserCheck size={16} strokeWidth={2.5} />
@@ -256,7 +189,7 @@ const SmartExerciseCoachModal = ({
                       {asesoriaRecommendation.headline}
                     </h4>
                     <p className="text-[11px] text-text-secondary font-medium leading-snug truncate sm:whitespace-normal">
-                      Un entrenador real puede revisar tus vídeos de técnica y organizar tus cargas.
+                      {asesoriaRecommendation.description}
                     </p>
                   </div>
                 </div>
@@ -277,6 +210,134 @@ const SmartExerciseCoachModal = ({
                 )}
               </div>
             )}
+
+            {/* 2. SEGUIMIENTO DE LA SESIÓN ANTERIOR (Si existe) */}
+            {followUp && (
+              <div className="p-3 sm:p-3.5 rounded-[18px] bg-accent/10 ring-1 ring-accent/25 flex items-start gap-2.5">
+                <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0 mt-0.5">
+                  <Check size={14} strokeWidth={3} />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-accent">
+                      Sesión anterior
+                    </span>
+                    <span className="text-[10px] font-bold text-text-muted">
+                      {followUp.badge}
+                    </span>
+                  </div>
+                  <p className="text-xs text-text-primary font-semibold mt-0.5">
+                    {followUp.title}: <span className="font-normal text-text-secondary">{followUp.actionHint}</span>
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 3. ¿QUÉ TE OCURRE? (EXPLICACIÓN CLARA DEL ESTADO) */}
+            <div className={`p-3.5 sm:p-4 rounded-[22px] space-y-2 ring-1 ${
+              trend.isWarning 
+                ? 'bg-amber-500/10 ring-amber-500/30' 
+                : trend.isProgressing 
+                ? 'bg-emerald-500/10 ring-emerald-500/30' 
+                : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10'
+            }`}>
+              <div className="flex items-center gap-2">
+                <div className={`p-1.5 rounded-[10px] shrink-0 ${
+                  trend.isWarning 
+                    ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' 
+                    : trend.isProgressing 
+                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+                    : 'bg-accent/20 text-accent'
+                }`}>
+                  {trend.isWarning ? (
+                    <AlertTriangle size={15} strokeWidth={2.5} />
+                  ) : trend.isProgressing ? (
+                    <Sparkles size={15} />
+                  ) : (
+                    <Info size={15} />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-text-muted block">
+                    ¿Qué le ocurre a tu rendimiento?
+                  </span>
+                  <h3 className="text-xs sm:text-sm font-black text-text-primary leading-tight">
+                    {trend.status === 'stagnant'
+                      ? `Llevas ${trend.weeksStagnant || 2} semanas levantando el mismo peso (${targets.suggestedWeight} kg)`
+                      : trend.status === 'decreasing'
+                      ? `Aviso: Fatiga o cansancio detectado (${trend.badgeText})`
+                      : trend.isProgressing
+                      ? `¡Gran progresión! Has aumentado tu fuerza (${trend.badgeText})`
+                      : `Calibración de carga para ${userGoal.label}`}
+                  </h3>
+                </div>
+              </div>
+
+              <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                {coachingAdvice}
+              </p>
+
+              {motivationalMessage && (
+                <div className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-[11px] text-text-secondary leading-relaxed font-medium flex items-start gap-2">
+                  <Lightbulb size={14} className="text-amber-500 shrink-0 mt-0.5" />
+                  <span>{motivationalMessage}</span>
+                </div>
+              )}
+            </div>
+
+            {/* 4. ¿PARA QUÉ TE LO RECOMENDAMOS? (OBJETIVO Y PASOS PRÁCTICOS) */}
+            <div className="p-3.5 sm:p-4 rounded-[22px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 space-y-2.5">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0">
+                    <Target size={15} strokeWidth={2.5} />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-accent block">
+                      ¿Para qué te lo recomendamos?
+                    </span>
+                    <h4 className="text-xs sm:text-sm font-black text-text-primary leading-tight">
+                      {targets.actionTitle || `Objetivo: ${userGoal.label}`}
+                    </h4>
+                  </div>
+                </div>
+
+                {activeStrategy?.badge && (
+                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-accent/15 text-accent ring-1 ring-accent/30">
+                    {activeStrategy.badge}
+                  </span>
+                )}
+              </div>
+
+              {/* Explicación de por qué se recomienda la opción seleccionada */}
+              {activeStrategy && (
+                <div className="p-2.5 rounded-[14px] bg-bg-secondary ring-1 ring-black/5 dark:ring-white/10 space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-accent block">
+                    Por qué elegimos esta pauta ({activeStrategy.title}):
+                  </span>
+                  <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                    {activeStrategy.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Pasos prácticos para aplicar hoy */}
+              {actionSteps && actionSteps.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-text-muted block">
+                    Cómo ejecutarlo en tu serie de hoy:
+                  </span>
+                  {actionSteps.map((step, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-xs font-medium text-text-secondary">
+                      <div className="w-4 h-4 rounded-full bg-accent/20 text-accent font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                        {idx + 1}
+                      </div>
+                      <span className="leading-snug text-text-primary/90">{step}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* 4. OBJETIVO CALCULADO PARA HOY (MÉTRICAS CLAVE EN VISTA RÁPIDA) */}
             <div>

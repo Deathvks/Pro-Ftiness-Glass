@@ -162,7 +162,7 @@ const SmartNutritionCoachModal = ({
 
             {/* 1. SEGUIMIENTO DE PAUTA DE HOY */}
             {previousStrategy && (
-              <div className="p-3.5 sm:p-4 rounded-[22px] bg-accent/10 border border-accent/30 flex items-start gap-3">
+              <div className="p-3.5 sm:p-4 rounded-[22px] bg-accent/10 ring-1 ring-accent/30 flex items-start gap-3">
                 <div className="p-2 rounded-[14px] bg-accent/20 text-accent ring-1 ring-accent/30 shrink-0 mt-0.5">
                   <Check size={16} strokeWidth={3} />
                 </div>
@@ -180,9 +180,9 @@ const SmartNutritionCoachModal = ({
               </div>
             )}
 
-            {/* 2. RECOMENDACIÓN DE ASESORÍA CON NUTRICIONISTA / PREPARADOR REAL (COMPACTA ARRIBA) */}
-            {asesoriaRecommendation?.show && (
-              <div className="p-3 sm:p-3.5 rounded-[20px] bg-accent/10 border border-accent/25 flex items-center justify-between gap-3">
+            {/* 2. RECOMENDACIÓN DE ASESORÍA CON NUTRICIONISTA / PREPARADOR REAL (SIEMPRE VISIBLE ARRIBA) */}
+            {asesoriaRecommendation && (
+              <div className="p-3 sm:p-3.5 rounded-[20px] bg-accent/10 ring-1 ring-accent/25 flex items-center justify-between gap-3">
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0 mt-0.5">
                     <UserCheck size={16} strokeWidth={2.5} />
@@ -192,7 +192,7 @@ const SmartNutritionCoachModal = ({
                       {asesoriaRecommendation.headline}
                     </h4>
                     <p className="text-[11px] text-text-secondary font-medium leading-snug truncate sm:whitespace-normal">
-                      Un nutricionista y preparador real puede diseñar tu menú según tus gustos y objetivos.
+                      {asesoriaRecommendation.description}
                     </p>
                   </div>
                 </div>
@@ -216,7 +216,7 @@ const SmartNutritionCoachModal = ({
 
             {/* 3. BANNER DE CELEBRACIÓN (Si está óptimo) */}
             {celebrationData?.isCelebrating && (
-              <div className="p-4 sm:p-5 rounded-[24px] bg-emerald-500/10 border border-emerald-500/30 space-y-3">
+              <div className="p-4 sm:p-5 rounded-[24px] bg-emerald-500/10 ring-1 ring-emerald-500/30 space-y-3">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-[14px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30 shrink-0">
                     <Sparkles size={18} />
@@ -247,7 +247,7 @@ const SmartNutritionCoachModal = ({
 
             {/* 4. MENSAJE MOTIVACIONAL Y CIENCIA (Si hay avisos) */}
             {motivationalMessage && (
-              <div className="p-4 rounded-[24px] bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+              <div className="p-4 rounded-[24px] bg-amber-500/10 ring-1 ring-amber-500/30 flex items-start gap-3">
                 <div className="p-2 rounded-[14px] bg-amber-500/20 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30 shrink-0 mt-0.5">
                   <Lightbulb size={18} />
                 </div>

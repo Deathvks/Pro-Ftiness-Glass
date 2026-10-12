@@ -296,6 +296,13 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
     suggestedReps = targetReps;
     suggestedWeight = currentTopWeight > 0 ? currentTopWeight : null;
 
+    asesoriaRecommendation = {
+      show: true,
+      headline: '¿Quieres dominar este ejercicio desde el primer día?',
+      description: 'En la Asesoría Pro Fitness, un entrenador real puede revisar tus vídeos de técnica para evitar malos hábitos o molestias desde el inicio.',
+      buttonText: 'Hablar con un Entrenador Real'
+    };
+
     if (goalInfo.key === 'gain') {
       intensityLabel = 'Esfuerzo Alto';
       intensityDesc = 'Parar 1-2 reps antes de fallar';
@@ -387,6 +394,14 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
         'Mantén la misma profundidad y cadencia estricta que cuando levantabas menos carga.',
         'Prioriza tu recuperación post-entrenamiento: duerme 7-8 horas y consume suficiente proteína para fijar este crecimiento.'
       ]
+    };
+
+    // Recomendación de Asesoría Pro Fitness con preparador real (Siempre disponible)
+    asesoriaRecommendation = {
+      show: true,
+      headline: '¿En racha? Maximiza tus marcas con un preparador',
+      description: 'En la Asesoría Pro Fitness, un entrenador real programa tus mesociclos y sobrecargas para que sigas superando récords de forma continua.',
+      buttonText: 'Potenciar con Entrenador Real'
     };
 
     if (goalInfo.key === 'gain') {

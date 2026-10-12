@@ -470,11 +470,11 @@ export const generateSmartNutritionCoachPlan = ({
     });
   }
 
-  // Recomendación de Asesoría Pro Fitness con nutricionista/preparador real
+  // Recomendación de Asesoría Pro Fitness con nutricionista/preparador real (Siempre activa)
   const asesoriaRecommendation = {
-    show: isWarning || (!isOptimal && foodCount >= 1),
-    headline: '¿Te cuesta cuadrar tus macros o calorías?',
-    description: 'En la Asesoría Pro Fitness, un preparador físico y dietista real diseña tu menú a medida con los alimentos que te gustan y tienes disponibles en casa, sin dietas estrictas ni pasar hambre.',
+    show: true,
+    headline: '¿Quieres una pauta nutricional 100% personalizada?',
+    description: 'En la Asesoría Pro Fitness, un preparador físico y dietista real diseña tu menú a medida con los alimentos que tienes disponibles en casa, sin dietas estrictas ni pasar hambre.',
     buttonText: 'Hablar con mi Nutricionista / Entrenador'
   };
 
