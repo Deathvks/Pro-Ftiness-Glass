@@ -250,8 +250,14 @@ const StoryCropModal = ({ imageSrc, onComplete, onCancel }) => {
     };
 
     return (
-        <ModalPortal>
-            <div className="fixed inset-0 z-[120] bg-black flex flex-col animate-[fade-in_0.2s_ease-out]">
+        <ModalPortal disableSwipeToClose={true}>
+            <div 
+                className="fixed inset-0 z-[120] bg-black flex flex-col animate-[fade-in_0.2s_ease-out] select-none"
+                onClick={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
+            >
                 {/* Header */}
                 <div className="p-4 px-6 pt-[calc(1rem+var(--safe-top,env(safe-area-inset-top,0px)))] flex items-center justify-between text-white z-10 shrink-0 bg-gradient-to-b from-black/80 to-transparent">
                     <button 
@@ -266,7 +272,12 @@ const StoryCropModal = ({ imageSrc, onComplete, onCancel }) => {
                 </div>
 
                 {/* Cropper Container */}
-                <div className="relative flex-1 bg-black overflow-hidden">
+                <div 
+                    className="relative flex-1 bg-black overflow-hidden select-none touch-none"
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchMove={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
+                >
                     <Cropper
                         image={imageSrc}
                         crop={crop}
