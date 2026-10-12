@@ -110,14 +110,14 @@ const SmartNutritionCoachModal = ({
         onClick={onClose}
       >
         <div 
-          className="relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-[#fefce8]/95 dark:bg-[#121214]/95 backdrop-blur-2xl rounded-t-[36px] sm:rounded-[36px] ring-1 ring-amber-400/25 dark:ring-white/15 border border-amber-300/30 dark:border-white/10 shadow-2xl overflow-hidden animate-[slide-up_0.25s_cubic-bezier(0.16,1,0.3,1)]"
+          className="relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-bg-secondary dark:bg-[#121214] border border-glass-border rounded-t-[32px] sm:rounded-2xl shadow-2xl overflow-hidden animate-[slide-up_0.25s_cubic-bezier(0.16,1,0.3,1)] sm:animate-[scale-in_0.2s_ease-out]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Grabber en móvil */}
-          <div className="w-12 h-1.5 bg-amber-900/20 dark:bg-white/20 rounded-full mx-auto mt-3 mb-1 sm:hidden" />
+          <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-3 mb-1 sm:hidden shrink-0" />
 
           {/* Header */}
-          <div className="p-4 sm:p-6 pb-3 border-b border-amber-900/10 dark:border-white/5 flex items-start justify-between gap-3">
+          <div className="p-4 sm:p-6 pb-3 border-b border-glass-border flex items-start justify-between gap-3 bg-bg-secondary">
             <div className="space-y-1.5 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent ring-1 ring-accent/30">
@@ -126,17 +126,17 @@ const SmartNutritionCoachModal = ({
                 </span>
 
                 {isWarning ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500/40 animate-pulse">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/40 animate-pulse">
                     <AlertTriangle size={13} className="shrink-0" />
                     <span>{overallBadgeText}</span>
                   </span>
                 ) : isOptimal ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/40">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/40">
                     <CheckCircle2 size={13} className="shrink-0" />
                     <span>{overallBadgeText}</span>
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/15 text-blue-700 dark:text-blue-400 ring-1 ring-blue-500/30">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/15 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30">
                     <Activity size={13} className="shrink-0" />
                     <span>{overallBadgeText}</span>
                   </span>
@@ -150,7 +150,7 @@ const SmartNutritionCoachModal = ({
 
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-muted hover:text-text-primary transition-all active:scale-95 shrink-0"
+              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary transition-all active:scale-95 shrink-0"
               aria-label="Cerrar modal"
             >
               <X size={20} />
@@ -162,7 +162,7 @@ const SmartNutritionCoachModal = ({
 
             {/* 1. SEGUIMIENTO DE PAUTA APLICADA HOY */}
             {previousStrategy && (
-              <div className="p-3.5 sm:p-4 rounded-[22px] bg-accent/10 ring-1 ring-accent/30 flex items-start gap-3">
+              <div className="p-3.5 sm:p-4 rounded-[22px] bg-accent/10 border border-accent/30 flex items-start gap-3">
                 <div className="p-2 rounded-[14px] bg-accent/20 text-accent ring-1 ring-accent/30 shrink-0 mt-0.5">
                   <Check size={16} strokeWidth={3} />
                 </div>
@@ -182,13 +182,13 @@ const SmartNutritionCoachModal = ({
 
             {/* 2. BANNER DE CELEBRACIÓN (Si está óptimo) */}
             {celebrationData?.isCelebrating && (
-              <div className="p-4 sm:p-5 rounded-[24px] bg-emerald-500/10 ring-1 ring-emerald-500/30 backdrop-blur-xl space-y-3">
+              <div className="p-4 sm:p-5 rounded-[24px] bg-emerald-500/10 border border-emerald-500/30 space-y-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-[14px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/30 shrink-0">
+                  <div className="p-2 rounded-[14px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30 shrink-0">
                     <Sparkles size={18} />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="text-sm sm:text-base font-black text-emerald-700 dark:text-emerald-400 leading-tight">
+                    <h4 className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400 leading-tight">
                       {celebrationData.title}
                     </h4>
                     <p className="text-xs text-text-secondary font-medium mt-0.5">
@@ -198,7 +198,7 @@ const SmartNutritionCoachModal = ({
                 </div>
 
                 <div className="space-y-1.5 pt-2 border-t border-emerald-500/20">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block">
                     Pautas para sostener esta consistencia:
                   </span>
                   {celebrationData.tipsToMaintain.map((tip, idx) => (
@@ -213,12 +213,12 @@ const SmartNutritionCoachModal = ({
 
             {/* 3. MENSAJE MOTIVACIONAL Y CIENCIA (Si hay avisos) */}
             {motivationalMessage && (
-              <div className="p-4 rounded-[24px] bg-amber-500/15 ring-1 ring-amber-500/30 flex items-start gap-3">
-                <div className="p-2 rounded-[14px] bg-amber-500/25 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500/40 shrink-0 mt-0.5">
+              <div className="p-4 rounded-[24px] bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+                <div className="p-2 rounded-[14px] bg-amber-500/20 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30 shrink-0 mt-0.5">
                   <Lightbulb size={18} />
                 </div>
                 <div className="space-y-1 min-w-0">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 block">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 block">
                     Perspectiva Científica y Sin Culpa
                   </span>
                   <p className="text-xs text-text-secondary leading-relaxed font-medium">
@@ -243,15 +243,15 @@ const SmartNutritionCoachModal = ({
                 {pillars.map((pillar) => (
                   <div
                     key={pillar.id}
-                    className={`p-3.5 rounded-[22px] ring-1 transition-all flex flex-col justify-between ${
+                    className={`p-3.5 rounded-[22px] border transition-all flex flex-col justify-between ${
                       pillar.isWarning
-                        ? 'bg-amber-500/15 ring-amber-500/35 dark:bg-amber-500/15'
-                        : 'bg-white/60 dark:bg-white/5 ring-1 ring-amber-900/10 dark:ring-white/10'
+                        ? 'bg-amber-500/10 border-amber-500/30'
+                        : 'bg-black/5 dark:bg-white/5 border-glass-border'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-[10px] bg-amber-500/10 dark:bg-white/10">
+                        <div className="p-1.5 rounded-[10px] bg-black/5 dark:bg-white/10">
                           {getPillarIcon(pillar.icon)}
                         </div>
                         <span className="text-xs font-bold text-text-primary">
@@ -260,11 +260,11 @@ const SmartNutritionCoachModal = ({
                       </div>
 
                       {pillar.isWarning ? (
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/20 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500/30">
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                           Alerta
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-500/30">
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                           OK
                         </span>
                       )}
@@ -282,7 +282,7 @@ const SmartNutritionCoachModal = ({
                     <p className="text-[11px] text-text-secondary font-medium leading-snug">
                       {pillar.message}
                     </p>
-                    <p className="text-[10px] text-text-muted font-normal mt-1 leading-snug border-t border-amber-900/10 dark:border-white/5 pt-1">
+                    <p className="text-[10px] text-text-muted font-normal mt-1 leading-snug border-t border-glass-border pt-1">
                       🔬 {pillar.science}
                     </p>
                   </div>
@@ -312,13 +312,13 @@ const SmartNutritionCoachModal = ({
                         onClick={() => setSelectedStrategyId(opt.id)}
                         className={`p-3.5 sm:p-4 rounded-[22px] transition-all cursor-pointer relative flex items-start gap-3 select-none ${
                           isSelected
-                            ? 'bg-accent/15 ring-2 ring-accent shadow-md shadow-accent/10'
-                            : 'bg-white/60 dark:bg-white/5 ring-1 ring-amber-900/10 dark:ring-white/10 hover:bg-white/80 dark:hover:bg-white/10'
+                            ? 'bg-accent/15 border-2 border-accent shadow-md shadow-accent/10'
+                            : 'bg-black/5 dark:bg-white/5 border border-glass-border hover:bg-black/10 dark:hover:bg-white/10'
                         }`}
                       >
                         {/* Radio Check */}
                         <div className={`mt-0.5 shrink-0 rounded-full w-5 h-5 flex items-center justify-center transition-all ${
-                          isSelected ? 'bg-accent text-white' : 'ring-1 ring-amber-900/25 dark:ring-white/20 text-transparent'
+                          isSelected ? 'bg-accent text-accent-contrast' : 'border border-glass-border text-transparent'
                         }`}>
                           <Check size={13} strokeWidth={3} />
                         </div>
@@ -330,7 +330,7 @@ const SmartNutritionCoachModal = ({
                             </span>
                             {opt.badge && (
                               <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                                isSelected ? 'bg-accent text-white' : 'bg-amber-500/10 dark:bg-white/10 text-text-secondary'
+                                isSelected ? 'bg-accent text-accent-contrast' : 'bg-black/5 dark:bg-white/10 text-text-secondary'
                               }`}>
                                 {opt.badge}
                               </span>
@@ -354,9 +354,9 @@ const SmartNutritionCoachModal = ({
 
             {/* 6. RECOMENDACIÓN DE ASESORÍA CON PREPARADOR/DIETISTA REAL */}
             {asesoriaRecommendation?.show && (
-              <div className="p-4 sm:p-5 rounded-[24px] bg-gradient-to-br from-amber-500/15 via-yellow-500/5 to-transparent border border-amber-500/30 flex flex-col gap-3">
+              <div className="p-4 sm:p-5 rounded-[24px] bg-accent/10 border border-accent/25 flex flex-col gap-3">
                 <div className="flex items-start gap-3">
-                  <div className="p-2.5 rounded-[16px] bg-amber-500/20 text-amber-500 dark:text-amber-400 ring-1 ring-amber-500/30 shrink-0">
+                  <div className="p-2.5 rounded-[16px] bg-accent/20 text-accent shrink-0">
                     <Sparkles size={18} />
                   </div>
                   <div className="space-y-1 min-w-0">
@@ -376,7 +376,8 @@ const SmartNutritionCoachModal = ({
                       onClose();
                       onNavigateAsesoria();
                     }}
-                    className="w-full py-3 px-4 rounded-[18px] bg-amber-500 hover:bg-amber-400 text-black font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition-all active:scale-95"
+                    className="w-full py-3 px-4 rounded-[18px] bg-accent hover:brightness-110 text-accent-contrast font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-accent/20 transition-all active:scale-95"
+                    style={{ color: "var(--btn-accent-text, #000)" }}
                   >
                     <UserCheck size={16} strokeWidth={2.5} />
                     <span>{asesoriaRecommendation.buttonText}</span>
@@ -387,7 +388,7 @@ const SmartNutritionCoachModal = ({
             )}
 
             {/* Contexto científico de cierre */}
-            <div className="p-3.5 rounded-[20px] bg-white/60 dark:bg-white/5 ring-1 ring-amber-900/10 dark:ring-white/10 flex items-start gap-3">
+            <div className="p-3.5 rounded-[20px] bg-black/5 dark:bg-white/5 border border-glass-border flex items-start gap-3">
               <Shield size={16} className="text-accent shrink-0 mt-0.5" />
               <p className="text-[11px] text-text-secondary leading-relaxed font-medium">
                 Cálculos nutricionales basados en tu perfil corporal ({latestWeight} kg) y objetivo de <strong className="text-text-primary font-bold">{userGoal.label}</strong>. Sin dietas milagro: solo balance energético, reparto proteico óptimo e hidratación celular.
@@ -397,13 +398,13 @@ const SmartNutritionCoachModal = ({
           </div>
 
           {/* Footer Buttons */}
-          <div className="p-4 sm:p-5 border-t border-amber-900/10 dark:border-white/5 bg-amber-500/5 dark:bg-white/5 flex items-center gap-3">
+          <div className="p-4 sm:p-5 border-t border-glass-border bg-bg-secondary flex items-center gap-3">
             {activeStrategy && (
               <button
                 type="button"
                 onClick={handleApply}
-                className="flex-1 py-3.5 px-4 rounded-[20px] bg-accent hover:brightness-110 active:scale-95 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-accent/30 transition-all"
-                style={{ color: "var(--btn-accent-text, #fff)" }}
+                className="flex-1 py-3.5 px-4 rounded-[20px] bg-accent hover:brightness-110 active:scale-95 text-accent-contrast font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-accent/30 transition-all"
+                style={{ color: "var(--btn-accent-text, #000)" }}
               >
                 <Check size={18} strokeWidth={3} />
                 <span className="truncate">

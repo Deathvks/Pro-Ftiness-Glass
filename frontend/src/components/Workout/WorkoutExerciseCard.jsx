@@ -174,9 +174,9 @@ const WorkoutExerciseCard = ({
                 }}
                 className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer shadow-sm group ${
                   trend?.isWarning
-                    ? 'bg-amber-500/15 hover:bg-amber-500/25 ring-1 ring-amber-500/40 text-amber-400 animate-pulse'
+                    ? 'bg-amber-500/15 hover:bg-amber-500/25 ring-1 ring-amber-500/40 text-amber-600 dark:text-amber-400 animate-pulse'
                     : trend?.isProgressing
-                    ? 'bg-emerald-500/15 hover:bg-emerald-500/25 ring-1 ring-emerald-500/40 text-emerald-400'
+                    ? 'bg-emerald-500/15 hover:bg-emerald-500/25 ring-1 ring-emerald-500/40 text-emerald-600 dark:text-emerald-400'
                     : 'bg-accent/10 hover:bg-accent/20 ring-1 ring-accent/30 text-accent'
                 }`}
                 title={
@@ -188,9 +188,9 @@ const WorkoutExerciseCard = ({
                 }
               >
                 {trend?.isWarning ? (
-                  <AlertTriangle size={15} strokeWidth={2.5} className="text-amber-400 shrink-0" />
+                  <AlertTriangle size={15} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 shrink-0" />
                 ) : trend?.isProgressing ? (
-                  <CheckCircle2 size={15} strokeWidth={2.5} className="text-emerald-400 shrink-0" />
+                  <CheckCircle2 size={15} strokeWidth={2.5} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                 ) : (
                   <Target size={16} strokeWidth={2.5} className="text-accent group-hover:rotate-45 transition-transform" />
                 )}
@@ -233,20 +233,20 @@ const WorkoutExerciseCard = ({
             }}
             className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] transition-all duration-300 active:scale-95 outline-none font-bold group relative ${
               trend?.isWarning
-                ? 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
+                ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
                 : trend?.isProgressing
-                ? 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
+                ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
                 : 'text-accent hover:bg-accent/10'
             }`}
             title="Guía inteligente según tu objetivo"
           >
             {trend?.isWarning ? (
               <div className="relative">
-                <AlertTriangle size={20} strokeWidth={2.5} className="text-amber-400 group-hover:scale-110 transition-transform" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full animate-ping" />
+                <AlertTriangle size={20} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 dark:bg-amber-400 rounded-full animate-ping" />
               </div>
             ) : trend?.isProgressing ? (
-              <CheckCircle2 size={20} strokeWidth={2.5} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+              <CheckCircle2 size={20} strokeWidth={2.5} className="text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
             ) : (
               <Target size={20} strokeWidth={2.5} className="text-accent group-hover:scale-110 transition-transform" />
             )}
@@ -359,8 +359,7 @@ const WorkoutExerciseCard = ({
               <div className="flex flex-col gap-3">
                 <button
                   type="submit"
-                  className="w-full py-4 rounded-[20px] bg-yellow-500 text-white font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-yellow-500/20">
-                  
+                  className="w-full py-4 rounded-[20px] bg-yellow-500 text-black font-black hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-yellow-500/20">
                   Guardar
                 </button>
                 <button
