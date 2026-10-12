@@ -60,13 +60,11 @@ const NutritionStatCard: React.FC<NutritionStatCardProps> = ({
           backgroundColor: isDanger
             ? '#ef4444'
             : isDark
-            ? 'rgba(255, 255, 255, 0.04)'
-            : 'rgba(255, 255, 255, 0.65)',
+            ? 'rgba(255, 255, 255, 0.05)'
+            : 'rgba(0, 0, 0, 0.03)',
           borderColor: isDanger
             ? '#ef4444'
-            : isDark
-            ? 'rgba(255, 255, 255, 0.1)'
-            : 'rgba(0, 0, 0, 0.06)',
+            : colors.border,
         },
       ]}
     >
@@ -255,21 +253,13 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.glassWrapper}>
+      <View style={[styles.glassWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />
-        <View
-          style={[
-            styles.card,
-            {
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.4)',
-            },
-          ]}
-        >
+        <View style={styles.card}>
           {/* Header with Switcher */}
           <View style={styles.headerRow}>
             <Text style={[styles.title, { color: colors.text }]}>Resumen del Día</Text>
@@ -278,7 +268,7 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
                 styles.toggleContainer,
                 {
                   backgroundColor: isDark ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.06)',
-                  borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                  borderColor: colors.border,
                 },
               ]}
             >
@@ -472,8 +462,8 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
                   style={[
                     styles.macroPill,
                     {
-                      borderColor: selectedMacro === 'protein' ? '#ef4444' : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                      backgroundColor: selectedMacro === 'protein' ? 'rgba(239,68,68,0.15)' : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.5)',
+                      borderColor: selectedMacro === 'protein' ? '#ef4444' : colors.border,
+                      backgroundColor: selectedMacro === 'protein' ? 'rgba(239,68,68,0.15)' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'),
                     },
                   ]}
                 >
@@ -489,8 +479,8 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
                   style={[
                     styles.macroPill,
                     {
-                      borderColor: selectedMacro === 'carbs' ? '#3b82f6' : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                      backgroundColor: selectedMacro === 'carbs' ? 'rgba(59,130,246,0.15)' : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.5)',
+                      borderColor: selectedMacro === 'carbs' ? '#3b82f6' : colors.border,
+                      backgroundColor: selectedMacro === 'carbs' ? 'rgba(59,130,246,0.15)' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'),
                     },
                   ]}
                 >
@@ -506,8 +496,8 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
                   style={[
                     styles.macroPill,
                     {
-                      borderColor: selectedMacro === 'fats' ? '#22c55e' : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                      backgroundColor: selectedMacro === 'fats' ? 'rgba(34,197,94,0.15)' : isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.5)',
+                      borderColor: selectedMacro === 'fats' ? '#22c55e' : colors.border,
+                      backgroundColor: selectedMacro === 'fats' ? 'rgba(34,197,94,0.15)' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'),
                     },
                   ]}
                 >
@@ -526,14 +516,14 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
                   style={[
                     styles.macroPill,
                     {
-                      borderColor: isSugarHigh ? '#ef4444' : selectedMacro === 'sugar' ? '#ec4899' : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                      borderColor: isSugarHigh ? '#ef4444' : selectedMacro === 'sugar' ? '#ec4899' : colors.border,
                       backgroundColor: isSugarHigh
                         ? 'rgba(239,68,68,0.2)'
                         : selectedMacro === 'sugar'
                         ? 'rgba(236,72,153,0.15)'
                         : isDark
-                        ? 'rgba(255,255,255,0.04)'
-                        : 'rgba(255,255,255,0.5)',
+                        ? 'rgba(255,255,255,0.05)'
+                        : 'rgba(0,0,0,0.03)',
                     },
                   ]}
                 >
@@ -558,11 +548,11 @@ const styles = StyleSheet.create({
   glassWrapper: {
     borderRadius: 28,
     overflow: 'hidden',
+    borderWidth: 1,
   },
   card: {
     padding: 18,
     borderRadius: 28,
-    borderWidth: 1,
   },
   headerRow: {
     flexDirection: 'row',

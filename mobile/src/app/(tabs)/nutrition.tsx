@@ -8,6 +8,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassView } from 'expo-glass-effect';
@@ -280,7 +281,7 @@ export default function NutritionScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ThemeBackground />
 
       {/* Sticky Global Header */}
@@ -292,13 +293,13 @@ export default function NutritionScreen() {
         contentContainerStyle={[
           styles.scrollContent,
           {
-            paddingTop: insets.top + 60,
+            paddingTop: insets.top + 70,
             paddingBottom: insets.bottom + 100,
           },
         ]}
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-          useNativeDriver: false,
+          useNativeDriver: Platform.OS !== 'web',
         })}
         scrollEventThrottle={16}
         refreshControl={

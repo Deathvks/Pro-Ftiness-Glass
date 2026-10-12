@@ -57,21 +57,13 @@ export const MealSection: React.FC<MealSectionProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.glassWrapper}>
+      <View style={[styles.glassWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />
-        <View
-          style={[
-            styles.card,
-            {
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.4)',
-            },
-          ]}
-        >
+        <View style={styles.card}>
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
@@ -146,8 +138,8 @@ export const MealSection: React.FC<MealSectionProps> = ({
                     style={[
                       styles.foodCard,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                        borderColor: colors.border,
                       },
                     ]}
                   >
@@ -157,7 +149,7 @@ export const MealSection: React.FC<MealSectionProps> = ({
                         styles.thumbContainer,
                         {
                           backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                          borderColor: colors.border,
                         },
                       ]}
                     >
@@ -252,8 +244,8 @@ export const MealSection: React.FC<MealSectionProps> = ({
               style={[
                 styles.emptyBox,
                 {
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.3)',
+                  borderColor: colors.border,
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
                 },
               ]}
             >
@@ -292,11 +284,11 @@ const styles = StyleSheet.create({
   glassWrapper: {
     borderRadius: 26,
     overflow: 'hidden',
+    borderWidth: 1,
   },
   card: {
     padding: 16,
     borderRadius: 26,
-    borderWidth: 1,
   },
   header: {
     flexDirection: 'row',

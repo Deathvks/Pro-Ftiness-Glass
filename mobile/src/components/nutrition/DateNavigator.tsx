@@ -47,21 +47,13 @@ export const DateNavigator: React.FC<DateNavigatorProps> = ({ selectedDate, onDa
 
   return (
     <View style={styles.container}>
-      <View style={styles.glassWrapper}>
+      <View style={[styles.glassWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />
-        <View
-          style={[
-            styles.inner,
-            {
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.4)',
-            },
-          ]}
-        >
+        <View style={styles.inner}>
           <TouchableOpacity
             onPress={() => changeDay(-1)}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -105,6 +97,7 @@ const styles = StyleSheet.create({
   glassWrapper: {
     borderRadius: 22,
     overflow: 'hidden',
+    borderWidth: 1,
   },
   inner: {
     flexDirection: 'row',
@@ -113,7 +106,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 22,
-    borderWidth: 1,
   },
   arrowButton: {
     width: 38,

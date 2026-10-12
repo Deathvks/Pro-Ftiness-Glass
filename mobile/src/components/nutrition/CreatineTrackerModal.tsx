@@ -115,21 +115,13 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
           ]}
           onPress={onClose}
         >
-          <Pressable onPress={e => e.stopPropagation()} style={styles.cardWrapper}>
+          <Pressable onPress={e => e.stopPropagation()} style={[styles.cardWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
               style={StyleSheet.absoluteFill}
             />
-            <View
-              style={[
-                styles.card,
-                {
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.45)',
-                },
-              ]}
-            >
+            <View style={styles.card}>
               {/* Close Button */}
               <TouchableOpacity
                 onPress={onClose}
@@ -169,8 +161,8 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                   style={[
                     styles.inputWrapper,
                     {
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
-                      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.7)',
+                      borderColor: colors.border,
+                      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 0, 0, 0.04)',
                     },
                   ]}
                 >
@@ -204,7 +196,7 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                         },
                         grams !== val && {
                           backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                          borderColor: colors.border,
                         },
                       ]}
                       activeOpacity={0.7}
@@ -258,8 +250,8 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                         style={[
                           styles.logItem,
                           {
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.6)',
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                            borderColor: colors.border,
                           },
                         ]}
                       >
@@ -292,8 +284,8 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                   style={[
                     styles.statsBox,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                      borderColor: colors.border,
                     },
                   ]}
                 >

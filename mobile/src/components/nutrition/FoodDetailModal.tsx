@@ -68,28 +68,20 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
           ]}
           onPress={onClose}
         >
-          <Pressable onPress={e => e.stopPropagation()} style={styles.cardWrapper}>
+          <Pressable onPress={e => e.stopPropagation()} style={[styles.cardWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
               style={StyleSheet.absoluteFill}
             />
-            <View
-              style={[
-                styles.card,
-                {
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.5)',
-                },
-              ]}
-            >
+            <View style={styles.card}>
               {/* Image banner */}
               <View
                 style={[
                   styles.imageHeader,
                   {
                     backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                    borderColor: colors.border,
                   },
                 ]}
               >
@@ -122,7 +114,7 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
                   style={[
                     styles.summaryRow,
                     {
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                      borderColor: colors.border,
                     },
                   ]}
                 >
@@ -154,8 +146,8 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
                     style={[
                       styles.macroCard,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.7)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                        borderColor: colors.border,
                       },
                     ]}
                   >
@@ -171,8 +163,8 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
                     style={[
                       styles.macroCard,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.7)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                        borderColor: colors.border,
                       },
                     ]}
                   >
@@ -188,8 +180,8 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
                     style={[
                       styles.macroCard,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.7)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                        borderColor: colors.border,
                       },
                     ]}
                   >
@@ -205,8 +197,8 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
                     style={[
                       styles.macroCard,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.7)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                        borderColor: colors.border,
                       },
                     ]}
                   >
@@ -224,8 +216,8 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
                   style={[
                     styles.bottomCloseBtn,
                     {
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                      borderColor: colors.border,
                     },
                   ]}
                   activeOpacity={0.8}

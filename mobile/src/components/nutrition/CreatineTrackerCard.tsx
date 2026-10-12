@@ -36,21 +36,13 @@ export const CreatineTrackerCard: React.FC<CreatineTrackerCardProps> = ({
       onPress={handlePress}
       style={styles.container}
     >
-      <View style={styles.glassWrapper}>
+      <View style={[styles.glassWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />
-        <View
-          style={[
-            styles.card,
-            {
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.45)',
-            },
-          ]}
-        >
+        <View style={styles.card}>
           {/* Watermark in bottom right */}
           <View style={styles.watermark}>
             <Zap size={140} color="#a855f7" />
@@ -61,7 +53,7 @@ export const CreatineTrackerCard: React.FC<CreatineTrackerCardProps> = ({
             style={[
               styles.header,
               {
-                borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                borderBottomColor: colors.border,
               },
             ]}
           >
@@ -92,7 +84,7 @@ export const CreatineTrackerCard: React.FC<CreatineTrackerCardProps> = ({
                 styles.iconBadge,
                 {
                   backgroundColor: hasLogged ? '#a855f7' : isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                  borderColor: hasLogged ? '#a855f7' : isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                  borderColor: hasLogged ? '#a855f7' : colors.border,
                 },
               ]}
             >
@@ -133,11 +125,11 @@ const styles = StyleSheet.create({
   glassWrapper: {
     borderRadius: 28,
     overflow: 'hidden',
+    borderWidth: 1,
   },
   card: {
     padding: 18,
     borderRadius: 28,
-    borderWidth: 1,
     position: 'relative',
     overflow: 'hidden',
   },

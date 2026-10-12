@@ -47,13 +47,23 @@ export function ConfirmationModal({
           ]}
           onPress={onCancel}
         >
-          <Pressable onPress={e => e.stopPropagation()} style={styles.cardWrapper}>
+          <Pressable
+            onPress={e => e.stopPropagation()}
+            style={[
+              styles.cardWrapper,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                borderWidth: 1,
+              },
+            ]}
+          >
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
               style={StyleSheet.absoluteFill}
             />
-            <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)', backgroundColor: 'transparent' }]}>
+            <View style={[styles.card, { borderWidth: 0, backgroundColor: 'transparent' }]}>
             <View
               style={[
                 styles.iconBadge,

@@ -38,6 +38,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 import * as nutritionService from '@/services/nutritionService';
 import { FoodLogItem } from './MealSection';
@@ -344,21 +345,24 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
             ]}
             onPress={onClose}
           >
-            <Pressable onPress={e => e.stopPropagation()} style={styles.sheetWrapper}>
+            <Pressable
+              onPress={e => e.stopPropagation()}
+              style={[
+                styles.sheetWrapper,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderBottomWidth: 0,
+                },
+              ]}
+            >
               <GlassView
                 glassEffectStyle="regular"
                 colorScheme={isDark ? 'dark' : 'light'}
                 style={StyleSheet.absoluteFill}
               />
-              <View
-                style={[
-                  styles.sheetContent,
-                  {
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.55)',
-                  },
-                ]}
-              >
+              <View style={styles.sheetContent}>
                 {/* Drag pill handle */}
                 <View
                   style={[
@@ -384,6 +388,8 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                       styles.closeBtn,
                       {
                         backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                        borderColor: colors.border,
+                        borderWidth: 1,
                       },
                     ]}
                     activeOpacity={0.7}
@@ -414,7 +420,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                         styles.weightCard,
                         {
                           backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.7)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                          borderColor: colors.border,
                         },
                       ]}
                     >
@@ -444,7 +450,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           styles.recalcCard,
                           {
                             backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.6)',
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                            borderColor: colors.border,
                           },
                         ]}
                       >
@@ -459,7 +465,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           styles.recalcCard,
                           {
                             backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.6)',
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                            borderColor: colors.border,
                           },
                         ]}
                       >
@@ -474,7 +480,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           styles.recalcCard,
                           {
                             backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.6)',
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                            borderColor: colors.border,
                           },
                         ]}
                       >
@@ -489,7 +495,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           styles.recalcCard,
                           {
                             backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.6)',
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                            borderColor: colors.border,
                           },
                         ]}
                       >
@@ -511,9 +517,11 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                       activeOpacity={0.85}
                     >
                       {isLoading ? (
-                        <ActivityIndicator color="#ffffff" />
+                        <ActivityIndicator color={getContrastTextColor(colors.tint)} />
                       ) : (
-                        <Text style={styles.primaryActionText}>Añadir al Registro</Text>
+                        <Text style={[styles.primaryActionText, { color: getContrastTextColor(colors.tint) }]}>
+                          Añadir al Registro
+                        </Text>
                       )}
                     </TouchableOpacity>
                   </ScrollView>
@@ -526,7 +534,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           styles.tabNav,
                           {
                             backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 0, 0, 0.05)',
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                            borderColor: colors.border,
                           },
                         ]}
                       >
@@ -545,11 +553,16 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           ]}
                           activeOpacity={0.8}
                         >
-                          <Search size={14} color={activeTab === 'search' ? '#ffffff' : colors.textMuted} />
+                          <Search
+                            size={14}
+                            color={activeTab === 'search' ? getContrastTextColor(colors.tint) : colors.textMuted}
+                          />
                           <Text
                             style={[
                               styles.tabText,
-                              { color: activeTab === 'search' ? '#ffffff' : colors.textSecondary },
+                              {
+                                color: activeTab === 'search' ? getContrastTextColor(colors.tint) : colors.textSecondary,
+                              },
                             ]}
                           >
                             Buscar
@@ -571,11 +584,16 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           ]}
                           activeOpacity={0.8}
                         >
-                          <Clock size={14} color={activeTab === 'recents' ? '#ffffff' : colors.textMuted} />
+                          <Clock
+                            size={14}
+                            color={activeTab === 'recents' ? getContrastTextColor(colors.tint) : colors.textMuted}
+                          />
                           <Text
                             style={[
                               styles.tabText,
-                              { color: activeTab === 'recents' ? '#ffffff' : colors.textSecondary },
+                              {
+                                color: activeTab === 'recents' ? getContrastTextColor(colors.tint) : colors.textSecondary,
+                              },
                             ]}
                           >
                             Recientes
@@ -597,11 +615,16 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           ]}
                           activeOpacity={0.8}
                         >
-                          <Star size={14} color={activeTab === 'favorites' ? '#ffffff' : colors.textMuted} />
+                          <Star
+                            size={14}
+                            color={activeTab === 'favorites' ? getContrastTextColor(colors.tint) : colors.textMuted}
+                          />
                           <Text
                             style={[
                               styles.tabText,
-                              { color: activeTab === 'favorites' ? '#ffffff' : colors.textSecondary },
+                              {
+                                color: activeTab === 'favorites' ? getContrastTextColor(colors.tint) : colors.textSecondary,
+                              },
                             ]}
                           >
                             Favoritos
@@ -623,11 +646,16 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           ]}
                           activeOpacity={0.8}
                         >
-                          <Edit3 size={14} color={activeTab === 'manual' ? '#ffffff' : colors.textMuted} />
+                          <Edit3
+                            size={14}
+                            color={activeTab === 'manual' ? getContrastTextColor(colors.tint) : colors.textMuted}
+                          />
                           <Text
                             style={[
                               styles.tabText,
-                              { color: activeTab === 'manual' ? '#ffffff' : colors.textSecondary },
+                              {
+                                color: activeTab === 'manual' ? getContrastTextColor(colors.tint) : colors.textSecondary,
+                              },
                             ]}
                           >
                             Manual
@@ -643,7 +671,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           styles.searchBar,
                           {
                             backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.8)',
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                            borderColor: colors.border,
                             marginBottom: 12,
                           },
                         ]}
@@ -698,7 +726,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                                       styles.foodItemRow,
                                       {
                                         backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.65)',
-                                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                                        borderColor: colors.border,
                                       },
                                     ]}
                                     activeOpacity={0.7}
@@ -708,6 +736,8 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                                         styles.itemThumb,
                                         {
                                           backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                                          borderColor: colors.border,
+                                          borderWidth: 1,
                                         },
                                       ]}
                                     >
@@ -768,7 +798,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                                       styles.foodItemRow,
                                       {
                                         backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.65)',
-                                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                                        borderColor: colors.border,
                                       },
                                     ]}
                                     activeOpacity={0.7}
@@ -778,6 +808,8 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                                         styles.itemThumb,
                                         {
                                           backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                                          borderColor: colors.border,
+                                          borderWidth: 1,
                                         },
                                       ]}
                                     >
@@ -834,7 +866,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                                       styles.foodItemRow,
                                       {
                                         backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.65)',
-                                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                                        borderColor: colors.border,
                                       },
                                     ]}
                                     activeOpacity={0.7}
@@ -844,6 +876,8 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                                         styles.itemThumb,
                                         {
                                           backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                                          borderColor: colors.border,
+                                          borderWidth: 1,
                                         },
                                       ]}
                                     >
@@ -913,7 +947,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                                 {
                                   color: colors.text,
                                   backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.7)',
-                                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                                  borderColor: colors.border,
                                 },
                               ]}
                               placeholder="Ej: Pechuga de pollo a la plancha"
@@ -934,7 +968,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                                   {
                                     color: colors.text,
                                     backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.7)',
-                                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                                    borderColor: colors.border,
                                   },
                                 ]}
                                 placeholder="100"
@@ -968,7 +1002,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                                 {
                                   color: colors.text,
                                   backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.7)',
-                                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                                  borderColor: colors.border,
                                 },
                               ]}
                               placeholder="Ej: 250"
@@ -1063,7 +1097,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                               style={[
                                 styles.pickImgBtn,
                                 {
-                                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.1)',
+                                  borderColor: colors.border,
                                   backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.6)',
                                 },
                               ]}
@@ -1104,7 +1138,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                                     : isDark
                                     ? 'rgba(255, 255, 255, 0.03)'
                                     : 'rgba(0, 0, 0, 0.03)',
-                                  borderColor: manualForm.isFavorite ? colors.tint + '40' : 'transparent',
+                                  borderColor: manualForm.isFavorite ? colors.tint + '40' : colors.border,
                                 },
                               ]}
                               activeOpacity={0.7}
@@ -1131,9 +1165,9 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                             activeOpacity={0.85}
                           >
                             {isLoading ? (
-                              <ActivityIndicator color="#ffffff" />
+                              <ActivityIndicator color={getContrastTextColor(colors.tint)} />
                             ) : (
-                              <Text style={styles.primaryActionText}>
+                              <Text style={[styles.primaryActionText, { color: getContrastTextColor(colors.tint) }]}>
                                 {logToEdit ? 'Actualizar Comida' : 'Añadir al Registro'}
                               </Text>
                             )}
@@ -1164,9 +1198,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 12,
-    borderTopLeftRadius: 36,
-    borderTopRightRadius: 36,
-    borderWidth: 1,
   },
   dragPill: {
     width: 40,

@@ -63,7 +63,17 @@ export const SugarTargetModal: React.FC<SugarTargetModalProps> = ({
           ]}
           onPress={onClose}
         >
-          <Pressable onPress={e => e.stopPropagation()} style={styles.cardWrapper}>
+          <Pressable
+            onPress={e => e.stopPropagation()}
+            style={[
+              styles.cardWrapper,
+              {
+                backgroundColor: colors.card,
+                borderColor: isOverLimit ? '#ef4444' : colors.border,
+                borderWidth: 1,
+              },
+            ]}
+          >
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
@@ -73,16 +83,7 @@ export const SugarTargetModal: React.FC<SugarTargetModalProps> = ({
               style={[
                 styles.card,
                 {
-                  borderColor: isOverLimit
-                    ? '#ef4444'
-                    : isDark
-                    ? 'rgba(255, 255, 255, 0.15)'
-                    : 'rgba(0, 0, 0, 0.08)',
-                  backgroundColor: isOverLimit
-                    ? 'rgba(239, 68, 68, 0.08)'
-                    : isDark
-                    ? 'rgba(255, 255, 255, 0.04)'
-                    : 'rgba(255, 255, 255, 0.45)',
+                  backgroundColor: isOverLimit ? 'rgba(239, 68, 68, 0.08)' : 'transparent',
                 },
               ]}
             >
@@ -94,6 +95,8 @@ export const SugarTargetModal: React.FC<SugarTargetModalProps> = ({
                   styles.closeButton,
                   {
                     backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                    borderColor: colors.border,
+                    borderWidth: 1,
                   },
                 ]}
                 activeOpacity={0.7}
@@ -119,7 +122,7 @@ export const SugarTargetModal: React.FC<SugarTargetModalProps> = ({
                     cx="70"
                     cy="70"
                     r={radius}
-                    stroke={isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'}
+                    stroke={colors.border}
                     strokeWidth="10"
                     fill="none"
                   />
@@ -148,7 +151,7 @@ export const SugarTargetModal: React.FC<SugarTargetModalProps> = ({
                   styles.statsRowBox,
                   {
                     backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                    borderColor: colors.border,
                   },
                 ]}
               >
@@ -159,7 +162,7 @@ export const SugarTargetModal: React.FC<SugarTargetModalProps> = ({
                 <View
                   style={[
                     styles.divider,
-                    { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)' },
+                    { backgroundColor: colors.border },
                   ]}
                 />
                 <View style={styles.statCol}>
@@ -194,7 +197,7 @@ export const SugarTargetModal: React.FC<SugarTargetModalProps> = ({
                   styles.closeBtn,
                   {
                     backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+                    borderColor: colors.border,
                   },
                 ]}
                 activeOpacity={0.8}
@@ -219,7 +222,6 @@ const styles = StyleSheet.create({
   card: {
     padding: 24,
     borderRadius: 32,
-    borderWidth: 1,
     alignItems: 'center',
   },
   closeButton: {

@@ -36,21 +36,13 @@ export const WaterTrackerCard: React.FC<WaterTrackerCardProps> = ({
       onPress={handlePress}
       style={styles.container}
     >
-      <View style={styles.glassWrapper}>
+      <View style={[styles.glassWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />
-        <View
-          style={[
-            styles.card,
-            {
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.45)',
-            },
-          ]}
-        >
+        <View style={styles.card}>
           {/* Watermark in bottom right */}
           <View style={styles.watermark}>
             <Droplet size={140} color="#3b82f6" />
@@ -61,7 +53,7 @@ export const WaterTrackerCard: React.FC<WaterTrackerCardProps> = ({
             style={[
               styles.header,
               {
-                borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                borderBottomColor: colors.border,
               },
             ]}
           >
@@ -130,11 +122,11 @@ const styles = StyleSheet.create({
   glassWrapper: {
     borderRadius: 28,
     overflow: 'hidden',
+    borderWidth: 1,
   },
   card: {
     padding: 18,
     borderRadius: 28,
-    borderWidth: 1,
     position: 'relative',
     overflow: 'hidden',
   },
