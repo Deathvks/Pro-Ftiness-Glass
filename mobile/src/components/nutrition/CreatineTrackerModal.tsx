@@ -378,8 +378,8 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                       style={[
                         styles.statCard,
                         {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.85)',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
                         },
                       ]}
                     >
@@ -388,11 +388,11 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                         colorScheme={isDark ? 'dark' : 'light'}
                         style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
                       />
-                      <Calendar size={22} color="#3b82f6" strokeWidth={1.7} />
+                      <Calendar size={22} color="#3b82f6" strokeWidth={2} />
                       <Text style={[styles.statValue, { color: colors.text }]}>
                         {stats.totalDays}
                       </Text>
-                      <Text style={[styles.statLabel, { color: colors.textMuted }]}>
+                      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
                         Días totales
                       </Text>
                     </View>
@@ -402,8 +402,8 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                       style={[
                         styles.statCard,
                         {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.85)',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
                         },
                       ]}
                     >
@@ -412,11 +412,11 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                         colorScheme={isDark ? 'dark' : 'light'}
                         style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
                       />
-                      <TrendingUp size={22} color={getStreakColor(stats.currentStreak)} strokeWidth={1.7} />
+                      <TrendingUp size={22} color={getStreakColor(stats.currentStreak)} strokeWidth={2} />
                       <Text style={[styles.statValue, { color: getStreakColor(stats.currentStreak) }]}>
                         {stats.currentStreak}
                       </Text>
-                      <Text style={[styles.statLabel, { color: colors.textMuted }]}>
+                      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
                         Racha actual
                       </Text>
                     </View>
@@ -426,8 +426,8 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                       style={[
                         styles.statCard,
                         {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.85)',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
                         },
                       ]}
                     >
@@ -436,12 +436,12 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                         colorScheme={isDark ? 'dark' : 'light'}
                         style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
                       />
-                      <Zap size={22} color="#a855f7" strokeWidth={1.7} />
+                      <Zap size={22} color="#a855f7" strokeWidth={2} />
                       <Text style={[styles.statValue, { color: colors.text }]}>
                         {stats.averageGrams ? stats.averageGrams.toFixed(1) : '0.0'}
                         <Text style={{ fontSize: 14 }}>g</Text>
                       </Text>
-                      <Text style={[styles.statLabel, { color: colors.textMuted }]}>
+                      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
                         Promedio
                       </Text>
                     </View>
@@ -451,8 +451,8 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                       style={[
                         styles.statCard,
                         {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.65)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.85)',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
                         },
                       ]}
                     >
@@ -461,11 +461,11 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                         colorScheme={isDark ? 'dark' : 'light'}
                         style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
                       />
-                      <Calendar size={22} color="#22c55e" strokeWidth={1.7} />
+                      <Calendar size={22} color="#22c55e" strokeWidth={2} />
                       <Text style={[styles.statValue, { color: colors.text }]}>
                         {stats.thisWeekDays}/7
                       </Text>
-                      <Text style={[styles.statLabel, { color: colors.textMuted }]}>
+                      <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
                         Esta semana
                       </Text>
                     </View>
@@ -476,8 +476,8 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                     style={[
                       styles.sectionCard,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.6)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.75)',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
                       },
                     ]}
                   >
@@ -489,7 +489,7 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
 
                     {/* Header de fecha seleccionada */}
                     <View style={styles.sectionHeaderRow}>
-                      <Calendar size={18} color="#a855f7" />
+                      <Calendar size={18} color="#a855f7" strokeWidth={2.5} />
                       <Text style={[styles.sectionTitle, { color: colors.text }]}>
                         {formattedSelectedDate}
                       </Text>
@@ -506,8 +506,8 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                           style={[
                             styles.inputWrapper,
                             {
-                              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                              borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
+                              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.95)',
+                              borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.12)',
                             },
                           ]}
                         >
@@ -525,79 +525,74 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
 
                         {/* Presets Chips Liquid Glass */}
                         <View style={styles.presetsRow}>
-                          {['3', '5', '7'].map(val => (
-                            <TouchableOpacity
-                              key={val}
-                              onPress={() => {
-                                try {
-                                  Haptics.selectionAsync();
-                                } catch {}
-                                setGrams(val);
-                              }}
-                              style={[
-                                styles.presetChip,
-                                {
-                                  borderColor: grams === val
-                                    ? '#a855f7'
-                                    : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)'),
-                                  backgroundColor: grams === val
-                                    ? '#a855f720'
-                                    : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.5)'),
-                                },
-                              ]}
-                              activeOpacity={0.7}
-                            >
-                              <GlassView
-                                glassEffectStyle="regular"
-                                colorScheme={isDark ? 'dark' : 'light'}
-                                style={[StyleSheet.absoluteFill, { borderRadius: 14 }]}
-                              />
-                              <Text
+                          {['3', '5', '7', '10'].map(val => {
+                            const isSelected = grams === val;
+                            return (
+                              <TouchableOpacity
+                                key={val}
+                                onPress={() => {
+                                  try {
+                                    Haptics.selectionAsync();
+                                  } catch {}
+                                  setGrams(val);
+                                }}
                                 style={[
-                                  styles.presetChipText,
-                                  { color: grams === val ? '#a855f7' : colors.textSecondary },
+                                  styles.presetChip,
+                                  {
+                                    borderColor: isSelected
+                                      ? '#a855f7'
+                                      : isDark
+                                      ? 'rgba(255, 255, 255, 0.16)'
+                                      : 'rgba(0, 0, 0, 0.1)',
+                                    backgroundColor: isSelected
+                                      ? '#a855f7'
+                                      : isDark
+                                      ? 'rgba(255, 255, 255, 0.07)'
+                                      : 'rgba(0, 0, 0, 0.04)',
+                                  },
                                 ]}
+                                activeOpacity={0.75}
                               >
-                                {val}g
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
+                                <Text
+                                  style={[
+                                    styles.presetChipText,
+                                    {
+                                      color: isSelected ? '#ffffff' : colors.text,
+                                    },
+                                  ]}
+                                >
+                                  {val}g
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
                         </View>
 
                         {/* Action Button Liquid Glass */}
                         <TouchableOpacity
                           onPress={handleAddLog}
                           disabled={isSubmitting || !grams}
-                          activeOpacity={0.75}
+                          activeOpacity={0.85}
                           style={[
                             styles.actionBtn,
                             {
-                              borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
-                              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
-                              opacity: isSubmitting || !grams ? 0.5 : 1,
+                              backgroundColor: '#a855f7',
+                              borderColor: 'rgba(255, 255, 255, 0.25)',
+                              opacity: isSubmitting || !grams ? 0.45 : 1,
+                              shadowColor: '#a855f7',
+                              shadowOffset: { width: 0, height: 4 },
+                              shadowOpacity: isDark ? 0.45 : 0.25,
+                              shadowRadius: 10,
+                              elevation: 6,
                             },
                           ]}
                         >
-                          <GlassView
-                            glassEffectStyle="regular"
-                            colorScheme={isDark ? 'dark' : 'light'}
-                            style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
-                          />
-                          <View
-                            style={[
-                              StyleSheet.absoluteFill,
-                              {
-                                backgroundColor: '#a855f7' + (isDark ? '25' : '18'),
-                                borderRadius: 20,
-                              },
-                            ]}
-                          />
                           {isSubmitting ? (
-                            <ActivityIndicator size="small" color="#a855f7" />
+                            <ActivityIndicator size="small" color="#ffffff" />
                           ) : (
                             <View style={styles.btnContentRow}>
-                              <Plus size={18} color="#a855f7" strokeWidth={2.5} />
-                              <Text style={[styles.actionBtnText, { color: '#a855f7' }]}>
+                              <Plus size={19} color="#ffffff" strokeWidth={2.8} />
+                              <Text style={[styles.actionBtnText, { color: '#ffffff' }]}>
                                 Añadir Toma
                               </Text>
                             </View>
@@ -661,8 +656,8 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                             style={[
                               styles.historyItem,
                               {
-                                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.55)',
-                                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.85)',
+                                borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
                               },
                             ]}
                           >
@@ -673,8 +668,19 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                             />
 
                             {/* Grams Badge */}
-                            <View style={styles.gramsBadge}>
-                              <Text style={styles.gramsBadgeText}>{log.grams}g</Text>
+                            <View
+                              style={[
+                                styles.gramsBadge,
+                                {
+                                  backgroundColor: isDark ? 'rgba(168, 85, 247, 0.22)' : 'rgba(168, 85, 247, 0.14)',
+                                  borderColor: isDark ? 'rgba(168, 85, 247, 0.35)' : 'rgba(168, 85, 247, 0.25)',
+                                  borderWidth: 1,
+                                },
+                              ]}
+                            >
+                              <Text style={[styles.gramsBadgeText, { color: isDark ? '#c084fc' : '#9333ea' }]}>
+                                {log.grams}g
+                              </Text>
                             </View>
 
                             {/* Date info */}
@@ -682,7 +688,7 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                               <Text style={[styles.historyDate, { color: colors.text }]}>
                                 {formatDateToShort(log.log_date)}
                               </Text>
-                              <Text style={[styles.historyWeekday, { color: colors.textMuted }]}>
+                              <Text style={[styles.historyWeekday, { color: colors.textSecondary }]}>
                                 {formatLogWeekday(log.log_date)}
                               </Text>
                             </View>
@@ -694,8 +700,8 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                                 style={[
                                   styles.historyActionBtn,
                                   {
-                                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                                    borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
                                   },
                                 ]}
                                 hitSlop={6}
@@ -706,7 +712,7 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                                   colorScheme={isDark ? 'dark' : 'light'}
                                   style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
                                 />
-                                <Edit2 size={15} color={colors.textSecondary} />
+                                <Edit2 size={15} color={colors.text} />
                               </TouchableOpacity>
 
                               <TouchableOpacity
@@ -714,8 +720,8 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                                 style={[
                                   styles.historyActionBtn,
                                   {
-                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                    borderColor: 'rgba(239, 68, 68, 0.25)',
+                                    backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)',
+                                    borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : 'rgba(239, 68, 68, 0.2)',
                                   },
                                 ]}
                                 hitSlop={6}
@@ -738,7 +744,7 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                             style={[
                               styles.paginationRow,
                               {
-                                borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                                borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
                               },
                             ]}
                           >
@@ -754,22 +760,17 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                                 styles.pageBtn,
                                 {
                                   opacity: currentPage === 1 ? 0.35 : 1,
-                                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                                  borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.1)',
                                 },
                               ]}
                               activeOpacity={0.7}
                             >
-                              <GlassView
-                                glassEffectStyle="regular"
-                                colorScheme={isDark ? 'dark' : 'light'}
-                                style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
-                              />
                               <ChevronLeft size={18} color={colors.text} />
                             </TouchableOpacity>
 
-                            <Text style={[styles.pageInfoText, { color: colors.textMuted }]}>
-                              PÁGINA {currentPage} DE {totalPages}
+                            <Text style={[styles.pageInfoText, { color: colors.textSecondary }]}>
+                              {currentPage} / {totalPages}
                             </Text>
 
                             <TouchableOpacity
@@ -784,17 +785,12 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                                 styles.pageBtn,
                                 {
                                   opacity: currentPage === totalPages ? 0.35 : 1,
-                                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                                  borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.1)',
                                 },
                               ]}
                               activeOpacity={0.7}
                             >
-                              <GlassView
-                                glassEffectStyle="regular"
-                                colorScheme={isDark ? 'dark' : 'light'}
-                                style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
-                              />
                               <ChevronRight size={18} color={colors.text} />
                             </TouchableOpacity>
                           </View>
@@ -958,33 +954,24 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                         style={[
                           styles.editSaveBtn,
                           {
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
-                            opacity: isSubmitting || !editGrams ? 0.5 : 1,
+                            backgroundColor: '#a855f7',
+                            borderColor: 'rgba(255, 255, 255, 0.25)',
+                            opacity: isSubmitting || !editGrams ? 0.45 : 1,
+                            shadowColor: '#a855f7',
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: isDark ? 0.45 : 0.25,
+                            shadowRadius: 10,
+                            elevation: 6,
                           },
                         ]}
-                        activeOpacity={0.75}
+                        activeOpacity={0.85}
                       >
-                        <GlassView
-                          glassEffectStyle="regular"
-                          colorScheme={isDark ? 'dark' : 'light'}
-                          style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
-                        />
-                        <View
-                          style={[
-                            StyleSheet.absoluteFill,
-                            {
-                              backgroundColor: '#a855f7' + (isDark ? '25' : '18'),
-                              borderRadius: 18,
-                            },
-                          ]}
-                        />
                         {isSubmitting ? (
-                          <ActivityIndicator size="small" color="#a855f7" />
+                          <ActivityIndicator size="small" color="#ffffff" />
                         ) : (
                           <View style={styles.btnContentRow}>
-                            <Save size={16} color="#a855f7" strokeWidth={2.5} />
-                            <Text style={[styles.actionBtnText, { color: '#a855f7' }]}>
+                            <Save size={16} color="#ffffff" strokeWidth={2.5} />
+                            <Text style={[styles.actionBtnText, { color: '#ffffff' }]}>
                               Guardar Cambios
                             </Text>
                           </View>
@@ -1157,26 +1144,23 @@ const styles = StyleSheet.create({
   },
   presetChip: {
     flex: 1,
-    paddingVertical: 9,
-    borderRadius: 14,
+    paddingVertical: 10,
+    borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-    position: 'relative',
   },
   presetChipText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
   },
   actionBtn: {
-    height: 50,
+    height: 52,
     borderRadius: 20,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-    position: 'relative',
+    marginTop: 4,
   },
   btnContentRow: {
     flexDirection: 'row',
