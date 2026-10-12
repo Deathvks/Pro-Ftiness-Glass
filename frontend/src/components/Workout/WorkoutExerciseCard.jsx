@@ -1,11 +1,12 @@
 import ModalPortal from '../ModalPortal';
 /* frontend/src/components/Workout/WorkoutExerciseCard.jsx */
-import React, { useState } from 'react';
-import { Repeat, Flame, History, Target, Bell, Sparkles } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Repeat, Flame, History, Target, Bell, Sparkles, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import WorkoutSetGrid from './WorkoutSetGrid';
 import useAppStore from '../../store/useAppStore';
 import { calculate1RM } from '../../utils/helpers';
+import { getExerciseHistorySessions, diagnoseExerciseTrend } from '../../utils/smartProgressionCoach';
 
 const WorkoutExerciseCard = ({
   t,
@@ -26,11 +27,18 @@ const WorkoutExerciseCard = ({
   onShowHistory,
   onShowSmartCoach
 }) => {
-  const { addWarmupSets, setExerciseReminder, userProfile } = useAppStore((state) => ({
+  const { addWarmupSets, setExerciseReminder, userProfile, workoutLog } = useAppStore((state) => ({
     addWarmupSets: state.addWarmupSets,
     setExerciseReminder: state.setExerciseReminder,
-    userProfile: state.userProfile
+    userProfile: state.userProfile,
+    workoutLog: state.workoutLog
   }));
+
+  const trend = useMemo(() => {
+    if (!exercise?.name || !workoutLog) return null;
+    const sessions = getExerciseHistorySessions(exercise.name, workoutLog);
+    return diagnoseExerciseTrend(sessions);
+  }, [exercise?.name, workoutLog]);
 
   const isInAsesoria = Boolean(
     userProfile?.trainer_id ||
@@ -164,11 +172,35 @@ const WorkoutExerciseCard = ({
                   e.stopPropagation();
                   onShowSmartCoach(exercise);
                 }}
-                className="flex items-center gap-1.5 bg-accent/10 hover:bg-accent/20 ring-1 ring-accent/30 rounded-full px-3.5 py-1.5 text-xs sm:text-sm font-bold text-accent transition-all active:scale-95 cursor-pointer shadow-sm group"
-                title="Consejo inteligente según tu objetivo"
+                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer shadow-sm group ${
+                  trend?.isWarning
+                    ? 'bg-amber-500/15 hover:bg-amber-500/25 ring-1 ring-amber-500/40 text-amber-400 animate-pulse'
+                    : trend?.isProgressing
+                    ? 'bg-emerald-500/15 hover:bg-emerald-500/25 ring-1 ring-emerald-500/40 text-emerald-400'
+                    : 'bg-accent/10 hover:bg-accent/20 ring-1 ring-accent/30 text-accent'
+                }`}
+                title={
+                  trend?.isWarning
+                    ? 'Aviso de rendimiento: Toca para ver recomendaciones para romper la meseta'
+                    : trend?.isProgressing
+                    ? '¡En progresión! Toca para ver pautas de sobrecarga'
+                    : 'Consejo inteligente según tu objetivo'
+                }
               >
-                <Target size={16} strokeWidth={2.5} className="text-accent group-hover:rotate-45 transition-transform" />
-                <span>Info Objetivo</span>
+                {trend?.isWarning ? (
+                  <AlertTriangle size={15} strokeWidth={2.5} className="text-amber-400 shrink-0" />
+                ) : trend?.isProgressing ? (
+                  <CheckCircle2 size={15} strokeWidth={2.5} className="text-emerald-400 shrink-0" />
+                ) : (
+                  <Target size={16} strokeWidth={2.5} className="text-accent group-hover:rotate-45 transition-transform" />
+                )}
+                <span>
+                  {trend?.isWarning 
+                    ? `Aviso (${trend.status === 'stagnant' ? 'Meseta' : 'Fatiga'}) !`
+                    : trend?.isProgressing 
+                    ? '¡En racha!' 
+                    : 'Info Objetivo'}
+                </span>
               </button>
             )}
           </div>
@@ -199,11 +231,28 @@ const WorkoutExerciseCard = ({
               e.stopPropagation();
               onShowSmartCoach(exercise);
             }}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] text-accent hover:bg-accent/10 hover:shadow-sm transition-all duration-300 active:scale-95 outline-none font-bold group"
+            className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] transition-all duration-300 active:scale-95 outline-none font-bold group relative ${
+              trend?.isWarning
+                ? 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
+                : trend?.isProgressing
+                ? 'text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
+                : 'text-accent hover:bg-accent/10'
+            }`}
             title="Guía inteligente según tu objetivo"
           >
-            <Target size={20} strokeWidth={2.5} className="text-accent group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-bold hidden sm:block">Objetivo</span>
+            {trend?.isWarning ? (
+              <div className="relative">
+                <AlertTriangle size={20} strokeWidth={2.5} className="text-amber-400 group-hover:scale-110 transition-transform" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full animate-ping" />
+              </div>
+            ) : trend?.isProgressing ? (
+              <CheckCircle2 size={20} strokeWidth={2.5} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+            ) : (
+              <Target size={20} strokeWidth={2.5} className="text-accent group-hover:scale-110 transition-transform" />
+            )}
+            <span className="text-sm font-bold hidden sm:block">
+              {trend?.isWarning ? 'Objetivo !' : trend?.isProgressing ? 'Objetivo ✓' : 'Objetivo'}
+            </span>
           </button>
         )}
 

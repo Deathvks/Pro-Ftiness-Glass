@@ -501,6 +501,45 @@ const Workout = ({ timer, setView }) => {
                     userProfile={userProfile}
                     workoutLog={workoutLog}
                     onClose={() => setSmartCoachExercise(null)}
+                    onApplyStrategy={(strategy) => {
+                        const exIndex = activeWorkout?.exercises?.findIndex(e => e.id === smartCoachExercise.id);
+                        if (exIndex !== -1 && exIndex !== undefined) {
+                            const { suggestedWeight, suggestedReps } = strategy;
+                            let appliedWeightCount = 0;
+                            let appliedRepsCount = 0;
+
+                            smartCoachExercise.setsDone.forEach((set, sIdx) => {
+                                if (suggestedWeight !== null && suggestedWeight !== undefined) {
+                                    if (set.weight_kg === '' || set.weight_kg === null || set.weight_kg === undefined) {
+                                        updateActiveWorkoutSet(exIndex, sIdx, 'weight_kg', suggestedWeight);
+                                        appliedWeightCount++;
+                                    }
+                                }
+                                if (suggestedReps !== null && suggestedReps !== undefined) {
+                                    if (set.reps === '' || set.reps === null || set.reps === undefined) {
+                                        updateActiveWorkoutSet(exIndex, sIdx, 'reps', suggestedReps);
+                                        appliedRepsCount++;
+                                    }
+                                }
+                            });
+
+                            if (appliedWeightCount === 0 && suggestedWeight !== null && suggestedWeight !== undefined) {
+                                updateActiveWorkoutSet(exIndex, 0, 'weight_kg', suggestedWeight);
+                                appliedWeightCount = 1;
+                            }
+                            if (appliedRepsCount === 0 && suggestedReps !== null && suggestedReps !== undefined) {
+                                updateActiveWorkoutSet(exIndex, 0, 'reps', suggestedReps);
+                                appliedRepsCount = 1;
+                            }
+
+                            const msgs = [];
+                            if (suggestedWeight !== null && suggestedWeight !== undefined) msgs.push(`${suggestedWeight} kg`);
+                            if (suggestedReps !== null && suggestedReps !== undefined) msgs.push(`${suggestedReps} reps`);
+
+                            addToast(`Estrategia aplicada: ${msgs.join(' y ')}`, 'success');
+                        }
+                        setSmartCoachExercise(null);
+                    }}
                     onApplyWeight={(suggestedWeight) => {
                         const exIndex = activeWorkout?.exercises?.findIndex(e => e.id === smartCoachExercise.id);
                         if (exIndex !== -1 && exIndex !== undefined) {
@@ -519,6 +558,10 @@ const Workout = ({ timer, setView }) => {
                             }
                         }
                         setSmartCoachExercise(null);
+                    }}
+                    onNavigateAsesoria={() => {
+                        setSmartCoachExercise(null);
+                        if (setView) setView('asesoria');
                     }}
                 />
             )}

@@ -1,5 +1,6 @@
 /* frontend/src/utils/smartProgressionCoach.js */
 import { calculate1RM } from './helpers';
+import { getAppliedCoachStrategy, evaluateCoachFollowUp } from './coachAppliedHistory';
 
 /**
  * Normaliza y clasifica el objetivo del usuario del perfil / onboarding.
@@ -11,10 +12,10 @@ export const normalizeUserGoal = (rawGoal) => {
       key: 'gain',
       label: 'Ganar Masa Muscular',
       shortLabel: 'Hipertrofia',
-      badge: 'Fuerza & Volumen',
+      badge: 'Fuerza & Tensión Mecánica',
       iconName: 'Dumbbell',
       color: 'accent',
-      description: 'Superávit y sobrecarga progresiva para maximizar la síntesis proteica y crecimiento miofibrilar.'
+      description: 'Superávit y sobrecarga progresiva sistemática para maximizar la síntesis proteica y el crecimiento miofibrilar.'
     };
   }
   if (g === 'lose' || g === 'weight_loss') {
@@ -25,7 +26,7 @@ export const normalizeUserGoal = (rawGoal) => {
       badge: 'Preservación Muscular',
       iconName: 'Flame',
       color: 'emerald-500',
-      description: 'Déficit calórico enfocado en mantener la fuerza mecánica para proteger el músculo ganado.'
+      description: 'Déficit calórico enfocado en mantener la fuerza mecánica para proteger el tejido muscular magro ganado.'
     };
   }
   if (g === 'recomp') {
@@ -36,7 +37,7 @@ export const normalizeUserGoal = (rawGoal) => {
       badge: 'Músculo & Grasa',
       iconName: 'Activity',
       color: 'purple-500',
-      description: 'Equilibrio entre estímulo neuromuscular y optimización de grasa corporal.'
+      description: 'Equilibrio entre estímulo neuromuscular óptimo y partición eficiente de nutrientes.'
     };
   }
   return {
@@ -138,12 +139,14 @@ export const getExerciseHistorySessions = (exerciseName, workoutLog) => {
  * Diagnostica si el usuario está progresando, estancado o disminuyendo en este ejercicio.
  */
 export const diagnoseExerciseTrend = (sessions) => {
-  if (sessions.length === 0) {
+  if (!sessions || sessions.length === 0) {
     return {
       status: 'first_time',
       label: 'Sesión Inicial',
       badgeText: 'Calibración inicial',
       colorClass: 'text-accent border-accent/30 bg-accent/10',
+      isWarning: false,
+      isProgressing: false,
       delta1RM: 0,
       deltaWeight: 0,
       deltaReps: 0,
@@ -158,6 +161,8 @@ export const diagnoseExerciseTrend = (sessions) => {
       label: 'Estableciendo Base',
       badgeText: '1 sesión previa registrada',
       colorClass: 'text-accent border-accent/30 bg-accent/10',
+      isWarning: false,
+      isProgressing: false,
       delta1RM: 0,
       deltaWeight: 0,
       deltaReps: 0,
@@ -177,15 +182,12 @@ export const diagnoseExerciseTrend = (sessions) => {
 
   // Comprobar semanas estancado si son varias sesiones iguales
   let weeksStagnant = 0;
-  let isMultiStagnant = false;
 
   if (sessions.length >= 2) {
     const isWeightSame = Math.abs(deltaWeight) < 0.5;
     const isRepsSameOrLower = deltaReps <= 0;
 
     if (isWeightSame && isRepsSameOrLower) {
-      isMultiStagnant = true;
-      // Calcular semanas entre la primera sesión de la meseta y la última
       const earliestDate = new Date(sessions[Math.min(sessions.length - 1, 3)].date);
       const latestDate = new Date(s0.date);
       const eTime = earliestDate.getTime();
@@ -197,7 +199,7 @@ export const diagnoseExerciseTrend = (sessions) => {
     }
   }
 
-  // Criterios claros de clasificación:
+  // Criterios de clasificación:
   // 1. Progresando: subió 1RM >= +1kg, subió peso, o mantuvo peso y subió repeticiones
   if (delta1RM >= 1.0 || deltaWeight > 0 || (Math.abs(deltaWeight) < 0.5 && deltaReps >= 1)) {
     return {
@@ -205,6 +207,8 @@ export const diagnoseExerciseTrend = (sessions) => {
       label: 'En Progresión',
       badgeText: `+${Math.abs(pctChange)}% fuerza`,
       colorClass: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
+      isWarning: false,
+      isProgressing: true,
       delta1RM,
       deltaWeight,
       deltaReps,
@@ -213,13 +217,15 @@ export const diagnoseExerciseTrend = (sessions) => {
     };
   }
 
-  // 2. Disminuido: bajó 1RM <= -2kg o bajó peso o bajó 2+ reps al mismo peso
+  // 2. Disminuido / Fatiga: bajó 1RM <= -2kg o bajó peso o bajó 2+ reps al mismo peso
   if (delta1RM <= -2.0 || deltaWeight < -1.0 || (Math.abs(deltaWeight) < 0.5 && deltaReps <= -2)) {
     return {
       status: 'decreasing',
       label: 'Rendimiento Reducido',
       badgeText: `${pctChange}% de fatiga`,
       colorClass: 'text-amber-400 border-amber-500/30 bg-amber-500/10',
+      isWarning: true,
+      isProgressing: false,
       delta1RM,
       deltaWeight,
       deltaReps,
@@ -234,6 +240,8 @@ export const diagnoseExerciseTrend = (sessions) => {
     label: 'Estancado',
     badgeText: weeksStagnant > 1 ? `Meseta de ${weeksStagnant} semanas` : 'Misma carga reciente',
     colorClass: 'text-amber-500 border-amber-500/30 bg-amber-500/10',
+    isWarning: true,
+    isProgressing: false,
     delta1RM,
     deltaWeight,
     deltaReps,
@@ -243,12 +251,17 @@ export const diagnoseExerciseTrend = (sessions) => {
 };
 
 /**
- * Genera el plan inteligente de peso, series, repeticiones y recomendaciones según objetivo y estado.
+ * Genera el plan inteligente de peso, series, repeticiones y opciones seleccionables
+ * según el objetivo, el historial científico del ejercicio y el seguimiento previo.
  */
 export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
   const goalInfo = normalizeUserGoal(userProfile?.goal);
   const sessions = getExerciseHistorySessions(exercise.name, workoutLog);
   const trend = diagnoseExerciseTrend(sessions);
+
+  // Comprobar si hubo una estrategia aplicada previamente para seguimiento continuo
+  const lastAppliedStrategy = getAppliedCoachStrategy(exercise.name);
+  const followUp = evaluateCoachFollowUp(exercise.name, trend, lastAppliedStrategy);
 
   const plannedSets = parseInt(exercise.sets, 10) || 3;
   const rawReps = String(exercise.reps || '10');
@@ -262,7 +275,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
   let suggestedSets = plannedSets;
   let suggestedReps = targetReps;
   let intensityLabel = 'Esfuerzo Alto';
-  let intensityDesc = 'Parar 1-2 reps antes del fallo';
+  let intensityDesc = 'Parar 1-2 reps antes de fallar';
   let suggestedRir = '1-2 del fallo';
   let suggestedRest = '90 - 120 seg';
   let actionTitle = '';
@@ -270,9 +283,14 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
   let weightChangeNote = '';
   let coachingAdvice = '';
   let actionSteps = [];
+  let strategyOptions = [];
+  let motivationalMessage = null;
+  let celebrationData = null;
+  let asesoriaRecommendation = null;
 
-  // --- LÓGICA ESPECÍFICA SEGÚN OBJETIVO Y ESTADO ---
-
+  // ============================================================
+  // CASO 1: PRIMERA VEZ O ESTABLECIENDO BASE
+  // ============================================================
   if (trend.status === 'first_time' || trend.status === 'calibrating') {
     suggestedSets = plannedSets;
     suggestedReps = targetReps;
@@ -280,168 +298,455 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
 
     if (goalInfo.key === 'gain') {
       intensityLabel = 'Esfuerzo Alto';
-      intensityDesc = 'Parar 1-2 reps antes del fallo';
+      intensityDesc = 'Parar 1-2 reps antes de fallar';
       actionTitle = 'Calibración de Fuerza e Hipertrofia';
-      actionDirection = 'maintain';
-      coachingAdvice = 'Para maximizar la ganancia muscular, busca un peso exigente con el que completes tus repeticiones sintiendo que podrías haber hecho como mucho 1 o 2 repeticiones más antes de fallar (sin llegar a no poder levantar la pesa).';
+      weightChangeNote = currentTopWeight > 0 ? `${currentTopWeight} kg base` : 'Establecer carga';
+      coachingAdvice = 'Para maximizar la ganancia muscular, busca un peso exigente con el que completes tus repeticiones sintiendo que podrías haber hecho como mucho 1 o 2 repeticiones más antes de fallar.';
       actionSteps = [
-        'Haz 1-2 series de aproximación con poco peso.',
-        'Selecciona una carga con la que llegues a la última repetición con esfuerzo alto pero técnica limpia.',
-        'Detén cada serie sintiendo que te quedaría 1 o 2 repeticiones en la reserva antes de que la barra se quede abajo.'
+        'Haz 1-2 series de aproximación con poco peso para calentar.',
+        'Selecciona una carga con la que llegues a la última repetición con técnica impecable.',
+        'Detén cada serie cuando sientas que te quedan 1 o 2 repeticiones en reserva.'
+      ];
+      strategyOptions = [
+        {
+          id: 'calibrate_standard',
+          title: 'Calibración Estándar de Hipertrofia',
+          tag: 'Recomendada',
+          badge: 'RIR 1-2',
+          suggestedWeight: currentTopWeight > 0 ? currentTopWeight : null,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          description: 'Carga exigente que te permita completar las repeticiones parando 1-2 antes del fallo muscular.'
+        }
       ];
     } else if (goalInfo.key === 'lose') {
       intensityLabel = 'Esfuerzo Moderado';
       intensityDesc = 'Parar 2 reps antes del fallo';
       actionTitle = 'Calibración de Carga para Definición';
-      actionDirection = 'maintain';
+      weightChangeNote = currentTopWeight > 0 ? `${currentTopWeight} kg base` : 'Carga moderada';
       coachingAdvice = 'En déficit calórico tu objetivo es mandar una señal fuerte al cuerpo para conservar masa muscular sin desgastar en exceso las articulaciones ni agotar tu energía.';
       actionSteps = [
         'Prioriza pesos que domines con cadencia controlada (2-3 segundos de bajada).',
         'Detén la serie cuando sientas que te quedan 2 repeticiones antes del fallo para proteger tu recuperación.',
         'Mantén descansos de 90 a 120 segundos para recuperar potencia.'
       ];
+      strategyOptions = [
+        {
+          id: 'calibrate_definition',
+          title: 'Calibración Protegida para Definición',
+          tag: 'Recomendada',
+          badge: 'RIR 2',
+          suggestedWeight: currentTopWeight > 0 ? currentTopWeight : null,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          description: 'Peso controlado con 2 repeticiones en recámara para blindar masa muscular sin fatiga extrema.'
+        }
+      ];
     } else {
       intensityLabel = 'Esfuerzo Controlado';
       intensityDesc = 'Sin llegar al fallo muscular';
       actionTitle = 'Estableciendo Base de Rendimiento';
-      actionDirection = 'maintain';
+      weightChangeNote = currentTopWeight > 0 ? `${currentTopWeight} kg base` : 'Establecer carga';
       coachingAdvice = 'Registra tus series de hoy con buena forma. A partir de esta sesión, el entrenador inteligente calculará tus incrementos de peso óptimos.';
       actionSteps = [
         'Ejecuta con rango completo de movimiento.',
         'Apunta el peso real y las repeticiones logradas.'
       ];
+      strategyOptions = [
+        {
+          id: 'calibrate_general',
+          title: 'Registro de Línea Base',
+          tag: 'Recomendada',
+          badge: 'Control',
+          suggestedWeight: currentTopWeight > 0 ? currentTopWeight : null,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          description: 'Completa las series con buena postura para que el sistema aprenda tus cargas.'
+        }
+      ];
     }
+
+  // ============================================================
+  // CASO 2: EN PROGRESIÓN (ÉXITO / RITMO CRECIENTE)
+  // ============================================================
   } else if (trend.status === 'progressing') {
-    // --- ESTADO: PROGRESANDO ---
+    const isHeavy = currentTopWeight >= 40;
+    const increment = isHeavy ? 2.5 : 1.25;
+    const nextWeight = Math.round((currentTopWeight + increment) * 10) / 10;
+
+    actionDirection = 'up';
+    suggestedRest = '120 - 180 seg';
+
+    // Felicitación y celebración según el objetivo
+    celebrationData = {
+      isCelebrating: true,
+      title: '¡Excelente progreso! Estás superando tus marcas 🚀',
+      subtitle: `Tu rendimiento ha aumentado un ${trend.badgeText} respecto a tu sesión anterior.`,
+      tipsToMaintain: [
+        'No te apresures: los micro-incrementos constantes (1.25 a 2.5 kg) construyen fuerza sólida a largo plazo.',
+        'Mantén la misma profundidad y cadencia estricta que cuando levantabas menos carga.',
+        'Prioriza tu recuperación post-entrenamiento: duerme 7-8 horas y consume suficiente proteína para fijar este crecimiento.'
+      ]
+    };
+
     if (goalInfo.key === 'gain') {
-      actionDirection = 'up';
       intensityLabel = 'Esfuerzo Alto';
-      intensityDesc = 'Parar 1-2 reps antes del fallo';
-      // Sobrecarga progresiva: micro-carga
-      const increment = currentTopWeight >= 40 ? 2.5 : 1.25;
-      suggestedWeight = Math.round((currentTopWeight + increment) * 10) / 10;
-      weightChangeNote = `+${increment} kg respecto a la sesión anterior`;
-      actionTitle = `Sobrecarga Progresiva: Sube a ${suggestedWeight} kg`;
-      coachingAdvice = `¡Excelente progresión! Tu 1RM estimado ha crecido un ${trend.badgeText}. Para tu objetivo de ganancia muscular, aplica el principio de sobrecarga progresiva subiendo hoy +${increment} kg.`;
+      intensityDesc = 'Parar 1-2 reps antes de fallar';
+      suggestedWeight = nextWeight;
+      weightChangeNote = `+${increment} kg`;
+      actionTitle = `Sobrecarga Progresiva: Sube a ${nextWeight} kg`;
+      coachingAdvice = `¡Gran trabajo! Tu 1RM estimado ha crecido un ${trend.badgeText}. Para tu meta de ganancia muscular, aplica el principio de sobrecarga progresiva subiendo hoy +${increment} kg o consolidando repeticiones.`;
       actionSteps = [
-        `Intenta completar tu primera serie pesada con ${suggestedWeight} kg.`,
-        `Si notas la carga exigente, mantén el rango de ${Math.max(6, targetReps - 2)}-${targetReps} reps parando justo cuando sientas que te quedan 1-2 reps antes de no poder más.`,
+        `Intenta completar tu primera serie pesada con ${nextWeight} kg.`,
+        `Si notas la carga exigente, mantén el rango de ${Math.max(6, targetReps - 2)}-${targetReps} reps parando justo cuando sientas que te quedan 1-2 reps antes del fallo.`,
         'Descansa entre 2 y 3 minutos para restaurar tus reservas de fosfocreatina.'
       ];
-      suggestedRest = '120 - 180 seg';
+
+      strategyOptions = [
+        {
+          id: 'prog_weight',
+          title: `Sobrecarga de Carga (+${increment} kg)`,
+          tag: 'Recomendada',
+          badge: `+${increment} kg`,
+          suggestedWeight: nextWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          description: `Sube a ${nextWeight} kg en tus primeras series para seguir estimulando la tensión mecánica y el crecimiento miofibrilar.`
+        },
+        {
+          id: 'prog_reps',
+          title: 'Consolidar Carga (+1 o 2 Reps)',
+          tag: 'Alternativa',
+          badge: '+1-2 reps',
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps + 1,
+          suggestedSets: plannedSets,
+          description: `Mantén los ${currentTopWeight} kg y busca 1 repetición adicional por serie antes de subir kilos, asegurando control absoluto.`
+        }
+      ];
     } else if (goalInfo.key === 'lose') {
-      actionDirection = 'maintain';
       intensityLabel = 'Esfuerzo Moderado';
       intensityDesc = 'Parar 2 reps antes del fallo';
       suggestedWeight = currentTopWeight;
-      weightChangeNote = 'Mantén el peso para blindar tu masa muscular';
-      actionTitle = `Potencia en Déficit: Mantén ${currentTopWeight} kg y consolida reps`;
-      coachingAdvice = `Estás ganando fuerza incluso en déficit calórico (${trend.badgeText}). Para no comprometer la recuperación en restricción calórica, mantén los ${currentTopWeight} kg y busca 1 repetición más antes de subir peso en kilos.`;
+      weightChangeNote = 'Consolidar fuerza';
+      actionTitle = `Potencia en Déficit: Mantén ${currentTopWeight} kg y consolida`;
+      coachingAdvice = `Estás ganando fuerza incluso en déficit calórico (${trend.badgeText}). Para no comprometer la recuperación en restricción de energía, mantén los ${currentTopWeight} kg y busca consolidar repeticiones.`;
       actionSteps = [
         `Consolida series limpias con ${currentTopWeight} kg sin descuidar la técnica.`,
         'Si sientes mucha energía en la 1ª serie, busca 1 repetición adicional.',
         'No entrenes al fallo absoluto: detén la serie cuando sientas que podrías hacer 2 repeticiones más.'
       ];
+
+      strategyOptions = [
+        {
+          id: 'prog_lose_reps',
+          title: 'Consolidar y +1 Repetición',
+          tag: 'Recomendada',
+          badge: 'Fuerza limpia',
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps + 1,
+          suggestedSets: plannedSets,
+          description: `Mantén ${currentTopWeight} kg e intenta sumar 1 repetición manteniendo 2 en reserva para no comprometer el glucógeno.`
+        },
+        {
+          id: 'prog_lose_weight',
+          title: `Micro-Carga Opcional (+${increment} kg)`,
+          tag: 'Si estás con energía',
+          badge: `+${increment} kg`,
+          suggestedWeight: nextWeight,
+          suggestedReps: Math.max(6, targetReps - 2),
+          suggestedSets: plannedSets,
+          description: `Prueba ${nextWeight} kg en tu 1ª serie solo si hoy sientes energía plena y descanso óptimo.`
+        }
+      ];
     } else {
-      actionDirection = 'up';
       intensityLabel = 'Esfuerzo Alto';
-      intensityDesc = 'Parar 1-2 reps antes del fallo';
-      const increment = currentTopWeight >= 40 ? 2.0 : 1.0;
-      suggestedWeight = Math.round((currentTopWeight + increment) * 10) / 10;
-      weightChangeNote = `+${increment} kg progresivo`;
-      actionTitle = `Consistencia en Aumento: Sube a ${suggestedWeight} kg`;
+      intensityDesc = 'Parar 1-2 reps antes de fallar';
+      suggestedWeight = nextWeight;
+      weightChangeNote = `+${increment} kg`;
+      actionTitle = `Consistencia en Aumento: Sube a ${nextWeight} kg`;
       coachingAdvice = `Tu rendimiento sigue una curva ascendente. Añade una micro-carga de +${increment} kg para seguir estimulando la densidad muscular.`;
       actionSteps = [
         `Añade la micro-carga de ${increment} kg en las primeras series.`,
         'Mantén la tensión muscular continua en cada repetición.'
       ];
+
+      strategyOptions = [
+        {
+          id: 'prog_general_weight',
+          title: `Incremento de Carga (+${increment} kg)`,
+          tag: 'Recomendada',
+          badge: `+${increment} kg`,
+          suggestedWeight: nextWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          description: `Aumenta a ${nextWeight} kg para mantener el estímulo progresivo.`
+        },
+        {
+          id: 'prog_general_reps',
+          title: 'Consolidación de Reps',
+          tag: 'Alternativa',
+          badge: '+1 rep',
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps + 1,
+          suggestedSets: plannedSets,
+          description: `Mantén los ${currentTopWeight} kg y suma una repetición extra con buena técnica.`
+        }
+      ];
     }
+
+  // ============================================================
+  // CASO 3: ESTANCADO (MESETA DETECTADA)
+  // ============================================================
   } else if (trend.status === 'stagnant') {
-    // --- ESTADO: ESTANCADO ---
+    const microLoad = currentTopWeight >= 40 ? 1.25 : 1.0;
+    const testWeight = Math.round((currentTopWeight + microLoad) * 10) / 10;
+    suggestedRest = '150 - 180 seg';
+
+    // Texto motivador fundamentado en ciencias del deporte
+    motivationalMessage = `No te frustres: las mesetas no son un estancamiento real, sino el proceso natural donde tu sistema neuromuscular consolida adaptaciones antes del siguiente salto de fuerza. Con una pequeña variación en la estrategia hoy, romperás este techo.`;
+
+    // Recomendación de Asesoría Pro Fitness con preparador real
+    asesoriaRecommendation = {
+      show: true,
+      headline: '¿Llevas varias semanas sin avanzar?',
+      description: 'Un preparador físico oficial en la Asesoría Pro Fitness puede revisar tus vídeos de técnica, periodizar tus cargas y ajustar tu nutrición para romper esta meseta de inmediato.',
+      buttonText: 'Hablar con un Entrenador Real'
+    };
+
     if (goalInfo.key === 'gain') {
       actionDirection = 'up';
       intensityLabel = 'Esfuerzo Alto';
       intensityDesc = 'Exigente sin perder técnica';
-      // Llevan semanas con el mismo peso y reps
-      const microLoad = currentTopWeight >= 40 ? 1.25 : 1.0;
-      const testWeight = Math.round((currentTopWeight + microLoad) * 10) / 10;
-
-      actionTitle = `Rompe el Estancamiento (${trend.weeksStagnant} sem): Micro-carga o +2 Reps`;
-      weightChangeNote = `Opción A: +${microLoad} kg micro-carga | Opción B: Mantén y saca +2 reps`;
       suggestedWeight = testWeight;
-      coachingAdvice = `Llevas ${trend.weeksStagnant} semanas con ${currentTopWeight} kg. En fase de ganancia de masa, el músculo necesita un nuevo estímulo mecánico para no acomodarse.`;
+      weightChangeNote = `+${microLoad} kg`;
+      actionTitle = `Rompe la Meseta (${trend.weeksStagnant} sem): Elige tu estrategia`;
+      coachingAdvice = `Llevas ${trend.weeksStagnant} semanas con ${currentTopWeight} kg. En fase de ganancia de masa, el músculo necesita una nueva demanda de tensión mecánica para no acomodarse.`;
       actionSteps = [
-        `Estrategia 1 (Recomendada): Pon ${testWeight} kg (micro-carga) en tu 1ª serie y trabaja en el límite inferior (${Math.max(6, targetReps - 2)} reps).`,
-        `Estrategia 2: Mantén los ${currentTopWeight} kg pero oblígate a conseguir 1 o 2 repeticiones extra en la primera serie antes de soltar la barra.`,
-        'Aumenta el tiempo de descanso a 2.5 - 3 minutos antes de la serie pesada.'
+        `Opción A: Pon ${testWeight} kg (micro-carga) en tu 1ª serie y trabaja en el límite inferior (${Math.max(6, targetReps - 2)} reps).`,
+        `Opción B: Mantén los ${currentTopWeight} kg pero oblígate a conseguir 1 o 2 repeticiones extra en la primera serie antes de soltar la barra.`,
+        'Aumenta el tiempo de descanso a 2.5 - 3 minutos antes de la serie más pesada.'
       ];
-      suggestedRest = '150 - 180 seg';
+
+      strategyOptions = [
+        {
+          id: 'stag_microload',
+          title: `Estrategia A: Micro-carga (+${microLoad} kg)`,
+          tag: 'Recomendada',
+          badge: `Probar ${testWeight} kg`,
+          suggestedWeight: testWeight,
+          suggestedReps: Math.max(6, targetReps - 2),
+          suggestedSets: plannedSets,
+          description: `Sube a ${testWeight} kg en la primera serie. Al tolerar 1-2 repeticiones menos, obligas a tus unidades motoras de alto umbral a activarse.`
+        },
+        {
+          id: 'stag_volume_reps',
+          title: `Estrategia B: Sobrecarga por Reps (+2 reps)`,
+          tag: 'Alternativa',
+          badge: `Mantener ${currentTopWeight} kg`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps + 2,
+          suggestedSets: plannedSets,
+          description: `Mantén los ${currentTopWeight} kg pero busca entre 1 y 2 repeticiones más en tu serie inicial para elevar el volumen efectivo.`
+        },
+        {
+          id: 'stag_tempo',
+          title: 'Estrategia C: Tempo Excéntrico (3 seg)',
+          tag: 'Tensión Máxima',
+          badge: 'Cadencia 3s',
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          description: `Mantén ${currentTopWeight} kg pero frena la bajada durante 3 segundos enteros. Dispara el tiempo bajo tensión sin riesgo articular.`
+        }
+      ];
     } else if (goalInfo.key === 'lose') {
       actionDirection = 'maintain';
       intensityLabel = 'Esfuerzo Moderado';
       intensityDesc = 'Retener masa sin agotamiento';
       suggestedWeight = currentTopWeight;
-      weightChangeNote = 'Estancarse en definición es un ÉXITO: retienes tu masa magra';
+      weightChangeNote = 'Mantener carga';
       actionTitle = `Blindaje Muscular: Mantén ${currentTopWeight} kg`;
-      coachingAdvice = `Estar estancado en peso levantado durante una fase de déficit o pérdida de grasa es la MEJOR señal posible: significa que tu masa muscular se está conservando intacta a pesar de comer menos calorías.`;
+      coachingAdvice = `¡Estar en meseta de fuerza durante definición es una EXCELENTE noticia! Significa que estás conservando intacta tu masa muscular magra a pesar de comer menos calorías.`;
       actionSteps = [
         `No fuerces aumentos bruscos de peso que puedan lesionarte en déficit: mantén firmes tus ${currentTopWeight} kg.`,
         'Concéntrate en la fase excéntrica (bajada lenta de 3 segundos) para maximizar tensión sin dañar articulaciones.',
         'Asegura un descanso de 2 minutos para disipar la fatiga del sistema nervioso.'
+      ];
+
+      strategyOptions = [
+        {
+          id: 'stag_lose_lock',
+          title: `Blindaje de Carga (${currentTopWeight} kg)`,
+          tag: 'Recomendada',
+          badge: 'Preservar músculo',
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          description: `Mantén exactamente ${currentTopWeight} kg. Cada sesión en la que no bajas peso en definición es una victoria directa para tu composición corporal.`
+        },
+        {
+          id: 'stag_lose_microreps',
+          title: 'Buscar +1 Repetición Limpia',
+          tag: 'Alternativa',
+          badge: '+1 rep',
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps + 1,
+          suggestedSets: plannedSets,
+          description: `Intenta sacar 1 repetición más solo en la 1ª serie y mantén 2 repeticiones en recámara en las siguientes.`
+        }
       ];
     } else {
       actionDirection = 'maintain';
       intensityLabel = 'Controlado';
       intensityDesc = 'Mayor tiempo bajo tensión';
       suggestedWeight = currentTopWeight;
+      weightChangeNote = 'Variar estímulo';
       actionTitle = `Meseta Detectada: Ajusta Rango o Cadencia`;
-      weightChangeNote = `Mantén ${currentTopWeight} kg y varía el tiempo bajo tensión`;
       coachingAdvice = `Llevas varias sesiones con la misma carga. Para reactivar el progreso, mantén los ${currentTopWeight} kg pero aplica una cadencia de 3 segundos en bajada o suma 1 repetición.`;
       actionSteps = [
         'Aumenta el tiempo bajo tensión bajando el peso en 3 segundos.',
         'Explora si puedes sumar 1 repetición más en las series iniciales.'
       ];
+
+      strategyOptions = [
+        {
+          id: 'stag_gen_tempo',
+          title: 'Variar Cadencia Excéntrica (3s)',
+          tag: 'Recomendada',
+          badge: 'Tempo 3s',
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          description: `Baja el peso en 3 segundos controlados con ${currentTopWeight} kg para romper la adaptación neuromuscular.`
+        },
+        {
+          id: 'stag_gen_micro',
+          title: `Micro-Carga (+${microLoad} kg)`,
+          tag: 'Alternativa',
+          badge: `+${microLoad} kg`,
+          suggestedWeight: testWeight,
+          suggestedReps: Math.max(6, targetReps - 2),
+          suggestedSets: plannedSets,
+          description: `Prueba ${testWeight} kg para dar un estímulo más intenso a nivel mecánico.`
+        }
+      ];
     }
+
+  // ============================================================
+  // CASO 4: DISMINUIDO / FATIGA RESIDUAL DETECTADA
+  // ============================================================
   } else if (trend.status === 'decreasing') {
-    // --- ESTADO: DISMINUIDO / FATIGA ---
-    const reducedWeight = Math.max(0, Math.round((currentTopWeight * 0.92) / 2.5) * 2.5 || currentTopWeight - 2.5);
+    const reducedWeight = Math.max(
+      0,
+      Math.round((currentTopWeight * 0.92) / 2.5) * 2.5 || Math.max(0, currentTopWeight - 2.5)
+    );
     suggestedWeight = reducedWeight;
     actionDirection = 'down';
+
+    const diffKg = Math.round((currentTopWeight - reducedWeight) * 10) / 10;
+    weightChangeNote = `-${diffKg} kg (-8%)`;
+
+    // Mensaje motivador enfocado en longevidad deportiva
+    motivationalMessage = `Escuchar la fatiga y saber modular la carga es la cualidad que distingue a los deportistas inteligentes. Bajar un poco hoy permite a tus tendones y sistema nervioso regenerarse para volver con más fuerza la próxima semana.`;
+
+    asesoriaRecommendation = {
+      show: true,
+      headline: '¿Sientes fatiga o estancamiento repetido?',
+      description: 'En la Asesoría Pro Fitness, tu entrenador ajusta el volumen semanal, los días de descanso y tu alimentación para que nunca acumules fatiga lesiva.',
+      buttonText: 'Consultar con Entrenador Real'
+    };
 
     if (goalInfo.key === 'gain') {
       intensityLabel = 'Descarga Controlada';
       intensityDesc = 'Parar 2-3 reps antes del fallo';
-      actionTitle = `Descarga Táctica por Fatiga: Baja a ${reducedWeight} kg`;
-      weightChangeNote = `Baja ~8-10% (-${Math.round((currentTopWeight - reducedWeight) * 10) / 10} kg) hoy`;
-      coachingAdvice = `Has registrado una bajada de rendimiento respecto a tus sesiones anteriores (${trend.badgeText}). En ganancia muscular, esto suele deberse a fatiga neuromuscular acumulada. Forzar el peso hoy solo aumenta el riesgo de lesión.`;
-      actionSteps = [
-        `Reduce el peso a ${reducedWeight} kg para hacer una sesión de descarga técnica de alta calidad.`,
-        'Enfócate en la contracción muscular perfecta y detén cada serie con margen cómodo (2-3 repeticiones antes de no poder más).',
-        'Revisa tu hidratación, consumo de carbohidratos previos y horas de sueño de anoche.'
-      ];
       suggestedRir = '2-3 del fallo';
+      actionTitle = `Descarga Táctica por Fatiga: Elige tu ajuste`;
+      coachingAdvice = `Has registrado una bajada de rendimiento respecto a sesiones previas (${trend.badgeText}). En ganancia muscular, esto suele deberse a fatiga neuromuscular acumulada. Forzar el peso hoy solo eleva el riesgo de lesión.`;
+      actionSteps = [
+        `Opción A (Descarga de Carga): Baja a ${reducedWeight} kg para una sesión técnica de alta calidad.`,
+        `Opción B (Reducción de Volumen): Mantén ${currentTopWeight} kg pero recorta una serie (${Math.max(2, plannedSets - 1)} series).`,
+        'Enfócate en la contracción y detén cada serie dejando 2-3 repeticiones en reserva.'
+      ];
+
+      strategyOptions = [
+        {
+          id: 'dec_tactical_deload',
+          title: `Descarga Táctica (-8% a ${reducedWeight} kg)`,
+          tag: 'Recomendada',
+          badge: `${reducedWeight} kg`,
+          suggestedWeight: reducedWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          description: `Baja a ${reducedWeight} kg hoy. Haz repeticiones limpias parando 2-3 antes del fallo para disipar la fatiga del sistema nervioso.`
+        },
+        {
+          id: 'dec_reduce_sets',
+          title: `Reducción de Volumen (-1 serie)`,
+          tag: 'Alternativa',
+          badge: `${Math.max(2, plannedSets - 1)} series`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps,
+          suggestedSets: Math.max(2, plannedSets - 1),
+          description: `Mantén ${currentTopWeight} kg pero haz solo ${Math.max(2, plannedSets - 1)} series en lugar de ${plannedSets} para reducir el estrés neuromuscular.`
+        }
+      ];
     } else if (goalInfo.key === 'lose') {
       intensityLabel = 'Carga Reducida';
       intensityDesc = 'Sin forzar articulaciones';
-      actionTitle = `Gestión de Energía en Déficit: Ajusta a ${reducedWeight} kg`;
-      weightChangeNote = `Ajuste preventivo (-${Math.round((currentTopWeight - reducedWeight) * 10) / 10} kg) por glucógeno bajo`;
-      coachingAdvice = `En pérdida de grasa es habitual tener días con menores niveles de glucógeno y energía. No te castigues: ajustar un poco la carga previene lesiones y te permite seguir entrenando con regularidad.`;
+      suggestedRir = '2-3 del fallo';
+      suggestedSets = Math.max(2, plannedSets - 1);
+      actionTitle = `Gestión de Energía en Déficit: Ajuste hoy`;
+      coachingAdvice = `En pérdida de grasa es totalmente normal tener días con reservas de glucógeno y energía bajas. No te castigues: ajustar un poco la carga previene lesiones y te permite seguir entrenando con regularidad.`;
       actionSteps = [
         `Trabaja hoy con ${reducedWeight} kg ejecutando repeticiones limpias sin rebotes.`,
         `Si te sientes agotado, quédate en ${Math.max(2, plannedSets - 1)} series en lugar de ${plannedSets}.`,
-        'Prioriza descansar bien y beber agua entre series.'
+        'Prioriza descansar bien y beber suficiente agua entre series.'
       ];
-      suggestedSets = Math.max(2, plannedSets - 1);
-      suggestedRir = '2-3 del fallo';
+
+      strategyOptions = [
+        {
+          id: 'dec_lose_deload',
+          title: `Ajuste Preventivo (${reducedWeight} kg)`,
+          tag: 'Recomendada',
+          badge: `${reducedWeight} kg`,
+          suggestedWeight: reducedWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          description: `Ajusta a ${reducedWeight} kg para completar un estímulo muscular seguro en déficit calórico.`
+        },
+        {
+          id: 'dec_lose_sets',
+          title: `Recorte de Volumen (${Math.max(2, plannedSets - 1)} series)`,
+          tag: 'Alternativa',
+          badge: `${Math.max(2, plannedSets - 1)} series`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps,
+          suggestedSets: Math.max(2, plannedSets - 1),
+          description: `Mantén los ${currentTopWeight} kg pero recorta una serie para proteger tu recuperación.`
+        }
+      ];
     } else {
       intensityLabel = 'Descarga Preventiva';
       intensityDesc = 'Velocidad controlada';
       actionTitle = `Ajuste de Carga por Fatiga: ${reducedWeight} kg`;
-      weightChangeNote = `Reducción preventiva de peso`;
       coachingAdvice = `Ligera disminución en la curva de fuerza. Ajusta el peso hoy a ${reducedWeight} kg para recuperar la frescura neuromuscular.`;
       actionSteps = [
         `Utiliza ${reducedWeight} kg con velocidad controlada.`,
         'Prioriza la recuperación post-entrenamiento.'
+      ];
+
+      strategyOptions = [
+        {
+          id: 'dec_gen_deload',
+          title: `Descarga Preventiva (${reducedWeight} kg)`,
+          tag: 'Recomendada',
+          badge: `${reducedWeight} kg`,
+          suggestedWeight: reducedWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          description: `Ajusta a ${reducedWeight} kg para recuperar la frescura física.`
+        }
       ];
     }
   }
@@ -467,6 +772,11 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
       actionTitle
     },
     coachingAdvice,
-    actionSteps
+    actionSteps,
+    strategyOptions,
+    motivationalMessage,
+    celebrationData,
+    asesoriaRecommendation,
+    followUp
   };
 };

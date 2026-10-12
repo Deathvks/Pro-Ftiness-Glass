@@ -6,6 +6,20 @@ import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_HOST = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
+const SIZE_MAP = {
+    6: 'w-6 h-6',
+    7: 'w-7 h-7',
+    8: 'w-8 h-8',
+    9: 'w-9 h-9',
+    10: 'w-10 h-10',
+    11: 'w-11 h-11',
+    12: 'w-12 h-12',
+    14: 'w-14 h-14',
+    16: 'w-16 h-16',
+    20: 'w-20 h-20',
+    full: 'w-full h-full'
+};
+
 const UserAvatar = ({ 
     user, 
     size = 10, 
@@ -16,7 +30,7 @@ const UserAvatar = ({
 }) => {
     const [error, setError] = useState(false);
 
-    const sizeClass = size === "full" ? "w-full h-full" : `w-${size} h-${size}`;
+    const sizeClass = SIZE_MAP[size] || (typeof size === 'number' ? `w-${size} h-${size}` : 'w-10 h-10');
     const roleConfig = getUserRoleRingConfig(user);
 
     const getSecureImageUrl = () => {

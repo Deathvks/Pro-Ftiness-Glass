@@ -1,3 +1,4 @@
+/* frontend/src/components/Workout/SmartExerciseCoachModal.jsx */
 import React, { useMemo, useState } from 'react';
 import { 
   X, 
@@ -8,18 +9,25 @@ import {
   Repeat, 
   Clock, 
   Target, 
-  Zap, 
   Shield, 
   Check, 
+  CheckCircle2,
+  AlertTriangle,
   HelpCircle,
   Calendar,
   Flame,
   Info,
   Activity,
-  Lightbulb
+  Lightbulb,
+  Sparkles,
+  ArrowRight,
+  UserCheck,
+  CheckCircle,
+  Radio
 } from 'lucide-react';
 import ModalPortal from '../ModalPortal';
 import { generateSmartCoachPlan } from '../../utils/smartProgressionCoach';
+import { saveAppliedCoachStrategy } from '../../utils/coachAppliedHistory';
 import { formatDateToShort } from '../../utils/dateUtils';
 
 const SmartExerciseCoachModal = ({
@@ -27,7 +35,9 @@ const SmartExerciseCoachModal = ({
   userProfile,
   workoutLog,
   onClose,
-  onApplyWeight
+  onApplyWeight,
+  onApplyStrategy,
+  onNavigateAsesoria
 }) => {
   const [showRirHelp, setShowRirHelp] = useState(false);
 
@@ -36,22 +46,75 @@ const SmartExerciseCoachModal = ({
     return generateSmartCoachPlan(exercise, userProfile, workoutLog);
   }, [exercise, userProfile, workoutLog]);
 
+  // Selección de estrategia interactiva
+  const [selectedStrategyId, setSelectedStrategyId] = useState(() => {
+    return plan?.strategyOptions?.[0]?.id || null;
+  });
+
+  // Asegurar que si cambia el plan, se sincronice la estrategia seleccionada
+  const activeStrategy = useMemo(() => {
+    if (!plan?.strategyOptions || plan.strategyOptions.length === 0) return null;
+    const found = plan.strategyOptions.find(s => s.id === selectedStrategyId);
+    return found || plan.strategyOptions[0];
+  }, [plan, selectedStrategyId]);
+
   if (!plan) return null;
 
-  const { userGoal, trend, targets, coachingAdvice, actionSteps, sessions } = plan;
+  const { 
+    userGoal, 
+    trend, 
+    targets, 
+    coachingAdvice, 
+    actionSteps, 
+    sessions, 
+    strategyOptions,
+    motivationalMessage,
+    celebrationData,
+    asesoriaRecommendation,
+    followUp
+  } = plan;
 
-  const getTrendIcon = () => {
-    if (trend.status === 'progressing') return <TrendingUp size={18} className="text-emerald-400" strokeWidth={2.5} />;
-    if (trend.status === 'decreasing') return <TrendingDown size={18} className="text-amber-400" strokeWidth={2.5} />;
-    if (trend.status === 'stagnant') return <Minus size={18} className="text-amber-500" strokeWidth={2.5} />;
-    return <Target size={18} className="text-accent" strokeWidth={2.5} />;
-  };
+  // Métricas activas computadas según la estrategia seleccionada por el usuario
+  const activeSuggestedWeight = activeStrategy?.suggestedWeight !== undefined && activeStrategy.suggestedWeight !== null
+    ? activeStrategy.suggestedWeight
+    : targets.suggestedWeight;
+
+  const activeSuggestedReps = activeStrategy?.suggestedReps !== undefined && activeStrategy.suggestedReps !== null
+    ? activeStrategy.suggestedReps
+    : targets.suggestedReps;
+
+  const activeSuggestedSets = activeStrategy?.suggestedSets !== undefined && activeStrategy.suggestedSets !== null
+    ? activeStrategy.suggestedSets
+    : targets.suggestedSets;
 
   const getGoalIcon = () => {
     if (userGoal.key === 'gain') return <Dumbbell size={15} strokeWidth={2.5} className="text-accent" />;
     if (userGoal.key === 'lose') return <Flame size={15} strokeWidth={2.5} className="text-emerald-400" />;
     if (userGoal.key === 'recomp') return <Activity size={15} strokeWidth={2.5} className="text-purple-400" />;
     return <Shield size={15} strokeWidth={2.5} className="text-blue-400" />;
+  };
+
+  const handleApplySelection = () => {
+    const payload = {
+      ...(activeStrategy || {}),
+      suggestedWeight: activeSuggestedWeight,
+      suggestedReps: activeSuggestedReps,
+      suggestedSets: activeSuggestedSets,
+      exerciseName: exercise.name,
+      goal: userGoal.key,
+      trendStatus: trend.status
+    };
+
+    // Guardar en la persistencia histórica de estrategias
+    saveAppliedCoachStrategy(exercise.name, payload);
+
+    if (onApplyStrategy) {
+      onApplyStrategy(payload);
+    } else if (onApplyWeight && activeSuggestedWeight !== null) {
+      onApplyWeight(activeSuggestedWeight);
+    }
+
+    onClose();
   };
 
   return (
@@ -64,76 +127,214 @@ const SmartExerciseCoachModal = ({
           className="relative w-full max-w-xl max-h-[90vh] flex flex-col bg-bg-secondary/95 dark:bg-[#121214]/95 backdrop-blur-2xl rounded-t-[36px] sm:rounded-[36px] ring-1 ring-white/10 dark:ring-white/15 shadow-2xl overflow-hidden animate-[slide-up_0.25s_cubic-bezier(0.16,1,0.3,1)]"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Top Grabber / Drag indicator en móvil */}
+          {/* Top Grabber en móvil */}
           <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mt-3 mb-1 sm:hidden" />
 
           {/* Header */}
-          <div className="p-5 sm:p-6 pb-3 border-b border-white/5 flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-accent/10 ring-1 ring-accent/30 text-accent">
-                  <Target size={13} strokeWidth={2.5} />
-                  Coach de Objetivo
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/5 ring-1 ring-white/10 text-text-secondary">
+          <div className="p-4 sm:p-6 pb-3 border-b border-white/5 flex items-start justify-between gap-3">
+            <div className="space-y-1.5 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent ring-1 ring-accent/30">
                   {getGoalIcon()}
-                  {userGoal.label}
+                  <span>{userGoal.label}</span>
                 </span>
+
+                {/* Badge de Diagnóstico */}
+                {trend.isWarning ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/40 animate-pulse">
+                    <AlertTriangle size={13} className="shrink-0" />
+                    <span>{trend.badgeText}</span>
+                  </span>
+                ) : trend.isProgressing ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/40">
+                    <CheckCircle2 size={13} className="shrink-0" />
+                    <span>¡En racha! {trend.badgeText}</span>
+                  </span>
+                ) : (
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ring-1 ${trend.colorClass}`}>
+                    <span>{trend.badgeText}</span>
+                  </span>
+                )}
               </div>
-              <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight truncate capitalize">
+
+              <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight truncate">
                 {exercise.name}
               </h2>
             </div>
 
             <button
               onClick={onClose}
-              className="p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-text-secondary hover:text-text-primary transition-all active:scale-90"
-              aria-label="Cerrar"
+              className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-muted hover:text-text-primary transition-all active:scale-95 shrink-0"
+              aria-label="Cerrar modal"
             >
-              <X size={18} strokeWidth={2.5} />
+              <X size={20} />
             </button>
           </div>
 
-          {/* Modal Content Scrollable */}
-          <div className="p-5 sm:p-6 overflow-y-auto space-y-5 hide-scrollbar">
-            
-            {/* Banner de Diagnóstico según Historial */}
-            <div className="bg-black/5 dark:bg-white/5 p-4 sm:p-5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 space-y-3 shadow-inner">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-[14px] bg-white/5 ring-1 ring-white/10">
-                    {getTrendIcon()}
+          {/* Body con Scroll */}
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto max-h-[calc(90vh-160px)]">
+
+            {/* 1. SEGUIMIENTO DE LA SESIÓN ANTERIOR (Si existe) */}
+            {followUp && (
+              <div className={`p-4 rounded-[24px] ring-1 transition-all ${
+                followUp.color === 'emerald'
+                  ? 'bg-emerald-500/10 ring-emerald-500/30'
+                  : followUp.color === 'amber'
+                  ? 'bg-amber-500/10 ring-amber-500/30'
+                  : 'bg-blue-500/10 ring-blue-500/30'
+              }`}>
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-[14px] shrink-0 mt-0.5 ${
+                    followUp.color === 'emerald'
+                      ? 'bg-emerald-500/20 text-emerald-400'
+                      : followUp.color === 'amber'
+                      ? 'bg-amber-500/20 text-amber-400'
+                      : 'bg-blue-500/20 text-blue-400'
+                  }`}>
+                    {followUp.color === 'emerald' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
                   </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted block">
-                      Estado de Rendimiento
-                    </span>
-                    <span className="text-sm font-extrabold text-text-primary">
-                      {trend.label}
-                    </span>
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                        followUp.color === 'emerald'
+                          ? 'bg-emerald-500/20 text-emerald-300'
+                          : 'bg-amber-500/20 text-amber-300'
+                      }`}>
+                        {followUp.badge}
+                      </span>
+                    </div>
+                    <h4 className="text-sm font-black text-text-primary leading-tight">
+                      {followUp.title}
+                    </h4>
+                    <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                      {followUp.description}
+                    </p>
+                    <p className="text-[11px] font-semibold text-text-muted pt-1">
+                      💡 {followUp.actionHint}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 2. CELEBRACIÓN DE PROGRESIÓN (Si está progresando) */}
+            {celebrationData?.isCelebrating && (
+              <div className="p-4 sm:p-5 rounded-[24px] bg-emerald-500/10 ring-1 ring-emerald-500/30 backdrop-blur-xl space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-[14px] bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30 shrink-0">
+                    <Sparkles size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-sm sm:text-base font-black text-emerald-400 leading-tight">
+                      {celebrationData.title}
+                    </h4>
+                    <p className="text-xs text-text-secondary font-medium mt-0.5">
+                      {celebrationData.subtitle}
+                    </p>
                   </div>
                 </div>
 
-                <span className={`text-xs font-bold px-3 py-1 rounded-full ring-1 ${trend.colorClass}`}>
-                  {trend.badgeText}
-                </span>
+                <div className="space-y-1.5 pt-1 border-t border-emerald-500/20">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 block">
+                    Pautas para sostener este ritmo:
+                  </span>
+                  {celebrationData.tipsToMaintain.map((tip, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-xs font-medium text-text-primary/90">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                      <span className="leading-relaxed">{tip}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
+            )}
 
-              {/* Titular de acción */}
-              <div className="pt-2 border-t border-black/5 dark:border-white/5">
-                <h3 className="text-base sm:text-lg font-black text-text-primary leading-snug">
-                  {targets.actionTitle}
-                </h3>
-                <p className="text-xs sm:text-sm text-text-secondary font-medium mt-1 leading-relaxed">
-                  {coachingAdvice}
-                </p>
+            {/* 3. MENSAJE MOTIVACIONAL Y CIENCIA (Si está estancado o con fatiga) */}
+            {motivationalMessage && (
+              <div className="p-4 rounded-[24px] bg-amber-500/10 ring-1 ring-amber-500/25 flex items-start gap-3">
+                <div className="p-2 rounded-[14px] bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/30 shrink-0 mt-0.5">
+                  <Lightbulb size={18} />
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 block">
+                    Perspectiva Científica y Motivación
+                  </span>
+                  <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                    {motivationalMessage}
+                  </p>
+                </div>
               </div>
+            )}
 
-              {/* Puntos clave / Pasos sugeridos */}
+            {/* 4. SELECCIÓN INTERACTIVA DE ESTRATEGIAS */}
+            {strategyOptions && strategyOptions.length > 0 && (
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-accent flex items-center gap-1.5">
+                    <Target size={14} />
+                    Pautas recomendadas para hoy (Selecciona una):
+                  </span>
+                  <span className="text-[10px] font-bold text-text-muted uppercase">
+                    {strategyOptions.length > 1 ? `${strategyOptions.length} opciones` : 'Pauta activa'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2.5">
+                  {strategyOptions.map((opt) => {
+                    const isSelected = activeStrategy?.id === opt.id;
+                    return (
+                      <div
+                        key={opt.id}
+                        onClick={() => setSelectedStrategyId(opt.id)}
+                        className={`p-3.5 sm:p-4 rounded-[22px] transition-all cursor-pointer relative flex items-start gap-3 select-none ${
+                          isSelected
+                            ? 'bg-accent/15 ring-2 ring-accent shadow-md shadow-accent/10'
+                            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
+                        }`}
+                      >
+                        {/* Indicador tipo Radio */}
+                        <div className={`mt-0.5 shrink-0 rounded-full w-5 h-5 flex items-center justify-center transition-all ${
+                          isSelected ? 'bg-accent text-white' : 'ring-1 ring-white/20 text-transparent'
+                        }`}>
+                          <Check size={13} strokeWidth={3} />
+                        </div>
+
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <span className="text-xs sm:text-sm font-black text-text-primary leading-tight">
+                              {opt.title}
+                            </span>
+                            {opt.badge && (
+                              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                                isSelected ? 'bg-accent text-white' : 'bg-black/10 dark:bg-white/10 text-text-secondary'
+                              }`}>
+                                {opt.badge}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-text-secondary font-medium leading-relaxed">
+                            {opt.description}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 5. TITULAR Y CONSEJO GENERAL */}
+            <div className="p-4 sm:p-5 rounded-[24px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 space-y-2">
+              <h3 className="text-sm sm:text-base font-black text-text-primary leading-snug">
+                {targets.actionTitle}
+              </h3>
+              <p className="text-xs sm:text-sm text-text-secondary font-medium leading-relaxed">
+                {coachingAdvice}
+              </p>
+
               {actionSteps && actionSteps.length > 0 && (
-                <div className="pt-2 space-y-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-accent block">
-                    Pautas recomendadas para hoy:
+                <div className="pt-2 space-y-1.5 border-t border-black/5 dark:border-white/5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted block">
+                    Pasos de ejecución:
                   </span>
                   {actionSteps.map((step, idx) => (
                     <div key={idx} className="flex items-start gap-2 text-xs font-medium text-text-primary/90">
@@ -145,14 +346,14 @@ const SmartExerciseCoachModal = ({
               )}
             </div>
 
-            {/* Grid de Métricas Calculadas Objetivo */}
+            {/* 6. GRID DE MÉTRICAS CALCULADAS (OBJETIVOS DINÁMICOS) */}
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted mb-2.5 block px-1">
-                Objetivos Calculados para esta sesión:
+                Objetivos adaptados a la estrategia seleccionada:
               </span>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-                {/* 1. Peso Sugerido */}
+                {/* 1. Peso Sugerido - SIN TRUNCATE */}
                 <div className="bg-accent/10 dark:bg-accent/15 p-3.5 rounded-[20px] ring-1 ring-accent/30 flex flex-col justify-between">
                   <div className="flex items-center justify-between text-accent mb-1">
                     <span className="text-[10px] font-bold uppercase tracking-wider">Peso Sugerido</span>
@@ -160,11 +361,11 @@ const SmartExerciseCoachModal = ({
                   </div>
                   <div className="my-1">
                     <span className="text-xl sm:text-2xl font-black text-accent tracking-tight">
-                      {targets.suggestedWeight !== null ? `${targets.suggestedWeight} kg` : 'Calibrar'}
+                      {activeSuggestedWeight !== null ? `${activeSuggestedWeight} kg` : 'Calibrar'}
                     </span>
                   </div>
-                  <span className="text-[10px] font-semibold text-text-secondary truncate" title={targets.weightChangeNote}>
-                    {targets.weightChangeNote || 'Ajustar según fatiga'}
+                  <span className="text-[10px] font-semibold text-text-secondary leading-tight">
+                    {activeStrategy?.badge || targets.weightChangeNote || 'Ajuste adaptado'}
                   </span>
                 </div>
 
@@ -176,7 +377,7 @@ const SmartExerciseCoachModal = ({
                   </div>
                   <div className="my-1">
                     <span className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
-                      {targets.suggestedSets}
+                      {activeSuggestedSets}
                     </span>
                   </div>
                   <span className="text-[10px] font-semibold text-text-muted">
@@ -192,7 +393,7 @@ const SmartExerciseCoachModal = ({
                   </div>
                   <div className="my-1">
                     <span className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
-                      {targets.suggestedReps}
+                      {activeSuggestedReps}
                     </span>
                   </div>
                   <span className="text-[10px] font-semibold text-text-muted">
@@ -200,7 +401,7 @@ const SmartExerciseCoachModal = ({
                   </span>
                 </div>
 
-                {/* 4. Intensidad & Margen del Fallo */}
+                {/* 4. Intensidad & RIR */}
                 <div 
                   onClick={() => setShowRirHelp(!showRirHelp)}
                   className="bg-black/5 dark:bg-white/5 p-3.5 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 flex flex-col justify-between cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group"
@@ -218,12 +419,12 @@ const SmartExerciseCoachModal = ({
                     </span>
                   </div>
                   <span className="text-[10px] font-semibold text-text-muted leading-tight">
-                    {targets.intensityDesc || 'Parar 1-2 reps antes de fallar'}
+                    {targets.intensityDesc || 'Parar 1-2 reps antes'}
                   </span>
                 </div>
               </div>
 
-              {/* Barra de descanso y botón explicativo */}
+              {/* Barra de descanso */}
               <div className="mt-2.5 flex items-center justify-between px-1 flex-wrap gap-2">
                 <button
                   type="button"
@@ -231,7 +432,7 @@ const SmartExerciseCoachModal = ({
                   className="inline-flex items-center gap-1.5 text-[11px] font-bold text-accent hover:underline transition-all"
                 >
                   <HelpCircle size={13} />
-                  <span>{showRirHelp ? 'Ocultar explicación de intensidad' : '¿No sabes cómo medir la intensidad o qué es el RIR? Toca aquí'}</span>
+                  <span>{showRirHelp ? 'Ocultar guía de intensidad' : '¿Cómo medir el esfuerzo o qué es el RIR? Ver guía'}</span>
                 </button>
                 <div className="flex items-center gap-1.5 text-[11px] font-semibold text-text-muted">
                   <Clock size={12} className="text-text-secondary" />
@@ -240,7 +441,7 @@ const SmartExerciseCoachModal = ({
               </div>
             </div>
 
-            {/* Explicación didáctica sobre Intensidad y RIR */}
+            {/* 7. GUÍA DIDÁCTICA DE INTENSIDAD Y RIR */}
             {showRirHelp && (
               <div className="p-4 sm:p-5 rounded-[24px] bg-accent/10 ring-1 ring-accent/30 backdrop-blur-xl animate-[fade-in_0.2s_ease-out] relative">
                 <button
@@ -266,26 +467,26 @@ const SmartExerciseCoachModal = ({
                     </div>
 
                     <p className="text-xs text-text-secondary leading-relaxed font-medium">
-                      En fitness se usa la palabra técnica <strong className="text-text-primary">RIR (Repeticiones en Recámara)</strong>. Significa simplemente: <strong>¿cuántas repeticiones más podrías haber hecho antes de que el músculo no pudiera levantar el peso ni una vez más?</strong>
+                      El <strong className="text-text-primary">RIR (Repeticiones en Recámara)</strong> indica cuántas repeticiones más podrías haber hecho antes de que el músculo no pudiera levantar el peso.
                     </p>
 
                     <div className="p-3 rounded-[16px] bg-black/10 dark:bg-white/5 ring-1 ring-white/10 text-xs text-text-secondary space-y-2 font-medium">
                       <div className="flex items-start gap-2">
                         <span className="text-red-400 font-bold shrink-0">·</span>
                         <p>
-                          <strong className="text-text-primary">Al Fallo (RIR 0):</strong> Hiciste la serie y ya no pudiste mover la pesa ni un centímetro más. No se recomienda siempre porque agota en exceso y sube el riesgo de lesión.
+                          <strong className="text-text-primary">Al Fallo (RIR 0):</strong> Ya no pudiste completar ni una repetición más. Agota en exceso el sistema nervioso.
                         </p>
                       </div>
                       <div className="flex items-start gap-2">
                         <span className="text-emerald-400 font-bold shrink-0">·</span>
                         <p>
-                          <strong className="text-text-primary">Cerca del Fallo (1-2 reps antes):</strong> Te detienes cuando sientes que te quedaba 1 o 2 repeticiones en el tanque. Consigues prácticamente el 100% del crecimiento muscular con total seguridad.
+                          <strong className="text-text-primary">Cerca del Fallo (1-2 reps antes):</strong> Te detienes cuando sientes que te quedaba 1 o 2 repeticiones en reserva. Consigues el estímulo óptimo de crecimiento con total seguridad.
                         </p>
                       </div>
                       <div className="flex items-start gap-2">
                         <span className="text-blue-400 font-bold shrink-0">·</span>
                         <p>
-                          <strong className="text-text-primary">Moderado (2-3 reps antes):</strong> Dejas 2 o 3 repeticiones de margen. Ideal para días con menor energía o descarga.
+                          <strong className="text-text-primary">Moderado (2-3 reps antes):</strong> Margen cómodo para proteger la recuperación o en días de fatiga.
                         </p>
                       </div>
                     </div>
@@ -293,7 +494,7 @@ const SmartExerciseCoachModal = ({
                     <div className="flex items-start gap-2 pt-1 text-[11px] text-text-muted leading-relaxed font-medium">
                       <Lightbulb size={14} className="text-amber-400 shrink-0 mt-0.5" strokeWidth={2.5} />
                       <p>
-                        <strong className="text-text-primary not-italic">Consejo práctico:</strong> No te compliques con tecnicismos. Solo entrena con un peso que te cueste, deteniéndote cuando sientas que la siguiente repetición te costaría la técnica.
+                        <strong className="text-text-primary not-italic">Consejo práctico:</strong> No te compliques con tecnicismos. Solo entrena con un peso que te cueste, deteniéndote cuando sientas que la siguiente repetición comprometería la técnica.
                       </p>
                     </div>
                   </div>
@@ -301,7 +502,7 @@ const SmartExerciseCoachModal = ({
               </div>
             )}
 
-            {/* Evolución Histórica de Sesiones Previas */}
+            {/* 8. HISTORIAL PREVIO */}
             {sessions && sessions.length > 0 && (
               <div className="bg-black/5 dark:bg-white/5 p-4 sm:p-5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
                 <div className="flex items-center justify-between mb-3">
@@ -345,11 +546,45 @@ const SmartExerciseCoachModal = ({
               </div>
             )}
 
+            {/* 9. RECOMENDACIÓN DE ASESORÍA CON PREPARADOR REAL */}
+            {asesoriaRecommendation?.show && (
+              <div className="p-4 sm:p-5 rounded-[24px] bg-gradient-to-br from-amber-500/15 via-yellow-500/5 to-transparent border border-amber-500/30 flex flex-col gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 rounded-[16px] bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/30 shrink-0">
+                    <Sparkles size={18} />
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <h4 className="text-sm font-black text-text-primary">
+                      {asesoriaRecommendation.headline}
+                    </h4>
+                    <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                      {asesoriaRecommendation.description}
+                    </p>
+                  </div>
+                </div>
+
+                {onNavigateAsesoria && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onNavigateAsesoria();
+                    }}
+                    className="w-full py-3 px-4 rounded-[18px] bg-amber-500 hover:bg-amber-400 text-black font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition-all active:scale-95"
+                  >
+                    <UserCheck size={16} strokeWidth={2.5} />
+                    <span>{asesoriaRecommendation.buttonText}</span>
+                    <ArrowRight size={15} />
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Contexto de Objetivo Onboarding */}
             <div className="p-3.5 rounded-[20px] bg-white/5 ring-1 ring-white/10 flex items-start gap-3">
               <Info size={16} className="text-accent shrink-0 mt-0.5" />
               <p className="text-[11px] text-text-secondary leading-relaxed font-medium">
-                Cálculos basados en tu meta de <strong className="text-text-primary font-bold">{userGoal.label}</strong> establecida en tu perfil. Cada ajuste está diseñado para mantener el balance ideal entre estímulo muscular y recuperación sin sobrecargar el SNC.
+                Cálculos deportivos adaptados a tu objetivo de <strong className="text-text-primary font-bold">{userGoal.label}</strong> registrado en tu perfil. Cada recomendación prioriza la relación estímulo-fatiga adecuada a tu nivel.
               </p>
             </div>
 
@@ -357,24 +592,24 @@ const SmartExerciseCoachModal = ({
 
           {/* Footer Buttons */}
           <div className="p-4 sm:p-5 border-t border-white/5 bg-black/10 dark:bg-white/5 flex items-center gap-3">
-            {targets.suggestedWeight !== null && onApplyWeight && (
-              <button
-                type="button"
-                onClick={() => onApplyWeight(targets.suggestedWeight)}
-                className="flex-1 py-3.5 px-4 rounded-[20px] bg-accent hover:brightness-110 active:scale-95 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-accent/30 transition-all"
-                style={{ color: "var(--btn-accent-text, #fff)" }}
-              >
-                <Check size={18} strokeWidth={3} />
-                <span>Aplicar {targets.suggestedWeight} kg a mis series</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleApplySelection}
+              className="flex-1 py-3.5 px-4 rounded-[20px] bg-accent hover:brightness-110 active:scale-95 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-accent/30 transition-all"
+              style={{ color: "var(--btn-accent-text, #fff)" }}
+            >
+              <Check size={18} strokeWidth={3} />
+              <span>
+                {activeSuggestedWeight !== null 
+                  ? `Aplicar ${activeSuggestedWeight} kg (${activeSuggestedReps} reps)`
+                  : `Aplicar pauta (${activeSuggestedReps} reps)`}
+              </span>
+            </button>
 
             <button
               type="button"
               onClick={onClose}
-              className={`py-3.5 px-6 rounded-[20px] font-bold text-sm bg-white/10 hover:bg-white/15 text-text-primary transition-all active:scale-95 ${
-                targets.suggestedWeight === null || !onApplyWeight ? 'w-full' : ''
-              }`}
+              className="py-3.5 px-6 rounded-[20px] font-bold text-sm bg-white/10 hover:bg-white/15 text-text-primary transition-all active:scale-95"
             >
               Entendido
             </button>

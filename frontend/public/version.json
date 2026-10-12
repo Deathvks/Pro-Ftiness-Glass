@@ -1,6 +1,5 @@
 {
-  "version": "7.2.80",
+  "version": "7.2.81",
   "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.2.1/app-release.apk",
-  "notes": "Mejoras en el entrenador inteligente según objetivo, guía de intensidad comprensible, visualización optimizada de ejercicios a 2 columnas en PC y correcciones de estabilidad."
+  "notes": "Entrenador inteligente de cargas con selección de estrategias, persistencia de seguimiento entre sesiones, avisos de meseta/fatiga, celebración de progreso y anillo de rol en el avatar del header."
 }
-
