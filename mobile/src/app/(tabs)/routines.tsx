@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
   View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, 
-  Dimensions, Share as NativeShare 
+  Dimensions, Share as NativeShare, Platform 
 } from 'react-native';
 import { 
   Search, Plus, Trash2, Globe, Sparkles, Folder, Dumbbell, 
@@ -205,6 +205,13 @@ export default function RoutinesScreen() {
 
   // Eliminar rutina
   const handleDeleteRoutine = (routineId: string | number) => {
+    if (Platform.OS === 'web') {
+      const ok = typeof window !== 'undefined' && window.confirm('¿Estás seguro de que deseas eliminar esta rutina? Esta acción no se puede deshacer.');
+      if (ok) {
+        deleteRoutine(routineId);
+      }
+      return;
+    }
     Alert.alert(
       'Eliminar Rutina',
       '¿Estás seguro de que deseas eliminar esta rutina? Esta acción no se puede deshacer.',
@@ -227,6 +234,13 @@ export default function RoutinesScreen() {
   // Borrar todas las rutinas
   const handleDeleteAll = () => {
     if (routines.length === 0) return;
+    if (Platform.OS === 'web') {
+      const ok = typeof window !== 'undefined' && window.confirm('¿Estás seguro? Perderás todas tus rutinas y esta acción NO se puede deshacer.');
+      if (ok && deleteAllRoutines) {
+        deleteAllRoutines();
+      }
+      return;
+    }
     Alert.alert(
       'Eliminar Todas las Rutinas',
       '¿Estás seguro? Perderás todas tus rutinas y esta acción NO se puede deshacer.',

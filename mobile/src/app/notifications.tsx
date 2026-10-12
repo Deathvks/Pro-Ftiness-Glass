@@ -146,11 +146,18 @@ export default function NotificationsScreen() {
     setIsLoadingMore(false);
   };
 
-  // Borrar notificación individual (Alerta nativa de Apple como en rutinas)
+  // Borrar notificación individual (idéntico a handleDeleteRoutine en routines.tsx)
   const handleDeleteSingle = (id: string) => {
+    if (Platform.OS === 'web') {
+      const ok = typeof window !== 'undefined' && window.confirm('¿Estás seguro de que deseas eliminar esta notificación? Esta acción no se puede deshacer.');
+      if (ok && removeNotification) {
+        removeNotification(id);
+      }
+      return;
+    }
     Alert.alert(
       'Eliminar Notificación',
-      '¿Estás seguro de que deseas eliminar esta notificación?',
+      '¿Estás seguro de que deseas eliminar esta notificación? Esta acción no se puede deshacer.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -158,7 +165,10 @@ export default function NotificationsScreen() {
           style: 'destructive',
           onPress: async () => {
             if (removeNotification) {
-              await removeNotification(id);
+              const res = await removeNotification(id);
+              if (res && !res.success) {
+                Alert.alert('Error', res.message || 'No se pudo eliminar la notificación.');
+              }
             }
           },
         },
@@ -166,12 +176,19 @@ export default function NotificationsScreen() {
     );
   };
 
-  // Borrar todas las notificaciones (Alerta nativa de Apple como en rutinas)
+  // Borrar todas las notificaciones (idéntico a handleDeleteAll en routines.tsx)
   const handleDeleteAll = () => {
     if (notifications.length === 0) return;
+    if (Platform.OS === 'web') {
+      const ok = typeof window !== 'undefined' && window.confirm('¿Estás seguro? Perderás todas tus notificaciones y esta acción NO se puede deshacer.');
+      if (ok && clearAllNotifications) {
+        clearAllNotifications();
+      }
+      return;
+    }
     Alert.alert(
       'Eliminar Todas las Notificaciones',
-      '¿Estás seguro de que deseas eliminar todas las notificaciones? Esta acción no se puede deshacer.',
+      '¿Estás seguro? Perderás todas tus notificaciones y esta acción NO se puede deshacer.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -581,10 +598,18 @@ export default function NotificationsScreen() {
 
                           <TouchableOpacity
                             onPress={() => handleDeleteSingle(n.id)}
-                            hitSlop={10}
-                            style={{ padding: 4 }}
+                            hitSlop={8}
+                            activeOpacity={0.7}
+                            style={{ 
+                              width: 32, 
+                              height: 32, 
+                              borderRadius: 10, 
+                              backgroundColor: 'rgba(239, 68, 68, 0.12)', 
+                              alignItems: 'center', 
+                              justifyContent: 'center' 
+                            }}
                           >
-                            <Trash2 size={16} color={colors.textMuted || colors.textSecondary} />
+                            <Trash2 size={15} color="#ef4444" />
                           </TouchableOpacity>
                         </View>
                       </TouchableOpacity>
