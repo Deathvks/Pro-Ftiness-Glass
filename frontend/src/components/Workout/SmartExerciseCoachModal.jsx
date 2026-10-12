@@ -225,7 +225,7 @@ const SmartExerciseCoachModal = ({
                     Historial de Cargas Previas
                   </span>
                   <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                    Últimas {Math.min(sessions.length, 4)} sesiones
+                    {sessions.length === 1 ? 'Última sesión' : `Últimas ${Math.min(sessions.length, 4)} sesiones`}
                   </span>
                 </div>
 
@@ -233,24 +233,26 @@ const SmartExerciseCoachModal = ({
                   {sessions.slice(0, 4).map((s, idx) => (
                     <div 
                       key={s.logId || idx}
-                      className="flex items-center justify-between p-2.5 rounded-[16px] bg-black/5 dark:bg-white/5 text-xs font-semibold"
+                      className="flex items-center justify-between p-2.5 rounded-[16px] bg-black/5 dark:bg-white/5 text-xs font-semibold gap-3"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-white/10 text-[10px] flex items-center justify-center font-bold text-text-muted">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-5 h-5 rounded-full bg-white/10 text-[10px] flex items-center justify-center font-bold text-text-muted shrink-0">
                           #{idx + 1}
                         </span>
-                        <span className="text-text-secondary">
-                          {formatDateToShort(s.date) || s.date}
+                        <span className="text-text-secondary font-medium truncate">
+                          {formatDateToShort(s.date) || 'Sesión previa'}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                         <span className="text-text-primary font-bold">
                           {s.topWeight > 0 ? `${s.topWeight} kg` : 'Corporal'} × {s.topReps} reps
                         </span>
-                        <span className="text-accent text-[11px] font-extrabold hidden sm:inline-block">
-                          1RM: {s.best1RM}kg
-                        </span>
+                        {s.best1RM > 0 && (
+                          <span className="text-accent text-[11px] font-extrabold bg-accent/10 px-2 py-0.5 rounded-md ring-1 ring-accent/20">
+                            1RM: {s.best1RM} kg
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}

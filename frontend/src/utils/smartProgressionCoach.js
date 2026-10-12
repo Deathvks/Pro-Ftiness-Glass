@@ -121,7 +121,7 @@ export const getExerciseHistorySessions = (exerciseName, workoutLog) => {
 
     sessions.push({
       logId: log.id,
-      date: log.workout_date,
+      date: log.workout_date || log.date || log.created_at || new Date().toISOString(),
       topWeight: Math.round(topWeight * 10) / 10,
       topReps,
       best1RM: Math.round(best1RM * 10) / 10,
@@ -188,7 +188,11 @@ export const diagnoseExerciseTrend = (sessions) => {
       // Calcular semanas entre la primera sesión de la meseta y la última
       const earliestDate = new Date(sessions[Math.min(sessions.length - 1, 3)].date);
       const latestDate = new Date(s0.date);
-      const diffDays = Math.max(7, Math.round((latestDate - earliestDate) / (1000 * 60 * 60 * 24)));
+      const eTime = earliestDate.getTime();
+      const lTime = latestDate.getTime();
+      const diffDays = (!isNaN(eTime) && !isNaN(lTime))
+        ? Math.max(7, Math.round((lTime - eTime) / (1000 * 60 * 60 * 24)))
+        : 7;
       weeksStagnant = Math.max(1, Math.round(diffDays / 7));
     }
   }
