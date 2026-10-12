@@ -6,6 +6,7 @@ import pushService from './pushService.js';
 import { createNotification } from './notificationService.js';
 import { cleanOrphanedImages, deleteFile } from './imageService.js';
 import { sendBotReminderEmail } from './emailService.js';
+import { countMissedWeekdays } from './gamificationService.js';
 
 /**
  * Obtiene la hora y fecha local para una zona horaria dada.
@@ -17,14 +18,16 @@ const getLocalTime = (timezone) => {
     const hour = parseInt(now.toLocaleTimeString('en-US', { timeZone: tz, hour12: false, hour: 'numeric' }), 10);
     const day = parseInt(now.toLocaleDateString('en-US', { timeZone: tz, day: 'numeric' }), 10);
     const date = now.toLocaleDateString('sv-SE', { timeZone: tz }); // Formato YYYY-MM-DD
+    const dayOfWeek = new Date(date + 'T12:00:00').getDay(); // 0 = Domingo, 6 = Sábado
 
-    return { hour, day, date };
+    return { hour, day, date, dayOfWeek };
   } catch (error) {
     const now = new Date();
     return {
       hour: now.getUTCHours(),
       day: now.getUTCDate(),
-      date: now.toISOString().split('T')[0]
+      date: now.toISOString().split('T')[0],
+      dayOfWeek: now.getUTCDay()
     };
   }
 };
@@ -285,7 +288,9 @@ const checkStreakWars = () => {
 
       // 2. Filtrar a los que se les acaba el día (20:00h) y no han entrenado hoy
       const targetUsers = users.filter(user => {
-        const { hour, date: localDate } = getLocalTime(user.timezone);
+        const { hour, date: localDate, dayOfWeek } = getLocalTime(user.timezone);
+        // Sábados y domingos son días de descanso protegidos: no se envía alerta de peligro en fin de semana
+        if (dayOfWeek === 0 || dayOfWeek === 6) return false;
         if (hour !== 20 || !user.last_activity_date) return false;
 
         // Si el último registro de actividad es anterior a hoy, está en peligro
@@ -376,12 +381,12 @@ const resetInactiveStreaks = () => {
         // Parseamos las fechas usando formato YYYY-MM-DD para evitar diferencias de horas
         const lastActiveDate = new Date(user.last_activity_date).toISOString().split('T')[0];
 
-        // Calculamos la diferencia exacta en días
-        const diffTime = new Date(localDate).getTime() - new Date(lastActiveDate).getTime();
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        // Calculamos cuántos días laborables (lunes a viernes) se han perdido
+        // Sábados y domingos son días de descanso protegidos y no cuentan como días perdidos
+        const missedWeekdays = countMissedWeekdays(lastActiveDate, localDate);
 
-        // Si han pasado más de 1 día (2 días o más), el usuario ha perdido la racha
-        if (diffDays > 1) {
+        // Si ha transcurrido al menos 1 día laborable requerido sin entrenar, el usuario ha perdido la racha
+        if (missedWeekdays > 0) {
           const oldStreak = user.streak;
           user.streak = 0;
           await user.save();

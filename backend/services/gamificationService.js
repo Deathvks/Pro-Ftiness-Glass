@@ -210,6 +210,32 @@ export const unlockBadge = async (userId, badgeId, opts = {}) => {
     }
 };
 
+/**
+ * Cuenta cuántos días laborables (lunes a viernes) transcurrieron estrictamente
+ * entre startDateStr (YYYY-MM-DD) y endDateStr (YYYY-MM-DD), sin incluir ni startDate ni endDate.
+ * Sábados y domingos se consideran días de descanso protegidos y no cuentan como días perdidos.
+ */
+export const countMissedWeekdays = (startDateStr, endDateStr) => {
+    if (!startDateStr || !endDateStr) return 0;
+    const start = new Date(startDateStr + 'T00:00:00');
+    const end = new Date(endDateStr + 'T00:00:00');
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) return 0;
+
+    let missed = 0;
+    const cur = new Date(start);
+    cur.setDate(cur.getDate() + 1);
+
+    while (cur < end) {
+        const dayOfWeek = cur.getDay(); // 0 = Domingo, 6 = Sábado
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            missed++;
+        }
+        cur.setDate(cur.getDate() + 1);
+    }
+
+    return missed;
+};
+
 export const checkStreak = async (userId, rawDate, opts = {}) => {
     try {
         const { transaction, userInstance } = opts;
@@ -228,20 +254,25 @@ export const checkStreak = async (userId, rawDate, opts = {}) => {
         if (!lastActivityStr) {
             user.streak = 1;
         } else {
-            const diffTime = new Date(todayDateStr).getTime() - new Date(lastActivityStr).getTime();
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            const lastTime = new Date(lastActivityStr + 'T00:00:00').getTime();
+            const todayTime = new Date(todayDateStr + 'T00:00:00').getTime();
 
-            if (diffDays === 1) {
-                // Entrenó ayer y entrena hoy: racha consecutiva +1
-                user.streak += 1;
-                const badgeId = STREAK_THRESHOLDS[user.streak];
-                if (badgeId) await unlockBadge(userId, badgeId, { transaction, userInstance: user });
-            } else if (diffDays > 1) {
-                // Pasaron 2 o más días sin entrenar: la racha anterior se rompió y empieza en 1 hoy
-                user.streak = 1;
-            } else {
+            if (todayTime < lastTime) {
                 // Registro de fecha anterior a la última conocida: no aumentamos racha
                 return { success: true, streak: user.streak };
+            }
+
+            // Calculamos cuántos días laborables (lunes a viernes) se perdieron entre el último entrenamiento y hoy
+            const missedWeekdays = countMissedWeekdays(lastActivityStr, todayDateStr);
+
+            if (missedWeekdays === 0) {
+                // No se perdió ningún día de entrenamiento requerido (fueron días consecutivos o fin de semana de descanso)
+                user.streak = (user.streak || 0) + 1;
+                const badgeId = STREAK_THRESHOLDS[user.streak];
+                if (badgeId) await unlockBadge(userId, badgeId, { transaction, userInstance: user });
+            } else {
+                // Pasaron 1 o más días laborables sin entrenar: la racha anterior se rompió y empieza en 1 hoy
+                user.streak = 1;
             }
         }
 
@@ -256,8 +287,9 @@ export const checkStreak = async (userId, rawDate, opts = {}) => {
 };
 
 /**
- * Sincroniza y valida la racha del usuario: si ha pasado más de 1 día desde su último entrenamiento (ayer no entrenó),
- * la racha se reinicia inmediatamente a 0. No altera last_activity_date.
+ * Sincroniza y valida la racha del usuario: si ha transcurrido al menos 1 día laborable (lunes a viernes)
+ * sin entrenar desde su último registro, la racha se reinicia inmediatamente a 0.
+ * Sábados y domingos no rompen la racha. No altera last_activity_date.
  */
 export const syncUserStreak = async (userIdOrUser, rawDate = null, opts = {}) => {
     try {
@@ -271,10 +303,11 @@ export const syncUserStreak = async (userIdOrUser, rawDate = null, opts = {}) =>
         const todayStr = normalizeDate(rawDate);
         const lastActiveStr = normalizeDate(user.last_activity_date);
 
-        const diffTime = new Date(todayStr).getTime() - new Date(lastActiveStr).getTime();
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        if (lastActiveStr >= todayStr) return user.streak;
 
-        if (diffDays > 1) {
+        const missedWeekdays = countMissedWeekdays(lastActiveStr, todayStr);
+
+        if (missedWeekdays > 0) {
             user.streak = 0;
             await user.save({ transaction });
         }
@@ -443,6 +476,7 @@ export default {
     unlockBadge,
     checkStreak,
     syncUserStreak,
+    countMissedWeekdays,
     processWorkoutGamification,
     processFoodGamification,
     processCreatinaGamification,

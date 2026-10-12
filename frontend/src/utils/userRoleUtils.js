@@ -10,19 +10,21 @@
 export const getUserRoleType = (user) => {
   if (!user) return 'user';
 
+  const role = String(user.role || '').toLowerCase().trim();
+
   // 1. Admin
-  if (user.role === 'admin' || user.isAdmin === true) {
+  if (role === 'admin' || user.isAdmin === true) {
     return 'admin';
   }
 
   // 2. Entrenador
-  if (user.role === 'trainer' || user.isTrainer === true) {
+  if (role === 'trainer' || user.isTrainer === true) {
     return 'trainer';
   }
 
   // 3. Miembro de la Asesoría (trainee o con trainer_id asignado)
   const isInAsesoria = 
-    user.role === 'trainee' || 
+    role === 'trainee' || 
     Boolean(user.trainer_id) || 
     Boolean(user.is_in_asesoria) || 
     Boolean(user.trainer);
