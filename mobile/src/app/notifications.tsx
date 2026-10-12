@@ -8,7 +8,8 @@ import {
   Pressable, 
   Platform, 
   ActivityIndicator, 
-  StyleSheet 
+  StyleSheet,
+  Alert 
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { 
@@ -111,7 +112,6 @@ export default function NotificationsScreen() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<any>(null);
-  const [deleteAction, setDeleteAction] = useState<{ type: 'single' | 'all'; id?: string } | null>(null);
 
   useEffect(() => {
     if (fetchNotifications) {
@@ -146,14 +146,45 @@ export default function NotificationsScreen() {
     setIsLoadingMore(false);
   };
 
-  const confirmDelete = async () => {
-    if (!deleteAction) return;
-    if (deleteAction.type === 'all' && clearAllNotifications) {
-      await clearAllNotifications();
-    } else if (deleteAction.type === 'single' && deleteAction.id && removeNotification) {
-      await removeNotification(deleteAction.id);
-    }
-    setDeleteAction(null);
+  // Borrar notificación individual (Alerta nativa de Apple como en rutinas)
+  const handleDeleteSingle = (id: string) => {
+    Alert.alert(
+      'Eliminar Notificación',
+      '¿Estás seguro de que deseas eliminar esta notificación?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            if (removeNotification) {
+              await removeNotification(id);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Borrar todas las notificaciones (Alerta nativa de Apple como en rutinas)
+  const handleDeleteAll = () => {
+    if (notifications.length === 0) return;
+    Alert.alert(
+      'Eliminar Todas las Notificaciones',
+      '¿Estás seguro de que deseas eliminar todas las notificaciones? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar Todas',
+          style: 'destructive',
+          onPress: async () => {
+            if (clearAllNotifications) {
+              await clearAllNotifications();
+            }
+          },
+        },
+      ]
+    );
   };
 
   // Filtros idénticos al frontend
@@ -280,7 +311,7 @@ export default function NotificationsScreen() {
             <View style={{ width: 1, height: 16, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', marginHorizontal: 2 }} />
 
             <TouchableOpacity 
-              onPress={() => setDeleteAction({ type: 'all' })}
+              onPress={handleDeleteAll}
               style={{ padding: 8, borderRadius: 9999 }}
               hitSlop={8}
             >
@@ -549,7 +580,7 @@ export default function NotificationsScreen() {
                           </Text>
 
                           <TouchableOpacity
-                            onPress={() => setDeleteAction({ type: 'single', id: n.id })}
+                            onPress={() => handleDeleteSingle(n.id)}
                             hitSlop={10}
                             style={{ padding: 4 }}
                           >
@@ -751,146 +782,33 @@ export default function NotificationsScreen() {
                   </View>
                 </View>
 
-                {/* Botón Entendido */}
+                {/* Botón Entendido (Liquid Glass) */}
                 <TouchableOpacity 
                   onPress={() => setSelectedNotification(null)}
-                  activeOpacity={0.8}
+                  activeOpacity={0.75}
                   style={{
                     height: 52,
                     borderRadius: 20,
-                    backgroundColor: colors.tint,
+                    overflow: 'hidden',
+                    position: 'relative',
                     alignItems: 'center',
                     justifyContent: 'center',
                     marginTop: 24,
-                    shadowColor: colors.tint,
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.35,
-                    shadowRadius: 8,
-                    elevation: 4,
+                    borderWidth: 1,
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
                   }}
                 >
-                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: accentTextColor }}>Entendido</Text>
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                  />
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.tint + (isDark ? '25' : '18') }]} />
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: colors.tint, letterSpacing: -0.2 }}>
+                    Entendido
+                  </Text>
                 </TouchableOpacity>
-              </View>
-            </Pressable>
-          </Pressable>
-        </GlassView>
-      </Modal>
-
-      {/* ================= MODAL: ELIMINAR NOTIFICACIÓN (TRUE LIQUID GLASS) ================= */}
-      <Modal 
-        visible={!!deleteAction} 
-        transparent 
-        animationType="fade" 
-        onRequestClose={() => setDeleteAction(null)}
-      >
-        <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-          <Pressable 
-            style={[
-              StyleSheet.absoluteFill,
-              { 
-                justifyContent: 'center', 
-                alignItems: 'center', 
-                padding: 20,
-                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.45)' : 'rgba(255, 255, 255, 0.25)',
-              }
-            ]}
-            onPress={() => setDeleteAction(null)}
-          >
-            <Pressable 
-              style={{ 
-                width: '100%', 
-                maxWidth: 380, 
-                borderRadius: 32, 
-                overflow: 'hidden',
-                position: 'relative',
-              }}
-              onPress={(e) => e.stopPropagation()}
-            >
-              <GlassView 
-                glassEffectStyle="regular" 
-                colorScheme={isDark ? 'dark' : 'light'} 
-                style={[StyleSheet.absoluteFill, { borderRadius: 32 }]} 
-              />
-
-              <View style={{
-                padding: 26,
-                borderRadius: 32,
-                borderWidth: 1,
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.65)',
-                alignItems: 'center',
-              }}>
-                <View style={{ 
-                  width: 64, 
-                  height: 64, 
-                  borderRadius: 22, 
-                  backgroundColor: 'rgba(239, 68, 68, 0.15)', 
-                  borderWidth: 1.5,
-                  borderColor: 'rgba(239, 68, 68, 0.3)',
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  marginBottom: 16,
-                  overflow: 'hidden',
-                  position: 'relative',
-                }}>
-                  <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, { borderRadius: 22 }]} />
-                  <Trash2 size={30} color="#ef4444" />
-                </View>
-
-                <Text style={{ fontSize: 20, fontWeight: '800', color: colors.text, textAlign: 'center', letterSpacing: -0.3 }}>
-                  {deleteAction?.type === 'all' ? '¿Eliminar todas?' : '¿Eliminar notificación?'}
-                </Text>
-
-                <Text style={{ fontSize: 14, fontWeight: '500', color: colors.textSecondary, marginTop: 8, textAlign: 'center', lineHeight: 20 }}>
-                  {deleteAction?.type === 'all'
-                    ? 'Esta acción borrará permanentemente todas tus notificaciones. No se puede deshacer.'
-                    : 'Esta notificación se eliminará permanentemente.'}
-                </Text>
-
-                <View style={{ flexDirection: 'row', gap: 12, marginTop: 26, width: '100%' }}>
-                  <TouchableOpacity
-                    onPress={() => setDeleteAction(null)}
-                    activeOpacity={0.75}
-                    style={{
-                      flex: 1,
-                      height: 50,
-                      borderRadius: 18,
-                      borderWidth: 1,
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                      overflow: 'hidden',
-                      position: 'relative',
-                    }}
-                  >
-                    <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, { borderRadius: 18 }]} />
-                    <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>Cancelar</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={confirmDelete}
-                    activeOpacity={0.8}
-                    style={{
-                      flex: 1,
-                      height: 50,
-                      borderRadius: 18,
-                      backgroundColor: '#ef4444',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      shadowColor: '#ef4444',
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.35,
-                      shadowRadius: 8,
-                      elevation: 4,
-                    }}
-                  >
-                    <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#ffffff' }}>
-                      {deleteAction?.type === 'all' ? 'Eliminar todas' : 'Eliminar'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
               </View>
             </Pressable>
           </Pressable>
