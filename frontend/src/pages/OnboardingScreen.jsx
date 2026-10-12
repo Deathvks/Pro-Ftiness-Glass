@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   ArrowDown, Minus, ArrowUp, Edit, ChevronRight,
   Check, Activity, Scale, User, Target, ChevronLeft, Sparkles,
-  Coffee, Footprints, Dumbbell, Trophy, Loader2
+  Coffee, Footprints, Dumbbell, Trophy, Loader2, Flame, Shield
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -603,7 +603,7 @@ const OnboardingScreen = () => {
                 <BigOptionButton
                   selected={formData.goal === 'lose'}
                   onClick={() => setFormData({ ...formData, goal: 'lose' })}
-                  icon={ArrowDown}
+                  icon={Flame}
                   title="Perder Grasa"
                   desc="Déficit calórico para definir y bajar peso."
                   delay="delay-100"
@@ -611,7 +611,7 @@ const OnboardingScreen = () => {
                 <BigOptionButton
                   selected={formData.goal === 'gain'}
                   onClick={() => setFormData({ ...formData, goal: 'gain' })}
-                  icon={ArrowUp}
+                  icon={Dumbbell}
                   title="Ganar Músculo"
                   desc="Superávit ligero para hipertrofia (volumen)."
                   delay="delay-200"
@@ -619,7 +619,7 @@ const OnboardingScreen = () => {
                 <BigOptionButton
                   selected={formData.goal === 'recomp'}
                   onClick={() => setFormData({ ...formData, goal: 'recomp' })}
-                  icon={Sparkles}
+                  icon={Activity}
                   title="Recomposición"
                   desc="Bajar grasa y subir músculo (mismo peso)."
                   delay="delay-300"
@@ -627,7 +627,7 @@ const OnboardingScreen = () => {
                 <BigOptionButton
                   selected={formData.goal === 'maintain'}
                   onClick={() => setFormData({ ...formData, goal: 'maintain' })}
-                  icon={Minus}
+                  icon={Shield}
                   title="Mantenimiento"
                   desc="Mantener peso mejorando rendimiento."
                   delay="delay-400"

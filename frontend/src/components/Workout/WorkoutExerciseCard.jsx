@@ -1,11 +1,12 @@
 import ModalPortal from '../ModalPortal';
 /* frontend/src/components/Workout/WorkoutExerciseCard.jsx */
-import React, { useState } from 'react';
-import { Repeat, Flame, History, Target, Bell } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Repeat, Flame, History, Target, Bell, Sparkles, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import WorkoutSetGrid from './WorkoutSetGrid';
 import useAppStore from '../../store/useAppStore';
 import { calculate1RM } from '../../utils/helpers';
+import { getExerciseHistorySessions, diagnoseExerciseTrend } from '../../utils/smartProgressionCoach';
 
 const WorkoutExerciseCard = ({
   t,
@@ -23,12 +24,27 @@ const WorkoutExerciseCard = ({
   onDisabledInputClick,
   onDisabledButtonClick,
   normalizeDecimalInput,
-  onShowHistory
+  onShowHistory,
+  onShowSmartCoach
 }) => {
-  const { addWarmupSets, setExerciseReminder } = useAppStore((state) => ({
+  const { addWarmupSets, setExerciseReminder, userProfile, workoutLog } = useAppStore((state) => ({
     addWarmupSets: state.addWarmupSets,
-    setExerciseReminder: state.setExerciseReminder
+    setExerciseReminder: state.setExerciseReminder,
+    userProfile: state.userProfile,
+    workoutLog: state.workoutLog
   }));
+
+  const trend = useMemo(() => {
+    if (!exercise?.name || !workoutLog) return null;
+    const sessions = getExerciseHistorySessions(exercise.name, workoutLog);
+    return diagnoseExerciseTrend(sessions);
+  }, [exercise?.name, workoutLog]);
+
+  const isInAsesoria = Boolean(
+    userProfile?.trainer_id ||
+    userProfile?.trainer ||
+    (userProfile?.role === 'trainee' && userProfile?.trainer_id)
+  );
 
   const [showWarmupInput, setShowWarmupInput] = useState(false);
   const [workingWeight, setWorkingWeight] = useState('');
@@ -138,15 +154,58 @@ const WorkoutExerciseCard = ({
             {exercise.sets} series × {exercise.reps} reps
           </p>
           
-          {/* 1RM Estimado del historial */}
-          {estimated1RM > 0 &&
-          <div className="flex w-fit items-center gap-2 bg-accent/10 ring-1 ring-accent/30 rounded-full px-4 py-2 animate-[fade-in_0.3s_ease-out] shadow-sm">
-              <Target size={16} className="text-accent shrink-0" strokeWidth={2.5} />
-              <span className="text-sm font-bold text-accent">
-                1RM Est: {estimated1RM}kg
-              </span>
-            </div>
-          }
+          {/* 1RM Estimado del historial y Botón de Objetivo IA */}
+          <div className="flex flex-wrap items-center gap-2">
+            {estimated1RM > 0 && (
+              <div className="flex w-fit items-center gap-2 bg-accent/10 ring-1 ring-accent/30 rounded-full px-4 py-2 animate-[fade-in_0.3s_ease-out] shadow-sm">
+                <Target size={16} className="text-accent shrink-0" strokeWidth={2.5} />
+                <span className="text-sm font-bold text-accent">
+                  1RM Est: {estimated1RM}kg
+                </span>
+              </div>
+            )}
+
+            {!isInAsesoria && onShowSmartCoach && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShowSmartCoach(exercise);
+                }}
+                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer shadow-sm group ${
+                  trend?.isWarning
+                    ? 'bg-amber-500/15 hover:bg-amber-500/25 ring-1 ring-amber-500/40 text-amber-600 dark:text-amber-400 animate-pulse'
+                    : trend?.isProgressing
+                    ? 'bg-emerald-500/15 hover:bg-emerald-500/25 ring-1 ring-emerald-500/40 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-accent/10 hover:bg-accent/20 ring-1 ring-accent/30 text-accent'
+                }`}
+                title={
+                  trend?.isWarning
+                    ? (trend.status === 'stagnant'
+                        ? 'Llevas varias sesiones con el mismo peso. Toca para ver opciones fáciles para avanzar'
+                        : 'Aviso de fatiga. Toca para ver cómo ajustar la sesión')
+                    : trend?.isProgressing
+                    ? '¡En progresión! Toca para ver pautas de sobrecarga'
+                    : 'Consejo inteligente según tu objetivo'
+                }
+              >
+                {trend?.isWarning ? (
+                  <AlertTriangle size={15} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                ) : trend?.isProgressing ? (
+                  <CheckCircle2 size={15} strokeWidth={2.5} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                ) : (
+                  <Target size={16} strokeWidth={2.5} className="text-accent group-hover:rotate-45 transition-transform" />
+                )}
+                <span>
+                  {trend?.isWarning 
+                    ? (trend.status === 'stagnant' ? 'Mismo peso !' : 'Aviso fatiga !')
+                    : trend?.isProgressing 
+                    ? '¡En racha!' 
+                    : 'Info Objetivo'}
+                </span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -162,10 +221,42 @@ const WorkoutExerciseCard = ({
             if (onShowHistory) onShowHistory(exercise);
           }}
           className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 hover:shadow-sm transition-all duration-300 active:scale-95 outline-none">
-          
           <History size={20} />
           <span className="text-sm font-bold hidden sm:block">Historial</span>
         </button>
+
+        {/* Guía Inteligente según Objetivo (Solo si NO está en asesoría) */}
+        {!isInAsesoria && onShowSmartCoach && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onShowSmartCoach(exercise);
+            }}
+            className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] transition-all duration-300 active:scale-95 outline-none font-bold group relative ${
+              trend?.isWarning
+                ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
+                : trend?.isProgressing
+                ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
+                : 'text-accent hover:bg-accent/10'
+            }`}
+            title="Guía inteligente según tu objetivo"
+          >
+            {trend?.isWarning ? (
+              <div className="relative">
+                <AlertTriangle size={20} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 dark:bg-amber-400 rounded-full animate-ping" />
+              </div>
+            ) : trend?.isProgressing ? (
+              <CheckCircle2 size={20} strokeWidth={2.5} className="text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+            ) : (
+              <Target size={20} strokeWidth={2.5} className="text-accent group-hover:scale-110 transition-transform" />
+            )}
+            <span className="text-sm font-bold hidden sm:block">
+              {trend?.isWarning ? 'Objetivo !' : trend?.isProgressing ? 'Objetivo ✓' : 'Objetivo'}
+            </span>
+          </button>
+        )}
 
         {/* Meta / Recordatorio */}
         <button
@@ -270,8 +361,7 @@ const WorkoutExerciseCard = ({
               <div className="flex flex-col gap-3">
                 <button
                   type="submit"
-                  className="w-full py-4 rounded-[20px] bg-yellow-500 text-white font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-yellow-500/20">
-                  
+                  className="w-full py-4 rounded-[20px] bg-yellow-500 text-black font-black hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-yellow-500/20">
                   Guardar
                 </button>
                 <button

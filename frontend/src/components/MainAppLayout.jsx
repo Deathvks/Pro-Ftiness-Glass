@@ -28,6 +28,7 @@ import AIInfoModal from './AIInfoModal';
 import MilestoneLevelUpModal from './MilestoneLevelUpModal';
 import ReferralSuccessAnimation from './ReferralSuccessAnimation';
 import GlobalRatingPrompt from './GlobalRatingPrompt';
+import UserAvatar from './UserAvatar';
 
 // Constantes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -875,17 +876,13 @@ export default function MainAppLayout({
                   <ChevronLeftIcon className="w-6 h-6" />
                 </button>
               ) : (
-                <button 
+                <UserAvatar
+                  user={userProfile}
+                  size={8}
+                  showRoleRing={true}
+                  className="shrink-0 relative z-20 cursor-pointer active:scale-95 transition-transform"
                   onClick={() => navigate('profile')}
-                  className="w-8 h-8 rounded-full border border-glass-border overflow-hidden shrink-0 flex items-center justify-center bg-bg-secondary active:scale-95 transition-transform relative z-20"
-                  style={{ WebkitTapHighlightColor: 'transparent' }}
-                >
-                  {profileImgSrc ? (
-                    <img src={profileImgSrc} alt="Perfil" className="w-full h-full object-cover" />
-                  ) : (
-                    <UserIcon className="w-5 h-5 text-text-secondary" />
-                  )}
-                </button>
+                />
               )}
                 {view !== 'dashboard' && (
                   <span

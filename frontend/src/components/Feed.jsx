@@ -159,13 +159,16 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
         <div className="space-y-6 sm:space-y-8">
             {feed.map(log => {
                 const isMe = log.user_id === userProfile?.id;
-                const avatarUrl = getFullImageUrl(log.user?.profile_image_url);
+                const authorUser = isMe
+                    ? { ...log.user, ...userProfile, role: userProfile?.role || log.user?.role, trainer_id: userProfile?.trainer_id ?? log.user?.trainer_id }
+                    : (log.user || {});
+                const avatarUrl = getFullImageUrl(authorUser?.profile_image_url);
                 const comments = log.Comments || [];
                 
                 // Determinamos si el usuario del post tiene una historia activa
                 const hasStory = isMe 
                     ? myStories && myStories.length > 0 
-                    : visibleStories.some(s => s.user_id === log.user_id && s.items && s.items.length > 0);
+                    : visibleStories.some(s => (s.userId === log.user_id || s.user_id === log.user_id) && s.items && s.items.length > 0);
 
                 // Clases del borde: si tiene historia -> borde naranja (accent). Si no -> sin borde adicional.
                 const ringClass = hasStory ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : "";
@@ -175,13 +178,13 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4 cursor-pointer group" onClick={() => goToProfile(log.user_id)}>
                                 <UserAvatar 
-                                    user={{ ...log.user, profile_image_url: avatarUrl }} 
+                                    user={{ ...authorUser, profile_image_url: avatarUrl }} 
                                     size={12} 
                                     className={`w-12 h-12 sm:w-14 sm:h-14 shadow-md shrink-0 transition-transform group-hover:scale-105 ${ringClass}`} 
                                 />
                                 <div className="min-w-0">
                                     <p className="font-bold text-text-primary text-base sm:text-lg truncate group-hover:text-accent transition-colors">
-                                        {log.user?.username || 'Usuario'} {isMe && <span className="text-text-tertiary font-medium ml-1 text-xs sm:text-sm">(Tú)</span>}
+                                        {authorUser?.username || 'Usuario'} {isMe && <span className="text-text-tertiary font-medium ml-1 text-xs sm:text-sm">(Tú)</span>}
                                     </p>
                                     <p className="text-xs sm:text-sm text-text-secondary font-medium truncate mt-0.5">{timeAgo(log.workout_date)}</p>
                                 </div>
@@ -303,11 +306,15 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                 {comments.length > 0 && (
                                     <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                                         {comments.map(c => {
-                                            const canDeleteComment = c.user_id === userProfile?.id || isMe || userProfile?.role === 'admin';
+                                            const isCommentMe = c.user_id === userProfile?.id;
+                                            const commentUser = isCommentMe
+                                                ? { ...c.user, ...userProfile, role: userProfile?.role || c.user?.role, trainer_id: userProfile?.trainer_id ?? c.user?.trainer_id }
+                                                : (c.user || {});
+                                            const canDeleteComment = isCommentMe || isMe || userProfile?.role === 'admin';
                                             return (
                                                 <div key={c.id} className="flex items-start gap-3 sm:gap-4 bg-black/5 dark:bg-white/5 p-4 rounded-[20px] group relative transition-colors hover:bg-black/10 dark:hover:bg-white/10">
                                                     <UserAvatar 
-                                                        user={{ ...c.user, profile_image_url: getFullImageUrl(c.user?.profile_image_url) }} 
+                                                        user={{ ...commentUser, profile_image_url: getFullImageUrl(commentUser?.profile_image_url) }} 
                                                         size={10} 
                                                         className="w-10 h-10 shrink-0 cursor-pointer transition-transform hover:scale-105" 
                                                         onClick={() => goToProfile(c.user_id)}
@@ -315,7 +322,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                                                         <div className="flex justify-between items-start gap-2 mb-1">
                                                             <span className="text-sm font-bold text-text-primary cursor-pointer hover:text-accent transition-colors truncate" onClick={() => goToProfile(c.user_id)}>
-                                                                {c.user?.username}
+                                                                {commentUser?.username || 'Usuario'}
                                                             </span>
                                                             <div className="flex items-center gap-2 shrink-0">
                                                                 <span className="text-[10px] sm:text-xs font-bold text-text-muted whitespace-nowrap">

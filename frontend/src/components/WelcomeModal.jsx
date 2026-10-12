@@ -276,7 +276,7 @@ const WelcomeModal = ({ onClose }) => {
                       padding: '2px 6px', borderRadius: '6px',
                       letterSpacing: '0.05em',
                       lineHeight: 1
-                    }}>v{majorVersion}</span>
+                    }}>v{APP_VERSION}</span>
                 </div>
 
                 {/* Badge */}
@@ -290,7 +290,7 @@ const WelcomeModal = ({ onClose }) => {
                     borderRadius: '99px',
                     boxShadow: '0 4px 16px -2px color-mix(in srgb, var(--color-accent) 60%, transparent)',
                     whiteSpace: 'nowrap'
-                  }}>NUEVA ERA</div>
+                  }}>NOVEDADES V{APP_VERSION}</div>
               </div>
 
               {/* Title */}
@@ -300,7 +300,7 @@ const WelcomeModal = ({ onClose }) => {
                   letterSpacing: '-0.5px',
                   lineHeight: 1.15
                 }}>
-                Tu Entrenador Personal
+                Evolución Inteligente
               </h1>
 
               <p style={{
@@ -311,7 +311,7 @@ const WelcomeModal = ({ onClose }) => {
                   maxWidth: '320px',
                   marginInline: 'auto'
                 }}>
-                La evolución definitiva. Descubre a tu nuevo Entrenador Personal interactivo, dietas personalizadas y un diseño impecable.
+                Descubre las recomendaciones con IA para romper mesetas, nuevos bordes de usuario en comunidad y rachas de entrenamiento protegidas en fin de semana.
               </p>
             </div>
 
@@ -321,7 +321,7 @@ const WelcomeModal = ({ onClose }) => {
             {/*  Feature Cards  */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
 
-              {/* Entrenador Personal */}
+              {/* Recomendaciones Inteligentes y Mesetas */}
               <div className="wm-feature-card wm-feature-1" style={{
                   background: 'linear-gradient(135deg, #080814 0%, #121226 100%)',
                   border: '1px solid rgba(168,85,247,0.35)',
@@ -342,60 +342,60 @@ const WelcomeModal = ({ onClose }) => {
                   }}></div>
                 <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #a855f7, #6366f1)' }} />
                 <div className="wm-icon-wrap" style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.25)' }}>
-                  <MessageCircle size={18} style={{ color: '#a855f7' }} />
+                  <Brain size={18} style={{ color: '#a855f7' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>Chat de Asesoría Integral</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>Recomendaciones Inteligentes</p>
                   <p style={{ fontSize: '13px', color: 'rgba(203,213,225,0.9)', margin: 0, lineHeight: 1.55 }}>
-                    Habla en tiempo real con tu Entrenador Personal. Te dará consejos, analizará tu progreso y resolverá cualquier duda al instante.
+                    Detección de mesetas y sobrecarga progresiva. La IA analiza tus cargas reales previas y te sugiere pesos, reps y ajuste dinámico de series para hoy con 1 toque.
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#a855f7' }}>01</span>
               </div>
 
-              {/* Generación de Rutinas y Dietas */}
+              {/* Nuevos Bordes por Usuario */}
               <div className="wm-feature-card wm-feature-2" style={{ border: '1px solid var(--glass-border)' }}>
-                <div className="wm-accent-line" style={{ background: 'var(--color-accent)' }} />
-                <div className="wm-icon-wrap" style={{ background: 'var(--color-accent-transparent)', border: '1px solid var(--color-accent-border)' }}>
-                  <Brain size={18} style={{ color: 'var(--color-accent)' }} />
+                <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #3b82f6, #06b6d4)' }} />
+                <div className="wm-icon-wrap" style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)' }}>
+                  <Palette size={18} style={{ color: '#3b82f6' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: 'var(--text-primary)', margin: '0 0 4px', textTransform: 'uppercase' }}>Rutinas y Dietas a Medida</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>Bordes Dinámicos en Comunidad</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Genera rutinas 100% personalizadas y obtén pautas nutricionales precisas adaptadas milimétricamente a tus objetivos diarios.
+                    Avatares con anillos degradados diferenciados estilo historias en el muro y publicaciones. Reconoce al instante la categoría y membresía de cada atleta y preparador.
                   </p>
                 </div>
-                <span className="wm-num" style={{ color: 'var(--color-accent)' }}>02</span>
+                <span className="wm-num" style={{ color: '#3b82f6' }}>02</span>
               </div>
 
-              {/* Modales y Fluidez */}
+              {/* Rachas y Fines de Semana */}
               <div className="wm-feature-card wm-feature-3" style={{ border: '1px solid var(--glass-border)' }}>
-                <div className="wm-accent-line" style={{ background: '#3b82f6' }} />
-                <div className="wm-icon-wrap" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
-                  <Smartphone size={18} style={{ color: '#3b82f6' }} />
+                <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #f97316, #eab308)' }} />
+                <div className="wm-icon-wrap" style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)' }}>
+                  <Flame size={18} style={{ color: '#f97316' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>Modales Bottom-Sheet</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f97316', margin: '0 0 4px', textTransform: 'uppercase' }}>Rachas Protegidas en Fines de Semana</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Nueva interfaz táctil renovada. Todos los menús emergen suavemente desde abajo, haciendo la navegación a una mano súper cómoda.
+                    Las rachas se vinculan 100% a entrenamientos completados. Sábados y domingos quedan protegidos como días de descanso sin romper tu racha ni falsas alertas.
                   </p>
                 </div>
-                <span className="wm-num" style={{ color: '#3b82f6' }}>03</span>
+                <span className="wm-num" style={{ color: '#f97316' }}>03</span>
               </div>
 
-              {/* Optimización Extrema */}
+              {/* Historias 9:16 y Muro */}
               <div className="wm-feature-card wm-feature-4" style={{ border: '1px solid var(--glass-border)' }}>
-                <div className="wm-accent-line" style={{ background: '#ea580c' }} />
-                <div className="wm-icon-wrap" style={{ background: 'rgba(234,88,12,0.1)', border: '1px solid rgba(234,88,12,0.2)' }}>
-                  <Sparkles size={18} style={{ color: '#ea580c' }} />
+                <div className="wm-accent-line" style={{ background: '#10b981' }} />
+                <div className="wm-icon-wrap" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)' }}>
+                  <Sparkles size={18} style={{ color: '#10b981' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#ea580c', margin: '0 0 4px', textTransform: 'uppercase' }}>60 FPS y Fluidez</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#10b981', margin: '0 0 4px', textTransform: 'uppercase' }}>Historias 9:16 y Fluidez Total</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Hemos optimizado cada animación y transición. Ahora pasar entre vistas es instantáneo, con gestos ultra-precisos de deslizamiento.
+                    Encuadre y recorte vertical 9:16 perfeccionado sin cierres accidentales, importación directa de rutinas de amigos y máxima rapidez de respuesta en cada vista.
                   </p>
                 </div>
-                <span className="wm-num" style={{ color: '#ea580c' }}>04</span>
+                <span className="wm-num" style={{ color: '#10b981' }}>04</span>
               </div>
 
             </div>
@@ -403,7 +403,7 @@ const WelcomeModal = ({ onClose }) => {
             {/*  Footer  */}
             <div className="wm-btn-in">
               <button className="wm-btn" onClick={handleGetStarted}>
-                <span style={{ position: 'relative', zIndex: 1 }}>DESCUBRIR LA V{majorVersion}</span>
+                <span style={{ position: 'relative', zIndex: 1 }}>DESCUBRIR NOVEDADES</span>
                 <ChevronRight size={18} strokeWidth={2.5} style={{ position: 'relative', zIndex: 1 }} />
               </button>
 

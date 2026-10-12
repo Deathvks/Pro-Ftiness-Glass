@@ -1,7 +1,7 @@
 /* frontend/src/pages/Nutrition.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, X, Scale, Image as ImageIcon, IceCream, AlertTriangle, Check, PieChart, LayoutGrid } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, X, Scale, Image as ImageIcon, IceCream, AlertTriangle, Check, CheckCircle2, Target, PieChart, LayoutGrid } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import Spinner from '../components/Spinner';
@@ -14,6 +14,8 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import CreatinaTracker from '../components/CreatinaTracker';
 import SugarTargetModal from '../components/SugarTargetModal';
 import NutritionTourGuide from '../components/NutritionTourGuide';
+import SmartNutritionCoachModal from '../components/nutrition/SmartNutritionCoachModal';
+import { generateSmartNutritionCoachPlan } from '../utils/smartNutritionCoach';
 import { useToast } from '../hooks/useToast';
 import * as nutritionService from '../services/nutritionService';
 import PromoBanner from '../components/PromoBanner';
@@ -140,6 +142,7 @@ const Nutrition = ({ setView }) => {
     const [logToDelete, setLogToDelete] = useState(null);
     const [mealGroupToDelete, setMealGroupToDelete] = useState(null);
     const [showCreatinaTracker, setShowCreatinaTracker] = useState(false);
+    const [showNutritionCoachModal, setShowNutritionCoachModal] = useState(false);
 
     const [hoveredMacro, setHoveredMacro] = useState(null);
 
@@ -449,6 +452,45 @@ const Nutrition = ({ setView }) => {
         return totals;
     }, [nutritionLog]);
 
+    const nutritionPlan = useMemo(() => {
+        if (!nutritionLog || nutritionLog.length === 0) return null;
+        return generateSmartNutritionCoachPlan({
+            userProfile,
+            totals,
+            targets: {
+                calorieTarget,
+                proteinTarget,
+                carbsTarget,
+                fatsTarget,
+                sugarTarget,
+                waterTarget,
+                creatineTarget
+            },
+            waterLog,
+            todaysCreatineLog,
+            meals,
+            nutritionLog,
+            selectedDate,
+            latestWeight
+        });
+    }, [
+        userProfile,
+        totals,
+        calorieTarget,
+        proteinTarget,
+        carbsTarget,
+        fatsTarget,
+        sugarTarget,
+        waterTarget,
+        creatineTarget,
+        waterLog,
+        todaysCreatineLog,
+        meals,
+        nutritionLog,
+        selectedDate,
+        latestWeight
+    ]);
+
     const getLogImage = (log) => {
         if (!log) return null;
         if (log.image_url) {
@@ -554,10 +596,106 @@ const Nutrition = ({ setView }) => {
                 <div className="flex justify-center items-center py-20"><Spinner size={40} /></div>
             ) : (
                 <>
+                    {/* Botón Inteligente de Objetivo Nutricional (Solo si hay comida registrada ese día) */}
+                    {Boolean(nutritionLog && nutritionLog.length > 0 && nutritionPlan) && (
+                        <div className="mb-6 animate-[fade-in_0.3s_ease-out]">
+                            <button
+                                type="button"
+                                onClick={() => setShowNutritionCoachModal(true)}
+                                className={`w-full p-4 sm:p-5 rounded-[28px] flex items-center justify-between gap-4 transition-all active:scale-[0.99] shadow-lg group cursor-pointer text-left ring-1 ring-black/5 dark:ring-white/10 border-none ${
+                                    nutritionPlan.isWarning
+                                        ? 'bg-amber-500/10 hover:bg-amber-500/15 text-text-primary'
+                                        : nutritionPlan.isOptimal
+                                        ? 'bg-emerald-500/10 hover:bg-emerald-500/15 text-text-primary'
+                                        : 'bg-accent/10 hover:bg-accent/15 text-text-primary'
+                                }`}
+                            >
+                                <div className="flex items-center gap-3.5 min-w-0">
+                                    <div className={`p-3 rounded-[18px] shrink-0 ${
+                                        nutritionPlan.isWarning
+                                            ? 'bg-amber-500/20 text-amber-400 animate-pulse'
+                                            : nutritionPlan.isOptimal
+                                            ? 'bg-emerald-500/20 text-emerald-400'
+                                            : 'bg-accent/20 text-accent'
+                                    }`}>
+                                        {nutritionPlan.isWarning ? (
+                                            <AlertTriangle size={22} strokeWidth={2.5} />
+                                        ) : nutritionPlan.isOptimal ? (
+                                            <CheckCircle2 size={22} strokeWidth={2.5} />
+                                        ) : (
+                                            <Target size={22} strokeWidth={2.5} />
+                                        )}
+                                    </div>
+
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border-none ${
+                                                nutritionPlan.isWarning
+                                                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                                    : nutritionPlan.isOptimal
+                                                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                                    : 'bg-accent/15 text-accent'
+                                            }`}>
+                                                {nutritionPlan.isWarning 
+                                                    ? `Aviso Nutricional (${nutritionPlan.warningsCount} ${nutritionPlan.warningsCount === 1 ? 'alerta' : 'alertas'}) !` 
+                                                    : nutritionPlan.isOptimal 
+                                                    ? '¡Día Nutricional en Racha! ✓' 
+                                                    : 'Objetivo Nutricional'}
+                                            </span>
+                                            <span className="text-[10px] font-bold text-text-muted">
+                                                Meta: {nutritionPlan.userGoal.label}
+                                            </span>
+                                        </div>
+
+                                        <p className="text-xs sm:text-sm font-black text-text-primary mt-1 truncate">
+                                            {nutritionPlan.isWarning
+                                                ? `Ajustes recomendados para hoy: Revisa proteína, calorías o hidratación.`
+                                                : nutritionPlan.isOptimal
+                                                ? `¡Tus macros y calorías están perfectamente ajustados a tu meta!`
+                                                : `Pautas recomendadas para completar tus objetivos de nutrición hoy.`}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 shrink-0 text-xs sm:text-sm font-extrabold text-accent group-hover:translate-x-1 transition-transform">
+                                    <span className="hidden sm:inline">Pautas & Recomendaciones</span>
+                                    <ChevronRight size={18} />
+                                </div>
+                            </button>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
                         <GlassCard className="glass lg:col-span-3 p-6 rounded-[32px] shadow-xl ring-1 ring-black/5 dark:ring-white/10 border-none">
                             <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-bold text-text-primary">Resumen del Día</h2>
+                                <div className="flex items-center gap-2.5 flex-wrap">
+                                    <h2 className="text-xl font-bold text-text-primary">Resumen del Día</h2>
+                                    {Boolean(nutritionLog && nutritionLog.length > 0 && nutritionPlan) && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNutritionCoachModal(true)}
+                                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black transition-all active:scale-95 shadow-sm ring-1 ring-black/5 dark:ring-white/10 border-none ${
+                                                nutritionPlan.isWarning
+                                                    ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 animate-pulse'
+                                                    : nutritionPlan.isOptimal
+                                                    ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400'
+                                                    : 'bg-accent/15 hover:bg-accent/25 text-accent'
+                                            }`}
+                                            title="Toca para ver el diagnóstico nutricional y pautas"
+                                        >
+                                            {nutritionPlan.isWarning ? (
+                                                <AlertTriangle size={13} strokeWidth={2.5} className="shrink-0" />
+                                            ) : nutritionPlan.isOptimal ? (
+                                                <CheckCircle2 size={13} strokeWidth={2.5} className="shrink-0" />
+                                            ) : (
+                                                <Target size={13} strokeWidth={2.5} className="shrink-0" />
+                                            )}
+                                            <span>
+                                                {nutritionPlan.isWarning ? 'Aviso !' : nutritionPlan.isOptimal ? 'Óptimo ✓' : 'Info Objetivo'}
+                                            </span>
+                                        </button>
+                                    )}
+                                </div>
                                 <div className="flex bg-glass-bg p-1 rounded-[14px] ring-1 ring-black/5 dark:ring-white/10 border-none">
                                     <button
                                         onClick={() => setSummaryView('grid')}
@@ -716,7 +854,7 @@ const Nutrition = ({ setView }) => {
                                 className="glass p-5 flex flex-col relative overflow-hidden group cursor-pointer hover:-translate-y-1 hover:shadow-xl transition-all duration-300 rounded-[28px] ring-1 ring-black/5 dark:ring-white/10 border-none"
                                 onClick={() => setModal({ type: 'water', data: null })}
                             >
-                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-black/5 dark:border-white/10/50 relative z-10">
+                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-black/5 dark:border-white/10 relative z-10">
                                     <div className="flex items-baseline gap-2">
                                         <h2 className="text-lg font-bold text-text-primary">Agua</h2>
                                         <span className="text-sm font-semibold text-text-muted">
@@ -757,7 +895,7 @@ const Nutrition = ({ setView }) => {
                                 className="glass p-5 flex flex-col relative overflow-hidden group cursor-pointer hover:-translate-y-1 hover:shadow-xl transition-all duration-300 rounded-[28px] ring-1 ring-black/5 dark:ring-white/10 border-none"
                                 onClick={() => setShowCreatinaTracker(true)}
                             >
-                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-black/5 dark:border-white/10/50 relative z-10">
+                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-black/5 dark:border-white/10 relative z-10">
                                     <div className="flex items-baseline gap-2">
                                         <h2 className="text-lg font-bold text-text-primary">Creatina</h2>
                                         <span className="text-sm font-semibold text-text-muted">
@@ -803,7 +941,7 @@ const Nutrition = ({ setView }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                         {Object.entries(meals).map(([mealType, logs]) => (
                             <GlassCard key={mealType} className="glass p-5 sm:p-6 flex flex-col rounded-[28px] hover:shadow-xl transition-all duration-300 group ring-1 ring-black/5 dark:ring-white/10 border-none">
-                                <div className="flex justify-between items-center mb-5 pb-3 border-b border-black/5 dark:border-white/10/50">
+                                <div className="flex justify-between items-center mb-5 pb-3 border-b border-black/5 dark:border-white/10">
                                     <div className="flex items-baseline gap-2">
                                         <h2 className="text-xl font-bold capitalize text-text-primary">
                                             {{ breakfast: 'Desayuno', lunch: 'Almuerzo', dinner: 'Cena', snack: 'Snacks' }[mealType]}
@@ -970,7 +1108,7 @@ const Nutrition = ({ setView }) => {
                         </div>
 
                         <div className="p-6 overflow-y-auto flex-1 min-h-0 custom-scrollbar bg-bg-primary">
-                            <div className="flex items-center justify-between mb-6 pb-4 border-b border-black/5 dark:border-white/10/50">
+                            <div className="flex items-center justify-between mb-6 pb-4 border-b border-black/5 dark:border-white/10">
                                 <div className="flex flex-col">
                                     <span className="text-sm font-semibold text-text-secondary uppercase tracking-widest">Calorías</span>
                                     <span className="text-4xl font-black text-accent">{viewLog.calories} <span className="text-lg font-medium text-text-muted">kcal</span></span>
@@ -1017,7 +1155,7 @@ const Nutrition = ({ setView }) => {
                             </div>
                         </div>
 
-                        <div className="p-5 border-t border-black/5 dark:border-white/10/50 shrink-0 bg-bg-primary">
+                        <div className="p-5 border-t border-black/5 dark:border-white/10 shrink-0 bg-bg-primary">
                             <button
                                 onClick={() => setViewLog(null)}
                                 className="w-full py-4 rounded-[20px] bg-bg-secondary hover:bg-glass-bg ring-1 ring-black/5 dark:ring-white/10 border-none font-bold text-text-primary transition-colors shadow-sm"
@@ -1082,6 +1220,36 @@ const Nutrition = ({ setView }) => {
                 <CreatinaTracker
                     onClose={() => setShowCreatinaTracker(false)}
                     selectedDate={selectedDate}
+                />
+            )}
+
+            {showNutritionCoachModal && (
+                <SmartNutritionCoachModal
+                    userProfile={userProfile}
+                    totals={totals}
+                    targets={{
+                        calorieTarget,
+                        proteinTarget,
+                        carbsTarget,
+                        fatsTarget,
+                        sugarTarget,
+                        waterTarget,
+                        creatineTarget
+                    }}
+                    waterLog={waterLog}
+                    todaysCreatineLog={todaysCreatineLog}
+                    meals={meals}
+                    nutritionLog={nutritionLog}
+                    selectedDate={selectedDate}
+                    latestWeight={latestWeight}
+                    onClose={() => setShowNutritionCoachModal(false)}
+                    onNavigateAsesoria={() => {
+                        setShowNutritionCoachModal(false);
+                        if (setView) setView('asesoria');
+                    }}
+                    onApplyStrategy={(strategy) => {
+                        addToast(`Pauta aplicada: ${strategy.title}`, 'success');
+                    }}
                 />
             )}
 

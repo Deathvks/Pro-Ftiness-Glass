@@ -6,7 +6,7 @@ import models from '../models/index.js';
 import { createNotification } from '../services/notificationService.js';
 import { processUploadedFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/imageService.js';
-import { addXp, checkStreak, WEIGHT_UPDATE_XP } from '../services/gamificationService.js';
+import { addXp, syncUserStreak, WEIGHT_UPDATE_XP } from '../services/gamificationService.js';
 
 const {
   User,
@@ -192,9 +192,8 @@ export const updateGamificationStats = async (req, res, next) => {
 
     if (reason === 'Login Diario') {
       const todayStr = new Date().toISOString().split('T')[0];
-      const result = await checkStreak(userId, todayStr);
-
-      if (!result.success) throw new Error(result.error || 'Error procesando racha');
+      const xpResult = await addXp(userId, 25, 'Login Diario', { userInstance: user });
+      await syncUserStreak(user, todayStr);
 
       await user.reload({ attributes: ['xp', 'level', 'streak', 'last_activity_date', 'unlocked_badges'] });
 
@@ -209,7 +208,7 @@ export const updateGamificationStats = async (req, res, next) => {
       if (returnDate) returnDate = new Date(returnDate).toISOString().split('T')[0];
 
       return res.json({
-        message: result.xpAwarded > 0 ? 'Login diario procesado (+XP)' : 'Login diario ya registrado hoy',
+        message: xpResult.xpAdded > 0 ? 'Login diario procesado (+XP)' : 'Login diario ya registrado hoy',
         success: true,
         data: {
           xp: user.xp,
@@ -218,7 +217,7 @@ export const updateGamificationStats = async (req, res, next) => {
           last_activity_date: returnDate,
           unlocked_badges: currentBadges
         },
-        ignored: result.xpAwarded === 0
+        ignored: xpResult.xpAdded === 0
       });
     }
 
@@ -330,9 +329,7 @@ export const updateMyProfile = async (req, res, next) => {
     await t.commit();
 
     if (weightUpdated) {
-      const todayStr = new Date().toISOString().split('T')[0];
       addXp(userId, WEIGHT_UPDATE_XP, 'Peso registrado (Perfil)').catch(console.error);
-      checkStreak(userId, todayStr).catch(console.error);
     }
 
     let ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'IP desconocida';

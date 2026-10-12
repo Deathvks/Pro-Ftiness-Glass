@@ -6,6 +6,7 @@ import pushService from './pushService.js';
 import { createNotification } from './notificationService.js';
 import { cleanOrphanedImages, deleteFile } from './imageService.js';
 import { sendBotReminderEmail } from './emailService.js';
+import { countMissedWeekdays } from './gamificationService.js';
 
 /**
  * Obtiene la hora y fecha local para una zona horaria dada.
@@ -17,14 +18,16 @@ const getLocalTime = (timezone) => {
     const hour = parseInt(now.toLocaleTimeString('en-US', { timeZone: tz, hour12: false, hour: 'numeric' }), 10);
     const day = parseInt(now.toLocaleDateString('en-US', { timeZone: tz, day: 'numeric' }), 10);
     const date = now.toLocaleDateString('sv-SE', { timeZone: tz }); // Formato YYYY-MM-DD
+    const dayOfWeek = new Date(date + 'T12:00:00').getDay(); // 0 = Domingo, 6 = Sábado
 
-    return { hour, day, date };
+    return { hour, day, date, dayOfWeek };
   } catch (error) {
     const now = new Date();
     return {
       hour: now.getUTCHours(),
       day: now.getUTCDate(),
-      date: now.toISOString().split('T')[0]
+      date: now.toISOString().split('T')[0],
+      dayOfWeek: now.getUTCDay()
     };
   }
 };
@@ -285,7 +288,9 @@ const checkStreakWars = () => {
 
       // 2. Filtrar a los que se les acaba el día (20:00h) y no han entrenado hoy
       const targetUsers = users.filter(user => {
-        const { hour, date: localDate } = getLocalTime(user.timezone);
+        const { hour, date: localDate, dayOfWeek } = getLocalTime(user.timezone);
+        // Sábados y domingos son días de descanso protegidos: no se envía alerta de peligro en fin de semana
+        if (dayOfWeek === 0 || dayOfWeek === 6) return false;
         if (hour !== 20 || !user.last_activity_date) return false;
 
         // Si el último registro de actividad es anterior a hoy, está en peligro
@@ -298,6 +303,13 @@ const checkStreakWars = () => {
 
       // 3. Obtener redes sociales de estos usuarios y notificar en paralelo
       await Promise.all(targetUsers.map(async (dangerUser) => {
+        // 1. Notificar primero y directamente al propio usuario cuya racha peligra
+        await notifyUser(dangerUser.id, {
+          title: '🔥 ¡Tu racha está en peligro!',
+          body: `Llevas una racha de ${dangerUser.streak} ${dangerUser.streak === 1 ? 'día' : 'días'} y aún no has entrenado hoy. ¡Completa tu entrenamiento antes de que acabe el día para no perderla!`,
+          url: '/routines'
+        });
+
         const [friendships, squadMemberships] = await Promise.all([
           db.Friendship.findAll({
             where: {
@@ -324,13 +336,13 @@ const checkStreakWars = () => {
           squadMateIds = mates.map(m => m.user_id);
         }
 
-        // Set unifica IDs repetidos (por si son amigos y del mismo squad)
-        const usersToNotify = [...new Set([...friendIds, ...squadMateIds])];
+        // Set unifica IDs repetidos (por si son amigos y del mismo squad) y EXCLUYE al propio usuario
+        const usersToNotify = [...new Set([...friendIds, ...squadMateIds])].filter(id => id !== dangerUser.id);
 
         await Promise.all(usersToNotify.map(notifyId =>
           notifyUser(notifyId, {
             title: '🔥 ¡Racha en peligro!',
-            body: `Tu amigo ${dangerUser.username || 'alguien de tu equipo'} está a punto de perder su racha de ${dangerUser.streak} días. ¡Empújale a entrenar!`,
+            body: `Tu amigo ${dangerUser.username || 'alguien de tu equipo'} está a punto de perder su racha de ${dangerUser.streak} ${dangerUser.streak === 1 ? 'día' : 'días'}. ¡Empújale a entrenar!`,
             url: `/social`,
           })
         ));
@@ -357,26 +369,35 @@ const resetInactiveStreaks = () => {
       let resetCount = 0;
 
       await Promise.all(users.map(async (user) => {
-        if (!user.last_activity_date) return;
+        if (!user.last_activity_date) {
+          user.streak = 0;
+          await user.save();
+          resetCount++;
+          return;
+        }
 
         const { date: localDate } = getLocalTime(user.timezone);
 
         // Parseamos las fechas usando formato YYYY-MM-DD para evitar diferencias de horas
-        const lastActiveDate = new Date(user.last_activity_date);
-        const todayDate = new Date(localDate);
+        const lastActiveDate = new Date(user.last_activity_date).toISOString().split('T')[0];
 
-        // Calculamos la diferencia exacta en días
-        const diffTime = todayDate.getTime() - lastActiveDate.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        // Calculamos cuántos días laborables (lunes a viernes) se han perdido
+        // Sábados y domingos son días de descanso protegidos y no cuentan como días perdidos
+        const missedWeekdays = countMissedWeekdays(lastActiveDate, localDate);
 
-        // Si han pasado más de 1 día (2 días o más), el usuario ha perdido la racha
-        if (diffDays > 1) {
+        // Si ha transcurrido al menos 1 día laborable requerido sin entrenar, el usuario ha perdido la racha
+        if (missedWeekdays > 0) {
+          const oldStreak = user.streak;
           user.streak = 0;
           await user.save();
           resetCount++;
 
-          // Opcional: podrías notificarle que ha perdido su racha
-          // notifyUser(user.id, { title: 'Racha perdida 💔', body: 'Tu racha ha vuelto a 0. ¡Hoy es un buen día para empezar de nuevo!', url: '/' });
+          // Notificar al usuario que ha perdido su racha
+          notifyUser(user.id, {
+            title: '💔 Racha perdida',
+            body: `Has perdido tu racha de ${oldStreak} ${oldStreak === 1 ? 'día' : 'días'} por no haber entrenado. ¡Hoy es un buen día para empezar de nuevo!`,
+            url: '/routines'
+          }).catch(err => console.error(`[Cron] Error notificando pérdida de racha a ${user.id}:`, err.message));
         }
       }));
 

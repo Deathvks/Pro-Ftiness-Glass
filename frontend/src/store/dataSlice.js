@@ -276,7 +276,6 @@ export const createDataSlice = (set, get) => ({
       }));
 
       if (get().addXp) get().addXp(20);
-      if (get().checkStreak) get().checkStreak(getTodayDateString());
 
       return { success: true, routine: newRoutine, message: 'Rutina creada con éxito.' };
     } catch (error) {
@@ -374,7 +373,6 @@ export const createDataSlice = (set, get) => ({
       }
 
       if (get().addXp) get().addXp(10);
-      if (get().checkStreak) get().checkStreak(getTodayDateString());
 
       return { success: true, message: 'Peso registrado con éxito.' };
     } catch (error) {

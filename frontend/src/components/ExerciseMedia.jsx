@@ -126,8 +126,10 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
 
   // Fallback directo si no hay ningÃƒÂºn recurso asignado (evita renderizar etiquetas vacÃƒÂ­as)
   if (!finalImageUrl && !videoUrl && !youtubeThumbnail) {
+    const hasAspectInClass = className && className.includes('aspect-');
+    const aspectClass = hasAspectInClass ? '' : 'aspect-video';
     return (
-      <div className={`aspect-video ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center ${className}`}>
+      <div className={`${aspectClass} ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center ${className}`}>
         <ImageIcon size={48} className="opacity-60" />
       </div>
     );
@@ -135,8 +137,10 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
 
   // Reproductor interactivo de YouTube
   if (youtubeId && playYouTube) {
+    const hasAspectInClass = className && className.includes('aspect-');
+    const aspectClass = hasAspectInClass ? '' : 'aspect-video';
     return (
-      <div className={`aspect-video w-full h-full rounded-xl overflow-hidden bg-black ${className}`}>
+      <div className={`${aspectClass} w-full h-full rounded-xl overflow-hidden bg-black ${className}`}>
         <iframe
           key={youtubeId}
           src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&loop=1&playlist=${youtubeId}`}

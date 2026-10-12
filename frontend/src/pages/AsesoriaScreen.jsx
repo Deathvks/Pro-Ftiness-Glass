@@ -366,8 +366,8 @@ export default function AsesoriaScreen({ onBack }) {
               <UserCircleIcon className="w-10 h-10 text-text-secondary" />
             )}
             <div>
-              <h2 className="font-bold text-text-primary text-sm leading-tight">Entrenador</h2>
-              <p className="text-[11px] text-text-secondary">@entrenador</p>
+              <h2 className="font-bold text-text-primary text-sm leading-tight">{trainer.name}</h2>
+              <p className="text-[11px] text-text-secondary">@{trainer.username}</p>
             </div>
           </div>
         ) : null}

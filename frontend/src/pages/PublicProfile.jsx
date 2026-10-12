@@ -38,6 +38,7 @@ import StoryViewer from '../components/StoryViewer';
 import SEOHead from '../components/SEOHead';
 import ExerciseMedia from '../components/ExerciseMedia';
 import ModalPortal from '../components/ModalPortal';
+import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 
 // --- CONFIGURACIÓN DE PUERTO ---
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
@@ -565,14 +566,24 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                 </div>
 
                 <div className="z-10">
-                    <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary mb-2 flex items-center justify-center gap-3">
-                        {profile.username}
-                        {userStory && (
-                            <span className="text-[10px] bg-accent text-accent-contrast px-2 py-1 rounded-full uppercase tracking-widest font-black shadow-md shadow-accent/30">
-                                Historia
-                            </span>
-                        )}
-                    </h2>
+                    {(() => {
+                        const roleConfig = getUserRoleRingConfig(profile);
+                        return (
+                            <>
+                                <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary mb-2 flex items-center justify-center gap-3 flex-wrap">
+                                    {profile.username}
+                                    <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ring-1 ${roleConfig.badgeBg}`}>
+                                        {roleConfig.label}
+                                    </span>
+                                    {userStory && (
+                                        <span className="text-[10px] bg-accent text-accent-contrast px-2 py-1 rounded-full uppercase tracking-widest font-black shadow-md shadow-accent/30">
+                                            Historia
+                                        </span>
+                                    )}
+                                </h2>
+                            </>
+                        );
+                    })()}
                     <p className="text-text-secondary text-sm font-medium flex items-center justify-center gap-2">
                         Miembro desde {profile.createdAt ? new Date(profile.createdAt).getFullYear() : '2024'}
                         {profile.is_verified && <Shield size={16} className="text-blue-500 fill-blue-500/20" />}

@@ -22,7 +22,9 @@ import {
   Lock,
   X,
   Sparkles,
-  Flame
+  Flame,
+  TrendingUp,
+  ArrowRight
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -817,9 +819,11 @@ const Routines = ({ setView }) => {
       <PromoBanner type="routines" onClick={() => setView('asesoria')} />
 
       <div className="hidden md:flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
-        <h1 className="text-3xl md:text-4xl font-extrabold mt-10 md:mt-0 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
-          Rutinas
-        </h1>
+        <div className="flex items-center gap-3.5">
+          <h1 className="text-3xl md:text-4xl font-extrabold mt-10 md:mt-0 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
+            Rutinas
+          </h1>
+        </div>
         {activeTab === 'myRoutines' && <RoutineActionButtons id="routines-actions-desktop" />}
       </div>
 
@@ -864,6 +868,38 @@ const Routines = ({ setView }) => {
 
       {activeTab === 'myRoutines' && (
         <>
+          {/* Tarjeta destacada de acceso directo a Tu Progreso */}
+          <button
+            type="button"
+            onClick={() => setView('progress')}
+            className="w-full flex items-center justify-between p-3.5 sm:p-4.5 rounded-[24px] sm:rounded-[28px] bg-gradient-to-r from-accent/15 via-accent/5 to-transparent hover:from-accent/20 hover:via-accent/10 hover:to-accent/5 ring-1 ring-black/5 dark:ring-white/10 border-none transition-all duration-300 group shadow-sm active:scale-[0.99] mb-6 text-left cursor-pointer"
+          >
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+              <div 
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-[16px] sm:rounded-[18px] bg-accent text-accent-contrast flex items-center justify-center shrink-0 shadow-md shadow-accent/25 group-hover:scale-105 transition-transform"
+                style={{ color: "var(--btn-accent-text, #000)" }}
+              >
+                <TrendingUp size={22} strokeWidth={2.5} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <span className="font-black text-sm sm:text-base text-text-primary group-hover:text-accent transition-colors">
+                    Ver Tu Progreso
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/20 text-accent">
+                    Gráficas & Récords
+                  </span>
+                </div>
+                <p className="text-xs text-text-secondary font-medium leading-relaxed mt-0.5 line-clamp-2 sm:line-clamp-none">
+                  Evolución de cargas, Récords Personales (PR), peso corporal y analítica
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 sm:gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full bg-accent/15 group-hover:bg-accent text-accent group-hover:text-accent-contrast font-bold text-xs sm:text-sm shrink-0 ml-2.5 sm:ml-4 transition-all">
+              <span className="hidden xs:inline sm:inline">Ver</span>
+              <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </button>
           <div className="mb-8 flex flex-col gap-5">
             <div className="max-w-md relative" id="routines-search">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary z-10 pointer-events-none" size={18} />

@@ -71,7 +71,7 @@ const ExerciseCard = ({
   const { t: tCommon } = useTranslation("translation");
 
   const identifier = exercise.tempId || exercise.id;
-  const translatedName = tName(exercise.name, { defaultValue: exercise.name });
+  const translatedName = exercise.name ? tName(exercise.name, { defaultValue: exercise.name }) : "";
 
   const displayMuscleGroup = useMemo(() => {
     if (exercise.is_manual) return exercise.muscle_group;

@@ -1,6 +1,5 @@
-/* frontend/src/pages/PhysicalProfileEditor.jsx */
 import React, { useState, useMemo } from 'react';
-import { ArrowDown, Minus, ArrowUp, ChevronLeft, Save, Sparkles, Scale } from 'lucide-react';
+import { Flame, Dumbbell, Activity, Shield, ChevronLeft, Save, Scale } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -92,10 +91,10 @@ const PhysicalProfileEditor = ({ onDone }) => {
   };
 
   const goalOptions = [
-    { value: 'lose', label: 'Bajar peso', Icon: ArrowDown },
-    { value: 'recomp', label: 'Recomposición', Icon: Sparkles },
-    { value: 'gain', label: 'Subir peso', Icon: ArrowUp },
-    { value: 'maintain', label: 'Mantener', Icon: Minus },
+    { value: 'lose', label: 'Bajar peso', Icon: Flame },
+    { value: 'recomp', label: 'Recomposición', Icon: Activity },
+    { value: 'gain', label: 'Subir peso', Icon: Dumbbell },
+    { value: 'maintain', label: 'Mantener', Icon: Shield },
   ];
 
   const baseInputClasses = "w-full bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[20px] px-5 py-4 text-text-primary focus:ring-2 focus:ring-accent/50 outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-bold placeholder:text-text-muted shadow-inner";

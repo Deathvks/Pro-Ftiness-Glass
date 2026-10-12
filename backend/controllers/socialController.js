@@ -32,7 +32,7 @@ export const searchUsers = async (req, res) => {
                     { is_public_profile: true } 
                 ]
             },
-            attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp'],
+            attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id'],
             limit: 20 
         });
 
@@ -41,7 +41,9 @@ export const searchUsers = async (req, res) => {
             username: user.username,
             profile_image_url: user.profile_image_url,
             level: user.show_level_xp ? user.level : null,
-            xp: user.show_level_xp ? user.xp : null
+            xp: user.show_level_xp ? user.xp : null,
+            role: user.role,
+            trainer_id: user.trainer_id
         }));
 
         res.json(results);
@@ -114,7 +116,7 @@ export const getFriendRequests = async (req, res) => {
             include: [{
                 model: User,
                 as: 'Requester',
-                attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp']
+                attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id']
             }]
         });
 
@@ -126,7 +128,7 @@ export const getFriendRequests = async (req, res) => {
             include: [{
                 model: User,
                 as: 'Addressee',
-                attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp']
+                attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id']
             }]
         });
 
@@ -135,7 +137,9 @@ export const getFriendRequests = async (req, res) => {
             username: user.username,
             profile_image_url: user.profile_image_url,
             level: user.show_level_xp ? user.level : null,
-            xp: user.show_level_xp ? user.xp : null
+            xp: user.show_level_xp ? user.xp : null,
+            role: user.role,
+            trainer_id: user.trainer_id
         });
 
         const formattedReceived = received.map(req => ({
@@ -236,8 +240,8 @@ export const getFriends = async (req, res) => {
                 status: 'accepted'
             },
             include: [
-                { model: User, as: 'Requester', attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp'] },
-                { model: User, as: 'Addressee', attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp'] }
+                { model: User, as: 'Requester', attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id'] },
+                { model: User, as: 'Addressee', attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'show_level_xp', 'role', 'trainer_id'] }
             ]
         });
 
@@ -248,7 +252,9 @@ export const getFriends = async (req, res) => {
                 username: friend.username,
                 profile_image_url: friend.profile_image_url,
                 level: friend.show_level_xp ? friend.level : null,
-                xp: friend.show_level_xp ? friend.xp : null
+                xp: friend.show_level_xp ? friend.xp : null,
+                role: friend.role,
+                trainer_id: friend.trainer_id
             };
         });
 
@@ -353,6 +359,8 @@ export const getPublicProfile = async (req, res) => {
             id: user.id,
             username: user.username,
             profile_image_url: user.profile_image_url,
+            role: user.role,
+            trainer_id: user.trainer_id,
             is_friend: isFriend && !isMe, 
             is_me: isMe,
             bio: user.bio,
@@ -404,7 +412,7 @@ export const getLeaderboard = async (req, res) => {
             },
             order: [['xp', 'DESC']],
             limit: 50,
-            attributes: ['id', 'username', 'profile_image_url', 'level', 'xp']
+            attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'role', 'trainer_id']
         });
         res.json(users);
     } catch (error) {
@@ -477,7 +485,7 @@ export const getFeed = async (req, res) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['id', 'username', 'profile_image_url']
+                    attributes: ['id', 'username', 'profile_image_url', 'role', 'trainer_id']
                 },
                 {
                     model: Routine,
@@ -510,11 +518,11 @@ export const getFeed = async (req, res) => {
                 {
                     model: WorkoutComment,
                     as: 'Comments',
-                    attributes: ['id', 'comment', 'created_at'], // OPTIMIZACIÓN
+                    attributes: ['id', 'comment', 'created_at', 'user_id'], // OPTIMIZACIÓN
                     include: [{
                         model: User,
                         as: 'user',
-                        attributes: ['id', 'username', 'profile_image_url']
+                        attributes: ['id', 'username', 'profile_image_url', 'role', 'trainer_id']
                     }]
                 }
             ]

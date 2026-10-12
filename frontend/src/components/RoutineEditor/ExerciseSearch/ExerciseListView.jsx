@@ -126,7 +126,9 @@ const ExerciseListView = ({
         className="flex-shrink-0 flex items-center justify-between px-4 py-4 border-b border-black/5 dark:border-white/10 gap-2 bg-transparent z-10"
       >
         <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-text-primary truncate min-w-0">
-          {t('exercise_ui:add_exercises_title', 'Añadir Ejercicios')}
+          {isReadOnly
+            ? t('Biblioteca de Ejercicios', { defaultValue: 'Biblioteca de Ejercicios' })
+            : t('exercise_ui:add_exercises_title', 'Añadir Ejercicios')}
         </h2>
         <div className="flex items-center gap-3 flex-shrink-0">
           {!isReadOnly && (
@@ -281,6 +283,8 @@ const ExerciseListView = ({
                 onAdd={onAddExercise}
                 onView={onViewDetail}
                 isStaged={stagedIds.has(exercise.id)}
+                isReplacing={isReplacing}
+                isReadOnly={isReadOnly}
                 t={t}
               />
             ))}

@@ -185,11 +185,7 @@ const Progress = ({ darkMode, setView }) => {
         const progress = {};
         if (!workoutLog || workoutLog.length === 0) return progress;
 
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const recentLogs = workoutLog.filter(log => new Date(log.workout_date) >= thirtyDaysAgo);
-
-        recentLogs.forEach(log => {
+        workoutLog.forEach(log => {
             if (log.WorkoutLogDetails) {
                 log.WorkoutLogDetails.forEach(detail => {
                     if (detail.best_set_weight > 0 || (detail.estimated_1rm && detail.estimated_1rm > 0)) {

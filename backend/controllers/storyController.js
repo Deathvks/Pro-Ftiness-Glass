@@ -67,7 +67,7 @@ export const createStory = async (req, res) => {
 
         // 3. Preparar respuesta optimizada
         const user = await User.findByPk(userId, {
-            attributes: ['id', 'username', 'profile_image_url'],
+            attributes: ['id', 'username', 'profile_image_url', 'role', 'trainer_id'],
             raw: true
         });
 
@@ -84,7 +84,10 @@ export const createStory = async (req, res) => {
             viewed: false,
             userId: user.id,
             username: user.username,
-            avatar: user.profile_image_url
+            avatar: user.profile_image_url,
+            role: user.role,
+            trainer_id: user.trainer_id,
+            user: user
         };
 
         // 4. Emitir evento Socket (Solo si hay clientes escuchando)
@@ -138,7 +141,7 @@ export const getStories = async (req, res) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['id', 'username', 'profile_image_url']
+                    attributes: ['id', 'username', 'profile_image_url', 'role', 'trainer_id']
                 },
                 {
                     model: StoryLike,
@@ -147,7 +150,7 @@ export const getStories = async (req, res) => {
                     include: [{
                         model: User,
                         as: 'user',
-                        attributes: ['id', 'username', 'profile_image_url']
+                        attributes: ['id', 'username', 'profile_image_url', 'role', 'trainer_id']
                     }]
                 },
                 {
@@ -173,6 +176,9 @@ export const getStories = async (req, res) => {
                     userId: u.id,
                     username: u.username,
                     avatar: u.profile_image_url,
+                    role: u.role,
+                    trainer_id: u.trainer_id,
+                    user: u,
                     hasUnseen: false,
                     items: []
                 };

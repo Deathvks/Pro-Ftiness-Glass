@@ -1,8 +1,9 @@
-/* frontend/src/components/Workout/WorkoutSupersetCard.jsx */
 import React from 'react';
-import { Clock, Flame, Repeat } from 'lucide-react';
+import { Clock, Flame, Repeat, Target, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import GlassCard from '../GlassCard';
+import useAppStore from '../../store/useAppStore';
+import { getExerciseHistorySessions, diagnoseExerciseTrend } from '../../utils/smartProgressionCoach';
 
 // --- Helper para normalizar inputs ---
 const normalizeDecimalInput = (value) => {
@@ -32,7 +33,17 @@ const WorkoutSupersetCard = ({
     onDisabledInputClick,
     onDisabledButtonClick,
     baseInputClasses,
+    onShowSmartCoach,
 }) => {
+    const { userProfile, workoutLog } = useAppStore((state) => ({
+        userProfile: state.userProfile,
+        workoutLog: state.workoutLog
+    }));
+    const isInAsesoria = Boolean(
+        userProfile?.trainer_id ||
+        userProfile?.trainer ||
+        (userProfile?.role === 'trainee' && userProfile?.trainer_id)
+    );
     // Calculamos el número máximo de series
     const maxSets = Math.max(...group.map((ex) => ex.setsDone.length));
 
@@ -173,7 +184,11 @@ const WorkoutSupersetCard = ({
             - md:justify-center: En escritorio se centran si caben
         */}
                 <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x hide-scrollbar md:justify-center">
-                    {group.map((ex) => (
+                    {group.map((ex) => {
+                        const exSessions = getExerciseHistorySessions(ex.name, workoutLog);
+                        const exTrend = diagnoseExerciseTrend(exSessions);
+
+                        return (
                         <div
                             key={ex.id}
                             onClick={() => onSetSelectedExercise(ex)}
@@ -198,21 +213,53 @@ const WorkoutSupersetCard = ({
                                 </span>
                             </div>
 
-                            {/* 3. Botón Reemplazar */}
-                            <div className="flex flex-col justify-center pl-2 border-l border-glass-border/50 my-1">
+                            {/* 3. Botones de acción */}
+                            <div className="flex flex-col justify-center pl-2 border-l border-glass-border/50 my-1 gap-1">
+                                {!isInAsesoria && onShowSmartCoach && (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onShowSmartCoach(ex);
+                                        }}
+                                        className={`p-1.5 rounded-md transition-colors flex items-center justify-center ${
+                                            exTrend.isWarning
+                                                ? 'text-amber-400 hover:bg-amber-500/10'
+                                                : exTrend.isProgressing
+                                                ? 'text-emerald-400 hover:bg-emerald-500/10'
+                                                : 'text-accent hover:bg-accent/10'
+                                        }`}
+                                        title={
+                                            exTrend.isWarning
+                                                ? 'Aviso de rendimiento: Toca para ver recomendaciones'
+                                                : exTrend.isProgressing
+                                                ? '¡En racha! Toca para ver recomendaciones de sobrecarga'
+                                                : 'Guía inteligente según tu objetivo'
+                                        }
+                                    >
+                                        {exTrend.isWarning ? (
+                                            <AlertTriangle size={16} strokeWidth={2.5} className="text-amber-400 animate-pulse" />
+                                        ) : exTrend.isProgressing ? (
+                                            <CheckCircle2 size={16} strokeWidth={2.5} className="text-emerald-400" />
+                                        ) : (
+                                            <Target size={16} strokeWidth={2.5} className="text-accent" />
+                                        )}
+                                    </button>
+                                )}
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onSetExerciseToReplace(getRealIndex(ex.id));
                                     }}
-                                    className="p-2 text-text-muted hover:text-accent hover:bg-bg-secondary rounded-md transition-colors flex items-center justify-center"
+                                    className="p-1.5 text-text-muted hover:text-accent hover:bg-bg-secondary rounded-md transition-colors flex items-center justify-center"
                                     title="Reemplazar ejercicio"
                                 >
-                                    <Repeat size={18} />
+                                    <Repeat size={16} />
                                 </button>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 
