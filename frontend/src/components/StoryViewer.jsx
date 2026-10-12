@@ -13,10 +13,12 @@ const DEFAULT_STORY_DURATION = 5000;
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 const SERVER_URL = API_URL.replace('/api', '');
 
-// --- Subcomponente: Lista de Likes (Con Animaciones) ---
+// --- Subcomponente: Lista de Likes (Bottom Sheet con Drag-to-dismiss) ---
 const LikesListModal = ({ likes, onClose }) => {
   const safeLikes = Array.isArray(likes) ? likes : [];
   const [isClosing, setIsClosing] = useState(false);
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   const listRef = useRef(null);
   const touchStartY = useRef(0);
@@ -31,66 +33,96 @@ const LikesListModal = ({ likes, onClose }) => {
     setIsClosing(true);
     setTimeout(() => {
       onClose();
-    }, 280);
+    }, 250);
+  };
+
+  const handleTouchMove = (e) => {
+    const currentY = e.touches[0].clientY;
+    const currentX = e.touches[0].clientX;
+    const diffY = currentY - touchStartY.current;
+    const diffX = Math.abs(currentX - touchStartX.current);
+
+    // Si está en el tope de la lista y arrastra hacia abajo
+    if (diffY > 0 && (!listRef.current || listRef.current.scrollTop <= 0) && diffY > diffX) {
+      setDragY(diffY);
+      setIsDragging(true);
+    }
   };
 
   const handleTouchEnd = (e) => {
     const touchEndY = e.changedTouches[0].clientY;
-    const touchEndX = e.changedTouches[0].clientX;
+    const diffY = touchEndY - touchStartY.current;
 
-    const deltaY = touchStartY.current - touchEndY;
-    const deltaX = Math.abs(touchStartX.current - touchEndX);
+    setIsDragging(false);
 
-    // Swipe Down para cerrar
-    if (deltaY < -50 && deltaX < 50) {
-      if (listRef.current && listRef.current.scrollTop <= 0) {
-        e.stopPropagation();
-        triggerClose();
-      }
+    if (diffY > 60 && (!listRef.current || listRef.current.scrollTop <= 0)) {
+      triggerClose();
+    } else {
+      setDragY(0);
     }
   };
 
   return (
     <div
-      className={`absolute inset-0 z-[60] bg-bg-primary flex flex-col ${isClosing ? 'animate-slide-out' : 'animate-slide-in'}`}
+      className={`absolute inset-x-0 bottom-0 max-h-[80vh] h-[65vh] z-[70] bg-bg-secondary dark:bg-[#18181b] rounded-t-[32px] border-t border-black/10 dark:border-white/10 flex flex-col shadow-2xl overflow-hidden ${isClosing ? 'animate-slide-out' : 'animate-slide-in'}`}
+      style={{
+        transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
+        transition: isDragging ? 'none' : 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)'
+      }}
       onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}>
-      
-            <div className="p-4 pt-[calc(1rem+var(--safe-top))] border-b border-white/10 flex items-center gap-3 bg-bg-primary z-10" onClick={(e) => e.stopPropagation()}>
-                <button onClick={triggerClose} className="p-1 hover:bg-white/10 rounded-full">
-                    <ChevronLeft size={24} className="text-text-primary" />
-                </button>
-                <h3 className="font-bold text-lg text-text-primary">Me gusta</h3>
-            </div>
-            <div
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Grabber */}
+      <div className="w-12 h-1.5 bg-black/20 dark:bg-white/20 rounded-full mx-auto mt-3 mb-1 shrink-0 cursor-grab" />
+
+      {/* Header */}
+      <div className="p-4 px-5 border-b border-black/5 dark:border-white/10 flex items-center justify-between bg-bg-secondary dark:bg-[#18181b] z-10 shrink-0">
+        <div className="flex items-center gap-2">
+          <Heart size={20} className="text-red-500 fill-current" />
+          <h3 className="font-black text-base sm:text-lg text-text-primary">Me gusta ({safeLikes.length})</h3>
+        </div>
+        <button 
+          onClick={triggerClose} 
+          className="p-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-full text-text-secondary hover:text-text-primary transition-colors active:scale-95"
+          aria-label="Cerrar"
+        >
+          <X size={20} />
+        </button>
+      </div>
+
+      {/* Lista */}
+      <div
         ref={listRef}
-        className="flex-1 overflow-y-auto p-2"
-        onClick={(e) => e.stopPropagation()}>
-        
-                {safeLikes.length === 0 ?
-        <div className="flex flex-col items-center justify-center h-full text-text-tertiary opacity-60">
-                        <Heart size={48} className="mb-2" />
-                        <p>Aún no hay me gusta</p>
-                    </div> :
-
-        safeLikes.map((user) =>
-        <div key={user.userId} className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl transition-colors">
-                            <UserAvatar
-            user={{
-              username: user.username,
-              profile_image_url: user.avatar
-            }}
-            size={10}
-            className="w-10 h-10" />
-          
-                            <span className="font-medium text-text-primary">{user.username}</span>
-                            <Heart size={16} className="ml-auto text-red-500 fill-current" />
-                        </div>
-        )
-        }
+        className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-1.5 custom-scrollbar overscroll-contain"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {safeLikes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full py-12 text-text-secondary opacity-60">
+            <Heart size={44} className="mb-2" />
+            <p className="text-sm font-medium">Aún no hay me gusta</p>
+          </div>
+        ) : (
+          safeLikes.map((user) => (
+            <div key={user.userId || user.id || user.username} className="flex items-center gap-3 p-2.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-2xl transition-colors">
+              <UserAvatar
+                user={{
+                  ...user,
+                  profile_image_url: user.avatar || user.profile_image_url
+                }}
+                size={10}
+                showRoleRing={true}
+                className="w-10 h-10 shadow-sm"
+              />
+              <span className="font-bold text-sm text-text-primary">{user.username}</span>
+              <Heart size={16} className="ml-auto text-red-500 fill-current" />
             </div>
-        </div>);
-
+          ))
+        )}
+      </div>
+    </div>
+  );
 };
 
 // --- Subcomponente: Animación de Corazones y Avatares Flotantes ---
@@ -204,19 +236,30 @@ const StoryViewer = ({ userId, onClose }) => {
         userId: userProfile?.id,
         username: userProfile?.username || 'Yo',
         avatar: getFullImageUrl(userProfile?.profile_image_url || userProfile?.avatar),
-        items: myStories
+        items: myStories,
+        user: userProfile
       };
     }
 
     const group = stories.find((s) => s.userId === viewingUserId);
     if (!group) return null;
 
-    const rawUser = group.user || {};
+    const rawUser = group.user || group;
     return {
       userId: group.userId,
       username: group.username || rawUser.username || 'Usuario',
       avatar: getFullImageUrl(group.profile_image_url || rawUser.profile_image_url || group.avatar || rawUser.avatar),
-      items: group.items || []
+      items: group.items || [],
+      user: {
+        ...rawUser,
+        username: group.username || rawUser.username || 'Usuario',
+        profile_image_url: group.profile_image_url || rawUser.profile_image_url || group.avatar || rawUser.avatar,
+        role: rawUser.role || group.role,
+        trainer_id: rawUser.trainer_id || group.trainer_id,
+        is_in_asesoria: rawUser.is_in_asesoria || group.is_in_asesoria,
+        isAdmin: rawUser.isAdmin || group.isAdmin,
+        isTrainer: rawUser.isTrainer || group.isTrainer
+      }
     };
   }, [viewingUserId, isMyStory, stories, myStories, userProfile, getFullImageUrl]);
 
@@ -450,30 +493,79 @@ const StoryViewer = ({ userId, onClose }) => {
     }
   };
 
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Bloqueo total de scroll en el body para evitar que el fondo se mueva o descoloque el visor
+  useEffect(() => {
+    const origOverflow = document.body.style.overflow;
+    const origHtmlOverflow = document.documentElement.style.overflow;
+    const origTouchAction = document.body.style.touchAction;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+
+    return () => {
+      document.body.style.overflow = origOverflow;
+      document.documentElement.style.overflow = origHtmlOverflow;
+      document.body.style.touchAction = origTouchAction;
+    };
+  }, []);
+
   const handleTouchStart = (e) => {
     touchStartY.current = e.touches[0].clientY;
     touchStartX.current = e.touches[0].clientX;
     handlePauseStart();
   };
 
+  const handleTouchMove = (e) => {
+    const currentY = e.touches[0].clientY;
+    const currentX = e.touches[0].clientX;
+    const deltaY = currentY - touchStartY.current;
+    const deltaX = Math.abs(currentX - touchStartX.current);
+
+    if (Math.abs(deltaY) > 8 && Math.abs(deltaY) > deltaX) {
+      if (deltaY > 0) {
+        // Deslizar hacia abajo: sigue el dedo suavemente para cerrar
+        setDragY(deltaY);
+        setIsDragging(true);
+      } else if (isMyStory && deltaY < 0) {
+        // Deslizar hacia arriba en mi historia: abre likes
+        setDragY(deltaY * 0.35);
+        setIsDragging(true);
+      }
+    }
+  };
+
   const handleTouchEnd = (e, action) => {
     const touchEndY = e.changedTouches[0].clientY;
     const touchEndX = e.changedTouches[0].clientX;
 
-    const deltaY = touchStartY.current - touchEndY;
-    const deltaX = Math.abs(touchStartX.current - touchEndX);
+    const diffY = touchEndY - touchStartY.current;
+    const diffX = Math.abs(touchEndX - touchStartX.current);
 
-    if (Math.abs(deltaY) > 50 && deltaX < 50) {
-      if (deltaY > 0) {
-        if (isMyStory) {
-          handleOpenLikesList(e);
-        }
-        return;
-      } else {
-        animateAndClose();
-        return;
-      }
+    setIsDragging(false);
+
+    // Deslizar abajo para cerrar (> 70px)
+    if (diffY > 70 && diffX < 80) {
+      animateAndClose();
+      return;
     }
+
+    // Deslizar arriba para ver likes (< -50px)
+    if (diffY < -50 && diffX < 80) {
+      setDragY(0);
+      if (isMyStory) {
+        handleOpenLikesList(e);
+      } else {
+        handlePauseEnd(e, action);
+      }
+      return;
+    }
+
+    // Volver a posición normal
+    setDragY(0);
     handlePauseEnd(e, action);
   };
 
@@ -654,7 +746,13 @@ const StoryViewer = ({ userId, onClose }) => {
       <div className="absolute inset-0" onClick={animateAndClose} />
 
       <div
-        className="relative w-full h-full md:w-[420px] md:h-[85vh] md:max-h-[900px] bg-black md:rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+        className={`relative w-full h-full md:w-[420px] md:h-[85vh] md:max-h-[900px] bg-black md:rounded-2xl overflow-hidden shadow-2xl flex flex-col select-none touch-none ${
+          isDragging ? 'transition-none' : 'transition-transform duration-200 ease-out'
+        }`}
+        style={{
+          transform: dragY !== 0 ? `translateY(${dragY}px)` : undefined,
+          opacity: dragY > 0 ? Math.max(0.3, 1 - dragY / 500) : 1
+        }}
         onClick={(e) => e.stopPropagation()}>
         
         {/* Barras de Progreso */}
@@ -680,13 +778,12 @@ const StoryViewer = ({ userId, onClose }) => {
         {/* Header Usuario */}
         <div className="absolute top-[calc(1.5rem+var(--safe-top))] left-0 right-0 z-50 flex items-center justify-between px-4 pt-2">
           <div className="flex items-center gap-3">
-              <UserAvatar
-              user={{
-                username: storyData.username,
-                profile_image_url: storyData.avatar
-              }}
+            <UserAvatar
+              user={isMyStory ? userProfile : (storyData.user || userProfile)}
               size={10}
-              className="w-10 h-10 border border-white/50 shadow-md" />
+              showRoleRing={true}
+              className="w-10 h-10 shadow-md"
+            />
             
             <div className="flex flex-col drop-shadow-md">
               <span className="text-white font-bold text-sm cursor-default" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
@@ -726,6 +823,7 @@ const StoryViewer = ({ userId, onClose }) => {
           <div
             className="w-1/3 h-full cursor-pointer"
             onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
             onTouchEnd={(e) => handleTouchEnd(e, 'prev')}
             onMouseDown={handlePauseStart}
             onMouseUp={(e) => handlePauseEnd(e, 'prev')}
@@ -735,6 +833,7 @@ const StoryViewer = ({ userId, onClose }) => {
           <div
             className="w-2/3 h-full cursor-pointer"
             onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
             onTouchEnd={(e) => handleTouchEnd(e, 'next')}
             onMouseDown={handlePauseStart}
             onMouseUp={(e) => handlePauseEnd(e, 'next')}
@@ -852,6 +951,9 @@ const StoryViewer = ({ userId, onClose }) => {
               <div className="flex items-center justify-center gap-2 text-white/90 drop-shadow-md pointer-events-auto">
                   <button
               onClick={handleOpenLikesList}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={(e) => handleTouchEnd(e)}
               className="text-sm font-medium outline-none focus:outline-none animate-pulse"
               style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
               

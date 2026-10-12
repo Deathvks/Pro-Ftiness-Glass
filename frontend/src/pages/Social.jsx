@@ -6,8 +6,9 @@ import {
     ChevronRight, ChevronLeft, Plus, Camera, Image as ImageIcon,
     Globe, Zap, ShieldAlert, Clock, Lock, Video as VideoIcon,
     Settings, Shield, PlusCircle, Hash, Copy, ArrowLeft, LogOut, Trash2,
-    Activity
+    Activity, Crop
 } from 'lucide-react';
+import Cropper from 'react-easy-crop';
 import { Capacitor } from '@capacitor/core';
 import { Camera as CapCamera } from '@capacitor/camera';
 import useAppStore from '../store/useAppStore';
@@ -207,10 +208,125 @@ const StoryTermsModal = ({ onAccept, onReject }) => {
     );
 };
 
+/// Helper para extraer la imagen recortada en formato 9:16 vertical
+const getCroppedImg = async (imageSrc, pixelCrop) => {
+    const image = new Image();
+    image.src = imageSrc;
+    await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = reject;
+    });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+    const ctx = canvas.getContext('2d');
+
+    ctx.drawImage(
+        image,
+        pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
+        0, 0, pixelCrop.width, pixelCrop.height
+    );
+
+    return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+            if (blob) {
+                resolve(new File([blob], 'story.jpg', { type: 'image/jpeg' }));
+            } else {
+                reject(new Error('Error al recortar la imagen'));
+            }
+        }, 'image/jpeg', 0.92);
+    });
+};
+
+// --- Subcomponente: Modal de Recorte y Ajuste de Historia (9:16) ---
+const StoryCropModal = ({ imageSrc, onComplete, onCancel }) => {
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
+    const onCropCompleteCallback = (croppedArea, pixels) => {
+        setCroppedAreaPixels(pixels);
+    };
+
+    return (
+        <ModalPortal>
+            <div className="fixed inset-0 z-[120] bg-black flex flex-col animate-[fade-in_0.2s_ease-out]">
+                {/* Header */}
+                <div className="p-4 px-6 pt-[calc(1rem+var(--safe-top,env(safe-area-inset-top,0px)))] flex items-center justify-between text-white z-10 shrink-0 bg-gradient-to-b from-black/80 to-transparent">
+                    <button 
+                        type="button" 
+                        onClick={onCancel} 
+                        className="p-2 -ml-2 text-white/80 hover:text-white rounded-full hover:bg-white/10 transition-colors active:scale-95"
+                    >
+                        <X size={24} />
+                    </button>
+                    <span className="font-bold text-base tracking-wide">Ajustar Encuadre (9:16)</span>
+                    <div className="w-8" />
+                </div>
+
+                {/* Cropper Container */}
+                <div className="relative flex-1 bg-black overflow-hidden">
+                    <Cropper
+                        image={imageSrc}
+                        crop={crop}
+                        zoom={zoom}
+                        aspect={9 / 16}
+                        cropShape="rect"
+                        showGrid={true}
+                        onCropChange={setCrop}
+                        onCropComplete={onCropCompleteCallback}
+                        onZoomChange={setZoom}
+                    />
+                </div>
+
+                {/* Controles y Botones de acción */}
+                <div 
+                    className="bg-bg-primary/95 dark:bg-[#121214]/95 backdrop-blur-xl border-t border-black/5 dark:border-white/10 p-5 pb-8 flex flex-col gap-4 z-10 shrink-0"
+                    style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom,env(safe-area-inset-bottom,0px)))' }}
+                >
+                    <div className="flex items-center gap-4 max-w-xs mx-auto w-full px-2">
+                        <span className="text-xs text-text-secondary font-bold shrink-0">Zoom</span>
+                        <input
+                            type="range"
+                            min={1}
+                            max={3}
+                            step={0.05}
+                            value={zoom}
+                            onChange={(e) => setZoom(Number(e.target.value))}
+                            className="w-full accent-accent h-1.5 bg-black/10 dark:bg-white/10 rounded-lg cursor-pointer"
+                        />
+                    </div>
+
+                    <div className="flex justify-between items-center gap-3 max-w-md mx-auto w-full">
+                        <button 
+                            type="button" 
+                            onClick={onCancel} 
+                            className="flex-1 py-3.5 rounded-[18px] text-text-secondary font-bold hover:bg-black/5 dark:hover:bg-white/5 transition-colors active:scale-95 text-sm"
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            type="button" 
+                            onClick={() => onComplete(croppedAreaPixels)} 
+                            className="flex-1 py-3.5 rounded-[18px] bg-accent text-accent-contrast font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20 text-sm flex items-center justify-center gap-2"
+                        >
+                            <Crop size={16} />
+                            Aplicar Encuadre
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </ModalPortal>
+    );
+};
+
 // --- Subcomponente: Modal de Subida de Historia ---
 const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
+    const [rawImageSrc, setRawImageSrc] = useState(null);
+    const [isCropping, setIsCropping] = useState(false);
     const [privacy, setPrivacy] = useState('friends');
     const [canUseHDR, setCanUseHDR] = useState(false);
     const [isHDR, setIsHDR] = useState(false);
@@ -234,34 +350,65 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                         e.target.value = ''; 
                         return;
                     }
+                    if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview);
+                    if (rawImageSrc && rawImageSrc.startsWith('blob:')) URL.revokeObjectURL(rawImageSrc);
                     setFile(selected);
                     setPreview(URL.createObjectURL(selected));
+                    setRawImageSrc(null);
                     setCanUseHDR(false);
                     setIsHDR(false);
                 };
                 videoElement.src = URL.createObjectURL(selected);
             } else {
-                setFile(selected);
-                setPreview(URL.createObjectURL(selected));
-                setCanUseHDR(false);
-                setIsHDR(false);
+                // Es imagen: preparar recorte 9:16 de inmediato
+                const objectUrl = URL.createObjectURL(selected);
+                setRawImageSrc(objectUrl);
+                setIsCropping(true);
 
                 if (selected.type.startsWith('image/')) {
                     const isPotentialHDRImage = /\.(heic|heif|avif)$/i.test(selected.name);
                     if (isPotentialHDRImage) {
                         setCanUseHDR(true);
                         setIsHDR(true);
+                    } else {
+                        setCanUseHDR(false);
+                        setIsHDR(false);
                     }
                 }
             }
         }
     };
 
+    const handleCropComplete = async (croppedAreaPixels) => {
+        try {
+            if (!rawImageSrc) return;
+            const croppedFile = await getCroppedImg(rawImageSrc, croppedAreaPixels);
+            setFile(croppedFile);
+            if (preview && preview.startsWith('blob:')) {
+                URL.revokeObjectURL(preview);
+            }
+            setPreview(URL.createObjectURL(croppedFile));
+            setIsCropping(false);
+        } catch (error) {
+            console.error('Error al recortar la imagen de historia:', error);
+            setIsCropping(false);
+        }
+    };
+
+    const handleCropCancel = () => {
+        setIsCropping(false);
+        if (!file) {
+            if (rawImageSrc && rawImageSrc.startsWith('blob:')) URL.revokeObjectURL(rawImageSrc);
+            setRawImageSrc(null);
+        }
+    };
+
     useEffect(() => {
         return () => {
-            if (preview) URL.revokeObjectURL(preview);
+            if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview);
+            if (rawImageSrc && rawImageSrc.startsWith('blob:')) URL.revokeObjectURL(rawImageSrc);
         };
-    }, [preview]);
+    }, [preview, rawImageSrc]);
 
     useEffect(() => {
         if (preview && file?.type?.startsWith('video') && previewVideoRef.current) {
@@ -388,10 +535,29 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     ) : (
                                         <img src={preview} alt="Preview" className="w-full h-full object-cover" />
                                     )}
+
+                                    {/* Botón para re-ajustar encuadre si es imagen */}
+                                    {!file?.type?.startsWith('video') && rawImageSrc && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsCropping(true)}
+                                            className="absolute bottom-4 left-4 px-3.5 py-2 bg-black/70 backdrop-blur-md text-white text-xs font-bold rounded-full hover:bg-black/90 transition-all shadow-lg flex items-center gap-1.5 z-20 active:scale-95"
+                                        >
+                                            <Crop size={14} /> Ajustar encuadre
+                                        </button>
+                                    )}
                                     
                                     <button
-                                        onClick={() => { setFile(null); setPreview(null); setCanUseHDR(false); setIsHDR(false); }}
-                                        className="absolute top-4 right-4 p-3 bg-black/60 backdrop-blur-md text-white rounded-full hover:bg-red-500 transition-colors shadow-lg group-hover:opacity-100 sm:opacity-0"
+                                        onClick={() => { 
+                                            setFile(null); 
+                                            if (preview && preview.startsWith('blob:')) URL.revokeObjectURL(preview);
+                                            if (rawImageSrc && rawImageSrc.startsWith('blob:')) URL.revokeObjectURL(rawImageSrc);
+                                            setPreview(null); 
+                                            setRawImageSrc(null); 
+                                            setCanUseHDR(false); 
+                                            setIsHDR(false); 
+                                        }}
+                                        className="absolute top-4 right-4 p-3 bg-black/60 backdrop-blur-md text-white rounded-full hover:bg-red-500 transition-colors shadow-lg group-hover:opacity-100 sm:opacity-0 z-20"
                                     >
                                         <X size={20} />
                                     </button>
@@ -410,8 +576,8 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     className={`flex-1 py-3 px-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1 
                                         ${privacy === 'friends'
                                             ? 'bg-accent text-accent-contrast ring-accent shadow-lg shadow-accent/20 scale-[1.02]'
-                                            : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
-                                        }`}
+                                             : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
+                                         }`}
                                 >
                                     <Users size={18} /><span>Amigos</span>
                                 </button>
@@ -421,8 +587,8 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                                     className={`flex-1 py-3 px-3 rounded-[16px] flex items-center justify-center gap-2 text-sm font-bold transition-all border-none ring-1 
                                         ${privacy === 'public'
                                             ? 'bg-accent text-accent-contrast ring-accent shadow-lg shadow-accent/20 scale-[1.02]'
-                                            : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
-                                        }`}
+                                             : 'bg-black/5 dark:bg-white/5 text-text-secondary ring-black/5 dark:ring-white/10 hover:bg-black/10 dark:hover:bg-white/10'
+                                         }`}
                                 >
                                     <Globe size={18} /><span>Público</span>
                                 </button>
@@ -453,6 +619,14 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                     </GlassCard>
                 </div>
             </ModalPortal>
+
+            {isCropping && rawImageSrc && (
+                <StoryCropModal
+                    imageSrc={rawImageSrc}
+                    onComplete={handleCropComplete}
+                    onCancel={handleCropCancel}
+                />
+            )}
 
             <PermissionModal
                 isOpen={showPermissionModal}
@@ -1167,16 +1341,9 @@ export default function Social({ setView }) {
             {showTermsModal && <StoryTermsModal onAccept={handleAcceptTerms} onReject={handleRejectTerms} />}
             {showUploadModal && <UploadStoryModal onClose={() => setShowUploadModal(false)} onUpload={handleUploadStory} isUploading={isUploadingStory} />}
             
-            {/* Modal envolvente del Visor de Historias */}
+            {/* Visor de Historias */}
             {viewingStoryUserId && (
-                <div 
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 animate-[fade-in_0.2s_ease-out]"
-                    onClick={() => setViewingStoryUserId(null)}
-                >
-                    <div onClick={(e) => e.stopPropagation()} className="w-full h-full sm:max-w-md sm:h-[90vh] sm:rounded-[32px] overflow-hidden relative shadow-2xl">
-                        <StoryViewer userId={viewingStoryUserId} onClose={() => setViewingStoryUserId(null)} />
-                    </div>
-                </div>
+                <StoryViewer userId={viewingStoryUserId} onClose={() => setViewingStoryUserId(null)} />
             )}
 
             {/* Modal Crear Grupo */}
@@ -1278,7 +1445,7 @@ export default function Social({ setView }) {
 
                     {/* Historias de Amigos */}
                     {visibleStories.map(storyUser => {
-                        const rawUser = storyUser.user || {};
+                        const rawUser = storyUser.user || storyUser;
                         const username = storyUser.username || rawUser.username || 'Usuario';
                         const avatarPath = storyUser.profile_image_url || rawUser.profile_image_url || storyUser.avatar || rawUser.avatar;
                         const hasUnseen = storyUser.hasUnseen !== undefined
@@ -1290,9 +1457,16 @@ export default function Social({ setView }) {
                             <StoryBubble
                                 key={storyUser.userId}
                                 user={{
+                                    ...rawUser,
+                                    ...storyUser,
                                     username: username,
                                     avatar: fullAvatarUrl,
-                                    profile_image_url: fullAvatarUrl
+                                    profile_image_url: fullAvatarUrl,
+                                    role: rawUser.role || storyUser.role,
+                                    trainer_id: rawUser.trainer_id || storyUser.trainer_id,
+                                    is_in_asesoria: rawUser.is_in_asesoria || storyUser.is_in_asesoria,
+                                    isAdmin: rawUser.isAdmin || storyUser.isAdmin,
+                                    isTrainer: rawUser.isTrainer || storyUser.isTrainer
                                 }}
                                 isMe={false}
                                 hasStories={true}
