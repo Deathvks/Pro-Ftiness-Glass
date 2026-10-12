@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, Animated, Platform, KeyboardAvoidingView, StyleSheet } from 'react-native';
+import { View, Animated, Platform, KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
@@ -23,9 +23,6 @@ export default function AnimatedScreen({
     const theme = useAppStore(state => state.theme) || 'oled';
     const colors = Colors[theme] || Colors.oled;
 
-    const headerOpacity = 1;
-    const headerTranslateY = 0;
-
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             <ThemeBackground />
@@ -48,18 +45,16 @@ export default function AnimatedScreen({
                 </Animated.ScrollView>
             </KeyboardAvoidingView>
 
-            {/* Header Flotante y Animado */}
-            <Animated.View style={{ 
+            {/* Header Flotante */}
+            <View style={{ 
                 position: 'absolute', 
                 top: 0, 
                 left: 0, 
                 right: 0, 
-                opacity: headerOpacity,
-                transform: [{ translateY: headerTranslateY }],
                 pointerEvents: 'box-none'
             }}>
                 {React.isValidElement(header) ? React.cloneElement(header as any, { scrollY }) : header}
-            </Animated.View>
+            </View>
         </View>
     );
 }

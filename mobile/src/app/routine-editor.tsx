@@ -501,7 +501,7 @@ export default function RoutineEditorScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }}>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
         <GlobalHeader title="Crear Rutina" scrollY={scrollY} showBackButton={true} hideRightButtons={true} />
       </View>
 

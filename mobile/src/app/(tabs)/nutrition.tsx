@@ -284,7 +284,7 @@ export default function NutritionScreen() {
       <ThemeBackground />
 
       {/* Sticky Global Header */}
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }}>
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
         <GlobalHeader title="Nutrición" scrollY={scrollY} />
       </View>
 

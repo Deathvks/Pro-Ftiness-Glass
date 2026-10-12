@@ -12,14 +12,17 @@ import { GlassView } from 'expo-glass-effect';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 
 export default function GlobalHeader({ title, scrollY, showBackButton, hideRightButtons }: { title?: string, scrollY?: Animated.Value, showBackButton?: boolean, hideRightButtons?: boolean }) {
-        const [showAiModal, setShowAiModal] = React.useState(false);
-    
-
-
-    
-    
-        const [isScrolled, setIsScrolled] = React.useState(false);
+    const [showAiModal, setShowAiModal] = React.useState(false);
+    const [isScrolled, setIsScrolled] = React.useState(false);
     const isScrolledRef = React.useRef(false);
+
+    const insets = useSafeAreaInsets();
+    const headerHeight = insets.top + 70;
+
+    const [isHeaderHidden, setIsHeaderHidden] = React.useState(false);
+    const isHiddenRef = React.useRef(false);
+    const lastScrollYRef = React.useRef(0);
+    const headerTranslateY = React.useRef(new Animated.Value(0)).current;
 
     React.useEffect(() => {
         if (!scrollY) {
@@ -29,55 +32,102 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
         }
 
         const listener = scrollY.addListener(({ value }) => {
-            if (value > 5 && !isScrolledRef.current) {
+            const currentY = value;
+            const diff = currentY - lastScrollYRef.current;
+
+            // Detección de fondo / blur scrolled
+            if (currentY > 5 && !isScrolledRef.current) {
                 isScrolledRef.current = true;
                 setIsScrolled(true);
-            } else if (value <= 5 && isScrolledRef.current) {
+            } else if (currentY <= 5 && isScrolledRef.current) {
                 isScrolledRef.current = false;
                 setIsScrolled(false);
             }
+
+            // Al estar arriba del todo (zona inicial de 20px o pull-to-refresh), siempre visible
+            if (currentY <= 20) {
+                if (isHiddenRef.current) {
+                    isHiddenRef.current = false;
+                    setIsHeaderHidden(false);
+                    Animated.timing(headerTranslateY, {
+                        toValue: 0,
+                        duration: 200,
+                        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+                        useNativeDriver: true,
+                    }).start();
+                }
+                lastScrollYRef.current = currentY;
+                return;
+            }
+
+            // Al descender (scroll hacia abajo con intención de lectura): ocultar header
+            if (diff > 8 && !isHiddenRef.current) {
+                isHiddenRef.current = true;
+                setIsHeaderHidden(true);
+                Animated.timing(headerTranslateY, {
+                    toValue: -headerHeight,
+                    duration: 250,
+                    easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+                    useNativeDriver: true,
+                }).start();
+            } 
+            // Al ascender (scroll hacia arriba con intención): mostrar header inmediatamente
+            else if (diff < -8 && isHiddenRef.current) {
+                isHiddenRef.current = false;
+                setIsHeaderHidden(false);
+                Animated.timing(headerTranslateY, {
+                    toValue: 0,
+                    duration: 200,
+                    easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+                    useNativeDriver: true,
+                }).start();
+            }
+
+            lastScrollYRef.current = currentY;
         });
 
         return () => {
             scrollY.removeListener(listener);
         };
-    }, [scrollY]);
+    }, [scrollY, headerHeight]);
+
     const router = useRouter();
     const segments = useSegments();
     
     const theme = useAppStore(state => state.theme);
-  const colors = useAppColors();
+    const colors = useAppColors();
     
-    const isDashboard = segments[segments.length - 1] === 'index' || segments.length === 1;
+    const isDashboard = (segments[segments.length - 1] as string) === 'index' || segments.length === 1;
 
     const gamification = useAppStore(state => state.gamification) || {};
     const aiLimit = gamification.ai_queries_limit || 5;
     const aiRemaining = gamification.ai_queries_remaining ?? aiLimit;
 
     const notifications = useAppStore(state => state.notifications) || [];
-    const unreadCount = notifications.filter(n => !n.is_read).length;
+    const unreadCount = notifications.filter((n: any) => !n.is_read).length;
 
-    const insets = useSafeAreaInsets();
-    
     const userProfile = useAppStore(state => state.userProfile);
     const imageUrl = userProfile?.profile_image_url ? 
         (userProfile.profile_image_url.startsWith('http') ? userProfile.profile_image_url : `${BACKEND_BASE_URL}${userProfile.profile_image_url}`) 
         : null;
 
     const colorScheme = ['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark';
-    const bgOpacity = scrollY ? scrollY.interpolate({
-        inputRange: [0, 50],
+
+    const headerOpacity = headerTranslateY.interpolate({
+        inputRange: [-headerHeight, 0],
         outputRange: [0, 1],
-        extrapolate: 'clamp'
-    }) : 1;
+        extrapolate: 'clamp',
+    });
 
-    // If scrollY is provided, we animate the background opacity
-     // Default to fully visible if no scrollY provided
-
-    
-
-        return (
-        <View style={{ position: 'relative' }}>
+    return (
+        <Animated.View 
+            pointerEvents={isHeaderHidden ? 'none' : 'auto'}
+            style={{ 
+                position: 'relative',
+                transform: [{ translateY: headerTranslateY }],
+                opacity: headerOpacity,
+            }}
+        >
             <GlassView 
                 glassEffectStyle="regular"
                 colorScheme={colorScheme as any}
@@ -164,6 +214,6 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
 
             <AiInfoModal visible={showAiModal} onClose={() => setShowAiModal(false)} />
             </View>
-        </View>
+        </Animated.View>
     );
 }
