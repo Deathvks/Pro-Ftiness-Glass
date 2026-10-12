@@ -1,4 +1,3 @@
-/* frontend/src/components/Workout/SmartExerciseCoachModal.jsx */
 import React, { useMemo, useState } from 'react';
 import { 
   X, 
@@ -16,7 +15,8 @@ import {
   Calendar,
   Flame,
   Info,
-  Activity
+  Activity,
+  Lightbulb
 } from 'lucide-react';
 import ModalPortal from '../ModalPortal';
 import { generateSmartCoachPlan } from '../../utils/smartProgressionCoach';
@@ -290,9 +290,12 @@ const SmartExerciseCoachModal = ({
                       </div>
                     </div>
 
-                    <p className="text-[11px] text-text-muted leading-relaxed font-medium italic">
-                      💡 Consejo práctico: No te compliques con tecnicismos. Solo entrena con un peso que te cueste, deteniéndote cuando sientas que la siguiente repetición te costaría la técnica.
-                    </p>
+                    <div className="flex items-start gap-2 pt-1 text-[11px] text-text-muted leading-relaxed font-medium">
+                      <Lightbulb size={14} className="text-amber-400 shrink-0 mt-0.5" strokeWidth={2.5} />
+                      <p>
+                        <strong className="text-text-primary not-italic">Consejo práctico:</strong> No te compliques con tecnicismos. Solo entrena con un peso que te cueste, deteniéndote cuando sientas que la siguiente repetición te costaría la técnica.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
