@@ -123,7 +123,7 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background === 'transparent' ? (isDark ? '#0a0a1a' : '#f8fafc') : colors.background }}>
       <ThemeProvider value={NavigationTheme}>
         <ThemeBackground />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>

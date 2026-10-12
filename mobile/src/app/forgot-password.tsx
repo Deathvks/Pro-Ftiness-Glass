@@ -9,7 +9,6 @@ import useAppStore from '@/store/useAppStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { forgotPassword } from '@/services/authService';
-import ThemeBackground from '@/components/ThemeBackground';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -48,7 +47,6 @@ export default function ForgotPassword() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Background entero con Liquid Glass igual que en los modales de IA */}
-      <ThemeBackground />
       <GlassView
         glassEffectStyle="regular"
         colorScheme={isDark ? 'dark' : 'light'}

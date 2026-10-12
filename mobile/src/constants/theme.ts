@@ -42,7 +42,7 @@ export const Colors = {
   },
   galaxy: {
     background: 'transparent',
-    card: 'rgba(20, 20, 43, 0.65)',
+    card: 'rgba(10, 10, 26, 0.65)',
     text: '#e0e0ff',
     textSecondary: '#b0b0d0',
     textMuted: '#8080a0',

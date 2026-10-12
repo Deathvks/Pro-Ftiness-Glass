@@ -15,7 +15,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import useAppStore from '@/store/useAppStore';
 import { registerUser, verifyEmail, resendVerificationEmail } from '@/services/authService';
 import { useColorScheme as useDeviceColorScheme } from 'react-native';
-import ThemeBackground from '@/components/ThemeBackground';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -270,7 +269,6 @@ export default function Register() {
       style={[styles.container, { backgroundColor: theme.background }]}
     >
       {/* Background entero con Liquid Glass igual que en los modales de IA */}
-      <ThemeBackground />
       <GlassView
         glassEffectStyle="regular"
         colorScheme={isDark ? 'dark' : 'light'}

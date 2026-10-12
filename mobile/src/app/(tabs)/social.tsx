@@ -26,7 +26,6 @@ import { GlassButton } from '@/components/ui/GlassButton';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import ThemeBackground from '@/components/ThemeBackground';
 import GlobalHeader from '@/components/GlobalHeader';
 import { PrivacyModal } from '@/components/modals/PrivacyModal';
 import { getContrastTextColor } from '@/utils/routineHelpers';
@@ -235,8 +234,6 @@ export default function SocialScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ThemeBackground />
-
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
         <GlobalHeader title="Comunidad" scrollY={scrollY} />
       </View>

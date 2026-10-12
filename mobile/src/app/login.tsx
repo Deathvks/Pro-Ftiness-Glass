@@ -15,7 +15,6 @@ import * as AuthSession from 'expo-auth-session';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Google from 'expo-auth-session/providers/google';
 import { verifyEmail, resendVerificationEmail } from '@/services/authService';
-import ThemeBackground from '@/components/ThemeBackground';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -265,7 +264,6 @@ export default function Login() {
       style={[styles.container, { backgroundColor: theme.background }]}
     >
       {/* Background entero con Liquid Glass igual que en los modales de IA */}
-      <ThemeBackground />
       <GlassView
         glassEffectStyle="regular"
         colorScheme={isDark ? 'dark' : 'light'}

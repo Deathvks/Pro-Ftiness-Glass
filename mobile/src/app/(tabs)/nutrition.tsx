@@ -16,7 +16,6 @@ import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import ThemeBackground from '@/components/ThemeBackground';
 import GlobalHeader from '@/components/GlobalHeader';
 
 // Subcomponents
@@ -312,8 +311,6 @@ export default function NutritionScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ThemeBackground />
-
       {/* Sticky Global Header */}
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
         <GlobalHeader title="Nutrición" scrollY={scrollY} />

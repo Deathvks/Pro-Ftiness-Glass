@@ -23,7 +23,6 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
 import { getContrastTextColor } from '@/utils/routineHelpers';
 import GlobalHeader from '@/components/GlobalHeader';
-import ThemeBackground from '@/components/ThemeBackground';
 import LevelBadge from '@/components/LevelBadge';
 
 // --- Constantes de Apariencia (idénticas a la web) ---
@@ -317,8 +316,6 @@ export default function AppearanceScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ThemeBackground />
-
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
         <GlobalHeader title="Apariencia" scrollY={scrollY} showBackButton />
       </View>
