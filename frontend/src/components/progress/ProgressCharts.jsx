@@ -279,6 +279,43 @@ const PRCustomDot = ({ cx, cy, payload, maxWeight }) => {
     return <circle cx={cx} cy={cy} r={3} fill="#818cf8" stroke="transparent" />;
 };
 
+// Píldora opaca para líneas de referencia (impide que las líneas de la gráfica tapen el texto)
+const ReferencePill = ({ viewBox, text, stroke = '#f59e0b', color = '#f59e0b' }) => {
+    if (!viewBox) return null;
+    const { x, y, width } = viewBox;
+    const textWidth = Math.max(76, text.length * 6.5 + 20);
+    const height = 20;
+    const pillX = Math.max(x + 10, x + width - textWidth - 8);
+    const pillY = Math.max(2, y - height / 2);
+
+    return (
+        <g className="pointer-events-none select-none">
+            <rect
+                x={pillX}
+                y={pillY}
+                width={textWidth}
+                height={height}
+                rx={10}
+                ry={10}
+                className="fill-bg-primary dark:fill-[#121214]"
+                stroke={stroke}
+                strokeWidth={1.5}
+            />
+            <text
+                x={pillX + textWidth / 2}
+                y={pillY + 13.5}
+                textAnchor="middle"
+                fill={color}
+                fontSize={10}
+                fontWeight={800}
+                letterSpacing="0.02em"
+            >
+                {text}
+            </text>
+        </g>
+    );
+};
+
 // ============================================================
 // 1. GRÁFICA DE PESO CORPORAL (APPLE HEALTH STYLE)
 // ============================================================
@@ -356,7 +393,7 @@ export const BodyWeightChart = ({ data, axisColor }) => {
                     : null
             }
         >
-            <AreaChart data={filteredData} margin={{ top: 15, right: 10, left: -20, bottom: 0 }}>
+            <AreaChart data={filteredData} margin={{ top: 25, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                     <linearGradient id="colorPesoApple" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
@@ -373,7 +410,7 @@ export const BodyWeightChart = ({ data, axisColor }) => {
                 </defs>
                 {grid}
                 <XAxis dataKey="timestamp" tickFormatter={formatTick} {...ax} />
-                <YAxis domain={['dataMin - 1', 'dataMax + 1']} {...ax} />
+                <YAxis domain={['dataMin - 1', 'dataMax + 2']} {...ax} />
                 <Tooltip content={<ModernTooltip />} cursor={{ stroke: 'rgba(16, 185, 129, 0.3)', strokeWidth: 1.5, strokeDasharray: '4 4' }} />
                 {stats?.avg && (
                     <ReferenceLine
@@ -381,13 +418,14 @@ export const BodyWeightChart = ({ data, axisColor }) => {
                         stroke="rgba(16, 185, 129, 0.45)"
                         strokeDasharray="4 4"
                         strokeWidth={1.5}
-                        label={{
-                            value: `Media: ${stats.avg} kg`,
-                            fill: '#10b981',
-                            fontSize: 10,
-                            fontWeight: 800,
-                            position: 'insideTopRight'
-                        }}
+                        label={(props) => (
+                            <ReferencePill
+                                {...props}
+                                text={`Media: ${stats.avg} kg`}
+                                stroke="#10b981"
+                                color="#10b981"
+                            />
+                        )}
                     />
                 )}
                 <Area
@@ -445,7 +483,7 @@ export const ExerciseChart = ({ data, axisColor, exerciseName }) => {
             activePeriod={period}
             onPeriodChange={setPeriod}
             headerExtra={
-                <div className="hidden sm:flex items-center gap-3 text-[10px] font-bold text-text-muted bg-black/5 dark:bg-white/5 px-2.5 py-1 rounded-full ring-1 ring-black/5 dark:ring-white/10">
+                <div className="flex items-center gap-2 flex-wrap text-[10px] font-bold text-text-muted bg-black/5 dark:bg-white/5 px-2.5 py-1.5 rounded-full ring-1 ring-black/5 dark:ring-white/10">
                     <span className="flex items-center gap-1.5">
                         <span className="w-2.5 h-1 bg-[#818cf8] rounded-full inline-block" />
                         Peso Real
@@ -495,7 +533,7 @@ export const ExerciseChart = ({ data, axisColor, exerciseName }) => {
                     : null
             }
         >
-            <LineChart data={filteredData} margin={{ top: 15, right: 10, left: -20, bottom: 0 }}>
+            <LineChart data={filteredData} margin={{ top: 25, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                     <filter id="glowExercise" x="-20%" y="-20%" width="140%" height="140%">
                         <feGaussianBlur stdDeviation="2.5" result="blur" />
@@ -507,7 +545,7 @@ export const ExerciseChart = ({ data, axisColor, exerciseName }) => {
                 </defs>
                 {grid}
                 <XAxis dataKey="date" tickFormatter={formatTick} {...ax} />
-                <YAxis domain={['dataMin - 2', 'dataMax + 2']} {...ax} />
+                <YAxis domain={['dataMin - 2', 'dataMax + 4']} {...ax} />
                 <Tooltip content={<ModernTooltip />} cursor={{ stroke: 'rgba(129, 140, 248, 0.3)', strokeWidth: 1.5, strokeDasharray: '4 4' }} />
                 {stats?.prWeight > 0 && (
                     <ReferenceLine
@@ -515,13 +553,14 @@ export const ExerciseChart = ({ data, axisColor, exerciseName }) => {
                         stroke="rgba(245, 158, 11, 0.55)"
                         strokeDasharray="4 4"
                         strokeWidth={1.5}
-                        label={{
-                            value: `PR: ${stats.prWeight} kg`,
-                            fill: '#f59e0b',
-                            fontSize: 10,
-                            fontWeight: 800,
-                            position: 'insideTopRight'
-                        }}
+                        label={(props) => (
+                            <ReferencePill
+                                {...props}
+                                text={`PR: ${stats.prWeight} kg`}
+                                stroke="#f59e0b"
+                                color="#f59e0b"
+                            />
+                        )}
                     />
                 )}
                 <Line
@@ -628,7 +667,7 @@ export const NutritionCharts = ({ chartData: d, axisColor: c, isLoading }) => {
                         : null
                 }
             >
-                <BarChart data={d} margin={{ top: 15, right: 0, left: -20, bottom: 0 }}>
+                <BarChart data={d} margin={{ top: 25, right: 0, left: -20, bottom: 0 }}>
                     <defs>
                         <linearGradient id="barCalorias" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor="#fbbf24" stopOpacity={1} />
@@ -637,7 +676,7 @@ export const NutritionCharts = ({ chartData: d, axisColor: c, isLoading }) => {
                     </defs>
                     {grid}
                     <XAxis dataKey="day" {...ax} />
-                    <YAxis {...ax} />
+                    <YAxis domain={[0, 'dataMax + 250']} {...ax} />
                     <Tooltip content={<ModernTooltip />} cursor={{ fill: 'rgba(150, 150, 150, 0.08)' }} />
                     {calStats?.avg && (
                         <ReferenceLine
@@ -645,13 +684,14 @@ export const NutritionCharts = ({ chartData: d, axisColor: c, isLoading }) => {
                             stroke="rgba(251, 191, 36, 0.45)"
                             strokeDasharray="4 4"
                             strokeWidth={1.5}
-                            label={{
-                                value: `Media: ${calStats.avg} kcal`,
-                                fill: '#f59e0b',
-                                fontSize: 10,
-                                fontWeight: 800,
-                                position: 'insideTopRight'
-                            }}
+                            label={(props) => (
+                                <ReferencePill
+                                    {...props}
+                                    text={`Media: ${calStats.avg} kcal`}
+                                    stroke="#f59e0b"
+                                    color="#f59e0b"
+                                />
+                            )}
                         />
                     )}
                     <Bar
@@ -756,7 +796,7 @@ export const NutritionCharts = ({ chartData: d, axisColor: c, isLoading }) => {
                         : null
                 }
             >
-                <AreaChart data={d} margin={{ top: 15, right: 0, left: -20, bottom: 0 }}>
+                <AreaChart data={d} margin={{ top: 25, right: 0, left: -20, bottom: 0 }}>
                     <defs>
                         <linearGradient id="colorAguaApple" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.4} />
@@ -773,20 +813,21 @@ export const NutritionCharts = ({ chartData: d, axisColor: c, isLoading }) => {
                     </defs>
                     {grid}
                     <XAxis dataKey="day" {...ax} />
-                    <YAxis {...ax} />
+                    <YAxis domain={[0, 'dataMax + 250']} {...ax} />
                     <Tooltip content={<ModernTooltip />} cursor={{ stroke: 'rgba(56, 189, 248, 0.3)', strokeWidth: 1.5, strokeDasharray: '4 4' }} />
                     <ReferenceLine
                         y={2000}
                         stroke="rgba(56, 189, 248, 0.45)"
                         strokeDasharray="4 4"
                         strokeWidth={1.5}
-                        label={{
-                            value: 'Meta: 2.000 ml',
-                            fill: '#38bdf8',
-                            fontSize: 10,
-                            fontWeight: 800,
-                            position: 'insideTopRight'
-                        }}
+                        label={(props) => (
+                            <ReferencePill
+                                {...props}
+                                text="Meta: 2.000 ml"
+                                stroke="#38bdf8"
+                                color="#38bdf8"
+                            />
+                        )}
                     />
                     <Area
                         type="monotone"
