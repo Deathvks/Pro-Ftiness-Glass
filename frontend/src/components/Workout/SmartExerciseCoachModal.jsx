@@ -1,5 +1,5 @@
 /* frontend/src/components/Workout/SmartExerciseCoachModal.jsx */
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
   X, 
   Sparkles, 
@@ -29,6 +29,8 @@ const SmartExerciseCoachModal = ({
   onClose,
   onApplyWeight
 }) => {
+  const [showRirHelp, setShowRirHelp] = useState(false);
+
   const plan = useMemo(() => {
     if (!exercise) return null;
     return generateSmartCoachPlan(exercise, userProfile, workoutLog);
@@ -162,7 +164,7 @@ const SmartExerciseCoachModal = ({
                     </span>
                   </div>
                   <span className="text-[10px] font-semibold text-text-secondary truncate" title={targets.weightChangeNote}>
-                    {targets.weightChangeNote || 'Según esfuerzo RIR'}
+                    {targets.weightChangeNote || 'Ajustar según fatiga'}
                   </span>
                 </div>
 
@@ -198,23 +200,103 @@ const SmartExerciseCoachModal = ({
                   </span>
                 </div>
 
-                {/* 4. RIR & Descanso */}
-                <div className="bg-black/5 dark:bg-white/5 p-3.5 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 flex flex-col justify-between">
+                {/* 4. Intensidad & Margen del Fallo */}
+                <div 
+                  onClick={() => setShowRirHelp(!showRirHelp)}
+                  className="bg-black/5 dark:bg-white/5 p-3.5 rounded-[20px] ring-1 ring-black/5 dark:ring-white/10 flex flex-col justify-between cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-all group"
+                  title="Toca para entender cómo medir tu esfuerzo"
+                >
                   <div className="flex items-center justify-between text-text-secondary mb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Intensidad</span>
-                    <Clock size={15} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider group-hover:text-accent transition-colors">
+                      Intensidad
+                    </span>
+                    <HelpCircle size={14} className="text-text-muted group-hover:text-accent transition-colors shrink-0" />
                   </div>
                   <div className="my-1">
-                    <span className="text-sm sm:text-base font-black text-text-primary tracking-tight leading-tight">
-                      {targets.suggestedRir}
+                    <span className="text-xs sm:text-sm font-black text-text-primary tracking-tight leading-tight block">
+                      {targets.intensityLabel || 'Esfuerzo Alto'}
                     </span>
                   </div>
-                  <span className="text-[10px] font-semibold text-text-muted">
-                    Descanso: {targets.suggestedRest}
+                  <span className="text-[10px] font-semibold text-text-muted leading-tight">
+                    {targets.intensityDesc || 'Parar 1-2 reps antes de fallar'}
                   </span>
                 </div>
               </div>
+
+              {/* Barra de descanso y botón explicativo */}
+              <div className="mt-2.5 flex items-center justify-between px-1 flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRirHelp(!showRirHelp)}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-bold text-accent hover:underline transition-all"
+                >
+                  <HelpCircle size={13} />
+                  <span>{showRirHelp ? 'Ocultar explicación de intensidad' : '¿No sabes cómo medir la intensidad o qué es el RIR? Toca aquí'}</span>
+                </button>
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-text-muted">
+                  <Clock size={12} className="text-text-secondary" />
+                  <span>Descanso sugerido: <strong className="text-text-primary font-bold">{targets.suggestedRest}</strong></span>
+                </div>
+              </div>
             </div>
+
+            {/* Explicación didáctica sobre Intensidad y RIR */}
+            {showRirHelp && (
+              <div className="p-4 sm:p-5 rounded-[24px] bg-accent/10 ring-1 ring-accent/30 backdrop-blur-xl animate-[fade-in_0.2s_ease-out] relative">
+                <button
+                  type="button"
+                  onClick={() => setShowRirHelp(false)}
+                  className="absolute top-3.5 right-3.5 p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-muted hover:text-text-primary transition-all"
+                  aria-label="Cerrar explicación"
+                >
+                  <X size={15} />
+                </button>
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-[14px] bg-accent/20 text-accent ring-1 ring-accent/40 shrink-0 mt-0.5">
+                    <HelpCircle size={18} strokeWidth={2.5} />
+                  </div>
+                  <div className="space-y-2 pr-6">
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-accent block">
+                        Guía de Intensidad Fácil
+                      </span>
+                      <h4 className="text-sm sm:text-base font-black text-text-primary leading-tight mt-0.5">
+                        ¿Qué significa parar antes del fallo (RIR)?
+                      </h4>
+                    </div>
+
+                    <p className="text-xs text-text-secondary leading-relaxed font-medium">
+                      En fitness se usa la palabra técnica <strong className="text-text-primary">RIR (Repeticiones en Recámara)</strong>. Significa simplemente: <strong>¿cuántas repeticiones más podrías haber hecho antes de que el músculo no pudiera levantar el peso ni una vez más?</strong>
+                    </p>
+
+                    <div className="p-3 rounded-[16px] bg-black/10 dark:bg-white/5 ring-1 ring-white/10 text-xs text-text-secondary space-y-2 font-medium">
+                      <div className="flex items-start gap-2">
+                        <span className="text-red-400 font-bold shrink-0">·</span>
+                        <p>
+                          <strong className="text-text-primary">Al Fallo (RIR 0):</strong> Hiciste la serie y ya no pudiste mover la pesa ni un centímetro más. No se recomienda siempre porque agota en exceso y sube el riesgo de lesión.
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="text-emerald-400 font-bold shrink-0">·</span>
+                        <p>
+                          <strong className="text-text-primary">Cerca del Fallo (1-2 reps antes):</strong> Te detienes cuando sientes que te quedaba 1 o 2 repeticiones en el tanque. Consigues prácticamente el 100% del crecimiento muscular con total seguridad.
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="text-blue-400 font-bold shrink-0">·</span>
+                        <p>
+                          <strong className="text-text-primary">Moderado (2-3 reps antes):</strong> Dejas 2 o 3 repeticiones de margen. Ideal para días con menor energía o descarga.
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-text-muted leading-relaxed font-medium italic">
+                      💡 Consejo práctico: No te compliques con tecnicismos. Solo entrena con un peso que te cueste, deteniéndote cuando sientas que la siguiente repetición te costaría la técnica.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Evolución Histórica de Sesiones Previas */}
             {sessions && sessions.length > 0 && (
