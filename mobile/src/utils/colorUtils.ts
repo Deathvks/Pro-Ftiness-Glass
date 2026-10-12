@@ -27,11 +27,21 @@ export function getContrastColor(hexColor: string, theme: string): string {
 
 export function getContrastTextColor(hexColor: string | null | undefined): string {
     if (!hexColor) return '#ffffff';
-    let clean = hexColor.replace('#', '');
-    if (clean.length === 3) clean = clean.split('').map(c => c + c).join('');
-    const r = parseInt(clean.substring(0, 2), 16) || 0;
-    const g = parseInt(clean.substring(2, 4), 16) || 0;
-    const b = parseInt(clean.substring(4, 6), 16) || 0;
+    let r = 0, g = 0, b = 0;
+    if (hexColor.startsWith('rgb')) {
+        const matches = hexColor.match(/\d+/g);
+        if (matches && matches.length >= 3) {
+            r = parseInt(matches[0], 10) || 0;
+            g = parseInt(matches[1], 10) || 0;
+            b = parseInt(matches[2], 10) || 0;
+        }
+    } else {
+        let clean = hexColor.replace('#', '');
+        if (clean.length === 3) clean = clean.split('').map(c => c + c).join('');
+        r = parseInt(clean.substring(0, 2), 16) || 0;
+        g = parseInt(clean.substring(2, 4), 16) || 0;
+        b = parseInt(clean.substring(4, 6), 16) || 0;
+    }
     const yiq = (r * 299 + g * 587 + b * 114) / 1000;
     return yiq >= 128 ? '#000000' : '#ffffff';
 }

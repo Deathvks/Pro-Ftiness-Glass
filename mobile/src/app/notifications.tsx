@@ -38,7 +38,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
 import { GlassView } from 'expo-glass-effect';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 
 // --- Helpers de Fecha Robustos ---
 const parseDateSafe = (dateStr: any) => {
@@ -92,6 +92,7 @@ export default function NotificationsScreen() {
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const accentTextColor = getContrastTextColor(colors.tint);
 
   // Store actions & state
   const notifications = useAppStore(state => state.notifications) || [];
@@ -256,10 +257,17 @@ export default function NotificationsScreen() {
           <View style={{ 
             flexDirection: 'row', 
             alignItems: 'center', 
-            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)', 
             borderRadius: 24, 
-            padding: 4 
+            padding: 4,
+            overflow: 'hidden',
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+            backgroundColor: 'transparent',
+            position: 'relative',
           }}>
+            <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.4)' }]} />
+
             <TouchableOpacity 
               onPress={() => { if (markAllNotificationsAsRead) markAllNotificationsAsRead(); }}
               style={{ padding: 8, borderRadius: 20 }}
@@ -268,7 +276,7 @@ export default function NotificationsScreen() {
               <CheckCheck size={18} color={colors.tint} />
             </TouchableOpacity>
 
-            <View style={{ width: 1, height: 20, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)', marginHorizontal: 2 }} />
+            <View style={{ width: 1, height: 20, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', marginHorizontal: 2 }} />
 
             <TouchableOpacity 
               onPress={() => setDeleteAction({ type: 'all' })}
@@ -281,12 +289,12 @@ export default function NotificationsScreen() {
         )}
       </View>
 
-      {/* ================= FILTROS PÍLDORAS FLOTANTES ================= */}
+      {/* ================= FILTROS PÍLDORAS FLOTANTES (LIQUID GLASS) ================= */}
       {hasNotifications && (
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, paddingBottom: 16 }}
+          contentContainerStyle={{ gap: 8, paddingBottom: 16, paddingHorizontal: 2 }}
           style={{ marginBottom: 4 }}
         >
           {filters.map(f => {
@@ -295,20 +303,47 @@ export default function NotificationsScreen() {
               <TouchableOpacity
                 key={f.id}
                 onPress={() => setActiveFilter(f.id)}
-                activeOpacity={0.8}
+                activeOpacity={0.75}
                 style={{
+                  position: 'relative',
                   paddingHorizontal: 18,
                   paddingVertical: 9,
                   borderRadius: 24,
-                  backgroundColor: isActive ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)'),
-                  borderWidth: isActive ? 0 : 1,
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                  overflow: 'hidden',
+                  borderWidth: 1,
+                  borderColor: isActive 
+                    ? colors.tint 
+                    : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: 'transparent',
                 }}
               >
+                {/* 1. Capa Liquid Glass Nativa de Apple */}
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={StyleSheet.absoluteFill}
+                />
+
+                {/* 2. Capa de Fondo (Acento cuando está activo, sutil iluminación cuando está inactivo) */}
+                <View
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      backgroundColor: isActive 
+                        ? colors.tint 
+                        : (isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.4)'),
+                    }
+                  ]}
+                />
+
+                {/* 3. Texto del filtro con Contraste Garantizado (100% legible) */}
                 <Text style={{
                   fontSize: 13,
                   fontWeight: 'bold',
-                  color: isActive ? getContrastColor(colors.tint, theme) : colors.textSecondary,
+                  letterSpacing: -0.2,
+                  color: isActive ? accentTextColor : colors.textSecondary,
                 }}>
                   {f.label}
                 </Text>
@@ -406,12 +441,12 @@ export default function NotificationsScreen() {
                         onPress={() => handleNotificationClick(n)}
                         activeOpacity={0.85}
                         style={{
-                          backgroundColor: isDark ? (theme === 'oled' ? '#111111' : '#1e293b') : '#ffffff',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.65)',
                           borderRadius: 24,
                           padding: 16,
                           borderWidth: isUnread ? 2 : 1,
-                          borderColor: isUnread ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'),
-                          opacity: isUnread ? 1 : 0.82,
+                          borderColor: isUnread ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                          opacity: isUnread ? 1 : 0.85,
                           overflow: 'hidden',
                           position: 'relative',
                         }}
@@ -563,7 +598,7 @@ export default function NotificationsScreen() {
             style={{ 
               width: '100%', 
               maxWidth: 400, 
-              backgroundColor: isDark ? (theme === 'oled' ? '#111111' : '#1e293b') : '#ffffff', 
+              backgroundColor: isDark ? 'rgba(20, 20, 25, 0.75)' : 'rgba(255, 255, 255, 0.85)', 
               borderRadius: 32, 
               padding: 24,
               borderWidth: 1,
@@ -651,7 +686,7 @@ export default function NotificationsScreen() {
                 marginTop: 20,
               }}
             >
-              <Text style={{ fontSize: 15, fontWeight: 'bold', color: getContrastColor(colors.tint, theme) }}>Entendido</Text>
+              <Text style={{ fontSize: 15, fontWeight: 'bold', color: accentTextColor }}>Entendido</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
@@ -672,7 +707,7 @@ export default function NotificationsScreen() {
             style={{ 
               width: '100%', 
               maxWidth: 380, 
-              backgroundColor: isDark ? (theme === 'oled' ? '#111111' : '#1e293b') : '#ffffff', 
+              backgroundColor: isDark ? 'rgba(20, 20, 25, 0.75)' : 'rgba(255, 255, 255, 0.85)', 
               borderRadius: 32, 
               padding: 24,
               alignItems: 'center',
