@@ -22,6 +22,8 @@ import NoActiveWorkout from '../components/Workout/NoActiveWorkout';
 import WorkoutHeader from '../components/Workout/WorkoutHeader';
 import WorkoutExerciseList from '../components/Workout/WorkoutExerciseList';
 import WorkoutNotes from '../components/Workout/WorkoutNotes';
+import PreviousWorkoutNoteBanner from '../components/Workout/PreviousWorkoutNoteBanner';
+import SmartExerciseCoachModal from '../components/Workout/SmartExerciseCoachModal';
 
 // --- Lazy Load de QuickCardio ---
 const QuickCardio = React.lazy(() => import('./QuickCardio'));
@@ -44,6 +46,7 @@ const Workout = ({ timer, setView }) => {
         workoutStartTime,
         openRestModal,
         userProfile,
+        workoutLog,
         fetchInitialData,
         setExerciseReminder,
         replaceExercise
@@ -60,6 +63,7 @@ const Workout = ({ timer, setView }) => {
         workoutStartTime: state.workoutStartTime,
         openRestModal: state.openRestModal,
         userProfile: state.userProfile,
+        workoutLog: state.workoutLog,
         fetchInitialData: state.fetchInitialData,
         setExerciseReminder: state.setExerciseReminder,
         replaceExercise: state.replaceExercise
@@ -80,8 +84,37 @@ const Workout = ({ timer, setView }) => {
     const [showCalculatorModal, setShowCalculatorModal] = useState(false);
     const [historyExercise, setHistoryExercise] = useState(null);
     const [showHeatmapModal, setShowHeatmapModal] = useState(false);
+    const [smartCoachExercise, setSmartCoachExercise] = useState(null);
+    const [dismissedPreviousNote, setDismissedPreviousNote] = useState(false);
 
     const [showQuickCardio, setShowQuickCardio] = useState(false);
+
+    // --- Recordatorio inteligente: Nota de la sesión anterior ---
+    const previousWorkoutNote = useMemo(() => {
+        if (!activeWorkout || !Array.isArray(workoutLog) || workoutLog.length === 0) return null;
+
+        const sorted = [...workoutLog].sort((a, b) => new Date(b.workout_date).getTime() - new Date(a.workout_date).getTime());
+
+        const match = sorted.find(log => {
+            const matchesRoutine = (
+                (activeWorkout.routineId && (log.routine_id === activeWorkout.routineId || log.routineId === activeWorkout.routineId)) ||
+                (activeWorkout.routineName && log.routine_name && log.routine_name.toLowerCase().trim() === activeWorkout.routineName.toLowerCase().trim())
+            );
+            if (!matchesRoutine) return false;
+
+            const cleanNote = log.notes ? log.notes.split('GPS_DATA::')[0].trim() : '';
+            return cleanNote.length > 0;
+        });
+
+        if (!match) return null;
+
+        const cleanNote = match.notes.split('GPS_DATA::')[0].trim();
+        return {
+            note: cleanNote,
+            date: match.workout_date,
+            routineName: match.routine_name || activeWorkout.routineName
+        };
+    }, [activeWorkout, workoutLog]);
 
     useEffect(() => {
         // Al entrar a la pantalla de Workout, asegurar que empezamos desde arriba
@@ -331,6 +364,18 @@ const Workout = ({ timer, setView }) => {
                 onShowHeatmap={() => setShowHeatmapModal(true)}
             />
 
+            {/* Banner recordatorio de la nota de la sesión anterior */}
+            {previousWorkoutNote && !dismissedPreviousNote && (
+                <PreviousWorkoutNoteBanner
+                    previousNote={previousWorkoutNote}
+                    onDismiss={() => setDismissedPreviousNote(true)}
+                    onCopyNote={(text) => {
+                        setNotes((prev) => (prev ? `${prev}\n${text}` : text));
+                        addToast('Nota anterior añadida a tus notas de hoy', 'success');
+                    }}
+                />
+            )}
+
             {!isSimpleWorkout && (
                 <WorkoutExerciseList
                     exerciseGroups={exerciseGroups}
@@ -339,6 +384,7 @@ const Workout = ({ timer, setView }) => {
                     onSetSelectedExercise={setSelectedExercise}
                     onSetExerciseToReplace={setExerciseToReplace}
                     onShowHistory={setHistoryExercise}
+                    onShowSmartCoach={setSmartCoachExercise}
                     baseInputClasses={baseInputClasses}
                     onUpdateSet={updateActiveWorkoutSet}
                     onAddDropset={addDropset}
@@ -355,6 +401,7 @@ const Workout = ({ timer, setView }) => {
                 notes={notes}
                 setNotes={setNotes}
                 hasWorkoutStarted={hasWorkoutStarted}
+                previousNote={previousWorkoutNote}
             />
 
             {showCalorieModal && (
@@ -445,6 +492,34 @@ const Workout = ({ timer, setView }) => {
                 <WorkoutHeatmapModal
                     exercises={activeWorkout?.exercises || []}
                     onClose={() => setShowHeatmapModal(false)}
+                />
+            )}
+
+            {smartCoachExercise && (
+                <SmartExerciseCoachModal
+                    exercise={smartCoachExercise}
+                    userProfile={userProfile}
+                    workoutLog={workoutLog}
+                    onClose={() => setSmartCoachExercise(null)}
+                    onApplyWeight={(suggestedWeight) => {
+                        const exIndex = activeWorkout?.exercises?.findIndex(e => e.id === smartCoachExercise.id);
+                        if (exIndex !== -1 && exIndex !== undefined) {
+                            let appliedCount = 0;
+                            smartCoachExercise.setsDone.forEach((set, sIdx) => {
+                                if (set.weight_kg === '' || set.weight_kg === null || set.weight_kg === undefined) {
+                                    updateActiveWorkoutSet(exIndex, sIdx, 'weight_kg', suggestedWeight);
+                                    appliedCount++;
+                                }
+                            });
+                            if (appliedCount > 0) {
+                                addToast(`Peso de ${suggestedWeight}kg aplicado a ${appliedCount} serie${appliedCount > 1 ? 's' : ''}`, 'success');
+                            } else {
+                                updateActiveWorkoutSet(exIndex, 0, 'weight_kg', suggestedWeight);
+                                addToast(`Peso de ${suggestedWeight}kg actualizado en la primera serie`, 'success');
+                            }
+                        }
+                        setSmartCoachExercise(null);
+                    }}
                 />
             )}
         </div>

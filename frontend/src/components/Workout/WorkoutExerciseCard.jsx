@@ -1,7 +1,7 @@
 import ModalPortal from '../ModalPortal';
 /* frontend/src/components/Workout/WorkoutExerciseCard.jsx */
 import React, { useState } from 'react';
-import { Repeat, Flame, History, Target, Bell } from 'lucide-react';
+import { Repeat, Flame, History, Target, Bell, Sparkles } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import WorkoutSetGrid from './WorkoutSetGrid';
 import useAppStore from '../../store/useAppStore';
@@ -23,12 +23,20 @@ const WorkoutExerciseCard = ({
   onDisabledInputClick,
   onDisabledButtonClick,
   normalizeDecimalInput,
-  onShowHistory
+  onShowHistory,
+  onShowSmartCoach
 }) => {
-  const { addWarmupSets, setExerciseReminder } = useAppStore((state) => ({
+  const { addWarmupSets, setExerciseReminder, userProfile } = useAppStore((state) => ({
     addWarmupSets: state.addWarmupSets,
-    setExerciseReminder: state.setExerciseReminder
+    setExerciseReminder: state.setExerciseReminder,
+    userProfile: state.userProfile
   }));
+
+  const isInAsesoria = Boolean(
+    userProfile?.trainer_id ||
+    userProfile?.trainer ||
+    (userProfile?.role === 'trainee' && userProfile?.trainer_id)
+  );
 
   const [showWarmupInput, setShowWarmupInput] = useState(false);
   const [workingWeight, setWorkingWeight] = useState('');
@@ -138,15 +146,32 @@ const WorkoutExerciseCard = ({
             {exercise.sets} series × {exercise.reps} reps
           </p>
           
-          {/* 1RM Estimado del historial */}
-          {estimated1RM > 0 &&
-          <div className="flex w-fit items-center gap-2 bg-accent/10 ring-1 ring-accent/30 rounded-full px-4 py-2 animate-[fade-in_0.3s_ease-out] shadow-sm">
-              <Target size={16} className="text-accent shrink-0" strokeWidth={2.5} />
-              <span className="text-sm font-bold text-accent">
-                1RM Est: {estimated1RM}kg
-              </span>
-            </div>
-          }
+          {/* 1RM Estimado del historial y Botón de Objetivo IA */}
+          <div className="flex flex-wrap items-center gap-2">
+            {estimated1RM > 0 && (
+              <div className="flex w-fit items-center gap-2 bg-accent/10 ring-1 ring-accent/30 rounded-full px-4 py-2 animate-[fade-in_0.3s_ease-out] shadow-sm">
+                <Target size={16} className="text-accent shrink-0" strokeWidth={2.5} />
+                <span className="text-sm font-bold text-accent">
+                  1RM Est: {estimated1RM}kg
+                </span>
+              </div>
+            )}
+
+            {!isInAsesoria && onShowSmartCoach && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onShowSmartCoach(exercise);
+                }}
+                className="flex items-center gap-1.5 bg-accent/10 hover:bg-accent/20 ring-1 ring-accent/30 rounded-full px-4 py-2 text-sm font-bold text-accent transition-all active:scale-95 cursor-pointer shadow-sm"
+                title="Consejo inteligente según tu objetivo"
+              >
+                <Sparkles size={16} className="text-accent animate-pulse" />
+                <span>Info Objetivo</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -162,10 +187,25 @@ const WorkoutExerciseCard = ({
             if (onShowHistory) onShowHistory(exercise);
           }}
           className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 hover:shadow-sm transition-all duration-300 active:scale-95 outline-none">
-          
           <History size={20} />
           <span className="text-sm font-bold hidden sm:block">Historial</span>
         </button>
+
+        {/* Guía Inteligente según Objetivo (Solo si NO está en asesoría) */}
+        {!isInAsesoria && onShowSmartCoach && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onShowSmartCoach(exercise);
+            }}
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] text-accent hover:bg-accent/10 hover:shadow-sm transition-all duration-300 active:scale-95 outline-none font-bold"
+            title="Guía inteligente según tu objetivo"
+          >
+            <Sparkles size={20} className="text-accent" />
+            <span className="text-sm font-bold hidden sm:block">Objetivo</span>
+          </button>
+        )}
 
         {/* Meta / Recordatorio */}
         <button

@@ -21,6 +21,7 @@ const WorkoutExerciseList = ({
   onDisabledInputClick,
   onDisabledButtonClick,
   normalizeDecimalInput,
+  onShowSmartCoach,
 }) => {
   const { t } = useTranslation('exercise_names');
 
@@ -50,6 +51,7 @@ const WorkoutExerciseList = ({
               onDisabledButtonClick={onDisabledButtonClick}
               baseInputClasses={baseInputClasses}
               onShowHistory={onShowHistory}
+              onShowSmartCoach={onShowSmartCoach}
             />
           );
         }
@@ -77,6 +79,7 @@ const WorkoutExerciseList = ({
               onSetSelectedExercise={onSetSelectedExercise}
               onSetExerciseToReplace={onSetExerciseToReplace}
               onShowHistory={onShowHistory}
+              onShowSmartCoach={onShowSmartCoach}
               baseInputClasses={baseInputClasses}
               onUpdateSet={onUpdateSet}
               onAddDropset={onAddDropset}

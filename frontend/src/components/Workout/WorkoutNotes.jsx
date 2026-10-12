@@ -7,15 +7,30 @@ import GlassCard from '../GlassCard';
  * Componente para la sección de "Notas de la Sesión" en la página de Workout.
  * Rediseñado con estética Glass premium.
  */
-const WorkoutNotes = ({ notes, setNotes, hasWorkoutStarted }) => {
+const WorkoutNotes = ({ notes, setNotes, hasWorkoutStarted, previousNote }) => {
   return (
     <GlassCard className="glass p-6 sm:p-8 mt-6 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 transition-all shadow-md">
-      <h2 className="flex items-center gap-3 text-xl sm:text-2xl font-extrabold mb-5 text-text-primary tracking-tight">
-        <div className="p-2.5 bg-accent/10 rounded-[16px] ring-1 ring-accent/30 text-accent shadow-sm shrink-0">
-          <FileText size={22} strokeWidth={2.5} />
-        </div>
-        Notas de la Sesión
-      </h2>
+      <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+        <h2 className="flex items-center gap-3 text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">
+          <div className="p-2.5 bg-accent/10 rounded-[16px] ring-1 ring-accent/30 text-accent shadow-sm shrink-0">
+            <FileText size={22} strokeWidth={2.5} />
+          </div>
+          Notas de la Sesión
+        </h2>
+
+        {previousNote?.note && hasWorkoutStarted && (
+          <button
+            type="button"
+            onClick={() => {
+              setNotes(prev => prev ? `${prev}\n${previousNote.note}` : previousNote.note);
+            }}
+            className="text-xs font-bold text-accent hover:underline flex items-center gap-1 bg-accent/10 px-3 py-1 rounded-full transition-colors active:scale-95"
+            title="Copiar nota de la sesión anterior"
+          >
+            📋 Pegar nota anterior
+          </button>
+        )}
+      </div>
       
       <textarea
         value={notes}

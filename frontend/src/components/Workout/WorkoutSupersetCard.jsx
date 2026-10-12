@@ -1,8 +1,8 @@
-/* frontend/src/components/Workout/WorkoutSupersetCard.jsx */
 import React from 'react';
-import { Clock, Flame, Repeat } from 'lucide-react';
+import { Clock, Flame, Repeat, Sparkles } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import GlassCard from '../GlassCard';
+import useAppStore from '../../store/useAppStore';
 
 // --- Helper para normalizar inputs ---
 const normalizeDecimalInput = (value) => {
@@ -32,7 +32,14 @@ const WorkoutSupersetCard = ({
     onDisabledInputClick,
     onDisabledButtonClick,
     baseInputClasses,
+    onShowSmartCoach,
 }) => {
+    const userProfile = useAppStore((state) => state.userProfile);
+    const isInAsesoria = Boolean(
+        userProfile?.trainer_id ||
+        userProfile?.trainer ||
+        (userProfile?.role === 'trainee' && userProfile?.trainer_id)
+    );
     // Calculamos el número máximo de series
     const maxSets = Math.max(...group.map((ex) => ex.setsDone.length));
 
@@ -198,17 +205,30 @@ const WorkoutSupersetCard = ({
                                 </span>
                             </div>
 
-                            {/* 3. Botón Reemplazar */}
-                            <div className="flex flex-col justify-center pl-2 border-l border-glass-border/50 my-1">
+                            {/* 3. Botones de acción */}
+                            <div className="flex flex-col justify-center pl-2 border-l border-glass-border/50 my-1 gap-1">
+                                {!isInAsesoria && onShowSmartCoach && (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onShowSmartCoach(ex);
+                                        }}
+                                        className="p-1.5 text-accent hover:bg-accent/10 rounded-md transition-colors flex items-center justify-center"
+                                        title="Guía inteligente según tu objetivo"
+                                    >
+                                        <Sparkles size={16} className="animate-pulse" />
+                                    </button>
+                                )}
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onSetExerciseToReplace(getRealIndex(ex.id));
                                     }}
-                                    className="p-2 text-text-muted hover:text-accent hover:bg-bg-secondary rounded-md transition-colors flex items-center justify-center"
+                                    className="p-1.5 text-text-muted hover:text-accent hover:bg-bg-secondary rounded-md transition-colors flex items-center justify-center"
                                     title="Reemplazar ejercicio"
                                 >
-                                    <Repeat size={18} />
+                                    <Repeat size={16} />
                                 </button>
                             </div>
                         </div>
