@@ -1,135 +1,747 @@
-import React, { useRef, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Animated, Platform, ActivityIndicator } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  View, 
+  Text, 
+  ScrollView, 
+  TouchableOpacity, 
+  Modal, 
+  Pressable, 
+  Platform, 
+  ActivityIndicator, 
+  StyleSheet 
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Info, CheckCircle, AlertTriangle, AlertCircle, UserPlus, Users, Zap, Award, CheckCheck, Trash2 } from 'lucide-react-native';
+import { 
+  Bell, 
+  CheckCheck, 
+  Trash2, 
+  X, 
+  Info, 
+  AlertTriangle, 
+  CheckCircle, 
+  AlertCircle, 
+  Filter, 
+  ChevronDown, 
+  ChevronRight, 
+  Smartphone, 
+  Globe, 
+  Clock, 
+  Shield, 
+  UserPlus, 
+  Users, 
+  Zap, 
+  Award, 
+  MessageCircle 
+} from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
-import { Colors } from '@/constants/theme';
+import { useAppColors } from '@/hooks/useAppColors';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
+import { GlassView } from 'expo-glass-effect';
 import { getContrastColor } from '@/utils/colorUtils';
 
+// --- Helpers de Fecha Robustos ---
+const parseDateSafe = (dateStr: any) => {
+  if (!dateStr) return new Date();
+  if (dateStr instanceof Date) return dateStr;
+  let normalized = String(dateStr).replace(' ', 'T');
+  if (!/Z$|[+-]\d{2}(:?\d{2})?$/.test(normalized)) {
+    normalized += 'Z';
+  }
+  const parsed = new Date(normalized);
+  return isNaN(parsed.getTime()) ? new Date(dateStr) : parsed;
+};
+
+const isSameDay = (d1: Date, d2: Date) =>
+  d1.getFullYear() === d2.getFullYear() &&
+  d1.getMonth() === d2.getMonth() &&
+  d1.getDate() === d2.getDate();
+
+const isToday = (d: Date) => isSameDay(d, new Date());
+const isYesterday = (d: Date) => {
+  const y = new Date();
+  y.setDate(y.getDate() - 1);
+  return isSameDay(d, y);
+};
+
+const getTimeDisplay = (dateStr: any) => {
+  const d = parseDateSafe(dateStr);
+  if (isToday(d) || isYesterday(d)) {
+    return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  }
+  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+};
+
+const formatDateFull = (d: Date) => {
+  try {
+    return d.toLocaleString('es-ES', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  } catch {
+    return d.toLocaleString();
+  }
+};
+
 export default function NotificationsScreen() {
-    const router = useRouter();
-    const insets = useSafeAreaInsets();
-    const theme = useAppStore(state => state.theme) || 'oled';
-    const colors = Colors[theme] || Colors.oled;
+  const router = useRouter();
+  const theme = useAppStore(state => state.theme) || 'oled';
+  const colors = useAppColors();
+  const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
-    const notifications = useAppStore(state => state.notifications) || [];
-    const markNotificationAsRead = useAppStore(state => state.markNotificationAsRead);
-    const deleteNotification = useAppStore(state => state.deleteNotification || state.removeNotification);
-    const markAllNotificationsAsRead = useAppStore(state => state.markAllNotificationsAsRead);
+  // Store actions & state
+  const notifications = useAppStore(state => state.notifications) || [];
+  const unreadCount = notifications.filter((n: any) => !n.is_read).length;
+  const notificationsLoading = useAppStore(state => (state as any).notificationsLoading);
+  const notificationPage = useAppStore(state => (state as any).notificationPage) || 1;
+  const notificationTotalPages = useAppStore(state => (state as any).notificationTotalPages) || 1;
 
-    const getIcon = (type, subType) => {
-        if (subType === 'friend_request') return <UserPlus size={20} color={getContrastColor(colors.tint, theme)} />;
-        if (subType === 'friend_accept') return <Users size={20} color="#10b981" />;
-        if (subType === 'xp' || subType === 'level_up') return <Zap size={20} color="#fbbf24" fill="#fbbf24" />;
-        if (subType === 'badge') return <Award size={20} color="#f59e0b" />;
+  const fetchNotifications = useAppStore(state => (state as any).fetchNotifications);
+  const markNotificationAsRead = useAppStore(state => state.markNotificationAsRead);
+  const markAllNotificationsAsRead = useAppStore(state => state.markAllNotificationsAsRead);
+  const removeNotification = useAppStore(state => state.deleteNotification || (state as any).removeNotification);
+  const clearAllNotifications = useAppStore(state => (state as any).clearAllNotifications);
 
-        switch (type) {
-            case 'success': return <CheckCircle size={20} color="#10b981" />;
-            case 'warning': return <AlertTriangle size={20} color="#eab308" />;
-            case 'alert': return <AlertCircle size={20} color="#ef4444" />;
-            default: return <Info size={20} color={getContrastColor(colors.tint, theme)} />;
-        }
-    };
+  // Estados locales
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<any>(null);
+  const [deleteAction, setDeleteAction] = useState<{ type: 'single' | 'all'; id?: string } | null>(null);
 
-    const getIconBg = (type, subType) => {
-        if (subType === 'friend_request') return colors.tint + '15';
-        if (subType === 'friend_accept') return '#10b98115';
-        if (subType === 'xp' || subType === 'level_up') return '#fbbf2415';
-        if (subType === 'badge') return '#f59e0b15';
+  useEffect(() => {
+    if (fetchNotifications) {
+      fetchNotifications(1);
+    }
+  }, []);
 
-        switch (type) {
-            case 'success': return '#10b98115';
-            case 'warning': return '#eab30815';
-            case 'alert': return '#ef444415';
-            default: return colors.tint + '15';
-        }
-    };
+  const handleNotificationClick = (notif: any) => {
+    if (!notif.is_read && markNotificationAsRead) {
+      markNotificationAsRead(notif.id);
+    }
 
-    const formatDate = (dateString) => {
-        if (!dateString) return '';
-        const d = new Date(dateString);
-        return `${d.toLocaleDateString()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-    };
+    if (notif.data && (notif.data.ip || notif.data.userAgent)) {
+      setSelectedNotification(notif);
+      return;
+    }
 
-    const handleNotificationPress = async (notif) => {
-        if (!notif.is_read) {
-            await markNotificationAsRead(notif.id);
-        }
-    };
+    if (notif.data?.url) {
+      const url = notif.data.url;
+      try {
+        router.push(url as any);
+      } catch (e) {
+        console.warn('Navigation error:', e);
+      }
+    }
+  };
 
-    const unreadCount = notifications.filter(n => !n.is_read).length;
-    const headerContent = <GlobalHeader title="Notificaciones" showBackButton hideRightButtons />;
+  const handleLoadMore = async () => {
+    if (isLoadingMore || notificationPage >= notificationTotalPages || !fetchNotifications) return;
+    setIsLoadingMore(true);
+    await fetchNotifications(notificationPage + 1);
+    setIsLoadingMore(false);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteAction) return;
+    if (deleteAction.type === 'all' && clearAllNotifications) {
+      await clearAllNotifications();
+    } else if (deleteAction.type === 'single' && deleteAction.id && removeNotification) {
+      await removeNotification(deleteAction.id);
+    }
+    setDeleteAction(null);
+  };
+
+  // Filtros idénticos al frontend
+  const filters = [
+    { id: 'all', label: 'Todas' },
+    { id: 'unread', label: 'No leídas' },
+    { id: 'xp', label: 'XP' },
+    { id: 'info', label: 'Info' },
+    { id: 'success', label: 'Éxito' },
+    { id: 'alert', label: 'Alertas' },
+  ];
+
+  const filteredList = useMemo(() => {
+    return notifications.filter((n: any) => {
+      if (activeFilter === 'all') return true;
+      if (activeFilter === 'unread') return !n.is_read;
+      if (activeFilter === 'xp') {
+        const title = n.title?.toLowerCase() || '';
+        const message = n.message?.toLowerCase() || '';
+        return title.includes('xp') || message.includes('xp') || n.data?.type === 'xp';
+      }
+      if (activeFilter === 'success') return n.type === 'success';
+      if (activeFilter === 'alert') return ['warning', 'alert'].includes(n.type);
+      if (activeFilter === 'info') return !['success', 'warning', 'alert'].includes(n.type);
+      return true;
+    });
+  }, [notifications, activeFilter]);
+
+  // Agrupación de fechas idéntica al frontend: Hoy, Ayer, Anterior
+  const groupedNotifications = useMemo(() => {
+    const groups: { hoy: any[]; ayer: any[]; anterior: any[] } = { hoy: [], ayer: [], anterior: [] };
+    filteredList.forEach((n: any) => {
+      const date = parseDateSafe(n.created_at);
+      if (isToday(date)) groups.hoy.push(n);
+      else if (isYesterday(date)) groups.ayer.push(n);
+      else groups.anterior.push(n);
+    });
+    return groups;
+  }, [filteredList]);
+
+  // Iconos idénticos al frontend (forma redondeada 14px, colores exactos)
+  const renderNotificationIcon = (n: any) => {
+    const subType = n.data?.type || n.type;
+
+    let icon = <Info size={20} color={colors.tint} />;
+    let bg = colors.tint + '18';
+
+    if (subType === 'friend_request') {
+      icon = <UserPlus size={20} color={colors.tint} />;
+      bg = colors.tint + '18';
+    } else if (subType === 'friend_accept') {
+      icon = <Users size={20} color="#22c55e" />;
+      bg = 'rgba(34, 197, 94, 0.15)';
+    } else if (subType === 'xp' || subType === 'level_up') {
+      icon = <Zap size={20} color="#f59e0b" fill="#f59e0b" />;
+      bg = 'rgba(245, 158, 11, 0.15)';
+    } else if (subType === 'badge') {
+      icon = <Award size={20} color="#f59e0b" />;
+      bg = 'rgba(245, 158, 11, 0.15)';
+    } else if (n.type === 'chat_message') {
+      icon = <MessageCircle size={20} color="#3b82f6" />;
+      bg = 'rgba(59, 130, 246, 0.15)';
+    } else if (n.type === 'success') {
+      icon = <CheckCircle size={20} color="#22c55e" />;
+      bg = 'rgba(34, 197, 94, 0.15)';
+    } else if (n.type === 'warning') {
+      icon = <AlertTriangle size={20} color="#eab308" />;
+      bg = 'rgba(234, 179, 8, 0.15)';
+    } else if (n.type === 'alert') {
+      icon = <AlertCircle size={20} color="#ef4444" />;
+      bg = 'rgba(239, 68, 68, 0.15)';
+    }
 
     return (
-        <AnimatedScreen header={headerContent}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, marginTop: 16 }}>
-                <View>
-                    <Text style={{ fontSize: 32, fontWeight: '900', color: colors.text }}>Novedades</Text>
-                    <Text style={{ fontSize: 16, color: colors.textSecondary, marginTop: 4 }}>
-                        Tienes {unreadCount} sin leer
-                    </Text>
+      <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
+        {icon}
+      </View>
+    );
+  };
+
+  const hasNotifications = notifications.length > 0;
+  const isListEmpty = filteredList.length === 0;
+  const canLoadMore = notificationPage < notificationTotalPages && activeFilter === 'all';
+
+  const headerContent = <GlobalHeader title="Notificaciones" showBackButton hideRightButtons />;
+
+  return (
+    <AnimatedScreen header={headerContent}>
+      {/* ================= HEADER SECCIÓN NOVEDADES / ACCIONES ================= */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20, marginTop: 8 }}>
+        <View>
+          <Text style={{ fontSize: 26, fontWeight: '900', color: colors.text, letterSpacing: -0.5 }}>
+            {unreadCount > 0 ? 'Novedades' : 'Al día'}
+          </Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginTop: 3 }}>
+            {unreadCount > 0 ? `${unreadCount} pendientes` : 'No hay alertas'}
+          </Text>
+        </View>
+
+        {hasNotifications && (
+          <View style={{ 
+            flexDirection: 'row', 
+            alignItems: 'center', 
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)', 
+            borderRadius: 24, 
+            padding: 4 
+          }}>
+            <TouchableOpacity 
+              onPress={() => { if (markAllNotificationsAsRead) markAllNotificationsAsRead(); }}
+              style={{ padding: 8, borderRadius: 20 }}
+              hitSlop={8}
+            >
+              <CheckCheck size={18} color={colors.tint} />
+            </TouchableOpacity>
+
+            <View style={{ width: 1, height: 20, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)', marginHorizontal: 2 }} />
+
+            <TouchableOpacity 
+              onPress={() => setDeleteAction({ type: 'all' })}
+              style={{ padding: 8, borderRadius: 20 }}
+              hitSlop={8}
+            >
+              <Trash2 size={18} color="#ef4444" />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
+      {/* ================= FILTROS PÍLDORAS FLOTANTES ================= */}
+      {hasNotifications && (
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8, paddingBottom: 16 }}
+          style={{ marginBottom: 4 }}
+        >
+          {filters.map(f => {
+            const isActive = activeFilter === f.id;
+            return (
+              <TouchableOpacity
+                key={f.id}
+                onPress={() => setActiveFilter(f.id)}
+                activeOpacity={0.8}
+                style={{
+                  paddingHorizontal: 18,
+                  paddingVertical: 9,
+                  borderRadius: 24,
+                  backgroundColor: isActive ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)'),
+                  borderWidth: isActive ? 0 : 1,
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                }}
+              >
+                <Text style={{
+                  fontSize: 13,
+                  fontWeight: 'bold',
+                  color: isActive ? getContrastColor(colors.tint, theme) : colors.textSecondary,
+                }}>
+                  {f.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
+
+      {/* ================= ESTADO VACÍO ================= */}
+      {!hasNotifications ? (
+        <View style={{
+          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.65)',
+          borderRadius: 32,
+          borderWidth: 1,
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+          padding: 36,
+          alignItems: 'center',
+          marginTop: 20,
+          overflow: 'hidden',
+        }}>
+          <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <View style={{ 
+            width: 72, 
+            height: 72, 
+            borderRadius: 24, 
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            marginBottom: 16 
+          }}>
+            <Bell size={32} color={colors.textSecondary} />
+          </View>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.text }}>No tienes notificaciones</Text>
+          <Text style={{ fontSize: 13, fontWeight: '500', color: colors.textSecondary, marginTop: 6, textAlign: 'center' }}>
+            Te avisaremos cuando ocurra algo importante.
+          </Text>
+        </View>
+      ) : isListEmpty ? (
+        <View style={{
+          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.65)',
+          borderRadius: 32,
+          borderWidth: 1,
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+          padding: 36,
+          alignItems: 'center',
+          marginTop: 20,
+          overflow: 'hidden',
+        }}>
+          <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <View style={{ 
+            width: 72, 
+            height: 72, 
+            borderRadius: 24, 
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            marginBottom: 16 
+          }}>
+            <Filter size={32} color={colors.textSecondary} />
+          </View>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.text }}>No hay notificaciones</Text>
+          <Text style={{ fontSize: 13, fontWeight: '500', color: colors.textSecondary, marginTop: 6, textAlign: 'center' }}>
+            Prueba a cambiar el filtro superior.
+          </Text>
+        </View>
+      ) : (
+        /* ================= LISTA AGRUPADA POR FECHA (HOY / AYER / ANTERIOR) ================= */
+        <View style={{ gap: 24, marginTop: 8 }}>
+          {(['hoy', 'ayer', 'anterior'] as const).map(key => {
+            const list = groupedNotifications[key];
+            if (!list || list.length === 0) return null;
+            const titleGroup = key === 'hoy' ? 'Hoy' : key === 'ayer' ? 'Ayer' : 'Anterior';
+
+            return (
+              <View key={key}>
+                <Text style={{ 
+                  fontSize: 11, 
+                  fontWeight: '800', 
+                  color: colors.textMuted || colors.textSecondary, 
+                  textTransform: 'uppercase', 
+                  letterSpacing: 1.5, 
+                  marginBottom: 12, 
+                  paddingLeft: 6 
+                }}>
+                  {titleGroup}
+                </Text>
+
+                <View style={{ gap: 12 }}>
+                  {list.map((n: any) => {
+                    const isUnread = !n.is_read;
+                    return (
+                      <TouchableOpacity
+                        key={n.id}
+                        onPress={() => handleNotificationClick(n)}
+                        activeOpacity={0.85}
+                        style={{
+                          backgroundColor: isDark ? (theme === 'oled' ? '#111111' : '#1e293b') : '#ffffff',
+                          borderRadius: 24,
+                          padding: 16,
+                          borderWidth: isUnread ? 2 : 1,
+                          borderColor: isUnread ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'),
+                          opacity: isUnread ? 1 : 0.82,
+                          overflow: 'hidden',
+                          position: 'relative',
+                        }}
+                      >
+                        <GlassView 
+                          glassEffectStyle="regular" 
+                          colorScheme={isDark ? 'dark' : 'light'} 
+                          style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} 
+                        />
+
+                        {/* Fila principal: icono y textos */}
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
+                          {renderNotificationIcon(n)}
+
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ 
+                              fontSize: 15, 
+                              fontWeight: '700', 
+                              color: isUnread ? colors.text : colors.textSecondary, 
+                              marginBottom: 4 
+                            }}>
+                              {n.title}
+                            </Text>
+
+                            <Text style={{ 
+                              fontSize: 13, 
+                              fontWeight: '500', 
+                              color: isUnread ? colors.textSecondary : (colors.textMuted || colors.textSecondary), 
+                              lineHeight: 19 
+                            }}>
+                              {n.message}
+                            </Text>
+
+                            {/* Píldoras de acción interactiva */}
+                            {n.data && (n.data.ip || n.data.userAgent) && (
+                              <View style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 4,
+                                backgroundColor: colors.tint + '18',
+                                paddingHorizontal: 10,
+                                paddingVertical: 5,
+                                borderRadius: 12,
+                                marginTop: 10,
+                                alignSelf: 'flex-start',
+                              }}>
+                                <Text style={{ fontSize: 10, fontWeight: '800', color: colors.tint, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                  Detalles de sesión
+                                </Text>
+                                <ChevronRight size={12} color={colors.tint} />
+                              </View>
+                            )}
+
+                            {n.data?.url && (
+                              <View style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 4,
+                                backgroundColor: colors.tint + '18',
+                                paddingHorizontal: 10,
+                                paddingVertical: 5,
+                                borderRadius: 12,
+                                marginTop: 10,
+                                alignSelf: 'flex-start',
+                              }}>
+                                <Text style={{ fontSize: 10, fontWeight: '800', color: colors.tint, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                  Ver contenido
+                                </Text>
+                                <ChevronRight size={12} color={colors.tint} />
+                              </View>
+                            )}
+                          </View>
+                        </View>
+
+                        {/* Fila inferior: Fecha/Hora y botón eliminar */}
+                        <View style={{ 
+                          flexDirection: 'row', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center', 
+                          marginTop: 14, 
+                          paddingTop: 10, 
+                          borderTopWidth: StyleSheet.hairlineWidth, 
+                          borderTopColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' 
+                        }}>
+                          <Text style={{ fontSize: 11, fontWeight: '700', color: colors.textMuted || colors.textSecondary }}>
+                            {getTimeDisplay(n.created_at)}
+                          </Text>
+
+                          <TouchableOpacity
+                            onPress={() => setDeleteAction({ type: 'single', id: n.id })}
+                            hitSlop={10}
+                            style={{ padding: 4 }}
+                          >
+                            <Trash2 size={16} color={colors.textMuted || colors.textSecondary} />
+                          </TouchableOpacity>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
-                {unreadCount > 0 && (
-                    <TouchableOpacity 
-                        onPress={() => { if(markAllNotificationsAsRead) markAllNotificationsAsRead(); }}
-                        style={{ backgroundColor: colors.tint + '20', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 }}
-                    >
-                        <CheckCheck size={20} color={getContrastColor(colors.tint, theme)} />
-                    </TouchableOpacity>
+              </View>
+            );
+          })}
+
+          {/* ================= BOTÓN CARGAR ANTERIORES ================= */}
+          {canLoadMore && (
+            <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+              <TouchableOpacity
+                onPress={handleLoadMore}
+                disabled={isLoadingMore}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
+                  paddingHorizontal: 24,
+                  paddingVertical: 12,
+                  borderRadius: 24,
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                  borderWidth: 1,
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                }}
+              >
+                {isLoadingMore ? (
+                  <ActivityIndicator size="small" color={colors.tint} />
+                ) : (
+                  <>
+                    <ChevronDown size={18} color={colors.textSecondary} />
+                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: colors.textSecondary }}>Cargar Anteriores</Text>
+                  </>
                 )}
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* ================= MODAL: DETALLES DE INICIO DE SESIÓN ================= */}
+      <Modal 
+        visible={!!selectedNotification} 
+        transparent 
+        animationType="fade" 
+        onRequestClose={() => setSelectedNotification(null)}
+      >
+        <Pressable 
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: 20 }}
+          onPress={() => setSelectedNotification(null)}
+        >
+          <Pressable 
+            style={{ 
+              width: '100%', 
+              maxWidth: 400, 
+              backgroundColor: isDark ? (theme === 'oled' ? '#111111' : '#1e293b') : '#ffffff', 
+              borderRadius: 32, 
+              padding: 24,
+              borderWidth: 1,
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+              overflow: 'hidden'
+            }}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+            
+            {/* Botón cerrar */}
+            <TouchableOpacity 
+              onPress={() => setSelectedNotification(null)}
+              style={{ position: 'absolute', top: 20, right: 20, width: 36, height: 36, borderRadius: 18, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}
+            >
+              <X size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+
+            {/* Encabezado */}
+            <View style={{ alignItems: 'center', marginBottom: 20 }}>
+              <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: colors.tint + '15', borderWidth: 2, borderColor: colors.tint + '30', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                <Shield size={32} color={colors.tint} strokeWidth={1.5} />
+              </View>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.text }}>Detalles de Inicio</Text>
+              <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4, textAlign: 'center' }}>Información del dispositivo registrado</Text>
             </View>
 
-            {notifications.length === 0 ? (
-                <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 60, opacity: 0.5 }}>
-                    <Info size={48} color={colors.textSecondary} />
-                    <Text style={{ color: colors.textSecondary, marginTop: 16, fontSize: 16, fontWeight: 'bold' }}>No tienes notificaciones</Text>
+            {/* Contenedor de datos */}
+            <View style={{ backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)', borderRadius: 20, padding: 16, gap: 16 }}>
+              {/* Dispositivo */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(59, 130, 246, 0.12)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Smartphone size={20} color="#3b82f6" />
                 </View>
-            ) : (
-                <View style={{ gap: 12 }}>
-                    {notifications.map((notif) => (
-                        <TouchableOpacity 
-                            key={notif.id}
-                            onPress={() => handleNotificationPress(notif)}
-                            style={{
-                                flexDirection: 'row',
-                                backgroundColor: colors.card,
-                                borderRadius: 24,
-                                padding: 16,
-                                borderWidth: 1,
-                                borderColor: colors.border,
-                                opacity: notif.is_read ? 0.6 : 1,
-                                alignItems: 'center'
-                            }}
-                        >
-                            <View style={{ width: 48, height: 48, borderRadius: 16, backgroundColor: getIconBg(notif.type, notif.sub_type), alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
-                                {getIcon(notif.type, notif.sub_type)}
-                            </View>
-                            
-                            <View style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.text, marginBottom: 4 }}>
-                                    {notif.title}
-                                </Text>
-                                <Text style={{ fontSize: 14, color: colors.textSecondary, lineHeight: 20 }}>
-                                    {notif.message}
-                                </Text>
-                                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 8, fontWeight: '600' }}>
-                                    {formatDate(notif.created_at)}
-                                </Text>
-                            </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textMuted || colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                    Dispositivo / Navegador
+                  </Text>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginTop: 2 }}>
+                    {selectedNotification?.data?.userAgent || 'Desconocido'}
+                  </Text>
+                </View>
+              </View>
 
-                            <TouchableOpacity 
-                                onPress={() => deleteNotification(notif.id)}
-                                style={{ padding: 8 }}
-                            >
-                                <Trash2 size={20} color={colors.textSecondary} style={{ opacity: 0.5 }} />
-                            </TouchableOpacity>
-                        </TouchableOpacity>
-                    ))}
+              {/* IP */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(168, 85, 247, 0.12)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Globe size={20} color="#a855f7" />
                 </View>
-            )}
-        </AnimatedScreen>
-    );
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textMuted || colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                    Dirección IP
+                  </Text>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginTop: 2, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>
+                    {selectedNotification?.data?.ip || 'Desconocida'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Fecha */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(34, 197, 94, 0.12)', alignItems: 'center', justifyContent: 'center' }}>
+                  <Clock size={20} color="#22c55e" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: colors.textMuted || colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                    Fecha y Hora
+                  </Text>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text, marginTop: 2 }}>
+                    {formatDateFull(parseDateSafe(selectedNotification?.data?.date || selectedNotification?.created_at))}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Botón Entendido */}
+            <TouchableOpacity 
+              onPress={() => setSelectedNotification(null)}
+              style={{
+                height: 50,
+                borderRadius: 18,
+                backgroundColor: colors.tint,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: 20,
+              }}
+            >
+              <Text style={{ fontSize: 15, fontWeight: 'bold', color: getContrastColor(colors.tint, theme) }}>Entendido</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* ================= MODAL: ELIMINAR NOTIFICACIÓN (INDIVIDUAL / TODAS) ================= */}
+      <Modal 
+        visible={!!deleteAction} 
+        transparent 
+        animationType="fade" 
+        onRequestClose={() => setDeleteAction(null)}
+      >
+        <Pressable 
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center', padding: 20 }}
+          onPress={() => setDeleteAction(null)}
+        >
+          <Pressable 
+            style={{ 
+              width: '100%', 
+              maxWidth: 380, 
+              backgroundColor: isDark ? (theme === 'oled' ? '#111111' : '#1e293b') : '#ffffff', 
+              borderRadius: 32, 
+              padding: 24,
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+              overflow: 'hidden'
+            }}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+
+            <View style={{ 
+              width: 64, 
+              height: 64, 
+              borderRadius: 32, 
+              backgroundColor: 'rgba(239, 68, 68, 0.12)', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              marginBottom: 16 
+            }}>
+              <Trash2 size={32} color="#ef4444" />
+            </View>
+
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.text, textAlign: 'center' }}>
+              {deleteAction?.type === 'all' ? '¿Eliminar todas?' : '¿Eliminar notificación?'}
+            </Text>
+
+            <Text style={{ fontSize: 14, color: colors.textSecondary, marginTop: 8, textAlign: 'center', lineHeight: 20 }}>
+              {deleteAction?.type === 'all'
+                ? 'Esta acción borrará permanentemente todas tus notificaciones. No se puede deshacer.'
+                : 'Esta notificación se eliminará permanentemente.'}
+            </Text>
+
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 24, width: '100%' }}>
+              <TouchableOpacity
+                onPress={() => setDeleteAction(null)}
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'transparent',
+                }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>Cancelar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={confirmDelete}
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: 16,
+                  backgroundColor: '#ef4444',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#ffffff' }}>
+                  {deleteAction?.type === 'all' ? 'Eliminar todas' : 'Eliminar'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </AnimatedScreen>
+  );
 }
