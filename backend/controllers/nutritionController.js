@@ -578,30 +578,54 @@ const searchFoods = async (req, res, next) => {
             action: 'process',
             json: 1,
             page_size: 20,
-            fields: 'code,product_name,product_name_es,generic_name,nutriments,image_front_small_url'
+            fields: 'code,product_name,product_name_es,generic_name,nutriments,image_front_small_url,serving_quantity,serving_size,brands'
           },
           timeout: 4000,
           headers: { 'User-Agent': 'FitApp_Backend/1.0 (profitnessglass@gmail.com)' }
         });
 
         if (offRes.data && offRes.data.products) {
-          externalResults = offRes.data.products.map(p => ({
-            id: `off-${p.code}`,
-            name: p.product_name_es || p.product_name || p.generic_name || 'Sin nombre',
-            calories: p.nutriments?.['energy-kcal_100g'] || 0,
-            protein_g: p.nutriments?.proteins_100g || 0,
-            carbs_g: p.nutriments?.carbohydrates_100g || 0,
-            fats_g: p.nutriments?.fat_100g || 0,
-            sugars_g: p.nutriments?.sugars_100g || 0,
-            calories_per_100g: p.nutriments?.['energy-kcal_100g'] || 0,
-            protein_per_100g: p.nutriments?.proteins_100g || 0,
-            carbs_per_100g: p.nutriments?.carbohydrates_100g || 0,
-            fat_per_100g: p.nutriments?.fat_100g || 0,
-            sugars_per_100g: p.nutriments?.sugars_100g || 0,
-            image_url: p.image_front_small_url || null,
-            source: 'openfoodfacts',
-            weight_g: 100
-          }));
+          externalResults = offRes.data.products.map(p => {
+            let servingWeight = null;
+            if (p.serving_quantity && !isNaN(Number(p.serving_quantity)) && Number(p.serving_quantity) > 0) {
+              servingWeight = Math.round(Number(p.serving_quantity) * 10) / 10;
+            } else if (p.serving_size && typeof p.serving_size === 'string') {
+              const match = p.serving_size.match(/(\d+(?:[.,]\d+)?)\s*(?:g|ml|gr|gramos)/i);
+              if (match) {
+                const parsed = parseFloat(match[1].replace(',', '.'));
+                if (parsed > 0) servingWeight = Math.round(parsed * 10) / 10;
+              }
+            }
+
+            const calPer100 = parseFloat(p.nutriments?.['energy-kcal_100g']) || 0;
+            const protPer100 = parseFloat(p.nutriments?.proteins_100g) || 0;
+            const carbsPer100 = parseFloat(p.nutriments?.carbohydrates_100g) || 0;
+            const fatPer100 = parseFloat(p.nutriments?.fat_100g) || 0;
+            const sugarsPer100 = parseFloat(p.nutriments?.sugars_100g) || 0;
+
+            const finalWeight = servingWeight && servingWeight > 0 ? servingWeight : 100;
+            const factor = finalWeight / 100;
+
+            return {
+              id: `off-${p.code}`,
+              name: p.product_name_es || p.product_name || p.generic_name || 'Sin nombre',
+              brand: p.brands || null,
+              calories: Math.round(calPer100 * factor),
+              protein_g: parseFloat((protPer100 * factor).toFixed(1)),
+              carbs_g: parseFloat((carbsPer100 * factor).toFixed(1)),
+              fats_g: parseFloat((fatPer100 * factor).toFixed(1)),
+              sugars_g: parseFloat((sugarsPer100 * factor).toFixed(1)),
+              calories_per_100g: calPer100,
+              protein_per_100g: protPer100,
+              carbs_per_100g: carbsPer100,
+              fat_per_100g: fatPer100,
+              sugars_per_100g: sugarsPer100,
+              image_url: p.image_front_small_url || null,
+              source: 'openfoodfacts',
+              serving_weight_g: servingWeight && servingWeight > 0 ? servingWeight : null,
+              weight_g: finalWeight
+            };
+          });
 
           searchCache.set(searchTerm, { timestamp: Date.now(), results: externalResults });
         }

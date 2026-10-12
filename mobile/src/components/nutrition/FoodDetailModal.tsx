@@ -78,6 +78,7 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
           sugars_g: food.sugars_g || food.sugar_g || food.sugars,
           weight_g: food.weight_g || 100,
           image_url: food.image_url,
+          serving_weight_g: food.serving_weight_g,
           calories_per_100g: food.calories_per_100g,
           protein_per_100g: food.protein_per_100g,
           carbs_per_100g: food.carbs_per_100g,
@@ -197,6 +198,11 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
                       {Math.round(food.calories)}{' '}
                       <Text style={[styles.caloriesUnit, { color: colors.textSecondary }]}>kcal</Text>
                     </Text>
+                    {food.calories_per_100g && food.weight_g && food.weight_g !== 100 ? (
+                      <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2, fontWeight: '500' }}>
+                        ({Math.round(food.calories_per_100g)} / 100g)
+                      </Text>
+                    ) : null}
                   </View>
 
                   {food.weight_g ? (

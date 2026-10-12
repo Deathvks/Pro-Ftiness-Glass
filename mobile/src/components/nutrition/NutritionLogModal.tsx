@@ -254,10 +254,12 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
       Haptics.selectionAsync();
     } catch {}
 
-    const defaultW = food.weight_g
-      ? String(food.weight_g)
-      : food.serving_weight_g && food.serving_weight_g > 0
+    const defaultW = cartTempId
+      ? String(food.weight_g || 100)
+      : food.serving_weight_g && Number(food.serving_weight_g) > 0
       ? String(food.serving_weight_g)
+      : food.weight_g && Number(food.weight_g) > 0
+      ? String(food.weight_g)
       : '100';
 
     const foodName = (food.name || food.description || '').toLowerCase().trim();
@@ -421,36 +423,60 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
     setEditingCartTempId(null);
   };
 
-  // Quick Add (directly stages with default 100g or serving weight)
+  // Quick Add (directly stages with default serving weight or 100g)
   const handleQuickAdd = (food: any, origin: 'search' | 'favorite' | 'recent') => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
 
-    const defaultW = parseFloat(food.weight_g) || parseFloat(food.serving_weight_g) || 100;
-    const refWeight = parseFloat(food.weight_g) || 100;
-    const factor = defaultW / refWeight;
+    const defaultW = food.serving_weight_g && Number(food.serving_weight_g) > 0
+      ? Number(food.serving_weight_g)
+      : food.weight_g && Number(food.weight_g) > 0
+      ? Number(food.weight_g)
+      : 100;
+
+    const calPer100 = food.calories_per_100g !== undefined && food.calories_per_100g !== null && !isNaN(Number(food.calories_per_100g))
+      ? Number(food.calories_per_100g)
+      : ((Number(food.calories) || 0) / (Number(food.weight_g) || 100)) * 100;
+
+    const protPer100 = food.protein_per_100g !== undefined && food.protein_per_100g !== null && !isNaN(Number(food.protein_per_100g))
+      ? Number(food.protein_per_100g)
+      : ((Number(food.protein_g || food.protein) || 0) / (Number(food.weight_g) || 100)) * 100;
+
+    const carbsPer100 = food.carbs_per_100g !== undefined && food.carbs_per_100g !== null && !isNaN(Number(food.carbs_per_100g))
+      ? Number(food.carbs_per_100g)
+      : ((Number(food.carbs_g || food.carbs) || 0) / (Number(food.weight_g) || 100)) * 100;
+
+    const fatPer100 = (food.fat_per_100g ?? food.fats_per_100g) !== undefined && (food.fat_per_100g ?? food.fats_per_100g) !== null && !isNaN(Number(food.fat_per_100g ?? food.fats_per_100g))
+      ? Number(food.fat_per_100g ?? food.fats_per_100g)
+      : ((Number(food.fats_g || food.fat) || 0) / (Number(food.weight_g) || 100)) * 100;
+
+    const sugarsPer100 = food.sugars_per_100g !== undefined && food.sugars_per_100g !== null && !isNaN(Number(food.sugars_per_100g))
+      ? Number(food.sugars_per_100g)
+      : ((Number(food.sugars_g || food.sugar_g) || 0) / (Number(food.weight_g) || 100)) * 100;
+
+    const factor = defaultW / 100;
 
     const newItem: CartItem = {
       tempId: `cart-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
       name: food.name || food.description || 'Alimento',
       description: food.description || food.name || 'Alimento',
-      calories: Math.round((parseFloat(food.calories) || 0) * factor),
-      protein_g: parseFloat(((parseFloat(food.protein_g || food.protein) || 0) * factor).toFixed(1)),
-      carbs_g: parseFloat(((parseFloat(food.carbs_g || food.carbs) || 0) * factor).toFixed(1)),
-      fats_g: parseFloat(((parseFloat(food.fats_g || food.fat) || 0) * factor).toFixed(1)),
-      sugars_g: parseFloat(((parseFloat(food.sugars_g || food.sugar_g) || 0) * factor).toFixed(1)),
+      calories: Math.round(calPer100 * factor),
+      protein_g: parseFloat((protPer100 * factor).toFixed(1)),
+      carbs_g: parseFloat((carbsPer100 * factor).toFixed(1)),
+      fats_g: parseFloat((fatPer100 * factor).toFixed(1)),
+      sugars_g: parseFloat((sugarsPer100 * factor).toFixed(1)),
       weight_g: defaultW,
       image_url: food.image_url,
       brand: food.brand,
       isFavorite: food.isFavorite || false,
       origin,
       serving_weight_g: food.serving_weight_g,
-      calories_per_100g: food.calories_per_100g,
-      protein_per_100g: food.protein_per_100g,
-      carbs_per_100g: food.carbs_per_100g,
-      fat_per_100g: food.fat_per_100g || food.fats_per_100g,
-      sugars_per_100g: food.sugars_per_100g,
+      calories_per_100g: calPer100,
+      protein_per_100g: protPer100,
+      carbs_per_100g: carbsPer100,
+      fat_per_100g: fatPer100,
+      sugars_per_100g: sugarsPer100,
     };
 
     setItemsToAdd(prev => [...prev, newItem]);
@@ -862,44 +888,6 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
 
                       {/* Quick Weight Chips - LIQUID GLASS OPTIONS */}
                       <View style={styles.quickChipsRow}>
-                        <TouchableOpacity
-                          onPress={() => {
-                            try {
-                              Haptics.selectionAsync();
-                            } catch {}
-                            setDetailWeight('100');
-                          }}
-                          style={[
-                            styles.chipBtn,
-                            detailWeight === '100'
-                              ? {
-                                  backgroundColor: colors.tint,
-                                  borderColor: colors.tint,
-                                  shadowColor: colors.tint,
-                                  shadowOffset: { width: 0, height: 3 },
-                                  shadowOpacity: isDark ? 0.45 : 0.25,
-                                  shadowRadius: 8,
-                                  elevation: 4,
-                                }
-                              : {
-                                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.7)',
-                                  borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
-                                },
-                          ]}
-                          activeOpacity={0.75}
-                        >
-                          <Text
-                            style={[
-                              styles.chipText,
-                              {
-                                color: detailWeight === '100' ? getContrastTextColor(colors.tint) : colors.text,
-                              },
-                            ]}
-                          >
-                            100 g
-                          </Text>
-                        </TouchableOpacity>
-
                         {selectedFoodForDetail.serving_weight_g && selectedFoodForDetail.serving_weight_g !== 100 && (
                           <TouchableOpacity
                             onPress={() => {
@@ -942,6 +930,44 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                             </Text>
                           </TouchableOpacity>
                         )}
+
+                        <TouchableOpacity
+                          onPress={() => {
+                            try {
+                              Haptics.selectionAsync();
+                            } catch {}
+                            setDetailWeight('100');
+                          }}
+                          style={[
+                            styles.chipBtn,
+                            detailWeight === '100'
+                              ? {
+                                  backgroundColor: colors.tint,
+                                  borderColor: colors.tint,
+                                  shadowColor: colors.tint,
+                                  shadowOffset: { width: 0, height: 3 },
+                                  shadowOpacity: isDark ? 0.45 : 0.25,
+                                  shadowRadius: 8,
+                                  elevation: 4,
+                                }
+                              : {
+                                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.7)',
+                                  borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                                },
+                          ]}
+                          activeOpacity={0.75}
+                        >
+                          <Text
+                            style={[
+                              styles.chipText,
+                              {
+                                color: detailWeight === '100' ? getContrastTextColor(colors.tint) : colors.text,
+                              },
+                            ]}
+                          >
+                            100 g
+                          </Text>
+                        </TouchableOpacity>
 
                         <TouchableOpacity
                           onPress={() => {
