@@ -802,6 +802,17 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
           suggestedSets: plannedSets,
           motive: `Bajar un 8% el peso permite que el sistema nervioso se recupere completamente para tu próxima semana.`,
           description: `Usa ${reducedWeight} kg con técnica estricta para estimular sin fatiga residual.`
+        },
+        {
+          id: 'dec_gen_sets',
+          title: `Reducir a ${Math.max(2, plannedSets - 1)} series`,
+          tag: 'Alternativa',
+          badge: `${Math.max(2, plannedSets - 1)} series`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps,
+          suggestedSets: Math.max(2, plannedSets - 1),
+          motive: `Reducir una serie disminuye la fatiga acumulada en los tejidos sin tener que reducir los ${currentTopWeight} kg que ya levantas.`,
+          description: `Haz ${Math.max(2, plannedSets - 1)} series efectivas en lugar de ${plannedSets} con tus ${currentTopWeight} kg habituales.`
         }
       ];
     }

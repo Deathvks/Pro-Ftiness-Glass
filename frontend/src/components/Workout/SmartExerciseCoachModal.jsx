@@ -74,7 +74,8 @@ const SmartExerciseCoachModal = ({
     motivationalMessage,
     celebrationData,
     asesoriaRecommendation,
-    followUp
+    followUp,
+    currentTopWeight
   } = plan;
 
   // Métricas activas computadas según la estrategia seleccionada por el usuario
@@ -263,7 +264,7 @@ const SmartExerciseCoachModal = ({
                   </span>
                   <h3 className="text-xs sm:text-sm font-black text-text-primary leading-tight">
                     {trend.status === 'stagnant'
-                      ? `Meseta detectada: Llevas ${trend.weeksStagnant || 2} semanas levantando ${targets.suggestedWeight} kg`
+                      ? `Meseta detectada: Llevas ${trend.weeksStagnant || 2} semanas levantando ${currentTopWeight > 0 ? `${currentTopWeight} kg` : 'peso corporal'}`
                       : trend.status === 'decreasing'
                       ? `Aviso: Fatiga residual detectada (${trend.badgeText})`
                       : trend.isProgressing
@@ -587,8 +588,12 @@ const SmartExerciseCoachModal = ({
               <Check size={18} strokeWidth={3} />
               <span>
                 {activeSuggestedWeight !== null 
-                  ? `Aplicar ${activeSuggestedWeight} kg (${activeSuggestedReps} reps)`
-                  : `Aplicar pauta (${activeSuggestedReps} reps)`}
+                  ? (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
+                      ? `Aplicar ${activeSuggestedSets} series con ${activeSuggestedWeight} kg`
+                      : `Aplicar ${activeSuggestedWeight} kg (${activeSuggestedReps} reps)`)
+                  : (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
+                      ? `Aplicar ${activeSuggestedSets} series (${activeSuggestedReps} reps)`
+                      : `Aplicar pauta (${activeSuggestedReps} reps)`)}
               </span>
             </button>
 

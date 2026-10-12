@@ -316,6 +316,94 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage({ ...get(), ...newState });
   },
 
+  applyCoachStrategyToExercise: (exIndex, strategy) => {
+    const session = get().activeWorkout;
+    if (!session || !session.exercises || !session.exercises[exIndex]) return;
+
+    const newExercises = JSON.parse(JSON.stringify(session.exercises));
+    const targetExercise = newExercises[exIndex];
+    if (!targetExercise) return;
+
+    const { suggestedSets, suggestedWeight, suggestedReps } = strategy || {};
+
+    // 1. Modificar número de series si la recomendación indica un conteo específico
+    const targetSetsCount = parseInt(suggestedSets, 10);
+    if (!isNaN(targetSetsCount) && targetSetsCount > 0) {
+      const currentSets = targetExercise.setsDone || [];
+      if (currentSets.length > targetSetsCount) {
+        // Reducir series para este entrenamiento (ej. de 3 a 2 series)
+        targetExercise.setsDone = currentSets.slice(0, targetSetsCount);
+      } else if (currentSets.length < targetSetsCount) {
+        // Aumentar series si la pauta sugiere más volumen
+        while (targetExercise.setsDone.length < targetSetsCount) {
+          targetExercise.setsDone.push({
+            set_number: targetExercise.setsDone.length + 1,
+            reps: suggestedReps !== null && suggestedReps !== undefined ? String(suggestedReps) : '',
+            weight_kg: suggestedWeight !== null && suggestedWeight !== undefined ? String(suggestedWeight) : '',
+            is_dropset: false,
+            is_warmup: false,
+            rir: null,
+          });
+        }
+      }
+
+      // Re-numerar series de forma correlativa
+      let nonDropsetCount = 0;
+      targetExercise.setsDone.forEach((s) => {
+        if (!s.is_dropset) {
+          nonDropsetCount++;
+          s.set_number = nonDropsetCount;
+        }
+      });
+      targetExercise.sets = targetSetsCount;
+    }
+
+    // 2. Aplicar peso y repeticiones sugeridas a las series de trabajo
+    if (targetExercise.setsDone && targetExercise.setsDone.length > 0) {
+      let appliedWeightCount = 0;
+      let appliedRepsCount = 0;
+
+      // Completar series que estén vacías
+      targetExercise.setsDone.forEach((set) => {
+        if (set.is_warmup) return;
+        if (suggestedWeight !== null && suggestedWeight !== undefined) {
+          if (set.weight_kg === '' || set.weight_kg === null || set.weight_kg === undefined) {
+            set.weight_kg = suggestedWeight;
+            appliedWeightCount++;
+          }
+        }
+        if (suggestedReps !== null && suggestedReps !== undefined) {
+          if (set.reps === '' || set.reps === null || set.reps === undefined) {
+            set.reps = suggestedReps;
+            appliedRepsCount++;
+          }
+        }
+      });
+
+      // Si ninguna serie estaba vacía, actualizar todas las series de trabajo a la pauta
+      if (appliedWeightCount === 0 && suggestedWeight !== null && suggestedWeight !== undefined) {
+        targetExercise.setsDone.forEach((set) => {
+          if (!set.is_warmup) {
+            set.weight_kg = suggestedWeight;
+          }
+        });
+      }
+      if (appliedRepsCount === 0 && suggestedReps !== null && suggestedReps !== undefined) {
+        targetExercise.setsDone.forEach((set) => {
+          if (!set.is_warmup) {
+            set.reps = suggestedReps;
+          }
+        });
+      }
+    }
+
+    const newState = {
+      activeWorkout: { ...session, exercises: newExercises },
+    };
+    set(newState);
+    setWorkoutInStorage({ ...get(), ...newState });
+  },
+
   addDropset: (exIndex, setIndex) => {
     const session = get().activeWorkout;
     if (!session) return;

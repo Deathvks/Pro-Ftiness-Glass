@@ -49,7 +49,8 @@ const Workout = ({ timer, setView }) => {
         workoutLog,
         fetchInitialData,
         setExerciseReminder,
-        replaceExercise
+        replaceExercise,
+        applyCoachStrategyToExercise
     } = useAppStore((state) => ({
         activeWorkout: state.activeWorkout,
         logWorkout: state.logWorkout,
@@ -66,7 +67,8 @@ const Workout = ({ timer, setView }) => {
         workoutLog: state.workoutLog,
         fetchInitialData: state.fetchInitialData,
         setExerciseReminder: state.setExerciseReminder,
-        replaceExercise: state.replaceExercise
+        replaceExercise: state.replaceExercise,
+        applyCoachStrategyToExercise: state.applyCoachStrategyToExercise
     }));
     
     // --- 2. Estado Local (Modales y Notas) ---
@@ -502,60 +504,32 @@ const Workout = ({ timer, setView }) => {
                     workoutLog={workoutLog}
                     onClose={() => setSmartCoachExercise(null)}
                     onApplyStrategy={(strategy) => {
-                        const exIndex = activeWorkout?.exercises?.findIndex(e => e.id === smartCoachExercise.id);
+                        const exIndex = activeWorkout?.exercises?.findIndex(
+                            (e) => e.id === smartCoachExercise.id || e.name === smartCoachExercise.name
+                        );
                         if (exIndex !== -1 && exIndex !== undefined) {
-                            const { suggestedWeight, suggestedReps } = strategy;
-                            let appliedWeightCount = 0;
-                            let appliedRepsCount = 0;
+                            applyCoachStrategyToExercise(exIndex, strategy);
 
-                            smartCoachExercise.setsDone.forEach((set, sIdx) => {
-                                if (suggestedWeight !== null && suggestedWeight !== undefined) {
-                                    if (set.weight_kg === '' || set.weight_kg === null || set.weight_kg === undefined) {
-                                        updateActiveWorkoutSet(exIndex, sIdx, 'weight_kg', suggestedWeight);
-                                        appliedWeightCount++;
-                                    }
-                                }
-                                if (suggestedReps !== null && suggestedReps !== undefined) {
-                                    if (set.reps === '' || set.reps === null || set.reps === undefined) {
-                                        updateActiveWorkoutSet(exIndex, sIdx, 'reps', suggestedReps);
-                                        appliedRepsCount++;
-                                    }
-                                }
-                            });
-
-                            if (appliedWeightCount === 0 && suggestedWeight !== null && suggestedWeight !== undefined) {
-                                updateActiveWorkoutSet(exIndex, 0, 'weight_kg', suggestedWeight);
-                                appliedWeightCount = 1;
+                            const parts = [];
+                            if (strategy.suggestedSets) parts.push(`${strategy.suggestedSets} series`);
+                            if (strategy.suggestedWeight !== null && strategy.suggestedWeight !== undefined) {
+                                parts.push(`${strategy.suggestedWeight} kg`);
                             }
-                            if (appliedRepsCount === 0 && suggestedReps !== null && suggestedReps !== undefined) {
-                                updateActiveWorkoutSet(exIndex, 0, 'reps', suggestedReps);
-                                appliedRepsCount = 1;
+                            if (strategy.suggestedReps !== null && strategy.suggestedReps !== undefined) {
+                                parts.push(`${strategy.suggestedReps} reps`);
                             }
 
-                            const msgs = [];
-                            if (suggestedWeight !== null && suggestedWeight !== undefined) msgs.push(`${suggestedWeight} kg`);
-                            if (suggestedReps !== null && suggestedReps !== undefined) msgs.push(`${suggestedReps} reps`);
-
-                            addToast(`Estrategia aplicada: ${msgs.join(' y ')}`, 'success');
+                            addToast(`Estrategia aplicada: ${parts.join(', ')}`, 'success');
                         }
                         setSmartCoachExercise(null);
                     }}
                     onApplyWeight={(suggestedWeight) => {
-                        const exIndex = activeWorkout?.exercises?.findIndex(e => e.id === smartCoachExercise.id);
+                        const exIndex = activeWorkout?.exercises?.findIndex(
+                            (e) => e.id === smartCoachExercise.id || e.name === smartCoachExercise.name
+                        );
                         if (exIndex !== -1 && exIndex !== undefined) {
-                            let appliedCount = 0;
-                            smartCoachExercise.setsDone.forEach((set, sIdx) => {
-                                if (set.weight_kg === '' || set.weight_kg === null || set.weight_kg === undefined) {
-                                    updateActiveWorkoutSet(exIndex, sIdx, 'weight_kg', suggestedWeight);
-                                    appliedCount++;
-                                }
-                            });
-                            if (appliedCount > 0) {
-                                addToast(`Peso de ${suggestedWeight}kg aplicado a ${appliedCount} serie${appliedCount > 1 ? 's' : ''}`, 'success');
-                            } else {
-                                updateActiveWorkoutSet(exIndex, 0, 'weight_kg', suggestedWeight);
-                                addToast(`Peso de ${suggestedWeight}kg actualizado en la primera serie`, 'success');
-                            }
+                            applyCoachStrategyToExercise(exIndex, { suggestedWeight });
+                            addToast(`Peso objetivo aplicado: ${suggestedWeight} kg`, 'success');
                         }
                         setSmartCoachExercise(null);
                     }}
