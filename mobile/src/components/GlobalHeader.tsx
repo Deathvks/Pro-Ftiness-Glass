@@ -11,10 +11,6 @@ import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 
-// Radio de cápsula idéntico al de la tab bar nativa de iOS 26
-const CAPSULE_INSET = 8;
-const CAPSULE_HEIGHT = 56;
-const CAPSULE_RADIUS = CAPSULE_HEIGHT / 2;
 
 export default function GlobalHeader({ title, scrollY, showBackButton, hideRightButtons }: { title?: string, scrollY?: Animated.Value, showBackButton?: boolean, hideRightButtons?: boolean }) {
     const [showAiModal, setShowAiModal] = React.useState(false);
@@ -82,21 +78,9 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
         }).start();
     }, [isScrolled, glassAvailable]);
 
-    const capsuleFrame = {
-        position: 'absolute' as const,
-        top: insets.top + 12 + 20 - CAPSULE_HEIGHT / 2,
-        left: CAPSULE_INSET,
-        right: CAPSULE_INSET,
-        height: CAPSULE_HEIGHT,
-        borderRadius: CAPSULE_RADIUS,
-    };
-
     return (
         <View style={{ position: 'relative', zIndex: 100 }}>
-            {/* Cápsula Liquid Glass nativa (UIGlassEffect), igual que la tab bar.
-                IMPORTANTE: el GlassView NO puede estar dentro de una vista con opacity < 1,
-                UIKit deja de renderizar el efecto. Se materializa cambiando el estilo
-                'none' -> 'regular' con la animación nativa de Apple. */}
+            {/* Fondo Liquid Glass nativo (UIGlassEffect) estirado a todo el ancho y alto del header */}
             {glassAvailable ? (
                 <GlassView
                     pointerEvents="none"
@@ -106,12 +90,26 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                         animationDuration: 0.35,
                     }}
                     colorScheme={colorScheme as any}
-                    style={capsuleFrame}
+                    style={[
+                        StyleSheet.absoluteFill,
+                        {
+                            borderBottomWidth: isScrolled ? StyleSheet.hairlineWidth : 0,
+                            borderBottomColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                        }
+                    ]}
                 />
             ) : (
                 <Animated.View
                     pointerEvents="none"
-                    style={[capsuleFrame, { overflow: 'hidden', opacity: fallbackOpacity }]}
+                    style={[
+                        StyleSheet.absoluteFill, 
+                        { 
+                            overflow: 'hidden', 
+                            opacity: fallbackOpacity,
+                            borderBottomWidth: StyleSheet.hairlineWidth,
+                            borderBottomColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                        }
+                    ]}
                 >
                     <BlurView
                         intensity={90}
