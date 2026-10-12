@@ -257,30 +257,31 @@ export default function NotificationsScreen() {
           <View style={{ 
             flexDirection: 'row', 
             alignItems: 'center', 
-            borderRadius: 24, 
+            borderRadius: 9999, 
             padding: 4,
             overflow: 'hidden',
-            borderWidth: 1,
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-            backgroundColor: 'transparent',
+            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
             position: 'relative',
           }}>
-            <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.4)' }]} />
+            <GlassView 
+              glassEffectStyle="regular" 
+              colorScheme={isDark ? 'dark' : 'light'} 
+              style={[StyleSheet.absoluteFill, { borderRadius: 9999 }]} 
+            />
 
             <TouchableOpacity 
               onPress={() => { if (markAllNotificationsAsRead) markAllNotificationsAsRead(); }}
-              style={{ padding: 8, borderRadius: 20 }}
+              style={{ padding: 8, borderRadius: 9999 }}
               hitSlop={8}
             >
               <CheckCheck size={18} color={colors.tint} />
             </TouchableOpacity>
 
-            <View style={{ width: 1, height: 20, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', marginHorizontal: 2 }} />
+            <View style={{ width: 1, height: 16, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)', marginHorizontal: 2 }} />
 
             <TouchableOpacity 
               onPress={() => setDeleteAction({ type: 'all' })}
-              style={{ padding: 8, borderRadius: 20 }}
+              style={{ padding: 8, borderRadius: 9999 }}
               hitSlop={8}
             >
               <Trash2 size={18} color="#ef4444" />
@@ -289,12 +290,12 @@ export default function NotificationsScreen() {
         )}
       </View>
 
-      {/* ================= FILTROS PÍLDORAS FLOTANTES (LIQUID GLASS) ================= */}
+      {/* ================= FILTROS PÍLDORAS FLOTANTES SIN BORDES (LIQUID GLASS) ================= */}
       {hasNotifications && (
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, paddingBottom: 16, paddingHorizontal: 2 }}
+          contentContainerStyle={{ gap: 10, paddingTop: 6, paddingBottom: 16, paddingHorizontal: 4 }}
           style={{ marginBottom: 4 }}
         >
           {filters.map(f => {
@@ -306,39 +307,32 @@ export default function NotificationsScreen() {
                 activeOpacity={0.75}
                 style={{
                   position: 'relative',
-                  paddingHorizontal: 18,
-                  paddingVertical: 9,
-                  borderRadius: 24,
+                  paddingHorizontal: 20,
+                  paddingVertical: 10,
+                  borderRadius: 9999,
                   overflow: 'hidden',
-                  borderWidth: 1,
-                  borderColor: isActive 
+                  backgroundColor: isActive 
                     ? colors.tint 
-                    : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                    : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)'),
                   justifyContent: 'center',
                   alignItems: 'center',
-                  backgroundColor: 'transparent',
+                  shadowColor: isActive ? colors.tint : 'transparent',
+                  shadowOffset: { width: 0, height: 3 },
+                  shadowOpacity: isActive ? 0.35 : 0,
+                  shadowRadius: 6,
+                  elevation: isActive ? 3 : 0,
                 }}
               >
-                {/* 1. Capa Liquid Glass Nativa de Apple */}
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={StyleSheet.absoluteFill}
-                />
+                {/* Capa Liquid Glass Nativa de Apple con radio cápsula completo */}
+                {!isActive && (
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 9999 }]}
+                  />
+                )}
 
-                {/* 2. Capa de Fondo (Acento cuando está activo, sutil iluminación cuando está inactivo) */}
-                <View
-                  style={[
-                    StyleSheet.absoluteFill,
-                    {
-                      backgroundColor: isActive 
-                        ? colors.tint 
-                        : (isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.4)'),
-                    }
-                  ]}
-                />
-
-                {/* 3. Texto del filtro con Contraste Garantizado (100% legible) */}
+                {/* Texto del filtro: contraste perfecto garantizado */}
                 <Text style={{
                   fontSize: 13,
                   fontWeight: 'bold',
@@ -557,18 +551,25 @@ export default function NotificationsScreen() {
               <TouchableOpacity
                 onPress={handleLoadMore}
                 disabled={isLoadingMore}
+                activeOpacity={0.8}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: 8,
-                  paddingHorizontal: 24,
-                  paddingVertical: 12,
-                  borderRadius: 24,
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                  borderWidth: 1,
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                  paddingHorizontal: 28,
+                  paddingVertical: 13,
+                  borderRadius: 9999,
+                  overflow: 'hidden',
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                  position: 'relative',
                 }}
               >
+                <GlassView 
+                  glassEffectStyle="regular" 
+                  colorScheme={isDark ? 'dark' : 'light'} 
+                  style={[StyleSheet.absoluteFill, { borderRadius: 9999 }]} 
+                />
+
                 {isLoadingMore ? (
                   <ActivityIndicator size="small" color={colors.tint} />
                 ) : (
