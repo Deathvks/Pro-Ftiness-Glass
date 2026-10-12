@@ -19,6 +19,7 @@ import {
 } from '../services/userService';
 import ProfileImageModal from '../components/ProfileImageModal';
 import Cropper from 'react-easy-crop';
+import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api')
@@ -431,32 +432,47 @@ const Profile = ({ onCancel, setView, navigate }) => {
               accept="image/png, image/jpeg, image/webp"
               className="hidden"
             />
-            <div
-              className="relative w-24 h-24 rounded-full cursor-pointer overflow-hidden shadow-sm ring-1 ring-glass-border mb-3"
-              onClick={openImageModal}
-            >
-              {imagePreview ? (
-                <img
-                  src={getProcessedImageUrl(imagePreview)}
-                  alt="Foto de perfil"
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => { e.target.onerror = null; }}
-                />
-              ) : (
-                <div className="w-full h-full bg-black/5 dark:bg-white/5 flex items-center justify-center">
-                  <User size={40} className="text-text-muted opacity-50" strokeWidth={1.5} />
-                </div>
-              )}
-            </div>
-            <button
-                type="button"
-                onClick={() => fileInputRef.current.click()}
-                className="text-[15px] font-bold text-accent active:opacity-50 transition-opacity mb-4"
-            >
-                Editar foto
-            </button>
-            <h1 className="text-2xl font-bold text-text-primary">{userProfile.username || 'Usuario'}</h1>
+            {(() => {
+              const roleConfig = getUserRoleRingConfig(userProfile);
+              return (
+                <>
+                  <div
+                    className={`relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-[3px] sm:p-[3.5px] ${roleConfig.borderClass} ${roleConfig.glowClass} cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95 mb-3`}
+                    onClick={openImageModal}
+                    title={`${userProfile.username || 'Usuario'} • ${roleConfig.title}`}
+                  >
+                    <div className="w-full h-full rounded-full p-[2.5px] sm:p-[3px] bg-bg-primary dark:bg-[#121214] overflow-hidden flex items-center justify-center">
+                      <div className="w-full h-full rounded-full overflow-hidden bg-black/5 dark:bg-white/5 flex items-center justify-center">
+                        {imagePreview ? (
+                          <img
+                            src={getProcessedImageUrl(imagePreview)}
+                            alt="Foto de perfil"
+                            className="w-full h-full object-cover rounded-full"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => { e.target.onerror = null; }}
+                          />
+                        ) : (
+                          <User size={44} className="text-text-muted opacity-50" strokeWidth={1.5} />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                      type="button"
+                      onClick={() => fileInputRef.current.click()}
+                      className="text-[15px] font-bold text-accent active:opacity-50 transition-opacity mb-3"
+                  >
+                      Editar foto
+                  </button>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h1 className="text-2xl font-bold text-text-primary">{userProfile.username || 'Usuario'}</h1>
+                    <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ring-1 ${roleConfig.badgeBg}`}>
+                      {roleConfig.label}
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
             <p className="text-sm text-text-secondary">{userProfile.email}</p>
         </div>
 

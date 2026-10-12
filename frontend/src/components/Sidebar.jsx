@@ -4,6 +4,7 @@ import { ChevronLeftIcon, ChevronRightIcon, ArrowRightOnRectangleIcon as LogOut,
 import useAppStore from '../store/useAppStore';
 import StoryViewer from './StoryViewer';
 import AIInfoModal from './AIInfoModal';
+import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 
 const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, isRed, shouldTruncate, className = '', isCollapsed, badge }) => (
   <button
@@ -120,19 +121,30 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
       </div>
     );
 
-    if (hasStories) {
+    const roleConfig = getUserRoleRingConfig(userProfile);
+
+    if (hasStories && hasUnseen) {
       return (
-        <div className={`w-10 h-10 rounded-full p-[2px] shrink-0 transition-all duration-300 cursor-pointer ${hasUnseen ? 'bg-accent shadow-md shadow-accent/40 animate-pulse-slow' : 'bg-glass-border'}`}>
-            <div className="w-full h-full rounded-full border-2 border-[--glass-bg] overflow-hidden bg-bg-primary">
-              {InnerContent}
+        <div className="w-10 h-10 rounded-full p-[2px] shrink-0 transition-all duration-300 cursor-pointer bg-accent shadow-md shadow-accent/40 animate-pulse-slow">
+            <div className="w-full h-full rounded-full p-[1.5px] bg-bg-primary dark:bg-[#121214] overflow-hidden flex items-center justify-center">
+              <div className="w-full h-full rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
+                {InnerContent}
+              </div>
             </div>
         </div>
       );
     }
 
     return (
-      <div className="w-9 h-9 rounded-full border border-glass-border overflow-hidden shrink-0 flex items-center justify-center bg-bg-secondary">
-         {InnerContent}
+      <div 
+        className={`w-10 h-10 rounded-full p-[2px] shrink-0 transition-all duration-300 ${roleConfig.borderClass} ${roleConfig.glowClass}`}
+        title={`${userProfile?.username || 'Perfil'} • ${roleConfig.title}`}
+      >
+        <div className="w-full h-full rounded-full p-[1.5px] bg-bg-primary dark:bg-[#121214] overflow-hidden flex items-center justify-center">
+          <div className="w-full h-full rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
+            {InnerContent}
+          </div>
+        </div>
       </div>
     );
   };
