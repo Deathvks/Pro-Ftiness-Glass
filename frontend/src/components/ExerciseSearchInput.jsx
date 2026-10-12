@@ -33,14 +33,14 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
   const { t: tCommon } = useTranslation('translation');
   const { t: tUi } = useTranslation('exercise_ui');
 
-  // Sincroniza el estado interno si la query inicial (prop) cambia.
-  // Al no depender de isSearching, cerramos el teclado (y perdemos foco)
-  // sin borrar el texto que el usuario había escrito.
+  // Sincroniza el estado interno si la query inicial (prop) cambia y no estamos buscando activamente
   useEffect(() => {
-    // setInputValue(String(initialQuery || '')); // Don't clear text so user doesn't lose it when scrolling/dismissing keyboard
-  }, [initialQuery]);
+    if (!isSearching) {
+      setInputValue(String(initialQuery || ''));
+    }
+  }, [initialQuery, isSearching]);
 
-  // Maneja el clic fuera para cerrar el dropdown en lugar de usar onBlur
+  // Maneja el clic fuera para cerrar el dropdown y confirmar ejercicio manual si hay texto escrito
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -53,7 +53,24 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
         const currentVal = inputValue.trim();
         const initialVal = String(initialQuery || '').trim();
 
-        setInputValue(String(initialQuery || ''));
+        if (currentVal && currentVal !== initialVal && !disableManualAdd) {
+          const fakeExercise = {
+            id: null, 
+            name: currentVal,
+            muscle_group: tMuscle('unknown', { defaultValue: 'N/A' }), 
+            image_url: null, 
+            video_url: null,
+            image_url_start: null,
+            image_url_end: null,
+            is_manual: true 
+          };
+          onExerciseSelect(fakeExercise);
+          setInputValue(currentVal);
+        } else if (!currentVal && initialVal && !disableManualAdd) {
+          setInputValue('');
+        } else {
+          setInputValue(String(initialQuery || ''));
+        }
       }
     };
 
@@ -86,6 +103,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
   const updateDropdownPos = useCallback(() => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) return;
     setDropdownPos({
       top: rect.bottom + 8,
       left: rect.left,
@@ -109,16 +127,16 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
 
   // Filtra los ejercicios basándose en la búsqueda
   const filteredExercises = useMemo(() => {
-    const safeInputValue = String(inputValue || '');
-    const safeInitialQuery = String(initialQuery || '');
+    const safeInputValue = String(inputValue || '').trim();
+    const safeInitialQuery = String(initialQuery || '').trim();
 
-    if (safeInputValue.length < 2 || !isSearching) return [];
+    if (safeInputValue.length < 1 || !isSearching) return [];
     if (safeInputValue.toLowerCase() === safeInitialQuery.toLowerCase()) return [];
 
     const query = safeInputValue.toLowerCase(); 
     return allExercises
       .filter(ex => {
-        const originalName = ex.name.toLowerCase();
+        const originalName = (ex.name || '').toLowerCase();
         const translatedName = tName(ex.name, { defaultValue: ex.name }).toLowerCase();
         const category = (ex.category || ex.muscle_group || '').toLowerCase();
         const translatedCategory = tMuscle(category, { defaultValue: category }).toLowerCase();
@@ -145,6 +163,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
     onExerciseSelect(normalizedExercise); 
     setInputValue(exercise.name || '');
     setIsSearching(false); 
+    inputRef.current?.blur();
   };
 
   const handleAddManualClick = () => {
@@ -165,19 +184,20 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
     handleSelect(fakeExercise);
   };
 
-  // Componente reutilizable para el botón "Añadir Manual"
+  // Componente para el botón "Añadir Manual", SIEMPRE visible y anclado abajo
   const ManualAddButton = () => {
     if (disableManualAdd) return null;
     const query = inputValue.trim();
     if (query.length === 0) return null; 
 
     return (
-      <div className="border-t border-black/5 dark:border-white/10 mt-1">
+      <div className="border-t border-black/5 dark:border-white/10 bg-bg-secondary/95 backdrop-blur-md shrink-0">
         <button
+          type="button"
           onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleAddManualClick(); }}
           className="flex items-center w-full gap-3 p-4 text-left text-accent font-bold hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
         >
-          <div className="p-2 bg-accent/10 rounded-full">
+          <div className="p-2 bg-accent/10 rounded-full shrink-0">
             <Plus size={18} />
           </div>
           <span className="flex-1 min-w-0 break-words text-sm">
@@ -189,10 +209,11 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
   };
 
   // Determinar si hay algo que mostrar en el dropdown
-  const showLoading = isLoading && isSearching && String(inputValue || '').length > 1;
-  const showResults = !isLoading && filteredExercises.length > 0 && isSearching;
-  const showNoResults = !isLoading && isSearching && String(inputValue || '').length > 1 && filteredExercises.length === 0;
-  const showDropdown = showLoading || showResults || showNoResults;
+  const hasInput = String(inputValue || '').trim().length > 0;
+  const showLoading = isLoading && isSearching && hasInput;
+  const showResults = !isLoading && isSearching && filteredExercises.length > 0;
+  const showNoResults = !isLoading && isSearching && hasInput && filteredExercises.length === 0;
+  const showDropdown = isSearching && hasInput;
 
   // Contenido del dropdown renderizado via Portal
   const dropdownContent = showDropdown && dropdownPos ? createPortal(
@@ -206,56 +227,58 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
         zIndex: 99999,
       }}
     >
-      {/* Estado de Carga */}
-      {showLoading && (
-        <div className="p-6 flex justify-center bg-bg-secondary border border-glass-border ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] shadow-2xl">
-          <Spinner size={28} />
-        </div>
-      )}
+      <div className="bg-bg-secondary border border-glass-border ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-80">
+        {/* Estado de Carga */}
+        {showLoading && (
+          <div className="p-6 flex justify-center items-center">
+            <Spinner size={28} />
+          </div>
+        )}
 
-      {/* Lista de Resultados */}
-      {showResults && (
-        <div className="max-h-72 overflow-y-auto custom-scrollbar bg-bg-secondary border border-glass-border ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] shadow-2xl">
-          <ul className="flex flex-col py-2">
-            {filteredExercises.map(exercise => (
-              <li key={exercise.id}>
-                <button
-                  onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleSelect(exercise); }}
-                  className="flex items-center w-full gap-4 px-4 py-3 text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
-                >
-                  <div className="w-12 h-12 rounded-[14px] overflow-hidden shrink-0 ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-black/5 dark:bg-white/5 p-1">
-                    <ExerciseMedia 
-                      details={exercise} 
-                      fitMode="cover"
-                      disableAnimation={true}
-                      className="w-full h-full object-cover" 
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-extrabold text-text-primary truncate text-sm sm:text-base group-hover:text-accent transition-colors">
-                      {tName(exercise.name, { defaultValue: exercise.name })}
-                    </p>
-                    <p className="text-[11px] sm:text-xs font-bold text-text-tertiary uppercase tracking-wider truncate mt-0.5">
-                      {tMuscle(exercise.category || exercise.muscle_group, { defaultValue: exercise.category || exercise.muscle_group })}
-                    </p>
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-          <ManualAddButton />
-        </div>
-      )}
+        {/* Lista de Resultados con scroll */}
+        {showResults && (
+          <div className="overflow-y-auto custom-scrollbar flex-1 min-h-0">
+            <ul className="flex flex-col py-2">
+              {filteredExercises.map(exercise => (
+                <li key={exercise.id}>
+                  <button
+                    type="button"
+                    onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleSelect(exercise); }}
+                    className="flex items-center w-full gap-4 px-4 py-3 text-left hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
+                  >
+                    <div className="w-12 h-12 rounded-[14px] overflow-hidden shrink-0 ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-black/5 dark:bg-white/5 p-1">
+                      <ExerciseMedia 
+                        details={exercise} 
+                        fitMode="cover"
+                        disableAnimation={true}
+                        className="w-full h-full object-cover" 
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-extrabold text-text-primary truncate text-sm sm:text-base group-hover:text-accent transition-colors">
+                        {tName(exercise.name, { defaultValue: exercise.name })}
+                      </p>
+                      <p className="text-[11px] sm:text-xs font-bold text-text-tertiary uppercase tracking-wider truncate mt-0.5">
+                        {tMuscle(exercise.category || exercise.muscle_group, { defaultValue: exercise.category || exercise.muscle_group })}
+                      </p>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-      {/* Sin Resultados */}
-      {showNoResults && (
-        <div className="bg-bg-secondary border border-glass-border ring-1 ring-black/5 dark:ring-white/10 rounded-[24px] shadow-2xl overflow-hidden">
+        {/* Sin Resultados */}
+        {showNoResults && (
           <div className="p-6 text-center">
             <p className="text-text-secondary font-medium">{tCommon('No se encontraron ejercicios.', { defaultValue: 'No se encontraron ejercicios.' })}</p>
           </div>
-          <ManualAddButton />
-        </div>
-      )}
+        )}
+
+        {/* Botón Añadir Manual (Siempre anclado al fondo del dropdown) */}
+        <ManualAddButton />
+      </div>
     </div>,
     document.body
   ) : null;
@@ -269,14 +292,21 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
           ref={inputRef}
           type="text"
           value={inputValue} 
-          onChange={(e) => setInputValue(e.target.value)} 
-          onFocus={() => setIsSearching(true)} 
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            if (!isSearching) setIsSearching(true);
+            updateDropdownPos();
+          }} 
+          onFocus={() => {
+            setIsSearching(true);
+            updateDropdownPos();
+          }} 
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
+            if (e.key === 'Enter' || e.key === 'Tab') {
               const currentVal = inputValue.trim();
               const initialVal = String(initialQuery || '').trim();
               if (currentVal && currentVal !== initialVal && !disableManualAdd) {
+                if (e.key === 'Enter') e.preventDefault();
                 const fakeExercise = {
                   id: null, 
                   name: currentVal,
@@ -288,8 +318,9 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
                   is_manual: true 
                 };
                 onExerciseSelect(fakeExercise);
+                setInputValue(currentVal);
                 setIsSearching(false);
-                inputRef.current?.blur();
+                if (e.key === 'Enter') inputRef.current?.blur();
               }
             }
           }}
