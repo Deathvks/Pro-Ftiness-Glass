@@ -18,6 +18,7 @@ import {
   Timer,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -105,22 +106,23 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
         <View style={StyleSheet.absoluteFill}>
           <Image
             source={{ uri: imgUri }}
-            style={[styles.bgImage, { opacity: isDark ? 0.35 : 0.25 }]}
+            style={[styles.bgImage, { opacity: isDark ? 0.6 : 0.45 }]}
             resizeMode="cover"
           />
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                backgroundColor: isDark ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.4)',
-              },
-            ]}
+          <LinearGradient
+            colors={
+              isDark
+                ? ['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.92)']
+                : ['rgba(255,255,255,0.6)', 'rgba(255,255,255,0.25)', 'rgba(255,255,255,0.35)', 'rgba(255,255,255,0.95)']
+            }
+            locations={[0, 0.3, 0.6, 1]}
+            style={StyleSheet.absoluteFill}
           />
         </View>
       ) : null}
 
       <View style={styles.content}>
-        {/* Fila superior: Botón atrás y Accesos Rápidos */}
+        {/* Fila superior: Botón atrás alineado a la izquierda como en el Frontend */}
         <View style={styles.topRow}>
           <TouchableOpacity
             onPress={handleBack}
@@ -136,46 +138,6 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
             <ChevronLeft size={20} color={colors.text} />
             <Text style={[styles.backText, { color: colors.text }]}>Atrás</Text>
           </TouchableOpacity>
-
-          <View style={styles.topRightActions}>
-            <TouchableOpacity
-              onPress={() => {
-                try {
-                  Haptics.selectionAsync();
-                } catch {}
-                onShowHeatmap();
-              }}
-              style={[
-                styles.smallCircleBtn,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-              activeOpacity={0.75}
-            >
-              <Activity size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                try {
-                  Haptics.selectionAsync();
-                } catch {}
-                onShowCalculator();
-              }}
-              style={[
-                styles.smallCircleBtn,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-              activeOpacity={0.75}
-            >
-              <Calculator size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* Título de la rutina */}
@@ -228,6 +190,20 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
             colorScheme={isDark ? 'dark' : 'light'}
             style={StyleSheet.absoluteFill}
           />
+
+          {/* Botón Mapa Muscular */}
+          <TouchableOpacity
+            onPress={() => {
+              try {
+                Haptics.selectionAsync();
+              } catch {}
+              onShowHeatmap();
+            }}
+            style={styles.islandSideBtn}
+            activeOpacity={0.7}
+          >
+            <Activity size={22} color={colors.textSecondary} />
+          </TouchableOpacity>
 
           {/* Botón Calculadora rápida */}
           <TouchableOpacity

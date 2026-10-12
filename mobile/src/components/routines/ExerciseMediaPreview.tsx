@@ -4,7 +4,7 @@ import { WebView } from "react-native-webview";
 import { Play } from 'lucide-react-native';
 import { API_BASE_URL } from '../../services/apiClient';
 
-export const ExerciseMediaPreview = ({ item, getImageUrl, staticOnly = false }) => {
+export const ExerciseMediaPreview = ({ item, getImageUrl, staticOnly = false, fitMode = 'cover' }: { item: any; getImageUrl?: any; staticOnly?: boolean; fitMode?: 'cover' | 'contain' }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -33,7 +33,7 @@ export const ExerciseMediaPreview = ({ item, getImageUrl, staticOnly = false }) 
     }
   }, [images.length, item.video_url, item.youtube_id]);
 
-  const getYoutubeId = (url) => {
+  const getYoutubeId = (url?: string | null) => {
     if (!url) return null;
     if (url.includes('v=')) return url.split('v=')[1]?.split('&')[0];
     if (url.includes('shorts/')) return url.split('shorts/')[1]?.split('?')[0];
@@ -113,7 +113,7 @@ export const ExerciseMediaPreview = ({ item, getImageUrl, staticOnly = false }) 
       <Image 
         source={{ uri: thumbUri }} 
         style={{ width: "100%", height: "100%" }} 
-        resizeMode="cover" 
+        resizeMode={fitMode} 
       />
       {!staticOnly && (item.video_url || item.youtube_id) && !isPlaying && (
         <View style={{ position: 'absolute', inset: 0, justifyContent: 'center', alignItems: 'center' }}>

@@ -232,33 +232,30 @@ export const WorkoutSetGrid: React.FC<WorkoutSetGridProps> = ({
             {/* 6. Botón Reloj / Rest Timer */}
             <View style={{ flex: 1 }}>
               <TouchableOpacity
-                disabled={!hasWorkoutStarted}
+                disabled={!hasWorkoutStarted || isSetCompleted}
                 onPress={() => {
-                  try {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  } catch {}
-                  onOpenRestModal(restSeconds);
+                  if (hasWorkoutStarted && !isSetCompleted) {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    } catch {}
+                    onOpenRestModal(restSeconds);
+                  }
                 }}
                 style={[
                   styles.iconActionBtn,
-                  isSetCompleted
-                    ? {
-                        backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                        borderColor: 'rgba(34, 197, 94, 0.35)',
-                      }
-                    : {
-                        backgroundColor: inputBg,
-                        borderColor: inputBorder,
-                      },
-                  !hasWorkoutStarted && { opacity: 0.4 },
+                  {
+                    backgroundColor: inputBg,
+                    borderColor: inputBorder,
+                    opacity: !hasWorkoutStarted || isSetCompleted ? 0.3 : 1,
+                  },
                 ]}
                 activeOpacity={0.7}
               >
-                {isSetCompleted ? (
-                  <Check size={16} color="#22c55e" strokeWidth={3} />
-                ) : (
-                  <Clock size={16} color={colors.textSecondary} strokeWidth={2.2} />
-                )}
+                <Clock
+                  size={16}
+                  color={!hasWorkoutStarted || isSetCompleted ? colors.textSecondary : colors.tint}
+                  strokeWidth={2.2}
+                />
               </TouchableOpacity>
             </View>
           </View>

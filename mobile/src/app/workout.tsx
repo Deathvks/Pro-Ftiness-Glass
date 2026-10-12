@@ -6,26 +6,24 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Dumbbell, ArrowLeft } from 'lucide-react-native';
-import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { calculateCalories, groupWorkoutExercises } from '@/utils/workoutHelpers';
 
-// Subcomponentes del entrenamiento
+// Subcomponentes modularizados con paridad 1:1 frente al Frontend
 import { WorkoutHeader } from '@/components/workout/WorkoutHeader';
 import { WorkoutExerciseCard } from '@/components/workout/WorkoutExerciseCard';
 import { WorkoutSupersetCard } from '@/components/workout/WorkoutSupersetCard';
 import { WorkoutNotes } from '@/components/workout/WorkoutNotes';
 import { PreviousWorkoutNoteBanner } from '@/components/workout/PreviousWorkoutNoteBanner';
+import { NoActiveWorkout } from '@/components/workout/NoActiveWorkout';
 import { RestTimerModal } from '@/components/workout/RestTimerModal';
 import { CalorieInputModal } from '@/components/workout/CalorieInputModal';
 import { WorkoutReviewModal } from '@/components/workout/WorkoutReviewModal';
@@ -34,15 +32,14 @@ import { PlateCalculatorModal } from '@/components/workout/PlateCalculatorModal'
 import { ExerciseHistoryModal } from '@/components/workout/ExerciseHistoryModal';
 import { WorkoutHeatmapModal } from '@/components/workout/WorkoutHeatmapModal';
 import { SmartExerciseCoachModal } from '@/components/workout/SmartExerciseCoachModal';
+import { WorkoutExerciseDetailModal } from '@/components/workout/WorkoutExerciseDetailModal';
 import { ExerciseSearchModal } from '@/components/modals/ExerciseSearchModal';
-import { FoodDetailModal } from '@/components/nutrition/FoodDetailModal';
 
 export default function WorkoutScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
-  const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
   // Zustand Store State
   const activeWorkout = useAppStore(state => state.activeWorkout);
@@ -56,7 +53,6 @@ export default function WorkoutScreen() {
   const togglePauseWorkout = useAppStore(state => state.togglePauseWorkout);
   const stopWorkout = useAppStore(state => state.stopWorkout);
   const updateActiveWorkoutSet = useAppStore(state => state.updateActiveWorkoutSet);
-  const addSetToExercise = useAppStore(state => state.addSetToExercise);
   const addDropset = useAppStore(state => state.addDropset);
   const removeDropset = useAppStore(state => state.removeDropset);
   const toggleWarmupSet = useAppStore(state => state.toggleWarmupSet);
@@ -115,11 +111,12 @@ export default function WorkoutScreen() {
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [historyExercise, setHistoryExercise] = useState<any>(null);
   const [coachExercise, setCoachExercise] = useState<any>(null);
+  const [selectedDetailExercise, setSelectedDetailExercise] = useState<any>(null);
   const [substituteIndex, setSubstituteIndex] = useState<number | null>(null);
 
   const hasWorkoutStarted = workoutStartTime !== null;
 
-  // Recordatorio inteligente de la sesión anterior
+  // Recordatorio inteligente de la sesión previa
   const previousWorkoutNote = useMemo(() => {
     if (!activeWorkout || !Array.isArray(workoutLog) || workoutLog.length === 0) return null;
 
@@ -154,39 +151,16 @@ export default function WorkoutScreen() {
     return groupWorkoutExercises(activeWorkout?.exercises || []);
   }, [activeWorkout?.exercises]);
 
-  // Si no hay entrenamiento activo
+  // Si no hay entrenamiento activo (Pantalla exacta del frontend)
   if (!activeWorkout) {
     return (
-      <View style={[styles.emptyContainer, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-        <View
-          style={[
-            styles.emptyCard,
-            {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.85)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-            },
-          ]}
-        >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
-          <Dumbbell size={48} color={colors.tint} style={{ marginBottom: 14 }} />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>No hay entrenamiento activo</Text>
-          <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
-            Selecciona una rutina para empezar a registrar tus series y descansos.
-          </Text>
-
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={[styles.emptyBackBtn, { backgroundColor: colors.tint }]}
-            activeOpacity={0.8}
-          >
-            <ArrowLeft size={16} color="#fff" style={{ marginRight: 6 }} />
-            <Text style={styles.emptyBackBtnText}>Volver a Rutinas</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+        <NoActiveWorkout
+          onGoToRoutines={() => router.replace('/(tabs)/routines')}
+          onStartQuickCardio={() => {
+            Alert.alert('Cardio Rápido', 'Próximamente disponible en la app.');
+          }}
+        />
       </View>
     );
   }
@@ -242,7 +216,6 @@ export default function WorkoutScreen() {
 
   // Callback de Calorías completadas
   const handleCalorieInputComplete = (calories: number) => {
-    // Comprobar si hay al menos una serie con datos
     const isAnySetFilled = (activeWorkout.exercises || []).some((ex: any) =>
       (ex.setsDone || []).some(
         (set: any) =>
@@ -316,7 +289,7 @@ export default function WorkoutScreen() {
     }
   };
 
-  // Manejador al sustituir ejercicio seleccionado
+  // Sustituir ejercicio seleccionado
   const handleSubstituteSelect = (exercisesToAdd: any[]) => {
     if (substituteIndex !== null && exercisesToAdd.length > 0 && replaceExercise) {
       const chosen = exercisesToAdd[0];
@@ -336,7 +309,7 @@ export default function WorkoutScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* 1. Header con Cronómetro y Portada */}
+          {/* 1. Header Hero con Cronómetro y Dynamic Island */}
           <WorkoutHeader
             routineName={activeWorkout.routineName}
             routineImage={activeWorkout.imageUrl || activeWorkout.image_url}
@@ -350,7 +323,7 @@ export default function WorkoutScreen() {
             onShowHeatmap={() => setShowHeatmap(true)}
           />
 
-          {/* 2. Banner de Nota de Sesión Anterior */}
+          {/* 2. Banner de Nota de la Sesión Previa */}
           {previousWorkoutNote && !dismissedPreviousNote ? (
             <PreviousWorkoutNoteBanner
               previousNote={previousWorkoutNote}
@@ -364,57 +337,76 @@ export default function WorkoutScreen() {
             />
           ) : null}
 
-          {/* 3. Lista de Ejercicios y Superseries */}
+          {/* 3. Lista de Ejercicios y Superseries con estructura idéntica al Frontend */}
           {exerciseGroups.map((groupObj, gIdx) => {
             const { group, isSuperset } = groupObj;
 
-            const cards = group.map((exercise) => {
-              const actualExIndex = (activeWorkout.exercises || []).findIndex(
-                (e: any) => e.id === exercise.id
-              );
+            if (isSuperset) {
+              const groupKey = group.map((e: any) => e.id).join('-');
 
               return (
-                <WorkoutExerciseCard
-                  key={exercise.id || actualExIndex}
-                  exercise={exercise}
-                  actualExIndex={actualExIndex}
+                <WorkoutSupersetCard
+                  key={groupKey}
+                  group={group}
+                  allExercises={activeWorkout.exercises || []}
                   hasWorkoutStarted={hasWorkoutStarted}
+                  onSetSelectedExercise={(ex) => setSelectedDetailExercise(ex)}
                   onSetExerciseToReplace={(idx) => setSubstituteIndex(idx)}
-                  onShowHistory={(ex) => setHistoryExercise(ex)}
-                  onShowSmartCoach={(ex) => setCoachExercise(ex)}
                   onUpdateSet={updateActiveWorkoutSet}
-                  onAddDropset={addDropset}
-                  onRemoveDropset={removeDropset}
                   onToggleWarmup={toggleWarmupSet}
                   onOpenRestModal={(secs) =>
                     setRestModalConfig({ visible: true, restSeconds: secs || 90 })
                   }
-                  onAddSet={(idx) => {
-                    if (addSetToExercise) addSetToExercise(idx);
-                  }}
+                  onShowSmartCoach={(ex) => setCoachExercise(ex)}
                 />
               );
-            });
-
-            if (isSuperset) {
-              return <WorkoutSupersetCard key={gIdx}>{cards}</WorkoutSupersetCard>;
             }
 
-            return <View key={gIdx}>{cards}</View>;
+            const exercise = group[0];
+            const actualExIndex = (activeWorkout.exercises || []).findIndex(
+              (e: any) => e.id === exercise.id
+            );
+
+            return (
+              <WorkoutExerciseCard
+                key={exercise.id}
+                exercise={exercise}
+                actualExIndex={actualExIndex}
+                hasWorkoutStarted={hasWorkoutStarted}
+                onSetSelectedExercise={(ex) => setSelectedDetailExercise(ex)}
+                onSetExerciseToReplace={(idx) => setSubstituteIndex(idx)}
+                onShowHistory={(ex) => setHistoryExercise(ex)}
+                onShowSmartCoach={(ex) => setCoachExercise(ex)}
+                onUpdateSet={updateActiveWorkoutSet}
+                onAddDropset={addDropset}
+                onRemoveDropset={removeDropset}
+                onToggleWarmup={toggleWarmupSet}
+                onOpenRestModal={(secs) =>
+                  setRestModalConfig({ visible: true, restSeconds: secs || 90 })
+                }
+              />
+            );
           })}
 
-          {/* 4. Notas del Entrenamiento */}
+          {/* 4. Notas de la Sesión */}
           <WorkoutNotes
             notes={notes}
             setNotes={setNotes}
             hasWorkoutStarted={hasWorkoutStarted}
+            previousNote={previousWorkoutNote}
           />
         </ScrollView>
       </KeyboardAvoidingView>
 
       {/* --- MODALES --- */}
 
-      {/* 1. Modal de entrada de calorías */}
+      {/* 1. Modal Detalle y Técnica del Ejercicio */}
+      <WorkoutExerciseDetailModal
+        exercise={selectedDetailExercise}
+        onClose={() => setSelectedDetailExercise(null)}
+      />
+
+      {/* 2. Modal Entrada de Calorías */}
       <CalorieInputModal
         visible={showCalorieModal}
         estimatedCalories={calculateCalories(timerSeconds, userProfile?.weight || 75)}
@@ -425,7 +417,7 @@ export default function WorkoutScreen() {
         }}
       />
 
-      {/* 2. Modal de revisión de datos antes de guardar */}
+      {/* 3. Modal Revisión antes de Guardar */}
       <WorkoutReviewModal
         visible={showReviewModal}
         onClose={() => setShowReviewModal(false)}
@@ -433,7 +425,7 @@ export default function WorkoutScreen() {
         isSaving={isSaving}
       />
 
-      {/* 3. Modal de Resumen y Celebración Post-Entrenamiento */}
+      {/* 4. Modal Resumen y Celebración */}
       <WorkoutSummaryModal
         visible={showSummaryModal}
         workoutData={completedWorkoutData}
@@ -446,34 +438,34 @@ export default function WorkoutScreen() {
         }}
       />
 
-      {/* 4. Modal Temporizador de Descanso */}
+      {/* 5. Modal Temporizador de Descanso */}
       <RestTimerModal
         visible={restModalConfig.visible}
         initialSeconds={restModalConfig.restSeconds}
         onClose={() => setRestModalConfig(prev => ({ ...prev, visible: false }))}
       />
 
-      {/* 5. Modal Calculadora de Discos */}
+      {/* 6. Modal Calculadora de Discos */}
       <PlateCalculatorModal
         visible={showCalculator}
         onClose={() => setShowCalculator(false)}
       />
 
-      {/* 6. Modal Historial de Ejercicio */}
+      {/* 7. Modal Historial de Ejercicio */}
       <ExerciseHistoryModal
         visible={Boolean(historyExercise)}
         exercise={historyExercise}
         onClose={() => setHistoryExercise(null)}
       />
 
-      {/* 7. Modal Mapa de Volumen Muscular */}
+      {/* 8. Modal Mapa Muscular */}
       <WorkoutHeatmapModal
         visible={showHeatmap}
         exercises={activeWorkout.exercises || []}
         onClose={() => setShowHeatmap(false)}
       />
 
-      {/* 8. Modal Entrenador Inteligente (Smart Progression Coach) */}
+      {/* 9. Modal Smart Progression Coach */}
       <SmartExerciseCoachModal
         visible={Boolean(coachExercise)}
         exercise={coachExercise}
@@ -484,14 +476,13 @@ export default function WorkoutScreen() {
               (e: any) => e.id === coachExercise.id
             );
             if (actualIndex !== -1 && updateActiveWorkoutSet) {
-              // Aplica a la primera serie vacía o primera serie
               updateActiveWorkoutSet(actualIndex, 0, 'weight_kg', String(suggestedWeight));
             }
           }
         }}
       />
 
-      {/* 9. Modal de Búsqueda para Sustituir Ejercicio */}
+      {/* 10. Modal Sustituir Ejercicio */}
       <ExerciseSearchModal
         visible={substituteIndex !== null}
         onClose={() => setSubstituteIndex(null)}
@@ -507,51 +498,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  emptyCard: {
+    maxWidth: 640,
     width: '100%',
-    maxWidth: 360,
-    borderRadius: 32,
-    borderWidth: 1,
-    padding: 28,
-    alignItems: 'center',
-    overflow: 'hidden',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 14,
-    elevation: 4,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptyDesc: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  emptyBackBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 22,
-    height: 48,
-    borderRadius: 20,
-  },
-  emptyBackBtnText: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#fff',
+    alignSelf: 'center',
   },
 });

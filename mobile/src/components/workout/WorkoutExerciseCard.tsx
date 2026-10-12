@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
-  Image,
   Pressable,
 } from 'react-native';
 import {
@@ -16,19 +15,20 @@ import {
   Flame,
   Repeat,
   Bell,
-  Plus,
   X,
   AlertTriangle,
   CheckCircle2,
-  Dumbbell,
+  Clock,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { calculate1RM } from '@/utils/workoutHelpers';
+import { getExerciseHistorySessions, diagnoseExerciseTrend } from '@/utils/smartProgressionCoach';
 import { WorkoutSetGrid } from './WorkoutSetGrid';
-import { BACKEND_BASE_URL } from '@/services/apiClient';
+import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview';
+import { BACKEND_BASE_URL, API_BASE_URL } from '@/services/apiClient';
 
 interface WorkoutExerciseCardProps {
   exercise: any;
@@ -43,7 +43,6 @@ interface WorkoutExerciseCardProps {
   onRemoveDropset: (exIdx: number, setIdx: number) => void;
   onToggleWarmup?: (exIdx: number, setIdx: number) => void;
   onOpenRestModal: (restSeconds: number) => void;
-  onAddSet: (exIdx: number) => void;
 }
 
 export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
@@ -59,7 +58,6 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
   onRemoveDropset,
   onToggleWarmup,
   onOpenRestModal,
-  onAddSet,
 }) => {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
@@ -67,6 +65,20 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
 
   const addWarmupSets = useAppStore(state => state.addWarmupSets);
   const setExerciseReminder = useAppStore(state => state.setExerciseReminder);
+  const userProfile = useAppStore(state => state.userProfile || (state as any).user);
+  const workoutLog = useAppStore(state => state.workoutLog) || [];
+
+  const isInAsesoria = Boolean(
+    userProfile?.trainer_id ||
+    userProfile?.trainer ||
+    (userProfile?.role === 'trainee' && userProfile?.trainer_id)
+  );
+
+  const trend = useMemo(() => {
+    if (!exercise?.name || !workoutLog) return null;
+    const sessions = getExerciseHistorySessions(exercise.name, workoutLog);
+    return diagnoseExerciseTrend(sessions);
+  }, [exercise?.name, workoutLog]);
 
   const [showWarmupModal, setShowWarmupModal] = useState(false);
   const [workingWeightInput, setWorkingWeightInput] = useState('');
@@ -74,21 +86,20 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [reminderInput, setReminderInput] = useState(exercise.reminder || '');
 
-  // Imagen del ejercicio
-  const getFullImageUrl = (url?: string | null) => {
-    if (!url) return null;
-    if (url.startsWith('http') || url.startsWith('blob:')) return url;
-    return `${BACKEND_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  // Helper para imágenes en ExerciseMediaPreview
+  const getImageUrl = (it: any) => {
+    const raw =
+      it?.image_url ||
+      it?.image ||
+      it?.exercise_details?.image_url ||
+      it?.exercise_details?.image_url_start ||
+      '';
+    if (!raw) return '';
+    if (raw.startsWith('http')) return raw;
+    return `${BACKEND_BASE_URL}${raw.startsWith('/') ? '' : '/'}${raw}`;
   };
 
-  const imgUrl = getFullImageUrl(
-    exercise.image_url ||
-    exercise.gif_url ||
-    exercise.exercise_details?.image_url ||
-    exercise.exercise_details?.image_url_start
-  );
-
-  // Cálculo de 1RM estimado
+  // 1RM Estimado del historial
   const estimated1RM = useMemo(() => {
     let best = parseFloat(exercise.last_performance?.estimated_1rm || 0);
     if (!best || best === 0) {
@@ -104,7 +115,7 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
     return best > 0 ? Math.round(best * 10) / 10 : null;
   }, [exercise]);
 
-  // Manejador para aplicar series de calentamiento
+  // Calentar: generar series
   const handleApplyWarmup = () => {
     const w = parseFloat(workingWeightInput);
     if (!isNaN(w) && w > 0 && addWarmupSets) {
@@ -117,7 +128,7 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
     }
   };
 
-  // Manejador para guardar recordatorio / meta
+  // Meta: guardar recordatorio
   const handleApplyReminder = () => {
     if (setExerciseReminder) {
       try {
@@ -131,9 +142,9 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
   return (
     <View
       style={[
-        styles.card,
+        styles.cardContainer,
         {
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.8)',
+          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.85)',
           borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
         },
       ]}
@@ -144,207 +155,284 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
         style={StyleSheet.absoluteFill}
       />
 
-      {/* 1. Header con imagen o icono del ejercicio */}
-      <View style={styles.headerArea}>
-        {imgUrl ? (
-          <TouchableOpacity
-            onPress={() => onSetSelectedExercise && onSetSelectedExercise(exercise)}
-            activeOpacity={0.85}
-            style={styles.imageWrapper}
+      <View style={styles.cardInner}>
+        {/* 1. Imagen / Vídeo grande centrado arriba (idéntico al Frontend) */}
+        <TouchableOpacity
+          onPress={() => onSetSelectedExercise && onSetSelectedExercise(exercise)}
+          activeOpacity={0.9}
+          style={[
+            styles.mediaHeroContainer,
+            {
+              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.35)' : 'rgba(0, 0, 0, 0.04)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+            },
+          ]}
+        >
+          <ExerciseMediaPreview
+            item={{
+              ...exercise,
+              ...(exercise.exercise_details || {}),
+            }}
+            getImageUrl={getImageUrl}
+            fitMode="contain"
+          />
+        </TouchableOpacity>
+
+        {/* 2. Recordatorio Activo / Meta si existe (idéntico al Frontend) */}
+        {exercise.reminder ? (
+          <View
+            style={[
+              styles.reminderBanner,
+              {
+                backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                borderColor: 'rgba(245, 158, 11, 0.3)',
+              },
+            ]}
           >
-            <Image source={{ uri: imgUrl }} style={styles.exerciseImg} resizeMode="cover" />
-          </TouchableOpacity>
+            <View style={styles.reminderIconBadge}>
+              <Bell size={18} color="#d97706" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.reminderBadgeTitle}>RECORDATORIO / META</Text>
+              <Text style={[styles.reminderBadgeText, { color: colors.text }]}>
+                {exercise.reminder}
+              </Text>
+            </View>
+          </View>
         ) : null}
 
-        <View style={styles.titleArea}>
+        {/* 3. Textos Principales: Título, Series × Reps y Badges */}
+        <View style={styles.textsBlock}>
           <TouchableOpacity
             onPress={() => onSetSelectedExercise && onSetSelectedExercise(exercise)}
             activeOpacity={0.8}
           >
-            <Text style={[styles.exerciseName, { color: colors.text }]} numberOfLines={2}>
+            <Text style={[styles.exerciseTitle, { color: colors.text }]} numberOfLines={2}>
               {exercise.name}
             </Text>
           </TouchableOpacity>
 
-          <Text style={[styles.targetSetsReps, { color: colors.tint }]}>
-            {exercise.sets} series × {exercise.reps} reps
-            {exercise.muscle_group ? (
-              <Text style={{ color: colors.textSecondary, fontWeight: '500' }}>
-                {' '}• {exercise.muscle_group}
-              </Text>
-            ) : null}
-          </Text>
+          <View style={styles.metaRow}>
+            <Text style={[styles.setsRepsText, { color: colors.tint }]}>
+              {exercise.sets} series × {exercise.reps} reps
+            </Text>
 
-          {/* Badges: 1RM Estimado */}
-          {estimated1RM ? (
-            <View
-              style={[
-                styles.oneRmBadge,
-                {
-                  backgroundColor: colors.tint + '18',
-                  borderColor: colors.tint + '35',
-                },
-              ]}
-            >
-              <Target size={12} color={colors.tint} style={{ marginRight: 4 }} />
-              <Text style={[styles.oneRmText, { color: colors.tint }]}>
-                1RM Est: {estimated1RM} kg
-              </Text>
+            <View style={styles.badgesInline}>
+              {estimated1RM ? (
+                <View
+                  style={[
+                    styles.oneRmPill,
+                    {
+                      backgroundColor: colors.tint + '18',
+                      borderColor: colors.tint + '35',
+                    },
+                  ]}
+                >
+                  <Target size={14} color={colors.tint} strokeWidth={2.5} style={{ marginRight: 5 }} />
+                  <Text style={[styles.oneRmPillText, { color: colors.tint }]}>
+                    1RM Est: {estimated1RM}kg
+                  </Text>
+                </View>
+              ) : null}
+
+              {!isInAsesoria && onShowSmartCoach ? (
+                <TouchableOpacity
+                  onPress={() => {
+                    try {
+                      Haptics.selectionAsync();
+                    } catch {}
+                    onShowSmartCoach(exercise);
+                  }}
+                  style={[
+                    styles.coachPill,
+                    trend?.isWarning
+                      ? {
+                          backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                          borderColor: 'rgba(245, 158, 11, 0.4)',
+                        }
+                      : trend?.isProgressing
+                      ? {
+                          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                          borderColor: 'rgba(16, 185, 129, 0.4)',
+                        }
+                      : {
+                          backgroundColor: colors.tint + '14',
+                          borderColor: colors.tint + '30',
+                        },
+                  ]}
+                  activeOpacity={0.75}
+                >
+                  {trend?.isWarning ? (
+                    <AlertTriangle size={14} color="#f59e0b" strokeWidth={2.5} style={{ marginRight: 5 }} />
+                  ) : trend?.isProgressing ? (
+                    <CheckCircle2 size={14} color="#10b981" strokeWidth={2.5} style={{ marginRight: 5 }} />
+                  ) : (
+                    <Target size={14} color={colors.tint} strokeWidth={2.5} style={{ marginRight: 5 }} />
+                  )}
+                  <Text
+                    style={[
+                      styles.coachPillText,
+                      {
+                        color: trend?.isWarning
+                          ? '#f59e0b'
+                          : trend?.isProgressing
+                          ? '#10b981'
+                          : colors.tint,
+                      },
+                    ]}
+                  >
+                    {trend?.isWarning
+                      ? (trend.status === 'stagnant' ? 'Mismo peso !' : 'Aviso fatiga !')
+                      : trend?.isProgressing
+                      ? '¡En racha!'
+                      : 'Info Objetivo'}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
-          ) : null}
+          </View>
         </View>
-      </View>
 
-      {/* 2. Banner de Recordatorio / Meta Activa */}
-      {exercise.reminder ? (
+        {/* 4. Divisor fino */}
         <View
           style={[
-            styles.reminderBanner,
+            styles.divider,
             {
-              backgroundColor: 'rgba(245, 158, 11, 0.12)',
-              borderColor: 'rgba(245, 158, 11, 0.3)',
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+            },
+          ]}
+        />
+
+        {/* 5. Botonera Segmentada de 5 Opciones (idéntica al Frontend) */}
+        <View
+          style={[
+            styles.segmentedToolbar,
+            {
+              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.35)' : 'rgba(0, 0, 0, 0.04)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
             },
           ]}
         >
-          <Bell size={16} color="#f59e0b" style={{ marginRight: 8, marginTop: 1 }} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.reminderTitle}>META / RECORDATORIO</Text>
-            <Text style={[styles.reminderBody, { color: colors.text }]}>{exercise.reminder}</Text>
-          </View>
-        </View>
-      ) : null}
-
-      {/* 3. Botonera Segmentada de Acciones Liquid Glass */}
-      <View
-        style={[
-          styles.actionPillRow,
-          {
-            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 0, 0, 0.04)',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-          },
-        ]}
-      >
-        {/* Historial */}
-        <TouchableOpacity
-          onPress={() => {
-            try {
-              Haptics.selectionAsync();
-            } catch {}
-            if (onShowHistory) onShowHistory(exercise);
-          }}
-          style={styles.actionBtn}
-          activeOpacity={0.7}
-        >
-          <History size={16} color={colors.textSecondary} />
-          <Text style={[styles.actionBtnText, { color: colors.textSecondary }]}>Historial</Text>
-        </TouchableOpacity>
-
-        {/* Coach / Objetivo */}
-        <TouchableOpacity
-          onPress={() => {
-            try {
-              Haptics.selectionAsync();
-            } catch {}
-            if (onShowSmartCoach) onShowSmartCoach(exercise);
-          }}
-          style={styles.actionBtn}
-          activeOpacity={0.7}
-        >
-          <Target size={16} color={colors.tint} />
-          <Text style={[styles.actionBtnText, { color: colors.tint }]}>Objetivo</Text>
-        </TouchableOpacity>
-
-        {/* Meta */}
-        <TouchableOpacity
-          disabled={!hasWorkoutStarted}
-          onPress={() => {
-            try {
-              Haptics.selectionAsync();
-            } catch {}
-            setShowReminderModal(true);
-          }}
-          style={[styles.actionBtn, !hasWorkoutStarted && { opacity: 0.4 }]}
-          activeOpacity={0.7}
-        >
-          <Bell size={16} color={exercise.reminder ? '#f59e0b' : colors.textSecondary} />
-          <Text
-            style={[
-              styles.actionBtnText,
-              { color: exercise.reminder ? '#f59e0b' : colors.textSecondary },
-            ]}
+          {/* Historial */}
+          <TouchableOpacity
+            onPress={() => {
+              try {
+                Haptics.selectionAsync();
+              } catch {}
+              if (onShowHistory) onShowHistory(exercise);
+            }}
+            style={styles.toolBtn}
+            activeOpacity={0.7}
           >
-            Meta
-          </Text>
-        </TouchableOpacity>
+            <History size={17} color={colors.textSecondary} />
+            <Text style={[styles.toolBtnText, { color: colors.textSecondary }]}>Historial</Text>
+          </TouchableOpacity>
 
-        {/* Calentar */}
-        <TouchableOpacity
-          disabled={!hasWorkoutStarted}
-          onPress={() => {
-            try {
-              Haptics.selectionAsync();
-            } catch {}
-            setShowWarmupModal(true);
-          }}
-          style={[styles.actionBtn, !hasWorkoutStarted && { opacity: 0.4 }]}
-          activeOpacity={0.7}
-        >
-          <Flame size={16} color="#f97316" />
-          <Text style={[styles.actionBtnText, { color: '#f97316' }]}>Calentar</Text>
-        </TouchableOpacity>
+          {/* Objetivo */}
+          {!isInAsesoria && onShowSmartCoach ? (
+            <TouchableOpacity
+              onPress={() => {
+                try {
+                  Haptics.selectionAsync();
+                } catch {}
+                onShowSmartCoach(exercise);
+              }}
+              style={styles.toolBtn}
+              activeOpacity={0.7}
+            >
+              {trend?.isWarning ? (
+                <AlertTriangle size={17} color="#f59e0b" strokeWidth={2.5} />
+              ) : trend?.isProgressing ? (
+                <CheckCircle2 size={17} color="#10b981" strokeWidth={2.5} />
+              ) : (
+                <Target size={17} color={colors.tint} />
+              )}
+              <Text
+                style={[
+                  styles.toolBtnText,
+                  {
+                    color: trend?.isWarning
+                      ? '#f59e0b'
+                      : trend?.isProgressing
+                      ? '#10b981'
+                      : colors.tint,
+                  },
+                ]}
+              >
+                {trend?.isWarning ? 'Objetivo !' : trend?.isProgressing ? 'Objetivo ✓' : 'Objetivo'}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
 
-        {/* Sustituir */}
-        <TouchableOpacity
-          disabled={!hasWorkoutStarted}
-          onPress={() => {
-            try {
-              Haptics.selectionAsync();
-            } catch {}
-            onSetExerciseToReplace(actualExIndex);
-          }}
-          style={[styles.actionBtn, !hasWorkoutStarted && { opacity: 0.4 }]}
-          activeOpacity={0.7}
-        >
-          <Repeat size={16} color={colors.textSecondary} />
-          <Text style={[styles.actionBtnText, { color: colors.textSecondary }]}>Sustituir</Text>
-        </TouchableOpacity>
+          {/* Meta */}
+          <TouchableOpacity
+            disabled={!hasWorkoutStarted}
+            onPress={() => {
+              try {
+                Haptics.selectionAsync();
+              } catch {}
+              setShowReminderModal(true);
+            }}
+            style={[styles.toolBtn, !hasWorkoutStarted && { opacity: 0.4 }]}
+            activeOpacity={0.7}
+          >
+            <Target size={17} color={exercise.reminder ? '#f59e0b' : colors.textSecondary} />
+            <Text
+              style={[
+                styles.toolBtnText,
+                { color: exercise.reminder ? '#f59e0b' : colors.textSecondary },
+              ]}
+            >
+              Meta
+            </Text>
+          </TouchableOpacity>
+
+          {/* Calentar */}
+          <TouchableOpacity
+            disabled={!hasWorkoutStarted}
+            onPress={() => {
+              try {
+                Haptics.selectionAsync();
+              } catch {}
+              setShowWarmupModal(true);
+            }}
+            style={[styles.toolBtn, !hasWorkoutStarted && { opacity: 0.4 }]}
+            activeOpacity={0.7}
+          >
+            <Flame size={17} color="#f97316" />
+            <Text style={[styles.toolBtnText, { color: '#f97316' }]}>Calentar</Text>
+          </TouchableOpacity>
+
+          {/* Sustituir */}
+          <TouchableOpacity
+            disabled={!hasWorkoutStarted}
+            onPress={() => {
+              try {
+                Haptics.selectionAsync();
+              } catch {}
+              onSetExerciseToReplace(actualExIndex);
+            }}
+            style={[styles.toolBtn, !hasWorkoutStarted && { opacity: 0.4 }]}
+            activeOpacity={0.7}
+          >
+            <Repeat size={17} color={colors.textSecondary} />
+            <Text style={[styles.toolBtnText, { color: colors.textSecondary }]}>Sustituir</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 6. Tabla de Series Grid */}
+        <WorkoutSetGrid
+          setsDone={exercise.setsDone}
+          restSeconds={exercise.rest_seconds || 90}
+          actualExIndex={actualExIndex}
+          hasWorkoutStarted={hasWorkoutStarted}
+          onUpdateSet={onUpdateSet}
+          onAddDropset={onAddDropset}
+          onRemoveDropset={onRemoveDropset}
+          onToggleWarmup={onToggleWarmup}
+          onOpenRestModal={onOpenRestModal}
+        />
       </View>
-
-      {/* 4. Tabla de Series Grid */}
-      <WorkoutSetGrid
-        setsDone={exercise.setsDone}
-        restSeconds={exercise.rest_seconds || 90}
-        actualExIndex={actualExIndex}
-        hasWorkoutStarted={hasWorkoutStarted}
-        onUpdateSet={onUpdateSet}
-        onAddDropset={onAddDropset}
-        onRemoveDropset={onRemoveDropset}
-        onToggleWarmup={onToggleWarmup}
-        onOpenRestModal={onOpenRestModal}
-      />
-
-      {/* 5. Botón + Añadir Serie */}
-      <TouchableOpacity
-        disabled={!hasWorkoutStarted}
-        onPress={() => {
-          try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          } catch {}
-          onAddSet(actualExIndex);
-        }}
-        style={[
-          styles.addSetBtn,
-          {
-            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-            opacity: hasWorkoutStarted ? 1 : 0.45,
-          },
-        ]}
-        activeOpacity={0.75}
-      >
-        <Plus size={16} color={colors.tint} style={{ marginRight: 6 }} />
-        <Text style={[styles.addSetText, { color: colors.tint }]}>Añadir Serie</Text>
-      </TouchableOpacity>
 
       {/* Modal: Calentar (Warm-up Sets) */}
       <Modal visible={showWarmupModal} transparent animationType="fade">
@@ -421,7 +509,7 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
           >
             <Text style={[styles.dialogTitle, { color: colors.text }]}>Meta / Recordatorio</Text>
             <Text style={[styles.dialogDesc, { color: colors.textSecondary }]}>
-              Añade una anotación clave para este ejercicio (ej: "Subir a 24kg en la 3ª serie" o "Foco en técnica lenta").
+              Añade un objetivo para este ejercicio (ej: "Subir a 24kg en la 3ª serie" o "Foco en técnica lenta").
             </Text>
 
             <TextInput
@@ -464,116 +552,134 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 28,
+  cardContainer: {
+    borderRadius: 32,
     borderWidth: 1,
-    padding: 16,
-    marginBottom: 16,
+    marginBottom: 20,
     overflow: 'hidden',
     position: 'relative',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
+    elevation: 3,
   },
-  headerArea: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
+  cardInner: {
+    padding: 18,
+    zIndex: 2,
   },
-  imageWrapper: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
-    overflow: 'hidden',
-    marginRight: 14,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-  },
-  exerciseImg: {
+  mediaHeroContainer: {
     width: '100%',
-    height: '100%',
-  },
-  titleArea: {
-    flex: 1,
-  },
-  exerciseName: {
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: -0.3,
-    marginBottom: 3,
-  },
-  targetSetsReps: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  oneRmBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+    height: 220,
+    borderRadius: 24,
     borderWidth: 1,
-    alignSelf: 'flex-start',
-  },
-  oneRmText: {
-    fontSize: 11,
-    fontWeight: '800',
+    overflow: 'hidden',
+    marginBottom: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   reminderBanner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    padding: 12,
-    borderRadius: 16,
+    padding: 14,
+    borderRadius: 20,
     borderWidth: 1,
-    marginBottom: 14,
+    marginBottom: 16,
+    gap: 12,
   },
-  reminderTitle: {
+  reminderIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 14,
+    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reminderBadgeTitle: {
     fontSize: 10,
     fontWeight: '900',
     color: '#d97706',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
     marginBottom: 2,
   },
-  reminderBody: {
+  reminderBadgeText: {
     fontSize: 13,
     fontWeight: '600',
+    lineHeight: 18,
   },
-  actionPillRow: {
+  textsBlock: {
+    marginBottom: 12,
+  },
+  exerciseTitle: {
+    fontSize: 26,
+    fontWeight: '900',
+    letterSpacing: -0.6,
+    lineHeight: 32,
+    marginBottom: 6,
+  },
+  metaRow: {
+    flexDirection: 'column',
+    gap: 8,
+  },
+  setsRepsText: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  badgesInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  oneRmPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 9999,
+    borderWidth: 1,
+  },
+  oneRmPillText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  coachPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 9999,
+    borderWidth: 1,
+  },
+  coachPillText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  divider: {
+    height: 1,
+    marginVertical: 14,
+  },
+  segmentedToolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 4,
-    borderRadius: 18,
+    padding: 5,
+    borderRadius: 24,
     borderWidth: 1,
-    marginBottom: 14,
+    marginBottom: 16,
   },
-  actionBtn: {
+  toolBtn: {
     flex: 1,
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
-    gap: 4,
-    borderRadius: 14,
-  },
-  actionBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  addSetBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 11,
+    gap: 3,
     borderRadius: 16,
-    borderWidth: 1,
-    marginTop: 12,
   },
-  addSetText: {
-    fontSize: 13,
-    fontWeight: '800',
+  toolBtnText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   modalOverlay: {
     flex: 1,
@@ -584,9 +690,9 @@ const styles = StyleSheet.create({
   dialogCard: {
     width: '100%',
     maxWidth: 360,
-    borderRadius: 24,
+    borderRadius: 28,
     borderWidth: 1,
-    padding: 20,
+    padding: 22,
   },
   dialogTitle: {
     fontSize: 18,
@@ -602,7 +708,7 @@ const styles = StyleSheet.create({
   },
   dialogInput: {
     height: 48,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     paddingHorizontal: 14,
     fontSize: 16,
@@ -612,7 +718,7 @@ const styles = StyleSheet.create({
   },
   dialogInputMultiline: {
     height: 80,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     padding: 12,
     fontSize: 14,
@@ -626,8 +732,8 @@ const styles = StyleSheet.create({
   },
   dialogBtn: {
     flex: 1,
-    height: 44,
-    borderRadius: 14,
+    height: 46,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
