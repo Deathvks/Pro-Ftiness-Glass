@@ -57,7 +57,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
             return;
         }
         const id = scrollY.addListener(({ value }) => {
-            const next = value > 4;
+            const next = value > 1;
             if (next !== isScrolledRef.current) {
                 isScrolledRef.current = next;
                 setIsScrolled(next);
@@ -72,7 +72,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
         if (glassAvailable) return;
         Animated.timing(fallbackOpacity, {
             toValue: isScrolled ? 1 : 0,
-            duration: 220,
+            duration: 150,
             easing: Easing.bezier(0.28, 0.11, 0.32, 1),
             useNativeDriver: true,
         }).start();
@@ -87,7 +87,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                     glassEffectStyle={{
                         style: isScrolled ? 'regular' : 'none',
                         animate: true,
-                        animationDuration: 0.35,
+                        animationDuration: 0.15,
                     }}
                     colorScheme={colorScheme as any}
                     style={[
