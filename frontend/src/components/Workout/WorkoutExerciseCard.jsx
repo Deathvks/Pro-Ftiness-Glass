@@ -181,7 +181,9 @@ const WorkoutExerciseCard = ({
                 }`}
                 title={
                   trend?.isWarning
-                    ? 'Aviso de rendimiento: Toca para ver recomendaciones para romper la meseta'
+                    ? (trend.status === 'stagnant'
+                        ? 'Llevas varias sesiones con el mismo peso. Toca para ver opciones fáciles para avanzar'
+                        : 'Aviso de fatiga. Toca para ver cómo ajustar la sesión')
                     : trend?.isProgressing
                     ? '¡En progresión! Toca para ver pautas de sobrecarga'
                     : 'Consejo inteligente según tu objetivo'
@@ -196,7 +198,7 @@ const WorkoutExerciseCard = ({
                 )}
                 <span>
                   {trend?.isWarning 
-                    ? `Aviso (${trend.status === 'stagnant' ? 'Meseta' : 'Fatiga'}) !`
+                    ? (trend.status === 'stagnant' ? 'Mismo peso !' : 'Aviso fatiga !')
                     : trend?.isProgressing 
                     ? '¡En racha!' 
                     : 'Info Objetivo'}

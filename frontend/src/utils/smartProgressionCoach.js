@@ -234,11 +234,11 @@ export const diagnoseExerciseTrend = (sessions) => {
     };
   }
 
-  // 3. Estancado
+  // 3. Estancado (Mismo peso en varias sesiones)
   return {
     status: 'stagnant',
-    label: 'Estancado',
-    badgeText: weeksStagnant > 1 ? `Meseta de ${weeksStagnant} semanas` : 'Misma carga reciente',
+    label: 'Mismo Peso',
+    badgeText: weeksStagnant > 1 ? `Mismo peso (${weeksStagnant} sem)` : 'Mismo peso reciente',
     colorClass: 'text-amber-500 border-amber-500/30 bg-amber-500/10',
     isWarning: true,
     isProgressing: false,
@@ -503,132 +503,132 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
     const testWeight = Math.round((currentTopWeight + microLoad) * 10) / 10;
     suggestedRest = '150 - 180 seg';
 
-    // Texto motivador fundamentado en ciencias del deporte
-    motivationalMessage = `No te frustres: las mesetas no son un estancamiento real, sino el proceso natural donde tu sistema neuromuscular consolida adaptaciones antes del siguiente salto de fuerza. Con una pequeña variación en la estrategia hoy, romperás este techo.`;
+    // Explicación motivadora y clara sin palabras difíciles
+    motivationalMessage = `Llevar varias sesiones levantando los mismos kilos es completamente normal: significa que tu cuerpo ya domina esta carga. Con un pequeño cambio hoy (probar un kilo más, sacar una repetición extra o controlar la bajada) volverás a progresar sin frustrarte.`;
 
     // Recomendación de Asesoría Pro Fitness con preparador real
     asesoriaRecommendation = {
       show: true,
-      headline: '¿Llevas varias semanas sin avanzar?',
-      description: 'Un preparador físico oficial en la Asesoría Pro Fitness puede revisar tus vídeos de técnica, periodizar tus cargas y ajustar tu nutrición para romper esta meseta de inmediato.',
+      headline: '¿Llevas tiempo sin subir de peso o tienes dudas?',
+      description: 'Un entrenador personal oficial en Pro Fitness puede revisar tus vídeos de técnica y planificar tus entrenamientos para que sigas mejorando de forma constante.',
       buttonText: 'Hablar con un Entrenador Real'
     };
 
     if (goalInfo.key === 'gain') {
       actionDirection = 'up';
       intensityLabel = 'Esfuerzo Alto';
-      intensityDesc = 'Exigente sin perder técnica';
+      intensityDesc = 'Exigente con buena técnica';
       suggestedWeight = testWeight;
       weightChangeNote = `+${microLoad} kg`;
-      actionTitle = `Rompe la Meseta (${trend.weeksStagnant} sem): Elige tu estrategia`;
-      coachingAdvice = `Llevas ${trend.weeksStagnant} semanas con ${currentTopWeight} kg. En fase de ganancia de masa, el músculo necesita una nueva demanda de tensión mecánica para no acomodarse.`;
+      actionTitle = `Mismo peso (${trend.weeksStagnant} sem): Elige cómo avanzar hoy`;
+      coachingAdvice = `Llevas ${trend.weeksStagnant} semanas levantando ${currentTopWeight} kg. Tu cuerpo ya se ha acostumbrado a este peso. Para seguir ganando músculo y fuerza, elige cuál de estas opciones fáciles prefieres hoy:`;
       actionSteps = [
-        `Opción A: Pon ${testWeight} kg (micro-carga) en tu 1ª serie y trabaja en el límite inferior (${Math.max(6, targetReps - 2)} reps).`,
-        `Opción B: Mantén los ${currentTopWeight} kg pero oblígate a conseguir 1 o 2 repeticiones extra en la primera serie antes de soltar la barra.`,
-        'Aumenta el tiempo de descanso a 2.5 - 3 minutos antes de la serie más pesada.'
+        `Opción 1: Pon ${testWeight} kg (un poquito más) en tu 1ª serie y haz ${Math.max(6, targetReps - 2)} reps con buena técnica.`,
+        `Opción 2: Mantén los ${currentTopWeight} kg e intenta sacar 1 o 2 repeticiones más antes de soltar la barra.`,
+        'Descansa entre 2 y 3 minutos antes de la serie más pesada para recuperar fuerzas.'
       ];
 
       strategyOptions = [
         {
           id: 'stag_microload',
-          title: `Estrategia A: Micro-carga (+${microLoad} kg)`,
+          title: `Opción 1: Subir un poco de peso (+${microLoad} kg)`,
           tag: 'Recomendada',
           badge: `Probar ${testWeight} kg`,
           suggestedWeight: testWeight,
           suggestedReps: Math.max(6, targetReps - 2),
           suggestedSets: plannedSets,
-          description: `Sube a ${testWeight} kg en la primera serie. Al tolerar 1-2 repeticiones menos, obligas a tus unidades motoras de alto umbral a activarse.`
+          description: `Sube a ${testWeight} kg en la primera serie. Si haces 1 o 2 repeticiones menos de lo habitual, es totalmente normal: así tu cuerpo gana fuerza nueva.`
         },
         {
           id: 'stag_volume_reps',
-          title: `Estrategia B: Sobrecarga por Reps (+2 reps)`,
+          title: 'Opción 2: Mantener peso y sumar repeticiones (+1 a 2 reps)',
           tag: 'Alternativa',
           badge: `Mantener ${currentTopWeight} kg`,
           suggestedWeight: currentTopWeight,
           suggestedReps: targetReps + 2,
           suggestedSets: plannedSets,
-          description: `Mantén los ${currentTopWeight} kg pero busca entre 1 y 2 repeticiones más en tu serie inicial para elevar el volumen efectivo.`
+          description: `Mantén los ${currentTopWeight} kg, pero esfuérzate en sacar 1 o 2 repeticiones más en tu serie inicial antes de dejar el peso.`
         },
         {
           id: 'stag_tempo',
-          title: 'Estrategia C: Tempo Excéntrico (3 seg)',
-          tag: 'Tensión Máxima',
-          badge: 'Cadencia 3s',
+          title: 'Opción 3: Mantener peso y bajar más despacio (3 seg)',
+          tag: 'Más Control',
+          badge: 'Control 3s',
           suggestedWeight: currentTopWeight,
           suggestedReps: targetReps,
           suggestedSets: plannedSets,
-          description: `Mantén ${currentTopWeight} kg pero frena la bajada durante 3 segundos enteros. Dispara el tiempo bajo tensión sin riesgo articular.`
+          description: `Mantén ${currentTopWeight} kg, pero frena la bajada contando 3 segundos. Tu músculo trabajará mucho más sin castigar tus articulaciones.`
         }
       ];
     } else if (goalInfo.key === 'lose') {
       actionDirection = 'maintain';
       intensityLabel = 'Esfuerzo Moderado';
-      intensityDesc = 'Retener masa sin agotamiento';
+      intensityDesc = 'Mantener músculo sin agotamiento';
       suggestedWeight = currentTopWeight;
       weightChangeNote = 'Mantener carga';
-      actionTitle = `Blindaje Muscular: Mantén ${currentTopWeight} kg`;
-      coachingAdvice = `¡Estar en meseta de fuerza durante definición es una EXCELENTE noticia! Significa que estás conservando intacta tu masa muscular magra a pesar de comer menos calorías.`;
+      actionTitle = `Excelente: Mantén tus ${currentTopWeight} kg firmes`;
+      coachingAdvice = `Mantener el mismo peso durante una etapa de definición o pérdida de peso es una excelente noticia: significa que estás conservando tu músculo intacto aunque comas menos calorías.`;
       actionSteps = [
-        `No fuerces aumentos bruscos de peso que puedan lesionarte en déficit: mantén firmes tus ${currentTopWeight} kg.`,
-        'Concéntrate en la fase excéntrica (bajada lenta de 3 segundos) para maximizar tensión sin dañar articulaciones.',
-        'Asegura un descanso de 2 minutos para disipar la fatiga del sistema nervioso.'
+        `No fuerces aumentos bruscos de peso que puedan lesionarte: mantén firmes tus ${currentTopWeight} kg.`,
+        'Baja el peso despacio y controlado para estimular bien el músculo con seguridad.',
+        'Asegura un descanso de 2 minutos entre series.'
       ];
 
       strategyOptions = [
         {
           id: 'stag_lose_lock',
-          title: `Blindaje de Carga (${currentTopWeight} kg)`,
+          title: `Mantener peso firme (${currentTopWeight} kg)`,
           tag: 'Recomendada',
-          badge: 'Preservar músculo',
+          badge: 'Conservar músculo',
           suggestedWeight: currentTopWeight,
           suggestedReps: targetReps,
           suggestedSets: plannedSets,
-          description: `Mantén exactamente ${currentTopWeight} kg. Cada sesión en la que no bajas peso en definición es una victoria directa para tu composición corporal.`
+          description: `Mantén exactamente ${currentTopWeight} kg. En pérdida de grasa, no bajar de peso en los ejercicios es la mayor victoria para mantener tu masa muscular.`
         },
         {
           id: 'stag_lose_microreps',
-          title: 'Buscar +1 Repetición Limpia',
+          title: 'Buscar 1 repetición más limpia',
           tag: 'Alternativa',
           badge: '+1 rep',
           suggestedWeight: currentTopWeight,
           suggestedReps: targetReps + 1,
           suggestedSets: plannedSets,
-          description: `Intenta sacar 1 repetición más solo en la 1ª serie y mantén 2 repeticiones en recámara en las siguientes.`
+          description: `Intenta sacar 1 repetición extra solo en la 1ª serie y guarda fuerzas en las siguientes.`
         }
       ];
     } else {
       actionDirection = 'maintain';
       intensityLabel = 'Controlado';
-      intensityDesc = 'Mayor tiempo bajo tensión';
+      intensityDesc = 'Control y buena técnica';
       suggestedWeight = currentTopWeight;
       weightChangeNote = 'Variar estímulo';
-      actionTitle = `Meseta Detectada: Ajusta Rango o Cadencia`;
-      coachingAdvice = `Llevas varias sesiones con la misma carga. Para reactivar el progreso, mantén los ${currentTopWeight} kg pero aplica una cadencia de 3 segundos en bajada o suma 1 repetición.`;
+      actionTitle = `Mismo peso en sesiones previas: Prueba una variación`;
+      coachingAdvice = `Llevas varias sesiones con la misma carga. Para reactivar tus mejoras, mantén los ${currentTopWeight} kg y baja más despacio, o prueba un kilo más.`;
       actionSteps = [
-        'Aumenta el tiempo bajo tensión bajando el peso en 3 segundos.',
-        'Explora si puedes sumar 1 repetición más en las series iniciales.'
+        'Baja el peso más despacio (en 3 segundos) para que el músculo trabaje más.',
+        'O intenta sacar 1 repetición más en tus primeras series.'
       ];
 
       strategyOptions = [
         {
           id: 'stag_gen_tempo',
-          title: 'Variar Cadencia Excéntrica (3s)',
+          title: 'Bajar el peso más despacio (3 seg)',
           tag: 'Recomendada',
-          badge: 'Tempo 3s',
+          badge: 'Control 3s',
           suggestedWeight: currentTopWeight,
           suggestedReps: targetReps,
           suggestedSets: plannedSets,
-          description: `Baja el peso en 3 segundos controlados con ${currentTopWeight} kg para romper la adaptación neuromuscular.`
+          description: `Baja el peso en 3 segundos controlados con ${currentTopWeight} kg para darle un estímulo nuevo al músculo sin subir peso.`
         },
         {
           id: 'stag_gen_micro',
-          title: `Micro-Carga (+${microLoad} kg)`,
+          title: `Probar un poco más de peso (+${microLoad} kg)`,
           tag: 'Alternativa',
           badge: `+${microLoad} kg`,
           suggestedWeight: testWeight,
           suggestedReps: Math.max(6, targetReps - 2),
           suggestedSets: plannedSets,
-          description: `Prueba ${testWeight} kg para dar un estímulo más intenso a nivel mecánico.`
+          description: `Prueba ${testWeight} kg haciendo 1-2 repeticiones menos para notar una exigencia mayor.`
         }
       ];
     }

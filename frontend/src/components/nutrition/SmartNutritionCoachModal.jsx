@@ -180,19 +180,19 @@ const SmartNutritionCoachModal = ({
               </div>
             )}
 
-            {/* 2. RECOMENDACIÓN DE ASESORÍA CON NUTRICIONISTA / PREPARADOR REAL (ARRIBA) */}
+            {/* 2. RECOMENDACIÓN DE ASESORÍA CON NUTRICIONISTA / PREPARADOR REAL (COMPACTA ARRIBA) */}
             {asesoriaRecommendation?.show && (
-              <div className="p-4 sm:p-5 rounded-[24px] bg-accent/10 border border-accent/25 flex flex-col gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="p-2.5 rounded-[16px] bg-accent/20 text-accent shrink-0">
-                    <Sparkles size={18} />
+              <div className="p-3 sm:p-3.5 rounded-[20px] bg-accent/10 border border-accent/25 flex items-center justify-between gap-3">
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0 mt-0.5">
+                    <UserCheck size={16} strokeWidth={2.5} />
                   </div>
-                  <div className="space-y-1 min-w-0">
-                    <h4 className="text-sm font-black text-text-primary">
+                  <div className="min-w-0">
+                    <h4 className="text-xs sm:text-sm font-black text-text-primary leading-tight">
                       {asesoriaRecommendation.headline}
                     </h4>
-                    <p className="text-xs text-text-secondary leading-relaxed font-medium">
-                      {asesoriaRecommendation.description}
+                    <p className="text-[11px] text-text-secondary font-medium leading-snug truncate sm:whitespace-normal">
+                      Un nutricionista y preparador real puede diseñar tu menú según tus gustos y objetivos.
                     </p>
                   </div>
                 </div>
@@ -204,12 +204,11 @@ const SmartNutritionCoachModal = ({
                       onClose();
                       onNavigateAsesoria();
                     }}
-                    className="w-full py-3 px-4 rounded-[18px] bg-accent hover:brightness-110 text-accent-contrast font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-accent/20 transition-all active:scale-95"
+                    className="py-2 px-3 rounded-[14px] bg-accent hover:brightness-110 text-accent-contrast font-black text-xs shrink-0 flex items-center gap-1 shadow-sm transition-all active:scale-95"
                     style={{ color: "var(--btn-accent-text, #000)" }}
                   >
-                    <UserCheck size={16} strokeWidth={2.5} />
-                    <span>{asesoriaRecommendation.buttonText}</span>
-                    <ArrowRight size={15} />
+                    <span>Asesoría</span>
+                    <ArrowRight size={13} />
                   </button>
                 )}
               </div>
@@ -274,11 +273,11 @@ const SmartNutritionCoachModal = ({
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
                 {pillars.map((pillar) => (
                   <div
                     key={pillar.id}
-                    className={`p-3.5 rounded-[22px] border transition-all flex flex-col justify-between ${
+                    className={`p-3 rounded-[18px] border transition-all flex flex-col justify-between ${
                       pillar.isWarning
                         ? 'bg-amber-500/10 border-amber-500/30'
                         : pillar.status === 'in_progress'
@@ -286,9 +285,9 @@ const SmartNutritionCoachModal = ({
                         : 'bg-black/5 dark:bg-white/5 border-glass-border'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
                       <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-[10px] bg-black/5 dark:bg-white/10">
+                        <div className="p-1 rounded-[8px] bg-black/5 dark:bg-white/10">
                           {getPillarIcon(pillar.icon)}
                         </div>
                         <span className="text-xs font-bold text-text-primary">
@@ -311,7 +310,7 @@ const SmartNutritionCoachModal = ({
                       )}
                     </div>
 
-                    <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                    <div className="flex items-baseline justify-between gap-2 mb-1">
                       <span className="text-base sm:text-lg font-black text-text-primary">
                         {typeof pillar.consumed === 'number' ? pillar.consumed.toLocaleString('es-ES') : pillar.consumed} {pillar.unit !== 'macros' && pillar.unit !== 'día' ? pillar.unit : ''}
                       </span>
@@ -333,22 +332,22 @@ const SmartNutritionCoachModal = ({
 
             {/* 6. PAUTAS Y SUGERENCIAS PRÁCTICAS FLEXIBLES */}
             {strategyOptions && strategyOptions.length > 0 && (
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between px-1">
                   <span className="text-[11px] font-black uppercase tracking-wider text-accent flex items-center gap-1.5">
                     <Target size={14} />
-                    Pautas y sugerencias nutricionales para hoy:
+                    Pautas y sugerencias para hoy:
                   </span>
                   <span className="text-[10px] font-bold text-text-muted uppercase">
                     Guía flexible
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 gap-2.5">
+                <div className="grid grid-cols-1 gap-2">
                   {strategyOptions.map((opt) => (
                     <div
                       key={opt.id}
-                      className="p-3.5 sm:p-4 rounded-[22px] bg-black/5 dark:bg-white/5 border border-glass-border flex items-start gap-3 transition-all"
+                      className="p-3 sm:p-3.5 rounded-[18px] bg-black/5 dark:bg-white/5 border border-glass-border flex items-start gap-2.5 transition-all"
                     >
                       <div className="mt-0.5 shrink-0 rounded-full w-5 h-5 flex items-center justify-center bg-accent/20 text-accent font-black text-[10px]">
                         ✓
