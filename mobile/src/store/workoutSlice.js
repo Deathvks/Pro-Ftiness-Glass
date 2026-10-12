@@ -312,6 +312,30 @@ export const createWorkoutSlice = (set, get) => ({
     setWorkoutInStorage({ ...get(), ...newState });
   },
 
+  addSetToExercise: (exIndex) => {
+    const session = get().activeWorkout;
+    if (!session) return;
+    const newExercises = JSON.parse(JSON.stringify(session.exercises));
+    const targetExercise = newExercises[exIndex];
+    if (!targetExercise) return;
+    const currentSets = targetExercise.setsDone || [];
+    currentSets.push({
+      set_number: currentSets.length + 1,
+      reps: '',
+      weight_kg: '',
+      is_dropset: false,
+      is_warmup: false,
+      rir: null,
+    });
+    targetExercise.setsDone = currentSets;
+    targetExercise.sets = currentSets.length;
+    const newState = {
+      activeWorkout: { ...session, exercises: newExercises },
+    };
+    set(newState);
+    setWorkoutInStorage({ ...get(), ...newState });
+  },
+
   addDropset: (exIndex, setIndex) => {
     const session = get().activeWorkout;
     if (!session) return;

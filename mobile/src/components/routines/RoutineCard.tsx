@@ -8,6 +8,7 @@ import {
   CheckCircle, Edit, Copy, Trash2, Share2, Folder, Link2 
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
+import * as Haptics from 'expo-haptics';
 import { 
   getContrastTextColor, 
   calculateRoutineEstimatedTime, 
@@ -268,43 +269,85 @@ export function RoutineCard({
           </View>
         )}
 
-        {/* BOTÓN GRANDE PRINCIPAL (INICIAR / CONTINUAR / BLOQUEADO / COMPLETADO) */}
+        {/* BOTÓN GRANDE PRINCIPAL (INICIAR / CONTINUAR / BLOQUEADO / COMPLETADO) - LIQUID GLASS */}
         <TouchableOpacity
-          onPress={onPressStart}
+          onPress={() => {
+            try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            } catch {}
+            onPressStart();
+          }}
           disabled={isCompletedToday || isBlockedByOtherWorkout}
-          activeOpacity={0.85}
+          activeOpacity={0.82}
           style={[
             styles.mainButton,
-            {
-              backgroundColor: isCompletedToday || isBlockedByOtherWorkout
-                ? iconBadgeBg
-                : colors.tint,
+            isCompletedToday ? {
+              backgroundColor: isDark ? 'rgba(34, 197, 94, 0.14)' : 'rgba(34, 197, 94, 0.1)',
+              borderColor: 'rgba(34, 197, 94, 0.35)',
+              borderWidth: 1,
+            } : isActive ? {
+              backgroundColor: colors.tint,
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.8)',
+              borderWidth: 1.2,
+              shadowColor: colors.tint,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: isDark ? 0.5 : 0.3,
+              shadowRadius: 10,
+              elevation: 5,
+            } : isBlockedByOtherWorkout ? {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+              borderWidth: 1,
+            } : {
+              backgroundColor: colors.tint,
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.85)',
+              borderWidth: 1.2,
+              shadowColor: colors.tint,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: isDark ? 0.45 : 0.28,
+              shadowRadius: 10,
+              elevation: 5,
             }
           ]}
         >
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
+          {/* Specular highlight strip on top of button for Liquid Glass reflection */}
+          <View
+            style={[
+              styles.liquidSpecularTop,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.45)',
+              }
+            ]}
+          />
+
           {isCompletedToday ? (
-            <>
-              <CheckCircle size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
-              <Text style={[styles.mainButtonText, { color: colors.textSecondary }]}>
+            <View style={styles.buttonContentRow}>
+              <CheckCircle size={18} color="#22c55e" style={{ marginRight: 8 }} />
+              <Text style={[styles.mainButtonText, { color: isDark ? '#4ade80' : '#15803d' }]}>
                 Entrenamiento Completado
               </Text>
-            </>
+            </View>
           ) : isActive ? (
-            <>
+            <View style={styles.buttonContentRow}>
               <Clock size={18} color={startTextColor} style={{ marginRight: 8 }} />
               <Text style={[styles.mainButtonText, { color: startTextColor }]}>
                 Continuar Entrenamiento
               </Text>
-            </>
+            </View>
           ) : isBlockedByOtherWorkout ? (
-            <>
+            <View style={styles.buttonContentRow}>
               <Lock size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
               <Text style={[styles.mainButtonText, { color: colors.textSecondary }]}>
                 Entrenamiento en Curso
               </Text>
-            </>
+            </View>
           ) : (
-            <>
+            <View style={styles.buttonContentRow}>
               <Play 
                 size={18} 
                 color={startTextColor} 
@@ -314,7 +357,7 @@ export function RoutineCard({
               <Text style={[styles.mainButtonText, { color: startTextColor }]}>
                 Empezar Entrenamiento
               </Text>
-            </>
+            </View>
           )}
         </TouchableOpacity>
 
@@ -477,15 +520,31 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   mainButton: {
+    height: 52,
+    borderRadius: 22,
+    marginTop: 4,
+    overflow: 'hidden',
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  liquidSpecularTop: {
+    position: 'absolute',
+    top: 0,
+    left: 12,
+    right: 12,
+    height: 1,
+    borderRadius: 1,
+  },
+  buttonContentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 50,
-    borderRadius: 20,
-    marginTop: 4,
+    zIndex: 2,
   },
   mainButtonText: {
     fontSize: 15,
     fontWeight: '800',
+    letterSpacing: 0.2,
   },
 });
