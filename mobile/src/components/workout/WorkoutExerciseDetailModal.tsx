@@ -1,5 +1,5 @@
 /* mobile/src/components/workout/WorkoutExerciseDetailModal.tsx */
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,15 +7,25 @@ import {
   Modal,
   ScrollView,
   TouchableOpacity,
-  Pressable,
+  ActivityIndicator,
+  Dimensions,
 } from 'react-native';
-import { X, Dumbbell, Repeat, Target, Sparkles } from 'lucide-react-native';
+import {
+  X,
+  Dumbbell,
+  Repeat,
+  Clock,
+  Target,
+  Sparkles,
+  FileText,
+  AlertCircle,
+} from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview';
-import { BACKEND_BASE_URL } from '@/services/apiClient';
+import { askTrainerAI } from '@/services/aiService';
 
 interface WorkoutExerciseDetailModalProps {
   exercise: any;
@@ -30,36 +40,134 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
+  const getOrFetchAllExercises = useAppStore(state => state.getOrFetchAllExercises);
+  const allExercises = useAppStore(state => state.allExercises || []);
+  const gamification = useAppStore(state => state.gamification || {});
+
+  const [localDetails, setLocalDetails] = useState<any>(exercise?.exercise_details || {});
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
+  // Estados del Entrenador IA
+  const [aiExplanation, setAiExplanation] = useState<string | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [remainingUses, setRemainingUses] = useState<number | null>(
+    gamification?.ai_queries_remaining !== undefined ? gamification.ai_queries_remaining : 5
+  );
+
+  // Sincronizar ejercicio base cuando cambia la selección
+  useEffect(() => {
+    if (!exercise) {
+      setLocalDetails({});
+      setAiExplanation(null);
+      setAiError(null);
+      return;
+    }
+
+    const initDetails = {
+      ...(exercise.exercise_details || {}),
+      ...exercise,
+    };
+    setLocalDetails(initDetails);
+    setAiExplanation(null);
+    setAiError(null);
+
+    // Auto-enriquecimiento: si faltan datos descriptivos o multimedia, buscar en allExercises
+    const hasMissingData =
+      (!initDetails.description && !initDetails.description_es) ||
+      (!initDetails.video_url && !initDetails.youtube_id && !initDetails.images?.length);
+
+    if (hasMissingData && getOrFetchAllExercises) {
+      setIsLoadingDetails(true);
+      getOrFetchAllExercises()
+        .then((fullList: any[]) => {
+          if (Array.isArray(fullList)) {
+            const match = fullList.find(
+              (e: any) =>
+                (e.id && e.id === exercise.id) ||
+                (e.name && exercise.name && e.name.toLowerCase().trim() === exercise.name.toLowerCase().trim())
+            );
+            if (match) {
+              setLocalDetails((prev: any) => ({
+                ...match,
+                ...prev,
+                description: match.description_es || match.description || prev.description,
+              }));
+            }
+          }
+        })
+        .catch(() => {})
+        .finally(() => setIsLoadingDetails(false));
+    }
+  }, [exercise, getOrFetchAllExercises]);
+
   if (!exercise) return null;
 
-  const details = exercise.exercise_details || exercise;
-
-  const getImageUrl = (it: any) => {
-    const raw =
-      it?.image_url ||
-      it?.image ||
-      it?.exercise_details?.image_url ||
-      it?.exercise_details?.image_url_start ||
-      '';
-    if (!raw) return '';
-    if (raw.startsWith('http')) return raw;
-    return `${BACKEND_BASE_URL}${raw.startsWith('/') ? '' : '/'}${raw}`;
+  const mergedDetails = {
+    ...exercise,
+    ...localDetails,
   };
 
-  const description =
-    details.description_es ||
-    details.description ||
-    'Realiza el movimiento controlando la fase excéntrica y manteniendo la tensión adecuada durante toda la serie.';
+  // Limpieza y formateo de descripción (remueve tags html residuales como <p>, </p>, <br>)
+  const cleanDescription = useMemo(() => {
+    const raw =
+      mergedDetails.description_es ||
+      mergedDetails.description ||
+      'Realiza el movimiento controlando la fase excéntrica y manteniendo una técnica sólida en cada repetición.';
+    return raw.replace(/<\/?[^>]+(>|$)/g, '').trim();
+  }, [mergedDetails]);
+
+  const muscleLabel =
+    mergedDetails.muscle_group ||
+    mergedDetails.muscles ||
+    mergedDetails.target ||
+    'General';
+
+  const setsCount = exercise.sets || mergedDetails.sets || 3;
+  const repsCount = exercise.reps || mergedDetails.reps || 10;
+  const restTime = exercise.rest_seconds || mergedDetails.rest_seconds || 90;
+
+  // Manejador de Consulta con IA
+  const handleAskAI = async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+
+    setIsAiLoading(true);
+    setAiError(null);
+
+    const prompt = `Actúa como un entrenador personal y biomecánico experto. Explica detalladamente el ejercicio "${exercise.name}". 
+Incluye:
+1. Técnica correcta paso a paso y posición de inicio.
+2. Músculos principales y secundarios implicados.
+3. Los 2 errores más comunes al ejecutarlo y cómo evitarlos.
+4. Un "Pro Tip" final para maximizar hipertrofia o fuerza.
+Sé directo, motivador y usa un formato limpio con viñetas.`;
+
+    try {
+      const res = await askTrainerAI(prompt);
+      const text = res?.response || res?.text || (typeof res === 'string' ? res : '');
+      setAiExplanation(text);
+      if (res?.remaining !== undefined) {
+        setRemainingUses(res.remaining);
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.message || 'Error al conectar con el entrenador IA.';
+      setAiError(msg);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   return (
     <Modal visible={Boolean(exercise)} transparent animationType="slide">
-      <View style={[styles.overlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.45)' }]}>
+      <View style={[styles.overlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.5)' }]}>
         <View
           style={[
-            styles.sheet,
+            styles.modalSheet,
             {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
+              backgroundColor: isDark ? 'rgba(18, 18, 22, 0.95)' : 'rgba(255, 255, 255, 0.97)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
@@ -69,15 +177,21 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
             style={StyleSheet.absoluteFill}
           />
 
-          {/* Header */}
-          <View style={[styles.header, { borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
+          {/* Barra de arrastre superior */}
+          <View style={styles.dragIndicatorWrapper}>
+            <View
+              style={[
+                styles.dragIndicator,
+                { backgroundColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.15)' },
+              ]}
+            />
+          </View>
+
+          {/* Cabecera */}
+          <View style={[styles.modalHeader, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={[styles.exerciseTitle, { color: colors.text }]} numberOfLines={2}>
                 {exercise.name}
-              </Text>
-              <Text style={[styles.subtitle, { color: colors.tint }]}>
-                {exercise.sets} series × {exercise.reps} reps
-                {exercise.muscle_group ? ` • ${exercise.muscle_group}` : ''}
               </Text>
             </View>
 
@@ -88,72 +202,264 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
                 } catch {}
                 onClose();
               }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               style={[
-                styles.closeBtn,
+                styles.closeButton,
                 {
                   backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
                 },
               ]}
             >
-              <X size={18} color={colors.textSecondary} />
+              <X size={18} color={colors.text} strokeWidth={2.5} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            {/* Media Player */}
-            <View
-              style={[
-                styles.mediaHero,
-                {
-                  backgroundColor: isDark ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.04)',
-                  borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
-                },
-              ]}
-            >
-              <ExerciseMediaPreview
-                item={{
-                  ...exercise,
-                  ...details,
-                }}
-                getImageUrl={getImageUrl}
-              />
+          {/* Contenido en Scroll */}
+          <ScrollView
+            contentContainerStyle={styles.scrollBody}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* 1. Reproductor de Vídeo / Formato Shorts 9:16 */}
+            <View style={styles.mediaContainerWrapper}>
+              <View
+                style={[
+                  styles.mediaHeroCard,
+                  {
+                    backgroundColor: isDark ? '#000000' : 'rgba(0,0,0,0.05)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+                  },
+                ]}
+              >
+                {isLoadingDetails ? (
+                  <View style={styles.loadingCenter}>
+                    <ActivityIndicator size="large" color={colors.tint} />
+                  </View>
+                ) : (
+                  <ExerciseMediaPreview
+                    item={mergedDetails}
+                    details={mergedDetails}
+                    fitMode="contain"
+                    playYouTube={true}
+                  />
+                )}
+              </View>
             </View>
 
-            {/* Muscles & Equipment Pills */}
-            <View style={styles.pillsRow}>
-              {exercise.muscle_group ? (
-                <View style={[styles.infoPill, { backgroundColor: colors.tint + '15', borderColor: colors.tint + '35' }]}>
-                  <Target size={13} color={colors.tint} style={{ marginRight: 5 }} />
-                  <Text style={[styles.infoPillText, { color: colors.tint }]}>
-                    {exercise.muscle_group}
+            {/* 2. Grid de 4 Métricas Clave (Músculo, Series, Reps, Descanso) */}
+            <View style={styles.metricsGrid}>
+              {/* Músculo */}
+              <View
+                style={[
+                  styles.metricCard,
+                  {
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                  },
+                ]}
+              >
+                <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
+                  <Target size={18} color={colors.tint} strokeWidth={2.5} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.metricLabel}>MÚSCULO</Text>
+                  <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
+                    {muscleLabel}
                   </Text>
+                </View>
+              </View>
+
+              {/* Series */}
+              <View
+                style={[
+                  styles.metricCard,
+                  {
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                  },
+                ]}
+              >
+                <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
+                  <Dumbbell size={18} color={colors.tint} strokeWidth={2.5} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.metricLabel}>SERIES</Text>
+                  <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
+                    {setsCount} series
+                  </Text>
+                </View>
+              </View>
+
+              {/* Reps */}
+              <View
+                style={[
+                  styles.metricCard,
+                  {
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                  },
+                ]}
+              >
+                <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
+                  <Repeat size={18} color={colors.tint} strokeWidth={2.5} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.metricLabel}>REPS</Text>
+                  <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
+                    {repsCount} reps
+                  </Text>
+                </View>
+              </View>
+
+              {/* Descanso */}
+              <View
+                style={[
+                  styles.metricCard,
+                  {
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                  },
+                ]}
+              >
+                <View style={[styles.metricIconWrap, { backgroundColor: colors.tint + '18' }]}>
+                  <Clock size={18} color={colors.tint} strokeWidth={2.5} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.metricLabel}>DESCANSO</Text>
+                  <Text style={[styles.metricValue, { color: colors.text }]} numberOfLines={1}>
+                    {restTime}s
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Píldora de Equipamiento si existe */}
+            {mergedDetails.equipment ? (
+              <View style={styles.equipmentRow}>
+                <View
+                  style={[
+                    styles.equipmentPill,
+                    {
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                    },
+                  ]}
+                >
+                  <Dumbbell size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                  <Text style={[styles.equipmentText, { color: colors.textSecondary }]}>
+                    Equipamiento: {mergedDetails.equipment}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+
+            {/* 3. Instrucciones de Ejecución / Descripción */}
+            <View style={styles.sectionBlock}>
+              <View style={styles.sectionHeaderRow}>
+                <View style={[styles.sectionIconBadge, { backgroundColor: colors.tint + '18' }]}>
+                  <FileText size={17} color={colors.tint} strokeWidth={2.5} />
+                </View>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Instrucciones de Ejecución
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.descBox,
+                  {
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                  },
+                ]}
+              >
+                <Text style={[styles.descBody, { color: colors.text }]}>
+                  {cleanDescription}
+                </Text>
+              </View>
+            </View>
+
+            {/* 4. Entrenador IA: Técnica y Consejos */}
+            <View style={[styles.sectionBlock, styles.aiSectionTopBorder]}>
+              <View style={styles.aiHeaderRow}>
+                <View style={styles.sectionHeaderRow}>
+                  <View style={[styles.sectionIconBadge, { backgroundColor: colors.tint + '18' }]}>
+                    <Sparkles size={17} color={colors.tint} strokeWidth={2.5} />
+                  </View>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                    Técnica y Consejos IA
+                  </Text>
+                </View>
+
+                {remainingUses !== null ? (
+                  <View style={styles.aiQuotaTag}>
+                    <Text style={[styles.aiQuotaText, { color: colors.tint }]}>
+                      Usos: {remainingUses}/5
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+
+              {!aiExplanation && !isAiLoading && (
+                <TouchableOpacity
+                  onPress={handleAskAI}
+                  activeOpacity={0.82}
+                  style={[
+                    styles.aiAskButton,
+                    {
+                      backgroundColor: colors.tint,
+                      shadowColor: colors.tint,
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.35,
+                      shadowRadius: 10,
+                      elevation: 4,
+                    },
+                  ]}
+                >
+                  <Sparkles size={18} color="#ffffff" strokeWidth={2.5} style={{ marginRight: 8 }} />
+                  <Text style={styles.aiAskButtonText}>Pedir explicación experta</Text>
+                </TouchableOpacity>
+              )}
+
+              {isAiLoading && (
+                <View
+                  style={[
+                    styles.aiLoadingBox,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                    },
+                  ]}
+                >
+                  <ActivityIndicator size="small" color={colors.tint} />
+                  <Text style={[styles.aiLoadingText, { color: colors.textSecondary }]}>
+                    Analizando biomecánica del ejercicio...
+                  </Text>
+                </View>
+              )}
+
+              {aiError ? (
+                <View style={styles.aiErrorBox}>
+                  <AlertCircle size={18} color="#ef4444" strokeWidth={2.5} style={{ marginRight: 8 }} />
+                  <Text style={styles.aiErrorText}>{aiError}</Text>
                 </View>
               ) : null}
 
-              {details.equipment ? (
-                <View style={[styles.infoPill, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)' }]}>
-                  <Dumbbell size={13} color={colors.textSecondary} style={{ marginRight: 5 }} />
-                  <Text style={[styles.infoPillText, { color: colors.textSecondary }]}>
-                    {details.equipment}
+              {aiExplanation ? (
+                <View
+                  style={[
+                    styles.aiResponseCard,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                      borderColor: colors.tint + '35',
+                    },
+                  ]}
+                >
+                  <Text style={[styles.aiResponseText, { color: colors.text }]}>
+                    {aiExplanation}
                   </Text>
                 </View>
               ) : null}
-            </View>
-
-            {/* Description */}
-            <View
-              style={[
-                styles.descCard,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                },
-              ]}
-            >
-              <Text style={[styles.descTitle, { color: colors.text }]}>Instrucciones de Ejecución</Text>
-              <Text style={[styles.descText, { color: colors.textSecondary }]}>{description}</Text>
             </View>
           </ScrollView>
         </View>
@@ -162,94 +468,234 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
   );
 };
 
+const { height: screenHeight } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
   },
-  sheet: {
-    width: '100%',
-    maxHeight: '85%',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+  modalSheet: {
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
     borderWidth: 1,
     borderBottomWidth: 0,
+    maxHeight: screenHeight * 0.92,
     overflow: 'hidden',
-    position: 'relative',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 14,
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
     elevation: 8,
   },
-  header: {
+  dragIndicatorWrapper: {
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  dragIndicator: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+  },
+  modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderBottomWidth: 1,
   },
-  title: {
+  exerciseTitle: {
     fontSize: 20,
     fontWeight: '900',
     letterSpacing: -0.4,
-    marginBottom: 4,
   },
-  subtitle: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  closeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 12,
   },
-  scrollContent: {
+  scrollBody: {
     padding: 20,
-    gap: 16,
+    paddingBottom: 40,
   },
-  mediaHero: {
-    width: '100%',
-    height: 240,
-    borderRadius: 24,
+  mediaContainerWrapper: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  mediaHeroCard: {
+    width: 250,
+    maxWidth: '100%',
+    height: 290,
+    borderRadius: 26,
     borderWidth: 1,
     overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  loadingCenter: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 16,
+  },
+  metricCard: {
+    width: '48.5%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 10,
+  },
+  metricIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pillsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  metricLabel: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#8e8e93',
+    letterSpacing: 0.6,
+    marginBottom: 2,
   },
-  infoPill: {
+  metricValue: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  equipmentRow: {
+    flexDirection: 'row',
+    marginBottom: 18,
+  },
+  equipmentPill: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
   },
-  infoPillText: {
+  equipmentText: {
     fontSize: 12,
+    fontWeight: '700',
+  },
+  sectionBlock: {
+    marginBottom: 22,
+  },
+  aiSectionTopBorder: {
+    paddingTop: 18,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  aiHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  sectionIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionTitle: {
+    fontSize: 16,
     fontWeight: '800',
-    textTransform: 'capitalize',
+    letterSpacing: -0.3,
   },
-  descCard: {
-    borderRadius: 22,
+  aiQuotaTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  aiQuotaText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  descBox: {
+    padding: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    padding: 18,
   },
-  descTitle: {
+  descBody: {
+    fontSize: 14,
+    lineHeight: 22,
+    fontWeight: '500',
+    opacity: 0.9,
+  },
+  aiAskButton: {
+    height: 50,
+    borderRadius: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiAskButtonText: {
+    color: '#ffffff',
     fontSize: 15,
     fontWeight: '800',
-    marginBottom: 8,
   },
-  descText: {
+  aiLoadingBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 10,
+  },
+  aiLoadingText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  aiErrorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    marginTop: 8,
+  },
+  aiErrorText: {
+    color: '#ef4444',
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+  },
+  aiResponseCard: {
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  aiResponseText: {
     fontSize: 14,
     lineHeight: 22,
     fontWeight: '500',
