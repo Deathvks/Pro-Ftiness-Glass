@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Image, Text, TouchableOpacity, StyleSheet, Pressable, Animated, Easing } from 'react-native';
+import { View, Image, Text, TouchableOpacity, StyleSheet, Pressable, Animated, Easing, Platform } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import { User, Sparkles, Bell, ChevronLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,7 +8,9 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { Colors } from '@/constants/theme';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { AiInfoModal } from '@/components/modals/AiInfoModal';
-import { GlassView } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 
 export default function GlobalHeader({ title, scrollY, showBackButton, hideRightButtons }: { title?: string, scrollY?: Animated.Value, showBackButton?: boolean, hideRightButtons?: boolean }) {
@@ -43,8 +45,8 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                 setIsScrolled(true);
                 Animated.timing(bgOpacityAnim, {
                     toValue: 1,
-                    duration: 160,
-                    easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+                    duration: 180,
+                    easing: Easing.bezier(0.28, 0.11, 0.32, 1),
                     useNativeDriver: true,
                 }).start();
             } else if (currentY <= 4 && isScrolledRef.current) {
@@ -52,8 +54,8 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                 setIsScrolled(false);
                 Animated.timing(bgOpacityAnim, {
                     toValue: 0,
-                    duration: 160,
-                    easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+                    duration: 180,
+                    easing: Easing.bezier(0.28, 0.11, 0.32, 1),
                     useNativeDriver: true,
                 }).start();
             }
@@ -66,7 +68,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                     Animated.timing(headerTranslateY, {
                         toValue: 0,
                         duration: 200,
-                        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+                        easing: Easing.bezier(0.28, 0.11, 0.32, 1),
                         useNativeDriver: true,
                     }).start();
                 }
@@ -81,7 +83,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                 Animated.timing(headerTranslateY, {
                     toValue: -headerHeight,
                     duration: 250,
-                    easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+                    easing: Easing.bezier(0.28, 0.11, 0.32, 1),
                     useNativeDriver: true,
                 }).start();
             } 
@@ -92,7 +94,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                 Animated.timing(headerTranslateY, {
                     toValue: 0,
                     duration: 200,
-                    easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+                    easing: Easing.bezier(0.28, 0.11, 0.32, 1),
                     useNativeDriver: true,
                 }).start();
             }
@@ -127,6 +129,27 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
 
     const colorScheme = ['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark';
 
+    const hasLiquidGlass = React.useMemo(() => {
+        try {
+            return Platform.OS === 'ios' && typeof isLiquidGlassAvailable === 'function' && isLiquidGlassAvailable();
+        } catch {
+            return false;
+        }
+    }, []);
+
+    const glassTint = React.useMemo(() => {
+        if (colorScheme === 'dark') {
+            if (theme === 'oled') return 'rgba(0, 0, 0, 0.45)';
+            if (theme === 'galaxy') return 'rgba(15, 15, 35, 0.50)';
+            if (theme === 'ocean-dark') return 'rgba(8, 30, 50, 0.50)';
+            return 'rgba(18, 24, 38, 0.45)';
+        } else {
+            if (theme === 'ocean') return 'rgba(240, 249, 255, 0.55)';
+            if (theme === 'desert') return 'rgba(253, 248, 245, 0.55)';
+            return 'rgba(255, 255, 255, 0.55)';
+        }
+    }, [colorScheme, theme]);
+
     const headerOpacity = headerTranslateY.interpolate({
         inputRange: [-headerHeight, 0],
         outputRange: [0, 1],
@@ -142,28 +165,82 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                 opacity: headerOpacity,
             }}
         >
-            {/* Capas de fondo con cristal, tinte y borde inferior (desaparecen al estar arriba del todo, aparecen solo al bajar) */}
+            {/* Capas de fondo con auténtico Liquid Glass (desaparecen al estar arriba del todo, aparecen solo al bajar) */}
             <Animated.View 
                 pointerEvents="none"
                 style={[
                     StyleSheet.absoluteFill,
-                    { opacity: bgOpacityAnim }
+                    { 
+                        opacity: bgOpacityAnim,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: colorScheme === 'dark' ? 0.35 : 0.08,
+                        shadowRadius: 16,
+                        elevation: 4,
+                    }
                 ]}
             >
-                <GlassView 
-                    glassEffectStyle="regular"
-                    colorScheme={colorScheme as any}
-                    style={StyleSheet.absoluteFill}
-                />
-                <View 
-                    style={[
-                        StyleSheet.absoluteFill,
-                        {
-                            backgroundColor: colorScheme === 'dark' ? 'rgba(0, 0, 0, 0.35)' : 'rgba(255, 255, 255, 0.45)',
+                <View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]}>
+                    {/* 1. Backdrop blur de material de cristal (iOS, Android y Web) */}
+                    <BlurView 
+                        intensity={Platform.OS === 'ios' ? 85 : 95}
+                        tint={colorScheme === 'dark' ? 'dark' : 'light'}
+                        style={StyleSheet.absoluteFill}
+                    />
+
+                    {/* 2. Liquid Glass nativo si está disponible en iOS */}
+                    {hasLiquidGlass && (
+                        <GlassView 
+                            glassEffectStyle="regular"
+                            colorScheme={colorScheme as any}
+                            style={StyleSheet.absoluteFill}
+                        />
+                    )}
+
+                    {/* 3. Tinte translúcido reactivo al tema para consistencia estética */}
+                    <View 
+                        style={[
+                            StyleSheet.absoluteFill,
+                            { backgroundColor: glassTint }
+                        ]}
+                    />
+
+                    {/* 4. Gradiente de refracción especular (destello de luz sobre el cristal estilo Apple HIG) */}
+                    <LinearGradient
+                        colors={
+                            colorScheme === 'dark'
+                                ? ['rgba(255, 255, 255, 0.12)', 'rgba(255, 255, 255, 0.0)']
+                                : ['rgba(255, 255, 255, 0.70)', 'rgba(255, 255, 255, 0.05)']
                         }
-                    ]}
-                />
-                <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: StyleSheet.hairlineWidth, backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)' }} />
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={StyleSheet.absoluteFill}
+                    />
+
+                    {/* 5. Rim highlight superior (borde especular pulido) */}
+                    <View 
+                        style={{ 
+                            position: 'absolute', 
+                            top: 0, 
+                            left: 0, 
+                            right: 0, 
+                            height: StyleSheet.hairlineWidth, 
+                            backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.20)' : 'rgba(255, 255, 255, 0.85)' 
+                        }} 
+                    />
+
+                    {/* 6. Hairline inferior de delimitación suave */}
+                    <View 
+                        style={{ 
+                            position: 'absolute', 
+                            bottom: 0, 
+                            left: 0, 
+                            right: 0, 
+                            height: StyleSheet.hairlineWidth, 
+                            backgroundColor: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)' 
+                        }} 
+                    />
+                </View>
             </Animated.View>
 
             <View 
