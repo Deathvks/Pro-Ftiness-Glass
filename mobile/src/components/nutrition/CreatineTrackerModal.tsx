@@ -276,94 +276,101 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
     <>
       <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
         <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-          <Pressable
-            style={[
-              StyleSheet.absoluteFill,
-              styles.modalOverlay,
-              {
-                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.45)' : 'rgba(255, 255, 255, 0.25)',
-              },
-            ]}
-            onPress={onClose}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={StyleSheet.absoluteFill}
           >
             <Pressable
-              onPress={e => e.stopPropagation()}
               style={[
-                styles.cardWrapper,
+                StyleSheet.absoluteFill,
+                styles.modalOverlay,
                 {
-                  backgroundColor: colors.card,
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
+                  backgroundColor: isDark ? 'rgba(0, 0, 0, 0.55)' : 'rgba(0, 0, 0, 0.25)',
                 },
               ]}
+              onPress={onClose}
             >
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={StyleSheet.absoluteFill}
-              />
+              <Pressable
+                onPress={e => e.stopPropagation()}
+                style={[
+                  styles.cardWrapper,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
+                  },
+                ]}
+              >
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={StyleSheet.absoluteFill}
+                />
 
-              <View style={styles.card}>
-                {/* Header (Liquid Glass) */}
-                <View
-                  style={[
-                    styles.header,
-                    {
-                      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-                    },
-                  ]}
-                >
-                  <View style={styles.headerLeft}>
-                    <View
+                <View style={styles.card}>
+                  {/* Header (Liquid Glass) */}
+                  <View
+                    style={[
+                      styles.header,
+                      {
+                        borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+                      },
+                    ]}
+                  >
+                    <View style={styles.headerLeft}>
+                      <View
+                        style={[
+                          styles.headerIconBadge,
+                          {
+                            backgroundColor: 'rgba(168, 85, 247, 0.15)',
+                            borderColor: 'rgba(168, 85, 247, 0.35)',
+                          },
+                        ]}
+                      >
+                        <GlassView
+                          glassEffectStyle="regular"
+                          colorScheme={isDark ? 'dark' : 'light'}
+                          style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                        />
+                        <Zap size={22} color="#a855f7" strokeWidth={2.5} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+                          Creatina
+                        </Text>
+                        <Text style={[styles.headerSubtitle, { color: colors.textMuted }]} numberOfLines={1}>
+                          Dosis recomendada: ~{creatineTarget}g/día
+                        </Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity
+                      onPress={onClose}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       style={[
-                        styles.headerIconBadge,
+                        styles.closeBtn,
                         {
-                          backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                          borderColor: 'rgba(168, 85, 247, 0.35)',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
                         },
                       ]}
+                      activeOpacity={0.7}
                     >
                       <GlassView
                         glassEffectStyle="regular"
                         colorScheme={isDark ? 'dark' : 'light'}
-                        style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                        style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
                       />
-                      <Zap size={22} color="#a855f7" strokeWidth={2.5} />
-                    </View>
-                    <View>
-                      <Text style={[styles.headerTitle, { color: colors.text }]}>Creatina</Text>
-                      <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
-                        Dosis recomendada: ~{creatineTarget}g/día
-                      </Text>
-                    </View>
+                      <X size={18} color={colors.textSecondary} />
+                    </TouchableOpacity>
                   </View>
 
-                  <TouchableOpacity
-                    onPress={onClose}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    style={[
-                      styles.closeBtn,
-                      {
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                      },
-                    ]}
-                    activeOpacity={0.7}
+                  {/* Body Content */}
+                  <ScrollView
+                    style={styles.scrollBody}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                   >
-                    <GlassView
-                      glassEffectStyle="regular"
-                      colorScheme={isDark ? 'dark' : 'light'}
-                      style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
-                    />
-                    <X size={18} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Body Content */}
-                <ScrollView
-                  style={styles.scrollBody}
-                  contentContainerStyle={styles.scrollContent}
-                  showsVerticalScrollIndicator={false}
-                >
                   {/* 1. STATS BENTO GRID (Identical to Frontend) */}
                   <View style={styles.statsGrid}>
                     {/* Días Totales */}
@@ -808,8 +815,9 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
               </View>
             </Pressable>
           </Pressable>
-        </GlassView>
-      </Modal>
+        </KeyboardAvoidingView>
+      </GlassView>
+    </Modal>
 
       {/* 4. MODAL DE EDICIÓN (Liquid Glass) */}
       {showEditModal && editingLog && (
@@ -996,6 +1004,7 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
 
 const styles = StyleSheet.create({
   modalOverlay: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -1003,7 +1012,8 @@ const styles = StyleSheet.create({
   cardWrapper: {
     width: '100%',
     maxWidth: 440,
-    maxHeight: '90%',
+    height: '86%',
+    maxHeight: 740,
     borderRadius: 32,
     overflow: 'hidden',
     borderWidth: 1,
@@ -1021,11 +1031,14 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: 1,
     marginBottom: 14,
+    flexShrink: 0,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+    marginRight: 8,
   },
   headerIconBadge: {
     width: 44,
@@ -1036,6 +1049,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
     position: 'relative',
+    flexShrink: 0,
   },
   headerTitle: {
     fontSize: 20,
@@ -1056,6 +1070,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
     position: 'relative',
+    flexShrink: 0,
   },
   scrollBody: {
     flex: 1,
