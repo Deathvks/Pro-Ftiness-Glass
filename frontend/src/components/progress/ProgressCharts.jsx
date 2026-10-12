@@ -378,9 +378,16 @@ export const BodyWeightChart = ({ data, axisColor }) => {
                 {stats?.avg && (
                     <ReferenceLine
                         y={stats.avg}
-                        stroke="rgba(16, 185, 129, 0.4)"
+                        stroke="rgba(16, 185, 129, 0.45)"
                         strokeDasharray="4 4"
                         strokeWidth={1.5}
+                        label={{
+                            value: `Media: ${stats.avg} kg`,
+                            fill: '#10b981',
+                            fontSize: 10,
+                            fontWeight: 800,
+                            position: 'insideTopRight'
+                        }}
                     />
                 )}
                 <Area
@@ -437,6 +444,22 @@ export const ExerciseChart = ({ data, axisColor, exerciseName }) => {
             periods={['1M', '3M', '6M', '1A', 'Todo']}
             activePeriod={period}
             onPeriodChange={setPeriod}
+            headerExtra={
+                <div className="hidden sm:flex items-center gap-3 text-[10px] font-bold text-text-muted bg-black/5 dark:bg-white/5 px-2.5 py-1 rounded-full ring-1 ring-black/5 dark:ring-white/10">
+                    <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-1 bg-[#818cf8] rounded-full inline-block" />
+                        Peso Real
+                    </span>
+                    <span className="flex items-center gap-1.5 text-rose-500">
+                        <span className="w-2.5 h-0.5 border-b-2 border-dashed border-[#f43f5e] inline-block" />
+                        1RM Estimado
+                    </span>
+                    <span className="flex items-center gap-1.5 text-amber-500">
+                        <span className="w-2.5 h-0.5 border-b-2 border-dotted border-amber-500 inline-block" />
+                        Récord PR
+                    </span>
+                </div>
+            }
             kpis={
                 stats
                     ? [
@@ -489,9 +512,16 @@ export const ExerciseChart = ({ data, axisColor, exerciseName }) => {
                 {stats?.prWeight > 0 && (
                     <ReferenceLine
                         y={stats.prWeight}
-                        stroke="rgba(245, 158, 11, 0.4)"
+                        stroke="rgba(245, 158, 11, 0.55)"
                         strokeDasharray="4 4"
                         strokeWidth={1.5}
+                        label={{
+                            value: `PR: ${stats.prWeight} kg`,
+                            fill: '#f59e0b',
+                            fontSize: 10,
+                            fontWeight: 800,
+                            position: 'insideTopRight'
+                        }}
                     />
                 )}
                 <Line
@@ -612,9 +642,16 @@ export const NutritionCharts = ({ chartData: d, axisColor: c, isLoading }) => {
                     {calStats?.avg && (
                         <ReferenceLine
                             y={calStats.avg}
-                            stroke="rgba(251, 191, 36, 0.4)"
+                            stroke="rgba(251, 191, 36, 0.45)"
                             strokeDasharray="4 4"
                             strokeWidth={1.5}
+                            label={{
+                                value: `Media: ${calStats.avg} kcal`,
+                                fill: '#f59e0b',
+                                fontSize: 10,
+                                fontWeight: 800,
+                                position: 'insideTopRight'
+                            }}
                         />
                     )}
                     <Bar
@@ -740,9 +777,16 @@ export const NutritionCharts = ({ chartData: d, axisColor: c, isLoading }) => {
                     <Tooltip content={<ModernTooltip />} cursor={{ stroke: 'rgba(56, 189, 248, 0.3)', strokeWidth: 1.5, strokeDasharray: '4 4' }} />
                     <ReferenceLine
                         y={2000}
-                        stroke="rgba(56, 189, 248, 0.4)"
+                        stroke="rgba(56, 189, 248, 0.45)"
                         strokeDasharray="4 4"
                         strokeWidth={1.5}
+                        label={{
+                            value: 'Meta: 2.000 ml',
+                            fill: '#38bdf8',
+                            fontSize: 10,
+                            fontWeight: 800,
+                            position: 'insideTopRight'
+                        }}
                     />
                     <Area
                         type="monotone"
