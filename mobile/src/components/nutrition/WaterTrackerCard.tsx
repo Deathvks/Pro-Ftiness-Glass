@@ -73,14 +73,32 @@ export const WaterTrackerCard: React.FC<WaterTrackerCardProps> = ({
                 },
               ]}
             >
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
+              />
               <Edit2 size={16} color="#3b82f6" />
             </View>
           </View>
 
           {/* Center Graphic */}
           <View style={styles.centerSection}>
-            <View style={styles.iconContainer}>
-              <Droplet size={48} color="#3b82f6" fill="#3b82f6" />
+            <View
+              style={[
+                styles.iconContainer,
+                {
+                  backgroundColor: isDark ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.08)',
+                  borderColor: isDark ? 'rgba(59, 130, 246, 0.28)' : 'rgba(59, 130, 246, 0.2)',
+                },
+              ]}
+            >
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: 22 }]}
+              />
+              <Droplet size={38} color="#3b82f6" fill="#3b82f6" />
             </View>
 
             <View style={styles.textRow}>
@@ -94,9 +112,15 @@ export const WaterTrackerCard: React.FC<WaterTrackerCardProps> = ({
                 styles.progressBarBg,
                 {
                   backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.04)',
                 },
               ]}
             >
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: 5 }]}
+              />
               <View
                 style={[
                   styles.progressBarFill,
@@ -167,6 +191,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+    overflow: 'hidden',
+    position: 'relative',
   },
   centerSection: {
     alignItems: 'center',
@@ -175,6 +201,14 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   iconContainer: {
+    width: 62,
+    height: 62,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
     marginVertical: 4,
   },
   textRow: {
@@ -197,6 +231,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     overflow: 'hidden',
     marginTop: 6,
+    borderWidth: 1,
+    position: 'relative',
   },
   progressBarFill: {
     height: '100%',

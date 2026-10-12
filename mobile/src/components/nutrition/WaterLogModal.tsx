@@ -71,58 +71,84 @@ export const WaterLogModal: React.FC<WaterLogModalProps> = ({
               justifyContent: 'center',
               alignItems: 'center',
               padding: 20,
-              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.25)',
+              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.45)' : 'rgba(255, 255, 255, 0.25)',
             },
           ]}
           onPress={onClose}
         >
-          <Pressable onPress={e => e.stopPropagation()} style={[styles.cardWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Pressable
+            onPress={e => e.stopPropagation()}
+            style={[
+              styles.cardWrapper,
+              {
+                backgroundColor: colors.card,
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
+                borderWidth: 1,
+              },
+            ]}
+          >
             <GlassView
               glassEffectStyle="regular"
               colorScheme={isDark ? 'dark' : 'light'}
               style={StyleSheet.absoluteFill}
             />
             <View style={styles.card}>
-              {/* Close Button */}
+              {/* Close Button (Liquid Glass) */}
               <TouchableOpacity
                 onPress={onClose}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 style={[
                   styles.closeButton,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
                   },
                 ]}
                 activeOpacity={0.7}
               >
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 18 }]}
+                />
                 <X size={18} color={colors.textSecondary} />
               </TouchableOpacity>
 
-              {/* Icon badge */}
+              {/* Icon badge (Liquid Glass) */}
               <View
                 style={[
                   styles.iconBadge,
                   {
-                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                    borderColor: 'rgba(59, 130, 246, 0.3)',
+                    backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)',
+                    borderColor: isDark ? 'rgba(59, 130, 246, 0.35)' : 'rgba(59, 130, 246, 0.25)',
                   },
                 ]}
               >
-                <Droplets size={32} color="#3b82f6" strokeWidth={1.7} />
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 22 }]}
+                />
+                <Droplets size={32} color="#3b82f6" strokeWidth={1.8} />
               </View>
 
               <Text style={[styles.title, { color: colors.text }]}>Registro de Agua</Text>
 
-              {/* Mode Switcher */}
+              {/* Mode Switcher (Liquid Glass Capsule) */}
               <View
                 style={[
                   styles.modeSwitcher,
                   {
-                    backgroundColor: isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.06)',
-                    borderColor: colors.border,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
                   },
                 ]}
               >
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 9999 }]}
+                />
                 <TouchableOpacity
                   onPress={() => {
                     try {
@@ -134,6 +160,11 @@ export const WaterLogModal: React.FC<WaterLogModalProps> = ({
                     styles.modeBtn,
                     mode === 'ml' && {
                       backgroundColor: colors.tint,
+                      shadowColor: colors.tint,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.35,
+                      shadowRadius: 5,
+                      elevation: 3,
                     },
                   ]}
                   activeOpacity={0.8}
@@ -159,6 +190,11 @@ export const WaterLogModal: React.FC<WaterLogModalProps> = ({
                     styles.modeBtn,
                     mode === 'glasses' && {
                       backgroundColor: colors.tint,
+                      shadowColor: colors.tint,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.35,
+                      shadowRadius: 5,
+                      elevation: 3,
                     },
                   ]}
                   activeOpacity={0.8}
@@ -174,7 +210,7 @@ export const WaterLogModal: React.FC<WaterLogModalProps> = ({
                 </TouchableOpacity>
               </View>
 
-              {/* Main Adjuster Row */}
+              {/* Main Adjuster Row (Liquid Glass Buttons) */}
               <View style={styles.counterRow}>
                 <TouchableOpacity
                   onPress={() => (mode === 'ml' ? handleAdjustMl(-250) : handleAdjustGlasses(-1))}
@@ -182,11 +218,16 @@ export const WaterLogModal: React.FC<WaterLogModalProps> = ({
                     styles.adjustCircle,
                     {
                       backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                      borderColor: colors.border,
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
                     },
                   ]}
                   activeOpacity={0.7}
                 >
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 25 }]}
+                  />
                   <Minus size={22} color={colors.text} strokeWidth={2.5} />
                 </TouchableOpacity>
 
@@ -212,16 +253,21 @@ export const WaterLogModal: React.FC<WaterLogModalProps> = ({
                     styles.adjustCircle,
                     {
                       backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-                      borderColor: colors.border,
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
                     },
                   ]}
                   activeOpacity={0.7}
                 >
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 25 }]}
+                  />
                   <Plus size={22} color={colors.text} strokeWidth={2.5} />
                 </TouchableOpacity>
               </View>
 
-              {/* Quick Add Presets */}
+              {/* Quick Add Presets (Liquid Glass Chips) */}
               <View style={styles.presetsGrid}>
                 {mode === 'ml'
                   ? [250, 500, 750].map(amount => (
@@ -231,13 +277,18 @@ export const WaterLogModal: React.FC<WaterLogModalProps> = ({
                         style={[
                           styles.presetBtn,
                           {
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                            borderColor: colors.border,
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.6)',
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
                           },
                         ]}
                         activeOpacity={0.7}
                       >
-                        <Text style={[styles.presetText, { color: colors.textSecondary }]}>
+                        <GlassView
+                          glassEffectStyle="regular"
+                          colorScheme={isDark ? 'dark' : 'light'}
+                          style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                        />
+                        <Text style={[styles.presetText, { color: colors.text }]}>
                           +{amount}
                         </Text>
                       </TouchableOpacity>
@@ -249,14 +300,19 @@ export const WaterLogModal: React.FC<WaterLogModalProps> = ({
                         style={[
                           styles.presetBtn,
                           {
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                            borderColor: colors.border,
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.6)',
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
                           },
                         ]}
                         activeOpacity={0.7}
                       >
+                        <GlassView
+                          glassEffectStyle="regular"
+                          colorScheme={isDark ? 'dark' : 'light'}
+                          style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                        />
                         <View style={styles.presetWithIcon}>
-                          <Text style={[styles.presetText, { color: colors.textSecondary }]}>
+                          <Text style={[styles.presetText, { color: colors.text }]}>
                             +{amount}
                           </Text>
                           <GlassWater size={13} color={colors.textSecondary} />
@@ -265,23 +321,41 @@ export const WaterLogModal: React.FC<WaterLogModalProps> = ({
                     ))}
               </View>
 
-              {/* Save Button */}
+              {/* Save Button (Liquid Glass Action) */}
               <TouchableOpacity
                 onPress={handleSave}
                 disabled={isLoading}
+                activeOpacity={0.75}
                 style={[
                   styles.saveBtn,
                   {
-                    backgroundColor: colors.tint,
+                    borderWidth: 1,
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
                     opacity: isLoading ? 0.6 : 1,
                   },
                 ]}
-                activeOpacity={0.85}
               >
+                <GlassView
+                  glassEffectStyle="regular"
+                  colorScheme={isDark ? 'dark' : 'light'}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                />
+                <View
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      backgroundColor: colors.tint + (isDark ? '25' : '18'),
+                      borderRadius: 20,
+                    },
+                  ]}
+                />
                 {isLoading ? (
-                  <ActivityIndicator size="small" color={getContrastTextColor(colors.tint)} />
+                  <ActivityIndicator size="small" color={colors.tint} />
                 ) : (
-                  <Text style={[styles.saveBtnText, { color: getContrastTextColor(colors.tint) }]}>Guardar Registro</Text>
+                  <Text style={[styles.saveBtnText, { color: colors.tint }]}>
+                    Guardar Registro
+                  </Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -302,28 +376,31 @@ const styles = StyleSheet.create({
   card: {
     padding: 24,
     borderRadius: 32,
-    borderWidth: 1,
     alignItems: 'center',
   },
   closeButton: {
     position: 'absolute',
     top: 18,
     right: 18,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconBadge: {
-    width: 60,
-    height: 60,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+    overflow: 'hidden',
+  },
+  iconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
     marginBottom: 14,
     marginTop: 6,
+    overflow: 'hidden',
+    position: 'relative',
   },
   title: {
     fontSize: 20,
@@ -333,16 +410,18 @@ const styles = StyleSheet.create({
   },
   modeSwitcher: {
     flexDirection: 'row',
-    borderRadius: 20,
+    borderRadius: 9999,
     padding: 3,
     borderWidth: 1,
     marginBottom: 24,
     width: 220,
+    overflow: 'hidden',
+    position: 'relative',
   },
   modeBtn: {
     flex: 1,
-    paddingVertical: 7,
-    borderRadius: 17,
+    paddingVertical: 8,
+    borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -365,6 +444,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
   },
   counterDisplay: {
     minWidth: 120,
@@ -394,11 +475,13 @@ const styles = StyleSheet.create({
   },
   presetBtn: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
   },
   presetWithIcon: {
     flexDirection: 'row',
@@ -406,21 +489,22 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   presetText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   saveBtn: {
     width: '100%',
-    paddingVertical: 14,
+    height: 52,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
   },
   saveBtnText: {
-    color: '#ffffff',
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -0.2,
   },
 });
