@@ -90,6 +90,8 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
   const favoriteMeals = useAppStore(state => state.favoriteMeals) || [];
   const recentMeals = useAppStore(state => state.recentMeals) || [];
   const deleteFavoriteMeal = useAppStore(state => state.deleteFavoriteMeal);
+  const addFavoriteMeal = useAppStore(state => state.addFavoriteMeal);
+  const [isTogglingFav, setIsTogglingFav] = useState(false);
 
   // Active tab state
   const [activeTab, setActiveTab] = useState<TabType>(logToEdit ? 'manual' : 'search');
@@ -258,10 +260,90 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
       ? String(food.serving_weight_g)
       : '100';
 
+    const foodName = (food.name || food.description || '').toLowerCase().trim();
+    const existingFav = favoriteMeals.find(
+      (f: any) =>
+        (f.name || f.description || '').toLowerCase().trim() === foodName ||
+        (food.id && f.id === food.id)
+    );
+
     setSelectedFoodForDetail(food);
     setDetailWeight(defaultW);
-    setDetailIsFavorite(Boolean(food.isFavorite));
+    setDetailIsFavorite(Boolean(existingFav || food.isFavorite));
     setEditingCartTempId(cartTempId || null);
+  };
+
+  // Toggle favorite immediately from detail view without needing to add food to meal
+  const handleToggleDetailFavorite = async () => {
+    if (!selectedFoodForDetail || isTogglingFav) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+
+    const foodName = (selectedFoodForDetail.name || selectedFoodForDetail.description || 'Alimento').trim();
+    const existingFav = favoriteMeals.find(
+      (f: any) =>
+        (f.name || f.description || '').toLowerCase().trim() === foodName.toLowerCase() ||
+        (selectedFoodForDetail.id && f.id === selectedFoodForDetail.id)
+    );
+
+    setIsTogglingFav(true);
+    try {
+      if (detailIsFavorite && existingFav) {
+        setDetailIsFavorite(false);
+        if (editingCartTempId) {
+          setItemsToAdd(prev =>
+            prev.map(item => (item.tempId === editingCartTempId ? { ...item, isFavorite: false } : item))
+          );
+        }
+        if (deleteFavoriteMeal) {
+          await deleteFavoriteMeal(existingFav.id);
+        }
+      } else {
+        setDetailIsFavorite(true);
+        if (editingCartTempId) {
+          setItemsToAdd(prev =>
+            prev.map(item => (item.tempId === editingCartTempId ? { ...item, isFavorite: true } : item))
+          );
+        }
+
+        const w = parseFloat(detailWeight) || parseFloat(selectedFoodForDetail.weight_g) || 100;
+        const refWeight = parseFloat(selectedFoodForDetail.weight_g) || 100;
+        const factor = w / refWeight;
+
+        const favPayload = {
+          name: foodName,
+          calories: calculatedDetailMacros?.calories ?? Math.round((parseFloat(selectedFoodForDetail.calories) || 0) * factor),
+          protein_g:
+            calculatedDetailMacros?.protein_g ??
+            parseFloat(((parseFloat(selectedFoodForDetail.protein_g || selectedFoodForDetail.protein) || 0) * factor).toFixed(1)),
+          carbs_g:
+            calculatedDetailMacros?.carbs_g ??
+            parseFloat(((parseFloat(selectedFoodForDetail.carbs_g || selectedFoodForDetail.carbs) || 0) * factor).toFixed(1)),
+          fats_g:
+            calculatedDetailMacros?.fats_g ??
+            parseFloat(((parseFloat(selectedFoodForDetail.fats_g || selectedFoodForDetail.fat) || 0) * factor).toFixed(1)),
+          sugars_g:
+            calculatedDetailMacros?.sugars_g ??
+            parseFloat(((parseFloat(selectedFoodForDetail.sugars_g || selectedFoodForDetail.sugar_g) || 0) * factor).toFixed(1)),
+          weight_g: w,
+          image_url: selectedFoodForDetail.image_url,
+          calories_per_100g: baseDetailValues?.calories ?? selectedFoodForDetail.calories_per_100g,
+          protein_per_100g: baseDetailValues?.protein ?? selectedFoodForDetail.protein_per_100g,
+          carbs_per_100g: baseDetailValues?.carbs ?? selectedFoodForDetail.carbs_per_100g,
+          fat_per_100g: baseDetailValues?.fat ?? selectedFoodForDetail.fat_per_100g ?? selectedFoodForDetail.fats_per_100g,
+          sugars_per_100g: baseDetailValues?.sugars ?? selectedFoodForDetail.sugars_per_100g,
+        };
+
+        if (addFavoriteMeal) {
+          await addFavoriteMeal(favPayload);
+        }
+      }
+    } catch (err) {
+      console.warn('Error cambiando favorito:', err);
+    } finally {
+      setIsTogglingFav(false);
+    }
   };
 
   // Add / Save from Detail view into cart or update single item
@@ -382,13 +464,48 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
     setItemsToAdd(prev => prev.filter(item => item.tempId !== tempId));
   };
 
-  const handleToggleCartFavorite = (tempId: string) => {
+  const handleToggleCartFavorite = async (tempId: string) => {
     try {
       Haptics.selectionAsync();
     } catch {}
+    const targetItem = itemsToAdd.find(item => item.tempId === tempId);
+    if (!targetItem) return;
+
+    const nextFavState = !targetItem.isFavorite;
     setItemsToAdd(prev =>
-      prev.map(item => (item.tempId === tempId ? { ...item, isFavorite: !item.isFavorite } : item))
+      prev.map(item => (item.tempId === tempId ? { ...item, isFavorite: nextFavState } : item))
     );
+
+    const foodName = (targetItem.name || targetItem.description || 'Alimento').trim();
+    const existingFav = favoriteMeals.find(
+      (f: any) => (f.name || f.description || '').toLowerCase().trim() === foodName.toLowerCase()
+    );
+
+    try {
+      if (!nextFavState && existingFav) {
+        if (deleteFavoriteMeal) await deleteFavoriteMeal(existingFav.id);
+      } else if (nextFavState && !existingFav) {
+        if (addFavoriteMeal) {
+          await addFavoriteMeal({
+            name: foodName,
+            calories: targetItem.calories,
+            protein_g: targetItem.protein_g,
+            carbs_g: targetItem.carbs_g,
+            fats_g: targetItem.fats_g,
+            sugars_g: targetItem.sugars_g,
+            weight_g: targetItem.weight_g,
+            image_url: targetItem.image_url,
+            calories_per_100g: targetItem.calories_per_100g,
+            protein_per_100g: targetItem.protein_per_100g,
+            carbs_per_100g: targetItem.carbs_per_100g,
+            fat_per_100g: targetItem.fat_per_100g,
+            sugars_per_100g: targetItem.sugars_per_100g,
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Error cambiando favorito en lista temporal:', err);
+    }
   };
 
   const handleSaveAllCart = async () => {
@@ -679,26 +796,36 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           ) : null}
                         </View>
 
+                        {/* Favorite button with immediate toggle and Liquid Glass styling */}
                         <TouchableOpacity
-                          onPress={() => setDetailIsFavorite(prev => !prev)}
+                          onPress={handleToggleDetailFavorite}
+                          disabled={isTogglingFav}
                           style={[
                             styles.detailFavBtn,
                             {
                               backgroundColor: detailIsFavorite
-                                ? colors.tint + '20'
+                                ? 'rgba(245, 158, 11, 0.22)'
                                 : isDark
                                 ? 'rgba(255, 255, 255, 0.08)'
                                 : 'rgba(0, 0, 0, 0.04)',
-                              borderColor: detailIsFavorite ? colors.tint + '50' : 'transparent',
+                              borderColor: detailIsFavorite
+                                ? 'rgba(245, 158, 11, 0.5)'
+                                : isDark
+                                ? 'rgba(255, 255, 255, 0.16)'
+                                : 'rgba(0, 0, 0, 0.08)',
                             },
                           ]}
                           activeOpacity={0.7}
                         >
-                          <Star
-                            size={20}
-                            color={detailIsFavorite ? '#f59e0b' : colors.textMuted}
-                            fill={detailIsFavorite ? '#f59e0b' : 'transparent'}
-                          />
+                          {isTogglingFav ? (
+                            <ActivityIndicator size="small" color="#f59e0b" />
+                          ) : (
+                            <Star
+                              size={20}
+                              color={detailIsFavorite ? '#f59e0b' : colors.textSecondary}
+                              fill={detailIsFavorite ? '#f59e0b' : 'transparent'}
+                            />
+                          )}
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -708,8 +835,8 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                       style={[
                         styles.weightCard,
                         {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.75)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)',
+                          borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
                         },
                       ]}
                     >
@@ -733,27 +860,39 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                         <Text style={[styles.weightUnit, { color: colors.tint }]}>g</Text>
                       </View>
 
-                      {/* Quick Weight Chips */}
+                      {/* Quick Weight Chips - LIQUID GLASS OPTIONS */}
                       <View style={styles.quickChipsRow}>
                         <TouchableOpacity
-                          onPress={() => setDetailWeight('100')}
+                          onPress={() => {
+                            try {
+                              Haptics.selectionAsync();
+                            } catch {}
+                            setDetailWeight('100');
+                          }}
                           style={[
                             styles.chipBtn,
-                            detailWeight === '100' && {
-                              backgroundColor: colors.tint,
-                              borderColor: colors.tint,
-                            },
-                            {
-                              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                            },
+                            detailWeight === '100'
+                              ? {
+                                  backgroundColor: colors.tint,
+                                  borderColor: colors.tint,
+                                  shadowColor: colors.tint,
+                                  shadowOffset: { width: 0, height: 3 },
+                                  shadowOpacity: isDark ? 0.45 : 0.25,
+                                  shadowRadius: 8,
+                                  elevation: 4,
+                                }
+                              : {
+                                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.7)',
+                                  borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                                },
                           ]}
-                          activeOpacity={0.7}
+                          activeOpacity={0.75}
                         >
                           <Text
                             style={[
                               styles.chipText,
                               {
-                                color: detailWeight === '100' ? getContrastTextColor(colors.tint) : colors.textSecondary,
+                                color: detailWeight === '100' ? getContrastTextColor(colors.tint) : colors.text,
                               },
                             ]}
                           >
@@ -763,18 +902,30 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
 
                         {selectedFoodForDetail.serving_weight_g && selectedFoodForDetail.serving_weight_g !== 100 && (
                           <TouchableOpacity
-                            onPress={() => setDetailWeight(String(selectedFoodForDetail.serving_weight_g))}
+                            onPress={() => {
+                              try {
+                                Haptics.selectionAsync();
+                              } catch {}
+                              setDetailWeight(String(selectedFoodForDetail.serving_weight_g));
+                            }}
                             style={[
                               styles.chipBtn,
-                              detailWeight === String(selectedFoodForDetail.serving_weight_g) && {
-                                backgroundColor: colors.tint,
-                                borderColor: colors.tint,
-                              },
-                              {
-                                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                              },
+                              detailWeight === String(selectedFoodForDetail.serving_weight_g)
+                                ? {
+                                    backgroundColor: colors.tint,
+                                    borderColor: colors.tint,
+                                    shadowColor: colors.tint,
+                                    shadowOffset: { width: 0, height: 3 },
+                                    shadowOpacity: isDark ? 0.45 : 0.25,
+                                    shadowRadius: 8,
+                                    elevation: 4,
+                                  }
+                                : {
+                                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.7)',
+                                    borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                                  },
                             ]}
-                            activeOpacity={0.7}
+                            activeOpacity={0.75}
                           >
                             <Text
                               style={[
@@ -783,7 +934,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                                   color:
                                     detailWeight === String(selectedFoodForDetail.serving_weight_g)
                                       ? getContrastTextColor(colors.tint)
-                                      : colors.textSecondary,
+                                      : colors.text,
                                 },
                               ]}
                             >
@@ -793,24 +944,36 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                         )}
 
                         <TouchableOpacity
-                          onPress={() => setDetailWeight('150')}
+                          onPress={() => {
+                            try {
+                              Haptics.selectionAsync();
+                            } catch {}
+                            setDetailWeight('150');
+                          }}
                           style={[
                             styles.chipBtn,
-                            detailWeight === '150' && {
-                              backgroundColor: colors.tint,
-                              borderColor: colors.tint,
-                            },
-                            {
-                              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                            },
+                            detailWeight === '150'
+                              ? {
+                                  backgroundColor: colors.tint,
+                                  borderColor: colors.tint,
+                                  shadowColor: colors.tint,
+                                  shadowOffset: { width: 0, height: 3 },
+                                  shadowOpacity: isDark ? 0.45 : 0.25,
+                                  shadowRadius: 8,
+                                  elevation: 4,
+                                }
+                              : {
+                                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.7)',
+                                  borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                                },
                           ]}
-                          activeOpacity={0.7}
+                          activeOpacity={0.75}
                         >
                           <Text
                             style={[
                               styles.chipText,
                               {
-                                color: detailWeight === '150' ? getContrastTextColor(colors.tint) : colors.textSecondary,
+                                color: detailWeight === '150' ? getContrastTextColor(colors.tint) : colors.text,
                               },
                             ]}
                           >
@@ -819,24 +982,36 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                          onPress={() => setDetailWeight('200')}
+                          onPress={() => {
+                            try {
+                              Haptics.selectionAsync();
+                            } catch {}
+                            setDetailWeight('200');
+                          }}
                           style={[
                             styles.chipBtn,
-                            detailWeight === '200' && {
-                              backgroundColor: colors.tint,
-                              borderColor: colors.tint,
-                            },
-                            {
-                              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                            },
+                            detailWeight === '200'
+                              ? {
+                                  backgroundColor: colors.tint,
+                                  borderColor: colors.tint,
+                                  shadowColor: colors.tint,
+                                  shadowOffset: { width: 0, height: 3 },
+                                  shadowOpacity: isDark ? 0.45 : 0.25,
+                                  shadowRadius: 8,
+                                  elevation: 4,
+                                }
+                              : {
+                                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.7)',
+                                  borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                                },
                           ]}
-                          activeOpacity={0.7}
+                          activeOpacity={0.75}
                         >
                           <Text
                             style={[
                               styles.chipText,
                               {
-                                color: detailWeight === '200' ? getContrastTextColor(colors.tint) : colors.textSecondary,
+                                color: detailWeight === '200' ? getContrastTextColor(colors.tint) : colors.text,
                               },
                             ]}
                           >
@@ -846,21 +1021,21 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                       </View>
                     </View>
 
-                    {/* Recalculated Macros Preview */}
+                    {/* Recalculated Macros Preview - Liquid Glass */}
                     <View style={styles.recalcWrapper}>
                       <View
                         style={[
                           styles.recalcCaloriesCard,
                           {
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.75)',
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)',
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
                           },
                         ]}
                       >
                         <Text style={[styles.recalcCalVal, { color: colors.text }]}>
                           {calculatedDetailMacros.calories}
                         </Text>
-                        <Text style={[styles.recalcCalLabel, { color: colors.textMuted }]}>KCAL TOTALES</Text>
+                        <Text style={[styles.recalcCalLabel, { color: colors.textSecondary }]}>KCAL TOTALES</Text>
                         {baseDetailValues?.calories ? (
                           <Text style={[styles.recalcCalPer100, { color: colors.tint }]}>
                             ({Math.round(baseDetailValues.calories)} / 100g)
@@ -873,8 +1048,8 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           style={[
                             styles.recalcMacroPill,
                             {
-                              backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.05)',
-                              borderColor: 'rgba(239, 68, 68, 0.25)',
+                              backgroundColor: isDark ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.06)',
+                              borderColor: 'rgba(239, 68, 68, 0.3)',
                             },
                           ]}
                         >
@@ -888,8 +1063,8 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           style={[
                             styles.recalcMacroPill,
                             {
-                              backgroundColor: isDark ? 'rgba(59, 130, 246, 0.08)' : 'rgba(59, 130, 246, 0.05)',
-                              borderColor: 'rgba(59, 130, 246, 0.25)',
+                              backgroundColor: isDark ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.06)',
+                              borderColor: 'rgba(59, 130, 246, 0.3)',
                             },
                           ]}
                         >
@@ -903,8 +1078,8 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           style={[
                             styles.recalcMacroPill,
                             {
-                              backgroundColor: isDark ? 'rgba(34, 197, 94, 0.08)' : 'rgba(34, 197, 94, 0.05)',
-                              borderColor: 'rgba(34, 197, 94, 0.25)',
+                              backgroundColor: isDark ? 'rgba(34, 197, 94, 0.12)' : 'rgba(34, 197, 94, 0.06)',
+                              borderColor: 'rgba(34, 197, 94, 0.3)',
                             },
                           ]}
                         >
@@ -918,8 +1093,8 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           style={[
                             styles.recalcMacroPill,
                             {
-                              backgroundColor: isDark ? 'rgba(236, 72, 153, 0.08)' : 'rgba(236, 72, 153, 0.05)',
-                              borderColor: 'rgba(236, 72, 153, 0.25)',
+                              backgroundColor: isDark ? 'rgba(236, 72, 153, 0.12)' : 'rgba(236, 72, 153, 0.06)',
+                              borderColor: 'rgba(236, 72, 153, 0.3)',
                             },
                           ]}
                         >
@@ -937,7 +1112,17 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                       disabled={isLoading}
                       style={[
                         styles.primaryActionBtn,
-                        { backgroundColor: colors.tint, opacity: isLoading ? 0.6 : 1 },
+                        {
+                          backgroundColor: colors.tint,
+                          opacity: isLoading ? 0.6 : 1,
+                          borderColor: 'rgba(255, 255, 255, 0.25)',
+                          borderWidth: 1,
+                          shadowColor: colors.tint,
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: isDark ? 0.45 : 0.25,
+                          shadowRadius: 10,
+                          elevation: 6,
+                        },
                       ]}
                       activeOpacity={0.85}
                     >
@@ -2394,9 +2579,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
   detailFavBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -2440,14 +2625,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chipBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 16,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chipText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '800',
   },
   recalcWrapper: {
     flexDirection: 'row',
@@ -2455,9 +2642,9 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   recalcCaloriesCard: {
-    width: '40%',
+    width: '42%',
     padding: 14,
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -2488,8 +2675,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingVertical: 7,
+    borderRadius: 14,
     borderWidth: 1,
   },
   recalcMacroName: {
