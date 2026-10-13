@@ -64,7 +64,7 @@ const ACCENT_MAP = {
   'mint': '#a8e6cf', 'peach': '#ffd3b6', 'rose-water': '#ffaaa5', 'lavender': '#c5a3ff',
   'baby-blue': '#a2cffe', 'sunset-pink': '#ff9a9e', 'pistachio': '#c5e1a5', 'mango': '#ffbe76',
   'lemonade': '#fdfd96', 'cherry-blossom': '#fccbcf',
-  'iris': '#5b5bd6', 'jade': '#29a383', 'ruby': '#e5465c', 'bronze': '#a17a59', 'plum': '#ab4aba',
+  'aurora': '#10b981', 'sunset': '#f43f5e', 'cyberpunk': '#8b5cf6', 'deep-ocean': '#2563eb', 'imperial-gold': '#f59e0b',
   'neutral': '#737373'
 };
 

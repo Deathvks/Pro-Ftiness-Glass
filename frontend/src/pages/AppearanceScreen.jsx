@@ -44,11 +44,11 @@ const ACCENT_OPTIONS = [
   { id: 'mango', label: 'Mango Pastel', hex: '#ffbe76', reqLevel: 10 },
   { id: 'lemonade', label: 'Limonada', hex: '#fdfd96', reqLevel: 10 },
   { id: 'cherry-blossom', label: 'Cerezo', hex: '#fccbcf', reqLevel: 10 },
-  { id: 'iris', label: 'Iris', hex: '#5b5bd6', reqLevel: 10 },
-  { id: 'jade', label: 'Jade', hex: '#29a383', reqLevel: 10 },
-  { id: 'ruby', label: 'Rubí', hex: '#e5465c', reqLevel: 10 },
-  { id: 'bronze', label: 'Bronce', hex: '#a17a59', reqLevel: 10 },
-  { id: 'plum', label: 'Ciruela', hex: '#ab4aba', reqLevel: 10 },
+  { id: 'aurora', label: 'Aurora Boreal', hex: '#10b981', gradient: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)', reqLevel: 15 },
+  { id: 'sunset', label: 'Sunset Glow', hex: '#f43f5e', gradient: 'linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)', reqLevel: 15 },
+  { id: 'cyberpunk', label: 'Cyberpunk', hex: '#8b5cf6', gradient: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)', reqLevel: 15 },
+  { id: 'deep-ocean', label: 'Océano Profundo', hex: '#2563eb', gradient: 'linear-gradient(135deg, #2563eb 0%, #00f5d4 100%)', reqLevel: 15 },
+  { id: 'imperial-gold', label: 'Oro Imperial', hex: '#f59e0b', gradient: 'linear-gradient(135deg, #f59e0b 0%, #fde047 100%)', reqLevel: 15 },
 ];
 
 const isIOS = () => {
@@ -283,6 +283,58 @@ export default function AppearanceScreen({ setView }) {
                       <span
                         className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
                         style={{
+                          background: opt.gradient || opt.hex,
+                          backgroundColor: opt.hex,
+                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
+                        }}
+                      />
+                      {accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked && (
+                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
+                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
+                        </span>
+                      )}
+                      {isLocked && (
+                        <span className="absolute inset-0 flex items-center justify-center text-black/40 dark:text-black/60 pointer-events-none drop-shadow-sm">
+                          <Lock size={16} strokeWidth={2.5} />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Nivel 15 · Degradados */}
+              <div className="flex items-center gap-2 mb-3 ml-1 mt-6">
+                <div className="scale-[0.6] origin-left -my-3">
+                  <LevelBadge level={15} size="sm" />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <h4 className="text-sm font-black text-text-primary tracking-tight">Nivel 15</h4>
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 text-accent tracking-wider">
+                    Degradados
+                  </span>
+                </div>
+              </div>
+              <div className="grid grid-cols-5 gap-3 sm:gap-4 mb-2">
+                {ACCENT_OPTIONS.filter(o => o.reqLevel === 15).map(opt => {
+                  const isLocked = (userProfile?.level || 1) < 15 && userProfile?.role !== 'admin';
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => {
+                        if (isLocked) {
+                          addToast(`Requiere nivel 15 para aplicarlo`, 'info', 'lock');
+                        } else {
+                          setAccent(opt.id);
+                        }
+                      }}
+                      title={opt.label + (isLocked ? ` (Nivel 15)` : '')}
+                      className={`group relative flex justify-center items-center w-full aspect-square ${isLocked ? 'opacity-40 grayscale-[0.3]' : ''}`}
+                    >
+                      <span
+                        className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
+                        style={{
+                          background: opt.gradient || opt.hex,
                           backgroundColor: opt.hex,
                           boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
                         }}

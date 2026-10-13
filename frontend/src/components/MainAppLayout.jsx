@@ -692,9 +692,19 @@ export default function MainAppLayout({
 
     const key5 = `accent_unlock_notified_5_${userId}`;
     const key10 = `accent_unlock_notified_10_${userId}`;
+    const key15 = `accent_unlock_notified_15_${userId}`;
 
-    // Priorizar nivel 10 sobre nivel 5
-    if (level >= 10 && localStorage.getItem(key10) !== 'true') {
+    // Priorizar nivel 15 sobre nivel 10 y nivel 5
+    if (level >= 15 && localStorage.getItem(key15) !== 'true') {
+      const timer = setTimeout(() => {
+        setAccentUnlockLevel(15);
+        setShowAccentUnlockModal(true);
+        localStorage.setItem(key15, 'true');
+        localStorage.setItem(key10, 'true');
+        localStorage.setItem(key5, 'true');
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else if (level >= 10 && localStorage.getItem(key10) !== 'true') {
       const timer = setTimeout(() => {
         setAccentUnlockLevel(10);
         setShowAccentUnlockModal(true);
@@ -1109,42 +1119,51 @@ export default function MainAppLayout({
                   <Palette className="text-accent" size={28} />
                 </div>
                 <h3 className="text-xl font-black mb-2 text-text-primary">
-                  {accentUnlockLevel === 10 ? '¡10 Colores Exclusivos!' : '¡5 Nuevos Colores!'}
+                  {accentUnlockLevel === 15 ? '¡Acentos con Degradado!' : accentUnlockLevel === 10 ? '¡5 Colores Pastel!' : '¡5 Nuevos Colores Pastel!'}
                 </h3>
               </div>
 
               {/* Contenido */}
               <div className="px-5 sm:px-6 pb-6 pt-2 text-center">
                 <p className="text-text-secondary mb-2 text-sm">
-                  {accentUnlockLevel === 10
-                    ? 'Al alcanzar el Nivel 10 has desbloqueado 10 colores exclusivos de alto nivel. ¡Junto con los del Nivel 5, ya tienes 15 opciones premium disponibles!'
+                  {accentUnlockLevel === 15
+                    ? 'Al alcanzar el Nivel 15 has desbloqueado 5 acentos exclusivos con degradado dinámico (Aurora, Sunset, Cyberpunk, Océano y Oro Imperial).'
+                    : accentUnlockLevel === 10
+                    ? 'Al alcanzar el Nivel 10 has desbloqueado 5 colores pastel adicionales para tu personalización.'
                     : 'Al alcanzar el Nivel 5 has desbloqueado 5 nuevos colores pastel para personalizar tu app.'}
                 </p>
                 <p className="text-text-muted text-xs mb-5">
                   Ve a <strong>Hub → Personalización</strong> para aplicarlos.
                 </p>
                 <div className="flex gap-2.5 justify-center mb-6 flex-wrap">
-                  {accentUnlockLevel >= 5 && (
+                  {accentUnlockLevel === 15 ? (
                     <>
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#a8e6cf' }} title="Menta Suave" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffd3b6' }} title="Melocotón" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffaaa5' }} title="Agua de Rosas" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#c5a3ff' }} title="Lavanda" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#a2cffe' }} title="Azul Bebé" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)' }} title="Aurora Boreal" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)' }} title="Sunset Glow" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)' }} title="Cyberpunk" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: 'linear-gradient(135deg, #2563eb 0%, #00f5d4 100%)' }} title="Océano Profundo" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #fde047 100%)' }} title="Oro Imperial" />
                     </>
-                  )}
-                  {accentUnlockLevel >= 10 && (
+                  ) : (
                     <>
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ff9a9e' }} title="Rosa Atardecer" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#c5e1a5' }} title="Pistacho" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffbe76' }} title="Mango" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fdfd96' }} title="Limonada" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fccbcf' }} title="Flor de Cerezo" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#5b5bd6' }} title="Iris" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#29a383' }} title="Jade" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#e5465c' }} title="Rubí" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#a17a59' }} title="Bronce" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ab4aba' }} title="Ciruela" />
+                      {accentUnlockLevel >= 5 && (
+                        <>
+                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#a8e6cf' }} title="Menta Suave" />
+                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffd3b6' }} title="Melocotón" />
+                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffaaa5' }} title="Agua de Rosas" />
+                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#c5a3ff' }} title="Lavanda" />
+                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#a2cffe' }} title="Azul Bebé" />
+                        </>
+                      )}
+                      {accentUnlockLevel >= 10 && (
+                        <>
+                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ff9a9e' }} title="Rosa Atardecer" />
+                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#c5e1a5' }} title="Pistacho" />
+                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffbe76' }} title="Mango" />
+                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fdfd96' }} title="Limonada" />
+                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fccbcf' }} title="Flor de Cerezo" />
+                        </>
+                      )}
                     </>
                   )}
                 </div>
