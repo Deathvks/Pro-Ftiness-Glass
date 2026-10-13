@@ -39,7 +39,8 @@ const SmartExerciseCoachModal = ({
   onClose,
   onApplyWeight,
   onApplyStrategy,
-  onNavigateAsesoria
+  onNavigateAsesoria,
+  readOnly = false
 }) => {
   const [showRirHelp, setShowRirHelp] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -99,6 +100,11 @@ const SmartExerciseCoachModal = ({
   };
 
   const handleApplySelection = () => {
+    if (readOnly) {
+      onClose();
+      return;
+    }
+
     const payload = {
       ...(activeStrategy || {}),
       suggestedWeight: activeSuggestedWeight,
@@ -160,10 +166,16 @@ const SmartExerciseCoachModal = ({
                     <span>{trend.badgeText}</span>
                   </span>
                 )}
+
+                {readOnly && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-black/5 dark:bg-white/10 text-text-secondary">
+                    <span>Guía de Progreso</span>
+                  </span>
+                )}
               </div>
 
               <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight truncate">
-                {exercise.name}
+                {exercise.displayName || exercise.name}
               </h2>
             </div>
 
@@ -472,7 +484,7 @@ const SmartExerciseCoachModal = ({
             {strategyOptions && strategyOptions.length > 0 && (
               <div className="space-y-2">
                 <span className="text-[11px] font-black uppercase tracking-wider text-text-muted block px-1">
-                  Elige cómo quieres enfocar el ejercicio hoy:
+                  {readOnly ? 'Estrategias recomendadas para tus próximas sesiones:' : 'Elige cómo quieres enfocar el ejercicio hoy:'}
                 </span>
 
                 <div className="grid grid-cols-1 gap-2">
@@ -582,30 +594,44 @@ const SmartExerciseCoachModal = ({
 
           {/* Footer Buttons */}
           <div className="p-4 sm:p-5 border-t border-black/5 dark:border-white/10 bg-bg-secondary flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleApplySelection}
-              className="flex-1 py-3.5 px-4 rounded-[20px] bg-accent hover:brightness-110 active:scale-95 text-accent-contrast font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-accent/30 transition-all"
-            >
-              <Check size={18} strokeWidth={3} />
-              <span>
-                {activeSuggestedWeight !== null 
-                  ? (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
-                      ? `Aplicar ${activeSuggestedSets} series con ${activeSuggestedWeight} kg`
-                      : `Aplicar ${activeSuggestedWeight} kg (${activeSuggestedReps} reps)`)
-                  : (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
-                      ? `Aplicar ${activeSuggestedSets} series (${activeSuggestedReps} reps)`
-                      : `Aplicar pauta (${activeSuggestedReps} reps)`)}
-              </span>
-            </button>
+            {!readOnly && (onApplyStrategy || onApplyWeight) ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleApplySelection}
+                  className="flex-1 py-3.5 px-4 rounded-[20px] bg-accent hover:brightness-110 active:scale-95 text-accent-contrast font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-accent/30 transition-all"
+                >
+                  <Check size={18} strokeWidth={3} />
+                  <span>
+                    {activeSuggestedWeight !== null 
+                      ? (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
+                          ? `Aplicar ${activeSuggestedSets} series con ${activeSuggestedWeight} kg`
+                          : `Aplicar ${activeSuggestedWeight} kg (${activeSuggestedReps} reps)`)
+                      : (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
+                          ? `Aplicar ${activeSuggestedSets} series (${activeSuggestedReps} reps)`
+                          : `Aplicar pauta (${activeSuggestedReps} reps)`)}
+                  </span>
+                </button>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="py-3.5 px-6 rounded-[20px] font-bold text-sm bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-text-primary transition-all active:scale-95"
-            >
-              Entendido
-            </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="py-3.5 px-6 rounded-[20px] font-bold text-sm bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-text-primary transition-all active:scale-95"
+                >
+                  Entendido
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full py-3.5 px-6 rounded-[20px] bg-accent hover:brightness-110 active:scale-95 text-accent-contrast font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-accent/30 transition-all"
+                style={{ color: "var(--btn-accent-text, #000)" }}
+              >
+                <Check size={18} strokeWidth={3} />
+                <span>Entendido</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -26,10 +26,16 @@ import {
     ArrowDownRight,
     Target,
     Ruler,
-    Sparkles
+    Sparkles,
+    AlertTriangle,
+    CheckCircle2,
+    ChevronRight
 } from 'lucide-react';
 import GlassCard from '../GlassCard';
 import Spinner from '../Spinner';
+import useAppStore from '../../store/useAppStore';
+import { getExerciseHistorySessions, diagnoseExerciseTrend } from '../../utils/smartProgressionCoach';
+import SmartExerciseCoachModal from '../Workout/SmartExerciseCoachModal';
 
 // --- FILTRO DE PERIODOS (APPLE PILL SEGMENTED CONTROL) ---
 export const PeriodFilter = ({ periods = ['7D', '1M', '3M', '6M', '1A', 'Todo'], activePeriod, onChange }) => {
@@ -128,9 +134,15 @@ export const ModernTooltip = ({ active, payload, label }) => {
 };
 
 // --- KPI STAT BADGE (APPLE HEALTH STYLE) ---
-const StatBadge = ({ label, value, unit, trend, isPositive, icon: Icon }) => {
+const StatBadge = ({ label, value, unit, trend, isPositive, icon: Icon, onClick, title }) => {
     return (
-        <div className="p-3 sm:p-3.5 rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 flex flex-col justify-between min-w-[110px] sm:min-w-[130px] flex-1">
+        <div 
+            onClick={onClick}
+            title={title}
+            className={`p-3 sm:p-3.5 rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 flex flex-col justify-between min-w-[110px] sm:min-w-[130px] flex-1 ${
+                onClick ? 'cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 active:scale-[0.98] transition-all' : ''
+            }`}
+        >
             <div className="flex items-center justify-between gap-1 mb-1">
                 <span className="text-[10px] font-black uppercase tracking-wider text-text-muted truncate">
                     {label}
@@ -178,6 +190,7 @@ const ChartBase = ({
     activePeriod,
     onPeriodChange,
     kpis,
+    alertsContent,
     headerExtra,
     emptyMessage = 'Sin datos suficientes',
     children
@@ -212,10 +225,17 @@ const ChartBase = ({
 
         {/* Tarjetas KPI Hero (Apple Health Style) */}
         {kpis && kpis.length > 0 && !isLoading && data?.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 mb-4">
                 {kpis.map((kpi, idx) => (
                     <StatBadge key={idx} {...kpi} />
                 ))}
+            </div>
+        )}
+
+        {/* Alertas Inteligentes / Diagnóstico (Apple Health Pills) */}
+        {alertsContent && !isLoading && data?.length > 0 && (
+            <div className="mb-4">
+                {alertsContent}
             </div>
         )}
 
@@ -454,8 +474,41 @@ export const BodyWeightChart = ({ data, axisColor }) => {
 // ============================================================
 // 2. GRÁFICA DE EJERCICIOS CON PR Y 1RM (APPLE FITNESS STYLE)
 // ============================================================
-export const ExerciseChart = ({ data, axisColor, exerciseName }) => {
+export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }) => {
     const [period, setPeriod] = useState('3M');
+    const [showSmartCoachModal, setShowSmartCoachModal] = useState(false);
+
+    const { workoutLog, userProfile, exercises } = useAppStore((state) => ({
+        workoutLog: state.workoutLog,
+        userProfile: state.userProfile,
+        exercises: state.allExercises || []
+    }));
+
+    const effectiveRawName = rawExerciseName || exerciseName;
+
+    const sessions = useMemo(() => {
+        if (!effectiveRawName || !workoutLog) return [];
+        return getExerciseHistorySessions(effectiveRawName, workoutLog);
+    }, [effectiveRawName, workoutLog]);
+
+    const trend = useMemo(() => {
+        if (!sessions || sessions.length === 0) return null;
+        return diagnoseExerciseTrend(sessions);
+    }, [sessions]);
+
+    const coachExerciseObject = useMemo(() => {
+        const raw = effectiveRawName;
+        const match = exercises.find(
+            (e) => e.name?.toLowerCase().trim() === raw?.toLowerCase().trim()
+        );
+        return {
+            ...(match || {}),
+            name: raw,
+            displayName: exerciseName || raw,
+            sets: match?.sets || 3,
+            reps: match?.reps || '10'
+        };
+    }, [effectiveRawName, exerciseName, exercises]);
 
     const sortedData = useMemo(() => {
         if (!data || !data.length) return [];
@@ -480,122 +533,279 @@ export const ExerciseChart = ({ data, axisColor, exerciseName }) => {
         return { currentWeight, prWeight, max1RM, gain };
     }, [filteredData]);
 
+    const alerts = useMemo(() => {
+        if (!trend && (!sessions || sessions.length === 0)) return [];
+        const list = [];
+
+        // 1. Detección de Meseta / Carga Constante
+        if (trend?.status === 'stagnant') {
+            list.push({
+                id: 'stagnant',
+                icon: AlertTriangle,
+                badge: 'Meseta detectada',
+                title: trend.weeksStagnant > 1
+                    ? `Carga constante (${trend.weeksStagnant} semanas)`
+                    : 'Mismo peso en sesiones recientes',
+                subtitle: 'Toca para ver recomendaciones de sobrecarga para avanzar',
+                colorClass: 'bg-amber-500/10 hover:bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-600 dark:text-amber-400',
+                badgeClass: 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+            });
+            list.push({
+                id: 'plateau_solution',
+                icon: Sparkles,
+                badge: 'Solución Progresiva',
+                title: 'Estrategia de superación lista',
+                subtitle: 'Micro-incrementos o variación de repeticiones para desbloquear tu avance',
+                colorClass: 'bg-accent/10 hover:bg-accent/15 ring-1 ring-accent/30 text-accent',
+                badgeClass: 'bg-accent/20 text-accent'
+            });
+        }
+        // 2. Detección de Fatiga / Descenso de Rendimiento
+        else if (trend?.status === 'decreasing') {
+            list.push({
+                id: 'fatigue',
+                icon: AlertTriangle,
+                badge: 'Aviso de rendimiento',
+                title: `Fatiga detectada (${trend.badgeText})`,
+                subtitle: 'Descenso de fuerza registrado respecto a la sesión previa',
+                colorClass: 'bg-rose-500/10 hover:bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-600 dark:text-rose-400',
+                badgeClass: 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
+            });
+            list.push({
+                id: 'fatigue_recovery',
+                icon: Activity,
+                badge: 'Ajuste de Cargas',
+                title: 'Pauta de recuperación activa',
+                subtitle: 'Descarga estratégica para restaurar tu sistema nervioso',
+                colorClass: 'bg-blue-500/10 hover:bg-blue-500/15 ring-1 ring-blue-500/30 text-blue-600 dark:text-blue-400',
+                badgeClass: 'bg-blue-500/20 text-blue-700 dark:text-blue-300'
+            });
+        }
+        // 3. Detección de En Racha / Progresión Activa
+        else if (trend?.status === 'progressing') {
+            list.push({
+                id: 'streak',
+                icon: CheckCircle2,
+                badge: '¡En racha!',
+                title: `Fuerza en aumento (+${Math.abs(trend.pctChange)}%)`,
+                subtitle: 'Sobrecarga progresiva exitosa en tus entrenamientos recientes',
+                colorClass: 'bg-emerald-500/10 hover:bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-600 dark:text-emerald-400',
+                badgeClass: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+            });
+            list.push({
+                id: 'overload',
+                icon: TrendingUp,
+                badge: 'Siguiente Meta',
+                title: 'Sobrecarga recomendada calculada',
+                subtitle: 'Toca para ver objetivos de peso y repeticiones sugeridos',
+                colorClass: 'bg-accent/10 hover:bg-accent/15 ring-1 ring-accent/30 text-accent',
+                badgeClass: 'bg-accent/20 text-accent'
+            });
+        }
+        // 4. Si la ganancia es constante en el periodo (stats?.gain === 0) y hay varias sesiones
+        else if (stats && stats.gain === 0 && sessions.length >= 2) {
+            list.push({
+                id: 'constant_weight',
+                icon: AlertTriangle,
+                badge: 'Carga Constante',
+                title: `Manteniendo ${stats.currentWeight} kg`,
+                subtitle: 'Toca para ver opciones fáciles para consolidar o aumentar',
+                colorClass: 'bg-amber-500/10 hover:bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-600 dark:text-amber-400',
+                badgeClass: 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+            });
+            list.push({
+                id: 'coach_advice',
+                icon: Sparkles,
+                badge: 'Recomendaciones IA',
+                title: 'Pautas de progresión listas',
+                subtitle: 'Ajuste de series, repeticiones y cargas para tu objetivo',
+                colorClass: 'bg-accent/10 hover:bg-accent/15 ring-1 ring-accent/30 text-accent',
+                badgeClass: 'bg-accent/20 text-accent'
+            });
+        }
+        // 5. Calibrando / Estableciendo base inicial
+        else {
+            list.push({
+                id: 'calibration',
+                icon: Target,
+                badge: 'Pauta Inteligente',
+                title: 'Recomendaciones según tu objetivo',
+                subtitle: 'Toca para ver pautas calculadas de fuerza, volumen e intensidad',
+                colorClass: 'bg-accent/10 hover:bg-accent/15 ring-1 ring-accent/30 text-accent',
+                badgeClass: 'bg-accent/20 text-accent'
+            });
+        }
+
+        return list;
+    }, [trend, stats, sessions]);
+
     const ax = axisConfig(axisColor);
 
     return (
-        <ChartBase
-            title={`Progreso: ${exerciseName || 'Ejercicio'}`}
-            icon={TrendingUp}
-            data={filteredData}
-            periods={['1M', '3M', '6M', '1A', 'Todo']}
-            activePeriod={period}
-            onPeriodChange={setPeriod}
-            headerExtra={
-                <div className="flex items-center gap-2 flex-wrap text-[10px] font-bold text-text-muted bg-black/5 dark:bg-white/5 px-2.5 py-1.5 rounded-full ring-1 ring-black/5 dark:ring-white/10">
-                    <span className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-1 bg-[#818cf8] rounded-full inline-block" />
-                        Peso Real
-                    </span>
-                    <span className="flex items-center gap-1.5 text-rose-500">
-                        <span className="w-2.5 h-0.5 border-b-2 border-dashed border-[#f43f5e] inline-block" />
-                        1RM Estimado
-                    </span>
-                    <span className="flex items-center gap-1.5 text-amber-500">
-                        <span className="w-2.5 h-0.5 border-b-2 border-dotted border-amber-500 inline-block" />
-                        Récord PR
-                    </span>
-                </div>
-            }
-            kpis={
-                stats
-                    ? [
-                          {
-                              label: 'Última Carga',
-                              value: stats.currentWeight,
-                              unit: 'kg',
-                              trend:
-                                  stats.gain > 0
-                                      ? `+${stats.gain} kg`
-                                      : stats.gain < 0
-                                      ? `${stats.gain} kg`
-                                      : 'Constante',
-                              isPositive: stats.gain >= 0,
-                              icon: TrendingUp
-                          },
-                          {
-                              label: 'Récord Personal (PR)',
-                              value: stats.prWeight,
-                              unit: 'kg',
-                              trend: 'Récord histórico',
-                              isPositive: true,
-                              icon: Trophy
-                          },
-                          {
-                              label: '1RM Estimado Máx',
-                              value: stats.max1RM,
-                              unit: 'kg',
-                              trend: 'Fuerza teórica',
-                              icon: Award
-                          }
-                      ]
-                    : null
-            }
-        >
-            <LineChart data={filteredData} margin={{ top: 30, right: 14, left: -20, bottom: 0 }}>
-                <defs>
-                    <filter id="glowExercise" x="-20%" y="-20%" width="140%" height="140%">
-                        <feGaussianBlur stdDeviation="2.5" result="blur" />
-                        <feMerge>
-                            <feMergeNode in="blur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                    </filter>
-                </defs>
-                {grid}
-                <XAxis dataKey="date" tickFormatter={formatTick} {...ax} />
-                <YAxis domain={['dataMin - 2', 'dataMax + 5']} {...ax} />
-                <Tooltip content={<ModernTooltip />} cursor={{ stroke: 'rgba(129, 140, 248, 0.3)', strokeWidth: 1.5, strokeDasharray: '4 4' }} />
-                <Line
-                    type="monotone"
-                    dataKey="Peso Máximo (kg)"
-                    stroke="#818cf8"
-                    strokeWidth={3.5}
-                    filter="url(#glowExercise)"
-                    dot={<PRCustomDot maxWeight={stats?.prWeight} />}
-                    activeDot={{ r: 7, strokeWidth: 2, stroke: '#fff', fill: '#818cf8' }}
-                    name="Peso Máximo"
-                    unit="kg"
-                />
-                <Line
-                    type="monotone"
-                    dataKey="1RM Estimado (kg)"
-                    stroke="#f43f5e"
-                    strokeWidth={2.5}
-                    strokeDasharray="5 5"
-                    dot={{ r: 2.5, strokeWidth: 0, fill: '#f43f5e' }}
-                    activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff', fill: '#f43f5e' }}
-                    name="1RM Estimado"
-                    unit="kg"
-                />
-                {stats?.prWeight > 0 && (
-                    <ReferenceLine
-                        y={stats.prWeight}
-                        stroke="rgba(245, 158, 11, 0.55)"
-                        strokeDasharray="4 4"
-                        strokeWidth={1.5}
-                        label={(props) => (
-                            <ReferencePill
-                                {...props}
-                                position="left"
-                                text={`PR: ${stats.prWeight} kg`}
-                                stroke="#f59e0b"
-                                color="#f59e0b"
-                            />
-                        )}
+        <>
+            <ChartBase
+                title={`Progreso: ${exerciseName || 'Ejercicio'}`}
+                icon={TrendingUp}
+                data={filteredData}
+                periods={['1M', '3M', '6M', '1A', 'Todo']}
+                activePeriod={period}
+                onPeriodChange={setPeriod}
+                headerExtra={
+                    <div className="flex items-center gap-2 flex-wrap text-[10px] font-bold text-text-muted bg-black/5 dark:bg-white/5 px-2.5 py-1.5 rounded-full ring-1 ring-black/5 dark:ring-white/10">
+                        <span className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-1 bg-[#818cf8] rounded-full inline-block" />
+                            Peso Real
+                        </span>
+                        <span className="flex items-center gap-1.5 text-rose-500">
+                            <span className="w-2.5 h-0.5 border-b-2 border-dashed border-[#f43f5e] inline-block" />
+                            1RM Estimado
+                        </span>
+                        <span className="flex items-center gap-1.5 text-amber-500">
+                            <span className="w-2.5 h-0.5 border-b-2 border-dotted border-amber-500 inline-block" />
+                            Récord PR
+                        </span>
+                    </div>
+                }
+                kpis={
+                    stats
+                        ? [
+                              {
+                                  label: 'Última Carga',
+                                  value: stats.currentWeight,
+                                  unit: 'kg',
+                                  trend:
+                                      stats.gain > 0
+                                          ? `+${stats.gain} kg`
+                                          : stats.gain < 0
+                                          ? `${stats.gain} kg`
+                                          : 'Constante',
+                                  isPositive: stats.gain >= 0,
+                                  icon: TrendingUp,
+                                  onClick: () => setShowSmartCoachModal(true),
+                                  title: 'Toca para ver recomendaciones inteligentes para este ejercicio'
+                              },
+                              {
+                                  label: 'Récord Personal (PR)',
+                                  value: stats.prWeight,
+                                  unit: 'kg',
+                                  trend: 'Récord histórico',
+                                  isPositive: true,
+                                  icon: Trophy
+                              },
+                              {
+                                  label: '1RM Estimado Máx',
+                                  value: stats.max1RM,
+                                  unit: 'kg',
+                                  trend: 'Fuerza teórica',
+                                  icon: Award
+                              }
+                          ]
+                        : null
+                }
+                alertsContent={
+                    alerts.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+                            {alerts.map((alert) => {
+                                const AlertIcon = alert.icon;
+                                return (
+                                    <button
+                                        key={alert.id}
+                                        type="button"
+                                        onClick={() => setShowSmartCoachModal(true)}
+                                        className={`p-3 sm:p-3.5 rounded-[20px] text-left transition-all active:scale-[0.98] cursor-pointer shadow-sm flex items-center justify-between gap-3 group border-none ${alert.colorClass}`}
+                                    >
+                                        <div className="flex items-start gap-2.5 min-w-0">
+                                            <div className="p-2 rounded-[14px] bg-black/5 dark:bg-white/10 shrink-0 mt-0.5">
+                                                <AlertIcon size={16} strokeWidth={2.5} className="shrink-0" />
+                                            </div>
+                                            <div className="min-w-0 space-y-0.5">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${alert.badgeClass}`}>
+                                                        {alert.badge}
+                                                    </span>
+                                                </div>
+                                                <h4 className="text-xs sm:text-sm font-black text-text-primary leading-tight truncate">
+                                                    {alert.title}
+                                                </h4>
+                                                <p className="text-[11px] text-text-secondary font-medium leading-snug truncate">
+                                                    {alert.subtitle}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <ChevronRight size={16} className="text-text-muted group-hover:text-text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    ) : null
+                }
+            >
+                <LineChart data={filteredData} margin={{ top: 30, right: 14, left: -20, bottom: 0 }}>
+                    <defs>
+                        <filter id="glowExercise" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="2.5" result="blur" />
+                            <feMerge>
+                                <feMergeNode in="blur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    {grid}
+                    <XAxis dataKey="date" tickFormatter={formatTick} {...ax} />
+                    <YAxis domain={['dataMin - 2', 'dataMax + 5']} {...ax} />
+                    <Tooltip content={<ModernTooltip />} cursor={{ stroke: 'rgba(129, 140, 248, 0.3)', strokeWidth: 1.5, strokeDasharray: '4 4' }} />
+                    <Line
+                        type="monotone"
+                        dataKey="Peso Máximo (kg)"
+                        stroke="#818cf8"
+                        strokeWidth={3.5}
+                        filter="url(#glowExercise)"
+                        dot={<PRCustomDot maxWeight={stats?.prWeight} />}
+                        activeDot={{ r: 7, strokeWidth: 2, stroke: '#fff', fill: '#818cf8' }}
+                        name="Peso Máximo"
+                        unit="kg"
                     />
-                )}
-            </LineChart>
-        </ChartBase>
+                    <Line
+                        type="monotone"
+                        dataKey="1RM Estimado (kg)"
+                        stroke="#f43f5e"
+                        strokeWidth={2.5}
+                        strokeDasharray="5 5"
+                        dot={{ r: 2.5, strokeWidth: 0, fill: '#f43f5e' }}
+                        activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff', fill: '#f43f5e' }}
+                        name="1RM Estimado"
+                        unit="kg"
+                    />
+                    {stats?.prWeight > 0 && (
+                        <ReferenceLine
+                            y={stats.prWeight}
+                            stroke="rgba(245, 158, 11, 0.55)"
+                            strokeDasharray="4 4"
+                            strokeWidth={1.5}
+                            label={(props) => (
+                                <ReferencePill
+                                    {...props}
+                                    position="left"
+                                    text={`PR: ${stats.prWeight} kg`}
+                                    stroke="#f59e0b"
+                                    color="#f59e0b"
+                                />
+                            )}
+                        />
+                    )}
+                </LineChart>
+            </ChartBase>
+
+            {showSmartCoachModal && (
+                <SmartExerciseCoachModal
+                    exercise={coachExerciseObject}
+                    userProfile={userProfile}
+                    workoutLog={workoutLog}
+                    onClose={() => setShowSmartCoachModal(false)}
+                    readOnly={true}
+                />
+            )}
+        </>
     );
 };
 

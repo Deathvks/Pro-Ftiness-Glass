@@ -152,6 +152,7 @@ const ExerciseView = ({ allExercises, exerciseProgressData, axisColor, onShowHis
         data={exerciseProgressData[selectedExercise]}
         axisColor={axisColor}
         exerciseName={t(selectedExercise, { ns: 'exercise_names', defaultValue: selectedExercise })}
+        rawExerciseName={selectedExercise}
       />
       {/* --- FIN DE LA MODIFICACIÓN --- */}
 
