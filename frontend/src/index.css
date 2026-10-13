@@ -417,6 +417,7 @@ html.galaxy-theme #root::after {
 .accent-aurora {
   --color-accent: #10b981;
   --color-accent-gradient: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #34d399 0%, #22d3ee 100%);
   --color-accent-transparent: rgba(16, 185, 129, 0.14);
   --color-accent-border: rgba(6, 182, 212, 0.32);
   --btn-accent-text: #ffffff;
@@ -425,6 +426,7 @@ html.galaxy-theme #root::after {
 .accent-sunset {
   --color-accent: #f43f5e;
   --color-accent-gradient: linear-gradient(135deg, #f43f5e 0%, #fb923c 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #fb7185 0%, #fb923c 100%);
   --color-accent-transparent: rgba(244, 63, 94, 0.14);
   --color-accent-border: rgba(251, 146, 60, 0.32);
   --btn-accent-text: #ffffff;
@@ -433,6 +435,7 @@ html.galaxy-theme #root::after {
 .accent-cyberpunk {
   --color-accent: #8b5cf6;
   --color-accent-gradient: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
   --color-accent-transparent: rgba(139, 92, 246, 0.14);
   --color-accent-border: rgba(236, 72, 153, 0.32);
   --btn-accent-text: #ffffff;
@@ -441,6 +444,7 @@ html.galaxy-theme #root::after {
 .accent-deep-ocean {
   --color-accent: #2563eb;
   --color-accent-gradient: linear-gradient(135deg, #2563eb 0%, #00f5d4 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #60a5fa 0%, #2dd4bf 100%);
   --color-accent-transparent: rgba(37, 99, 235, 0.14);
   --color-accent-border: rgba(0, 245, 212, 0.32);
   --btn-accent-text: #ffffff;
@@ -449,6 +453,7 @@ html.galaxy-theme #root::after {
 .accent-imperial-gold {
   --color-accent: #f59e0b;
   --color-accent-gradient: linear-gradient(135deg, #f59e0b 0%, #fde047 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
   --color-accent-transparent: rgba(245, 158, 11, 0.14);
   --color-accent-border: rgba(253, 224, 71, 0.32);
   --btn-accent-text: #000000;
@@ -488,6 +493,84 @@ html.galaxy-theme #root::after {
 .accent-imperial-gold .btn-accent {
   background: linear-gradient(135deg, #f59e0b 0%, #fde047 100%) !important;
   color: #000000 !important;
+}
+
+/* Gradiente suave en letras/textos para acentos de nivel 15 (aurora, sunset, cyberpunk, deep-ocean, imperial-gold) */
+.accent-aurora :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-sunset :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-cyberpunk :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-deep-ocean :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-imperial-gold :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-aurora div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-sunset div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-cyberpunk div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-deep-ocean div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-imperial-gold div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-aurora button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-sunset button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-cyberpunk button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-deep-ocean button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-imperial-gold button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-aurora .text-accent-gradient,
+.accent-sunset .text-accent-gradient,
+.accent-cyberpunk .text-accent-gradient,
+.accent-deep-ocean .text-accent-gradient,
+.accent-imperial-gold .text-accent-gradient {
+  background-image: var(--color-accent-text-gradient, var(--color-accent-gradient)) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Blindaje de iconos SVG para acentos de nivel 15:
+   Asegura que los iconos SVG nunca hereden relleno transparente ni se rompan.
+   Los iconos con text-accent o dentro de contenedores text-accent mantienen color sólido nítido. */
+.accent-aurora svg.text-accent,
+.accent-sunset svg.text-accent,
+.accent-cyberpunk svg.text-accent,
+.accent-deep-ocean svg.text-accent,
+.accent-imperial-gold svg.text-accent,
+.accent-aurora .text-accent svg,
+.accent-sunset .text-accent svg,
+.accent-cyberpunk .text-accent svg,
+.accent-deep-ocean .text-accent svg,
+.accent-imperial-gold .text-accent svg {
+  -webkit-text-fill-color: initial !important;
+  color: var(--color-accent) !important;
+}
+
+.accent-aurora .text-accent svg[class*="text-white"],
+.accent-sunset .text-accent svg[class*="text-white"],
+.accent-cyberpunk .text-accent svg[class*="text-white"],
+.accent-deep-ocean .text-accent svg[class*="text-white"],
+.accent-imperial-gold .text-accent svg[class*="text-white"] {
+  color: #ffffff !important;
+}
+
+.accent-aurora .text-accent svg[class*="text-red"],
+.accent-sunset .text-accent svg[class*="text-red"],
+.accent-cyberpunk .text-accent svg[class*="text-red"],
+.accent-deep-ocean .text-accent svg[class*="text-red"],
+.accent-imperial-gold .text-accent svg[class*="text-red"] {
+  color: #ef4444 !important;
+}
+
+/* Iconos dentro de botones con fondo degradado: heredan el color legible del botón */
+.accent-aurora .bg-accent svg,
+.accent-sunset .bg-accent svg,
+.accent-cyberpunk .bg-accent svg,
+.accent-deep-ocean .bg-accent svg,
+.accent-imperial-gold .bg-accent svg,
+.accent-aurora .btn-accent svg,
+.accent-sunset .btn-accent svg,
+.accent-cyberpunk .btn-accent svg,
+.accent-deep-ocean .btn-accent svg,
+.accent-imperial-gold .btn-accent svg {
+  -webkit-text-fill-color: initial !important;
+  color: inherit !important;
 }
 
 
@@ -1248,11 +1331,11 @@ html.light-theme.accent-pistachio, html.light-theme.accent-pistachio * { --text-
 html.light-theme.accent-cherry-blossom, html.light-theme.accent-cherry-blossom * { --text-accent: #be123c; }
 html.light-theme.accent-lime, html.light-theme.accent-lime * { --text-accent: #3f6212; }
 html.light-theme.accent-sky, html.light-theme.accent-sky * { --text-accent: #0284c7; }
-html.light-theme.accent-aurora, html.light-theme.accent-aurora * { --text-accent: #059669; }
-html.light-theme.accent-sunset, html.light-theme.accent-sunset * { --text-accent: #e11d48; }
-html.light-theme.accent-cyberpunk, html.light-theme.accent-cyberpunk * { --text-accent: #7c3aed; }
-html.light-theme.accent-deep-ocean, html.light-theme.accent-deep-ocean * { --text-accent: #1d4ed8; }
-html.light-theme.accent-imperial-gold, html.light-theme.accent-imperial-gold * { --text-accent: #b45309; }
+html.light-theme.accent-aurora, html.light-theme.accent-aurora * { --text-accent: #059669; --color-accent-text-gradient: linear-gradient(135deg, #059669 0%, #0891b2 100%); }
+html.light-theme.accent-sunset, html.light-theme.accent-sunset * { --text-accent: #e11d48; --color-accent-text-gradient: linear-gradient(135deg, #e11d48 0%, #ea580c 100%); }
+html.light-theme.accent-cyberpunk, html.light-theme.accent-cyberpunk * { --text-accent: #7c3aed; --color-accent-text-gradient: linear-gradient(135deg, #7c3aed 0%, #c026d3 100%); }
+html.light-theme.accent-deep-ocean, html.light-theme.accent-deep-ocean * { --text-accent: #1d4ed8; --color-accent-text-gradient: linear-gradient(135deg, #2563eb 0%, #0d9488 100%); }
+html.light-theme.accent-imperial-gold, html.light-theme.accent-imperial-gold * { --text-accent: #b45309; --color-accent-text-gradient: linear-gradient(135deg, #b45309 0%, #d97706 100%); }
 
 /* En modo claro con temas amarillos/pasteles, asegurar que botones y cápsulas con fondo acento tengan texto/icono oscuro de alto contraste */
 html.light-theme.accent-yellow .bg-accent,

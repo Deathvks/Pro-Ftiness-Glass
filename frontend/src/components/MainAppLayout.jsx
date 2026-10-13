@@ -1119,7 +1119,9 @@ export default function MainAppLayout({
                   <Palette className="text-accent" size={28} />
                 </div>
                 <h3 className="text-xl font-black mb-2 text-text-primary">
-                  {accentUnlockLevel === 15 ? '¡Acentos con Degradado!' : accentUnlockLevel === 10 ? '¡5 Colores Pastel!' : '¡5 Nuevos Colores Pastel!'}
+                  {accentUnlockLevel === 15 ? (
+                    <>¡Acentos con <span className="text-accent">Degradado</span>!</>
+                  ) : accentUnlockLevel === 10 ? '¡5 Colores Pastel!' : '¡5 Nuevos Colores Pastel!'}
                 </h3>
               </div>
 

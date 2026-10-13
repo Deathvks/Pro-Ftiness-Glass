@@ -310,8 +310,8 @@ export default function AppearanceScreen({ setView }) {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <h4 className="text-sm font-black text-text-primary tracking-tight">Nivel 15</h4>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 text-accent tracking-wider">
-                    Degradados
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 border border-accent/20 tracking-wider">
+                    <span className="text-accent">Degradados</span>
                   </span>
                 </div>
               </div>
