@@ -588,9 +588,18 @@ html.galaxy-theme #root::after {
   }
 }
 
+@keyframes living-preview-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
 .living-accent-preview {
-  background-size: 250% 250% !important;
-  animation: living-accent-flow 6s ease infinite !important;
+  background-size: 280% 280% !important;
+  animation: living-accent-flow 3.5s ease-in-out infinite, living-preview-breathe 2.5s ease-in-out infinite !important;
 }
 
 .accent-supernova {

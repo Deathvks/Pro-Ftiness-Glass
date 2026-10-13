@@ -34,6 +34,37 @@ import UserAvatar from './UserAvatar';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
+const ACCENT_UNLOCK_REWARDS = {
+  20: [
+    { name: 'Supernova', gradient: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 35%, #3b82f6 70%, #7c3aed 100%)', isAnimated: true, glow: 'rgba(124, 58, 237, 0.45)' },
+    { name: 'Plasma Cuántico', gradient: 'linear-gradient(135deg, #10b981 0%, #06b6d4 35%, #3b82f6 70%, #10b981 100%)', isAnimated: true, glow: 'rgba(16, 185, 129, 0.45)' },
+    { name: 'Llama Eterna', gradient: 'linear-gradient(135deg, #ef4444 0%, #f97316 35%, #facc15 70%, #ef4444 100%)', isAnimated: true, glow: 'rgba(239, 68, 68, 0.45)' },
+    { name: 'Vórtice Abisal', gradient: 'linear-gradient(135deg, #1d4ed8 0%, #6366f1 35%, #14b8a6 70%, #1d4ed8 100%)', isAnimated: true, glow: 'rgba(29, 78, 216, 0.45)' },
+    { name: 'Oro Cósmico', gradient: 'linear-gradient(135deg, #d97706 0%, #fef08a 35%, #b45309 70%, #d97706 100%)', isAnimated: true, glow: 'rgba(217, 119, 6, 0.45)' },
+  ],
+  15: [
+    { name: 'Aurora Boreal', gradient: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)', glow: 'rgba(16, 185, 129, 0.35)' },
+    { name: 'Sunset Glow', gradient: 'linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)', glow: 'rgba(244, 63, 94, 0.35)' },
+    { name: 'Cyberpunk', gradient: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)', glow: 'rgba(139, 92, 246, 0.35)' },
+    { name: 'Océano Profundo', gradient: 'linear-gradient(135deg, #2563eb 0%, #00f5d4 100%)', glow: 'rgba(37, 99, 235, 0.35)' },
+    { name: 'Oro Imperial', gradient: 'linear-gradient(135deg, #f59e0b 0%, #fde047 100%)', glow: 'rgba(245, 158, 11, 0.35)' },
+  ],
+  10: [
+    { name: 'Rosa Atardecer', bg: '#ff9a9e', glow: 'rgba(255, 154, 158, 0.35)' },
+    { name: 'Pistacho', bg: '#c5e1a5', glow: 'rgba(197, 225, 165, 0.35)' },
+    { name: 'Mango', bg: '#ffbe76', glow: 'rgba(255, 190, 118, 0.35)' },
+    { name: 'Limonada', bg: '#fdfd96', glow: 'rgba(253, 253, 150, 0.35)' },
+    { name: 'Flor de Cerezo', bg: '#fccbcf', glow: 'rgba(252, 203, 207, 0.35)' },
+  ],
+  5: [
+    { name: 'Menta Suave', bg: '#a8e6cf', glow: 'rgba(168, 230, 207, 0.35)' },
+    { name: 'Melocotón', bg: '#ffd3b6', glow: 'rgba(255, 211, 182, 0.35)' },
+    { name: 'Agua de Rosas', bg: '#ffaaa5', glow: 'rgba(255, 170, 165, 0.35)' },
+    { name: 'Lavanda', bg: '#c5a3ff', glow: 'rgba(197, 163, 255, 0.35)' },
+    { name: 'Azul Bebé', bg: '#a2cffe', glow: 'rgba(162, 207, 254, 0.35)' },
+  ],
+};
+
 const LoadingFallback = () => (
   <div className="flex justify-center items-center h-full pt-20">
     <Spinner size={40} />
@@ -644,8 +675,15 @@ export default function MainAppLayout({
 
   const handleMilestoneClose = () => {
     if (pendingMilestone) {
-      unlockMilestone(pendingMilestone);
+      const milestoneLvl = pendingMilestone;
+      unlockMilestone(milestoneLvl);
       setPendingMilestone(null);
+      if ([5, 10, 15, 20].includes(milestoneLvl)) {
+        setTimeout(() => {
+          setAccentUnlockLevel(milestoneLvl);
+          setShowAccentUnlockModal(true);
+        }, 300);
+      }
     }
   };
 
@@ -666,16 +704,28 @@ export default function MainAppLayout({
         } else if (event.type === 'badge') {
           addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
         } else if (event.type === 'level_up') {
-            let extraStr = '';
-            if (event.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
-            if (event.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
-            if (event.newLevel === 15) extraStr = ' (¡Nuevos degradados desbloqueados!)';
-            if (event.newLevel === 20) extraStr = ' (¡Nuevos acentos animados desbloqueados!)';
-            addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel} 🚀${extraStr}`, 'success', 6000);
-          } else if (event.type === 'challenge_completed') {
+          let extraStr = '';
+          if (event.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
+          if (event.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
+          if (event.newLevel === 15) extraStr = ' (¡Nuevos degradados desbloqueados!)';
+          if (event.newLevel === 20) extraStr = ' (¡Nuevos acentos animados desbloqueados!)';
+          addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel} 🚀${extraStr}`, 'success', 6000);
+          if ([5, 10, 15, 20].includes(event.newLevel)) {
+            setTimeout(() => {
+              setAccentUnlockLevel(event.newLevel);
+              setShowAccentUnlockModal(true);
+            }, 500);
+          }
+        } else if (event.type === 'challenge_completed') {
           addToast(`¡Reto completado! ${event.message} (+${event.xpAdded} XP)`, 'success');
           if (event.leveledUp) {
             addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel} 🏆`, 'success', 6000);
+            if ([5, 10, 15, 20].includes(event.newLevel)) {
+              setTimeout(() => {
+                setAccentUnlockLevel(event.newLevel);
+                setShowAccentUnlockModal(true);
+              }, 500);
+            }
           }
         }
       });
@@ -1168,45 +1218,30 @@ export default function MainAppLayout({
                 <p className="text-text-muted text-xs mb-5">
                   Ve a <strong>Hub → Personalización</strong> para aplicarlos.
                 </p>
-                <div className="flex gap-2.5 justify-center mb-6 flex-wrap">
-                  {accentUnlockLevel === 20 ? (
-                    <>
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5 living-accent-preview" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 35%, #3b82f6 70%, #7c3aed 100%)' }} title="Supernova" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5 living-accent-preview" style={{ background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 35%, #3b82f6 70%, #10b981 100%)' }} title="Plasma Cuántico" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5 living-accent-preview" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #f97316 35%, #facc15 70%, #ef4444 100%)' }} title="Llama Eterna" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5 living-accent-preview" style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #6366f1 35%, #14b8a6 70%, #1d4ed8 100%)' }} title="Vórtice Abisal" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5 living-accent-preview" style={{ background: 'linear-gradient(135deg, #d97706 0%, #fef08a 35%, #b45309 70%, #d97706 100%)' }} title="Oro Cósmico" />
-                    </>
-                  ) : accentUnlockLevel === 15 ? (
-                    <>
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)' }} title="Aurora Boreal" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)' }} title="Sunset Glow" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)' }} title="Cyberpunk" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: 'linear-gradient(135deg, #2563eb 0%, #00f5d4 100%)' }} title="Océano Profundo" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #fde047 100%)' }} title="Oro Imperial" />
-                    </>
-                  ) : (
-                    <>
-                      {accentUnlockLevel >= 5 && (
-                        <>
-                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#a8e6cf' }} title="Menta Suave" />
-                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffd3b6' }} title="Melocotón" />
-                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffaaa5' }} title="Agua de Rosas" />
-                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#c5a3ff' }} title="Lavanda" />
-                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#a2cffe' }} title="Azul Bebé" />
-                        </>
-                      )}
-                      {accentUnlockLevel >= 10 && (
-                        <>
-                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ff9a9e' }} title="Rosa Atardecer" />
-                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#c5e1a5' }} title="Pistacho" />
-                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffbe76' }} title="Mango" />
-                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fdfd96' }} title="Limonada" />
-                          <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fccbcf' }} title="Flor de Cerezo" />
-                        </>
-                      )}
-                    </>
-                  )}
+                <div className="grid grid-cols-5 gap-2 sm:gap-2.5 justify-center mb-6 w-full">
+                  {(ACCENT_UNLOCK_REWARDS[accentUnlockLevel] || []).map((item) => (
+                    <div key={item.name} className="flex flex-col items-center">
+                      <div className="relative w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center">
+                        <span
+                          className={`w-full h-full rounded-full shadow-md ring-1 ring-black/10 dark:ring-white/10 ${
+                            item.isAnimated ? 'living-accent-preview' : ''
+                          }`}
+                          style={{
+                            background: item.gradient || item.bg,
+                            backgroundColor: item.bg,
+                            boxShadow: `0 4px 12px ${item.glow}`,
+                          }}
+                          title={item.name}
+                        />
+                        {item.isAnimated && (
+                          <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/30 to-transparent pointer-events-none animate-[pulse_2s_ease-in-out_infinite]" />
+                        )}
+                      </div>
+                      <span className="text-[10px] sm:text-[11px] font-bold text-text-primary mt-1.5 text-center leading-tight line-clamp-2 px-0.5">
+                        {item.name}
+                      </span>
+                    </div>
+                  ))}
                 </div>
                 <button
                   onClick={() => {
