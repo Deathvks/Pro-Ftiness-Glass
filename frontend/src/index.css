@@ -835,10 +835,25 @@ html.galaxy-theme #root::after {
   -webkit-mask-image: radial-gradient(ellipse 95% 65% at 50% 0%, #000 20%, transparent 80%);
 }
 
-html.light-theme .aurora-container {
-  opacity: 0.25;
-  mask-image: radial-gradient(ellipse 95% 55% at 50% 0%, #000 15%, transparent 75%);
-  -webkit-mask-image: radial-gradient(ellipse 95% 55% at 50% 0%, #000 15%, transparent 75%);
+html.light-theme,
+html.desert-theme:not(.dark),
+html.ocean-theme:not(.dark) {
+  --aurora-stripes: repeating-linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0) 7%,
+    rgba(255, 255, 255, 0.6) 10%,
+    rgba(255, 255, 255, 0.6) 12%,
+    rgba(255, 255, 255, 0) 16%
+  );
+}
+
+html.light-theme .aurora-container,
+html.desert-theme:not(.dark) .aurora-container,
+html.ocean-theme:not(.dark) .aurora-container {
+  opacity: 0.82;
+  mask-image: radial-gradient(ellipse 100% 75% at 50% 0%, #000 30%, transparent 88%);
+  -webkit-mask-image: radial-gradient(ellipse 100% 75% at 50% 0%, #000 30%, transparent 88%);
 }
 
 html.oled-theme .aurora-container {
@@ -861,6 +876,19 @@ html.oled-theme .aurora-container {
   animation: aurora-glow-breathe 14s ease-in-out infinite;
 }
 
+html.light-theme .aurora-glow,
+html.desert-theme:not(.dark) .aurora-glow,
+html.ocean-theme:not(.dark) .aurora-glow {
+  opacity: 0.68;
+  filter: blur(75px);
+  background: radial-gradient(
+    ellipse at 50% 22%,
+    var(--aurora-glow-1, #8b5cf6) 0%,
+    var(--aurora-glow-2, #ec4899) 42%,
+    transparent 75%
+  );
+}
+
 .aurora-curtain {
   position: absolute;
   inset: -20px;
@@ -874,6 +902,13 @@ html.oled-theme .aurora-container {
   animation: aurora-wave 60s linear infinite;
 }
 
+html.light-theme .aurora-curtain,
+html.desert-theme:not(.dark) .aurora-curtain,
+html.ocean-theme:not(.dark) .aurora-curtain {
+  opacity: 0.65;
+  filter: blur(18px);
+}
+
 .aurora-curtain::after {
   content: '';
   position: absolute;
@@ -885,6 +920,13 @@ html.oled-theme .aurora-container {
   pointer-events: none;
   animation: aurora-wave 45s linear infinite reverse;
   opacity: 0.80;
+}
+
+html.light-theme .aurora-curtain::after,
+html.desert-theme:not(.dark) .aurora-curtain::after,
+html.ocean-theme:not(.dark) .aurora-curtain::after {
+  mix-blend-mode: multiply;
+  opacity: 0.72;
 }
 
 .accent-neutral {
@@ -1648,11 +1690,55 @@ html.light-theme.accent-sunset, html.light-theme.accent-sunset * { --text-accent
 html.light-theme.accent-cyberpunk, html.light-theme.accent-cyberpunk * { --text-accent: #7c3aed; --color-accent-text-gradient: linear-gradient(135deg, #7c3aed 0%, #c026d3 100%); }
 html.light-theme.accent-deep-ocean, html.light-theme.accent-deep-ocean * { --text-accent: #1d4ed8; --color-accent-text-gradient: linear-gradient(135deg, #2563eb 0%, #0d9488 100%); }
 html.light-theme.accent-imperial-gold, html.light-theme.accent-imperial-gold * { --text-accent: #b45309; --color-accent-text-gradient: linear-gradient(135deg, #b45309 0%, #d97706 100%); }
-html.light-theme.accent-supernova, html.light-theme.accent-supernova * { --text-accent: #7c3aed; --color-accent-text-gradient: linear-gradient(135deg, #7c3aed 0%, #db2777 35%, #2563eb 70%, #7c3aed 100%); }
-html.light-theme.accent-plasma, html.light-theme.accent-plasma * { --text-accent: #059669; --color-accent-text-gradient: linear-gradient(135deg, #059669 0%, #0891b2 35%, #2563eb 70%, #059669 100%); }
-html.light-theme.accent-eternal-flame, html.light-theme.accent-eternal-flame * { --text-accent: #ea580c; --color-accent-text-gradient: linear-gradient(135deg, #dc2626 0%, #ea580c 35%, #ca8a04 70%, #dc2626 100%); }
-html.light-theme.accent-abyssal-vortex, html.light-theme.accent-abyssal-vortex * { --text-accent: #1d4ed8; --color-accent-text-gradient: linear-gradient(135deg, #1e40af 0%, #4f46e5 35%, #0d9488 70%, #1e40af 100%); }
-html.light-theme.accent-cosmic-gold, html.light-theme.accent-cosmic-gold * { --text-accent: #b45309; --color-accent-text-gradient: linear-gradient(135deg, #b45309 0%, #ca8a04 35%, #92400e 70%, #b45309 100%); }
+html.light-theme.accent-supernova, html.light-theme.accent-supernova *,
+html.desert-theme:not(.dark).accent-supernova, html.desert-theme:not(.dark).accent-supernova *,
+html.ocean-theme:not(.dark).accent-supernova, html.ocean-theme:not(.dark).accent-supernova * {
+  --text-accent: #7c3aed;
+  --color-accent-text-gradient: linear-gradient(135deg, #7c3aed 0%, #db2777 35%, #2563eb 70%, #7c3aed 100%);
+  --aurora-gradient: repeating-linear-gradient(100deg, #8b5cf6 10%, #ec4899 15%, #3b82f6 20%, #c084fc 25%, #8b5cf6 30%);
+  --aurora-glow-1: #a855f7;
+  --aurora-glow-2: #f472b6;
+}
+
+html.light-theme.accent-plasma, html.light-theme.accent-plasma *,
+html.desert-theme:not(.dark).accent-plasma, html.desert-theme:not(.dark).accent-plasma *,
+html.ocean-theme:not(.dark).accent-plasma, html.ocean-theme:not(.dark).accent-plasma * {
+  --text-accent: #059669;
+  --color-accent-text-gradient: linear-gradient(135deg, #059669 0%, #0891b2 35%, #2563eb 70%, #059669 100%);
+  --aurora-gradient: repeating-linear-gradient(100deg, #059669 10%, #0891b2 15%, #2563eb 20%, #10b981 25%, #059669 30%);
+  --aurora-glow-1: #10b981;
+  --aurora-glow-2: #06b6d4;
+}
+
+html.light-theme.accent-eternal-flame, html.light-theme.accent-eternal-flame *,
+html.desert-theme:not(.dark).accent-eternal-flame, html.desert-theme:not(.dark).accent-eternal-flame *,
+html.ocean-theme:not(.dark).accent-eternal-flame, html.ocean-theme:not(.dark).accent-eternal-flame * {
+  --text-accent: #ea580c;
+  --color-accent-text-gradient: linear-gradient(135deg, #dc2626 0%, #ea580c 35%, #ca8a04 70%, #dc2626 100%);
+  --aurora-gradient: repeating-linear-gradient(100deg, #f43f5e 10%, #ea580c 15%, #eab308 20%, #fb923c 25%, #f43f5e 30%);
+  --aurora-glow-1: #f97316;
+  --aurora-glow-2: #fb7185;
+}
+
+html.light-theme.accent-abyssal-vortex, html.light-theme.accent-abyssal-vortex *,
+html.desert-theme:not(.dark).accent-abyssal-vortex, html.desert-theme:not(.dark).accent-abyssal-vortex *,
+html.ocean-theme:not(.dark).accent-abyssal-vortex, html.ocean-theme:not(.dark).accent-abyssal-vortex * {
+  --text-accent: #1d4ed8;
+  --color-accent-text-gradient: linear-gradient(135deg, #1e40af 0%, #4f46e5 35%, #0d9488 70%, #1e40af 100%);
+  --aurora-gradient: repeating-linear-gradient(100deg, #2563eb 10%, #6366f1 15%, #0d9488 20%, #3b82f6 25%, #2563eb 30%);
+  --aurora-glow-1: #3b82f6;
+  --aurora-glow-2: #818cf8;
+}
+
+html.light-theme.accent-cosmic-gold, html.light-theme.accent-cosmic-gold *,
+html.desert-theme:not(.dark).accent-cosmic-gold, html.desert-theme:not(.dark).accent-cosmic-gold *,
+html.ocean-theme:not(.dark).accent-cosmic-gold, html.ocean-theme:not(.dark).accent-cosmic-gold * {
+  --text-accent: #b45309;
+  --color-accent-text-gradient: linear-gradient(135deg, #b45309 0%, #ca8a04 35%, #92400e 70%, #b45309 100%);
+  --aurora-gradient: repeating-linear-gradient(100deg, #d97706 10%, #f59e0b 15%, #eab308 20%, #b45309 25%, #d97706 30%);
+  --aurora-glow-1: #f59e0b;
+  --aurora-glow-2: #fbbf24;
+}
 
 /* En modo claro con temas amarillos/pasteles/dorados, asegurar que botones y cápsulas con fondo acento tengan texto/icono oscuro de alto contraste */
 html.light-theme.accent-yellow .bg-accent,
