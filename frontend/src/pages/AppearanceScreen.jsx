@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { 
-  Palette, Sun, Moon, MonitorCog, Smartphone, Check, ChevronLeft, ChevronRight, LockOpen, Lock, Info, Vibrate, Droplet
+  Palette, Sun, Moon, MonitorCog, Smartphone, Check, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, LockOpen, Lock, Info, Vibrate, Droplet
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6'; 
 import useAppStore from '../store/useAppStore';
@@ -137,19 +137,36 @@ export default function AppearanceScreen({ setView }) {
     setPendingThemeAction(null);
   };
 
-  const glassCardClass = "glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300 mb-6";
+  const [isMyThemesOpenMobile, setIsMyThemesOpenMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('my_themes_expanded_mobile');
+      if (saved !== null) return saved === 'true';
+    }
+    return isGalaxyActive || isDesertActive || isOceanActive || isTestingTheme;
+  });
+
+  const toggleMyThemesMobile = () => {
+    setIsMyThemesOpenMobile(prev => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('my_themes_expanded_mobile', String(next));
+      }
+      return next;
+    });
+  };
+
+  const glassCardClass = "glass p-5 sm:p-7 lg:p-8 rounded-[28px] sm:rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300";
 
   return (
-    <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-4xl mx-auto animate-[fade-in_0.3s_ease-out]">
+    <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-4xl lg:max-w-6xl xl:max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
         <title>Apariencia - Pro Fitness Glass</title>
       </Helmet>
-      
 
-
-      <div className="w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <GlassCard className={glassCardClass}>
+        {/* 1) Apariencia de la App: a la izquierda en PC, abajo en móvil */}
+        <GlassCard className={`${glassCardClass} order-2 lg:order-1 lg:col-span-7 xl:col-span-7`}>
           <SectionTitle icon={Palette} title="Apariencia de la App" />
 
           {/* Temas Base */}
@@ -373,12 +390,68 @@ export default function AppearanceScreen({ setView }) {
           </div>
         </GlassCard>
 
-        {/* Mis Temas (Desbloqueables) */}
-        <GlassCard className={glassCardClass}>
-          <SectionTitle icon={FaMeteor} title="Mis Temas" />
-          <p className="text-sm text-text-secondary mb-6 ml-1">
-            Temas exclusivos desbloqueados mediante retos y progreso en la aplicación.
-          </p>
+        {/* 2) Mis Temas: a la derecha en PC y fija, arriba y desplegable/solapable en móvil */}
+        <GlassCard className={`${glassCardClass} order-1 lg:order-2 lg:col-span-5 xl:col-span-5 lg:sticky lg:top-6`}>
+          {/* Cabecera / Trigger Móvil de Desplegar/Solapar */}
+          <div 
+            onClick={() => {
+              if (typeof window !== 'undefined' && window.innerWidth < 1024) toggleMyThemesMobile();
+            }}
+            className="flex items-center justify-between cursor-pointer select-none lg:cursor-default"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-[16px] bg-black/5 dark:bg-white/5 text-accent shrink-0">
+                <FaMeteor size={24} strokeWidth={2.5} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">Mis Temas</h2>
+                  {(isGalaxyActive || isDesertActive || isOceanActive) && (
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 text-accent tracking-wider">
+                      {isGalaxyActive ? 'Galaxia' : isDesertActive ? 'Desierto' : 'Océano'}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-text-secondary mt-0.5 hidden lg:block">
+                  Temas exclusivos desbloqueados mediante retos y progreso en la aplicación.
+                </p>
+                <p className="text-[11px] text-text-muted mt-0.5 lg:hidden block">
+                  {isMyThemesOpenMobile ? 'Toca para solapar' : '3 temas exclusivos · Toca para desplegar'}
+                </p>
+              </div>
+            </div>
+
+            {/* Controles móviles para desplegar/solapar */}
+            <div className="flex items-center gap-2 lg:hidden">
+              {!isMyThemesOpenMobile && (
+                <div className="flex -space-x-1 items-center mr-1 opacity-90">
+                  <span className="w-5 h-5 rounded-full bg-[#a855f7]/20 flex items-center justify-center text-[10px] ring-1 ring-white/10" title="Galaxia">🌌</span>
+                  <span className="w-5 h-5 rounded-full bg-[#f59e0b]/20 flex items-center justify-center text-[10px] ring-1 ring-white/10" title="Desierto">🏜️</span>
+                  <span className="w-5 h-5 rounded-full bg-[#0ea5e9]/20 flex items-center justify-center text-[10px] ring-1 ring-white/10" title="Océano">🌊</span>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleMyThemesMobile();
+                }}
+                className="p-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary transition-all active:scale-95"
+                aria-label={isMyThemesOpenMobile ? "Solapar mis temas" : "Desplegar mis temas"}
+              >
+                <ChevronDown 
+                  size={18} 
+                  className={`transition-transform duration-300 ${isMyThemesOpenMobile ? 'rotate-180' : 'rotate-0'}`} 
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Contenido: Desplegable en móvil, Siempre visible en PC */}
+          <div className={`${isMyThemesOpenMobile ? 'block' : 'hidden'} lg:block transition-all duration-300 ${isMyThemesOpenMobile ? 'mt-5' : 'mt-0'}`}>
+            <p className="text-sm text-text-secondary mb-5 ml-1 hidden lg:block">
+              Temas exclusivos desbloqueados mediante retos y progreso en la aplicación.
+            </p>
 
           <div className={`p-4 rounded-[20px] transition-all duration-500 border ${theme === 'galaxy' || isTestingTheme ? 'bg-[#a855f7]/10 border-[#a855f7]/30 shadow-lg shadow-[#a855f7]/20 scale-[1.02]' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
             <div className="flex items-center justify-between">
@@ -586,7 +659,19 @@ export default function AppearanceScreen({ setView }) {
               </p>
             )}
           </div>
-        </GlassCard>
+
+          {/* Botón inferior móvil para solapar */}
+          <div className="mt-5 pt-3 border-t border-black/5 dark:border-white/5 flex justify-center lg:hidden">
+            <button
+              type="button"
+              onClick={toggleMyThemesMobile}
+              className="text-xs font-bold text-text-muted hover:text-text-primary flex items-center gap-1.5 py-1.5 px-4 rounded-full bg-black/5 dark:bg-white/5 active:scale-95 transition-all"
+            >
+              <ChevronUp size={14} /> Solapar Mis Temas
+            </button>
+          </div>
+        </div>
+      </GlassCard>
 
         {showThemeReloadModal && (
           <ConfirmationModal
