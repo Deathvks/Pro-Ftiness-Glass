@@ -262,7 +262,11 @@ export const useAppTheme = () => {
       root.style.removeProperty('background-color');
       body.style.setProperty('background-color', 'var(--bg-primary)', 'important');
       if (appRootDiv) {
-        appRootDiv.style.setProperty('background-color', 'var(--bg-primary)', 'important');
+        if (['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(effectiveTheme)) {
+          appRootDiv.style.setProperty('background-color', 'transparent', 'important');
+        } else {
+          appRootDiv.style.setProperty('background-color', 'var(--bg-primary)', 'important');
+        }
       }
 
       const metaColor = document.getElementById('dynamic-theme-color');
