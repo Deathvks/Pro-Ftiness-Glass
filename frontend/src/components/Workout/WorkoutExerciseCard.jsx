@@ -1,7 +1,7 @@
 import ModalPortal from '../ModalPortal';
 /* frontend/src/components/Workout/WorkoutExerciseCard.jsx */
 import React, { useState, useMemo } from 'react';
-import { Repeat, Flame, History, Target, Bell, Sparkles, AlertTriangle, CheckCircle2, Clock, ChevronRight } from 'lucide-react';
+import { Repeat, Flame, History, Target, Bell, Sparkles, AlertTriangle, CheckCircle2, Clock, ChevronRight, TrendingUp } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import WorkoutSetGrid from './WorkoutSetGrid';
 import useAppStore from '../../store/useAppStore';
@@ -202,7 +202,7 @@ const WorkoutExerciseCard = ({
                 ) : followUp.type === 'recovery_notice' ? (
                   <Clock size={15} strokeWidth={2.5} className="text-blue-600 dark:text-blue-400 shrink-0" />
                 ) : followUp.type === 'next_session_target' ? (
-                  <Target size={16} strokeWidth={2.5} className="text-accent shrink-0 group-hover:rotate-45 transition-transform" />
+                  <TrendingUp size={15} strokeWidth={2.5} className="text-accent shrink-0 group-hover:scale-110 transition-transform" />
                 ) : (
                   <AlertTriangle size={15} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 shrink-0" />
                 )}
@@ -258,7 +258,7 @@ const WorkoutExerciseCard = ({
                 ) : followUp.type === 'recovery_notice' ? (
                   <Clock size={18} strokeWidth={2.5} />
                 ) : followUp.type === 'next_session_target' ? (
-                  <Target size={18} strokeWidth={2.5} />
+                  <TrendingUp size={18} strokeWidth={2.5} />
                 ) : (
                   <AlertTriangle size={18} strokeWidth={2.5} />
                 )}
@@ -354,9 +354,9 @@ const WorkoutExerciseCard = ({
             ) : followUp?.type === 'recovery_notice' ? (
               <Clock size={20} strokeWidth={2.5} className="text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
             ) : followUp?.type === 'next_session_target' ? (
-              <Target size={20} strokeWidth={2.5} className="text-accent group-hover:scale-110 transition-transform" />
+              <TrendingUp size={20} strokeWidth={2.5} className="text-accent group-hover:scale-110 transition-transform" />
             ) : (
-              <Target size={20} strokeWidth={2.5} className="text-accent group-hover:scale-110 transition-transform" />
+              <TrendingUp size={20} strokeWidth={2.5} className="text-accent group-hover:scale-110 transition-transform" />
             )}
             <span className="text-sm font-bold hidden sm:block">
               {followUp?.badgeShort || (trend?.isWarning ? 'Objetivo !' : trend?.isProgressing ? 'Objetivo ✓' : 'Objetivo')}

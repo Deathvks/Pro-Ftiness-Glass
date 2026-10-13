@@ -71,7 +71,7 @@ export const saveAppliedCoachStrategy = (exerciseName, strategyData) => {
  * Formatea el texto legible de la meta (series x reps con peso).
  */
 export const formatTargetText = (strategy) => {
-  if (!strategy) return 'objetivo pautado';
+  if (!strategy) return 'objetivo planificado';
   const parts = [];
   if (strategy.suggestedSets) parts.push(`${strategy.suggestedSets} series`);
   if (strategy.suggestedReps) parts.push(`${strategy.suggestedReps} reps`);
@@ -83,7 +83,7 @@ export const formatTargetText = (strategy) => {
       parts.push('con peso corporal');
     }
   }
-  return parts.length > 0 ? parts.join(' × ') : 'objetivo pautado';
+  return parts.length > 0 ? parts.join(' × ') : 'objetivo planificado';
 };
 
 /**
@@ -239,7 +239,7 @@ export const evaluateExerciseFollowUpAndRecovery = ({
     return {
       type: 'next_session_target',
       status: 'next_session_target',
-      badge: 'Pauta Sesión Anterior',
+      badge: 'Objetivo Sesión Anterior',
       badgeShort: 'Tu objetivo',
       title: 'Objetivo según lo trabajado en la sesión anterior',
       message: `Según lo trabajado en la sesión anterior (aplicaste "${lastApplied.strategyTitle}"), ahora deberías poder hacer ${targetText}.`,

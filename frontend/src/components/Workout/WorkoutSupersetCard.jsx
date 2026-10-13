@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Flame, Repeat, Target, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Clock, Flame, Repeat, Target, AlertTriangle, CheckCircle2, TrendingUp } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import GlassCard from '../GlassCard';
 import useAppStore from '../../store/useAppStore';
@@ -268,13 +268,13 @@ const WorkoutSupersetCard = ({
                                         ) : exFollowUp?.type === 'recovery_notice' ? (
                                             <Clock size={16} strokeWidth={2.5} className="text-blue-400" />
                                         ) : exFollowUp?.type === 'next_session_target' ? (
-                                            <Target size={16} strokeWidth={2.5} className="text-accent" />
+                                            <TrendingUp size={16} strokeWidth={2.5} className="text-accent" />
                                         ) : exTrend.isWarning ? (
                                             <AlertTriangle size={16} strokeWidth={2.5} className="text-amber-400 animate-pulse" />
                                         ) : exTrend.isProgressing ? (
                                             <CheckCircle2 size={16} strokeWidth={2.5} className="text-emerald-400" />
                                         ) : (
-                                            <Target size={16} strokeWidth={2.5} className="text-accent" />
+                                            <TrendingUp size={16} strokeWidth={2.5} className="text-accent" />
                                         )}
                                     </button>
                                 )}

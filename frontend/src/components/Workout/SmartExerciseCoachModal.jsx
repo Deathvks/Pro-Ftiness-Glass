@@ -169,7 +169,7 @@ const SmartExerciseCoachModal = ({
                   </span>
                 ) : followUp?.type === 'next_session_target' ? (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent">
-                    <Target size={13} className="shrink-0" />
+                    <TrendingUp size={13} className="shrink-0" />
                     <span>{followUp.badge}</span>
                   </span>
                 ) : trend.isWarning ? (
@@ -284,7 +284,7 @@ const SmartExerciseCoachModal = ({
                       ) : followUp.type === 'recovery_notice' ? (
                         <Clock size={16} strokeWidth={2.5} />
                       ) : followUp.type === 'next_session_target' ? (
-                        <Target size={16} strokeWidth={2.5} />
+                        <TrendingUp size={16} strokeWidth={2.5} />
                       ) : (
                         <AlertTriangle size={16} strokeWidth={2.5} />
                       )}
@@ -322,7 +322,7 @@ const SmartExerciseCoachModal = ({
 
                 {followUp.actionHint && (
                   <div className="pt-1 border-t border-black/5 dark:border-white/10 flex items-start gap-1.5 text-[11px] font-medium text-text-muted">
-                    <span className="font-bold text-text-primary shrink-0">Pauta recomendada:</span>
+                    <span className="font-bold text-text-primary shrink-0">Recomendación:</span>
                     <span>{followUp.actionHint}</span>
                   </div>
                 )}
@@ -631,7 +631,7 @@ const SmartExerciseCoachModal = ({
                           : `Aplicar ${activeSuggestedWeight} kg (${activeSuggestedReps} reps)`)
                       : (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
                           ? `Aplicar ${activeSuggestedSets} series (${activeSuggestedReps} reps)`
-                          : `Aplicar pauta (${activeSuggestedReps} reps)`)}
+                          : `Aplicar objetivo (${activeSuggestedReps} reps)`)}
                   </span>
                 </button>
 
