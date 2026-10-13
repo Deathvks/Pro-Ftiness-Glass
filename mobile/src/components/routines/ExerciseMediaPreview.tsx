@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Image, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { Play, Image as ImageIcon } from 'lucide-react-native';
+import { Play, Image as ImageIcon, Volume2, VolumeX } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BACKEND_BASE_URL, API_BASE_URL } from '@/services/apiClient';
 
@@ -26,6 +26,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(playYouTube);
+  const [isMuted, setIsMuted] = useState(true);
 
   useEffect(() => {
     if (playYouTube) {
@@ -47,17 +48,17 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   const getYoutubeId = (url?: string | null) => {
     if (!url || typeof url !== 'string') return null;
     const trimmed = url.trim();
-    if (trimmed.length === 11 && !trimmed.includes('/') && !trimmed.includes('.')) {
+    if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
       return trimmed;
     }
     const match = trimmed.match(
-      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|shorts\/|&v=)([^#&?]*).*/
+      /(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|shorts\/|&v=)([a-zA-Z0-9_-]{11})/
     );
-    return match && match[2]?.length === 11 ? match[2] : null;
+    return match ? match[1] : null;
   };
 
   const yid = useMemo(() => getYoutubeId(rawVideo), [rawVideo]);
-  const youtubeThumbnail = yid ? `https://img.youtube.com/vi/${yid}/hqdefault.jpg` : null;
+  const youtubeThumbnail = yid ? `https://img.youtube.com/vi/${yid}/mqdefault.jpg` : null;
 
   // 2. Normalizador robusto de URLs de imágenes (Wger, backend uploads y externas)
   const getNormalizedUrl = (url: any): string | null => {
@@ -157,14 +158,14 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
         <head>
           <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
           <style>
-            * { box-sizing: border-box; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
             body { margin: 0; padding: 0; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; }
             iframe { width: 100%; height: 100%; border: none; }
           </style>
         </head>
         <body>
           <iframe 
-            src="https://www.youtube.com/embed/${yid}?autoplay=1&mute=0&controls=1&modestbranding=1&rel=0&playsinline=1" 
+            src="https://www.youtube.com/embed/${yid}?autoplay=1&mute=${isMuted ? '1' : '0'}&controls=0&modestbranding=1&rel=0&playsinline=1&loop=1&playlist=${yid}&enablejsapi=1" 
             frameborder="0" 
             allow="autoplay; encrypted-media; picture-in-picture" 
             allowfullscreen>
@@ -175,12 +176,35 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       return (
         <View style={styles.fullContainer}>
           <WebView
-            source={{ html, baseUrl: 'https://youtube.com' }}
+            source={{ html, baseUrl: 'https://www.youtube.com' }}
             style={styles.webView}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
             allowsInlineMediaPlayback={true}
             mediaPlaybackRequiresUserAction={false}
+            allowsFullscreenVideo={true}
             scrollEnabled={false}
+            originWhitelist={['*']}
+            mixedContentMode="always"
+            pointerEvents="none"
           />
+          <TouchableOpacity
+            activeOpacity={0.7}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            onPress={() => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch {}
+              setIsMuted(prev => !prev);
+            }}
+            style={styles.muteButton}
+          >
+            {isMuted ? (
+              <VolumeX size={15} color="#ffffff" strokeWidth={2.5} />
+            ) : (
+              <Volume2 size={15} color="#ffffff" strokeWidth={2.5} />
+            )}
+          </TouchableOpacity>
         </View>
       );
     }
@@ -190,9 +214,12 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
         <WebView
           source={{ uri: rawVideo }}
           style={styles.webView}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
           allowsInlineMediaPlayback={true}
           mediaPlaybackRequiresUserAction={false}
           scrollEnabled={false}
+          pointerEvents="none"
         />
       </View>
     );
@@ -268,7 +295,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   webView: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
     backgroundColor: '#000000',
   },
   imageFill: {
@@ -320,5 +348,24 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 13,
     fontWeight: '800',
+  },
+  muteButton: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });

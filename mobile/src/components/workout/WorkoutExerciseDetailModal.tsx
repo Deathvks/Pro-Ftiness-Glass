@@ -1,5 +1,5 @@
 /* mobile/src/components/workout/WorkoutExerciseDetailModal.tsx */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Dimensions,
   Pressable,
+  Animated,
+  PanResponder,
 } from 'react-native';
 import {
   X,
@@ -46,6 +48,62 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
 
   const [localDetails, setLocalDetails] = useState<any>(exercise?.exercise_details || {});
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
+  // Animación de arrastre hacia abajo y cierre suave
+  const translateY = useRef(new Animated.Value(0)).current;
+  const isClosingRef = useRef(false);
+
+  const handleClose = () => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    Animated.timing(translateY, {
+      toValue: screenHeight,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => {
+      onClose();
+      translateY.setValue(0);
+      isClosingRef.current = false;
+    });
+  };
+
+  useEffect(() => {
+    if (exercise) {
+      isClosingRef.current = false;
+      translateY.setValue(0);
+    }
+  }, [exercise]);
+
+  // Gesto táctil tipo tarjeta deslizable de iOS (swipe down to close)
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return gestureState.dy > 5 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.2;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          translateY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 90 || gestureState.vy > 0.5) {
+          try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          } catch {}
+          handleClose();
+        } else {
+          Animated.spring(translateY, {
+            toValue: 0,
+            damping: 20,
+            mass: 0.8,
+            stiffness: 250,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
 
   // Estados del Entrenador IA
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
@@ -84,14 +142,20 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
           if (Array.isArray(fullList)) {
             const match = fullList.find(
               (e: any) =>
-                (e.id && e.id === exercise.id) ||
+                (e.id && (e.id === exercise.id || e.id === exercise.exercise_id || e.id === exercise.exercise_list_id)) ||
                 (e.name && exercise.name && e.name.toLowerCase().trim() === exercise.name.toLowerCase().trim())
             );
             if (match) {
               setLocalDetails((prev: any) => ({
                 ...match,
                 ...prev,
+                video_url: prev.video_url || match.video_url,
+                youtube_id: prev.youtube_id || match.youtube_id,
+                image_url: prev.image_url || match.image_url,
+                images: (prev.images && prev.images.length > 0) ? prev.images : match.images,
                 description: match.description_es || match.description || prev.description,
+                description_es: match.description_es || prev.description_es,
+                muscle_group: prev.muscle_group || match.muscle_group || match.muscles,
               }));
             }
           }
@@ -101,10 +165,25 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
     }
   }, [exercise, getOrFetchAllExercises]);
 
-  const mergedDetails = {
-    ...(exercise || {}),
-    ...(localDetails || {}),
-  };
+  const mergedDetails = useMemo(() => {
+    const rawEx = exercise || {};
+    const rawLoc = localDetails || {};
+    return {
+      ...rawLoc,
+      ...rawEx,
+      video_url: rawLoc.video_url || rawEx.video_url || rawEx.exercise_details?.video_url,
+      youtube_id: rawLoc.youtube_id || rawEx.youtube_id || rawEx.exercise_details?.youtube_id,
+      image_url: rawLoc.image_url || rawEx.image_url || rawEx.exercise_details?.image_url,
+      images: (rawLoc.images && rawLoc.images.length > 0)
+        ? rawLoc.images
+        : (rawEx.images && rawEx.images.length > 0)
+          ? rawEx.images
+          : rawEx.exercise_details?.images,
+      description: rawLoc.description_es || rawLoc.description || rawEx.description_es || rawEx.description,
+      description_es: rawLoc.description_es || rawEx.description_es,
+      muscle_group: rawLoc.muscle_group || rawLoc.muscles || rawEx.muscle_group || rawEx.muscles,
+    };
+  }, [exercise, localDetails]);
 
   // Limpieza y formateo de descripción (remueve tags html residuales como <p>, </p>, <br>)
   const rawDescription =
@@ -161,23 +240,26 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
       visible={Boolean(exercise)}
       transparent
       animationType="slide"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       {exercise ? (
-        <Pressable
-          style={[
-            styles.overlay,
-            { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.55)' : 'rgba(0, 0, 0, 0.28)' },
-          ]}
-          onPress={onClose}
-        >
+        <View style={styles.overlay}>
+          {/* Fondo oscuro traslúcido: pulsar fuera cierra el modal */}
           <Pressable
-            onPress={e => e.stopPropagation()}
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.55)' : 'rgba(0, 0, 0, 0.28)' },
+            ]}
+            onPress={handleClose}
+          />
+
+          <Animated.View
             style={[
               styles.modalSheet,
               {
-                backgroundColor: isDark ? 'rgba(22, 22, 28, 0.75)' : 'rgba(255, 255, 255, 0.82)',
+                backgroundColor: isDark ? 'rgba(22, 22, 28, 0.85)' : 'rgba(255, 255, 255, 0.90)',
                 borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.88)',
+                transform: [{ translateY }],
               },
             ]}
           >
@@ -187,18 +269,21 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
               style={StyleSheet.absoluteFill}
             />
 
-            {/* Barra de arrastre superior tipo cápsula Apple */}
-            <View style={styles.dragIndicatorWrapper}>
+            {/* Barra de arrastre superior tipo cápsula Apple (Swipe down to dismiss) */}
+            <View {...panResponder.panHandlers} style={styles.dragIndicatorWrapper}>
               <View
                 style={[
                   styles.dragIndicator,
-                  { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.22)' },
+                  { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.40)' : 'rgba(0, 0, 0, 0.25)' },
                 ]}
               />
             </View>
 
-            {/* Cabecera con efecto Liquid Glass */}
-            <View style={[styles.modalHeader, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.06)' }]}>
+            {/* Cabecera con efecto Liquid Glass y arrastre hacia abajo */}
+            <View 
+              {...panResponder.panHandlers}
+              style={[styles.modalHeader, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.06)' }]}
+            >
               <View style={{ flex: 1, paddingRight: 12 }}>
                 <Text style={[styles.exerciseTitle, { color: colors.text }]} numberOfLines={2}>
                   {exercise.name}
@@ -210,7 +295,7 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                   try {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   } catch {}
-                  onClose();
+                  handleClose();
                 }}
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 style={[
@@ -229,6 +314,9 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
             <ScrollView
               contentContainerStyle={styles.scrollBody}
               showsVerticalScrollIndicator={false}
+              nestedScrollEnabled={true}
+              keyboardShouldPersistTaps="handled"
+              bounces={true}
             >
               {/* 1. Reproductor de Vídeo / Formato Shorts 9:16 */}
               <View style={styles.mediaContainerWrapper}>
@@ -473,8 +561,8 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                 ) : null}
               </View>
             </ScrollView>
-          </Pressable>
-        </Pressable>
+          </Animated.View>
+        </View>
       ) : null}
     </Modal>
   );
@@ -503,7 +591,8 @@ const styles = StyleSheet.create({
   dragIndicatorWrapper: {
     alignItems: 'center',
     paddingTop: 12,
-    paddingBottom: 4,
+    paddingBottom: 8,
+    width: '100%',
   },
   dragIndicator: {
     width: 44,
@@ -534,16 +623,17 @@ const styles = StyleSheet.create({
   },
   scrollBody: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 48,
   },
   mediaContainerWrapper: {
     alignItems: 'center',
     marginBottom: 20,
   },
   mediaHeroCard: {
-    width: 250,
+    width: 220,
     maxWidth: '100%',
-    height: 290,
+    aspectRatio: 9 / 16,
+    maxHeight: 380,
     borderRadius: 26,
     borderWidth: 1,
     overflow: 'hidden',
