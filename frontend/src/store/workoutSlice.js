@@ -324,10 +324,10 @@ export const createWorkoutSlice = (set, get) => ({
     const targetExercise = newExercises[exIndex];
     if (!targetExercise) return;
 
-    const { suggestedSets, suggestedWeight, suggestedReps } = strategy || {};
+    const { suggestedSets, suggestedWeight, suggestedReps, perSetPlan } = strategy || {};
 
     // 1. Modificar número de series si la recomendación indica un conteo específico
-    const targetSetsCount = parseInt(suggestedSets, 10);
+    const targetSetsCount = parseInt(suggestedSets || (Array.isArray(perSetPlan) ? perSetPlan.length : null), 10);
     if (!isNaN(targetSetsCount) && targetSetsCount > 0) {
       const currentSets = targetExercise.setsDone || [];
       if (currentSets.length > targetSetsCount) {
@@ -336,10 +336,12 @@ export const createWorkoutSlice = (set, get) => ({
       } else if (currentSets.length < targetSetsCount) {
         // Aumentar series si la pauta sugiere más volumen
         while (targetExercise.setsDone.length < targetSetsCount) {
+          const newIdx = targetExercise.setsDone.length;
+          const planSet = perSetPlan && perSetPlan[newIdx] ? perSetPlan[newIdx] : null;
           targetExercise.setsDone.push({
             set_number: targetExercise.setsDone.length + 1,
-            reps: suggestedReps !== null && suggestedReps !== undefined ? String(suggestedReps) : '',
-            weight_kg: suggestedWeight !== null && suggestedWeight !== undefined ? String(suggestedWeight) : '',
+            reps: planSet?.reps !== undefined && planSet?.reps !== null ? String(planSet.reps) : (suggestedReps !== null && suggestedReps !== undefined ? String(suggestedReps) : ''),
+            weight_kg: planSet?.weight !== undefined && planSet?.weight !== null ? String(planSet.weight) : (suggestedWeight !== null && suggestedWeight !== undefined ? String(suggestedWeight) : ''),
             is_dropset: false,
             is_warmup: false,
             rir: null,
@@ -360,40 +362,58 @@ export const createWorkoutSlice = (set, get) => ({
 
     // 2. Aplicar peso y repeticiones sugeridas a las series de trabajo
     if (targetExercise.setsDone && targetExercise.setsDone.length > 0) {
-      let appliedWeightCount = 0;
-      let appliedRepsCount = 0;
-
-      // Completar series que estén vacías
-      targetExercise.setsDone.forEach((set) => {
-        if (set.is_warmup) return;
-        if (suggestedWeight !== null && suggestedWeight !== undefined) {
-          if (set.weight_kg === '' || set.weight_kg === null || set.weight_kg === undefined) {
-            set.weight_kg = suggestedWeight;
-            appliedWeightCount++;
-          }
-        }
-        if (suggestedReps !== null && suggestedReps !== undefined) {
-          if (set.reps === '' || set.reps === null || set.reps === undefined) {
-            set.reps = suggestedReps;
-            appliedRepsCount++;
-          }
-        }
-      });
-
-      // Si ninguna serie estaba vacía, actualizar todas las series de trabajo a la pauta
-      if (appliedWeightCount === 0 && suggestedWeight !== null && suggestedWeight !== undefined) {
+      if (perSetPlan && Array.isArray(perSetPlan) && perSetPlan.length > 0) {
+        // Asignación diferenciada por serie (ej: Top Set + Back-off sets)
+        let workingIdx = 0;
         targetExercise.setsDone.forEach((set) => {
-          if (!set.is_warmup) {
-            set.weight_kg = suggestedWeight;
+          if (set.is_warmup || set.is_dropset) return;
+          const planSet = perSetPlan[workingIdx] || perSetPlan[perSetPlan.length - 1];
+          if (planSet) {
+            if (planSet.weight !== null && planSet.weight !== undefined) {
+              set.weight_kg = planSet.weight;
+            }
+            if (planSet.reps !== null && planSet.reps !== undefined) {
+              set.reps = planSet.reps;
+            }
+          }
+          workingIdx++;
+        });
+      } else {
+        let appliedWeightCount = 0;
+        let appliedRepsCount = 0;
+
+        // Completar series que estén vacías
+        targetExercise.setsDone.forEach((set) => {
+          if (set.is_warmup) return;
+          if (suggestedWeight !== null && suggestedWeight !== undefined) {
+            if (set.weight_kg === '' || set.weight_kg === null || set.weight_kg === undefined) {
+              set.weight_kg = suggestedWeight;
+              appliedWeightCount++;
+            }
+          }
+          if (suggestedReps !== null && suggestedReps !== undefined) {
+            if (set.reps === '' || set.reps === null || set.reps === undefined) {
+              set.reps = suggestedReps;
+              appliedRepsCount++;
+            }
           }
         });
-      }
-      if (appliedRepsCount === 0 && suggestedReps !== null && suggestedReps !== undefined) {
-        targetExercise.setsDone.forEach((set) => {
-          if (!set.is_warmup) {
-            set.reps = suggestedReps;
-          }
-        });
+
+        // Si ninguna serie estaba vacía, actualizar todas las series de trabajo a la pauta
+        if (appliedWeightCount === 0 && suggestedWeight !== null && suggestedWeight !== undefined) {
+          targetExercise.setsDone.forEach((set) => {
+            if (!set.is_warmup) {
+              set.weight_kg = suggestedWeight;
+            }
+          });
+        }
+        if (appliedRepsCount === 0 && suggestedReps !== null && suggestedReps !== undefined) {
+          targetExercise.setsDone.forEach((set) => {
+            if (!set.is_warmup) {
+              set.reps = suggestedReps;
+            }
+          });
+        }
       }
     }
 

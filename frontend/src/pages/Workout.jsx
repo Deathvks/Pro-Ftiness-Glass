@@ -28,7 +28,7 @@ import SmartExerciseCoachModal from '../components/Workout/SmartExerciseCoachMod
 // --- Lazy Load de QuickCardio ---
 const QuickCardio = React.lazy(() => import('./QuickCardio'));
 
-const Workout = ({ timer, setView }) => {
+const Workout = ({ timer, setView, navParams }) => {
     const { addToast } = useToast();
     const { t } = useTranslation(['exercise_names', 'exercise_descriptions']);
 
@@ -90,6 +90,36 @@ const Workout = ({ timer, setView }) => {
     const [dismissedPreviousNote, setDismissedPreviousNote] = useState(false);
 
     const [showQuickCardio, setShowQuickCardio] = useState(false);
+
+    // --- Restaurar modal de Smart Coach si volvemos desde Asesoría ---
+    useEffect(() => {
+        let exerciseToReopen = navParams?.reopenCoachExercise;
+        if (!exerciseToReopen) {
+            try {
+                const saved = sessionStorage.getItem('asesoria_return_context');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.view === 'workout' && parsed.reopenCoachExercise) {
+                        exerciseToReopen = parsed.reopenCoachExercise;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        if (exerciseToReopen && activeWorkout?.exercises && activeWorkout.exercises.length > 0) {
+            const found = activeWorkout.exercises.find(
+                (e) => (exerciseToReopen.id && e.id === exerciseToReopen.id) ||
+                       (exerciseToReopen.name && e.name === exerciseToReopen.name) ||
+                       (typeof exerciseToReopen === 'string' && (e.name === exerciseToReopen || e.id === exerciseToReopen))
+            );
+            if (found) {
+                setSmartCoachExercise(found);
+                try {
+                    sessionStorage.removeItem('asesoria_return_context');
+                } catch (e) {}
+            }
+        }
+    }, [navParams, activeWorkout?.exercises]);
 
     // --- Recordatorio inteligente: Nota de la sesión anterior ---
     const previousWorkoutNote = useMemo(() => {
@@ -510,16 +540,21 @@ const Workout = ({ timer, setView }) => {
                         if (exIndex !== -1 && exIndex !== undefined) {
                             applyCoachStrategyToExercise(exIndex, strategy);
 
-                            const parts = [];
-                            if (strategy.suggestedSets) parts.push(`${strategy.suggestedSets} series`);
-                            if (strategy.suggestedWeight !== null && strategy.suggestedWeight !== undefined) {
-                                parts.push(`${strategy.suggestedWeight} kg`);
-                            }
-                            if (strategy.suggestedReps !== null && strategy.suggestedReps !== undefined) {
-                                parts.push(`${strategy.suggestedReps} reps`);
-                            }
+                            if (strategy.perSetPlan && strategy.perSetPlan.length > 0) {
+                                const setsDesc = strategy.perSetPlan.map(s => `${s.weight}kg`).join(' / ');
+                                addToast(`Estrategia aplicada: ${strategy.title} (${setsDesc})`, 'success');
+                            } else {
+                                const parts = [];
+                                if (strategy.suggestedSets) parts.push(`${strategy.suggestedSets} series`);
+                                if (strategy.suggestedWeight !== null && strategy.suggestedWeight !== undefined) {
+                                    parts.push(`${strategy.suggestedWeight} kg`);
+                                }
+                                if (strategy.suggestedReps !== null && strategy.suggestedReps !== undefined) {
+                                    parts.push(`${strategy.suggestedReps} reps`);
+                                }
 
-                            addToast(`Estrategia aplicada: ${parts.join(', ')}`, 'success');
+                                addToast(`Estrategia aplicada: ${parts.join(', ')}`, 'success');
+                            }
                         }
                         setSmartCoachExercise(null);
                     }}
@@ -534,8 +569,23 @@ const Workout = ({ timer, setView }) => {
                         setSmartCoachExercise(null);
                     }}
                     onNavigateAsesoria={() => {
-                        setSmartCoachExercise(null);
-                        if (setView) setView('asesoria');
+                        const exercisePayload = {
+                            id: smartCoachExercise.id,
+                            name: smartCoachExercise.name
+                        };
+                        try {
+                            sessionStorage.setItem('asesoria_return_context', JSON.stringify({
+                                view: 'workout',
+                                reopenCoachExercise: exercisePayload
+                            }));
+                        } catch (e) {}
+
+                        if (setView) {
+                            setView('asesoria', {
+                                returnView: 'workout',
+                                returnParams: { reopenCoachExercise: exercisePayload }
+                            });
+                        }
                     }}
                 />
             )}

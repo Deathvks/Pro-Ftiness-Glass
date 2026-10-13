@@ -343,8 +343,8 @@ export default function App() {
       case 'dashboard': return <Dashboard setView={navigateInternal} />;
       case 'progress': return <Progress darkMode={resolvedTheme !== 'light'} setView={navigateInternal} />;
       case 'routines': return <Routines setView={navigateInternal} />;
-      case 'workout': return <Workout timer={timer} setView={navigateInternal} />;
-      case 'nutrition': return <Nutrition setView={navigateInternal} />;
+      case 'workout': return <Workout timer={timer} setView={navigateInternal} navParams={navParams} />;
+      case 'nutrition': return <Nutrition setView={navigateInternal} navParams={navParams} />;
       case 'templateDiets': return <TemplateDiets setView={navigateInternal} />;
       case 'social': return <Social setView={navigateInternal} />;
       case 'publicProfile': return <PublicProfile userId={navParams?.userId} onBack={() => navigateInternal('social')} />;
@@ -377,7 +377,39 @@ export default function App() {
       case 'terms': return <TermsPage />;
       case 'twoFactorSetup': return <TwoFactorSetup setView={navigateInternal} />;
       case 'notifications': return <NotificationsScreen setView={navigateInternal} />;
-      case 'asesoria': return <AsesoriaScreen onBack={() => navigateInternal('hub')} />;
+      case 'asesoria': {
+        const handleBackFromAsesoria = () => {
+          let returnTarget = null;
+          if (navParams?.returnView) {
+            returnTarget = {
+              view: navParams.returnView,
+              params: navParams.returnParams || {}
+            };
+          } else {
+            try {
+              const saved = sessionStorage.getItem('asesoria_return_context');
+              if (saved) {
+                returnTarget = JSON.parse(saved);
+              }
+            } catch (e) {
+              console.warn('Error recuperando contexto de retorno de asesoría', e);
+            }
+          }
+
+          if (returnTarget?.view) {
+            try {
+              sessionStorage.removeItem('asesoria_return_context');
+            } catch (e) {}
+            navigateInternal(
+              returnTarget.view, 
+              returnTarget.params || (returnTarget.reopenCoachExercise ? { reopenCoachExercise: returnTarget.reopenCoachExercise } : {})
+            );
+          } else {
+            navigateInternal('hub');
+          }
+        };
+        return <AsesoriaScreen onBack={handleBackFromAsesoria} />;
+      }
       case 'not-found': return <NotFoundPage navigate={navigateInternal} />;
       default: return <Dashboard setView={navigateInternal} />;
     }

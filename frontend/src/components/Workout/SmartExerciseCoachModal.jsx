@@ -25,7 +25,8 @@ import {
   CheckCircle,
   Radio,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Layers
 } from 'lucide-react';
 import ModalPortal from '../ModalPortal';
 import { generateSmartCoachPlan } from '../../utils/smartProgressionCoach';
@@ -109,6 +110,7 @@ const SmartExerciseCoachModal = ({
       suggestedWeight: activeSuggestedWeight,
       suggestedReps: activeSuggestedReps,
       suggestedSets: activeSuggestedSets,
+      perSetPlan: activeStrategy?.perSetPlan || null,
       exerciseName: exercise.name,
       goal: userGoal.key,
       trendStatus: trend.status,
@@ -402,12 +404,18 @@ const SmartExerciseCoachModal = ({
                     <Dumbbell size={14} />
                   </div>
                   <div className="my-0.5">
-                    <span className="text-xl sm:text-2xl font-black text-accent tracking-tight">
-                      {activeSuggestedWeight !== null ? `${activeSuggestedWeight} kg` : 'Calibrar'}
-                    </span>
+                    {activeStrategy?.perSetPlan ? (
+                      <span className="text-sm sm:text-base font-black text-accent tracking-tight leading-tight block truncate">
+                        {activeStrategy.perSetPlan[0].weight}kg <span className="text-[10px] font-bold text-text-muted">/</span> {activeStrategy.perSetPlan[1]?.weight ?? activeStrategy.perSetPlan[0].weight}kg
+                      </span>
+                    ) : (
+                      <span className="text-xl sm:text-2xl font-black text-accent tracking-tight">
+                        {activeSuggestedWeight !== null ? `${activeSuggestedWeight} kg` : 'Calibrar'}
+                      </span>
+                    )}
                   </div>
                   <span className="text-[10px] font-semibold text-text-secondary truncate">
-                    {targets.weightChangeNote || 'Carga sugerida'}
+                    {activeStrategy?.perSetPlan ? '1ª Top · Resto Back-off' : (targets.weightChangeNote || 'Carga sugerida')}
                   </span>
                 </div>
 
@@ -422,8 +430,8 @@ const SmartExerciseCoachModal = ({
                       {activeSuggestedSets}
                     </span>
                   </div>
-                  <span className="text-[10px] font-semibold text-text-muted">
-                    Series efectivas
+                  <span className="text-[10px] font-semibold text-text-muted truncate">
+                    {activeStrategy?.perSetPlan ? `1 Top + ${activeSuggestedSets - 1} Back-off` : 'Series efectivas'}
                   </span>
                 </div>
 
@@ -465,6 +473,65 @@ const SmartExerciseCoachModal = ({
                   </span>
                 </div>
               </div>
+
+              {/* Desglose Serie a Serie si es estrategia escalonada (Top Set + Back-off) */}
+              {activeStrategy?.perSetPlan && activeStrategy.perSetPlan.length > 0 && (
+                <div className="mt-2.5 p-3 sm:p-3.5 rounded-[20px] bg-accent/10 ring-1 ring-accent/25 space-y-2 animate-[fade-in_0.2s_ease-out]">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="p-1 rounded-[8px] bg-accent/20 text-accent shrink-0">
+                        <Layers size={13} strokeWidth={2.5} />
+                      </div>
+                      <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-accent truncate">
+                        Desglose Inteligente por Serie (Top Set + Back-off)
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-accent/20 text-accent shrink-0">
+                      {activeStrategy.perSetPlan.length} Series
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2">
+                    {activeStrategy.perSetPlan.map((s) => (
+                      <div
+                        key={s.set_number}
+                        className={`p-2.5 rounded-[15px] flex flex-col justify-between gap-1.5 ring-1 ${
+                          s.type === 'top_set'
+                            ? 'bg-accent/15 ring-accent/30 shadow-sm'
+                            : 'bg-black/5 dark:bg-white/5 ring-black/5 dark:ring-white/10'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-[10px] font-bold text-text-muted">
+                            Serie {s.set_number}
+                          </span>
+                          <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
+                            s.type === 'top_set'
+                              ? 'bg-accent text-accent-contrast'
+                              : 'bg-black/10 dark:bg-white/10 text-text-secondary'
+                          }`}>
+                            {s.badge || (s.type === 'top_set' ? 'Top Set' : 'Back-off')}
+                          </span>
+                        </div>
+
+                        <div className="flex items-baseline gap-1 my-0.5">
+                          <span className="text-base sm:text-lg font-black text-text-primary tracking-tight">
+                            {s.weight} kg
+                          </span>
+                          <span className="text-xs font-bold text-text-secondary">
+                            × {s.reps} reps
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[10px] font-medium text-text-muted pt-1 border-t border-black/5 dark:border-white/10">
+                          <span className="text-accent font-bold">{s.rir || 'RIR 1'}</span>
+                          <span className="truncate text-[9px]">{s.type === 'top_set' ? 'Fuerza máxima' : 'Hipertrofia'}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Descanso sugerido */}
               <div className="mt-2 flex items-center justify-between px-1 text-[11px] font-semibold text-text-muted">
@@ -625,13 +692,15 @@ const SmartExerciseCoachModal = ({
                 >
                   <Check size={18} strokeWidth={3} />
                   <span>
-                    {activeSuggestedWeight !== null 
-                      ? (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
-                          ? `Aplicar ${activeSuggestedSets} series con ${activeSuggestedWeight} kg`
-                          : `Aplicar ${activeSuggestedWeight} kg (${activeSuggestedReps} reps)`)
-                      : (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
-                          ? `Aplicar ${activeSuggestedSets} series (${activeSuggestedReps} reps)`
-                          : `Aplicar objetivo (${activeSuggestedReps} reps)`)}
+                    {activeStrategy?.perSetPlan && activeStrategy.perSetPlan.length > 0
+                      ? `Aplicar Top Set + Back-off (${activeStrategy.perSetPlan.map(s => `${s.weight}kg`).join(' / ')})`
+                      : activeSuggestedWeight !== null 
+                        ? (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
+                            ? `Aplicar ${activeSuggestedSets} series con ${activeSuggestedWeight} kg`
+                            : `Aplicar ${activeSuggestedWeight} kg (${activeSuggestedReps} reps)`)
+                        : (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
+                            ? `Aplicar ${activeSuggestedSets} series (${activeSuggestedReps} reps)`
+                            : `Aplicar objetivo (${activeSuggestedReps} reps)`)}
                   </span>
                 </button>
 

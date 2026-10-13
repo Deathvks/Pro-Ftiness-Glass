@@ -104,6 +104,9 @@ export const useAppNavigation = (isInitialLoad) => {
     else if (path === '/social' && view !== 'social') {
       setView('social');
     }
+    else if (path === '/workout' && view !== 'workout') {
+      setView('workout');
+    }
     else if (path === '/asesoria' && view !== 'asesoria') {
       setView('asesoria');
     }
@@ -198,6 +201,10 @@ export const useAppNavigation = (isInitialLoad) => {
         setView('notifications');
       } else if (path === '/active-cardio') {
         setView('active-cardio');
+      } else if (path === '/workout') {
+        setView('workout');
+      } else if (path === '/asesoria') {
+        setView('asesoria');
       } else {
         setView('dashboard');
       }

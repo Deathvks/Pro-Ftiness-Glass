@@ -102,7 +102,7 @@ const MealImage = ({ src, alt, className, onClick }) => {
     );
 };
 
-const Nutrition = ({ setView }) => {
+const Nutrition = ({ setView, navParams }) => {
     const { addToast } = useToast();
     const {
         userProfile,
@@ -143,6 +143,28 @@ const Nutrition = ({ setView }) => {
     const [mealGroupToDelete, setMealGroupToDelete] = useState(null);
     const [showCreatinaTracker, setShowCreatinaTracker] = useState(false);
     const [showNutritionCoachModal, setShowNutritionCoachModal] = useState(false);
+ 
+    // --- Restaurar modal de Smart Nutrition Coach si volvemos de Asesoría ---
+    useEffect(() => {
+        let shouldReopen = navParams?.reopenNutritionCoach;
+        if (!shouldReopen) {
+            try {
+                const saved = sessionStorage.getItem('asesoria_return_context');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.view === 'nutrition' && parsed.reopenNutritionCoach) {
+                        shouldReopen = true;
+                    }
+                }
+            } catch (e) {}
+        }
+        if (shouldReopen) {
+            setShowNutritionCoachModal(true);
+            try {
+                sessionStorage.removeItem('asesoria_return_context');
+            } catch (e) {}
+        }
+    }, [navParams]);
 
     const [hoveredMacro, setHoveredMacro] = useState(null);
 
@@ -1245,7 +1267,18 @@ const Nutrition = ({ setView }) => {
                     onClose={() => setShowNutritionCoachModal(false)}
                     onNavigateAsesoria={() => {
                         setShowNutritionCoachModal(false);
-                        if (setView) setView('asesoria');
+                        try {
+                            sessionStorage.setItem('asesoria_return_context', JSON.stringify({
+                                view: 'nutrition',
+                                reopenNutritionCoach: true
+                            }));
+                        } catch (e) {}
+                        if (setView) {
+                            setView('asesoria', {
+                                returnView: 'nutrition',
+                                returnParams: { reopenNutritionCoach: true }
+                            });
+                        }
                     }}
                     onApplyStrategy={(strategy) => {
                         addToast(`Pauta aplicada: ${strategy.title}`, 'success');

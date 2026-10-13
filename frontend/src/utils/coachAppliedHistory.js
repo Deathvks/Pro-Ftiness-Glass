@@ -55,6 +55,7 @@ export const saveAppliedCoachStrategy = (exerciseName, strategyData) => {
       baselineWeight: strategyData.baselineWeight !== undefined ? strategyData.baselineWeight : null,
       baselineReps: strategyData.baselineReps !== undefined ? strategyData.baselineReps : null,
       baseline1RM: strategyData.baseline1RM !== undefined ? strategyData.baseline1RM : null,
+      perSetPlan: Array.isArray(strategyData.perSetPlan) ? strategyData.perSetPlan : null,
       appliedAt: new Date().toISOString()
     };
 

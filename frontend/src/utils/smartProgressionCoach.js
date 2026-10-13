@@ -52,6 +52,62 @@ export const normalizeUserGoal = (rawGoal) => {
 };
 
 /**
+ * Redondea un peso al incremento estándar de gimnasio (múltiplos de 1.25 o 2.5 kg).
+ */
+export const roundToWeightStep = (w) => {
+  if (w <= 0) return 0;
+  if (w >= 30) {
+    return Math.round(w / 2.5) * 2.5;
+  }
+  return Math.round(w / 1.25) * 1.25;
+};
+
+/**
+ * Genera la estructura de desglose serie a serie para estrategias escalonadas
+ * como Top Set (1ª serie récord/fuerza) + Back-off sets (series siguientes de volumen/hipertrofia).
+ */
+export const generateTopSetBackoffPlan = (
+  plannedSets, 
+  topWeight, 
+  topReps, 
+  backOffWeight, 
+  backOffReps, 
+  topSetRir = 'RIR 1', 
+  backOffRir = 'RIR 1-2'
+) => {
+  const setsCount = Math.max(3, parseInt(plannedSets, 10) || 3);
+  const plan = [];
+
+  // Serie 1: Top Set (frescura neural máxima)
+  plan.push({
+    set_number: 1,
+    type: 'top_set',
+    label: 'Serie 1: Top Set',
+    badge: 'Pico de Fuerza',
+    weight: topWeight,
+    reps: topReps,
+    rir: topSetRir,
+    note: 'Aprovecha tu máxima frescura neuromuscular para mover la carga récord con técnica impecable.'
+  });
+
+  // Series 2 a N: Back-off Sets (volumen de hipertrofia con peso descargado)
+  for (let i = 2; i <= setsCount; i++) {
+    plan.push({
+      set_number: i,
+      type: 'back_off',
+      label: `Serie ${i}: Back-off`,
+      badge: 'Volumen Hipertrofia',
+      weight: backOffWeight,
+      reps: backOffReps,
+      rir: backOffRir,
+      note: 'Descarga de carga (-10 a 15%) para acumular volumen efectivo sin fallo técnico.'
+    });
+  }
+
+  return plan;
+};
+
+/**
  * Analiza el historial de un ejercicio específico a lo largo de las sesiones del usuario.
  */
 export const getExerciseHistorySessions = (exerciseName, workoutLog) => {
@@ -276,6 +332,8 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
 
   const isBodyweight = lastSession ? lastSession.topWeight === 0 : false;
   const currentTopWeight = lastSession?.topWeight || 0;
+  // Criterio científico para esquemas Top Set + Back-off: mínimo 3 series, ejercicio con peso real y carga mínima de 15kg
+  const canUseTopSetBackoff = plannedSets >= 3 && !isBodyweight && currentTopWeight >= 15;
 
   let suggestedWeight = currentTopWeight;
   let suggestedSets = plannedSets;
@@ -456,6 +514,22 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
           description: `Mantén los ${currentTopWeight} kg y busca 1 repetición adicional por serie antes de subir kilos, asegurando control absoluto.`
         }
       ];
+
+      if (canUseTopSetBackoff && currentTopWeight >= 20) {
+        const progTopReps = Math.max(6, targetReps - 2);
+        strategyOptions.push({
+          id: 'prog_topset_backoff',
+          title: 'Top Set + Back-off (Pico de Sobrecarga)',
+          tag: 'Intensidad & Volumen',
+          badge: `1ª ${nextWeight}kg · Resto ${currentTopWeight}kg`,
+          suggestedWeight: nextWeight,
+          suggestedReps: progTopReps,
+          suggestedSets: plannedSets,
+          perSetPlan: generateTopSetBackoffPlan(plannedSets, nextWeight, progTopReps, currentTopWeight, targetReps),
+          motive: `Estás en racha positiva. Aplicar ${nextWeight} kg en la 1ª serie estimula la tensión mecánica máxima aprovechando tu energía intacta, mientras que las series siguientes a ${currentTopWeight} kg consolidan el volumen total de trabajo sin riesgo de fatiga neural.`,
+          description: `Serie 1 récord a ${nextWeight} kg (${progTopReps} reps) + Series 2-${plannedSets} a ${currentTopWeight} kg (${targetReps} reps) para consolidar hipertrofia.`
+        });
+      }
     } else if (goalInfo.key === 'lose') {
       intensityLabel = 'Esfuerzo Moderado';
       intensityDesc = 'Parar 2 reps antes del fallo';
@@ -493,6 +567,22 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
           description: `Prueba ${nextWeight} kg en tu 1ª serie solo si hoy sientes energía plena y descanso óptimo.`
         }
       ];
+
+      if (canUseTopSetBackoff && currentTopWeight >= 20) {
+        const loseBackOff = roundToWeightStep(currentTopWeight * 0.88);
+        strategyOptions.push({
+          id: 'prog_lose_topset_backoff',
+          title: 'Top Set + Back-off en Definición',
+          tag: 'Pico Controlado',
+          badge: `1ª ${nextWeight}kg · Resto ${loseBackOff}kg`,
+          suggestedWeight: nextWeight,
+          suggestedReps: Math.max(6, targetReps - 2),
+          suggestedSets: plannedSets,
+          perSetPlan: generateTopSetBackoffPlan(plannedSets, nextWeight, Math.max(6, targetReps - 2), loseBackOff, targetReps, 'RIR 1-2', 'RIR 2'),
+          motive: `Tocar ${nextWeight} kg en la 1ª serie envía un pulso de tensión pura para retener masa muscular, y descargar a ${loseBackOff} kg en las series restantes protege tus reservas de glucógeno.`,
+          description: `Serie 1 a ${nextWeight} kg + Series 2-${plannedSets} a ${loseBackOff} kg para proteger tu recuperación en déficit.`
+        });
+      }
     } else {
       intensityLabel = 'Esfuerzo Alto';
       intensityDesc = 'Parar 1-2 reps antes de fallar';
@@ -529,6 +619,21 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
           description: `Mantén los ${currentTopWeight} kg y suma una repetición extra con buena técnica.`
         }
       ];
+
+      if (canUseTopSetBackoff && currentTopWeight >= 20) {
+        strategyOptions.push({
+          id: 'prog_gen_topset_backoff',
+          title: 'Top Set + Back-off de Rendimiento',
+          tag: 'Fuerza & Volumen',
+          badge: `1ª ${nextWeight}kg · Resto ${currentTopWeight}kg`,
+          suggestedWeight: nextWeight,
+          suggestedReps: Math.max(6, targetReps - 2),
+          suggestedSets: plannedSets,
+          perSetPlan: generateTopSetBackoffPlan(plannedSets, nextWeight, Math.max(6, targetReps - 2), currentTopWeight, targetReps),
+          motive: `Combina una primera serie de alta intensidad con series de volumen para mantenerte atlético y versátil.`,
+          description: `Serie 1 a ${nextWeight} kg + Series 2-${plannedSets} a ${currentTopWeight} kg.`
+        });
+      }
     }
 
   // ============================================================
@@ -601,6 +706,23 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
           description: `Mantén ${currentTopWeight} kg y frena la bajada contando 3 segundos. Tu músculo trabajará mucho más sin castigar tus articulaciones.`
         }
       ];
+
+      if (canUseTopSetBackoff) {
+        const backOffWeight = Math.min(currentTopWeight, roundToWeightStep(testWeight * 0.88));
+        const topReps = Math.max(5, targetReps - 2);
+        strategyOptions.unshift({
+          id: 'stag_topset_backoff',
+          title: `Top Set + Back-off (1ª Serie Récord + ${plannedSets - 1} Volumen)`,
+          tag: 'Romper Estancamiento',
+          badge: `1ª ${testWeight}kg · Resto ${backOffWeight}kg`,
+          suggestedWeight: testWeight,
+          suggestedReps: topReps,
+          suggestedSets: plannedSets,
+          perSetPlan: generateTopSetBackoffPlan(plannedSets, testWeight, topReps, backOffWeight, targetReps),
+          motive: `Llevas ${weeksCount} semanas levantando ${currentTopWeight} kg. Probar ${testWeight} kg en la 1ª serie aprovecha tu frescura neuromuscular para reclutar fibras rápidas dormidas, mientras que las series siguientes a ${backOffWeight} kg acumulan volumen de hipertrofia sin fatiga extrema.`,
+          description: `Serie 1 a ${testWeight} kg (${topReps} reps) para romper la adaptación + Series 2-${plannedSets} a ${backOffWeight} kg (${targetReps} reps) para acumular volumen sin fallar.`
+        });
+      }
     } else if (goalInfo.key === 'lose') {
       actionDirection = 'maintain';
       intensityLabel = 'Esfuerzo Moderado';
@@ -639,6 +761,22 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
           description: `Intenta sacar 1 repetición extra solo en la 1ª serie y guarda fuerzas en las siguientes.`
         }
       ];
+
+      if (canUseTopSetBackoff && currentTopWeight >= 20) {
+        const loseBackOff = roundToWeightStep(currentTopWeight * 0.88);
+        strategyOptions.push({
+          id: 'stag_lose_topset_backoff',
+          title: `Top Set + Descarga (1ª Fuerte + ${plannedSets - 1} Protegidas)`,
+          tag: 'Cuidar Glucógeno',
+          badge: `1ª ${currentTopWeight}kg · Resto ${loseBackOff}kg`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: Math.max(5, targetReps - 2),
+          suggestedSets: plannedSets,
+          perSetPlan: generateTopSetBackoffPlan(plannedSets, currentTopWeight, Math.max(5, targetReps - 2), loseBackOff, targetReps, 'RIR 1-2', 'RIR 2'),
+          motive: `En déficit calórico, hacer todas las series pesadas drena rápidamente el glucógeno y aumenta la fatiga articular. Hacer una 1ª serie fuerte a ${currentTopWeight} kg envía la señal de blindar la masa muscular, y bajar a ${loseBackOff} kg en las siguientes protege tu recuperación.`,
+          description: `Serie 1 a ${currentTopWeight} kg (${Math.max(5, targetReps - 2)} reps) para blindar fuerza + Series 2-${plannedSets} con descarga a ${loseBackOff} kg para acumular repeticiones limpias sin agotar glucógeno.`
+        });
+      }
     } else {
       actionDirection = 'maintain';
       intensityLabel = 'Controlado';
@@ -676,6 +814,22 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
           description: `Prueba ${testWeight} kg haciendo 1-2 repeticiones menos para notar una exigencia mayor.`
         }
       ];
+
+      if (canUseTopSetBackoff) {
+        const genBackOff = roundToWeightStep(testWeight * 0.88);
+        strategyOptions.push({
+          id: 'stag_gen_topset_backoff',
+          title: `Top Set + Back-off (Romper Monotonía)`,
+          tag: 'Variedad de Carga',
+          badge: `1ª ${testWeight}kg · Resto ${genBackOff}kg`,
+          suggestedWeight: testWeight,
+          suggestedReps: Math.max(5, targetReps - 2),
+          suggestedSets: plannedSets,
+          perSetPlan: generateTopSetBackoffPlan(plannedSets, testWeight, Math.max(5, targetReps - 2), genBackOff, targetReps),
+          motive: `Variar la carga entre series rompe la monotonía y estimula diferentes tipos de fibras musculares.`,
+          description: `Prueba ${testWeight} kg en la 1ª serie y ajusta a ${genBackOff} kg en las series 2-${plannedSets}.`
+        });
+      }
     }
 
   // ============================================================
