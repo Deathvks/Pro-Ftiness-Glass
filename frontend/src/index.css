@@ -413,39 +413,39 @@ html.galaxy-theme #root::after {
   --btn-accent-text: #000000;
 }
 
-.accent-matcha {
-  --color-accent: #98d8aa;
-  --color-accent-transparent: rgba(152, 216, 170, 0.12);
-  --color-accent-border: rgba(152, 216, 170, 0.28);
+.accent-volt {
+  --color-accent: #ccff00;
+  --color-accent-transparent: rgba(204, 255, 0, 0.14);
+  --color-accent-border: rgba(204, 255, 0, 0.32);
   --btn-accent-text: #000000;
 }
 
-.accent-glacier {
-  --color-accent: #7dd3fc;
-  --color-accent-transparent: rgba(125, 211, 252, 0.12);
-  --color-accent-border: rgba(125, 211, 252, 0.28);
+.accent-cyber-aqua {
+  --color-accent: #00f5d4;
+  --color-accent-transparent: rgba(0, 245, 212, 0.14);
+  --color-accent-border: rgba(0, 245, 212, 0.32);
   --btn-accent-text: #000000;
 }
 
-.accent-mauve {
-  --color-accent: #d8b4fe;
-  --color-accent-transparent: rgba(216, 180, 254, 0.12);
-  --color-accent-border: rgba(216, 180, 254, 0.28);
-  --btn-accent-text: #000000;
+.accent-laser-ruby {
+  --color-accent: #ff0055;
+  --color-accent-transparent: rgba(255, 0, 85, 0.14);
+  --color-accent-border: rgba(255, 0, 85, 0.32);
+  --btn-accent-text: #ffffff;
 }
 
-.accent-soft-coral {
-  --color-accent: #ff9a76;
-  --color-accent-transparent: rgba(255, 154, 118, 0.12);
-  --color-accent-border: rgba(255, 154, 118, 0.28);
-  --btn-accent-text: #000000;
+.accent-ultra-violet {
+  --color-accent: #7928ca;
+  --color-accent-transparent: rgba(121, 40, 202, 0.14);
+  --color-accent-border: rgba(121, 40, 202, 0.32);
+  --btn-accent-text: #ffffff;
 }
 
-.accent-champagne {
-  --color-accent: #f5c87a;
-  --color-accent-transparent: rgba(245, 200, 122, 0.12);
-  --color-accent-border: rgba(245, 200, 122, 0.28);
-  --btn-accent-text: #000000;
+.accent-terracotta {
+  --color-accent: #e76f51;
+  --color-accent-transparent: rgba(231, 111, 81, 0.14);
+  --color-accent-border: rgba(231, 111, 81, 0.32);
+  --btn-accent-text: #ffffff;
 }
 
 
@@ -1206,11 +1206,11 @@ html.light-theme.accent-pistachio, html.light-theme.accent-pistachio * { --text-
 html.light-theme.accent-cherry-blossom, html.light-theme.accent-cherry-blossom * { --text-accent: #be123c; }
 html.light-theme.accent-lime, html.light-theme.accent-lime * { --text-accent: #3f6212; }
 html.light-theme.accent-sky, html.light-theme.accent-sky * { --text-accent: #0284c7; }
-html.light-theme.accent-matcha, html.light-theme.accent-matcha * { --text-accent: #15803d; }
-html.light-theme.accent-glacier, html.light-theme.accent-glacier * { --text-accent: #0369a1; }
-html.light-theme.accent-mauve, html.light-theme.accent-mauve * { --text-accent: #7e22ce; }
-html.light-theme.accent-soft-coral, html.light-theme.accent-soft-coral * { --text-accent: #c2410c; }
-html.light-theme.accent-champagne, html.light-theme.accent-champagne * { --text-accent: #a16207; }
+html.light-theme.accent-volt, html.light-theme.accent-volt * { --text-accent: #4d7c0f; }
+html.light-theme.accent-cyber-aqua, html.light-theme.accent-cyber-aqua * { --text-accent: #0f766e; }
+html.light-theme.accent-laser-ruby, html.light-theme.accent-laser-ruby * { --text-accent: #be123c; }
+html.light-theme.accent-ultra-violet, html.light-theme.accent-ultra-violet * { --text-accent: #6b21a8; }
+html.light-theme.accent-terracotta, html.light-theme.accent-terracotta * { --text-accent: #9a3412; }
 
 /* En modo claro con temas amarillos/pasteles, asegurar que botones y cápsulas con fondo acento tengan texto/icono oscuro de alto contraste */
 html.light-theme.accent-yellow .bg-accent,
@@ -1220,11 +1220,8 @@ html.light-theme.accent-mango .bg-accent,
 html.light-theme.accent-peach .bg-accent,
 html.light-theme.accent-mint .bg-accent,
 html.light-theme.accent-cherry-blossom .bg-accent,
-html.light-theme.accent-matcha .bg-accent,
-html.light-theme.accent-glacier .bg-accent,
-html.light-theme.accent-mauve .bg-accent,
-html.light-theme.accent-soft-coral .bg-accent,
-html.light-theme.accent-champagne .bg-accent {
+html.light-theme.accent-volt .bg-accent,
+html.light-theme.accent-cyber-aqua .bg-accent {
   color: var(--btn-accent-text, #000000) !important;
 }
 
@@ -1235,10 +1232,7 @@ html.light-theme.accent-mango .bg-accent svg,
 html.light-theme.accent-peach .bg-accent svg,
 html.light-theme.accent-mint .bg-accent svg,
 html.light-theme.accent-cherry-blossom .bg-accent svg,
-html.light-theme.accent-matcha .bg-accent svg,
-html.light-theme.accent-glacier .bg-accent svg,
-html.light-theme.accent-mauve .bg-accent svg,
-html.light-theme.accent-soft-coral .bg-accent svg,
-html.light-theme.accent-champagne .bg-accent svg {
+html.light-theme.accent-volt .bg-accent svg,
+html.light-theme.accent-cyber-aqua .bg-accent svg {
   color: var(--btn-accent-text, #000000) !important;
 }

@@ -1140,11 +1140,11 @@ export default function MainAppLayout({
                       <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffbe76' }} title="Mango" />
                       <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fdfd96' }} title="Limonada" />
                       <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fccbcf' }} title="Flor de Cerezo" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#98d8aa' }} title="Té Matcha" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#7dd3fc' }} title="Azul Glaciar" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#d8b4fe' }} title="Malva Pastel" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ff9a76' }} title="Coral Suave" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#f5c87a' }} title="Oro Champán" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ccff00' }} title="Volt Deportivo" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#00f5d4' }} title="Aqua Neón" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ff0055' }} title="Rubí Láser" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#7928ca' }} title="Ultra Violeta" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#e76f51' }} title="Terracota" />
                     </>
                   )}
                 </div>
