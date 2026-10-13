@@ -164,6 +164,8 @@ export default function AppearanceScreen({ setView }) {
   const isOceanUnlocked = (userProfile?.referralCount || 0) >= 11 || userProfile?.role === 'admin';
   const isOceanActive = activeTheme === 'ocean' || activeTheme === 'ocean-dark';
 
+  const isLevel20Accent = ['supernova', 'plasma', 'eternal-flame', 'abyssal-vortex', 'cosmic-gold'].includes(accent);
+
   
 
   const handleThemeClick = (mode) => {
@@ -216,7 +218,7 @@ export default function AppearanceScreen({ setView }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* 1) Apariencia de la App: a la izquierda en PC, abajo en móvil */}
-        <GlassCard className={`${glassCardClass} order-2 lg:order-1 lg:col-span-7 xl:col-span-7`}>
+        <GlassCard className={`${glassCardClass} order-2 lg:order-1 lg:col-span-7 xl:col-span-7 ${isLevel20Accent ? 'living-accent-container' : ''}`}>
           <SectionTitle icon={Palette} title="Apariencia de la App" />
 
           {/* Temas Base */}
@@ -361,7 +363,7 @@ export default function AppearanceScreen({ setView }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <h4 className="text-sm font-black text-text-primary tracking-tight leading-none">Nivel 20</h4>
-                  <span className="inline-flex items-center justify-center text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 tracking-wider leading-none">
+                  <span className={`inline-flex items-center justify-center text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 tracking-wider leading-none ${isLevel20Accent ? 'living-accent-container' : ''}`}>
                     <span className="text-accent leading-none">Animados</span>
                   </span>
                 </div>

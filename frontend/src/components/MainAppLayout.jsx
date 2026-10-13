@@ -63,7 +63,8 @@ export default function MainAppLayout({
 }) {
   const { addToast } = useToast();
   useOfflineSync();
-  const { activeTheme } = useAppTheme();
+  const { activeTheme, accent } = useAppTheme();
+  const isLevel20Accent = ['supernova', 'plasma', 'eternal-flame', 'abyssal-vortex', 'cosmic-gold'].includes(accent);
 
   // Workaround para re-calcular env(safe-area-inset-top) en iOS PWA al cambiar el tema
   useEffect(() => {
@@ -861,6 +862,14 @@ export default function MainAppLayout({
 
   return (
     <div className="relative flex flex-1 w-full h-full overflow-hidden bg-transparent">
+      {/* ATMÓSFERA ÉPICA DE FONDO (NIVEL 20) */}
+      {isLevel20Accent && (
+        <div className="living-bg-ambient pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+          <div className="living-ambient-orb living-ambient-orb-1" />
+          <div className="living-ambient-orb living-ambient-orb-2" />
+          <div className="living-ambient-orb living-ambient-orb-3" />
+        </div>
+      )}
       
       <GlobalRatingPrompt />
       
@@ -1014,7 +1023,7 @@ export default function MainAppLayout({
         className={`md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isGlobalModalOpen ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
         style={{ bottom: 'calc(var(--safe-bottom) + 12px)' }}
       >
-        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
+        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3 living-accent-container">
           
           <nav 
             ref={navRef} 
@@ -1129,7 +1138,7 @@ export default function MainAppLayout({
       {showAccentUnlockModal && (
         <ModalPortal>
           <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]" onClick={() => setShowAccentUnlockModal(false)}>
-            <div className="bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-t-[32px] sm:rounded-[32px] w-full max-w-md flex flex-col shadow-2xl overflow-hidden animate-[slide-up_0.3s_ease-out] mt-auto sm:mt-0" onClick={e => e.stopPropagation()}>
+            <div className={`bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-t-[32px] sm:rounded-[32px] w-full max-w-md flex flex-col shadow-2xl overflow-hidden animate-[slide-up_0.3s_ease-out] mt-auto sm:mt-0 ${accentUnlockLevel === 20 ? 'living-accent-container' : ''}`} onClick={e => e.stopPropagation()}>
 
               {/* Header con drag handle */}
               <div className="shrink-0 p-5 sm:p-6 pb-0 flex flex-col items-center">
