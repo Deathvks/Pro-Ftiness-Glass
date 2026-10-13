@@ -764,13 +764,13 @@ html.galaxy-theme #root::after {
   color: inherit !important;
 }
 
-/* 4.4) ATMÓSFERA Y FONDOS ÉPICOS NIVEL 20 */
+/* 4.4) ATMÓSFERA Y FONDOS ÉPICOS NIVEL 20 (SOLO BACKGROUND) */
 @keyframes living-ambient-flow-1 {
   0% {
     transform: translate3d(-10%, -10%, 0) scale(1);
   }
   50% {
-    transform: translate3d(8%, 12%, 0) scale(1.15);
+    transform: translate3d(12%, 14%, 0) scale(1.18);
   }
   100% {
     transform: translate3d(-10%, -10%, 0) scale(1);
@@ -779,25 +779,67 @@ html.galaxy-theme #root::after {
 
 @keyframes living-ambient-flow-2 {
   0% {
-    transform: translate3d(10%, 15%, 0) scale(1.1);
+    transform: translate3d(12%, 15%, 0) scale(1.15);
   }
   50% {
-    transform: translate3d(-12%, -8%, 0) scale(0.95);
+    transform: translate3d(-14%, -10%, 0) scale(0.92);
   }
   100% {
-    transform: translate3d(10%, 15%, 0) scale(1.1);
+    transform: translate3d(12%, 15%, 0) scale(1.15);
   }
 }
 
 @keyframes living-ambient-flow-3 {
   0% {
-    transform: translate3d(0%, 10%, 0) scale(0.95);
+    transform: translate3d(-5%, 8%, 0) scale(0.95);
   }
   50% {
-    transform: translate3d(-8%, -15%, 0) scale(1.12);
+    transform: translate3d(10%, -14%, 0) scale(1.14);
   }
   100% {
-    transform: translate3d(0%, 10%, 0) scale(0.95);
+    transform: translate3d(-5%, 8%, 0) scale(0.95);
+  }
+}
+
+@keyframes living-ambient-flow-4 {
+  0% {
+    transform: translate3d(10%, -8%, 0) scale(1.05);
+  }
+  50% {
+    transform: translate3d(-10%, 12%, 0) scale(0.95);
+  }
+  100% {
+    transform: translate3d(10%, -8%, 0) scale(1.05);
+  }
+}
+
+@keyframes living-mesh-drift {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.12) rotate(4deg);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.55;
+  }
+}
+
+@keyframes living-beam-drift {
+  0% {
+    transform: rotate(-25deg) translate3d(-10%, 0, 0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: rotate(-20deg) translate3d(12%, 8%, 0);
+    opacity: 0.65;
+  }
+  100% {
+    transform: rotate(-25deg) translate3d(-10%, 0, 0);
+    opacity: 0.4;
   }
 }
 
@@ -807,223 +849,311 @@ html.galaxy-theme #root::after {
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
-  opacity: 0.55;
-  transition: opacity 0.8s ease;
+  opacity: 0.68;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translateZ(0);
 }
 
 html.light-theme .living-bg-ambient {
-  opacity: 0.22;
+  opacity: 0.30;
 }
 
 html.oled-theme .living-bg-ambient {
-  opacity: 0.28;
+  opacity: 0.40;
+}
+
+.living-ambient-mesh {
+  position: absolute;
+  inset: -20%;
+  filter: blur(65px);
+  will-change: transform, opacity;
+  pointer-events: none;
+  animation: living-mesh-drift 24s ease-in-out infinite;
+}
+
+.living-ambient-beam {
+  position: absolute;
+  width: 140vw;
+  height: 38vh;
+  top: 22%;
+  left: -20%;
+  filter: blur(80px);
+  will-change: transform, opacity;
+  pointer-events: none;
+  animation: living-beam-drift 28s ease-in-out infinite;
 }
 
 .living-ambient-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
+  filter: blur(90px);
   will-change: transform;
   pointer-events: none;
 }
 
 /* Supernova */
+.accent-supernova .living-ambient-mesh {
+  background: radial-gradient(ellipse at 50% 50%, rgba(124, 58, 237, 0.28) 0%, rgba(236, 72, 153, 0.16) 45%, transparent 75%);
+}
+
+.accent-supernova .living-ambient-beam {
+  background: linear-gradient(90deg, transparent 0%, rgba(236, 72, 153, 0.35) 35%, rgba(59, 130, 246, 0.30) 70%, transparent 100%);
+}
+
 .accent-supernova .living-ambient-orb-1 {
   top: -15%;
   left: -15%;
-  width: 65vw;
-  height: 65vw;
-  max-width: 650px;
-  max-height: 650px;
-  background: radial-gradient(circle, rgba(124, 58, 237, 0.45) 0%, rgba(124, 58, 237, 0) 70%);
+  width: 75vw;
+  height: 75vw;
+  max-width: 800px;
+  max-height: 800px;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.65) 0%, rgba(139, 92, 246, 0.35) 45%, transparent 75%);
   animation: living-ambient-flow-1 18s ease-in-out infinite;
 }
 
 .accent-supernova .living-ambient-orb-2 {
   bottom: -15%;
   right: -15%;
-  width: 70vw;
-  height: 70vw;
-  max-width: 700px;
-  max-height: 700px;
-  background: radial-gradient(circle, rgba(236, 72, 153, 0.38) 0%, rgba(236, 72, 153, 0) 70%);
+  width: 80vw;
+  height: 80vw;
+  max-width: 850px;
+  max-height: 850px;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.60) 0%, rgba(219, 39, 119, 0.32) 45%, transparent 75%);
   animation: living-ambient-flow-2 22s ease-in-out infinite;
 }
 
 .accent-supernova .living-ambient-orb-3 {
-  top: 40%;
-  right: 15%;
-  width: 50vw;
-  height: 50vw;
-  max-width: 500px;
-  max-height: 500px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0) 70%);
-  animation: living-ambient-flow-3 20s ease-in-out infinite;
+  top: 35%;
+  left: -8%;
+  width: 58vw;
+  height: 58vw;
+  max-width: 620px;
+  max-height: 620px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.50) 0%, rgba(99, 102, 241, 0.28) 45%, transparent 75%);
+  animation: living-ambient-flow-3 17s ease-in-out infinite;
+}
+
+.accent-supernova .living-ambient-orb-4 {
+  top: 55%;
+  right: -8%;
+  width: 52vw;
+  height: 52vw;
+  max-width: 560px;
+  max-height: 560px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.55) 0%, rgba(244, 114, 182, 0.30) 45%, transparent 75%);
+  animation: living-ambient-flow-4 21s ease-in-out infinite;
 }
 
 /* Plasma Cuántico */
+.accent-plasma .living-ambient-mesh {
+  background: radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.28) 0%, rgba(6, 182, 212, 0.16) 45%, transparent 75%);
+}
+
+.accent-plasma .living-ambient-beam {
+  background: linear-gradient(90deg, transparent 0%, rgba(16, 185, 129, 0.35) 35%, rgba(6, 182, 212, 0.35) 70%, transparent 100%);
+}
+
 .accent-plasma .living-ambient-orb-1 {
   top: -15%;
   left: -15%;
-  width: 65vw;
-  height: 65vw;
-  max-width: 650px;
-  max-height: 650px;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.45) 0%, rgba(16, 185, 129, 0) 70%);
+  width: 75vw;
+  height: 75vw;
+  max-width: 800px;
+  max-height: 800px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.65) 0%, rgba(52, 211, 153, 0.35) 45%, transparent 75%);
   animation: living-ambient-flow-1 18s ease-in-out infinite;
 }
 
 .accent-plasma .living-ambient-orb-2 {
   bottom: -15%;
   right: -15%;
-  width: 70vw;
-  height: 70vw;
-  max-width: 700px;
-  max-height: 700px;
-  background: radial-gradient(circle, rgba(6, 182, 212, 0.38) 0%, rgba(6, 182, 212, 0) 70%);
+  width: 80vw;
+  height: 80vw;
+  max-width: 850px;
+  max-height: 850px;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.60) 0%, rgba(34, 211, 238, 0.32) 45%, transparent 75%);
   animation: living-ambient-flow-2 22s ease-in-out infinite;
 }
 
 .accent-plasma .living-ambient-orb-3 {
-  top: 40%;
-  right: 15%;
-  width: 50vw;
-  height: 50vw;
-  max-width: 500px;
-  max-height: 500px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0) 70%);
-  animation: living-ambient-flow-3 20s ease-in-out infinite;
+  top: 35%;
+  left: -8%;
+  width: 58vw;
+  height: 58vw;
+  max-width: 620px;
+  max-height: 620px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.50) 0%, rgba(14, 165, 233, 0.28) 45%, transparent 75%);
+  animation: living-ambient-flow-3 17s ease-in-out infinite;
+}
+
+.accent-plasma .living-ambient-orb-4 {
+  top: 55%;
+  right: -8%;
+  width: 52vw;
+  height: 52vw;
+  max-width: 560px;
+  max-height: 560px;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.55) 0%, rgba(16, 185, 129, 0.30) 45%, transparent 75%);
+  animation: living-ambient-flow-4 21s ease-in-out infinite;
 }
 
 /* Llama Eterna */
+.accent-eternal-flame .living-ambient-mesh {
+  background: radial-gradient(ellipse at 50% 50%, rgba(239, 68, 68, 0.28) 0%, rgba(249, 115, 22, 0.16) 45%, transparent 75%);
+}
+
+.accent-eternal-flame .living-ambient-beam {
+  background: linear-gradient(90deg, transparent 0%, rgba(249, 115, 22, 0.35) 35%, rgba(250, 204, 21, 0.32) 70%, transparent 100%);
+}
+
 .accent-eternal-flame .living-ambient-orb-1 {
   top: -15%;
   left: -15%;
-  width: 65vw;
-  height: 65vw;
-  max-width: 650px;
-  max-height: 650px;
-  background: radial-gradient(circle, rgba(239, 68, 68, 0.42) 0%, rgba(239, 68, 68, 0) 70%);
+  width: 75vw;
+  height: 75vw;
+  max-width: 800px;
+  max-height: 800px;
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.65) 0%, rgba(248, 113, 113, 0.35) 45%, transparent 75%);
   animation: living-ambient-flow-1 18s ease-in-out infinite;
 }
 
 .accent-eternal-flame .living-ambient-orb-2 {
   bottom: -15%;
   right: -15%;
-  width: 70vw;
-  height: 70vw;
-  max-width: 700px;
-  max-height: 700px;
-  background: radial-gradient(circle, rgba(249, 115, 22, 0.38) 0%, rgba(249, 115, 22, 0) 70%);
+  width: 80vw;
+  height: 80vw;
+  max-width: 850px;
+  max-height: 850px;
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.60) 0%, rgba(251, 146, 60, 0.32) 45%, transparent 75%);
   animation: living-ambient-flow-2 22s ease-in-out infinite;
 }
 
 .accent-eternal-flame .living-ambient-orb-3 {
-  top: 40%;
-  right: 15%;
-  width: 50vw;
-  height: 50vw;
-  max-width: 500px;
-  max-height: 500px;
-  background: radial-gradient(circle, rgba(250, 204, 21, 0.28) 0%, rgba(250, 204, 21, 0) 70%);
-  animation: living-ambient-flow-3 20s ease-in-out infinite;
+  top: 35%;
+  left: -8%;
+  width: 58vw;
+  height: 58vw;
+  max-width: 620px;
+  max-height: 620px;
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.45) 0%, rgba(253, 224, 71, 0.25) 45%, transparent 75%);
+  animation: living-ambient-flow-3 17s ease-in-out infinite;
+}
+
+.accent-eternal-flame .living-ambient-orb-4 {
+  top: 55%;
+  right: -8%;
+  width: 52vw;
+  height: 52vw;
+  max-width: 560px;
+  max-height: 560px;
+  background: radial-gradient(circle, rgba(220, 38, 38, 0.55) 0%, rgba(249, 115, 22, 0.30) 45%, transparent 75%);
+  animation: living-ambient-flow-4 21s ease-in-out infinite;
 }
 
 /* Vórtice Abisal */
+.accent-abyssal-vortex .living-ambient-mesh {
+  background: radial-gradient(ellipse at 50% 50%, rgba(29, 78, 216, 0.28) 0%, rgba(99, 102, 241, 0.16) 45%, transparent 75%);
+}
+
+.accent-abyssal-vortex .living-ambient-beam {
+  background: linear-gradient(90deg, transparent 0%, rgba(99, 102, 241, 0.35) 35%, rgba(20, 184, 166, 0.32) 70%, transparent 100%);
+}
+
 .accent-abyssal-vortex .living-ambient-orb-1 {
   top: -15%;
   left: -15%;
-  width: 65vw;
-  height: 65vw;
-  max-width: 650px;
-  max-height: 650px;
-  background: radial-gradient(circle, rgba(29, 78, 216, 0.45) 0%, rgba(29, 78, 216, 0) 70%);
+  width: 75vw;
+  height: 75vw;
+  max-width: 800px;
+  max-height: 800px;
+  background: radial-gradient(circle, rgba(29, 78, 216, 0.65) 0%, rgba(96, 165, 250, 0.35) 45%, transparent 75%);
   animation: living-ambient-flow-1 18s ease-in-out infinite;
 }
 
 .accent-abyssal-vortex .living-ambient-orb-2 {
   bottom: -15%;
   right: -15%;
-  width: 70vw;
-  height: 70vw;
-  max-width: 700px;
-  max-height: 700px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.38) 0%, rgba(99, 102, 241, 0) 70%);
+  width: 80vw;
+  height: 80vw;
+  max-width: 850px;
+  max-height: 850px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.60) 0%, rgba(129, 140, 248, 0.32) 45%, transparent 75%);
   animation: living-ambient-flow-2 22s ease-in-out infinite;
 }
 
 .accent-abyssal-vortex .living-ambient-orb-3 {
-  top: 40%;
-  right: 15%;
-  width: 50vw;
-  height: 50vw;
-  max-width: 500px;
-  max-height: 500px;
-  background: radial-gradient(circle, rgba(20, 184, 166, 0.3) 0%, rgba(20, 184, 166, 0) 70%);
-  animation: living-ambient-flow-3 20s ease-in-out infinite;
+  top: 35%;
+  left: -8%;
+  width: 58vw;
+  height: 58vw;
+  max-width: 620px;
+  max-height: 620px;
+  background: radial-gradient(circle, rgba(13, 148, 136, 0.50) 0%, rgba(45, 212, 191, 0.28) 45%, transparent 75%);
+  animation: living-ambient-flow-3 17s ease-in-out infinite;
+}
+
+.accent-abyssal-vortex .living-ambient-orb-4 {
+  top: 55%;
+  right: -8%;
+  width: 52vw;
+  height: 52vw;
+  max-width: 560px;
+  max-height: 560px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.55) 0%, rgba(79, 70, 229, 0.30) 45%, transparent 75%);
+  animation: living-ambient-flow-4 21s ease-in-out infinite;
 }
 
 /* Oro Cósmico */
+.accent-cosmic-gold .living-ambient-mesh {
+  background: radial-gradient(ellipse at 50% 50%, rgba(217, 119, 6, 0.28) 0%, rgba(245, 158, 11, 0.16) 45%, transparent 75%);
+}
+
+.accent-cosmic-gold .living-ambient-beam {
+  background: linear-gradient(90deg, transparent 0%, rgba(245, 158, 11, 0.35) 35%, rgba(253, 224, 71, 0.32) 70%, transparent 100%);
+}
+
 .accent-cosmic-gold .living-ambient-orb-1 {
   top: -15%;
   left: -15%;
-  width: 65vw;
-  height: 65vw;
-  max-width: 650px;
-  max-height: 650px;
-  background: radial-gradient(circle, rgba(217, 119, 6, 0.42) 0%, rgba(217, 119, 6, 0) 70%);
+  width: 75vw;
+  height: 75vw;
+  max-width: 800px;
+  max-height: 800px;
+  background: radial-gradient(circle, rgba(217, 119, 6, 0.65) 0%, rgba(245, 158, 11, 0.35) 45%, transparent 75%);
   animation: living-ambient-flow-1 18s ease-in-out infinite;
 }
 
 .accent-cosmic-gold .living-ambient-orb-2 {
   bottom: -15%;
   right: -15%;
-  width: 70vw;
-  height: 70vw;
-  max-width: 700px;
-  max-height: 700px;
-  background: radial-gradient(circle, rgba(253, 224, 71, 0.3) 0%, rgba(253, 224, 71, 0) 70%);
+  width: 80vw;
+  height: 80vw;
+  max-width: 850px;
+  max-height: 850px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.60) 0%, rgba(251, 191, 36, 0.32) 45%, transparent 75%);
   animation: living-ambient-flow-2 22s ease-in-out infinite;
 }
 
 .accent-cosmic-gold .living-ambient-orb-3 {
-  top: 40%;
-  right: 15%;
-  width: 50vw;
-  height: 50vw;
-  max-width: 500px;
-  max-height: 500px;
-  background: radial-gradient(circle, rgba(180, 83, 9, 0.28) 0%, rgba(180, 83, 9, 0) 70%);
-  animation: living-ambient-flow-3 20s ease-in-out infinite;
+  top: 35%;
+  left: -8%;
+  width: 58vw;
+  height: 58vw;
+  max-width: 620px;
+  max-height: 620px;
+  background: radial-gradient(circle, rgba(253, 224, 71, 0.45) 0%, rgba(254, 240, 138, 0.25) 45%, transparent 75%);
+  animation: living-ambient-flow-3 17s ease-in-out infinite;
 }
 
-/* Contenedores con Borde y Resplandor Animado de Nivel 20 */
-:is(.accent-supernova, .accent-plasma, .accent-eternal-flame, .accent-abyssal-vortex, .accent-cosmic-gold) .living-accent-container {
-  position: relative;
-  box-shadow: 0 10px 35px var(--color-accent-transparent), 0 0 24px -4px var(--color-accent-transparent) !important;
-}
-
-:is(.accent-supernova, .accent-plasma, .accent-eternal-flame, .accent-abyssal-vortex, .accent-cosmic-gold) .living-accent-container::before {
-  content: '';
-  position: absolute;
-  inset: -1.5px;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: var(--color-accent-gradient) !important;
-  background-size: 250% 250% !important;
-  animation: living-accent-flow 6s ease infinite !important;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* Enriquecimiento de todas las GlassCards en Nivel 20 */
-:is(.accent-supernova, .accent-plasma, .accent-eternal-flame, .accent-abyssal-vortex, .accent-cosmic-gold) .glass {
-  border-color: var(--color-accent-border) !important;
-  box-shadow: 0 14px 40px var(--color-accent-transparent), var(--glass-highlight) !important;
+.accent-cosmic-gold .living-ambient-orb-4 {
+  top: 55%;
+  right: -8%;
+  width: 52vw;
+  height: 52vw;
+  max-width: 560px;
+  max-height: 560px;
+  background: radial-gradient(circle, rgba(180, 83, 9, 0.55) 0%, rgba(217, 119, 6, 0.30) 45%, transparent 75%);
+  animation: living-ambient-flow-4 21s ease-in-out infinite;
 }
 
 .accent-neutral {
