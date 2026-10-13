@@ -325,10 +325,10 @@ export default function AppearanceScreen({ setView }) {
                 <div className="scale-[0.6] origin-left -my-3">
                   <LevelBadge level={15} size="sm" />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <h4 className="text-sm font-black text-text-primary tracking-tight">Nivel 15</h4>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 tracking-wider">
-                    <span className="text-accent">Degradados</span>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-black text-text-primary tracking-tight leading-none">Nivel 15</h4>
+                  <span className="inline-flex items-center justify-center text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 tracking-wider leading-none">
+                    <span className="text-accent leading-none">Degradados</span>
                   </span>
                 </div>
               </div>
