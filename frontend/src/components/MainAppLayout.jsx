@@ -912,9 +912,9 @@ export default function MainAppLayout({
 
   return (
     <div className="relative flex flex-1 w-full h-full overflow-hidden bg-transparent">
-      {/* ATMÓSFERA AURORA BOREAL LÍQUIDA (NIVEL 20 - ESTILO ACETERNITY / APPLE SEQUOIA) */}
+      {/* ATMÓSFERA AURORA BOREAL LÍQUIDA (NIVEL 20 - TRANQUILITA SOLO ARRIBA) */}
       {isLevel20Accent && (
-        <div className="aurora-container pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+        <div className="aurora-container pointer-events-none fixed top-0 left-0 right-0 h-[40vh] max-h-[360px] z-0 overflow-hidden" aria-hidden="true">
           <div className="aurora-glow" />
           <div className="aurora-curtain" />
         </div>

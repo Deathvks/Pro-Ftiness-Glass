@@ -1,5 +1,5 @@
 {
-  "version": "7.4.21",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.21/app-release.apk",
-  "notes": "Aurora Boreal Líquida (nivel 20) potenciada en Modo Claro con alta intensidad, auras de 80vh, definición de ondas de 10px y mezcla overlay vivaz."
+  "version": "7.4.22",
+  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.22/app-release.apk",
+  "notes": "Corrección de acentos: Eliminado aura en niveles 5, 10 y 15; aurora de nivel 20 acotada y elegante exclusivamente arriba sin sobrecargar la pantalla ni provocar lag."
 }

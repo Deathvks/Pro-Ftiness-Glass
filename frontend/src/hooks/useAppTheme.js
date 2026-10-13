@@ -28,15 +28,23 @@ const HEADER_COLORS = {
   'ocean-dark': '#0f172a',
 };
 
-// --- ESTADO GLOBAL PARA LA PRUEBA DE TEMAS ---
+// --- ESTADO GLOBAL PARA LA PRUEBA DE TEMAS Y SINCRONIZACIÓN REACTIVA ---
 let testingThemeNameGlobal = null;
 let isTestingGlobal = false;
 let testTimeLeftGlobal = 0;
 let testIntervalGlobal = null;
 let listeners = [];
 
+let themeGlobal = typeof window !== 'undefined' ? (localStorage.getItem('theme') || 'system') : 'system';
+let accentGlobal = typeof window !== 'undefined' ? (localStorage.getItem('accent') || 'green') : 'green';
+let appThemeListeners = new Set();
+
 const notifyThemeListeners = () => {
   listeners.forEach(listener => listener());
+};
+
+const notifyAppThemeListeners = () => {
+  appThemeListeners.forEach(fn => fn());
 };
 
 const getSafeTextAccent = (hexColor, isLightTheme) => {
@@ -72,19 +80,19 @@ const ACCENT_MAP = {
 export const useAppTheme = () => {
   const cookieConsent = useAppStore(state => state.cookieConsent);
 
-  const [theme, setThemeState] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') || 'system';
-    }
-    return 'system';
-  });
+  const [theme, setThemeState] = useState(themeGlobal);
+  const [accent, setAccentState] = useState(accentGlobal);
 
-  const [accent, setAccentState] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('accent') || 'green';
-    }
-    return 'green';
-  });
+  useEffect(() => {
+    const syncThemeAndAccent = () => {
+      setThemeState(themeGlobal);
+      setAccentState(accentGlobal);
+    };
+    appThemeListeners.add(syncThemeAndAccent);
+    return () => {
+      appThemeListeners.delete(syncThemeAndAccent);
+    };
+  }, []);
 
   const [isTestingTheme, setIsTestingTheme] = useState(isTestingGlobal);
   const [testTimeLeft, setTestTimeLeft] = useState(testTimeLeftGlobal);
@@ -131,7 +139,9 @@ export const useAppTheme = () => {
     localStorage.removeItem('pending_theme_test');
 
     if (cookieConsent) localStorage.setItem('theme', newTheme);
+    themeGlobal = newTheme;
     setThemeState(newTheme);
+    notifyAppThemeListeners();
 
     if (forceReload) {
       window.location.reload();
@@ -140,7 +150,9 @@ export const useAppTheme = () => {
 
   const setAccent = (newAccent) => {
     if (cookieConsent) localStorage.setItem('accent', newAccent);
+    accentGlobal = newAccent;
     setAccentState(newAccent);
+    notifyAppThemeListeners();
   };
 
   const startThemeTest = (themeName = 'galaxy', durationSecs = 10, forceReload = false) => {

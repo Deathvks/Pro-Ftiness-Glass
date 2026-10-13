@@ -789,7 +789,7 @@ html.galaxy-theme #root::after {
 }
 
 /* ==========================================================================
-   4.4) AURORA BOREAL LÍQUIDA (NIVEL 20 - ESTILO ACETERNITY / APPLE SEQUOIA)
+   4.4) ATMÓSFERA AURORA BOREAL (EXCLUSIVA NIVEL 20 - TRANQUILITA SOLO ARRIBA)
    ========================================================================== */
 :root {
   --aurora-stripes: repeating-linear-gradient(
@@ -804,35 +804,51 @@ html.galaxy-theme #root::after {
 
 @keyframes aurora-wave {
   from {
-    background-position: 50% 50%, 50% 50%;
+    background-position: 50% 50%;
   }
   to {
-    background-position: 350% 50%, 350% 50%;
+    background-position: 300% 50%;
   }
 }
 
 @keyframes aurora-glow-breathe {
   0%, 100% {
-    transform: scale(0.96) translateY(0);
-    opacity: 0.35;
+    transform: translate3d(0, 0, 0) scale(0.97);
+    opacity: 0.40;
   }
   50% {
-    transform: scale(1.08) translateY(-8px);
-    opacity: 0.55;
+    transform: translate3d(0, -6px, 0) scale(1.05);
+    opacity: 0.65;
   }
 }
 
+/* Blindaje CSS: La aurora solo existe y se muestra en acentos de Nivel 20 */
 .aurora-container {
+  display: none !important;
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40vh;
+  max-height: 360px;
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
-  opacity: 0.72;
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  transform: translateZ(0);
-  mask-image: radial-gradient(ellipse 95% 65% at 50% 0%, #000 20%, transparent 80%);
-  -webkit-mask-image: radial-gradient(ellipse 95% 65% at 50% 0%, #000 20%, transparent 80%);
+  opacity: 0.65;
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate3d(0, 0, 0);
+  mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 20%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 20%, transparent 80%);
+}
+
+:is(
+  html.accent-supernova,
+  html.accent-plasma,
+  html.accent-eternal-flame,
+  html.accent-abyssal-vortex,
+  html.accent-cosmic-gold
+) .aurora-container {
+  display: block !important;
 }
 
 html.light-theme,
@@ -841,68 +857,73 @@ html.ocean-theme:not(.dark) {
   --aurora-stripes: repeating-linear-gradient(
     100deg,
     transparent 0%,
-    transparent 7%,
-    rgba(255, 255, 255, 0.40) 9%,
-    rgba(255, 255, 255, 0.40) 11%,
-    transparent 14%
+    transparent 8%,
+    rgba(255, 255, 255, 0.45) 10%,
+    rgba(255, 255, 255, 0.45) 12%,
+    transparent 15%
   );
 }
 
 html.light-theme .aurora-container,
 html.desert-theme:not(.dark) .aurora-container,
 html.ocean-theme:not(.dark) .aurora-container {
-  opacity: 0.95;
-  mask-image: linear-gradient(to bottom, #000 0%, #000 70%, transparent 95%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 70%, transparent 95%);
+  opacity: 0.65;
+  mask-image: radial-gradient(ellipse 92% 62% at 50% 0%, #000 25%, transparent 82%);
+  -webkit-mask-image: radial-gradient(ellipse 92% 62% at 50% 0%, #000 25%, transparent 82%);
 }
 
 html.oled-theme .aurora-container {
-  opacity: 0.60;
-  mask-image: radial-gradient(ellipse 90% 55% at 50% 0%, #000 15%, transparent 70%);
-  -webkit-mask-image: radial-gradient(ellipse 90% 55% at 50% 0%, #000 15%, transparent 70%);
+  opacity: 0.55;
+  mask-image: radial-gradient(ellipse 85% 55% at 50% 0%, #000 15%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 85% 55% at 50% 0%, #000 15%, transparent 75%);
 }
 
 .aurora-glow {
   position: absolute;
   top: -20%;
-  left: 10%;
-  right: 10%;
-  height: 55vh;
+  left: 5%;
+  right: 5%;
+  height: 36vh;
+  max-height: 320px;
   border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 30%, var(--aurora-glow-1, #8b5cf6) 0%, var(--aurora-glow-2, #ec4899) 45%, transparent 75%);
-  filter: blur(80px);
+  background: radial-gradient(ellipse at 50% 30%, var(--aurora-glow-1, transparent) 0%, var(--aurora-glow-2, transparent) 45%, transparent 75%);
+  filter: blur(40px);
+  transform: translate3d(0, 0, 0);
   will-change: transform, opacity;
   pointer-events: none;
-  animation: aurora-glow-breathe 14s ease-in-out infinite;
+  animation: aurora-glow-breathe 12s ease-in-out infinite;
 }
 
 html.light-theme .aurora-glow,
 html.desert-theme:not(.dark) .aurora-glow,
 html.ocean-theme:not(.dark) .aurora-glow {
-  position: absolute;
-  top: -15%;
-  left: -10%;
-  right: -10%;
-  height: 80vh;
-  border-radius: 50%;
-  opacity: 0.82;
-  filter: blur(50px);
+  top: -20%;
+  left: 0;
+  right: 0;
+  height: 36vh;
+  max-height: 320px;
+  opacity: 0.70;
+  filter: blur(35px);
   background: radial-gradient(
     ellipse at 50% 25%,
-    var(--aurora-glow-1, #7c3aed) 0%,
-    var(--aurora-glow-2, #db2777) 40%,
-    transparent 72%
+    var(--aurora-glow-1, transparent) 0%,
+    var(--aurora-glow-2, transparent) 42%,
+    transparent 75%
   );
 }
 
 .aurora-curtain {
   position: absolute;
-  inset: -20px;
+  top: -10px;
+  left: -20px;
+  right: -20px;
+  height: 100%;
   background-image: var(--aurora-stripes), var(--aurora-gradient);
-  background-size: 300% 200%;
+  background-size: 250% 180%;
   background-position: 50% 50%;
-  filter: blur(14px);
-  opacity: 0.60;
+  filter: blur(12px);
+  opacity: 0.35;
+  transform: translate3d(0, 0, 0);
   will-change: background-position;
   pointer-events: none;
   animation: aurora-wave 60s linear infinite;
@@ -911,28 +932,8 @@ html.ocean-theme:not(.dark) .aurora-glow {
 html.light-theme .aurora-curtain,
 html.desert-theme:not(.dark) .aurora-curtain,
 html.ocean-theme:not(.dark) .aurora-curtain {
-  opacity: 0.88;
+  opacity: 0.40;
   filter: blur(10px);
-}
-
-.aurora-curtain::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: var(--aurora-stripes), var(--aurora-gradient);
-  background-size: 200% 100%;
-  background-attachment: fixed;
-  mix-blend-mode: difference;
-  pointer-events: none;
-  animation: aurora-wave 45s linear infinite reverse;
-  opacity: 0.80;
-}
-
-html.light-theme .aurora-curtain::after,
-html.desert-theme:not(.dark) .aurora-curtain::after,
-html.ocean-theme:not(.dark) .aurora-curtain::after {
-  mix-blend-mode: overlay;
-  opacity: 0.85;
 }
 
 .accent-neutral {
