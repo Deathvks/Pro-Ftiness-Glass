@@ -128,15 +128,16 @@ const SmartExerciseCoachModal = ({
         onClick={onClose}
       >
         <div 
-          className="relative w-full max-w-xl max-h-[90vh] flex flex-col bg-bg-secondary dark:bg-[#121214] ring-1 ring-black/5 dark:ring-white/10 border-none rounded-t-[32px] sm:rounded-2xl shadow-2xl overflow-hidden animate-[slide-up_0.25s_cubic-bezier(0.16,1,0.3,1)] sm:animate-[scale-in_0.2s_ease-out]"
+          className="relative w-full max-w-xl max-h-[90vh] flex flex-col bg-bg-secondary ring-1 ring-black/5 dark:ring-white/10 border-none rounded-t-[32px] sm:rounded-2xl shadow-2xl overflow-hidden animate-[slide-up_0.25s_cubic-bezier(0.16,1,0.3,1)] sm:animate-[scale-in_0.2s_ease-out]"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Top Grabber en móvil */}
-          <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-3 mb-1 sm:hidden shrink-0" />
-
           {/* Header */}
-          <div className="p-4 sm:p-6 pb-3 border-b border-black/5 dark:border-white/10 flex items-start justify-between gap-3 bg-bg-secondary">
-            <div className="space-y-1.5 min-w-0">
+          <div className="p-4 sm:p-6 pt-3 sm:pt-6 pb-3 border-b border-black/5 dark:border-white/10 flex flex-col gap-2 bg-bg-secondary shrink-0">
+            {/* Top Grabber en móvil */}
+            <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-1 sm:hidden shrink-0" />
+
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1.5 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent">
                   {getGoalIcon()}
@@ -173,6 +174,7 @@ const SmartExerciseCoachModal = ({
             >
               <X size={20} />
             </button>
+            </div>
           </div>
 
           {/* Body con Scroll */}

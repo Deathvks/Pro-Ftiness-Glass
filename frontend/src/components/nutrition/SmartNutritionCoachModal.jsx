@@ -111,51 +111,53 @@ const SmartNutritionCoachModal = ({
         onClick={onClose}
       >
         <div 
-          className="relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-bg-secondary dark:bg-[#121214] ring-1 ring-black/5 dark:ring-white/10 border-none rounded-t-[32px] sm:rounded-2xl shadow-2xl overflow-hidden animate-[slide-up_0.25s_cubic-bezier(0.16,1,0.3,1)] sm:animate-[scale-in_0.2s_ease-out]"
+          className="relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-bg-secondary ring-1 ring-black/5 dark:ring-white/10 border-none rounded-t-[32px] sm:rounded-2xl shadow-2xl overflow-hidden animate-[slide-up_0.25s_cubic-bezier(0.16,1,0.3,1)] sm:animate-[scale-in_0.2s_ease-out]"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Grabber en móvil */}
-          <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mt-3 mb-1 sm:hidden shrink-0" />
-
           {/* Header */}
-          <div className="p-4 sm:p-6 pb-3 border-b border-black/5 dark:border-white/10 flex items-start justify-between gap-3 bg-bg-secondary">
-            <div className="space-y-1.5 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent">
-                  <Target size={13} strokeWidth={2.5} />
-                  <span>{userGoal.label}</span>
-                </span>
+          <div className="p-4 sm:p-6 pt-3 sm:pt-6 pb-3 border-b border-black/5 dark:border-white/10 flex flex-col gap-2 bg-bg-secondary shrink-0">
+            {/* Grabber en móvil */}
+            <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-1 sm:hidden shrink-0" />
 
-                {isWarning ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 animate-pulse">
-                    <AlertTriangle size={13} className="shrink-0" />
-                    <span>{overallBadgeText}</span>
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1.5 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent">
+                    <Target size={13} strokeWidth={2.5} />
+                    <span>{userGoal.label}</span>
                   </span>
-                ) : isOptimal ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 size={13} className="shrink-0" />
-                    <span>{overallBadgeText}</span>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/15 text-blue-600 dark:text-blue-400">
-                    <Activity size={13} className="shrink-0" />
-                    <span>{overallBadgeText}</span>
-                  </span>
-                )}
+
+                  {isWarning ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 animate-pulse">
+                      <AlertTriangle size={13} className="shrink-0" />
+                      <span>{overallBadgeText}</span>
+                    </span>
+                  ) : isOptimal ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 size={13} className="shrink-0" />
+                      <span>{overallBadgeText}</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/15 text-blue-600 dark:text-blue-400">
+                      <Activity size={13} className="shrink-0" />
+                      <span>{overallBadgeText}</span>
+                    </span>
+                  )}
+                </div>
+
+                <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight truncate">
+                  Diagnóstico Nutricional Inteligente
+                </h2>
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight truncate">
-                Diagnóstico Nutricional Inteligente
-              </h2>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary transition-all active:scale-95 shrink-0"
+                aria-label="Cerrar modal"
+              >
+                <X size={20} />
+              </button>
             </div>
-
-            <button
-              onClick={onClose}
-              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-text-muted hover:text-text-primary transition-all active:scale-95 shrink-0"
-              aria-label="Cerrar modal"
-            >
-              <X size={20} />
-            </button>
           </div>
 
           {/* Body */}
