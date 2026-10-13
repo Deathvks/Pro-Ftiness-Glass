@@ -98,6 +98,51 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled }
   </div>
 );
 
+const AccentButton = ({ opt, isLocked, isSelected, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    title={opt.label + (isLocked ? ` (Nivel ${opt.reqLevel})` : '')}
+    className={`group flex flex-col items-center justify-start w-full focus:outline-none select-none transition-all ${
+      isLocked ? 'opacity-40 grayscale-[0.3]' : ''
+    }`}
+  >
+    <div className="relative flex justify-center items-center w-full aspect-square">
+      <span
+        className={`w-full h-full rounded-full transition-all duration-300 group-hover:scale-105 shrink-0 ${
+          opt.isAnimated ? 'living-accent-preview' : ''
+        }`}
+        style={{
+          background: opt.gradient || opt.hex,
+          backgroundColor: opt.hex,
+          boxShadow: isSelected
+            ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80`
+            : 'none',
+        }}
+      />
+      {isSelected && (
+        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
+          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
+        </span>
+      )}
+      {isLocked && (
+        <span className="absolute inset-0 flex items-center justify-center text-black/40 dark:text-black/60 pointer-events-none drop-shadow-sm">
+          <Lock size={16} strokeWidth={2.5} />
+        </span>
+      )}
+    </div>
+    <span
+      className={`h-7 sm:h-8 flex items-center justify-center text-center text-[10px] sm:text-[11px] leading-[1.15] mt-1.5 transition-colors line-clamp-2 w-full px-0.5 ${
+        isSelected
+          ? 'text-accent font-bold'
+          : 'text-text-secondary group-hover:text-text-primary font-medium'
+      }`}
+    >
+      {opt.label}
+    </span>
+  </button>
+);
+
 export default function AppearanceScreen({ setView }) {
   const { userProfile, hapticsEnabled, setHapticsEnabled } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, hapticsEnabled: state.hapticsEnabled, setHapticsEnabled: state.setHapticsEnabled })));
   const { addToast } = useToast();
@@ -205,30 +250,16 @@ export default function AppearanceScreen({ setView }) {
               
               {/* Por defecto */}
               <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 ml-1">Acento de Color</h3>
-              <div className="grid grid-cols-6 gap-3 sm:gap-4 mb-6">
-                {ACCENT_OPTIONS.filter(o => !o.reqLevel).map(opt => {
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => setAccent(opt.id)}
-                      title={opt.label}
-                      className="group relative flex justify-center items-center w-full aspect-square"
-                    >
-                      <span
-                        className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
-                        style={{
-                          backgroundColor: opt.hex,
-                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
-                        }}
-                      />
-                      {accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && (
-                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
-                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+              <div className="grid grid-cols-5 gap-y-4 gap-x-2.5 sm:gap-4 mb-6">
+                {ACCENT_OPTIONS.filter(o => !o.reqLevel).map(opt => (
+                  <AccentButton
+                    key={opt.id}
+                    opt={opt}
+                    isLocked={false}
+                    isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive}
+                    onClick={() => setAccent(opt.id)}
+                  />
+                ))}
               </div>
 
               {/* Por niveles */}
@@ -236,17 +267,20 @@ export default function AppearanceScreen({ setView }) {
               
               {/* Nivel 5 */}
               <div className="flex items-center gap-2 mb-3 ml-1 mt-6">
-                  <div className="scale-[0.6] origin-left -my-3">
-                    <LevelBadge level={5} size="sm" />
-                  </div>
-                  <h4 className="text-sm font-black text-text-primary tracking-tight">Nivel 5</h4>
+                <div className="scale-[0.6] origin-left -my-3">
+                  <LevelBadge level={5} size="sm" />
                 </div>
-              <div className="grid grid-cols-5 gap-3 sm:gap-4 mb-6">
+                <h4 className="text-sm font-black text-text-primary tracking-tight">Nivel 5</h4>
+              </div>
+              <div className="grid grid-cols-5 gap-y-4 gap-x-2.5 sm:gap-4 mb-6">
                 {ACCENT_OPTIONS.filter(o => o.reqLevel === 5).map(opt => {
                   const isLocked = (userProfile?.level || 1) < 5 && userProfile?.role !== 'admin';
                   return (
-                    <button
+                    <AccentButton
                       key={opt.id}
+                      opt={opt}
+                      isLocked={isLocked}
+                      isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked}
                       onClick={() => {
                         if (isLocked) {
                           addToast(`Requiere nivel 5 para aplicarlo`, 'info', 'lock');
@@ -254,44 +288,27 @@ export default function AppearanceScreen({ setView }) {
                           setAccent(opt.id);
                         }
                       }}
-                      title={opt.label + (isLocked ? ` (Nivel 5)` : '')}
-                      className={`group relative flex justify-center items-center w-full aspect-square ${isLocked ? 'opacity-40 grayscale-[0.3]' : ''}`}
-                    >
-                      <span
-                        className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
-                        style={{
-                          backgroundColor: opt.hex,
-                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
-                        }}
-                      />
-                      {accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked && (
-                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
-                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
-                        </span>
-                      )}
-                      {isLocked && (
-                        <span className="absolute inset-0 flex items-center justify-center text-black/40 dark:text-black/60 pointer-events-none drop-shadow-sm">
-                          <Lock size={16} strokeWidth={2.5} />
-                        </span>
-                      )}
-                    </button>
+                    />
                   );
                 })}
               </div>
 
               {/* Nivel 10 */}
               <div className="flex items-center gap-2 mb-3 ml-1 mt-6">
-                  <div className="scale-[0.6] origin-left -my-3">
-                    <LevelBadge level={10} size="sm" />
-                  </div>
-                  <h4 className="text-sm font-black text-text-primary tracking-tight">Nivel 10</h4>
+                <div className="scale-[0.6] origin-left -my-3">
+                  <LevelBadge level={10} size="sm" />
                 </div>
-              <div className="grid grid-cols-5 gap-3 sm:gap-4 mb-2">
+                <h4 className="text-sm font-black text-text-primary tracking-tight">Nivel 10</h4>
+              </div>
+              <div className="grid grid-cols-5 gap-y-4 gap-x-2.5 sm:gap-4 mb-6">
                 {ACCENT_OPTIONS.filter(o => o.reqLevel === 10).map(opt => {
                   const isLocked = (userProfile?.level || 1) < 10 && userProfile?.role !== 'admin';
                   return (
-                    <button
+                    <AccentButton
                       key={opt.id}
+                      opt={opt}
+                      isLocked={isLocked}
+                      isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked}
                       onClick={() => {
                         if (isLocked) {
                           addToast(`Requiere nivel 10 para aplicarlo`, 'info', 'lock');
@@ -299,28 +316,7 @@ export default function AppearanceScreen({ setView }) {
                           setAccent(opt.id);
                         }
                       }}
-                      title={opt.label + (isLocked ? ` (Nivel 10)` : '')}
-                      className={`group relative flex justify-center items-center w-full aspect-square ${isLocked ? 'opacity-40 grayscale-[0.3]' : ''}`}
-                    >
-                      <span
-                        className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
-                        style={{
-                          background: opt.gradient || opt.hex,
-                          backgroundColor: opt.hex,
-                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
-                        }}
-                      />
-                      {accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked && (
-                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
-                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
-                        </span>
-                      )}
-                      {isLocked && (
-                        <span className="absolute inset-0 flex items-center justify-center text-black/40 dark:text-black/60 pointer-events-none drop-shadow-sm">
-                          <Lock size={16} strokeWidth={2.5} />
-                        </span>
-                      )}
-                    </button>
+                    />
                   );
                 })}
               </div>
@@ -337,12 +333,15 @@ export default function AppearanceScreen({ setView }) {
                   </span>
                 </div>
               </div>
-              <div className="grid grid-cols-5 gap-3 sm:gap-4 mb-2">
+              <div className="grid grid-cols-5 gap-y-4 gap-x-2.5 sm:gap-4 mb-6">
                 {ACCENT_OPTIONS.filter(o => o.reqLevel === 15).map(opt => {
                   const isLocked = (userProfile?.level || 1) < 15 && userProfile?.role !== 'admin';
                   return (
-                    <button
+                    <AccentButton
                       key={opt.id}
+                      opt={opt}
+                      isLocked={isLocked}
+                      isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked}
                       onClick={() => {
                         if (isLocked) {
                           addToast(`Requiere nivel 15 para aplicarlo`, 'info', 'lock');
@@ -350,28 +349,7 @@ export default function AppearanceScreen({ setView }) {
                           setAccent(opt.id);
                         }
                       }}
-                      title={opt.label + (isLocked ? ` (Nivel 15)` : '')}
-                      className={`group relative flex justify-center items-center w-full aspect-square ${isLocked ? 'opacity-40 grayscale-[0.3]' : ''}`}
-                    >
-                      <span
-                        className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
-                        style={{
-                          background: opt.gradient || opt.hex,
-                          backgroundColor: opt.hex,
-                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
-                        }}
-                      />
-                      {accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked && (
-                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
-                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
-                        </span>
-                      )}
-                      {isLocked && (
-                        <span className="absolute inset-0 flex items-center justify-center text-black/40 dark:text-black/60 pointer-events-none drop-shadow-sm">
-                          <Lock size={16} strokeWidth={2.5} />
-                        </span>
-                      )}
-                    </button>
+                    />
                   );
                 })}
               </div>
@@ -388,12 +366,15 @@ export default function AppearanceScreen({ setView }) {
                   </span>
                 </div>
               </div>
-              <div className="grid grid-cols-5 gap-3 sm:gap-4 mb-2">
+              <div className="grid grid-cols-5 gap-y-4 gap-x-2.5 sm:gap-4 mb-2">
                 {ACCENT_OPTIONS.filter(o => o.reqLevel === 20).map(opt => {
                   const isLocked = (userProfile?.level || 1) < 20 && userProfile?.role !== 'admin';
                   return (
-                    <button
+                    <AccentButton
                       key={opt.id}
+                      opt={opt}
+                      isLocked={isLocked}
+                      isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked}
                       onClick={() => {
                         if (isLocked) {
                           addToast(`Requiere nivel 20 para aplicarlo`, 'info', 'lock');
@@ -401,28 +382,7 @@ export default function AppearanceScreen({ setView }) {
                           setAccent(opt.id);
                         }
                       }}
-                      title={opt.label + (isLocked ? ` (Nivel 20)` : '')}
-                      className={`group relative flex justify-center items-center w-full aspect-square ${isLocked ? 'opacity-40 grayscale-[0.3]' : ''}`}
-                    >
-                      <span
-                        className={`w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0 ${opt.isAnimated ? 'living-accent-preview' : ''}`}
-                        style={{
-                          background: opt.gradient || opt.hex,
-                          backgroundColor: opt.hex,
-                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
-                        }}
-                      />
-                      {accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked && (
-                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
-                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
-                        </span>
-                      )}
-                      {isLocked && (
-                        <span className="absolute inset-0 flex items-center justify-center text-black/40 dark:text-black/60 pointer-events-none drop-shadow-sm">
-                          <Lock size={16} strokeWidth={2.5} />
-                        </span>
-                      )}
-                    </button>
+                    />
                   );
                 })}
               </div>
