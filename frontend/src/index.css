@@ -413,38 +413,38 @@ html.galaxy-theme #root::after {
   --btn-accent-text: #000000;
 }
 
-.accent-volt {
-  --color-accent: #ccff00;
-  --color-accent-transparent: rgba(204, 255, 0, 0.14);
-  --color-accent-border: rgba(204, 255, 0, 0.32);
-  --btn-accent-text: #000000;
-}
-
-.accent-cyber-aqua {
-  --color-accent: #00f5d4;
-  --color-accent-transparent: rgba(0, 245, 212, 0.14);
-  --color-accent-border: rgba(0, 245, 212, 0.32);
-  --btn-accent-text: #000000;
-}
-
-.accent-laser-ruby {
-  --color-accent: #ff0055;
-  --color-accent-transparent: rgba(255, 0, 85, 0.14);
-  --color-accent-border: rgba(255, 0, 85, 0.32);
+.accent-iris {
+  --color-accent: #5b5bd6;
+  --color-accent-transparent: rgba(91, 91, 214, 0.14);
+  --color-accent-border: rgba(91, 91, 214, 0.32);
   --btn-accent-text: #ffffff;
 }
 
-.accent-ultra-violet {
-  --color-accent: #7928ca;
-  --color-accent-transparent: rgba(121, 40, 202, 0.14);
-  --color-accent-border: rgba(121, 40, 202, 0.32);
+.accent-jade {
+  --color-accent: #29a383;
+  --color-accent-transparent: rgba(41, 163, 131, 0.14);
+  --color-accent-border: rgba(41, 163, 131, 0.32);
   --btn-accent-text: #ffffff;
 }
 
-.accent-terracotta {
-  --color-accent: #e76f51;
-  --color-accent-transparent: rgba(231, 111, 81, 0.14);
-  --color-accent-border: rgba(231, 111, 81, 0.32);
+.accent-ruby {
+  --color-accent: #e5465c;
+  --color-accent-transparent: rgba(229, 70, 92, 0.14);
+  --color-accent-border: rgba(229, 70, 92, 0.32);
+  --btn-accent-text: #ffffff;
+}
+
+.accent-bronze {
+  --color-accent: #a17a59;
+  --color-accent-transparent: rgba(161, 122, 89, 0.14);
+  --color-accent-border: rgba(161, 122, 89, 0.32);
+  --btn-accent-text: #ffffff;
+}
+
+.accent-plum {
+  --color-accent: #ab4aba;
+  --color-accent-transparent: rgba(171, 74, 186, 0.14);
+  --color-accent-border: rgba(171, 74, 186, 0.32);
   --btn-accent-text: #ffffff;
 }
 
@@ -1206,11 +1206,11 @@ html.light-theme.accent-pistachio, html.light-theme.accent-pistachio * { --text-
 html.light-theme.accent-cherry-blossom, html.light-theme.accent-cherry-blossom * { --text-accent: #be123c; }
 html.light-theme.accent-lime, html.light-theme.accent-lime * { --text-accent: #3f6212; }
 html.light-theme.accent-sky, html.light-theme.accent-sky * { --text-accent: #0284c7; }
-html.light-theme.accent-volt, html.light-theme.accent-volt * { --text-accent: #4d7c0f; }
-html.light-theme.accent-cyber-aqua, html.light-theme.accent-cyber-aqua * { --text-accent: #0f766e; }
-html.light-theme.accent-laser-ruby, html.light-theme.accent-laser-ruby * { --text-accent: #be123c; }
-html.light-theme.accent-ultra-violet, html.light-theme.accent-ultra-violet * { --text-accent: #6b21a8; }
-html.light-theme.accent-terracotta, html.light-theme.accent-terracotta * { --text-accent: #9a3412; }
+html.light-theme.accent-iris, html.light-theme.accent-iris * { --text-accent: #3730a3; }
+html.light-theme.accent-jade, html.light-theme.accent-jade * { --text-accent: #0f766e; }
+html.light-theme.accent-ruby, html.light-theme.accent-ruby * { --text-accent: #be123c; }
+html.light-theme.accent-bronze, html.light-theme.accent-bronze * { --text-accent: #78350f; }
+html.light-theme.accent-plum, html.light-theme.accent-plum * { --text-accent: #86198f; }
 
 /* En modo claro con temas amarillos/pasteles, asegurar que botones y cápsulas con fondo acento tengan texto/icono oscuro de alto contraste */
 html.light-theme.accent-yellow .bg-accent,
@@ -1219,9 +1219,7 @@ html.light-theme.accent-lime .bg-accent,
 html.light-theme.accent-mango .bg-accent,
 html.light-theme.accent-peach .bg-accent,
 html.light-theme.accent-mint .bg-accent,
-html.light-theme.accent-cherry-blossom .bg-accent,
-html.light-theme.accent-volt .bg-accent,
-html.light-theme.accent-cyber-aqua .bg-accent {
+html.light-theme.accent-cherry-blossom .bg-accent {
   color: var(--btn-accent-text, #000000) !important;
 }
 
@@ -1231,8 +1229,6 @@ html.light-theme.accent-lime .bg-accent svg,
 html.light-theme.accent-mango .bg-accent svg,
 html.light-theme.accent-peach .bg-accent svg,
 html.light-theme.accent-mint .bg-accent svg,
-html.light-theme.accent-cherry-blossom .bg-accent svg,
-html.light-theme.accent-volt .bg-accent svg,
-html.light-theme.accent-cyber-aqua .bg-accent svg {
+html.light-theme.accent-cherry-blossom .bg-accent svg {
   color: var(--btn-accent-text, #000000) !important;
 }

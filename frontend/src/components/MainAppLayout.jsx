@@ -1140,11 +1140,11 @@ export default function MainAppLayout({
                       <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffbe76' }} title="Mango" />
                       <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fdfd96' }} title="Limonada" />
                       <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fccbcf' }} title="Flor de Cerezo" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ccff00' }} title="Volt Deportivo" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#00f5d4' }} title="Aqua Neón" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ff0055' }} title="Rubí Láser" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#7928ca' }} title="Ultra Violeta" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#e76f51' }} title="Terracota" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#5b5bd6' }} title="Iris" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#29a383' }} title="Jade" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#e5465c' }} title="Rubí" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#a17a59' }} title="Bronce" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ab4aba' }} title="Ciruela" />
                     </>
                   )}
                 </div>

@@ -44,11 +44,11 @@ const ACCENT_OPTIONS = [
   { id: 'mango', label: 'Mango Pastel', hex: '#ffbe76', reqLevel: 10 },
   { id: 'lemonade', label: 'Limonada', hex: '#fdfd96', reqLevel: 10 },
   { id: 'cherry-blossom', label: 'Cerezo', hex: '#fccbcf', reqLevel: 10 },
-  { id: 'volt', label: 'Volt Deportivo', hex: '#ccff00', reqLevel: 10 },
-  { id: 'cyber-aqua', label: 'Aqua Neón', hex: '#00f5d4', reqLevel: 10 },
-  { id: 'laser-ruby', label: 'Rubí Láser', hex: '#ff0055', reqLevel: 10 },
-  { id: 'ultra-violet', label: 'Ultra Violeta', hex: '#7928ca', reqLevel: 10 },
-  { id: 'terracotta', label: 'Terracota', hex: '#e76f51', reqLevel: 10 },
+  { id: 'iris', label: 'Iris', hex: '#5b5bd6', reqLevel: 10 },
+  { id: 'jade', label: 'Jade', hex: '#29a383', reqLevel: 10 },
+  { id: 'ruby', label: 'Rubí', hex: '#e5465c', reqLevel: 10 },
+  { id: 'bronze', label: 'Bronce', hex: '#a17a59', reqLevel: 10 },
+  { id: 'plum', label: 'Ciruela', hex: '#ab4aba', reqLevel: 10 },
 ];
 
 const isIOS = () => {
