@@ -390,8 +390,8 @@ export default function AppearanceScreen({ setView }) {
           </div>
         </GlassCard>
 
-        {/* 2) Mis Temas: a la derecha en PC y fija, arriba y desplegable/solapable en móvil */}
-        <GlassCard className={`${glassCardClass} order-1 lg:order-2 lg:col-span-5 xl:col-span-5 lg:sticky lg:top-6`}>
+        {/* 2) Mis Temas: a la derecha en PC, arriba y desplegable/solapable en móvil */}
+        <GlassCard className={`${glassCardClass} order-1 lg:order-2 lg:col-span-5 xl:col-span-5`}>
           {/* Cabecera / Trigger Móvil de Desplegar/Solapar */}
           <div 
             onClick={() => {

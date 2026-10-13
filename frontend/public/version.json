@@ -1,5 +1,5 @@
 {
-  "version": "7.4.10",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.10/app-release.apk",
-  "notes": "Alineación del botón volver en PC al borde izquierdo del contenedor de apariencia y limpieza visual en Mis Temas."
+  "version": "7.4.11",
+  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.11/app-release.apk",
+  "notes": "Desactivada posición fija (sticky) de Mis Temas en PC para un desplazamiento natural con la página."
 }
