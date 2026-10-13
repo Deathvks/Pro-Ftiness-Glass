@@ -668,6 +668,8 @@ export default function MainAppLayout({
             let extraStr = '';
             if (event.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
             if (event.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
+            if (event.newLevel === 15) extraStr = ' (¡Nuevos degradados desbloqueados!)';
+            if (event.newLevel === 20) extraStr = ' (¡Nuevos acentos animados desbloqueados!)';
             addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel} 🚀${extraStr}`, 'success', 6000);
           } else if (event.type === 'challenge_completed') {
           addToast(`¡Reto completado! ${event.message} (+${event.xpAdded} XP)`, 'success');
@@ -693,9 +695,20 @@ export default function MainAppLayout({
     const key5 = `accent_unlock_notified_5_${userId}`;
     const key10 = `accent_unlock_notified_10_${userId}`;
     const key15 = `accent_unlock_notified_15_${userId}`;
+    const key20 = `accent_unlock_notified_20_${userId}`;
 
-    // Priorizar nivel 15 sobre nivel 10 y nivel 5
-    if (level >= 15 && localStorage.getItem(key15) !== 'true') {
+    // Priorizar nivel 20 sobre nivel 15, nivel 10 y nivel 5
+    if (level >= 20 && localStorage.getItem(key20) !== 'true') {
+      const timer = setTimeout(() => {
+        setAccentUnlockLevel(20);
+        setShowAccentUnlockModal(true);
+        localStorage.setItem(key20, 'true');
+        localStorage.setItem(key15, 'true');
+        localStorage.setItem(key10, 'true');
+        localStorage.setItem(key5, 'true');
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else if (level >= 15 && localStorage.getItem(key15) !== 'true') {
       const timer = setTimeout(() => {
         setAccentUnlockLevel(15);
         setShowAccentUnlockModal(true);
@@ -745,6 +758,8 @@ export default function MainAppLayout({
           let extraStr = '';
           if (data.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
           if (data.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
+          if (data.newLevel === 15) extraStr = ' (¡Nuevos degradados desbloqueados!)';
+          if (data.newLevel === 20) extraStr = ' (¡Nuevos acentos animados desbloqueados!)';
           addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel} 🚀${extraStr}`, 'success', 6000);
         } else if (data.type === 'challenge_completed') {
         addToast(`¡Reto completado! ${data.message} (+${data.xpAdded} XP)`, 'success');
@@ -1123,7 +1138,9 @@ export default function MainAppLayout({
                   <Palette className="text-accent" size={28} />
                 </div>
                 <h3 className="text-xl font-black mb-2 text-text-primary">
-                  {accentUnlockLevel === 15 ? (
+                  {accentUnlockLevel === 20 ? (
+                    <>¡Acentos <span className="text-accent">Animados Nivel 20</span>!</>
+                  ) : accentUnlockLevel === 15 ? (
                     <>¡Acentos con <span className="text-accent">Degradado</span>!</>
                   ) : accentUnlockLevel === 10 ? '¡5 Colores Pastel!' : '¡5 Nuevos Colores Pastel!'}
                 </h3>
@@ -1132,7 +1149,9 @@ export default function MainAppLayout({
               {/* Contenido */}
               <div className="px-5 sm:px-6 pb-6 pt-2 text-center">
                 <p className="text-text-secondary mb-2 text-sm">
-                  {accentUnlockLevel === 15
+                  {accentUnlockLevel === 20
+                    ? '¡Hito épico alcanzado! Al llegar al Nivel 20 has desbloqueado 5 acentos dinámicos animados con flujo continuo (Supernova, Plasma Cuántico, Llama Eterna, Vórtice Abisal y Oro Cósmico).'
+                    : accentUnlockLevel === 15
                     ? 'Al alcanzar el Nivel 15 has desbloqueado 5 acentos exclusivos con degradado dinámico (Aurora, Sunset, Cyberpunk, Océano y Oro Imperial).'
                     : accentUnlockLevel === 10
                     ? 'Al alcanzar el Nivel 10 has desbloqueado 5 colores pastel adicionales para tu personalización.'
@@ -1142,7 +1161,15 @@ export default function MainAppLayout({
                   Ve a <strong>Hub → Personalización</strong> para aplicarlos.
                 </p>
                 <div className="flex gap-2.5 justify-center mb-6 flex-wrap">
-                  {accentUnlockLevel === 15 ? (
+                  {accentUnlockLevel === 20 ? (
+                    <>
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5 living-accent-preview" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 35%, #3b82f6 70%, #7c3aed 100%)' }} title="Supernova" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5 living-accent-preview" style={{ background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 35%, #3b82f6 70%, #10b981 100%)' }} title="Plasma Cuántico" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5 living-accent-preview" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #f97316 35%, #facc15 70%, #ef4444 100%)' }} title="Llama Eterna" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5 living-accent-preview" style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #6366f1 35%, #14b8a6 70%, #1d4ed8 100%)' }} title="Vórtice Abisal" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5 living-accent-preview" style={{ background: 'linear-gradient(135deg, #d97706 0%, #fef08a 35%, #b45309 70%, #d97706 100%)' }} title="Oro Cósmico" />
+                    </>
+                  ) : accentUnlockLevel === 15 ? (
                     <>
                       <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)' }} title="Aurora Boreal" />
                       <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)' }} title="Sunset Glow" />

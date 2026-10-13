@@ -575,6 +575,195 @@ html.galaxy-theme #root::after {
 
 
 
+/* 4.3) ACENTOS DINÁMICOS ANIMADOS (NIVEL 20) */
+@keyframes living-accent-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.living-accent-preview {
+  background-size: 250% 250% !important;
+  animation: living-accent-flow 6s ease infinite !important;
+}
+
+.accent-supernova {
+  --color-accent: #8b5cf6;
+  --color-accent-gradient: linear-gradient(135deg, #7c3aed 0%, #ec4899 35%, #3b82f6 70%, #7c3aed 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #a78bfa 0%, #f472b6 35%, #60a5fa 70%, #a78bfa 100%);
+  --color-accent-transparent: rgba(139, 92, 246, 0.16);
+  --color-accent-border: rgba(236, 72, 153, 0.35);
+  --btn-accent-text: #ffffff;
+}
+
+.accent-plasma {
+  --color-accent: #10b981;
+  --color-accent-gradient: linear-gradient(135deg, #10b981 0%, #06b6d4 35%, #3b82f6 70%, #10b981 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #34d399 0%, #22d3ee 35%, #60a5fa 70%, #34d399 100%);
+  --color-accent-transparent: rgba(16, 185, 129, 0.16);
+  --color-accent-border: rgba(6, 182, 212, 0.35);
+  --btn-accent-text: #ffffff;
+}
+
+.accent-eternal-flame {
+  --color-accent: #f97316;
+  --color-accent-gradient: linear-gradient(135deg, #ef4444 0%, #f97316 35%, #facc15 70%, #ef4444 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #f87171 0%, #fb923c 35%, #fde047 70%, #f87171 100%);
+  --color-accent-transparent: rgba(249, 115, 22, 0.16);
+  --color-accent-border: rgba(250, 204, 21, 0.35);
+  --btn-accent-text: #ffffff;
+}
+
+.accent-abyssal-vortex {
+  --color-accent: #3b82f6;
+  --color-accent-gradient: linear-gradient(135deg, #1d4ed8 0%, #6366f1 35%, #14b8a6 70%, #1d4ed8 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #60a5fa 0%, #818cf8 35%, #2dd4bf 70%, #60a5fa 100%);
+  --color-accent-transparent: rgba(59, 130, 246, 0.16);
+  --color-accent-border: rgba(99, 102, 241, 0.35);
+  --btn-accent-text: #ffffff;
+}
+
+.accent-cosmic-gold {
+  --color-accent: #f59e0b;
+  --color-accent-gradient: linear-gradient(135deg, #d97706 0%, #fef08a 35%, #b45309 70%, #d97706 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #f59e0b 0%, #fde047 35%, #d97706 70%, #f59e0b 100%);
+  --color-accent-transparent: rgba(245, 158, 11, 0.16);
+  --color-accent-border: rgba(254, 240, 138, 0.35);
+  --btn-accent-text: #000000;
+}
+
+/* Efecto de degradado animado en botones principales (.bg-accent) */
+.accent-supernova button.bg-accent,
+.accent-supernova a.bg-accent,
+.accent-supernova .btn-accent {
+  background: var(--color-accent-gradient) !important;
+  background-size: 250% 250% !important;
+  animation: living-accent-flow 6s ease infinite !important;
+  color: #ffffff !important;
+}
+
+.accent-plasma button.bg-accent,
+.accent-plasma a.bg-accent,
+.accent-plasma .btn-accent {
+  background: var(--color-accent-gradient) !important;
+  background-size: 250% 250% !important;
+  animation: living-accent-flow 6s ease infinite !important;
+  color: #ffffff !important;
+}
+
+.accent-eternal-flame button.bg-accent,
+.accent-eternal-flame a.bg-accent,
+.accent-eternal-flame .btn-accent {
+  background: var(--color-accent-gradient) !important;
+  background-size: 250% 250% !important;
+  animation: living-accent-flow 6s ease infinite !important;
+  color: #ffffff !important;
+}
+
+.accent-abyssal-vortex button.bg-accent,
+.accent-abyssal-vortex a.bg-accent,
+.accent-abyssal-vortex .btn-accent {
+  background: var(--color-accent-gradient) !important;
+  background-size: 250% 250% !important;
+  animation: living-accent-flow 6s ease infinite !important;
+  color: #ffffff !important;
+}
+
+.accent-cosmic-gold button.bg-accent,
+.accent-cosmic-gold a.bg-accent,
+.accent-cosmic-gold .btn-accent {
+  background: var(--color-accent-gradient) !important;
+  background-size: 250% 250% !important;
+  animation: living-accent-flow 6s ease infinite !important;
+  color: #000000 !important;
+}
+
+/* Flujo animado en letras/textos para acentos de nivel 20 (supernova, plasma, eternal-flame, abyssal-vortex, cosmic-gold) */
+.accent-supernova :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-plasma :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-eternal-flame :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-abyssal-vortex :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-cosmic-gold :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-supernova div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-plasma div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-eternal-flame div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-abyssal-vortex div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-cosmic-gold div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-supernova button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-plasma button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-eternal-flame button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-abyssal-vortex button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-cosmic-gold button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-supernova .text-accent-gradient,
+.accent-plasma .text-accent-gradient,
+.accent-eternal-flame .text-accent-gradient,
+.accent-abyssal-vortex .text-accent-gradient,
+.accent-cosmic-gold .text-accent-gradient {
+  background-image: var(--color-accent-text-gradient, var(--color-accent-gradient)) !important;
+  background-size: 250% 250% !important;
+  animation: living-accent-flow 6s ease infinite !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Blindaje de iconos SVG para acentos de nivel 20:
+   Asegura que los iconos SVG nunca hereden relleno transparente ni se rompan.
+   Los iconos con text-accent o dentro de contenedores text-accent mantienen color sólido nítido. */
+.accent-supernova svg.text-accent,
+.accent-plasma svg.text-accent,
+.accent-eternal-flame svg.text-accent,
+.accent-abyssal-vortex svg.text-accent,
+.accent-cosmic-gold svg.text-accent,
+.accent-supernova .text-accent svg,
+.accent-plasma .text-accent svg,
+.accent-eternal-flame .text-accent svg,
+.accent-abyssal-vortex .text-accent svg,
+.accent-cosmic-gold .text-accent svg {
+  -webkit-text-fill-color: initial !important;
+  color: var(--color-accent) !important;
+}
+
+.accent-supernova .text-accent svg[class*="text-white"],
+.accent-plasma .text-accent svg[class*="text-white"],
+.accent-eternal-flame .text-accent svg[class*="text-white"],
+.accent-abyssal-vortex .text-accent svg[class*="text-white"],
+.accent-cosmic-gold .text-accent svg[class*="text-white"] {
+  color: #ffffff !important;
+}
+
+.accent-supernova .text-accent svg[class*="text-red"],
+.accent-plasma .text-accent svg[class*="text-red"],
+.accent-eternal-flame .text-accent svg[class*="text-red"],
+.accent-abyssal-vortex .text-accent svg[class*="text-red"],
+.accent-cosmic-gold .text-accent svg[class*="text-red"] {
+  color: #ef4444 !important;
+}
+
+/* Iconos dentro de botones con fondo degradado animado */
+.accent-supernova .bg-accent svg,
+.accent-plasma .bg-accent svg,
+.accent-eternal-flame .bg-accent svg,
+.accent-abyssal-vortex .bg-accent svg,
+.accent-cosmic-gold .bg-accent svg,
+.accent-supernova .btn-accent svg,
+.accent-plasma .btn-accent svg,
+.accent-eternal-flame .btn-accent svg,
+.accent-abyssal-vortex .btn-accent svg,
+.accent-cosmic-gold .btn-accent svg {
+  -webkit-text-fill-color: initial !important;
+  color: inherit !important;
+}
+
 .accent-neutral {
   --color-accent: #737373;
   --color-accent-transparent: rgba(115, 115, 115, 0.12);
@@ -1336,8 +1525,13 @@ html.light-theme.accent-sunset, html.light-theme.accent-sunset * { --text-accent
 html.light-theme.accent-cyberpunk, html.light-theme.accent-cyberpunk * { --text-accent: #7c3aed; --color-accent-text-gradient: linear-gradient(135deg, #7c3aed 0%, #c026d3 100%); }
 html.light-theme.accent-deep-ocean, html.light-theme.accent-deep-ocean * { --text-accent: #1d4ed8; --color-accent-text-gradient: linear-gradient(135deg, #2563eb 0%, #0d9488 100%); }
 html.light-theme.accent-imperial-gold, html.light-theme.accent-imperial-gold * { --text-accent: #b45309; --color-accent-text-gradient: linear-gradient(135deg, #b45309 0%, #d97706 100%); }
+html.light-theme.accent-supernova, html.light-theme.accent-supernova * { --text-accent: #7c3aed; --color-accent-text-gradient: linear-gradient(135deg, #7c3aed 0%, #db2777 35%, #2563eb 70%, #7c3aed 100%); }
+html.light-theme.accent-plasma, html.light-theme.accent-plasma * { --text-accent: #059669; --color-accent-text-gradient: linear-gradient(135deg, #059669 0%, #0891b2 35%, #2563eb 70%, #059669 100%); }
+html.light-theme.accent-eternal-flame, html.light-theme.accent-eternal-flame * { --text-accent: #ea580c; --color-accent-text-gradient: linear-gradient(135deg, #dc2626 0%, #ea580c 35%, #ca8a04 70%, #dc2626 100%); }
+html.light-theme.accent-abyssal-vortex, html.light-theme.accent-abyssal-vortex * { --text-accent: #1d4ed8; --color-accent-text-gradient: linear-gradient(135deg, #1e40af 0%, #4f46e5 35%, #0d9488 70%, #1e40af 100%); }
+html.light-theme.accent-cosmic-gold, html.light-theme.accent-cosmic-gold * { --text-accent: #b45309; --color-accent-text-gradient: linear-gradient(135deg, #b45309 0%, #ca8a04 35%, #92400e 70%, #b45309 100%); }
 
-/* En modo claro con temas amarillos/pasteles, asegurar que botones y cápsulas con fondo acento tengan texto/icono oscuro de alto contraste */
+/* En modo claro con temas amarillos/pasteles/dorados, asegurar que botones y cápsulas con fondo acento tengan texto/icono oscuro de alto contraste */
 html.light-theme.accent-yellow .bg-accent,
 html.light-theme.accent-lemonade .bg-accent,
 html.light-theme.accent-lime .bg-accent,
@@ -1345,7 +1539,8 @@ html.light-theme.accent-mango .bg-accent,
 html.light-theme.accent-peach .bg-accent,
 html.light-theme.accent-mint .bg-accent,
 html.light-theme.accent-cherry-blossom .bg-accent,
-html.light-theme.accent-imperial-gold .bg-accent {
+html.light-theme.accent-imperial-gold .bg-accent,
+html.light-theme.accent-cosmic-gold .bg-accent {
   color: var(--btn-accent-text, #000000) !important;
 }
 
@@ -1356,6 +1551,7 @@ html.light-theme.accent-mango .bg-accent svg,
 html.light-theme.accent-peach .bg-accent svg,
 html.light-theme.accent-mint .bg-accent svg,
 html.light-theme.accent-cherry-blossom .bg-accent svg,
-html.light-theme.accent-imperial-gold .bg-accent svg {
+html.light-theme.accent-imperial-gold .bg-accent svg,
+html.light-theme.accent-cosmic-gold .bg-accent svg {
   color: var(--btn-accent-text, #000000) !important;
 }

@@ -49,6 +49,11 @@ const ACCENT_OPTIONS = [
   { id: 'cyberpunk', label: 'Cyberpunk', hex: '#8b5cf6', gradient: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)', reqLevel: 15 },
   { id: 'deep-ocean', label: 'Océano Profundo', hex: '#2563eb', gradient: 'linear-gradient(135deg, #2563eb 0%, #00f5d4 100%)', reqLevel: 15 },
   { id: 'imperial-gold', label: 'Oro Imperial', hex: '#f59e0b', gradient: 'linear-gradient(135deg, #f59e0b 0%, #fde047 100%)', reqLevel: 15 },
+  { id: 'supernova', label: 'Supernova', hex: '#8b5cf6', gradient: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 35%, #3b82f6 70%, #7c3aed 100%)', reqLevel: 20, isAnimated: true },
+  { id: 'plasma', label: 'Plasma Cuántico', hex: '#10b981', gradient: 'linear-gradient(135deg, #10b981 0%, #06b6d4 35%, #3b82f6 70%, #10b981 100%)', reqLevel: 20, isAnimated: true },
+  { id: 'eternal-flame', label: 'Llama Eterna', hex: '#f97316', gradient: 'linear-gradient(135deg, #ef4444 0%, #f97316 35%, #facc15 70%, #ef4444 100%)', reqLevel: 20, isAnimated: true },
+  { id: 'abyssal-vortex', label: 'Vórtice Abisal', hex: '#3b82f6', gradient: 'linear-gradient(135deg, #1d4ed8 0%, #6366f1 35%, #14b8a6 70%, #1d4ed8 100%)', reqLevel: 20, isAnimated: true },
+  { id: 'cosmic-gold', label: 'Oro Cósmico', hex: '#f59e0b', gradient: 'linear-gradient(135deg, #d97706 0%, #fef08a 35%, #b45309 70%, #d97706 100%)', reqLevel: 20, isAnimated: true },
 ];
 
 const isIOS = () => {
@@ -350,6 +355,57 @@ export default function AppearanceScreen({ setView }) {
                     >
                       <span
                         className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
+                        style={{
+                          background: opt.gradient || opt.hex,
+                          backgroundColor: opt.hex,
+                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
+                        }}
+                      />
+                      {accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked && (
+                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
+                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
+                        </span>
+                      )}
+                      {isLocked && (
+                        <span className="absolute inset-0 flex items-center justify-center text-black/40 dark:text-black/60 pointer-events-none drop-shadow-sm">
+                          <Lock size={16} strokeWidth={2.5} />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Nivel 20 · Dinámicos Animados */}
+              <div className="flex items-center gap-2 mb-3 ml-1 mt-6">
+                <div className="scale-[0.6] origin-left -my-3">
+                  <LevelBadge level={20} size="sm" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-black text-text-primary tracking-tight leading-none">Nivel 20</h4>
+                  <span className="inline-flex items-center justify-center text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 tracking-wider leading-none">
+                    <span className="text-accent leading-none">Animados</span>
+                  </span>
+                </div>
+              </div>
+              <div className="grid grid-cols-5 gap-3 sm:gap-4 mb-2">
+                {ACCENT_OPTIONS.filter(o => o.reqLevel === 20).map(opt => {
+                  const isLocked = (userProfile?.level || 1) < 20 && userProfile?.role !== 'admin';
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => {
+                        if (isLocked) {
+                          addToast(`Requiere nivel 20 para aplicarlo`, 'info', 'lock');
+                        } else {
+                          setAccent(opt.id);
+                        }
+                      }}
+                      title={opt.label + (isLocked ? ` (Nivel 20)` : '')}
+                      className={`group relative flex justify-center items-center w-full aspect-square ${isLocked ? 'opacity-40 grayscale-[0.3]' : ''}`}
+                    >
+                      <span
+                        className={`w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0 ${opt.isAnimated ? 'living-accent-preview' : ''}`}
                         style={{
                           background: opt.gradient || opt.hex,
                           backgroundColor: opt.hex,
