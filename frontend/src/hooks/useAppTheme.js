@@ -63,7 +63,9 @@ const ACCENT_MAP = {
   'sky': '#0ea5e9', 'slate': '#64748b', 'zinc': '#71717a', 'stone': '#78716c',
   'mint': '#a8e6cf', 'peach': '#ffd3b6', 'rose-water': '#ffaaa5', 'lavender': '#c5a3ff',
   'baby-blue': '#a2cffe', 'sunset-pink': '#ff9a9e', 'pistachio': '#c5e1a5', 'mango': '#ffbe76',
-  'lemonade': '#fdfd96', 'cherry-blossom': '#fccbcf', 'neutral': '#737373'
+  'lemonade': '#fdfd96', 'cherry-blossom': '#fccbcf',
+  'matcha': '#98d8aa', 'glacier': '#7dd3fc', 'mauve': '#d8b4fe', 'soft-coral': '#ff9a76', 'champagne': '#f5c87a',
+  'neutral': '#737373'
 };
 
 export const useAppTheme = () => {

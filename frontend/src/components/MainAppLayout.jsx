@@ -1109,7 +1109,7 @@ export default function MainAppLayout({
                   <Palette className="text-accent" size={28} />
                 </div>
                 <h3 className="text-xl font-black mb-2 text-text-primary">
-                  {accentUnlockLevel === 10 ? '¡10 Nuevos Colores!' : '¡5 Nuevos Colores!'}
+                  {accentUnlockLevel === 10 ? '¡10 Colores Exclusivos!' : '¡5 Nuevos Colores!'}
                 </h3>
               </div>
 
@@ -1117,7 +1117,7 @@ export default function MainAppLayout({
               <div className="px-5 sm:px-6 pb-6 pt-2 text-center">
                 <p className="text-text-secondary mb-2 text-sm">
                   {accentUnlockLevel === 10
-                    ? 'Al alcanzar el Nivel 10 has desbloqueado 5 colores pastel adicionales. ¡Junto con los del Nivel 5, ya tienes los 10 disponibles!'
+                    ? 'Al alcanzar el Nivel 10 has desbloqueado 10 colores exclusivos de alto nivel. ¡Junto con los del Nivel 5, ya tienes 15 opciones premium disponibles!'
                     : 'Al alcanzar el Nivel 5 has desbloqueado 5 nuevos colores pastel para personalizar tu app.'}
                 </p>
                 <p className="text-text-muted text-xs mb-5">
@@ -1140,6 +1140,11 @@ export default function MainAppLayout({
                       <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffbe76' }} title="Mango" />
                       <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fdfd96' }} title="Limonada" />
                       <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fccbcf' }} title="Flor de Cerezo" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#98d8aa' }} title="Té Matcha" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#7dd3fc' }} title="Azul Glaciar" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#d8b4fe' }} title="Malva Pastel" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ff9a76' }} title="Coral Suave" />
+                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#f5c87a' }} title="Oro Champán" />
                     </>
                   )}
                 </div>

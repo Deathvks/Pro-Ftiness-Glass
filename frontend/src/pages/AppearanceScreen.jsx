@@ -44,6 +44,11 @@ const ACCENT_OPTIONS = [
   { id: 'mango', label: 'Mango Pastel', hex: '#ffbe76', reqLevel: 10 },
   { id: 'lemonade', label: 'Limonada', hex: '#fdfd96', reqLevel: 10 },
   { id: 'cherry-blossom', label: 'Cerezo', hex: '#fccbcf', reqLevel: 10 },
+  { id: 'matcha', label: 'Té Matcha', hex: '#98d8aa', reqLevel: 10 },
+  { id: 'glacier', label: 'Azul Glaciar', hex: '#7dd3fc', reqLevel: 10 },
+  { id: 'mauve', label: 'Malva Pastel', hex: '#d8b4fe', reqLevel: 10 },
+  { id: 'soft-coral', label: 'Coral Suave', hex: '#ff9a76', reqLevel: 10 },
+  { id: 'champagne', label: 'Oro Champán', hex: '#f5c87a', reqLevel: 10 },
 ];
 
 const isIOS = () => {
