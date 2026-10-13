@@ -240,7 +240,7 @@ export const evaluateExerciseFollowUpAndRecovery = ({
       type: 'next_session_target',
       status: 'next_session_target',
       badge: 'Pauta Sesión Anterior',
-      badgeShort: 'Pauta IA',
+      badgeShort: 'Tu objetivo',
       title: 'Objetivo según lo trabajado en la sesión anterior',
       message: `Según lo trabajado en la sesión anterior (aplicaste "${lastApplied.strategyTitle}"), ahora deberías poder hacer ${targetText}.`,
       actionHint: 'Aplica el objetivo planificado y registra tus repeticiones para evaluar el avance hacia el OK verde.',

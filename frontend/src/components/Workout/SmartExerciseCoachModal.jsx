@@ -323,7 +323,7 @@ const SmartExerciseCoachModal = ({
 
                 {followUp.actionHint && (
                   <div className="pt-1 border-t border-black/5 dark:border-white/10 flex items-start gap-1.5 text-[11px] font-medium text-text-muted">
-                    <span className="font-bold text-text-primary shrink-0">Pauta IA:</span>
+                    <span className="font-bold text-text-primary shrink-0">Pauta recomendada:</span>
                     <span>{followUp.actionHint}</span>
                   </div>
                 )}
