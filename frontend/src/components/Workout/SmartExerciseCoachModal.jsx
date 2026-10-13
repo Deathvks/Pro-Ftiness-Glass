@@ -69,7 +69,6 @@ const SmartExerciseCoachModal = ({
     trend, 
     targets, 
     coachingAdvice, 
-    actionSteps, 
     sessions, 
     strategyOptions,
     motivationalMessage,
@@ -384,60 +383,6 @@ const SmartExerciseCoachModal = ({
               )}
             </div>
 
-            {/* 4. ¿PARA QUÉ TE LO RECOMENDAMOS? (OBJETIVO Y PASOS PRÁCTICOS) */}
-            <div className="p-3.5 sm:p-4 rounded-[22px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 border-none space-y-2.5">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0">
-                    <Target size={15} strokeWidth={2.5} />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-accent block">
-                      ¿Para qué te lo recomendamos?
-                    </span>
-                    <h4 className="text-xs sm:text-sm font-black text-text-primary leading-tight">
-                      {targets.actionTitle || `Objetivo: ${userGoal.label}`}
-                    </h4>
-                  </div>
-                </div>
-
-                {activeStrategy?.badge && (
-                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-accent/15 text-accent">
-                    {activeStrategy.badge}
-                  </span>
-                )}
-              </div>
-
-              {/* Motivo específico de por qué se recomienda la opción seleccionada */}
-              {activeStrategy && (
-                <div className="p-2.5 rounded-[14px] bg-bg-secondary space-y-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-accent block">
-                    Motivo por el que te recomendamos ({activeStrategy.title}):
-                  </span>
-                  <p className="text-xs text-text-secondary leading-relaxed font-medium">
-                    {activeStrategy.motive || activeStrategy.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Pasos prácticos para aplicar hoy */}
-              {actionSteps && actionSteps.length > 0 && (
-                <div className="space-y-1.5 pt-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-text-muted block">
-                    Cómo ejecutarlo en tu serie de hoy:
-                  </span>
-                  {actionSteps.map((step, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-xs font-medium text-text-secondary">
-                      <div className="w-4 h-4 rounded-full bg-accent/20 text-accent font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                        {idx + 1}
-                      </div>
-                      <span className="leading-snug text-text-primary/90">{step}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* 4. OBJETIVO CALCULADO PARA HOY (MÉTRICAS CLAVE EN VISTA RÁPIDA) */}
             <div>
               <div className="flex items-center justify-between mb-2 px-1">
@@ -604,11 +549,6 @@ const SmartExerciseCoachModal = ({
                           <p className="text-xs text-text-secondary font-medium leading-relaxed">
                             {opt.description}
                           </p>
-                          {opt.motive && (
-                            <p className="text-[11px] text-accent font-medium leading-snug pt-0.5">
-                              <strong className="font-bold">Motivo:</strong> {opt.motive}
-                            </p>
-                          )}
                         </div>
                       </div>
                     );
