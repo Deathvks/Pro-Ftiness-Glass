@@ -600,6 +600,9 @@ html.galaxy-theme #root::after {
   --color-accent-transparent: rgba(139, 92, 246, 0.16);
   --color-accent-border: rgba(236, 72, 153, 0.35);
   --btn-accent-text: #ffffff;
+  --aurora-gradient: repeating-linear-gradient(100deg, #7c3aed 10%, #ec4899 15%, #3b82f6 20%, #a855f7 25%, #7c3aed 30%);
+  --aurora-glow-1: #8b5cf6;
+  --aurora-glow-2: #ec4899;
 }
 
 .accent-plasma {
@@ -609,6 +612,9 @@ html.galaxy-theme #root::after {
   --color-accent-transparent: rgba(16, 185, 129, 0.16);
   --color-accent-border: rgba(6, 182, 212, 0.35);
   --btn-accent-text: #ffffff;
+  --aurora-gradient: repeating-linear-gradient(100deg, #10b981 10%, #06b6d4 15%, #3b82f6 20%, #34d399 25%, #10b981 30%);
+  --aurora-glow-1: #10b981;
+  --aurora-glow-2: #06b6d4;
 }
 
 .accent-eternal-flame {
@@ -618,6 +624,9 @@ html.galaxy-theme #root::after {
   --color-accent-transparent: rgba(249, 115, 22, 0.16);
   --color-accent-border: rgba(250, 204, 21, 0.35);
   --btn-accent-text: #ffffff;
+  --aurora-gradient: repeating-linear-gradient(100deg, #ef4444 10%, #f97316 15%, #facc15 20%, #fb923c 25%, #ef4444 30%);
+  --aurora-glow-1: #ef4444;
+  --aurora-glow-2: #f97316;
 }
 
 .accent-abyssal-vortex {
@@ -627,6 +636,9 @@ html.galaxy-theme #root::after {
   --color-accent-transparent: rgba(59, 130, 246, 0.16);
   --color-accent-border: rgba(99, 102, 241, 0.35);
   --btn-accent-text: #ffffff;
+  --aurora-gradient: repeating-linear-gradient(100deg, #1d4ed8 10%, #6366f1 15%, #14b8a6 20%, #60a5fa 25%, #1d4ed8 30%);
+  --aurora-glow-1: #1d4ed8;
+  --aurora-glow-2: #6366f1;
 }
 
 .accent-cosmic-gold {
@@ -636,6 +648,9 @@ html.galaxy-theme #root::after {
   --color-accent-transparent: rgba(245, 158, 11, 0.16);
   --color-accent-border: rgba(254, 240, 138, 0.35);
   --btn-accent-text: #000000;
+  --aurora-gradient: repeating-linear-gradient(100deg, #d97706 10%, #f59e0b 15%, #fef08a 20%, #b45309 25%, #d97706 30%);
+  --aurora-glow-1: #d97706;
+  --aurora-glow-2: #f59e0b;
 }
 
 /* Efecto de degradado animado en botones principales (.bg-accent) */
@@ -764,396 +779,103 @@ html.galaxy-theme #root::after {
   color: inherit !important;
 }
 
-/* 4.4) ATMÓSFERA Y FONDOS ÉPICOS NIVEL 20 (SOLO BACKGROUND) */
-@keyframes living-ambient-flow-1 {
-  0% {
-    transform: translate3d(-10%, -10%, 0) scale(1);
+/* ==========================================================================
+   4.4) AURORA BOREAL LÍQUIDA (NIVEL 20 - ESTILO ACETERNITY / APPLE SEQUOIA)
+   ========================================================================== */
+:root {
+  --aurora-stripes: repeating-linear-gradient(
+    100deg,
+    #ffffff 0%,
+    #ffffff 7%,
+    transparent 10%,
+    transparent 12%,
+    #ffffff 16%
+  );
+}
+
+@keyframes aurora-wave {
+  from {
+    background-position: 50% 50%, 50% 50%;
   }
-  50% {
-    transform: translate3d(12%, 14%, 0) scale(1.18);
-  }
-  100% {
-    transform: translate3d(-10%, -10%, 0) scale(1);
+  to {
+    background-position: 350% 50%, 350% 50%;
   }
 }
 
-@keyframes living-ambient-flow-2 {
-  0% {
-    transform: translate3d(12%, 15%, 0) scale(1.15);
+@keyframes aurora-glow-breathe {
+  0%, 100% {
+    transform: scale(0.96) translateY(0);
+    opacity: 0.35;
   }
   50% {
-    transform: translate3d(-14%, -10%, 0) scale(0.92);
-  }
-  100% {
-    transform: translate3d(12%, 15%, 0) scale(1.15);
-  }
-}
-
-@keyframes living-ambient-flow-3 {
-  0% {
-    transform: translate3d(-5%, 8%, 0) scale(0.95);
-  }
-  50% {
-    transform: translate3d(10%, -14%, 0) scale(1.14);
-  }
-  100% {
-    transform: translate3d(-5%, 8%, 0) scale(0.95);
-  }
-}
-
-@keyframes living-ambient-flow-4 {
-  0% {
-    transform: translate3d(10%, -8%, 0) scale(1.05);
-  }
-  50% {
-    transform: translate3d(-10%, 12%, 0) scale(0.95);
-  }
-  100% {
-    transform: translate3d(10%, -8%, 0) scale(1.05);
-  }
-}
-
-@keyframes living-mesh-drift {
-  0% {
-    transform: scale(1) rotate(0deg);
-    opacity: 0.55;
-  }
-  50% {
-    transform: scale(1.12) rotate(4deg);
-    opacity: 0.75;
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
+    transform: scale(1.08) translateY(-8px);
     opacity: 0.55;
   }
 }
 
-@keyframes living-beam-drift {
-  0% {
-    transform: rotate(-25deg) translate3d(-10%, 0, 0);
-    opacity: 0.4;
-  }
-  50% {
-    transform: rotate(-20deg) translate3d(12%, 8%, 0);
-    opacity: 0.65;
-  }
-  100% {
-    transform: rotate(-25deg) translate3d(-10%, 0, 0);
-    opacity: 0.4;
-  }
-}
-
-.living-bg-ambient {
+.aurora-container {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
-  opacity: 0.68;
+  opacity: 0.72;
   transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translateZ(0);
+  mask-image: radial-gradient(ellipse 95% 65% at 50% 0%, #000 20%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 95% 65% at 50% 0%, #000 20%, transparent 80%);
 }
 
-html.light-theme .living-bg-ambient {
-  opacity: 0.30;
+html.light-theme .aurora-container {
+  opacity: 0.25;
+  mask-image: radial-gradient(ellipse 95% 55% at 50% 0%, #000 15%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 95% 55% at 50% 0%, #000 15%, transparent 75%);
 }
 
-html.oled-theme .living-bg-ambient {
-  opacity: 0.40;
+html.oled-theme .aurora-container {
+  opacity: 0.60;
+  mask-image: radial-gradient(ellipse 90% 55% at 50% 0%, #000 15%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 55% at 50% 0%, #000 15%, transparent 70%);
 }
 
-.living-ambient-mesh {
+.aurora-glow {
   position: absolute;
-  inset: -20%;
-  filter: blur(65px);
-  will-change: transform, opacity;
-  pointer-events: none;
-  animation: living-mesh-drift 24s ease-in-out infinite;
-}
-
-.living-ambient-beam {
-  position: absolute;
-  width: 140vw;
-  height: 38vh;
-  top: 22%;
-  left: -20%;
+  top: -20%;
+  left: 10%;
+  right: 10%;
+  height: 55vh;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 30%, var(--aurora-glow-1, #8b5cf6) 0%, var(--aurora-glow-2, #ec4899) 45%, transparent 75%);
   filter: blur(80px);
   will-change: transform, opacity;
   pointer-events: none;
-  animation: living-beam-drift 28s ease-in-out infinite;
+  animation: aurora-glow-breathe 14s ease-in-out infinite;
 }
 
-.living-ambient-orb {
+.aurora-curtain {
   position: absolute;
-  border-radius: 50%;
-  filter: blur(90px);
-  will-change: transform;
+  inset: -20px;
+  background-image: var(--aurora-stripes), var(--aurora-gradient);
+  background-size: 300% 200%;
+  background-position: 50% 50%;
+  filter: blur(14px);
+  opacity: 0.60;
+  will-change: background-position;
   pointer-events: none;
+  animation: aurora-wave 60s linear infinite;
 }
 
-/* Supernova */
-.accent-supernova .living-ambient-mesh {
-  background: radial-gradient(ellipse at 50% 50%, rgba(124, 58, 237, 0.28) 0%, rgba(236, 72, 153, 0.16) 45%, transparent 75%);
-}
-
-.accent-supernova .living-ambient-beam {
-  background: linear-gradient(90deg, transparent 0%, rgba(236, 72, 153, 0.35) 35%, rgba(59, 130, 246, 0.30) 70%, transparent 100%);
-}
-
-.accent-supernova .living-ambient-orb-1 {
-  top: -15%;
-  left: -15%;
-  width: 75vw;
-  height: 75vw;
-  max-width: 800px;
-  max-height: 800px;
-  background: radial-gradient(circle, rgba(124, 58, 237, 0.65) 0%, rgba(139, 92, 246, 0.35) 45%, transparent 75%);
-  animation: living-ambient-flow-1 18s ease-in-out infinite;
-}
-
-.accent-supernova .living-ambient-orb-2 {
-  bottom: -15%;
-  right: -15%;
-  width: 80vw;
-  height: 80vw;
-  max-width: 850px;
-  max-height: 850px;
-  background: radial-gradient(circle, rgba(236, 72, 153, 0.60) 0%, rgba(219, 39, 119, 0.32) 45%, transparent 75%);
-  animation: living-ambient-flow-2 22s ease-in-out infinite;
-}
-
-.accent-supernova .living-ambient-orb-3 {
-  top: 35%;
-  left: -8%;
-  width: 58vw;
-  height: 58vw;
-  max-width: 620px;
-  max-height: 620px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.50) 0%, rgba(99, 102, 241, 0.28) 45%, transparent 75%);
-  animation: living-ambient-flow-3 17s ease-in-out infinite;
-}
-
-.accent-supernova .living-ambient-orb-4 {
-  top: 55%;
-  right: -8%;
-  width: 52vw;
-  height: 52vw;
-  max-width: 560px;
-  max-height: 560px;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.55) 0%, rgba(244, 114, 182, 0.30) 45%, transparent 75%);
-  animation: living-ambient-flow-4 21s ease-in-out infinite;
-}
-
-/* Plasma Cuántico */
-.accent-plasma .living-ambient-mesh {
-  background: radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.28) 0%, rgba(6, 182, 212, 0.16) 45%, transparent 75%);
-}
-
-.accent-plasma .living-ambient-beam {
-  background: linear-gradient(90deg, transparent 0%, rgba(16, 185, 129, 0.35) 35%, rgba(6, 182, 212, 0.35) 70%, transparent 100%);
-}
-
-.accent-plasma .living-ambient-orb-1 {
-  top: -15%;
-  left: -15%;
-  width: 75vw;
-  height: 75vw;
-  max-width: 800px;
-  max-height: 800px;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.65) 0%, rgba(52, 211, 153, 0.35) 45%, transparent 75%);
-  animation: living-ambient-flow-1 18s ease-in-out infinite;
-}
-
-.accent-plasma .living-ambient-orb-2 {
-  bottom: -15%;
-  right: -15%;
-  width: 80vw;
-  height: 80vw;
-  max-width: 850px;
-  max-height: 850px;
-  background: radial-gradient(circle, rgba(6, 182, 212, 0.60) 0%, rgba(34, 211, 238, 0.32) 45%, transparent 75%);
-  animation: living-ambient-flow-2 22s ease-in-out infinite;
-}
-
-.accent-plasma .living-ambient-orb-3 {
-  top: 35%;
-  left: -8%;
-  width: 58vw;
-  height: 58vw;
-  max-width: 620px;
-  max-height: 620px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.50) 0%, rgba(14, 165, 233, 0.28) 45%, transparent 75%);
-  animation: living-ambient-flow-3 17s ease-in-out infinite;
-}
-
-.accent-plasma .living-ambient-orb-4 {
-  top: 55%;
-  right: -8%;
-  width: 52vw;
-  height: 52vw;
-  max-width: 560px;
-  max-height: 560px;
-  background: radial-gradient(circle, rgba(20, 184, 166, 0.55) 0%, rgba(16, 185, 129, 0.30) 45%, transparent 75%);
-  animation: living-ambient-flow-4 21s ease-in-out infinite;
-}
-
-/* Llama Eterna */
-.accent-eternal-flame .living-ambient-mesh {
-  background: radial-gradient(ellipse at 50% 50%, rgba(239, 68, 68, 0.28) 0%, rgba(249, 115, 22, 0.16) 45%, transparent 75%);
-}
-
-.accent-eternal-flame .living-ambient-beam {
-  background: linear-gradient(90deg, transparent 0%, rgba(249, 115, 22, 0.35) 35%, rgba(250, 204, 21, 0.32) 70%, transparent 100%);
-}
-
-.accent-eternal-flame .living-ambient-orb-1 {
-  top: -15%;
-  left: -15%;
-  width: 75vw;
-  height: 75vw;
-  max-width: 800px;
-  max-height: 800px;
-  background: radial-gradient(circle, rgba(239, 68, 68, 0.65) 0%, rgba(248, 113, 113, 0.35) 45%, transparent 75%);
-  animation: living-ambient-flow-1 18s ease-in-out infinite;
-}
-
-.accent-eternal-flame .living-ambient-orb-2 {
-  bottom: -15%;
-  right: -15%;
-  width: 80vw;
-  height: 80vw;
-  max-width: 850px;
-  max-height: 850px;
-  background: radial-gradient(circle, rgba(249, 115, 22, 0.60) 0%, rgba(251, 146, 60, 0.32) 45%, transparent 75%);
-  animation: living-ambient-flow-2 22s ease-in-out infinite;
-}
-
-.accent-eternal-flame .living-ambient-orb-3 {
-  top: 35%;
-  left: -8%;
-  width: 58vw;
-  height: 58vw;
-  max-width: 620px;
-  max-height: 620px;
-  background: radial-gradient(circle, rgba(250, 204, 21, 0.45) 0%, rgba(253, 224, 71, 0.25) 45%, transparent 75%);
-  animation: living-ambient-flow-3 17s ease-in-out infinite;
-}
-
-.accent-eternal-flame .living-ambient-orb-4 {
-  top: 55%;
-  right: -8%;
-  width: 52vw;
-  height: 52vw;
-  max-width: 560px;
-  max-height: 560px;
-  background: radial-gradient(circle, rgba(220, 38, 38, 0.55) 0%, rgba(249, 115, 22, 0.30) 45%, transparent 75%);
-  animation: living-ambient-flow-4 21s ease-in-out infinite;
-}
-
-/* Vórtice Abisal */
-.accent-abyssal-vortex .living-ambient-mesh {
-  background: radial-gradient(ellipse at 50% 50%, rgba(29, 78, 216, 0.28) 0%, rgba(99, 102, 241, 0.16) 45%, transparent 75%);
-}
-
-.accent-abyssal-vortex .living-ambient-beam {
-  background: linear-gradient(90deg, transparent 0%, rgba(99, 102, 241, 0.35) 35%, rgba(20, 184, 166, 0.32) 70%, transparent 100%);
-}
-
-.accent-abyssal-vortex .living-ambient-orb-1 {
-  top: -15%;
-  left: -15%;
-  width: 75vw;
-  height: 75vw;
-  max-width: 800px;
-  max-height: 800px;
-  background: radial-gradient(circle, rgba(29, 78, 216, 0.65) 0%, rgba(96, 165, 250, 0.35) 45%, transparent 75%);
-  animation: living-ambient-flow-1 18s ease-in-out infinite;
-}
-
-.accent-abyssal-vortex .living-ambient-orb-2 {
-  bottom: -15%;
-  right: -15%;
-  width: 80vw;
-  height: 80vw;
-  max-width: 850px;
-  max-height: 850px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.60) 0%, rgba(129, 140, 248, 0.32) 45%, transparent 75%);
-  animation: living-ambient-flow-2 22s ease-in-out infinite;
-}
-
-.accent-abyssal-vortex .living-ambient-orb-3 {
-  top: 35%;
-  left: -8%;
-  width: 58vw;
-  height: 58vw;
-  max-width: 620px;
-  max-height: 620px;
-  background: radial-gradient(circle, rgba(13, 148, 136, 0.50) 0%, rgba(45, 212, 191, 0.28) 45%, transparent 75%);
-  animation: living-ambient-flow-3 17s ease-in-out infinite;
-}
-
-.accent-abyssal-vortex .living-ambient-orb-4 {
-  top: 55%;
-  right: -8%;
-  width: 52vw;
-  height: 52vw;
-  max-width: 560px;
-  max-height: 560px;
-  background: radial-gradient(circle, rgba(37, 99, 235, 0.55) 0%, rgba(79, 70, 229, 0.30) 45%, transparent 75%);
-  animation: living-ambient-flow-4 21s ease-in-out infinite;
-}
-
-/* Oro Cósmico */
-.accent-cosmic-gold .living-ambient-mesh {
-  background: radial-gradient(ellipse at 50% 50%, rgba(217, 119, 6, 0.28) 0%, rgba(245, 158, 11, 0.16) 45%, transparent 75%);
-}
-
-.accent-cosmic-gold .living-ambient-beam {
-  background: linear-gradient(90deg, transparent 0%, rgba(245, 158, 11, 0.35) 35%, rgba(253, 224, 71, 0.32) 70%, transparent 100%);
-}
-
-.accent-cosmic-gold .living-ambient-orb-1 {
-  top: -15%;
-  left: -15%;
-  width: 75vw;
-  height: 75vw;
-  max-width: 800px;
-  max-height: 800px;
-  background: radial-gradient(circle, rgba(217, 119, 6, 0.65) 0%, rgba(245, 158, 11, 0.35) 45%, transparent 75%);
-  animation: living-ambient-flow-1 18s ease-in-out infinite;
-}
-
-.accent-cosmic-gold .living-ambient-orb-2 {
-  bottom: -15%;
-  right: -15%;
-  width: 80vw;
-  height: 80vw;
-  max-width: 850px;
-  max-height: 850px;
-  background: radial-gradient(circle, rgba(245, 158, 11, 0.60) 0%, rgba(251, 191, 36, 0.32) 45%, transparent 75%);
-  animation: living-ambient-flow-2 22s ease-in-out infinite;
-}
-
-.accent-cosmic-gold .living-ambient-orb-3 {
-  top: 35%;
-  left: -8%;
-  width: 58vw;
-  height: 58vw;
-  max-width: 620px;
-  max-height: 620px;
-  background: radial-gradient(circle, rgba(253, 224, 71, 0.45) 0%, rgba(254, 240, 138, 0.25) 45%, transparent 75%);
-  animation: living-ambient-flow-3 17s ease-in-out infinite;
-}
-
-.accent-cosmic-gold .living-ambient-orb-4 {
-  top: 55%;
-  right: -8%;
-  width: 52vw;
-  height: 52vw;
-  max-width: 560px;
-  max-height: 560px;
-  background: radial-gradient(circle, rgba(180, 83, 9, 0.55) 0%, rgba(217, 119, 6, 0.30) 45%, transparent 75%);
-  animation: living-ambient-flow-4 21s ease-in-out infinite;
+.aurora-curtain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--aurora-stripes), var(--aurora-gradient);
+  background-size: 200% 100%;
+  background-attachment: fixed;
+  mix-blend-mode: difference;
+  pointer-events: none;
+  animation: aurora-wave 45s linear infinite reverse;
+  opacity: 0.80;
 }
 
 .accent-neutral {
