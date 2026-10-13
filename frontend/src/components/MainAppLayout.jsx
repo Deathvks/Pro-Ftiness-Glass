@@ -958,7 +958,11 @@ export default function MainAppLayout({
           onTouchCancel={handleContentTouchEnd}
         >
           {['appearance', 'support', 'socialLinks', 'emotional-onboarding'].includes(view) && (
-            <div className="hidden md:flex items-center px-4 sm:px-6 pt-2 pb-4 w-full max-w-4xl mx-auto">
+            <div className={`hidden md:flex items-center pt-2 pb-2 w-full mx-auto ${
+              view === 'appearance' 
+                ? 'max-w-4xl lg:max-w-6xl xl:max-w-7xl px-4 md:px-8' 
+                : 'max-w-4xl px-4 sm:px-6'
+            }`}>
               <button
                 onClick={() => navigate('hub')}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95 shadow-sm"

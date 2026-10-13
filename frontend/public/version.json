@@ -1,5 +1,5 @@
 {
-  "version": "7.4.9",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.9/app-release.apk",
-  "notes": "Diseño responsivo optimizado en Apariencia: Mis Temas fijo a la derecha en PC y panel desplegable/solapable superior en móvil."
+  "version": "7.4.10",
+  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.10/app-release.apk",
+  "notes": "Alineación del botón volver en PC al borde izquierdo del contenedor de apariencia y limpieza visual en Mis Temas."
 }

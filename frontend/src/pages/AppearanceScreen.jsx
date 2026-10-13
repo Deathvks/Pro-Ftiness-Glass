@@ -158,7 +158,7 @@ export default function AppearanceScreen({ setView }) {
   const glassCardClass = "glass p-5 sm:p-7 lg:p-8 rounded-[28px] sm:rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300";
 
   return (
-    <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-4xl lg:max-w-6xl xl:max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
+    <div className="px-4 md:px-8 pt-4 md:pt-2 pb-28 md:pb-8 max-w-4xl lg:max-w-6xl xl:max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
         <title>Apariencia - Pro Fitness Glass</title>
       </Helmet>
@@ -448,10 +448,7 @@ export default function AppearanceScreen({ setView }) {
           </div>
 
           {/* Contenido: Desplegable en móvil, Siempre visible en PC */}
-          <div className={`${isMyThemesOpenMobile ? 'block' : 'hidden'} lg:block transition-all duration-300 ${isMyThemesOpenMobile ? 'mt-5' : 'mt-0'}`}>
-            <p className="text-sm text-text-secondary mb-5 ml-1 hidden lg:block">
-              Temas exclusivos desbloqueados mediante retos y progreso en la aplicación.
-            </p>
+          <div className={`${isMyThemesOpenMobile ? 'block' : 'hidden'} lg:block transition-all duration-300 ${isMyThemesOpenMobile ? 'mt-5' : 'mt-4'}`}>
 
           <div className={`p-4 rounded-[20px] transition-all duration-500 border ${theme === 'galaxy' || isTestingTheme ? 'bg-[#a855f7]/10 border-[#a855f7]/30 shadow-lg shadow-[#a855f7]/20 scale-[1.02]' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
             <div className="flex items-center justify-between">
