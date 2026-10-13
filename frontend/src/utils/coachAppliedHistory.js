@@ -272,7 +272,7 @@ export const evaluateExerciseFollowUpAndRecovery = ({
       message: isStagnant
         ? `Llevas ${weeksStagnant > 1 ? `${weeksStagnant} semanas` : 'varias sesiones'} repitiendo la misma carga (${lastSession?.topWeight || 0} kg). Tu musculatura se ha adaptado y necesita un estímulo planificado para seguir avanzando.`
         : 'Hemos detectado una caída en tus métricas de fuerza en las últimas series. Tu sistema neuromuscular necesita un micro-ajuste táctico.',
-      actionHint: 'Toca aquí para ver las recomendaciones del entrenador y aplicar un plan de sobrecarga.',
+      actionHint: null,
       targetText: '',
       color: 'amber',
       isTooSoon: false,
@@ -294,7 +294,7 @@ export const evaluateExerciseFollowUpAndRecovery = ({
     badgeShort: 'Info Objetivo',
     title: 'Estableciendo umbral de partida',
     message: 'Registra tus marcas hoy manteniendo 1-2 repeticiones en reserva (RIR 1-2) para calibrar tus futuras progresiones.',
-    actionHint: 'Toca aquí para ver recomendaciones de técnica y volumen para tu objetivo.',
+    actionHint: null,
     targetText: '',
     color: 'accent',
     isTooSoon: false,

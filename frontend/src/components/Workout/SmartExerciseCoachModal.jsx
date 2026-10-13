@@ -248,7 +248,7 @@ const SmartExerciseCoachModal = ({
             )}
 
             {/* 2. SEGUIMIENTO LONGITUDINAL Y ESTADO DE RECUPERACIÓN */}
-            {followUp && (
+            {followUp && (followUp.isTooSoon || followUp.isOkGreen || followUp.type === 'next_session_target') && (
               <div
                 className={`p-3.5 sm:p-4 rounded-[22px] ring-1 ring-black/5 dark:ring-white/10 border-none flex flex-col gap-2.5 shadow-sm ${
                   followUp.type === 'ok_green'
@@ -322,7 +322,7 @@ const SmartExerciseCoachModal = ({
 
                 {followUp.actionHint && (
                   <div className="pt-1 border-t border-black/5 dark:border-white/10 flex items-start gap-1.5 text-[11px] font-medium text-text-muted">
-                    <span className="font-bold text-text-primary shrink-0">Recomendación:</span>
+                    <span className="font-bold text-text-primary shrink-0">Consejo:</span>
                     <span>{followUp.actionHint}</span>
                   </div>
                 )}
