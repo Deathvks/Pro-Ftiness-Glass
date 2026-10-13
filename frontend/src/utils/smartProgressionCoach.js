@@ -1,6 +1,6 @@
 /* frontend/src/utils/smartProgressionCoach.js */
 import { calculate1RM } from './helpers';
-import { getAppliedCoachStrategy, evaluateCoachFollowUp } from './coachAppliedHistory';
+import { getAppliedCoachStrategy, evaluateCoachFollowUp, evaluateExerciseFollowUpAndRecovery } from './coachAppliedHistory';
 
 /**
  * Normaliza y clasifica el objetivo del usuario del perfil / onboarding.
@@ -259,9 +259,15 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
   const sessions = getExerciseHistorySessions(exercise.name, workoutLog);
   const trend = diagnoseExerciseTrend(sessions);
 
-  // Comprobar si hubo una estrategia aplicada previamente para seguimiento continuo
+  // Comprobar si hubo una estrategia aplicada previamente para seguimiento continuo y recuperación
   const lastAppliedStrategy = getAppliedCoachStrategy(exercise.name);
-  const followUp = evaluateCoachFollowUp(exercise.name, trend, lastAppliedStrategy);
+  const followUp = evaluateExerciseFollowUpAndRecovery({
+    exerciseName: exercise.name,
+    sessions,
+    currentTrend: trend,
+    lastApplied: lastAppliedStrategy,
+    userProfile
+  });
 
   const plannedSets = parseInt(exercise.sets, 10) || 3;
   const rawReps = String(exercise.reps || '10');

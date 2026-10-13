@@ -5,7 +5,7 @@ const STORAGE_KEY = 'pro_fitness_coach_history';
 /**
  * Normaliza el nombre del ejercicio para indexación unificada.
  */
-const normalizeKey = (name) => {
+export const normalizeKey = (name) => {
   return String(name || '').toLowerCase().trim();
 };
 
@@ -52,6 +52,9 @@ export const saveAppliedCoachStrategy = (exerciseName, strategyData) => {
       suggestedSets: strategyData.suggestedSets !== undefined ? strategyData.suggestedSets : null,
       goal: strategyData.goal || null,
       trendAtApplication: strategyData.trendStatus || null,
+      baselineWeight: strategyData.baselineWeight !== undefined ? strategyData.baselineWeight : null,
+      baselineReps: strategyData.baselineReps !== undefined ? strategyData.baselineReps : null,
+      baseline1RM: strategyData.baseline1RM !== undefined ? strategyData.baseline1RM : null,
       appliedAt: new Date().toISOString()
     };
 
@@ -65,86 +68,254 @@ export const saveAppliedCoachStrategy = (exerciseName, strategyData) => {
 };
 
 /**
- * Evalúa el progreso tras la aplicación de una estrategia previa.
- * Determina si la estrategia funcionó (pasó a progressing), si la meseta persiste,
- * o si la fatiga continúa, recomendando la siguiente fase de acción.
+ * Formatea el texto legible de la meta (series x reps con peso).
+ */
+export const formatTargetText = (strategy) => {
+  if (!strategy) return 'objetivo pautado';
+  const parts = [];
+  if (strategy.suggestedSets) parts.push(`${strategy.suggestedSets} series`);
+  if (strategy.suggestedReps) parts.push(`${strategy.suggestedReps} reps`);
+  if (strategy.suggestedWeight !== null && strategy.suggestedWeight !== undefined) {
+    const w = parseFloat(strategy.suggestedWeight);
+    if (!isNaN(w) && w > 0) {
+      parts.push(`con ${strategy.suggestedWeight} kg`);
+    } else {
+      parts.push('con peso corporal');
+    }
+  }
+  return parts.length > 0 ? parts.join(' × ') : 'objetivo pautado';
+};
+
+/**
+ * Formatea el tiempo transcurrido en formato amigable y conciso.
+ */
+export const formatTimeAgo = (diffHours, calendarDaysDiff) => {
+  if (diffHours === null || diffHours === undefined) return '';
+  if (calendarDaysDiff === 0) {
+    if (diffHours < 2) return 'hace menos de 2 horas (hoy)';
+    return `hace ${Math.round(diffHours)} horas (hoy)`;
+  }
+  if (calendarDaysDiff === 1) return 'hace 1 día (ayer)';
+  return `hace ${calendarDaysDiff} días`;
+};
+
+/**
+ * Evalúa el progreso longitudinal y el estado de recuperación fisiológica de un ejercicio:
+ * 1. Recuperación en días/horas: Si se intentó hace nada (< 36-40h / hoy o ayer)
+ *    - Si en la sesión anterior salió mal/fatiga/estancamiento: Alerta de fatiga (volverá a salir mal, requiere 48-72h).
+ *    - Si en la sesión anterior estaba mejorando: Alerta de supercompensación incompleta (carga se sentirá más pesada).
+ * 2. Próximo día con descanso adecuado:
+ *    - Si aplicó recomendación: "Según lo trabajado en la sesión anterior, ahora deberías poder hacer X".
+ * 3. En siguientes sesiones: Seguimiento adaptativo hasta llegar al "OK Verde" cuando rompe la meseta o progresa.
+ * 4. Día 1 / Sin recomendación: "Debes mejorar esto X..."
+ */
+export const evaluateExerciseFollowUpAndRecovery = ({
+  exerciseName,
+  sessions = [],
+  currentTrend = null,
+  lastApplied = null,
+  userProfile = null
+}) => {
+  const lastSession = sessions && sessions.length > 0 ? sessions[0] : null;
+
+  // 1. Cálculo del tiempo transcurrido desde la última sesión registrada
+  let diffMs = null;
+  let diffHours = null;
+  let calendarDaysDiff = null;
+  let timeAgoText = '';
+  let isTooSoon = false;
+
+  if (lastSession?.date) {
+    const sessionDate = new Date(lastSession.date);
+    if (!isNaN(sessionDate.getTime())) {
+      const now = new Date();
+      diffMs = Math.max(0, now.getTime() - sessionDate.getTime());
+      diffHours = diffMs / (1000 * 60 * 60);
+
+      const sessionDayStart = new Date(sessionDate.getFullYear(), sessionDate.getMonth(), sessionDate.getDate());
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      calendarDaysDiff = Math.max(0, Math.round((todayStart - sessionDayStart) / (1000 * 60 * 60 * 24)));
+
+      timeAgoText = formatTimeAgo(diffHours, calendarDaysDiff);
+
+      // Si se intentó el mismo día o al día siguiente (< 36 horas / <= 1 día calendario)
+      if (calendarDaysDiff < 2 || diffHours < 36) {
+        isTooSoon = true;
+      }
+    }
+  }
+
+  const targetText = lastApplied ? formatTargetText(lastApplied) : '';
+  const trendStatus = currentTrend?.status || 'first_time';
+
+  // ============================================================
+  // CONDICIÓN A: INTENTADO HACE POCO (< 36-40h / hoy o ayer)
+  // ============================================================
+  if (isTooSoon) {
+    // Subcaso A1: En la sesión anterior salió mal / fatiga / estancamiento
+    if (trendStatus === 'stagnant' || trendStatus === 'decreasing') {
+      return {
+        type: 'recovery_warning',
+        status: 'too_soon_fatigue',
+        badge: 'Descanso Incompleto',
+        badgeShort: 'Descanso !',
+        title: 'Aviso de descanso: ejercicio realizado hace poco',
+        message: `Intentaste este ejercicio ${timeAgoText}. Como en la sesión anterior el rendimiento no fue óptimo o hubo fatiga acumulada, el sistema neuromuscular y articular necesita entre 48 y 72 horas para recuperarse. Si lo fuerzas hoy, es muy probable que vuelva a salir mal o sufras sobrecarga.`,
+        actionHint: 'Te recomendamos posponer este ejercicio hoy o realizar series de técnica ligera (descarga). Dale al menos 48h de recuperación.',
+        targetText,
+        color: 'amber',
+        isTooSoon: true,
+        diffHours,
+        calendarDaysDiff,
+        timeAgoText,
+        lastApplied,
+        lastSession,
+        isOkGreen: false,
+        isWarning: true
+      };
+    }
+
+    // Subcaso A2: En la sesión anterior estaba mejorando / en racha positiva
+    if (trendStatus === 'progressing') {
+      return {
+        type: 'recovery_notice',
+        status: 'too_soon_progressing',
+        badge: 'Supercompensación en Curso',
+        badgeShort: 'Recuperación',
+        title: 'Aviso de recuperación: poco tiempo de descanso',
+        message: `Entrenaste este ejercicio ${timeAgoText}. Aunque en la sesión anterior estabas mejorando, tus depósitos de glucógeno y la supercompensación aún están en proceso (requieren 48-72h). No ha dado tiempo a recuperarte al 100%, por lo que es normal si hoy notas la carga más pesada o te cuesta igualar marcas.`,
+        actionHint: 'Si decides entrenarlo hoy, modera el volumen sin llegar al fallo muscular para no cortar la adaptación.',
+        targetText,
+        color: 'blue',
+        isTooSoon: true,
+        diffHours,
+        calendarDaysDiff,
+        timeAgoText,
+        lastApplied,
+        lastSession,
+        isOkGreen: false,
+        isWarning: false
+      };
+    }
+  }
+
+  // ============================================================
+  // CONDICIÓN B: TIEMPO DE RECUPERACIÓN ÓPTIMO (>= 48h o sin registros)
+  // ============================================================
+
+  // B1. OK VERDE: El usuario ha superado el estancamiento o está en progresión confirmada
+  const hasAchievedTarget = lastApplied && lastSession && (
+    (lastApplied.suggestedWeight !== null && lastSession.topWeight >= lastApplied.suggestedWeight) ||
+    trendStatus === 'progressing'
+  );
+
+  if (trendStatus === 'progressing' || hasAchievedTarget) {
+    const progressionDetail = currentTrend?.badgeText || (currentTrend?.deltaWeight > 0 ? `+${currentTrend.deltaWeight} kg` : 'en progresión');
+    return {
+      type: 'ok_green',
+      status: 'ok_green',
+      badge: '¡OK Verde! Progreso Confirmado',
+      badgeShort: '¡OK Verde!',
+      title: '¡Objetivo superado! Rompiste la meseta',
+      message: lastApplied
+        ? `Según lo trabajado en tus sesiones anteriores, aplicaste "${lastApplied.strategyTitle}" y lograste el objetivo (${progressionDetail}). Tu rendimiento está completamente normalizado y en progresión positiva.`
+        : `¡Excelente ritmo! Tu rendimiento está progresando de manera óptima (${progressionDetail}). Mantén esta sobrecarga gradual.`,
+      actionHint: 'Consolida la técnica y continúa aplicando sobrecarga progresiva sin apresurar los saltos de peso.',
+      targetText,
+      color: 'emerald',
+      isTooSoon: false,
+      diffHours,
+      calendarDaysDiff,
+      timeAgoText,
+      lastApplied,
+      lastSession,
+      isOkGreen: true,
+      isWarning: false
+    };
+  }
+
+  // B2. SIGUIENTE SESIÓN TRAS APLICAR RECOMENDACIÓN (Fase de adaptación hacia el objetivo)
+  if (lastApplied) {
+    return {
+      type: 'next_session_target',
+      status: 'next_session_target',
+      badge: 'Pauta Sesión Anterior',
+      badgeShort: 'Pauta IA',
+      title: 'Objetivo según lo trabajado en la sesión anterior',
+      message: `Según lo trabajado en la sesión anterior (aplicaste "${lastApplied.strategyTitle}"), ahora deberías poder hacer ${targetText}.`,
+      actionHint: 'Aplica el objetivo planificado y registra tus repeticiones para evaluar el avance hacia el OK verde.',
+      targetText,
+      color: 'accent',
+      isTooSoon: false,
+      diffHours,
+      calendarDaysDiff,
+      timeAgoText,
+      lastApplied,
+      lastSession,
+      isOkGreen: false,
+      isWarning: false
+    };
+  }
+
+  // B3. DÍA 1 / SIN RECOMENDACIÓN APLICADA: DETECTADO ESTANCAMIENTO O FATIGA
+  if (currentTrend?.isWarning) {
+    const isStagnant = trendStatus === 'stagnant';
+    const weeksStagnant = currentTrend.weeksStagnant || 1;
+    return {
+      type: 'needs_improvement',
+      status: isStagnant ? 'needs_improvement_stagnant' : 'needs_improvement_fatigue',
+      badge: isStagnant ? 'Mejora Requerida' : 'Fatiga Detectada',
+      badgeShort: isStagnant ? 'Mismo peso !' : 'Aviso fatiga !',
+      title: isStagnant
+        ? 'Debes mejorar este ejercicio: estancamiento detectado'
+        : 'Debes mejorar este ejercicio: fatiga acumulada',
+      message: isStagnant
+        ? `Llevas ${weeksStagnant > 1 ? `${weeksStagnant} semanas` : 'varias sesiones'} repitiendo la misma carga (${lastSession?.topWeight || 0} kg). Tu musculatura se ha adaptado y necesita un estímulo planificado para seguir avanzando.`
+        : 'Hemos detectado una caída en tus métricas de fuerza en las últimas series. Tu sistema neuromuscular necesita un micro-ajuste táctico.',
+      actionHint: 'Toca aquí para ver las recomendaciones del entrenador y aplicar un plan de sobrecarga.',
+      targetText: '',
+      color: 'amber',
+      isTooSoon: false,
+      diffHours,
+      calendarDaysDiff,
+      timeAgoText,
+      lastApplied: null,
+      lastSession,
+      isOkGreen: false,
+      isWarning: true
+    };
+  }
+
+  // B4. CALIBRACIÓN / PRIMERA VEZ
+  return {
+    type: 'calibrating',
+    status: 'calibrating',
+    badge: 'Calibración Inicial',
+    badgeShort: 'Info Objetivo',
+    title: 'Estableciendo umbral de partida',
+    message: 'Registra tus marcas hoy manteniendo 1-2 repeticiones en reserva (RIR 1-2) para calibrar tus futuras progresiones.',
+    actionHint: 'Toca aquí para ver recomendaciones de técnica y volumen para tu objetivo.',
+    targetText: '',
+    color: 'accent',
+    isTooSoon: false,
+    diffHours,
+    calendarDaysDiff,
+    timeAgoText,
+    lastApplied: null,
+    lastSession,
+    isOkGreen: false,
+    isWarning: false
+  };
+};
+
+/**
+ * Función heredada para compatibilidad directa.
  */
 export const evaluateCoachFollowUp = (exerciseName, currentTrend, lastApplied) => {
-  if (!lastApplied) return null;
-
-  const appliedTime = new Date(lastApplied.appliedAt).getTime();
-  const now = Date.now();
-  const diffDays = Math.max(0, Math.round((now - appliedTime) / (1000 * 60 * 60 * 24)));
-  const diffWeeks = Math.max(1, Math.round(diffDays / 7));
-
-  const prevTrend = lastApplied.trendAtApplication;
-  const currentStatus = currentTrend?.status;
-
-  // 1. Éxito rotundo: Estaba estancado o con fatiga y ahora está progresando
-  if ((prevTrend === 'stagnant' || prevTrend === 'decreasing') && currentStatus === 'progressing') {
-    return {
-      type: 'success_breakthrough',
-      badge: '¡Meseta Superada!',
-      color: 'emerald',
-      title: '¡Estrategia exitosa! Rompiste el estancamiento',
-      description: `En tu sesión anterior aplicaste "${lastApplied.strategyTitle}". Hoy tus métricas reflejan una mejora de ${currentTrend.badgeText}. Tu cuerpo ha respondido a la sobrecarga y supercompensación.`,
-      actionHint: 'Mantén esta inercia: consolida la técnica y sigue con el plan actual.',
-      daysAgo: diffDays,
-      lastApplied
-    };
-  }
-
-  // 2. Estaba progresando y sigue en racha
-  if (prevTrend === 'progressing' && currentStatus === 'progressing') {
-    return {
-      type: 'streak_continued',
-      badge: 'En Racha Positiva',
-      color: 'emerald',
-      title: '¡Racha Imparable!',
-      description: `La sobrecarga anterior funcionó a la perfección. Has sumado ${currentTrend.badgeText} manteniendo una progresión constante.`,
-      actionHint: 'No te saltes la regla de micro-incrementos para evitar frenar la adaptación.',
-      daysAgo: diffDays,
-      lastApplied
-    };
-  }
-
-  // 3. Persiste estancado tras haber aplicado una estrategia
-  if (currentStatus === 'stagnant') {
-    return {
-      type: 'still_stagnant',
-      badge: diffDays > 7 ? `Meseta persistente (${diffWeeks} sem)` : 'Meseta en observación',
-      color: 'amber',
-      title: 'Seguimiento: La meseta aún no ha cedido',
-      description: `Aplicaste "${lastApplied.strategyTitle}" hace ${diffDays === 0 ? 'poco' : `${diffDays} días`}. Cuando una estrategia de micro-carga o repeticiones no desbloquea el estímulo, la ciencia del entrenamiento recomienda variar el tiempo bajo tensión o ajustar el orden del ejercicio.`,
-      actionHint: 'Hoy activamos la Estrategia Alternativa para obligar a una nueva adaptación neuromuscular.',
-      daysAgo: diffDays,
-      weeksAgo: diffWeeks,
-      lastApplied
-    };
-  }
-
-  // 4. Persiste fatiga o disminución de fuerza
-  if (currentStatus === 'decreasing') {
-    return {
-      type: 'persistent_fatigue',
-      badge: 'Fatiga Neuromuscular Acumulada',
-      color: 'amber',
-      title: 'Atención: Fatiga residual detectada',
-      description: `Habías aplicado "${lastApplied.strategyTitle}", pero tu sistema neuromuscular continúa demandando recuperación. Forzar la carga en este estado eleva el riesgo articular.`,
-      actionHint: 'Aplica una descarga táctica o consulta con el preparador físico para reestructurar volumen.',
-      daysAgo: diffDays,
-      lastApplied
-    };
-  }
-
-  return {
-    type: 'neutral_followup',
-    badge: 'Seguimiento Activo',
-    color: 'blue',
-    title: 'Estrategia previa registrada',
-    description: `Última pauta aplicada: "${lastApplied.strategyTitle}" hace ${diffDays} días.`,
-    actionHint: 'Continuando calibración de carga según tu respuesta de hoy.',
-    daysAgo: diffDays,
+  return evaluateExerciseFollowUpAndRecovery({
+    exerciseName,
+    sessions: [],
+    currentTrend,
     lastApplied
-  };
+  });
 };

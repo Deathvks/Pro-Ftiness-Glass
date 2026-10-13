@@ -112,7 +112,10 @@ const SmartExerciseCoachModal = ({
       suggestedSets: activeSuggestedSets,
       exerciseName: exercise.name,
       goal: userGoal.key,
-      trendStatus: trend.status
+      trendStatus: trend.status,
+      baselineWeight: sessions?.[0]?.topWeight ?? currentTopWeight,
+      baselineReps: sessions?.[0]?.topReps ?? null,
+      baseline1RM: sessions?.[0]?.best1RM ?? null
     };
 
     // Guardar en la persistencia histórica de estrategias
@@ -150,8 +153,27 @@ const SmartExerciseCoachModal = ({
                   <span>{userGoal.label}</span>
                 </span>
 
-                {/* Badge de Diagnóstico */}
-                {trend.isWarning ? (
+                {/* Badge de Diagnóstico o Seguimiento */}
+                {followUp?.isOkGreen ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 size={13} className="shrink-0" />
+                    <span>{followUp.badge}</span>
+                  </span>
+                ) : followUp?.isTooSoon ? (
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                    followUp.type === 'recovery_warning'
+                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 animate-pulse'
+                      : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                  }`}>
+                    {followUp.type === 'recovery_warning' ? <AlertTriangle size={13} /> : <Clock size={13} />}
+                    <span>{followUp.badge}</span>
+                  </span>
+                ) : followUp?.type === 'next_session_target' ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent">
+                    <Target size={13} className="shrink-0" />
+                    <span>{followUp.badge}</span>
+                  </span>
+                ) : trend.isWarning ? (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 animate-pulse">
                     <AlertTriangle size={13} className="shrink-0" />
                     <span>{trend.badgeText}</span>
@@ -226,25 +248,85 @@ const SmartExerciseCoachModal = ({
               </div>
             )}
 
-            {/* 2. SEGUIMIENTO DE LA SESIÓN ANTERIOR (Si existe) */}
+            {/* 2. SEGUIMIENTO LONGITUDINAL Y ESTADO DE RECUPERACIÓN */}
             {followUp && (
-              <div className="p-3 sm:p-3.5 rounded-[18px] bg-accent/10 ring-1 ring-black/5 dark:ring-white/10 border-none flex items-start gap-2.5">
-                <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0 mt-0.5">
-                  <Check size={14} strokeWidth={3} />
-                </div>
-                <div className="min-w-0">
+              <div
+                className={`p-3.5 sm:p-4 rounded-[22px] ring-1 ring-black/5 dark:ring-white/10 border-none flex flex-col gap-2.5 shadow-sm ${
+                  followUp.type === 'ok_green'
+                    ? 'bg-emerald-500/10'
+                    : followUp.type === 'recovery_warning'
+                    ? 'bg-amber-500/15 ring-amber-500/30'
+                    : followUp.type === 'recovery_notice'
+                    ? 'bg-blue-500/10'
+                    : followUp.type === 'next_session_target'
+                    ? 'bg-accent/10'
+                    : 'bg-amber-500/10'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-accent">
-                      Sesión anterior
-                    </span>
-                    <span className="text-[10px] font-bold text-text-muted">
+                    <div
+                      className={`p-1.5 rounded-[10px] shrink-0 ${
+                        followUp.type === 'ok_green'
+                          ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                          : followUp.type === 'recovery_warning'
+                          ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                          : followUp.type === 'recovery_notice'
+                          ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
+                          : followUp.type === 'next_session_target'
+                          ? 'bg-accent/20 text-accent'
+                          : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                      }`}
+                    >
+                      {followUp.type === 'ok_green' ? (
+                        <CheckCircle2 size={16} strokeWidth={2.5} />
+                      ) : followUp.type === 'recovery_warning' ? (
+                        <AlertTriangle size={16} strokeWidth={2.5} />
+                      ) : followUp.type === 'recovery_notice' ? (
+                        <Clock size={16} strokeWidth={2.5} />
+                      ) : followUp.type === 'next_session_target' ? (
+                        <Target size={16} strokeWidth={2.5} />
+                      ) : (
+                        <AlertTriangle size={16} strokeWidth={2.5} />
+                      )}
+                    </div>
+                    <span
+                      className={`text-[10px] font-black uppercase tracking-wider ${
+                        followUp.type === 'ok_green'
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : followUp.type === 'recovery_warning'
+                          ? 'text-amber-600 dark:text-amber-400'
+                          : followUp.type === 'recovery_notice'
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : 'text-accent'
+                      }`}
+                    >
                       {followUp.badge}
                     </span>
                   </div>
-                  <p className="text-xs text-text-primary font-semibold mt-0.5">
-                    {followUp.title}: <span className="font-normal text-text-secondary">{followUp.actionHint}</span>
+
+                  {followUp.timeAgoText && (
+                    <span className="text-[10px] font-bold text-text-muted">
+                      {followUp.timeAgoText}
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <h4 className="text-xs sm:text-sm font-bold text-text-primary leading-tight">
+                    {followUp.title}
+                  </h4>
+                  <p className="text-[11px] sm:text-xs text-text-secondary leading-relaxed">
+                    {followUp.message}
                   </p>
                 </div>
+
+                {followUp.actionHint && (
+                  <div className="pt-1 border-t border-black/5 dark:border-white/10 flex items-start gap-1.5 text-[11px] font-medium text-text-muted">
+                    <span className="font-bold text-text-primary shrink-0">Pauta IA:</span>
+                    <span>{followUp.actionHint}</span>
+                  </div>
+                )}
               </div>
             )}
 

@@ -1,12 +1,13 @@
 import ModalPortal from '../ModalPortal';
 /* frontend/src/components/Workout/WorkoutExerciseCard.jsx */
 import React, { useState, useMemo } from 'react';
-import { Repeat, Flame, History, Target, Bell, Sparkles, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Repeat, Flame, History, Target, Bell, Sparkles, AlertTriangle, CheckCircle2, Clock, ChevronRight } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import WorkoutSetGrid from './WorkoutSetGrid';
 import useAppStore from '../../store/useAppStore';
 import { calculate1RM } from '../../utils/helpers';
 import { getExerciseHistorySessions, diagnoseExerciseTrend } from '../../utils/smartProgressionCoach';
+import { getAppliedCoachStrategy, evaluateExerciseFollowUpAndRecovery } from '../../utils/coachAppliedHistory';
 
 const WorkoutExerciseCard = ({
   t,
@@ -34,11 +35,20 @@ const WorkoutExerciseCard = ({
     workoutLog: state.workoutLog
   }));
 
-  const trend = useMemo(() => {
-    if (!exercise?.name || !workoutLog) return null;
+  const { trend, followUp } = useMemo(() => {
+    if (!exercise?.name || !workoutLog) return { trend: null, followUp: null };
     const sessions = getExerciseHistorySessions(exercise.name, workoutLog);
-    return diagnoseExerciseTrend(sessions);
-  }, [exercise?.name, workoutLog]);
+    const diagnosedTrend = diagnoseExerciseTrend(sessions);
+    const lastApplied = getAppliedCoachStrategy(exercise.name);
+    const evaluatedFollowUp = evaluateExerciseFollowUpAndRecovery({
+      exerciseName: exercise.name,
+      sessions,
+      currentTrend: diagnosedTrend,
+      lastApplied,
+      userProfile
+    });
+    return { trend: diagnosedTrend, followUp: evaluatedFollowUp };
+  }, [exercise?.name, workoutLog, userProfile]);
 
   const isInAsesoria = Boolean(
     userProfile?.trainer_id ||
@@ -165,7 +175,7 @@ const WorkoutExerciseCard = ({
               </div>
             )}
 
-            {!isInAsesoria && onShowSmartCoach && (
+            {!isInAsesoria && onShowSmartCoach && followUp && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -173,41 +183,127 @@ const WorkoutExerciseCard = ({
                   onShowSmartCoach(exercise);
                 }}
                 className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer shadow-sm group ${
-                  trend?.isWarning
-                    ? 'bg-amber-500/15 hover:bg-amber-500/25 ring-1 ring-amber-500/40 text-amber-600 dark:text-amber-400 animate-pulse'
-                    : trend?.isProgressing
+                  followUp.type === 'ok_green'
                     ? 'bg-emerald-500/15 hover:bg-emerald-500/25 ring-1 ring-emerald-500/40 text-emerald-600 dark:text-emerald-400'
-                    : 'bg-accent/10 hover:bg-accent/20 ring-1 ring-accent/30 text-accent'
+                    : followUp.type === 'recovery_warning'
+                    ? 'bg-amber-500/15 hover:bg-amber-500/25 ring-1 ring-amber-500/40 text-amber-600 dark:text-amber-400 animate-pulse'
+                    : followUp.type === 'recovery_notice'
+                    ? 'bg-blue-500/15 hover:bg-blue-500/25 ring-1 ring-blue-500/40 text-blue-600 dark:text-blue-400'
+                    : followUp.type === 'next_session_target'
+                    ? 'bg-accent/15 hover:bg-accent/25 ring-1 ring-accent/40 text-accent'
+                    : 'bg-amber-500/15 hover:bg-amber-500/25 ring-1 ring-amber-500/40 text-amber-600 dark:text-amber-400 animate-pulse'
                 }`}
-                title={
-                  trend?.isWarning
-                    ? (trend.status === 'stagnant'
-                        ? 'Llevas varias sesiones con el mismo peso. Toca para ver opciones fáciles para avanzar'
-                        : 'Aviso de fatiga. Toca para ver cómo ajustar la sesión')
-                    : trend?.isProgressing
-                    ? '¡En progresión! Toca para ver pautas de sobrecarga'
-                    : 'Consejo inteligente según tu objetivo'
-                }
+                title={followUp.title}
               >
-                {trend?.isWarning ? (
-                  <AlertTriangle size={15} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 shrink-0" />
-                ) : trend?.isProgressing ? (
+                {followUp.type === 'ok_green' ? (
                   <CheckCircle2 size={15} strokeWidth={2.5} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                ) : followUp.type === 'recovery_warning' ? (
+                  <AlertTriangle size={15} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                ) : followUp.type === 'recovery_notice' ? (
+                  <Clock size={15} strokeWidth={2.5} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                ) : followUp.type === 'next_session_target' ? (
+                  <Target size={16} strokeWidth={2.5} className="text-accent shrink-0 group-hover:rotate-45 transition-transform" />
                 ) : (
-                  <Target size={16} strokeWidth={2.5} className="text-accent group-hover:rotate-45 transition-transform" />
+                  <AlertTriangle size={15} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 shrink-0" />
                 )}
                 <span>
-                  {trend?.isWarning 
-                    ? (trend.status === 'stagnant' ? 'Mismo peso !' : 'Aviso fatiga !')
-                    : trend?.isProgressing 
-                    ? '¡En racha!' 
-                    : 'Info Objetivo'}
+                  {followUp.badgeShort || followUp.badge}
                 </span>
               </button>
             )}
           </div>
         </div>
       </div>
+
+      {/* --- AVISO INTELIGENTE DE SEGUIMIENTO Y RECUPERACIÓN (LIQUID GLASS) --- */}
+      {!isInAsesoria && onShowSmartCoach && followUp && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onShowSmartCoach(exercise);
+          }}
+          role="button"
+          tabIndex={0}
+          className={`group/alert relative overflow-hidden rounded-[22px] p-3.5 sm:p-4 transition-all duration-300 cursor-pointer active:scale-[0.99] shadow-sm backdrop-blur-md ${
+            followUp.type === 'ok_green'
+              ? 'bg-emerald-500/10 hover:bg-emerald-500/15 ring-1 ring-emerald-500/30'
+              : followUp.type === 'recovery_warning'
+              ? 'bg-amber-500/15 hover:bg-amber-500/20 ring-1 ring-amber-500/40'
+              : followUp.type === 'recovery_notice'
+              ? 'bg-blue-500/10 hover:bg-blue-500/15 ring-1 ring-blue-500/30'
+              : followUp.type === 'next_session_target'
+              ? 'bg-accent/10 hover:bg-accent/15 ring-1 ring-accent/30'
+              : 'bg-amber-500/10 hover:bg-amber-500/15 ring-1 ring-amber-500/30'
+          }`}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <div
+                className={`p-2 rounded-[14px] shrink-0 mt-0.5 transition-transform group-hover/alert:scale-105 ${
+                  followUp.type === 'ok_green'
+                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                    : followUp.type === 'recovery_warning'
+                    ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                    : followUp.type === 'recovery_notice'
+                    ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
+                    : followUp.type === 'next_session_target'
+                    ? 'bg-accent/20 text-accent'
+                    : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                }`}
+              >
+                {followUp.type === 'ok_green' ? (
+                  <CheckCircle2 size={18} strokeWidth={2.5} />
+                ) : followUp.type === 'recovery_warning' ? (
+                  <AlertTriangle size={18} strokeWidth={2.5} className="animate-pulse" />
+                ) : followUp.type === 'recovery_notice' ? (
+                  <Clock size={18} strokeWidth={2.5} />
+                ) : followUp.type === 'next_session_target' ? (
+                  <Target size={18} strokeWidth={2.5} />
+                ) : (
+                  <AlertTriangle size={18} strokeWidth={2.5} />
+                )}
+              </div>
+
+              <div className="min-w-0 space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                    followUp.type === 'ok_green'
+                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                      : followUp.type === 'recovery_warning'
+                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                      : followUp.type === 'recovery_notice'
+                      ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                      : followUp.type === 'next_session_target'
+                      ? 'bg-accent/15 text-accent'
+                      : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                  }`}>
+                    {followUp.badge}
+                  </span>
+                  {followUp.timeAgoText && (
+                    <span className="text-[10px] font-bold text-text-muted">
+                      {followUp.timeAgoText}
+                    </span>
+                  )}
+                </div>
+
+                <h4 className="text-sm font-bold text-text-primary leading-snug">
+                  {followUp.title}
+                </h4>
+
+                <p className="text-xs text-text-secondary leading-relaxed line-clamp-2 sm:line-clamp-none">
+                  {followUp.message}
+                </p>
+              </div>
+            </div>
+
+            <div className="shrink-0 flex items-center self-center pl-1">
+              <div className="p-1.5 rounded-full bg-black/5 dark:bg-white/10 text-text-secondary group-hover/alert:text-text-primary group-hover/alert:translate-x-0.5 transition-all">
+                <ChevronRight size={16} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="w-full h-px bg-black/5 dark:bg-white/10" />
 
@@ -234,26 +330,36 @@ const WorkoutExerciseCard = ({
               onShowSmartCoach(exercise);
             }}
             className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] transition-all duration-300 active:scale-95 outline-none font-bold group relative ${
-              trend?.isWarning
-                ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
-                : trend?.isProgressing
+              followUp?.type === 'ok_green'
                 ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
+                : followUp?.type === 'recovery_warning'
+                ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
+                : followUp?.type === 'recovery_notice'
+                ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20'
+                : followUp?.type === 'next_session_target'
+                ? 'text-accent bg-accent/10 hover:bg-accent/20'
+                : trend?.isWarning
+                ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
                 : 'text-accent hover:bg-accent/10'
             }`}
             title="Guía inteligente según tu objetivo"
           >
-            {trend?.isWarning ? (
+            {followUp?.type === 'ok_green' ? (
+              <CheckCircle2 size={20} strokeWidth={2.5} className="text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+            ) : followUp?.type === 'recovery_warning' ? (
               <div className="relative">
                 <AlertTriangle size={20} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 dark:bg-amber-400 rounded-full animate-ping" />
               </div>
-            ) : trend?.isProgressing ? (
-              <CheckCircle2 size={20} strokeWidth={2.5} className="text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+            ) : followUp?.type === 'recovery_notice' ? (
+              <Clock size={20} strokeWidth={2.5} className="text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
+            ) : followUp?.type === 'next_session_target' ? (
+              <Target size={20} strokeWidth={2.5} className="text-accent group-hover:scale-110 transition-transform" />
             ) : (
               <Target size={20} strokeWidth={2.5} className="text-accent group-hover:scale-110 transition-transform" />
             )}
             <span className="text-sm font-bold hidden sm:block">
-              {trend?.isWarning ? 'Objetivo !' : trend?.isProgressing ? 'Objetivo ✓' : 'Objetivo'}
+              {followUp?.badgeShort || (trend?.isWarning ? 'Objetivo !' : trend?.isProgressing ? 'Objetivo ✓' : 'Objetivo')}
             </span>
           </button>
         )}
