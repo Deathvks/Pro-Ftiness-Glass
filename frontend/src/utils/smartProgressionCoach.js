@@ -538,7 +538,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
     }
 
   // ============================================================
-  // CASO 3: ESTANCADO (MESETA DETECTADA)
+  // CASO 3: ESTANCADO (MISMO PESO DETECTADO)
   // ============================================================
   } else if (trend.status === 'stagnant') {
     const microLoad = currentTopWeight >= 40 ? 1.25 : 1.0;
@@ -566,7 +566,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
       suggestedWeight = testWeight;
       weightChangeNote = `+${microLoad} kg`;
       actionTitle = `Mismo peso (${weeksCount} sem): Elige cómo avanzar hoy`;
-      coachingAdvice = `${detectedReason} Tu cuerpo ya se ha acostumbrado a este peso y no recibe una señal de estrés suficiente para seguir adaptándose. Para romper esta meseta y reactivar la ganancia de músculo y fuerza, elige cuál de estas opciones fáciles prefieres hoy:`;
+      coachingAdvice = `${detectedReason} Tu cuerpo ya se ha acostumbrado a este peso y no recibe una señal de estrés suficiente para seguir adaptándose. Para superar este estancamiento y reactivar la ganancia de músculo y fuerza, elige cuál de estas opciones fáciles prefieres hoy:`;
       actionSteps = [
         `Opción 1: Pon ${testWeight} kg (un poquito más) en tu 1ª serie y haz ${Math.max(6, targetReps - 2)} reps con buena técnica.`,
         `Opción 2: Mantén los ${currentTopWeight} kg e intenta sacar 1 o 2 repeticiones más antes de soltar la barra.`,
@@ -604,7 +604,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
           suggestedWeight: currentTopWeight,
           suggestedReps: targetReps,
           suggestedSets: plannedSets,
-          motive: `Frenar la bajada en 3 segundos multiplica el tiempo bajo tensión (TUT) y el estímulo muscular con los mismos ${currentTopWeight} kg, superando la meseta con seguridad absoluta.`,
+          motive: `Frenar la bajada en 3 segundos multiplica el tiempo bajo tensión (TUT) y el estímulo muscular con los mismos ${currentTopWeight} kg, superando el estancamiento con seguridad absoluta.`,
           description: `Mantén ${currentTopWeight} kg, pero frena la bajada contando 3 segundos. Tu músculo trabajará mucho más sin castigar tus articulaciones.`
         }
       ];

@@ -106,7 +106,7 @@ export const formatTimeAgo = (diffHours, calendarDaysDiff) => {
  *    - Si en la sesión anterior estaba mejorando: Alerta de supercompensación incompleta (carga se sentirá más pesada).
  * 2. Próximo día con descanso adecuado:
  *    - Si aplicó recomendación: "Según lo trabajado en la sesión anterior, ahora deberías poder hacer X".
- * 3. En siguientes sesiones: Seguimiento adaptativo hasta llegar al "OK Verde" cuando rompe la meseta o progresa.
+ * 3. En siguientes sesiones: Seguimiento adaptativo hasta llegar al "OK Verde" cuando rompe el estancamiento o progresa.
  * 4. Día 1 / Sin recomendación: "Debes mejorar esto X..."
  */
 export const evaluateExerciseFollowUpAndRecovery = ({
@@ -216,7 +216,7 @@ export const evaluateExerciseFollowUpAndRecovery = ({
       status: 'ok_green',
       badge: '¡OK Verde! Progreso Confirmado',
       badgeShort: '¡OK Verde!',
-      title: '¡Objetivo superado! Rompiste la meseta',
+      title: '¡Objetivo superado! Rompiste el estancamiento',
       message: lastApplied
         ? `Según lo trabajado en tus sesiones anteriores, aplicaste "${lastApplied.strategyTitle}" y lograste el objetivo (${progressionDetail}). Tu rendimiento está completamente normalizado y en progresión positiva.`
         : `¡Excelente ritmo! Tu rendimiento está progresando de manera óptima (${progressionDetail}). Mantén esta sobrecarga gradual.`,

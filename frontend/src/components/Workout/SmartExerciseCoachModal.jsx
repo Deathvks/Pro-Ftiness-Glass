@@ -360,7 +360,7 @@ const SmartExerciseCoachModal = ({
                   </span>
                   <h3 className="text-xs sm:text-sm font-black text-text-primary leading-tight">
                     {trend.status === 'stagnant'
-                      ? `Meseta detectada: Llevas ${trend.weeksStagnant || 2} semanas levantando ${currentTopWeight > 0 ? `${currentTopWeight} kg` : 'peso corporal'}`
+                      ? `Estancamiento detectado: Llevas ${trend.weeksStagnant || 2} semanas levantando ${currentTopWeight > 0 ? `${currentTopWeight} kg` : 'peso corporal'}`
                       : trend.status === 'decreasing'
                       ? `Aviso: Fatiga residual detectada (${trend.badgeText})`
                       : trend.isProgressing

@@ -537,27 +537,18 @@ export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }
         if (!trend && (!sessions || sessions.length === 0)) return [];
         const list = [];
 
-        // 1. Detección de Meseta / Carga Constante
+        // 1. Detección de Estancamiento / Mismo Peso
         if (trend?.status === 'stagnant') {
             list.push({
                 id: 'stagnant',
                 icon: AlertTriangle,
-                badge: 'Meseta detectada',
+                badge: 'Mismo peso (estancado)',
                 title: trend.weeksStagnant > 1
-                    ? `Carga constante (${trend.weeksStagnant} semanas)`
-                    : 'Mismo peso en sesiones recientes',
-                subtitle: 'Toca para ver recomendaciones de sobrecarga para avanzar',
+                    ? `Llevas ${trend.weeksStagnant} semanas con el mismo peso`
+                    : 'Llevas varias sesiones con el mismo peso',
+                subtitle: 'Toca aquí para ver la estrategia recomendada y volver a subir',
                 colorClass: 'bg-amber-500/10 hover:bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-600 dark:text-amber-400',
                 badgeClass: 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
-            });
-            list.push({
-                id: 'plateau_solution',
-                icon: Sparkles,
-                badge: 'Solución Progresiva',
-                title: 'Estrategia de superación lista',
-                subtitle: 'Micro-incrementos o variación de repeticiones para desbloquear tu avance',
-                colorClass: 'bg-accent/10 hover:bg-accent/15 ring-1 ring-accent/30 text-accent',
-                badgeClass: 'bg-accent/20 text-accent'
             });
         }
         // 2. Detección de Fatiga / Descenso de Rendimiento
@@ -565,20 +556,11 @@ export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }
             list.push({
                 id: 'fatigue',
                 icon: AlertTriangle,
-                badge: 'Aviso de rendimiento',
+                badge: 'Aviso de descanso',
                 title: `Fatiga detectada (${trend.badgeText})`,
-                subtitle: 'Descenso de fuerza registrado respecto a la sesión previa',
+                subtitle: 'Toca aquí para ver la pauta de recuperación y ajuste de cargas',
                 colorClass: 'bg-rose-500/10 hover:bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-600 dark:text-rose-400',
                 badgeClass: 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
-            });
-            list.push({
-                id: 'fatigue_recovery',
-                icon: Activity,
-                badge: 'Ajuste de Cargas',
-                title: 'Pauta de recuperación activa',
-                subtitle: 'Descarga estratégica para restaurar tu sistema nervioso',
-                colorClass: 'bg-blue-500/10 hover:bg-blue-500/15 ring-1 ring-blue-500/30 text-blue-600 dark:text-blue-400',
-                badgeClass: 'bg-blue-500/20 text-blue-700 dark:text-blue-300'
             });
         }
         // 3. Detección de En Racha / Progresión Activa
@@ -586,20 +568,11 @@ export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }
             list.push({
                 id: 'streak',
                 icon: CheckCircle2,
-                badge: '¡En racha!',
+                badge: '¡En racha positiva!',
                 title: `Fuerza en aumento (+${Math.abs(trend.pctChange)}%)`,
-                subtitle: 'Sobrecarga progresiva exitosa en tus entrenamientos recientes',
+                subtitle: 'Toca aquí para ver tu siguiente meta de sobrecarga sugerida',
                 colorClass: 'bg-emerald-500/10 hover:bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-600 dark:text-emerald-400',
                 badgeClass: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
-            });
-            list.push({
-                id: 'overload',
-                icon: TrendingUp,
-                badge: 'Siguiente Meta',
-                title: 'Sobrecarga recomendada calculada',
-                subtitle: 'Toca para ver objetivos de peso y repeticiones sugeridos',
-                colorClass: 'bg-accent/10 hover:bg-accent/15 ring-1 ring-accent/30 text-accent',
-                badgeClass: 'bg-accent/20 text-accent'
             });
         }
         // 4. Si la ganancia es constante en el periodo (stats?.gain === 0) y hay varias sesiones
@@ -607,20 +580,11 @@ export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }
             list.push({
                 id: 'constant_weight',
                 icon: AlertTriangle,
-                badge: 'Carga Constante',
+                badge: 'Misma carga',
                 title: `Manteniendo ${stats.currentWeight} kg`,
-                subtitle: 'Toca para ver opciones fáciles para consolidar o aumentar',
+                subtitle: 'Toca aquí para ver recomendaciones de ajuste y progreso',
                 colorClass: 'bg-amber-500/10 hover:bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-600 dark:text-amber-400',
                 badgeClass: 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
-            });
-            list.push({
-                id: 'coach_advice',
-                icon: Sparkles,
-                badge: 'Recomendaciones IA',
-                title: 'Pautas de progresión listas',
-                subtitle: 'Ajuste de series, repeticiones y cargas para tu objetivo',
-                colorClass: 'bg-accent/10 hover:bg-accent/15 ring-1 ring-accent/30 text-accent',
-                badgeClass: 'bg-accent/20 text-accent'
             });
         }
         // 5. Calibrando / Estableciendo base inicial
@@ -704,7 +668,7 @@ export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }
                 }
                 alertsContent={
                     alerts.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
+                        <div className="flex flex-col gap-2">
                             {alerts.map((alert) => {
                                 const AlertIcon = alert.icon;
                                 return (
@@ -712,11 +676,11 @@ export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }
                                         key={alert.id}
                                         type="button"
                                         onClick={() => setShowSmartCoachModal(true)}
-                                        className={`p-3 sm:p-3.5 rounded-[20px] text-left transition-all active:scale-[0.98] cursor-pointer shadow-sm flex items-center justify-between gap-3 group border-none ${alert.colorClass}`}
+                                        className={`w-full p-3.5 sm:p-4 rounded-[22px] text-left transition-all active:scale-[0.99] cursor-pointer shadow-sm flex items-center justify-between gap-3 group border-none ${alert.colorClass}`}
                                     >
-                                        <div className="flex items-start gap-2.5 min-w-0">
-                                            <div className="p-2 rounded-[14px] bg-black/5 dark:bg-white/10 shrink-0 mt-0.5">
-                                                <AlertIcon size={16} strokeWidth={2.5} className="shrink-0" />
+                                        <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+                                            <div className="p-2 sm:p-2.5 rounded-[14px] bg-black/5 dark:bg-white/10 shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                                                <AlertIcon size={18} strokeWidth={2.5} className="shrink-0" />
                                             </div>
                                             <div className="min-w-0 space-y-0.5">
                                                 <div className="flex items-center gap-1.5">

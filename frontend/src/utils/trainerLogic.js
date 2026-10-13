@@ -188,7 +188,7 @@ export const checkStagnation = (history = []) => {
     return {
       isStalled: true,
       type: 'stagnation',
-      title: '⚠️ Meseta de Rendimiento',
+      title: '⚠️ Estancamiento de Rendimiento',
       text: 'Llevas 3 sesiones sin lograr superar tus marcas.',
       actions: [
         'Intenta añadir micro-discos (0.5kg o 1.25kg) en lugar de hacer saltos grandes de peso.',

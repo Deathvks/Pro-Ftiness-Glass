@@ -311,7 +311,7 @@ const WelcomeModal = ({ onClose }) => {
                   maxWidth: '320px',
                   marginInline: 'auto'
                 }}>
-                Descubre las recomendaciones con IA para romper mesetas, nuevos bordes de usuario en comunidad y rachas de entrenamiento protegidas en fin de semana.
+                Descubre las recomendaciones con IA para romper el estancamiento, nuevos bordes de usuario en comunidad y rachas de entrenamiento protegidas en fin de semana.
               </p>
             </div>
 
@@ -321,7 +321,7 @@ const WelcomeModal = ({ onClose }) => {
             {/*  Feature Cards  */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
 
-              {/* Recomendaciones Inteligentes y Mesetas */}
+              {/* Recomendaciones Inteligentes y Progresión */}
               <div className="wm-feature-card wm-feature-1" style={{
                   background: 'linear-gradient(135deg, #080814 0%, #121226 100%)',
                   border: '1px solid rgba(168,85,247,0.35)',
@@ -347,7 +347,7 @@ const WelcomeModal = ({ onClose }) => {
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>Recomendaciones Inteligentes</p>
                   <p style={{ fontSize: '13px', color: 'rgba(203,213,225,0.9)', margin: 0, lineHeight: 1.55 }}>
-                    Detección de mesetas y sobrecarga progresiva. La IA analiza tus cargas reales previas y te sugiere pesos, reps y ajuste dinámico de series para hoy con 1 toque.
+                    Detección de estancamiento y sobrecarga progresiva. La IA analiza tus cargas reales previas y te sugiere pesos, reps y ajuste dinámico de series para hoy con 1 toque.
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#a855f7' }}>01</span>
