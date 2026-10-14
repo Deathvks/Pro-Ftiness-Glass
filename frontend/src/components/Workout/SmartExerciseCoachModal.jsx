@@ -697,7 +697,7 @@ const SmartExerciseCoachModal = ({
                       : activeSuggestedWeight !== null 
                         ? (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
                             ? `Aplicar ${activeSuggestedSets} series con ${activeSuggestedWeight} kg`
-                            : `Aplicar ${activeSuggestedWeight} kg (${activeSuggestedReps} reps)`)
+                            : `Aplicar ${activeSuggestedWeight} kg en todas las series (${activeSuggestedReps} reps)`)
                         : (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
                             ? `Aplicar ${activeSuggestedSets} series (${activeSuggestedReps} reps)`
                             : `Aplicar objetivo (${activeSuggestedReps} reps)`)}

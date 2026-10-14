@@ -68,12 +68,23 @@ const Progress = ({ darkMode, setView }) => {
             console.error('Error guardando preferencia de vista', e);
         }
 
-        // Auto-scroll the tabs container so the active tab is visible
+        // Auto-scroll the tabs container so the active tab is visible (strictly horizontal, avoiding window scroll jumps)
         if (tabsRef.current) {
             const activeEl = tabsRef.current.querySelector('.active-tab');
             if (activeEl) {
-                activeEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                const container = tabsRef.current;
+                const scrollLeft = activeEl.offsetLeft - (container.clientWidth / 2) + (activeEl.clientWidth / 2);
+                container.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
             }
+        }
+
+        // Blindaje para iOS WebKit / PWA: asegurar que la página principal y window nunca queden desplazadas horizontalmente
+        if (typeof window !== 'undefined' && window.scrollX !== 0) {
+            window.scrollTo({ left: 0 });
+        }
+        const mainEl = document.querySelector('main');
+        if (mainEl && mainEl.scrollLeft !== 0) {
+            mainEl.scrollLeft = 0;
         }
     }, [viewType]);
 
@@ -338,7 +349,7 @@ const Progress = ({ darkMode, setView }) => {
 
     return (
         <div 
-            className="w-full max-w-7xl mx-auto px-4 pt-6 pb-28 md:p-6 md:pb-8 lg:p-10 lg:pb-8 animate-[fade-in_0.5s_ease-out]"
+            className="w-full max-w-7xl mx-auto px-4 pt-6 pb-28 md:p-6 md:pb-8 lg:p-10 lg:pb-8 animate-[fade-in_0.5s_ease-out] overflow-x-hidden"
             onTouchStartCapture={handleTouchStartCapture}
             onTouchMoveCapture={handleTouchMoveCapture}
             onTouchEndCapture={handleTouchEndCapture}

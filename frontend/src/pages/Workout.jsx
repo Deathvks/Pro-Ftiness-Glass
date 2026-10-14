@@ -547,7 +547,7 @@ const Workout = ({ timer, setView, navParams }) => {
                                 const parts = [];
                                 if (strategy.suggestedSets) parts.push(`${strategy.suggestedSets} series`);
                                 if (strategy.suggestedWeight !== null && strategy.suggestedWeight !== undefined) {
-                                    parts.push(`${strategy.suggestedWeight} kg`);
+                                    parts.push(`${strategy.suggestedWeight} kg (todas las series)`);
                                 }
                                 if (strategy.suggestedReps !== null && strategy.suggestedReps !== undefined) {
                                     parts.push(`${strategy.suggestedReps} reps`);

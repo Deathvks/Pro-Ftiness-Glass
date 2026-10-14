@@ -1,5 +1,5 @@
 {
-  "version": "7.4.24",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.24/app-release.apk",
-  "notes": "Estrategia inteligente de sobrecarga Top Set + Back-off y retorno seguro desde asesoría al entrenamiento con modal activo."
+  "version": "7.4.25",
+  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.25/app-release.apk",
+  "notes": "Rediseño completo de la sección Calendario con métricas mensuales, historial detallado, corrección de desplazamiento horizontal en iOS PWA y vista a pantalla completa."
 }

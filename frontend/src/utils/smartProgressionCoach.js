@@ -485,50 +485,54 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
       actionTitle = `Sobrecarga Progresiva: Sube a ${nextWeight} kg`;
       coachingAdvice = `Al haber asimilado tu carga previa, tus fibras musculares ya toleran esa tensión. Te recomendamos aplicar sobrecarga progresiva subiendo hoy +${increment} kg o consolidando repeticiones adicionales.`;
       actionSteps = [
-        `Intenta completar tu primera serie pesada con ${nextWeight} kg.`,
+        `Trabaja con ${nextWeight} kg buscando mantener una técnica estricta.`,
         `Si notas la carga exigente, mantén el rango de ${Math.max(6, targetReps - 2)}-${targetReps} reps parando justo cuando sientas que te quedan 1-2 reps antes del fallo.`,
         'Descansa entre 2 y 3 minutos para restaurar tus reservas de fosfocreatina.'
       ];
 
-      strategyOptions = [
-        {
-          id: 'prog_weight',
-          title: `Sobrecarga de Carga (+${increment} kg)`,
-          tag: 'Recomendada',
-          badge: `+${increment} kg`,
-          suggestedWeight: nextWeight,
-          suggestedReps: targetReps,
-          suggestedSets: plannedSets,
-          motive: `Tus músculos ya dominan los ${currentTopWeight} kg. Subir +${increment} kg introduce tensión mecánica nueva sobre las fibras, el estímulo biológico principal para forzar nueva síntesis de proteínas contráctiles.`,
-          description: `Sube a ${nextWeight} kg en tus primeras series para seguir estimulando la tensión mecánica y el crecimiento miofibrilar.`
-        },
-        {
-          id: 'prog_reps',
-          title: 'Consolidar Carga (+1 o 2 Reps)',
-          tag: 'Alternativa',
-          badge: '+1-2 reps',
-          suggestedWeight: currentTopWeight,
-          suggestedReps: targetReps + 1,
-          suggestedSets: plannedSets,
-          motive: `Consolidar 1 repetición adicional con los mismos ${currentTopWeight} kg afianza tu adaptación neuromuscular y volumen de entrenamiento antes de añadir más kilos, con cero riesgo articular.`,
-          description: `Mantén los ${currentTopWeight} kg y busca 1 repetición adicional por serie antes de subir kilos, asegurando control absoluto.`
-        }
-      ];
+      const linearOption = {
+        id: 'prog_weight',
+        title: `Sobrecarga Lineal (+${increment} kg)`,
+        tag: 'Carga Uniforme',
+        badge: `Todas a ${nextWeight}kg`,
+        suggestedWeight: nextWeight,
+        suggestedReps: targetReps,
+        suggestedSets: plannedSets,
+        motive: `Tus músculos ya dominan los ${currentTopWeight} kg. Subir +${increment} kg en todas tus series introduce una tensión mecánica constante sobre las fibras, el estímulo biológico principal para forzar nueva síntesis de proteínas contráctiles.`,
+        description: `Sube a ${nextWeight} kg en todas tus series de trabajo para mantener una progresión lineal completa.`
+      };
+
+      const repsOption = {
+        id: 'prog_reps',
+        title: 'Consolidar Carga (+1 o 2 Reps)',
+        tag: 'Alternativa',
+        badge: '+1-2 reps',
+        suggestedWeight: currentTopWeight,
+        suggestedReps: targetReps + 1,
+        suggestedSets: plannedSets,
+        motive: `Consolidar 1 repetición adicional con los mismos ${currentTopWeight} kg afianza tu adaptación neuromuscular y volumen de entrenamiento antes de añadir más kilos, con cero riesgo articular.`,
+        description: `Mantén los ${currentTopWeight} kg y busca 1 repetición adicional por serie antes de subir kilos, asegurando control absoluto.`
+      };
 
       if (canUseTopSetBackoff && currentTopWeight >= 20) {
         const progTopReps = Math.max(6, targetReps - 2);
-        strategyOptions.push({
+        const topSetOption = {
           id: 'prog_topset_backoff',
           title: 'Top Set + Back-off (Pico de Sobrecarga)',
-          tag: 'Intensidad & Volumen',
+          tag: 'Recomendada (Escalonada)',
           badge: `1ª ${nextWeight}kg · Resto ${currentTopWeight}kg`,
           suggestedWeight: nextWeight,
           suggestedReps: progTopReps,
           suggestedSets: plannedSets,
           perSetPlan: generateTopSetBackoffPlan(plannedSets, nextWeight, progTopReps, currentTopWeight, targetReps),
-          motive: `Estás en racha positiva. Aplicar ${nextWeight} kg en la 1ª serie estimula la tensión mecánica máxima aprovechando tu energía intacta, mientras que las series siguientes a ${currentTopWeight} kg consolidan el volumen total de trabajo sin riesgo de fatiga neural.`,
-          description: `Serie 1 récord a ${nextWeight} kg (${progTopReps} reps) + Series 2-${plannedSets} a ${currentTopWeight} kg (${targetReps} reps) para consolidar hipertrofia.`
-        });
+          motive: `Estás en racha positiva. Aplicar ${nextWeight} kg solo en la 1ª serie estimula la tensión mecánica máxima aprovechando tu energía intacta, mientras que las series siguientes a ${currentTopWeight} kg consolidan el volumen total de trabajo sin riesgo de fatiga neural.`,
+          description: `Sube a ${nextWeight} kg solo en tu 1ª serie récord (${progTopReps} reps) y mantén ${currentTopWeight} kg en las series 2-${plannedSets} (${targetReps} reps) para no agotarte.`
+        };
+
+        strategyOptions = [topSetOption, linearOption, repsOption];
+      } else {
+        linearOption.tag = 'Recomendada';
+        strategyOptions = [linearOption, repsOption];
       }
     } else if (goalInfo.key === 'lose') {
       intensityLabel = 'Esfuerzo Moderado';
@@ -557,14 +561,15 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
         },
         {
           id: 'prog_lose_weight',
-          title: `Micro-Carga Opcional (+${increment} kg)`,
+          title: `Micro-Carga en 1ª Serie (+${increment} kg)`,
           tag: 'Si estás con energía',
-          badge: `+${increment} kg`,
+          badge: `1ª ${nextWeight}kg · Resto ${currentTopWeight}kg`,
           suggestedWeight: nextWeight,
           suggestedReps: Math.max(6, targetReps - 2),
           suggestedSets: plannedSets,
-          motive: `Si hoy tu descanso y energía son plenos, probar una micro-carga (+${increment} kg) en la primera serie envía un pulso de tensión máxima al sistema nervioso.`,
-          description: `Prueba ${nextWeight} kg en tu 1ª serie solo si hoy sientes energía plena y descanso óptimo.`
+          perSetPlan: generateTopSetBackoffPlan(plannedSets, nextWeight, Math.max(6, targetReps - 2), currentTopWeight, targetReps, 'RIR 1-2', 'RIR 2'),
+          motive: `Si hoy tu descanso y energía son plenos, probar una micro-carga (+${increment} kg) en la 1ª serie envía un pulso de tensión máxima al sistema nervioso sin comprometer tu recuperación en déficit.`,
+          description: `Prueba ${nextWeight} kg en tu 1ª serie y mantén ${currentTopWeight} kg en las series 2-${plannedSets}.`
         }
       ];
 
@@ -591,48 +596,52 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
       actionTitle = `Consistencia en Aumento: Sube a ${nextWeight} kg`;
       coachingAdvice = `Tu rendimiento sigue una curva ascendente. Añade una micro-carga de +${increment} kg o suma repeticiones para seguir estimulando la densidad muscular.`;
       actionSteps = [
-        `Añade la micro-carga de ${increment} kg en las primeras series.`,
+        `Añade la micro-carga de +${increment} kg en tus series de trabajo.`,
         'Mantén la tensión muscular continua en cada repetición.'
       ];
 
-      strategyOptions = [
-        {
-          id: 'prog_general_weight',
-          title: `Incremento de Carga (+${increment} kg)`,
-          tag: 'Recomendada',
-          badge: `+${increment} kg`,
-          suggestedWeight: nextWeight,
-          suggestedReps: targetReps,
-          suggestedSets: plannedSets,
-          motive: `Añadir una micro-carga de +${increment} kg mantiene el estímulo de tensión progresiva sin saltos drásticos de peso.`,
-          description: `Aumenta a ${nextWeight} kg para mantener el estímulo progresivo.`
-        },
-        {
-          id: 'prog_general_reps',
-          title: 'Consolidación de Reps',
-          tag: 'Alternativa',
-          badge: '+1 rep',
-          suggestedWeight: currentTopWeight,
-          suggestedReps: targetReps + 1,
-          suggestedSets: plannedSets,
-          motive: `Sumar una repetición extra con ${currentTopWeight} kg incrementa el volumen efectivo garantizando un control postural seguro.`,
-          description: `Mantén los ${currentTopWeight} kg y suma una repetición extra con buena técnica.`
-        }
-      ];
+      const genLinearOption = {
+        id: 'prog_general_weight',
+        title: `Sobrecarga Lineal (+${increment} kg)`,
+        tag: 'Carga Uniforme',
+        badge: `Todas a ${nextWeight}kg`,
+        suggestedWeight: nextWeight,
+        suggestedReps: targetReps,
+        suggestedSets: plannedSets,
+        motive: `Añadir una micro-carga de +${increment} kg en todas las series mantiene el estímulo de tensión progresiva sin saltos drásticos de peso.`,
+        description: `Sube a ${nextWeight} kg en todas tus series de trabajo para mantener el estímulo progresivo.`
+      };
+
+      const genRepsOption = {
+        id: 'prog_general_reps',
+        title: 'Consolidación de Reps',
+        tag: 'Alternativa',
+        badge: '+1 rep',
+        suggestedWeight: currentTopWeight,
+        suggestedReps: targetReps + 1,
+        suggestedSets: plannedSets,
+        motive: `Sumar una repetición extra con ${currentTopWeight} kg incrementa el volumen efectivo garantizando un control postural seguro.`,
+        description: `Mantén los ${currentTopWeight} kg y suma una repetición extra con buena técnica.`
+      };
 
       if (canUseTopSetBackoff && currentTopWeight >= 20) {
-        strategyOptions.push({
+        const topSetGenOption = {
           id: 'prog_gen_topset_backoff',
           title: 'Top Set + Back-off de Rendimiento',
-          tag: 'Fuerza & Volumen',
+          tag: 'Recomendada (Escalonada)',
           badge: `1ª ${nextWeight}kg · Resto ${currentTopWeight}kg`,
           suggestedWeight: nextWeight,
           suggestedReps: Math.max(6, targetReps - 2),
           suggestedSets: plannedSets,
           perSetPlan: generateTopSetBackoffPlan(plannedSets, nextWeight, Math.max(6, targetReps - 2), currentTopWeight, targetReps),
-          motive: `Combina una primera serie de alta intensidad con series de volumen para mantenerte atlético y versátil.`,
+          motive: `Combina una primera serie de alta intensidad con series de volumen para mantenerte atlético y versátil sin sobrecargar tus articulaciones.`,
           description: `Serie 1 a ${nextWeight} kg + Series 2-${plannedSets} a ${currentTopWeight} kg.`
-        });
+        };
+
+        strategyOptions = [topSetGenOption, genLinearOption, genRepsOption];
+      } else {
+        genLinearOption.tag = 'Recomendada';
+        strategyOptions = [genLinearOption, genRepsOption];
       }
     }
 
@@ -674,14 +683,14 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
       strategyOptions = [
         {
           id: 'stag_microload',
-          title: `Subir un poco de peso (+${microLoad} kg)`,
-          tag: 'Recomendada',
-          badge: `Probar ${testWeight} kg`,
+          title: `Subir peso en todas las series (+${microLoad} kg)`,
+          tag: 'Sobrecarga Lineal',
+          badge: `Todas a ${testWeight}kg`,
           suggestedWeight: testWeight,
           suggestedReps: Math.max(6, targetReps - 2),
           suggestedSets: plannedSets,
-          motive: `Llevas ${weeksCount} semanas con ${currentTopWeight} kg. Probar +${microLoad} kg obliga a tu sistema neuromuscular a reclutar unidades motoras de alto umbral que estaban dormidas, rompiendo la adaptación.`,
-          description: `Sube a ${testWeight} kg en la primera serie. Si haces 1 o 2 repeticiones menos de lo habitual, es totalmente normal: así tu cuerpo gana fuerza nueva.`
+          motive: `Llevas ${weeksCount} semanas con ${currentTopWeight} kg. Probar +${microLoad} kg en todas tus series obliga a tu sistema neuromuscular a reclutar unidades motoras de alto umbral que estaban dormidas, rompiendo la adaptación.`,
+          description: `Sube a ${testWeight} kg en todas tus series de trabajo para forzar una nueva adaptación neuromuscular completa.`
         },
         {
           id: 'stag_volume_reps',
@@ -692,7 +701,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
           suggestedReps: targetReps + 2,
           suggestedSets: plannedSets,
           motive: `Sacar 1 o 2 repeticiones extra con los mismos ${currentTopWeight} kg eleva el tonelaje total de la sesión, reactivando la hipertrofia metabólica sin forzar articulaciones con más peso.`,
-          description: `Mantén los ${currentTopWeight} kg y esfuérzate en sacar 1 o 2 repeticiones más en tu serie inicial antes de dejar el peso.`
+          description: `Mantén los ${currentTopWeight} kg y esfuérzate en sacar 1 o 2 repeticiones más antes de soltar la barra.`
         },
         {
           id: 'stag_tempo',
@@ -757,8 +766,8 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
           suggestedWeight: currentTopWeight,
           suggestedReps: targetReps + 1,
           suggestedSets: plannedSets,
-          motive: `Buscar 1 repetición extra en la primera serie añade estímulo metabólico adicional sin riesgo de sobreentrenar.`,
-          description: `Intenta sacar 1 repetición extra solo en la 1ª serie y guarda fuerzas en las siguientes.`
+          motive: `Buscar 1 repetición extra añade estímulo metabólico adicional sin riesgo de sobreentrenar.`,
+          description: `Intenta sacar 1 repetición extra manteniendo la técnica estricta con tus ${currentTopWeight} kg.`
         }
       ];
 
@@ -787,7 +796,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog) => {
       coachingAdvice = `Tu cuerpo ya asimiló esta carga. Te recomendamos variar el estímulo manteniendo los ${currentTopWeight} kg con bajada controlada (3 seg), o probando un kilo más.`;
       actionSteps = [
         'Baja el peso más despacio (en 3 segundos) para que el músculo trabaje más.',
-        'O intenta sacar 1 repetición más en tus primeras series.'
+        'O intenta sacar 1 repetición más en tus series de trabajo.'
       ];
 
       strategyOptions = [

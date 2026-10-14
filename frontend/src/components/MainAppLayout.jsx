@@ -198,8 +198,9 @@ export default function MainAppLayout({
     const node = mainContentRef?.current;
     if (!node) return;
 
-    // Cuando cambiamos de vista, asegúrate de scrollear arriba del todo de forma instantánea
-    node.scrollTo({ top: 0, behavior: 'auto' });
+    // Cuando cambiamos de vista, asegúrate de scrollear arriba y a la izquierda de forma instantánea
+    node.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    node.scrollLeft = 0;
 
     const handleScroll = () => {
       const currentScrollTop = node.scrollTop;
