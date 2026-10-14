@@ -61,6 +61,13 @@ export const saveAppliedCoachStrategy = (exerciseName, strategyData) => {
 
     history[key] = record;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('coach-strategy-applied', {
+        detail: { exerciseName, record }
+      }));
+    }
+
     return record;
   } catch (e) {
     console.warn('Error saving coach strategy to localStorage', e);
@@ -204,11 +211,36 @@ export const evaluateExerciseFollowUpAndRecovery = ({
   // CONDICIÓN B: TIEMPO DE RECUPERACIÓN ÓPTIMO (>= 48h o sin registros)
   // ============================================================
 
-  // B1. OK VERDE: El usuario ha superado el estancamiento o está en progresión confirmada
+  // B1. OK VERDE: El usuario ha aplicado la pauta para este entrenamiento o superó el estancamiento
+  const appliedAtTime = lastApplied?.appliedAt ? new Date(lastApplied.appliedAt).getTime() : 0;
+  const isCurrentSessionApplied = appliedAtTime > 0 && (Date.now() - appliedAtTime) < (4 * 60 * 60 * 1000); // Aplicado en las últimas 4h
   const hasAchievedTarget = lastApplied && lastSession && (
     (lastApplied.suggestedWeight !== null && lastSession.topWeight >= lastApplied.suggestedWeight) ||
     trendStatus === 'progressing'
   );
+
+  // Si se aplicó la recomendación para la sesión actual, reflejar inmediatamente el estado verde
+  if (isCurrentSessionApplied && lastApplied) {
+    return {
+      type: 'ok_green',
+      status: 'ok_green',
+      badge: 'Estrategia Aplicada',
+      badgeShort: 'Plan Activo',
+      title: `Estrategia activa: ${lastApplied.strategyTitle}`,
+      message: `Has configurado tus series según la recomendación del entrenador (${targetText || 'Pauta ajustada'}). ¡A por ello!`,
+      actionHint: 'Completa tus series con esta pauta para consolidar el progreso.',
+      targetText,
+      color: 'emerald',
+      isTooSoon: false,
+      diffHours,
+      calendarDaysDiff,
+      timeAgoText: 'Ahora',
+      lastApplied,
+      lastSession,
+      isOkGreen: true,
+      isWarning: false
+    };
+  }
 
   if (trendStatus === 'progressing' || hasAchievedTarget) {
     const progressionDetail = currentTrend?.badgeText || (currentTrend?.deltaWeight > 0 ? `+${currentTrend.deltaWeight} kg` : 'en progresión');

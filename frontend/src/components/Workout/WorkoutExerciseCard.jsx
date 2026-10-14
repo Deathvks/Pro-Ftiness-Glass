@@ -28,17 +28,33 @@ const WorkoutExerciseCard = ({
   onShowHistory,
   onShowSmartCoach
 }) => {
-  const { addWarmupSets, setExerciseReminder, userProfile, workoutLog } = useAppStore((state) => ({
+  const { addWarmupSets, setExerciseReminder, userProfile, workoutLog, activeWorkout } = useAppStore((state) => ({
     addWarmupSets: state.addWarmupSets,
     setExerciseReminder: state.setExerciseReminder,
     userProfile: state.userProfile,
-    workoutLog: state.workoutLog
+    workoutLog: state.workoutLog,
+    activeWorkout: state.activeWorkout
   }));
+
+  const [appliedTick, setAppliedTick] = useState(0);
+
+  // Escuchar actualización instantánea de la estrategia aplicada por el coach
+  React.useEffect(() => {
+    const handleApplied = (e) => {
+      const targetName = e?.detail?.exerciseName;
+      if (!targetName || !exercise?.name || targetName.toLowerCase().trim() === exercise.name.toLowerCase().trim()) {
+        setAppliedTick(v => v + 1);
+      }
+    };
+    window.addEventListener('coach-strategy-applied', handleApplied);
+    return () => window.removeEventListener('coach-strategy-applied', handleApplied);
+  }, [exercise?.name]);
 
   const { trend, followUp } = useMemo(() => {
     if (!exercise?.name || !workoutLog) return { trend: null, followUp: null };
-    const sessions = getExerciseHistorySessions(exercise.name, workoutLog);
-    const diagnosedTrend = diagnoseExerciseTrend(sessions);
+    const currentRoutineId = activeWorkout?.routine_id || activeWorkout?.id || null;
+    const sessions = getExerciseHistorySessions(exercise.name, workoutLog, currentRoutineId);
+    const diagnosedTrend = diagnoseExerciseTrend(sessions, currentRoutineId);
     const lastApplied = getAppliedCoachStrategy(exercise.name);
     const evaluatedFollowUp = evaluateExerciseFollowUpAndRecovery({
       exerciseName: exercise.name,
@@ -48,7 +64,7 @@ const WorkoutExerciseCard = ({
       userProfile
     });
     return { trend: diagnosedTrend, followUp: evaluatedFollowUp };
-  }, [exercise?.name, workoutLog, userProfile]);
+  }, [exercise?.name, workoutLog, userProfile, activeWorkout?.routine_id, activeWorkout?.id, appliedTick]);
 
   const isInAsesoria = Boolean(
     userProfile?.trainer_id ||

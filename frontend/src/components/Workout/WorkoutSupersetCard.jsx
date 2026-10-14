@@ -36,10 +36,22 @@ const WorkoutSupersetCard = ({
     baseInputClasses,
     onShowSmartCoach,
 }) => {
-    const { userProfile, workoutLog } = useAppStore((state) => ({
+    const { userProfile, workoutLog, activeWorkout } = useAppStore((state) => ({
         userProfile: state.userProfile,
-        workoutLog: state.workoutLog
+        workoutLog: state.workoutLog,
+        activeWorkout: state.activeWorkout
     }));
+    const [appliedTick, setAppliedTick] = useState(0);
+
+    // Escuchar actualización instantánea de la estrategia aplicada por el coach
+    React.useEffect(() => {
+        const handleApplied = () => {
+            setAppliedTick(v => v + 1);
+        };
+        window.addEventListener('coach-strategy-applied', handleApplied);
+        return () => window.removeEventListener('coach-strategy-applied', handleApplied);
+    }, []);
+
     const isInAsesoria = Boolean(
         userProfile?.trainer_id ||
         userProfile?.trainer ||
@@ -186,8 +198,9 @@ const WorkoutSupersetCard = ({
         */}
                 <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x hide-scrollbar md:justify-center">
                     {group.map((ex) => {
-                        const exSessions = getExerciseHistorySessions(ex.name, workoutLog);
-                        const exTrend = diagnoseExerciseTrend(exSessions);
+                        const currentRoutineId = activeWorkout?.routine_id || activeWorkout?.id || null;
+                        const exSessions = getExerciseHistorySessions(ex.name, workoutLog, currentRoutineId);
+                        const exTrend = diagnoseExerciseTrend(exSessions, currentRoutineId);
                         const exLastApplied = getAppliedCoachStrategy(ex.name);
                         const exFollowUp = evaluateExerciseFollowUpAndRecovery({
                             exerciseName: ex.name,

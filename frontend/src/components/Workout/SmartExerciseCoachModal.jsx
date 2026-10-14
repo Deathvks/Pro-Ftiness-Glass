@@ -37,6 +37,8 @@ const SmartExerciseCoachModal = ({
   exercise,
   userProfile,
   workoutLog,
+  currentRoutineId = null,
+  currentRoutineName = null,
   onClose,
   onApplyWeight,
   onApplyStrategy,
@@ -45,29 +47,40 @@ const SmartExerciseCoachModal = ({
 }) => {
   const [showRirHelp, setShowRirHelp] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [difficultyFeedback, setDifficultyFeedback] = useState('normal'); // 'normal' | 'struggling' | 'cannot_reach'
 
   const plan = useMemo(() => {
     if (!exercise) return null;
-    return generateSmartCoachPlan(exercise, userProfile, workoutLog);
-  }, [exercise, userProfile, workoutLog]);
+    return generateSmartCoachPlan(exercise, userProfile, workoutLog, {
+      currentRoutineId,
+      currentRoutineName,
+      difficultyFeedback
+    });
+  }, [exercise, userProfile, workoutLog, currentRoutineId, currentRoutineName, difficultyFeedback]);
 
   // Selección de estrategia interactiva
-  const [selectedStrategyId, setSelectedStrategyId] = useState(() => {
-    return plan?.strategyOptions?.[0]?.id || null;
-  });
+  const [selectedStrategyId, setSelectedStrategyId] = useState(null);
 
-  // Asegurar que si cambia el plan, se sincronice la estrategia seleccionada
+  // Asegurar que si cambia el plan o dificultad, se sincronice la estrategia seleccionada
   const activeStrategy = useMemo(() => {
     if (!plan?.strategyOptions || plan.strategyOptions.length === 0) return null;
     const found = plan.strategyOptions.find(s => s.id === selectedStrategyId);
     return found || plan.strategyOptions[0];
   }, [plan, selectedStrategyId]);
 
+  const handleDifficultyChange = (newFeedback) => {
+    setDifficultyFeedback(newFeedback);
+    setSelectedStrategyId(null);
+  };
+
   if (!plan) return null;
 
   const { 
     userGoal, 
     trend, 
+    routineContext,
+    repGoalAudit,
+    plateNote,
     targets, 
     coachingAdvice, 
     sessions, 
@@ -76,7 +89,9 @@ const SmartExerciseCoachModal = ({
     celebrationData,
     asesoriaRecommendation,
     followUp,
-    currentTopWeight
+    currentTopWeight,
+    actualPreviousReps,
+    missedTargetInPrevious
   } = plan;
 
   // Métricas activas computadas según la estrategia seleccionada por el usuario
@@ -385,6 +400,109 @@ const SmartExerciseCoachModal = ({
               )}
             </div>
 
+            {/* AISLAMIENTO DE FATIGA POR RUTINA */}
+            {routineContext?.hasMultipleRoutines && (
+              <div className="p-3 sm:p-3.5 rounded-[20px] bg-blue-500/10 ring-1 ring-blue-500/20 flex items-start gap-2.5">
+                <div className="p-1.5 rounded-[10px] bg-blue-500/20 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5">
+                  <Layers size={15} strokeWidth={2.5} />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 block">
+                    Ejercicio en múltiples rutinas
+                  </span>
+                  <p className="text-[11px] text-text-secondary font-medium leading-relaxed mt-0.5">
+                    Para que la fatiga o el orden de otros entrenamientos no distorsione tu progresión, aislamos y priorizamos tu historial en <strong className="text-text-primary font-bold">{routineContext.currentRoutineName}</strong>.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* AUDITORÍA DE REPETICIONES SEGÚN OBJETIVO */}
+            {repGoalAudit?.isSuboptimal && (
+              <div className="p-3 sm:p-3.5 rounded-[20px] bg-amber-500/10 ring-1 ring-amber-500/25 flex items-start gap-2.5">
+                <div className="p-1.5 rounded-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5">
+                  <AlertTriangle size={15} strokeWidth={2.5} />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 block">
+                    Ajuste de Repeticiones ({repGoalAudit.tag})
+                  </span>
+                  <p className="text-[11px] text-text-secondary font-medium leading-relaxed mt-0.5">
+                    {repGoalAudit.message}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* SELECTOR INTERACTIVO DE SENSACIONES / DIFICULTAD */}
+            <div className="p-3.5 sm:p-4 rounded-[22px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider text-text-muted">
+                  ¿Cómo sientes este peso y repeticiones?
+                </span>
+                {actualPreviousReps > 0 && (
+                  <span className="text-[10px] font-bold text-text-muted">
+                    Última vez: <strong className="text-text-primary">{actualPreviousReps} reps</strong>
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDifficultyChange('normal')}
+                  className={`p-2.5 sm:p-3 rounded-[16px] flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+                    difficultyFeedback === 'normal'
+                      ? 'bg-emerald-500/20 ring-2 ring-emerald-500 text-emerald-600 dark:text-emerald-400 font-black shadow-sm'
+                      : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-muted font-bold'
+                  }`}
+                >
+                  <span className="text-base sm:text-lg mb-0.5">🟢</span>
+                  <span className="text-xs leading-tight">Llego bien</span>
+                  <span className="text-[9px] opacity-75 hidden sm:inline">Con energía</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDifficultyChange('struggling')}
+                  className={`p-2.5 sm:p-3 rounded-[16px] flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+                    difficultyFeedback === 'struggling'
+                      ? 'bg-amber-500/20 ring-2 ring-amber-500 text-amber-600 dark:text-amber-400 font-black shadow-sm'
+                      : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-muted font-bold'
+                  }`}
+                >
+                  <span className="text-base sm:text-lg mb-0.5">🟡</span>
+                  <span className="text-xs leading-tight">Me cuesta</span>
+                  <span className="text-[9px] opacity-75 hidden sm:inline">Al límite</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDifficultyChange('cannot_reach')}
+                  className={`p-2.5 sm:p-3 rounded-[16px] flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
+                    difficultyFeedback === 'cannot_reach'
+                      ? 'bg-rose-500/20 ring-2 ring-rose-500 text-rose-600 dark:text-rose-400 font-black shadow-sm'
+                      : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-muted font-bold'
+                  }`}
+                >
+                  <span className="text-base sm:text-lg mb-0.5">🔴</span>
+                  <span className="text-xs leading-tight">No llego</span>
+                  <span className="text-[9px] opacity-75 hidden sm:inline">Carga alta</span>
+                </button>
+              </div>
+
+              {difficultyFeedback === 'struggling' && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold px-1 pt-0.5 leading-snug">
+                  Reajustado: Consolidamos tu peso actual o proponemos pausas con repeticiones reducidas para que no falles a mitad de serie.
+                </p>
+              )}
+              {difficultyFeedback === 'cannot_reach' && (
+                <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold px-1 pt-0.5 leading-snug">
+                  Reajustado: Aplicamos una descarga táctica del 10% para que puedas completar el rango con técnica limpia y RIR seguro.
+                </p>
+              )}
+            </div>
+
             {/* 4. OBJETIVO CALCULADO PARA HOY (MÉTRICAS CLAVE EN VISTA RÁPIDA) */}
             <div>
               <div className="flex items-center justify-between mb-2 px-1">
@@ -620,6 +738,23 @@ const SmartExerciseCoachModal = ({
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* NOTA EDUCATIVA SOBRE DISCOS Y BARRAS */}
+            {plateNote && (
+              <div className="p-3 sm:p-3.5 rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 flex items-start gap-2.5">
+                <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0 mt-0.5">
+                  <Dumbbell size={15} strokeWidth={2.5} />
+                </div>
+                <div className="min-w-0 space-y-0.5">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-text-muted block">
+                    Saltos de discos en gimnasio (+{plateNote.standardJump} kg)
+                  </span>
+                  <p className="text-[11px] text-text-secondary font-medium leading-relaxed">
+                    {plateNote.text}
+                  </p>
                 </div>
               </div>
             )}

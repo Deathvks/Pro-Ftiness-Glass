@@ -532,6 +532,8 @@ const Workout = ({ timer, setView, navParams }) => {
                     exercise={smartCoachExercise}
                     userProfile={userProfile}
                     workoutLog={workoutLog}
+                    currentRoutineId={activeWorkout?.routine_id || activeWorkout?.id}
+                    currentRoutineName={activeWorkout?.routine_name || activeWorkout?.name}
                     onClose={() => setSmartCoachExercise(null)}
                     onApplyStrategy={(strategy) => {
                         const exIndex = activeWorkout?.exercises?.findIndex(
