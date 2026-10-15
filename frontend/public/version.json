@@ -1,5 +1,5 @@
 {
-  "version": "7.4.28",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.28/app-release.apk",
-  "notes": "Coach de Seguimiento: cálculo automático de pesos iniciales sin tecnicismos ni siglas RIR, lenguaje claro y accesible, botón de aplicar optimizado para evitar desbordes en móvil y restauración del tamaño completo de placeholders de ejercicios sin imagen."
+  "version": "7.4.29",
+  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.29/app-release.apk",
+  "notes": "Filtros de periodo corregidos en Tu Progreso: corte por fecha calendario real (1M, 3M, 6M, 1A), eliminación del fallback que mostraba todo el historial, mensajes vacíos contextuales con enlace a ver todo, PR y 1RM siempre históricos, parsing robusto de timestamps y tooltips mejorados."
 }

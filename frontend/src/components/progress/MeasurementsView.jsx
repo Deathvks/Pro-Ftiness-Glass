@@ -29,7 +29,13 @@ const MeasurementsView = ({ axisColor }) => {
         () =>
             bodyMeasurementsLog
                 .filter((l) => l.measure_type === type)
-                .map((l) => ({ timestamp: new Date(l.log_date).getTime(), value: parseFloat(l.value) }))
+                .map((l) => {
+                    const time = new Date(l.log_date).getTime();
+                    const val = parseFloat(l.value);
+                    if (isNaN(time) || isNaN(val)) return null;
+                    return { timestamp: time, value: val };
+                })
+                .filter(Boolean)
                 .sort((a, b) => a.timestamp - b.timestamp),
         [bodyMeasurementsLog, type]
     );

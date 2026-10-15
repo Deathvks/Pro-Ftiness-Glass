@@ -40,7 +40,7 @@ import SmartExerciseCoachModal from '../Workout/SmartExerciseCoachModal';
 // --- FILTRO DE PERIODOS (APPLE PILL SEGMENTED CONTROL) ---
 export const PeriodFilter = ({ periods = ['7D', '1M', '3M', '6M', '1A', 'Todo'], activePeriod, onChange }) => {
     return (
-        <div className="flex items-center gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-full ring-1 ring-black/5 dark:ring-white/10 shrink-0">
+        <div className="flex items-center gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-full ring-1 ring-black/5 dark:ring-white/10 shrink-0 max-w-full overflow-x-auto no-scrollbar">
             {periods.map((p) => {
                 const isActive = activePeriod === p;
                 return (
@@ -48,7 +48,7 @@ export const PeriodFilter = ({ periods = ['7D', '1M', '3M', '6M', '1A', 'Todo'],
                         key={p}
                         type="button"
                         onClick={() => onChange(p)}
-                        className={`px-2.5 py-1 text-[11px] font-black rounded-full transition-all duration-200 outline-none ${
+                        className={`px-2.5 py-1 text-[11px] font-black rounded-full transition-all duration-200 outline-none whitespace-nowrap ${
                             isActive
                                 ? 'bg-accent text-accent-contrast shadow-sm scale-[1.03]'
                                 : 'text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5'
@@ -62,26 +62,48 @@ export const PeriodFilter = ({ periods = ['7D', '1M', '3M', '6M', '1A', 'Todo'],
     );
 };
 
-// Helper para filtrar datos por periodo
+// Helper para filtrar datos por periodo (corte por fecha de calendario)
 export const filterByPeriod = (data, period, dateKey = 'date') => {
-    if (!data || !data.length || period === 'Todo') return data;
-    const now = Date.now();
-    let days = 30;
-    if (period === '7D') days = 7;
-    else if (period === '14D') days = 14;
-    else if (period === '1M') days = 30;
-    else if (period === '3M') days = 90;
-    else if (period === '6M') days = 180;
-    else if (period === '1A') days = 365;
+    if (!data || !data.length || period === 'Todo') return data || [];
 
-    const cutoff = now - days * 24 * 60 * 60 * 1000;
-    const filtered = data.filter((item) => {
-        const val = item[dateKey] ?? item.timestamp ?? item.date;
-        const time = typeof val === 'number' ? val : new Date(val).getTime();
+    // Inicio del día de corte (00:00:00.000)
+    const cutoffDate = new Date();
+    cutoffDate.setHours(0, 0, 0, 0);
+
+    if (period === '7D') {
+        cutoffDate.setDate(cutoffDate.getDate() - 7);
+    } else if (period === '14D') {
+        cutoffDate.setDate(cutoffDate.getDate() - 14);
+    } else if (period === '1M') {
+        cutoffDate.setMonth(cutoffDate.getMonth() - 1);
+    } else if (period === '3M') {
+        cutoffDate.setMonth(cutoffDate.getMonth() - 3);
+    } else if (period === '6M') {
+        cutoffDate.setMonth(cutoffDate.getMonth() - 6);
+    } else if (period === '1A') {
+        cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
+    } else {
+        return data;
+    }
+
+    const cutoff = cutoffDate.getTime();
+
+    return data.filter((item) => {
+        if (!item) return false;
+        const val = item[dateKey] ?? item.timestamp ?? item.date ?? item.log_date ?? item.workout_date;
+        if (val === undefined || val === null) return false;
+
+        let time;
+        if (typeof val === 'number') {
+            time = val;
+        } else if (typeof val === 'string' && !isNaN(Number(val)) && Number(val) > 1000000000) {
+            time = Number(val);
+        } else {
+            time = new Date(val).getTime();
+        }
+
         return !isNaN(time) && time >= cutoff;
     });
-
-    return filtered.length > 0 ? filtered : data;
 };
 
 // --- TOOLTIP FLOTANTE LIQUID GLASS ---
@@ -90,7 +112,8 @@ export const ModernTooltip = ({ active, payload, label }) => {
     const rawDate = payload[0]?.payload?.date || payload[0]?.payload?.timestamp || label;
     let formattedDate = label;
     if (rawDate) {
-        const d = new Date(rawDate);
+        const num = Number(rawDate);
+        const d = !isNaN(num) && num > 1000000000 ? new Date(num) : new Date(rawDate);
         if (!isNaN(d.getTime())) {
             formattedDate = d.toLocaleDateString('es-ES', {
                 weekday: 'short',
@@ -245,10 +268,19 @@ const ChartBase = ({
                 <Spinner size={32} />
             </div>
         ) : !data?.length ? (
-            <div className="flex flex-col justify-center items-center h-60 sm:h-72 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 shadow-inner text-center p-6 gap-2">
+            <div className="flex flex-col justify-center items-center h-60 sm:h-72 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 shadow-inner text-center p-6 gap-3">
                 <span className="text-text-muted text-sm font-semibold bg-bg-primary px-4 py-2 rounded-full ring-1 ring-black/5 dark:ring-white/10">
                     {emptyMessage}
                 </span>
+                {activePeriod && activePeriod !== 'Todo' && onPeriodChange && (
+                    <button
+                        type="button"
+                        onClick={() => onPeriodChange('Todo')}
+                        className="text-xs font-bold text-accent hover:underline active:scale-95 transition-transform"
+                    >
+                        Ver todo el historial
+                    </button>
+                )}
             </div>
         ) : (
             <div className="h-60 sm:h-72 w-full [&_*]:!outline-none pt-2">
@@ -280,7 +312,8 @@ const grid = (
 
 const formatTick = (t) => {
     if (!t) return '';
-    const d = new Date(t);
+    const num = Number(t);
+    const d = !isNaN(num) && num > 1000000000 ? new Date(num) : new Date(t);
     return isNaN(d.getTime()) ? '' : d.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
 };
 
@@ -351,7 +384,11 @@ export const BodyWeightChart = ({ data, axisColor }) => {
 
     const sortedData = useMemo(() => {
         if (!data || !data.length) return [];
-        return [...data].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        return [...data].sort((a, b) => {
+            const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime() || 0;
+            const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime() || 0;
+            return timeA - timeB;
+        });
     }, [data]);
 
     const filteredData = useMemo(() => {
@@ -370,7 +407,7 @@ export const BodyWeightChart = ({ data, axisColor }) => {
         const max = Math.max(...weights);
         const avg = Math.round((weights.reduce((a, b) => a + b, 0) / weights.length) * 10) / 10;
 
-        return { current, start, delta, min, max, avg };
+        return { current, start, delta, min, max, avg, count: weights.length };
     }, [filteredData]);
 
     const ax = axisConfig(axisColor);
@@ -383,6 +420,21 @@ export const BodyWeightChart = ({ data, axisColor }) => {
             periods={['7D', '1M', '3M', '6M', '1A', 'Todo']}
             activePeriod={period}
             onPeriodChange={setPeriod}
+            emptyMessage={
+                period === 'Todo'
+                    ? 'Sin registros de peso'
+                    : `Sin registros en los últimos ${
+                          period === '7D'
+                              ? '7 días'
+                              : period === '1M'
+                              ? '30 días'
+                              : period === '3M'
+                              ? '3 meses'
+                              : period === '6M'
+                              ? '6 meses'
+                              : '12 meses'
+                      }`
+            }
             kpis={
                 stats
                     ? [
@@ -391,9 +443,11 @@ export const BodyWeightChart = ({ data, axisColor }) => {
                               value: stats.current,
                               unit: 'kg',
                               trend:
-                                  stats.delta !== 0
-                                      ? `${stats.delta > 0 ? '+' : ''}${stats.delta} kg`
-                                      : 'Estable',
+                                  stats.count > 1
+                                      ? stats.delta !== 0
+                                          ? `${stats.delta > 0 ? '+' : ''}${stats.delta} kg (${period})`
+                                          : `Estable (${period})`
+                                      : '1 registro',
                               isPositive: stats.delta <= 0,
                               icon: Activity
                           },
@@ -446,6 +500,7 @@ export const BodyWeightChart = ({ data, axisColor }) => {
                     strokeWidth={3.5}
                     fill="url(#colorPesoApple)"
                     filter="url(#glowPeso)"
+                    dot={{ r: 3.5, strokeWidth: 2, fill: '#10b981', stroke: '#fff' }}
                     activeDot={{ r: 7, strokeWidth: 2.5, stroke: '#fff', fill: '#10b981' }}
                     unit="kg"
                 />
@@ -512,26 +567,40 @@ export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }
 
     const sortedData = useMemo(() => {
         if (!data || !data.length) return [];
-        return [...data].sort((a, b) => (a.date || 0) - (b.date || 0));
+        return [...data].sort((a, b) => {
+            const timeA = typeof a.date === 'number' ? a.date : new Date(a.date).getTime() || 0;
+            const timeB = typeof b.date === 'number' ? b.date : new Date(b.date).getTime() || 0;
+            return timeA - timeB;
+        });
     }, [data]);
 
     const filteredData = useMemo(() => {
         return filterByPeriod(sortedData, period, 'date');
     }, [sortedData, period]);
 
+    // PR y 1RM históricos calculados sobre TODO el historial registrado del ejercicio
+    const allTimePR = useMemo(() => {
+        if (!data || !data.length) return 0;
+        return Math.max(...data.map((d) => parseFloat(d['Peso Máximo (kg)']) || 0), 0);
+    }, [data]);
+
+    const allTime1RM = useMemo(() => {
+        if (!data || !data.length) return 0;
+        return Math.max(...data.map((d) => parseFloat(d['1RM Estimado (kg)']) || 0), 0);
+    }, [data]);
+
     const stats = useMemo(() => {
         if (!filteredData.length) return null;
-        const maxWeights = filteredData.map((d) => d['Peso Máximo (kg)'] || 0);
-        const est1RMs = filteredData.map((d) => d['1RM Estimado (kg)'] || 0);
+        const maxWeights = filteredData.map((d) => parseFloat(d['Peso Máximo (kg)']) || 0);
+        const est1RMs = filteredData.map((d) => parseFloat(d['1RM Estimado (kg)']) || 0);
 
         const currentWeight = maxWeights[maxWeights.length - 1] || 0;
-        const prWeight = Math.max(...maxWeights, 0);
-        const max1RM = Math.max(...est1RMs, 0);
         const firstWeight = maxWeights[0] || 0;
         const gain = Math.round((currentWeight - firstWeight) * 10) / 10;
+        const periodMax1RM = Math.max(...est1RMs, 0);
 
-        return { currentWeight, prWeight, max1RM, gain };
-    }, [filteredData]);
+        return { currentWeight, prWeight: allTimePR, max1RM: allTime1RM, gain, periodMax1RM, count: filteredData.length };
+    }, [filteredData, allTimePR, allTime1RM]);
 
     const alerts = useMemo(() => {
         if (!trend && (!sessions || sessions.length === 0)) return [];
@@ -614,6 +683,19 @@ export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }
                 periods={['1M', '3M', '6M', '1A', 'Todo']}
                 activePeriod={period}
                 onPeriodChange={setPeriod}
+                emptyMessage={
+                    period === 'Todo'
+                        ? 'Sin registros para este ejercicio'
+                        : `Sin registros en los últimos ${
+                              period === '1M'
+                                  ? '30 días'
+                                  : period === '3M'
+                                  ? '3 meses'
+                                  : period === '6M'
+                                  ? '6 meses'
+                                  : '12 meses'
+                          }`
+                }
                 headerExtra={
                     <div className="flex items-center gap-2 flex-wrap text-[10px] font-bold text-text-muted bg-black/5 dark:bg-white/5 px-2.5 py-1.5 rounded-full ring-1 ring-black/5 dark:ring-white/10">
                         <span className="flex items-center gap-1.5">
@@ -638,11 +720,13 @@ export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }
                                   value: stats.currentWeight,
                                   unit: 'kg',
                                   trend:
-                                      stats.gain > 0
-                                          ? `+${stats.gain} kg`
-                                          : stats.gain < 0
-                                          ? `${stats.gain} kg`
-                                          : 'Constante',
+                                      stats.count > 1
+                                          ? stats.gain > 0
+                                              ? `+${stats.gain} kg (${period})`
+                                              : stats.gain < 0
+                                              ? `${stats.gain} kg (${period})`
+                                              : `Constante (${period})`
+                                          : '1 sesión',
                                   isPositive: stats.gain >= 0,
                                   icon: TrendingUp,
                                   onClick: () => setShowSmartCoachModal(true),
@@ -650,7 +734,7 @@ export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }
                               },
                               {
                                   label: 'Récord Personal (PR)',
-                                  value: stats.prWeight,
+                                  value: allTimePR,
                                   unit: 'kg',
                                   trend: 'Récord histórico',
                                   isPositive: true,
@@ -658,9 +742,9 @@ export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }
                               },
                               {
                                   label: '1RM Estimado Máx',
-                                  value: stats.max1RM,
+                                  value: allTime1RM,
                                   unit: 'kg',
-                                  trend: 'Fuerza teórica',
+                                  trend: 'Récord histórico',
                                   icon: Award
                               }
                           ]
@@ -724,7 +808,7 @@ export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }
                         stroke="#818cf8"
                         strokeWidth={3.5}
                         filter="url(#glowExercise)"
-                        dot={<PRCustomDot maxWeight={stats?.prWeight} />}
+                        dot={<PRCustomDot maxWeight={allTimePR} />}
                         activeDot={{ r: 7, strokeWidth: 2, stroke: '#fff', fill: '#818cf8' }}
                         name="Peso Máximo"
                         unit="kg"
@@ -735,14 +819,14 @@ export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }
                         stroke="#f43f5e"
                         strokeWidth={2.5}
                         strokeDasharray="5 5"
-                        dot={{ r: 2.5, strokeWidth: 0, fill: '#f43f5e' }}
+                        dot={{ r: 3, strokeWidth: 1, stroke: '#fff', fill: '#f43f5e' }}
                         activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff', fill: '#f43f5e' }}
                         name="1RM Estimado"
                         unit="kg"
                     />
-                    {stats?.prWeight > 0 && (
+                    {allTimePR > 0 && (
                         <ReferenceLine
-                            y={stats.prWeight}
+                            y={allTimePR}
                             stroke="rgba(245, 158, 11, 0.55)"
                             strokeDasharray="4 4"
                             strokeWidth={1.5}
@@ -750,7 +834,7 @@ export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }
                                 <ReferencePill
                                     {...props}
                                     position="left"
-                                    text={`PR: ${stats.prWeight} kg`}
+                                    text={`PR: ${allTimePR} kg`}
                                     stroke="#f59e0b"
                                     color="#f59e0b"
                                 />
@@ -1038,7 +1122,11 @@ export const MeasurementChart = ({ data, axisColor, measureLabel }) => {
 
     const sortedData = useMemo(() => {
         if (!data || !data.length) return [];
-        return [...data].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        return [...data].sort((a, b) => {
+            const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime() || 0;
+            const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime() || 0;
+            return timeA - timeB;
+        });
     }, [data]);
 
     const filteredData = useMemo(() => {
@@ -1056,7 +1144,7 @@ export const MeasurementChart = ({ data, axisColor, measureLabel }) => {
         const min = Math.min(...vals);
         const max = Math.max(...vals);
 
-        return { current, delta, min, max };
+        return { current, delta, min, max, count: vals.length };
     }, [filteredData]);
 
     const ax = axisConfig(axisColor);
@@ -1069,6 +1157,19 @@ export const MeasurementChart = ({ data, axisColor, measureLabel }) => {
             periods={['1M', '3M', '6M', '1A', 'Todo']}
             activePeriod={period}
             onPeriodChange={setPeriod}
+            emptyMessage={
+                period === 'Todo'
+                    ? 'Sin registros de medida'
+                    : `Sin registros en los últimos ${
+                          period === '1M'
+                              ? '30 días'
+                              : period === '3M'
+                              ? '3 meses'
+                              : period === '6M'
+                              ? '6 meses'
+                              : '12 meses'
+                      }`
+            }
             kpis={
                 stats
                     ? [
@@ -1077,9 +1178,11 @@ export const MeasurementChart = ({ data, axisColor, measureLabel }) => {
                               value: stats.current,
                               unit: 'cm',
                               trend:
-                                  stats.delta !== 0
-                                      ? `${stats.delta > 0 ? '+' : ''}${stats.delta} cm`
-                                      : 'Constante',
+                                  stats.count > 1
+                                      ? stats.delta !== 0
+                                          ? `${stats.delta > 0 ? '+' : ''}${stats.delta} cm (${period})`
+                                          : `Constante (${period})`
+                                      : '1 registro',
                               isPositive: stats.delta <= 0,
                               icon: Ruler
                           },
@@ -1126,6 +1229,7 @@ export const MeasurementChart = ({ data, axisColor, measureLabel }) => {
                     strokeWidth={3.5}
                     fill="url(#colorMedidaApple)"
                     filter="url(#glowMedida)"
+                    dot={{ r: 3.5, strokeWidth: 2, fill: '#a855f7', stroke: '#fff' }}
                     activeDot={{ r: 7, strokeWidth: 2.5, stroke: '#fff', fill: '#9333ea' }}
                     unit="cm"
                 />

@@ -171,9 +171,10 @@ const Progress = ({ darkMode, setView }) => {
         return bodyWeightLog
             .map(log => {
                 const weight = parseFloat(log.weight_kg);
-                if (isNaN(weight)) return null;
+                const time = new Date(log.log_date).getTime();
+                if (isNaN(weight) || isNaN(time)) return null;
                 return {
-                    timestamp: new Date(log.log_date).getTime(),
+                    timestamp: time,
                     'Peso (kg)': weight,
                 };
             })
@@ -198,14 +199,33 @@ const Progress = ({ darkMode, setView }) => {
 
         workoutLog.forEach(log => {
             if (log.WorkoutLogDetails) {
+                const logTime = new Date(log.workout_date).getTime();
+                if (isNaN(logTime)) return;
+
                 log.WorkoutLogDetails.forEach(detail => {
-                    if (detail.best_set_weight > 0 || (detail.estimated_1rm && detail.estimated_1rm > 0)) {
-                        if (!progress[detail.exercise_name]) progress[detail.exercise_name] = [];
-                        progress[detail.exercise_name].push({
-                            date: new Date(log.workout_date).getTime(),
-                            'Peso Máximo (kg)': detail.best_set_weight || 0,
-                            '1RM Estimado (kg)': detail.estimated_1rm || 0,
-                        });
+                    const bestWeight = parseFloat(detail.best_set_weight) || 0;
+                    const est1rm = parseFloat(detail.estimated_1rm) || 0;
+                    if (bestWeight > 0 || est1rm > 0) {
+                        const exName = detail.exercise_name;
+                        if (!progress[exName]) progress[exName] = [];
+                        
+                        const existingIndex = progress[exName].findIndex(p => p.date === logTime);
+                        if (existingIndex >= 0) {
+                            progress[exName][existingIndex]['Peso Máximo (kg)'] = Math.max(
+                                progress[exName][existingIndex]['Peso Máximo (kg)'],
+                                bestWeight
+                            );
+                            progress[exName][existingIndex]['1RM Estimado (kg)'] = Math.max(
+                                progress[exName][existingIndex]['1RM Estimado (kg)'],
+                                est1rm
+                            );
+                        } else {
+                            progress[exName].push({
+                                date: logTime,
+                                'Peso Máximo (kg)': bestWeight,
+                                '1RM Estimado (kg)': est1rm,
+                            });
+                        }
                     }
                 });
             }
