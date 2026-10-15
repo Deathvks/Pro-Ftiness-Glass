@@ -148,7 +148,7 @@ const WorkoutExerciseCard = ({
           details={exercise}
           fitMode="contain"
           forceAuto={true}
-          className="w-full aspect-auto lg:max-w-lg mx-auto mb-2 transition-all rounded-[24px] overflow-hidden relative" />
+          className="w-full min-h-[200px] sm:min-h-[240px] lg:max-w-lg mx-auto mb-2 transition-all rounded-[24px] overflow-hidden relative" />
         
       </button>
 

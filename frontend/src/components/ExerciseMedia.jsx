@@ -124,13 +124,15 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   // Fondo caracterÃƒÂ­stico para los placeholders
   const placeholderBgClass = 'bg-accent/10 text-accent';
 
-  // Fallback directo si no hay ningÃƒÂºn recurso asignado (evita renderizar etiquetas vacÃƒÂ­as)
+  // Fallback directo si no hay ningún recurso asignado (evita renderizar etiquetas vacías)
   if (!finalImageUrl && !videoUrl && !youtubeThumbnail) {
-    const hasAspectInClass = className && className.includes('aspect-');
-    const aspectClass = hasAspectInClass ? '' : 'aspect-video';
+    const isSmallContainer = className && (className.includes('h-full') || className.includes('w-16') || className.includes('w-20') || className.includes('h-16') || className.includes('h-20') || className.includes('w-12') || className.includes('w-14'));
+    const hasFixedAspect = className && className.includes('aspect-') && !className.includes('aspect-auto');
+    const aspectClass = hasFixedAspect || isSmallContainer ? '' : 'aspect-video min-h-[200px] sm:min-h-[240px]';
+    const iconSize = isSmallContainer ? 24 : 64;
     return (
-      <div className={`${aspectClass} ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center ${className}`}>
-        <ImageIcon size={48} className="opacity-60" />
+      <div className={`w-full h-full ${aspectClass} ${placeholderBgClass} rounded-[24px] overflow-hidden flex items-center justify-center ${className.replace('aspect-auto', '')}`}>
+        <ImageIcon size={iconSize} className="opacity-60" />
       </div>
     );
   }
@@ -263,9 +265,13 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   }
 
   // Fallback final si la imagen falla y no hay video (onError activado)
+  const isSmallContainer = className && (className.includes('h-full') || className.includes('w-16') || className.includes('w-20') || className.includes('h-16') || className.includes('h-20') || className.includes('w-12') || className.includes('w-14'));
+  const hasFixedAspect = className && className.includes('aspect-') && !className.includes('aspect-auto');
+  const aspectClass = hasFixedAspect || isSmallContainer ? '' : 'aspect-video min-h-[200px] sm:min-h-[240px]';
+  const iconSize = isSmallContainer ? 24 : 64;
   return (
-    <div className={`aspect-video ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center ${className}`}>
-      <ImageIcon size={48} className="opacity-60" />
+    <div className={`w-full h-full ${aspectClass} ${placeholderBgClass} rounded-[24px] overflow-hidden flex items-center justify-center ${className.replace('aspect-auto', '')}`}>
+      <ImageIcon size={iconSize} className="opacity-60" />
     </div>
   );
 }, (prevProps, nextProps) => {

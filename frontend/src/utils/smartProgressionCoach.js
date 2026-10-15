@@ -138,14 +138,104 @@ export const auditRepsForGoal = (targetReps, goalKey) => {
  * Genera la estructura de desglose serie a serie para estrategias escalonadas
  * como Top Set (1ª serie récord/fuerza) + Back-off sets (series siguientes de volumen/hipertrofia).
  */
+/**
+ * Calcula una estimación de peso inicial sensata y segura cuando un ejercicio
+ * no cuenta con registros históricos ni peso configurado por el usuario.
+ */
+export const estimateExerciseInitialWeight = (exerciseName, userProfile = {}) => {
+  if (!exerciseName) return 10;
+  const name = exerciseName.toLowerCase().trim();
+  const gender = userProfile?.gender || userProfile?.sex || 'male';
+  const isFemale = gender === 'female' || gender === 'f';
+
+  // 1. Ejercicios corporales / sin carga externa inicial
+  if (
+    name.includes('dominada') || name.includes('pull-up') || name.includes('chin-up') ||
+    name.includes('flexion') || name.includes('flexión') || name.includes('push-up') ||
+    name.includes('fondo') || name.includes('dip') ||
+    name.includes('plancha') || name.includes('plank') ||
+    name.includes('crunch') || name.includes('abdominal') ||
+    name.includes('salto') || name.includes('jump') ||
+    name.includes('burpee') || name.includes('mountain') ||
+    name.includes('gemelo corporal') || name.includes('elevacion talon corporal')
+  ) {
+    return 0;
+  }
+
+  // 2. Pierna pesada (Prensa, Sentadilla Hack)
+  if (name.includes('prensa') || name.includes('leg press') || name.includes('hack')) {
+    return isFemale ? 40 : 60;
+  }
+
+  // 3. Sentadilla con barra / Peso muerto
+  if (name.includes('peso muerto') || name.includes('deadlift')) {
+    if (name.includes('rumano') && (name.includes('mancuerna') || name.includes('dumbbell'))) {
+      return isFemale ? 8 : 14;
+    }
+    return isFemale ? 25 : 40;
+  }
+  if (name.includes('sentadilla') || name.includes('squat')) {
+    if (name.includes('búlgara') || name.includes('bulgarian') || name.includes('goblet') || name.includes('mancuerna')) {
+      return isFemale ? 6 : 10;
+    }
+    return isFemale ? 20 : 35;
+  }
+
+  // 4. Pecho con barra vs mancuerna
+  if (name.includes('press banca') || name.includes('bench press') || name.includes('press de banca') || name.includes('pecho barra')) {
+    return isFemale ? 15 : 30; // Barra olímpica (20kg) o barra guiada con discos ligeros
+  }
+
+  // 5. Ejercicios de aislamiento ligero (Elevaciones laterales, pájaros)
+  if (name.includes('lateral') || name.includes('pájaro') || name.includes('pajaro') || name.includes('rear delt') || name.includes('face pull')) {
+    return isFemale ? 3 : 6;
+  }
+
+  // 6. Brazos (Bíceps / Tríceps)
+  if (name.includes('curl') || name.includes('biceps') || name.includes('bíceps') || name.includes('triceps') || name.includes('tríceps')) {
+    if (name.includes('polea') || name.includes('cable')) {
+      return isFemale ? 10 : 15;
+    }
+    return isFemale ? 5 : 9;
+  }
+
+  // 7. Espalda (Jalones / Remos)
+  if (name.includes('jalón') || name.includes('jalon') || name.includes('lat pulldown')) {
+    return isFemale ? 20 : 30;
+  }
+  if (name.includes('remo') || name.includes('row')) {
+    if (name.includes('mancuerna')) return isFemale ? 8 : 14;
+    return isFemale ? 15 : 25;
+  }
+
+  // 8. Hombro (Press militar / hombros)
+  if (name.includes('militar') || name.includes('overhead') || name.includes('shoulder press')) {
+    if (name.includes('mancuerna')) return isFemale ? 6 : 10;
+    return isFemale ? 15 : 20;
+  }
+
+  // 9. Poleas generales
+  if (name.includes('polea') || name.includes('cable')) {
+    return isFemale ? 10 : 15;
+  }
+
+  // 10. Mancuernas generales
+  if (name.includes('mancuerna') || name.includes('dumbbell')) {
+    return isFemale ? 6 : 10;
+  }
+
+  // 11. Valor seguro por defecto
+  return isFemale ? 10 : 15;
+};
+
 export const generateTopSetBackoffPlan = (
   plannedSets, 
   topWeight, 
   topReps, 
   backOffWeight, 
   backOffReps, 
-  topSetRir = 'RIR 1', 
-  backOffRir = 'RIR 1-2'
+  topSetRir = '1 rep de margen', 
+  backOffRir = '1-2 reps de margen'
 ) => {
   const setsCount = Math.max(3, parseInt(plannedSets, 10) || 3);
   const plan = [];
@@ -474,8 +564,27 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   const isStruggling = difficultyFeedback === 'struggling';
   const isNormal = difficultyFeedback === 'normal';
 
-  const isBodyweight = lastSession ? lastSession.topWeight === 0 : false;
-  const currentTopWeight = lastSession?.topWeight || 0;
+  // Detección de carga base / histórica o estimación inteligente
+  let calculatedInitialWeight = 0;
+  let initialWeightSource = 'session_history'; // 'session_history' | 'routine_history' | 'exercise_preset' | 'estimated'
+
+  if (lastSession && lastSession.topWeight !== undefined) {
+    calculatedInitialWeight = lastSession.topWeight;
+    initialWeightSource = 'session_history';
+  } else if (sessions.length > 0 && sessions[0].topWeight > 0) {
+    calculatedInitialWeight = sessions[0].topWeight;
+    initialWeightSource = 'routine_history';
+  } else if (parseFloat(exercise.weight) > 0) {
+    calculatedInitialWeight = parseFloat(exercise.weight);
+    initialWeightSource = 'exercise_preset';
+  } else {
+    calculatedInitialWeight = estimateExerciseInitialWeight(exercise.name, userProfile);
+    initialWeightSource = 'estimated';
+  }
+
+  const currentTopWeight = calculatedInitialWeight;
+  const isBodyweight = currentTopWeight === 0;
+  const isCalibratingSession = targetSessions.length === 0;
   const canUseTopSetBackoff = plannedSets >= 3 && !isBodyweight && currentTopWeight >= 15;
 
   // Incremento realista de gimnasio:
@@ -495,7 +604,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     note: isRoutineIsolated
       ? `Recomendaciones basadas al 100% en tu historial de ${activeRoutineName} (${rCtx.sameRoutineSessions.length} sesiones). Aislamos la fatiga de otros entrenamientos.`
       : sessions.routineContext.hasMultipleRoutines
-      ? `Detectamos este ejercicio en otras rutinas. Al ser tu 1ª sesión en ${activeRoutineName}, calibramos la base para este día sin arrastrar fatiga.`
+      ? `Detectamos este ejercicio en otras rutinas. Calculamos una carga inicial para ${activeRoutineName} sin arrastrar fatiga.`
       : null
   } : null;
 
@@ -510,7 +619,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   let suggestedReps = targetReps;
   let intensityLabel = 'Esfuerzo Alto';
   let intensityDesc = 'Parar 1-2 reps antes de fallar';
-  let suggestedRir = '1-2 del fallo';
+  let suggestedRir = '1-2 reps en recámara';
   let suggestedRest = '90 - 120 seg';
   let actionTitle = '';
   let actionDirection = 'maintain'; // 'up' | 'down' | 'maintain'
@@ -545,14 +654,14 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     suggestedSets = plannedSets;
     actionDirection = 'down';
     intensityLabel = 'Descarga Táctica';
-    intensityDesc = 'Priorizar técnica y RIR 2';
-    suggestedRir = '2 del fallo';
+    intensityDesc = 'Priorizar técnica limpia';
+    suggestedRir = '2 reps en recámara';
     suggestedRest = '120 - 150 seg';
     weightChangeNote = reducedWeight > 0 ? `-${diffReducedKg} kg (-10%)` : 'Reducir repeticiones';
     actionTitle = 'Descarga Táctica: -10% para clavar repeticiones con técnica limpia';
-    coachingAdvice = `Nos indicas que no llegas a las ${targetReps} repeticiones. Para evitar fallos técnicos lesivos o sobrecarga articular, lo más óptimo para tu progreso en ${activeRoutineName} es aplicar una ligera descarga y consolidar el rango de repeticiones con técnica limpia.`;
+    coachingAdvice = `Nos indicas que no llegas a las ${targetReps} repeticiones. Para evitar fallos técnicos o sobrecarga articular, lo más óptimo para tu progreso en ${activeRoutineName} es aplicar una ligera descarga y consolidar el rango de repeticiones con técnica limpia.`;
     actionSteps = [
-      `Baja a ${suggestedWeight} kg para asegurar que completas las ${targetReps} reps con RIR 2.`,
+      `Baja a ${suggestedWeight} kg para asegurar que completas las ${targetReps} reps con 2 repeticiones de margen antes de fallar.`,
       'Concéntrate en la velocidad concéntrica y el control del movimiento.',
       'Una descarga a tiempo previene semanas de estancamiento por sobreesfuerzo.'
     ];
@@ -566,7 +675,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
         suggestedWeight: reducedWeight,
         suggestedReps: targetReps,
         suggestedSets: plannedSets,
-        motive: `Bajar un 10% la carga disipa la fatiga acumulada en articulaciones y tendones, permitiendo que tus fibras musculares completen las ${targetReps} reps con técnica impecable y margen de seguridad (RIR 2).`,
+        motive: `Bajar un 10% la carga disipa la fatiga acumulada en articulaciones y tendones, permitiendo que tus fibras musculares completen las ${targetReps} reps con técnica impecable y margen de seguridad (parando 2 repeticiones antes de no poder más).`,
         description: `Ajusta a ${reducedWeight} kg en todas las series para clavar las ${targetReps} repeticiones sin trampas.`
       },
       {
@@ -578,7 +687,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
         suggestedReps: safeReducedReps,
         suggestedSets: plannedSets,
         motive: `Si prefieres mantener los ${currentTopWeight} kg, recortar a ${safeReducedReps} repeticiones evita el fallo forzado y mantiene la barra a máxima velocidad concéntrica.`,
-        description: `Mantén ${currentTopWeight} kg pero detén cada serie en ${safeReducedReps} repeticiones limpias con RIR 1-2.`
+        description: `Mantén ${currentTopWeight} kg pero detén cada serie en ${safeReducedReps} repeticiones limpias, parando 1 o 2 antes del agotamiento.`
       }
     ];
 
@@ -592,7 +701,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
         suggestedWeight: currentTopWeight,
         suggestedReps: topCannotReps,
         suggestedSets: plannedSets,
-        perSetPlan: generateTopSetBackoffPlan(plannedSets, currentTopWeight, topCannotReps, reducedWeight, targetReps, 'RIR 1-2', 'RIR 2'),
+        perSetPlan: generateTopSetBackoffPlan(plannedSets, currentTopWeight, topCannotReps, reducedWeight, targetReps, '1 rep de margen', '2 reps de margen'),
         motive: `Toca los ${currentTopWeight} kg únicamente en la 1ª serie a ${topCannotReps} reps para mantener el estímulo de fuerza sin quemarte, y realiza las series restantes a ${reducedWeight} kg para acumular volumen seguro.`,
         description: `1ª serie a ${currentTopWeight} kg (${topCannotReps} reps) + ${plannedSets - 1} series a ${reducedWeight} kg (${targetReps} reps).`
       });
@@ -607,8 +716,8 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     suggestedSets = plannedSets;
     actionDirection = 'maintain';
     intensityLabel = 'Consolidar Control';
-    intensityDesc = 'RIR 1 con técnica impecable';
-    suggestedRir = '1 del fallo';
+    intensityDesc = 'Parar 1 rep antes del fallo';
+    suggestedRir = '1 rep en recámara';
     suggestedRest = '120 - 180 seg';
     weightChangeNote = `Consolidar ${currentTopWeight} kg`;
     actionTitle = `Consolidar Carga: Afianza tus ${currentTopWeight} kg`;
@@ -617,7 +726,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
       : `Nos indicas que te cuesta llegar a las ${targetReps} repeticiones. Para no sobrecargar articulaciones ni forzar una serie con mala técnica, te recomendamos afianzar los ${currentTopWeight} kg completando las repeticiones sin subir carga hoy.`;
     actionSteps = [
       `Mantén los ${currentTopWeight} kg y céntrate en completar las ${targetReps} repeticiones con técnica perfecta.`,
-      'Detén la serie cuando te quede 1 repetición en reserva (RIR 1).',
+      'Detén la serie cuando sientas que te queda 1 repetición en reserva antes de fallar.',
       'Si sientes mucha fatiga en las últimas series, descansa 3 minutos completos.'
     ];
 
@@ -631,7 +740,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
         suggestedReps: targetReps,
         suggestedSets: plannedSets,
         motive: `Afianzar las ${targetReps} repeticiones con los ${currentTopWeight} kg actuales consolida el control neuromuscular. Subir de peso cuando aún cuesta llegar solo provocaría acortar el recorrido o usar inercia.`,
-        description: `Mantén los ${currentTopWeight} kg y busca clavar las ${targetReps} repeticiones con control total y RIR 1.`
+        description: `Mantén los ${currentTopWeight} kg y busca clavar las ${targetReps} repeticiones con control total y 1 repetición de margen.`
       },
       {
         id: 'strat_pause_struggling',
@@ -656,7 +765,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
         suggestedWeight: currentTopWeight,
         suggestedReps: Math.max(5, targetReps - 2),
         suggestedSets: plannedSets,
-        perSetPlan: generateTopSetBackoffPlan(plannedSets, currentTopWeight, Math.max(5, targetReps - 2), struggleBackOff, targetReps, 'RIR 1-2', 'RIR 2'),
+        perSetPlan: generateTopSetBackoffPlan(plannedSets, currentTopWeight, Math.max(5, targetReps - 2), struggleBackOff, targetReps, '1 rep de margen', '2 reps de margen'),
         motive: `Hacer la 1ª serie a ${currentTopWeight} kg con ${Math.max(5, targetReps - 2)} reps aprovecha tu energía fresca, y descargar a ${struggleBackOff} kg en las series restantes te permite acumular volumen sin agotar tu sistema nervioso.`,
         description: `Serie 1 a ${currentTopWeight} kg (${Math.max(5, targetReps - 2)} reps) + Series 2-${plannedSets} con descarga a ${struggleBackOff} kg para no agotarte.`
       });
@@ -666,65 +775,85 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   // CASO C: EL USUARIO INDICA "LLEGO BIEN" (🟢 CON ENERGÍA / SOBRECARGA)
   // ------------------------------------------------------------
   } else {
-    // Si no hay peso registrado aún en esta rutina (calibración base)
-    if (currentTopWeight === 0) {
-      suggestedWeight = null;
+    // Si es una sesión de calibración inicial (sin registros previos en esta rutina)
+    if (isCalibratingSession) {
+      suggestedWeight = currentTopWeight;
       suggestedReps = targetReps;
       suggestedSets = plannedSets;
       actionDirection = 'maintain';
       intensityLabel = 'Calibración Inicial';
-      intensityDesc = 'Buscar carga con RIR 1-2';
-      suggestedRir = '1-2 del fallo';
+      intensityDesc = 'Parar 1-2 reps antes de no poder más';
+      suggestedRir = '1-2 reps en recámara';
       suggestedRest = '90 - 120 seg';
-      weightChangeNote = 'Establecer carga';
-      actionTitle = 'Calibración de Fuerza e Hipertrofia';
-      coachingAdvice = `Al ser tu primera sesión registrada en ${activeRoutineName}, busca un peso exigente con el que completes tus ${targetReps} repeticiones parando 1-2 antes de llegar al fallo (RIR 1-2).`;
+      weightChangeNote = currentTopWeight > 0 ? `${currentTopWeight} kg inicial` : 'Peso corporal';
+      actionTitle = initialWeightSource === 'routine_history' 
+        ? `Carga Base: ${currentTopWeight} kg según tu historial`
+        : initialWeightSource === 'estimated'
+        ? `Carga Inicial Sugerida: ${currentTopWeight > 0 ? `${currentTopWeight} kg` : 'Corporal'}`
+        : `Carga Base: ${currentTopWeight} kg`;
+
+      if (initialWeightSource === 'routine_history') {
+        coachingAdvice = `Al ser tu primera sesión de este ejercicio en ${activeRoutineName}, calculamos una carga inicial de ${currentTopWeight} kg basándonos en tu historial en ${sessions[0]?.routineName || 'otra de tus rutinas'}. Te sugerimos hacer tu primera serie con este peso y ajustar si el orden de los ejercicios de hoy te hace llegar con más o menos energía.`;
+      } else if (initialWeightSource === 'exercise_preset') {
+        coachingAdvice = `Al ser tu primera sesión en ${activeRoutineName}, tomamos como base los ${currentTopWeight} kg guardados en tu rutina. Haz tu primera serie con este peso para comprobar si terminas las ${targetReps} repeticiones cansado pero con fuerza para 1 o 2 más.`;
+      } else {
+        coachingAdvice = `Al no tener datos registrados de este ejercicio, hemos calculado una carga inicial sugerida de ${currentTopWeight > 0 ? `${currentTopWeight} kg` : 'peso corporal'} para que puedas tantear el movimiento. Haz tu primera serie con este peso: si vas muy sobrado sube un poco en la siguiente, y si te cuesta baja para completar las repeticiones con buena técnica sin llegar al límite.`;
+      }
+
       actionSteps = [
-        'Haz 1-2 series de aproximación con poco peso para calentar.',
-        'Selecciona una carga con la que llegues a la última repetición con técnica impecable.',
-        'Detén cada serie cuando sientas que te quedan 1 o 2 repeticiones en reserva.'
+        `Prueba con ${currentTopWeight > 0 ? `${currentTopWeight} kg` : 'peso corporal'} en tu primera serie de trabajo.`,
+        'Detén la serie cuando sientas que podrías hacer como mucho 1 o 2 repeticiones más.',
+        'Si notas el peso muy ligero, sube 2.5 kg en la siguiente serie; si te cuesta, mantén o baja un poco.'
       ];
 
-      strategyOptions = [
+      const calibOptions = [
         {
-          id: 'strat_calib_standard_normal',
-          title: '🟢 Calibración Estándar de Hipertrofia',
+          id: 'strat_calib_recommended_normal',
+          title: `🟢 Carga Inicial Sugerida (${currentTopWeight > 0 ? `${currentTopWeight} kg` : 'Corporal'})`,
           tag: 'Recomendada',
-          badge: 'RIR 1-2',
-          suggestedWeight: null,
+          badge: currentTopWeight > 0 ? `Todas a ${currentTopWeight}kg` : 'Corporal',
+          suggestedWeight: currentTopWeight,
           suggestedReps: targetReps,
           suggestedSets: plannedSets,
-          motive: 'Calibrar a RIR 1-2 previene lesionarte con una carga excesiva o quedarte corto: sitúa de forma inmediata tu estímulo en la zona óptima de hipertrofia muscular.',
-          description: 'Carga exigente que te permita completar las repeticiones parando 1-2 antes del fallo muscular.'
-        },
-        {
-          id: 'strat_calib_conservative_normal',
-          title: '🟢 Calibración Conservadora de Técnica',
-          tag: 'Más Margen',
-          badge: 'RIR 2-3',
-          suggestedWeight: null,
-          suggestedReps: targetReps,
-          suggestedSets: plannedSets,
-          motive: 'Permite afianzar la trayectoria biomecánica con margen de 2 a 3 repeticiones en recámara antes de subir kilos.',
-          description: 'Carga moderada que domines con cadencia perfecta y sin esfuerzo articular.'
+          motive: initialWeightSource === 'routine_history'
+            ? `Basada en los ${currentTopWeight} kg que levantaste en ${sessions[0]?.routineName || 'otra de tus rutinas'}. Te sirve como referencia directa para esta sesión.`
+            : `Carga calculada automáticamente para un inicio seguro. Te permite tantear el ejercicio sin riesgo de sobrecarga ni lesión.`,
+          description: `Prueba con ${currentTopWeight > 0 ? `${currentTopWeight} kg` : 'peso corporal'} en tu 1ª serie y ajusta según cómo notes el esfuerzo.`
         }
       ];
+
+      if (currentTopWeight > 5) {
+        const lightCalibWeight = Math.max(0, roundToWeightStep(currentTopWeight * 0.8));
+        calibOptions.push({
+          id: 'strat_calib_conservative_normal',
+          title: `🟢 Inicio Más Ligero (${lightCalibWeight} kg)`,
+          tag: 'Más Margen',
+          badge: `${lightCalibWeight} kg`,
+          suggestedWeight: lightCalibWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          motive: 'Empezar un 20% más ligero asegura que tus tendones y articulaciones se adapten a la trayectoria del ejercicio sin fatiga ni molestias.',
+          description: `Comienza con ${lightCalibWeight} kg con bajada controlada para aprender bien el movimiento.`
+        });
+      }
+
+      strategyOptions = calibOptions;
     } else {
-      // Progresión normal con carga previa registrada
+      // Progresión normal con carga previa registrada en esta rutina
       suggestedWeight = nextWeight;
       suggestedReps = targetReps;
       suggestedSets = plannedSets;
       actionDirection = 'up';
       intensityLabel = 'Esfuerzo Alto';
       intensityDesc = 'Parar 1-2 reps antes de fallar';
-      suggestedRir = '1-2 del fallo';
+      suggestedRir = '1-2 reps en recámara';
       suggestedRest = '120 - 180 seg';
       weightChangeNote = `+${realisticIncrement} kg`;
       actionTitle = `Sobrecarga Progresiva: Sube a ${nextWeight} kg`;
       coachingAdvice = `Al haber asimilado tu carga previa en ${activeRoutineName}, tus fibras musculares ya toleran esa tensión. En barras estándar los discos mínimos habituales son de 1.25 kg por lado (+2.5 kg totales). Si dispones de micro-discos (+0.5 kg por lado = +1 kg total) úsalos; si no, aplica el salto realista de +2.5 kg o progresa en repeticiones.`;
       actionSteps = [
         `Trabaja con ${nextWeight} kg buscando mantener una técnica estricta.`,
-        `Si notas el salto de peso muy exigente, mantén el rango de ${Math.max(6, targetReps - 2)}-${targetReps} reps con RIR 1-2.`,
+        `Si notas el salto de peso muy exigente, mantén el rango de ${Math.max(6, targetReps - 2)}-${targetReps} reps parando 1-2 antes del fallo.`,
         'Descansa entre 2 y 3 minutos para restaurar tus reservas de fosfocreatina.'
       ];
 

@@ -1,5 +1,5 @@
 {
-  "version": "7.4.27",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.27/app-release.apk",
-  "notes": "Coach de Seguimiento: opciones reactivas e instantáneas según el selector de sensaciones (Llego bien / Me cuesta / No llego), aislamiento estricto de fatiga y recomendaciones por rutina, y eliminación del historial redundante en el calendario de tu progreso."
+  "version": "7.4.28",
+  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.28/app-release.apk",
+  "notes": "Coach de Seguimiento: cálculo automático de pesos iniciales sin tecnicismos ni siglas RIR, lenguaje claro y accesible, botón de aplicar optimizado para evitar desbordes en móvil y restauración del tamaño completo de placeholders de ejercicios sin imagen."
 }

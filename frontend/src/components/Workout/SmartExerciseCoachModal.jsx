@@ -498,7 +498,7 @@ const SmartExerciseCoachModal = ({
               )}
               {difficultyFeedback === 'cannot_reach' && (
                 <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold px-1 pt-0.5 leading-snug">
-                  Reajustado: Aplicamos una descarga táctica del 10% para que puedas completar el rango con técnica limpia y RIR seguro.
+                  Reajustado: Aplicamos una descarga táctica del 10% para que puedas completar el rango con técnica limpia y margen de seguridad antes de fallar.
                 </p>
               )}
             </div>
@@ -642,7 +642,9 @@ const SmartExerciseCoachModal = ({
                         </div>
 
                         <div className="flex items-center justify-between text-[10px] font-medium text-text-muted pt-1 border-t border-black/5 dark:border-white/10">
-                          <span className="text-accent font-bold">{s.rir || 'RIR 1'}</span>
+                          <span className="text-accent font-bold">
+                            {s.rir ? (s.rir.includes('RIR') ? s.rir.replace('RIR', 'Margen:') : s.rir) : '1 rep en recámara'}
+                          </span>
                           <span className="truncate text-[9px]">{s.type === 'top_set' ? 'Fuerza máxima' : 'Hipertrofia'}</span>
                         </div>
                       </div>
@@ -660,7 +662,7 @@ const SmartExerciseCoachModal = ({
               </div>
             </div>
 
-            {/* GUÍA DE INTENSIDAD / RIR (SOLO SE DESPLIEGA SI SE TOCA) */}
+            {/* GUÍA DE INTENSIDAD / ESFUERZO */}
             {showRirHelp && (
               <div className="p-3.5 sm:p-4 rounded-[20px] bg-accent/10 space-y-2 text-xs text-text-secondary animate-[fade-in_0.15s_ease-out]">
                 <div className="flex items-center justify-between">
@@ -673,7 +675,7 @@ const SmartExerciseCoachModal = ({
                   </button>
                 </div>
                 <p className="leading-relaxed">
-                  No hace falta llegar al fallo extremo en cada serie. La ciencia demuestra que parar cuando sientes que te quedaban <strong className="text-text-primary font-bold">1 o 2 repeticiones en reserva</strong> da el mismo crecimiento muscular pero sin agotar tu sistema nervioso ni lesionarte.
+                  No hace falta llegar al agotamiento extremo ni fallar la barra en cada serie. La ciencia demuestra que parar cuando sientes que te quedaban <strong className="text-text-primary font-bold">1 o 2 repeticiones en la recámara</strong> da el mismo crecimiento muscular pero sin agotar tu sistema nervioso ni lesionarte.
                 </p>
                 <div className="p-2.5 rounded-[12px] bg-bg-secondary space-y-1.5 text-[11px]">
                   <p className="flex items-start gap-2">
@@ -835,22 +837,22 @@ const SmartExerciseCoachModal = ({
                 <button
                   type="button"
                   onClick={handleApplySelection}
-                  className="flex-1 py-3.5 px-4 rounded-[20px] bg-accent hover:brightness-110 active:scale-95 text-accent-contrast font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-accent/30 transition-all"
+                  className="flex-1 min-w-0 py-3.5 px-3 sm:px-4 rounded-[20px] bg-accent hover:brightness-110 active:scale-95 text-accent-contrast font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg shadow-accent/30 transition-all overflow-hidden"
                 >
-                  <Check size={18} strokeWidth={3} />
+                  <Check size={18} strokeWidth={3} className="shrink-0" />
                   <span className="truncate">
                     {activeStrategy?.perSetPlan && activeStrategy.perSetPlan.length > 0
-                      ? `Aplicar: ${activeStrategy.title} (${activeStrategy.perSetPlan.map(s => `${s.weight}kg`).join(' / ')})`
-                      : activeSuggestedWeight !== null 
-                        ? `Aplicar: ${activeStrategy?.title || 'Estrategia'} (${activeSuggestedWeight} kg · ${activeSuggestedReps} reps)`
-                        : `Aplicar: ${activeStrategy?.title || 'Estrategia'} (${activeSuggestedReps} reps)`}
+                      ? `Aplicar Top Set (${activeStrategy.perSetPlan[0].weight}kg / ${activeStrategy.perSetPlan[1]?.weight || activeStrategy.perSetPlan[0].weight}kg)`
+                      : activeSuggestedWeight !== null && activeSuggestedWeight > 0
+                        ? `Aplicar ${activeSuggestedWeight} kg (${activeSuggestedReps} reps)`
+                        : `Aplicar objetivo (${activeSuggestedReps} reps)`}
                   </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={onClose}
-                  className="py-3.5 px-6 rounded-[20px] font-bold text-sm bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-text-primary transition-all active:scale-95"
+                  className="py-3.5 px-4 sm:px-6 rounded-[20px] font-bold text-xs sm:text-sm bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-text-primary transition-all active:scale-95 shrink-0"
                 >
                   Entendido
                 </button>
