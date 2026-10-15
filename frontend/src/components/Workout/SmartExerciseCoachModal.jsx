@@ -699,7 +699,7 @@ const SmartExerciseCoachModal = ({
                   {readOnly ? 'Estrategias recomendadas para tus próximas sesiones:' : 'Elige cómo quieres enfocar el ejercicio hoy:'}
                 </span>
 
-                <div className="grid grid-cols-1 gap-2">
+                <div key={difficultyFeedback} className="grid grid-cols-1 gap-2">
                   {strategyOptions.map((opt) => {
                     const isSelected = activeStrategy?.id === opt.id;
                     return (
@@ -779,7 +779,7 @@ const SmartExerciseCoachModal = ({
 
                 {showHistory && (
                   <div className="p-3 pt-0 space-y-1.5 border-t border-black/5 dark:border-white/10 animate-[fade-in_0.15s_ease-out]">
-                    {sessions.slice(0, 4).map((s, idx) => (
+                    {sessions.slice(0, 5).map((s, idx) => (
                       <div 
                         key={s.logId || idx}
                         className="flex items-center justify-between p-2 rounded-[14px] bg-bg-secondary text-xs font-semibold gap-2"
@@ -788,9 +788,21 @@ const SmartExerciseCoachModal = ({
                           <span className="w-5 h-5 rounded-full bg-black/5 dark:bg-white/10 text-[10px] flex items-center justify-center font-bold text-text-muted shrink-0">
                             #{idx + 1}
                           </span>
-                          <span className="text-text-secondary font-medium truncate">
-                            {formatDateToShort(s.date) || 'Sesión previa'}
-                          </span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-text-primary font-bold truncate">
+                                {s.routineName || 'Rutina'}
+                              </span>
+                              {s.isCurrentRoutine && (
+                                <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/20 text-accent shrink-0">
+                                  Esta rutina
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-text-muted block">
+                              {formatDateToShort(s.date) || 'Sesión previa'}
+                            </span>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="text-text-primary font-bold">
@@ -826,16 +838,12 @@ const SmartExerciseCoachModal = ({
                   className="flex-1 py-3.5 px-4 rounded-[20px] bg-accent hover:brightness-110 active:scale-95 text-accent-contrast font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-accent/30 transition-all"
                 >
                   <Check size={18} strokeWidth={3} />
-                  <span>
+                  <span className="truncate">
                     {activeStrategy?.perSetPlan && activeStrategy.perSetPlan.length > 0
-                      ? `Aplicar Top Set + Back-off (${activeStrategy.perSetPlan.map(s => `${s.weight}kg`).join(' / ')})`
+                      ? `Aplicar: ${activeStrategy.title} (${activeStrategy.perSetPlan.map(s => `${s.weight}kg`).join(' / ')})`
                       : activeSuggestedWeight !== null 
-                        ? (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
-                            ? `Aplicar ${activeSuggestedSets} series con ${activeSuggestedWeight} kg`
-                            : `Aplicar ${activeSuggestedWeight} kg en todas las series (${activeSuggestedReps} reps)`)
-                        : (activeSuggestedSets && activeSuggestedSets !== parseInt(exercise.sets, 10)
-                            ? `Aplicar ${activeSuggestedSets} series (${activeSuggestedReps} reps)`
-                            : `Aplicar objetivo (${activeSuggestedReps} reps)`)}
+                        ? `Aplicar: ${activeStrategy?.title || 'Estrategia'} (${activeSuggestedWeight} kg · ${activeSuggestedReps} reps)`
+                        : `Aplicar: ${activeStrategy?.title || 'Estrategia'} (${activeSuggestedReps} reps)`}
                   </span>
                 </button>
 

@@ -1,5 +1,5 @@
 {
-  "version": "7.4.26",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.26/app-release.apk",
-  "notes": "Mejoras en el Coach de Seguimiento: saltos realistas de discos (+2.5 kg en barra o micro-discos), selector interactivo de dificultad y sensaciones (Llego bien / Me cuesta / No llego), pausas adaptadas a reps reducidas, aislamiento de fatiga por rutina y detección inmediata de plan aplicado en verde."
+  "version": "7.4.27",
+  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.27/app-release.apk",
+  "notes": "Coach de Seguimiento: opciones reactivas e instantáneas según el selector de sensaciones (Llego bien / Me cuesta / No llego), aislamiento estricto de fatiga y recomendaciones por rutina, y eliminación del historial redundante en el calendario de tu progreso."
 }

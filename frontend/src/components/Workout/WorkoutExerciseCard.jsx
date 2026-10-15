@@ -52,8 +52,9 @@ const WorkoutExerciseCard = ({
 
   const { trend, followUp } = useMemo(() => {
     if (!exercise?.name || !workoutLog) return { trend: null, followUp: null };
-    const currentRoutineId = activeWorkout?.routine_id || activeWorkout?.id || null;
-    const sessions = getExerciseHistorySessions(exercise.name, workoutLog, currentRoutineId);
+    const currentRoutineId = activeWorkout?.routine_id || activeWorkout?.routineId || activeWorkout?.id || null;
+    const currentRoutineName = activeWorkout?.routine_name || activeWorkout?.routineName || activeWorkout?.name || null;
+    const sessions = getExerciseHistorySessions(exercise.name, workoutLog, currentRoutineId, currentRoutineName);
     const diagnosedTrend = diagnoseExerciseTrend(sessions, currentRoutineId);
     const lastApplied = getAppliedCoachStrategy(exercise.name);
     const evaluatedFollowUp = evaluateExerciseFollowUpAndRecovery({
@@ -64,7 +65,7 @@ const WorkoutExerciseCard = ({
       userProfile
     });
     return { trend: diagnosedTrend, followUp: evaluatedFollowUp };
-  }, [exercise?.name, workoutLog, userProfile, activeWorkout?.routine_id, activeWorkout?.id, appliedTick]);
+  }, [exercise?.name, workoutLog, userProfile, activeWorkout?.routine_id, activeWorkout?.routineId, activeWorkout?.id, activeWorkout?.routine_name, activeWorkout?.routineName, activeWorkout?.name, appliedTick]);
 
   const isInAsesoria = Boolean(
     userProfile?.trainer_id ||

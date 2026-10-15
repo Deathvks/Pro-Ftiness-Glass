@@ -198,8 +198,9 @@ const WorkoutSupersetCard = ({
         */}
                 <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x hide-scrollbar md:justify-center">
                     {group.map((ex) => {
-                        const currentRoutineId = activeWorkout?.routine_id || activeWorkout?.id || null;
-                        const exSessions = getExerciseHistorySessions(ex.name, workoutLog, currentRoutineId);
+                        const currentRoutineId = activeWorkout?.routine_id || activeWorkout?.routineId || activeWorkout?.id || null;
+                        const currentRoutineName = activeWorkout?.routine_name || activeWorkout?.routineName || activeWorkout?.name || null;
+                        const exSessions = getExerciseHistorySessions(ex.name, workoutLog, currentRoutineId, currentRoutineName);
                         const exTrend = diagnoseExerciseTrend(exSessions, currentRoutineId);
                         const exLastApplied = getAppliedCoachStrategy(ex.name);
                         const exFollowUp = evaluateExerciseFollowUpAndRecovery({
