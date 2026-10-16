@@ -113,7 +113,7 @@ export default function TutorialsCenter({ userRole, onClose, onStart }) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="tutorials-center-title"
-          className="mt-auto flex max-h-[calc(100dvh-var(--safe-top)-1rem)] w-full max-w-5xl flex-col overflow-hidden rounded-t-[32px] rounded-b-none border-t border-black/5 bg-bg-primary shadow-2xl animate-[slide-up_0.3s_ease-out] dark:border-white/5 sm:mt-0 sm:max-h-[92vh] sm:rounded-[32px] sm:border sm:animate-[scale-in_0.2s_ease-out]"
+          className="mt-auto mb-0 flex max-h-[calc(100dvh-var(--safe-top)-1rem)] w-[90%] sm:w-full max-w-5xl flex-col overflow-hidden rounded-t-[32px] rounded-b-none border-t border-black/5 bg-bg-primary shadow-2xl animate-[slide-up_0.3s_ease-out] dark:border-white/5 sm:mt-0 sm:max-h-[92vh] sm:rounded-[32px] sm:border sm:animate-[scale-in_0.2s_ease-out]"
           onClick={event => event.stopPropagation()}
         >
           <header className="shrink-0 border-b border-black/5 bg-bg-primary/95 p-5 backdrop-blur-xl dark:border-white/5 sm:p-7">

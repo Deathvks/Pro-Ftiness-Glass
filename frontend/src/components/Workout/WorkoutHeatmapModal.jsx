@@ -67,7 +67,7 @@ const WorkoutHeatmapModal = ({ exercises = [], onClose }) => {
         onClick={onClose}
       >
         <div
-          className="relative mt-auto mb-0 sm:my-0 w-full sm:max-w-md max-h-[calc(92dvh_-_var(--safe-top,_env(safe-area-inset-top,_0px)))] sm:max-h-[80vh] animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out] bg-bg-primary rounded-t-[32px] rounded-b-none sm:rounded-[32px] border border-glass-border shadow-2xl overflow-hidden flex flex-col"
+          className="relative mt-auto mb-0 sm:my-0 w-[90%] sm:w-full max-w-md max-h-[calc(92dvh_-_var(--safe-top,_env(safe-area-inset-top,_0px)))] sm:max-h-[80vh] animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out] bg-bg-primary rounded-t-[32px] rounded-b-none sm:rounded-[32px] border border-glass-border shadow-2xl overflow-hidden flex flex-col"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="shrink-0 bg-bg-secondary pt-3 sm:hidden">

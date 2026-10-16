@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { Activity, AlertTriangle, CheckCircle2, ChevronDown, Dumbbell, Target } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Activity, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Dumbbell, FolderKanban, Layers, Target, X } from 'lucide-react';
 import { MUSCLE_NAMES_ES } from '../../utils/muscleUtils';
+import ModalPortal from '../ModalPortal';
+import useModalLock from '../../hooks/useModalLock';
 
 const GOAL_RANGES = {
   gain: {
@@ -30,16 +33,66 @@ const GOAL_RANGES = {
 };
 
 const TRACKED_MUSCLES = [
-  { key: 'chest', label: 'Pecho', aliases: ['chest', 'pecho', 'pechos', 'pectoral', 'pectorals', 'pectoralis major', 'pectoral mayor'] },
-  { key: 'back', label: 'Espalda', aliases: ['back', 'espalda', 'dorsal', 'dorsales', 'dorsal ancho', 'lats', 'latissimus dorsi', 'upper back', 'lower back', 'upper-back', 'lower-back', 'lumbar', 'lumbares'] },
-  { key: 'shoulders', label: 'Hombros', aliases: ['shoulder', 'shoulders', 'hombro', 'hombros', 'deltoid', 'deltoids', 'deltoides', 'deltoides anterior', 'deltoides posterior', 'deltoides medio', 'anterior deltoid', 'posterior deltoid', 'front-deltoids', 'back-deltoids'] },
-  { key: 'biceps', label: 'Bíceps', aliases: ['biceps', 'bíceps', 'biceps brachii', 'biceps braquial', 'brachialis', 'braquial'] },
-  { key: 'triceps', label: 'Tríceps', aliases: ['triceps', 'tríceps', 'triceps brachii', 'tríceps braquial'] },
-  { key: 'quadriceps', label: 'Cuádriceps', aliases: ['quadriceps', 'quadriceps femoris', 'quads', 'cuadriceps', 'cuádriceps'] },
-  { key: 'hamstring', label: 'Isquios', aliases: ['hamstring', 'hamstrings', 'isquios', 'isquiotibiales', 'femorales', 'femoral', 'biceps femoris'] },
-  { key: 'gluteal', label: 'Glúteos', aliases: ['gluteal', 'glutes', 'gluteos', 'glúteos', 'gluteo', 'glúteo', 'gluteus maximus'] },
-  { key: 'calves', label: 'Gemelos', aliases: ['calves', 'calf', 'gemelos', 'gemelo', 'pantorrillas', 'pantorrilla', 'gastrocnemius', 'soleus'] },
-  { key: 'core', label: 'Core', aliases: ['core', 'abs', 'abdominal', 'abdominales', 'abdominals', 'obliques', 'oblicuos', 'oblicuo'] }
+  {
+    key: 'chest',
+    label: 'Pecho',
+    includedMuscles: ['Pectoral mayor', 'Pectoral superior (clavicular)', 'Pectoral inferior', 'Serrato anterior'],
+    aliases: ['chest', 'pecho', 'pechos', 'pectoral', 'pectorals', 'pectoralis major', 'pectoral mayor']
+  },
+  {
+    key: 'back',
+    label: 'Espalda',
+    includedMuscles: ['Dorsal ancho', 'Espalda alta y romboides', 'Trapecio medio/inferior', 'Zona lumbar'],
+    aliases: ['back', 'espalda', 'dorsal', 'dorsales', 'dorsal ancho', 'lats', 'latissimus dorsi', 'upper back', 'lower back', 'upper-back', 'lower-back', 'lumbar', 'lumbares']
+  },
+  {
+    key: 'shoulders',
+    label: 'Hombros',
+    includedMuscles: ['Deltoides anterior (frontal)', 'Deltoides lateral (medio)', 'Deltoides posterior', 'Trapecio superior'],
+    aliases: ['shoulder', 'shoulders', 'hombro', 'hombros', 'deltoid', 'deltoids', 'deltoides', 'deltoides anterior', 'deltoides posterior', 'deltoides medio', 'anterior deltoid', 'posterior deltoid', 'front-deltoids', 'back-deltoids']
+  },
+  {
+    key: 'biceps',
+    label: 'Bíceps',
+    includedMuscles: ['Bíceps braquial (cabeza larga y corta)', 'Braquial anterior', 'Braquiorradial'],
+    aliases: ['biceps', 'bíceps', 'biceps brachii', 'biceps braquial', 'brachialis', 'braquial']
+  },
+  {
+    key: 'triceps',
+    label: 'Tríceps',
+    includedMuscles: ['Tríceps braquial', 'Cabeza larga', 'Cabeza lateral', 'Cabeza medial'],
+    aliases: ['triceps', 'tríceps', 'triceps brachii', 'tríceps braquial']
+  },
+  {
+    key: 'quadriceps',
+    label: 'Cuádriceps',
+    includedMuscles: ['Recto femoral', 'Vasto lateral', 'Vasto medial', 'Vasto intermedio'],
+    aliases: ['quadriceps', 'quadriceps femoris', 'quads', 'cuadriceps', 'cuádriceps']
+  },
+  {
+    key: 'hamstring',
+    label: 'Isquios',
+    includedMuscles: ['Bíceps femoral', 'Semitendinoso', 'Semimembranoso', 'Isquiotibiales'],
+    aliases: ['hamstring', 'hamstrings', 'isquios', 'isquiotibiales', 'femorales', 'femoral', 'biceps femoris']
+  },
+  {
+    key: 'gluteal',
+    label: 'Glúteos',
+    includedMuscles: ['Glúteo mayor', 'Glúteo medio', 'Glúteo menor'],
+    aliases: ['gluteal', 'glutes', 'gluteos', 'glúteos', 'gluteo', 'glúteo', 'gluteus maximus']
+  },
+  {
+    key: 'calves',
+    label: 'Gemelos',
+    includedMuscles: ['Gastrocnemio (gemelos)', 'Sóleo'],
+    aliases: ['calves', 'calf', 'gemelos', 'gemelo', 'pantorrillas', 'pantorrilla', 'gastrocnemius', 'soleus']
+  },
+  {
+    key: 'core',
+    label: 'Core',
+    includedMuscles: ['Recto abdominal', 'Oblicuos internos y externos', 'Transverso abdominal'],
+    aliases: ['core', 'abs', 'abdominal', 'abdominales', 'abdominals', 'obliques', 'oblicuos', 'oblicuo']
+  }
 ];
 
 const normalizeKey = (value = '') => String(value)
@@ -291,36 +344,97 @@ const classifyExerciseMuscles = (exercise) => {
 // Peso que aporta una serie indirecta/sinergista para alcanzar el volumen mínimo efectivo
 const INDIRECT_SET_FACTOR = 0.35;
 
+const formatMuscleTag = (rawTag = '') => {
+  const clean = String(rawTag).trim();
+  if (!clean) return '';
+  const lower = clean.toLowerCase();
+  if (MUSCLE_NAMES_ES[lower]) return MUSCLE_NAMES_ES[lower];
+  const canonical = ALIAS_TO_MUSCLE.get(normalizeKey(clean));
+  if (canonical && MUSCLE_BY_KEY.has(canonical)) {
+    return MUSCLE_BY_KEY.get(canonical).label;
+  }
+  return clean.replace(/[_-]/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
+};
+
 const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
+  const { t } = useTranslation(['exercise_names']);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedMuscleKey, setSelectedMuscleKey] = useState(null);
   const goalRange = getGoalRange(goal);
+
+  useModalLock(Boolean(selectedMuscleKey));
 
   const volumeRows = useMemo(() => {
     const directTotals = Object.fromEntries(TRACKED_MUSCLES.map(muscle => [muscle.key, 0]));
     const indirectTotals = Object.fromEntries(TRACKED_MUSCLES.map(muscle => [muscle.key, 0]));
+    const contributionsByMuscle = Object.fromEntries(TRACKED_MUSCLES.map(muscle => [muscle.key, []]));
+    const detectedSubMuscles = Object.fromEntries(TRACKED_MUSCLES.map(muscle => [muscle.key, new Set()]));
     const extraMuscles = new Map();
     let routinesCounted = 0;
 
-    (Array.isArray(routines) ? routines : []).forEach(routine => {
+    (Array.isArray(routines) ? routines : []).forEach((routine, routineIdx) => {
       const exercises = getRoutineExercises(routine);
       if (exercises.length === 0) return;
 
       routinesCounted += 1;
-      exercises.forEach(exercise => {
+      const routineId = routine.id ?? `routine-${routineIdx}`;
+      const routineName = routine.name || routine.routine_name || `Rutina ${routineIdx + 1}`;
+
+      exercises.forEach((exercise, exIdx) => {
         const sets = getPlannedSets(exercise);
         if (!sets) return;
 
         const { primary, secondary, extra } = classifyExerciseMuscles(exercise);
+        const rawMuscleString = exercise.muscle_group || exercise.exercise?.muscle_group || exercise.exercise_details?.muscle_group || exercise.target || '';
+        const rawTokens = Array.isArray(rawMuscleString)
+          ? rawMuscleString
+          : String(rawMuscleString).split(/[,;/]/).map(s => s.trim()).filter(Boolean);
+
+        const rawLabels = [...new Set(rawTokens.map(formatMuscleTag).filter(Boolean))];
+        const primaryLabels = primary.map(key => MUSCLE_BY_KEY.get(key)?.label || formatMuscleTag(key));
+        const secondaryLabels = secondary.map(key => MUSCLE_BY_KEY.get(key)?.label || formatMuscleTag(key));
 
         primary.forEach(canonicalKey => {
           if (canonicalKey in directTotals) {
             directTotals[canonicalKey] += sets;
+            rawLabels.forEach(lbl => {
+              if (ALIAS_TO_MUSCLE.get(normalizeKey(lbl)) === canonicalKey) {
+                detectedSubMuscles[canonicalKey].add(lbl);
+              }
+            });
+            contributionsByMuscle[canonicalKey].push({
+              id: `${routineId}-${exIdx}-direct`,
+              routineId,
+              routineName,
+              rawExerciseName: exercise.name || 'Ejercicio',
+              sets,
+              role: 'direct',
+              primaryLabels,
+              secondaryLabels,
+              rawLabels
+            });
           }
         });
 
         secondary.forEach(canonicalKey => {
           if (canonicalKey in indirectTotals) {
             indirectTotals[canonicalKey] += sets;
+            rawLabels.forEach(lbl => {
+              if (ALIAS_TO_MUSCLE.get(normalizeKey(lbl)) === canonicalKey) {
+                detectedSubMuscles[canonicalKey].add(lbl);
+              }
+            });
+            contributionsByMuscle[canonicalKey].push({
+              id: `${routineId}-${exIdx}-indirect`,
+              routineId,
+              routineName,
+              rawExerciseName: exercise.name || 'Ejercicio',
+              sets,
+              role: 'indirect',
+              primaryLabels,
+              secondaryLabels,
+              rawLabels
+            });
           }
         });
 
@@ -329,11 +443,27 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
             const rawLabel = String(exercise.muscle_group || exercise.exercise?.muscle_group || exercise.exercise_details?.muscle_group || exercise.target || normalizedKey);
             const label = MUSCLE_NAMES_ES[rawLabel] || rawLabel.replace(/[_-]/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
             const existing = extraMuscles.get(normalizedKey);
+            const nextContributions = [
+              ...(existing?.contributions || []),
+              {
+                id: `${routineId}-${exIdx}-extra`,
+                routineId,
+                routineName,
+                rawExerciseName: exercise.name || 'Ejercicio',
+                sets,
+                role: 'direct',
+                primaryLabels: [label],
+                secondaryLabels: [],
+                rawLabels: [label]
+              }
+            ];
             extraMuscles.set(normalizedKey, {
               key: `extra:${normalizedKey}`,
               label,
+              includedMuscles: [label],
               directSets: (existing?.directSets || 0) + sets,
-              indirectSets: existing?.indirectSets || 0
+              indirectSets: existing?.indirectSets || 0,
+              contributions: nextContributions
             });
           });
         }
@@ -341,12 +471,18 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
     });
 
     const rows = [
-      ...TRACKED_MUSCLES.map(muscle => ({
-        key: muscle.key,
-        label: muscle.label,
-        directSets: directTotals[muscle.key],
-        indirectSets: indirectTotals[muscle.key]
-      })),
+      ...TRACKED_MUSCLES.map(muscle => {
+        const extraDetected = Array.from(detectedSubMuscles[muscle.key] || []);
+        const allIncluded = [...new Set([...(muscle.includedMuscles || [muscle.label]), ...extraDetected])];
+        return {
+          key: muscle.key,
+          label: muscle.label,
+          includedMuscles: allIncluded,
+          directSets: directTotals[muscle.key],
+          indirectSets: indirectTotals[muscle.key],
+          contributions: contributionsByMuscle[muscle.key] || []
+        };
+      }),
       ...Array.from(extraMuscles.values())
     ];
 
@@ -391,14 +527,35 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
         recommendation = `En rango combinando ${directSets} directas y ${indirectSets} indirectas (≈ ${Math.round(effectiveSets)} efectivas).`;
       }
 
+      // Agrupar contribuciones por rutina para el modal de desglose
+      const routineGroupsMap = new Map();
+      (row.contributions || []).forEach(item => {
+        const existingGroup = routineGroupsMap.get(item.routineId) || {
+          routineId: item.routineId,
+          routineName: item.routineName,
+          directSets: 0,
+          indirectSets: 0,
+          exercises: []
+        };
+        if (item.role === 'direct') {
+          existingGroup.directSets += item.sets;
+        } else {
+          existingGroup.indirectSets += item.sets;
+        }
+        existingGroup.exercises.push(item);
+        routineGroupsMap.set(item.routineId, existingGroup);
+      });
+
       return {
         ...row,
         sets: directSets,
         directSets,
         indirectSets,
         effectiveSets,
+        indirectContribution,
         status,
         recommendation,
+        routineGroups: Array.from(routineGroupsMap.values()),
         progress: Math.min(100, (effectiveSets / goalRange.max) * 100),
         statusLabel: status === 'red' ? 'Por encima' : status === 'orange' ? 'Ajustar' : 'En rango'
       };
@@ -412,6 +569,15 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
 
   const greenCount = volumeRows.rows.filter(row => row.status === 'green').length;
   const alertCount = volumeRows.rows.length - greenCount;
+  const selectedRow = useMemo(
+    () => volumeRows.rows.find(row => row.key === selectedMuscleKey) || null,
+    [volumeRows.rows, selectedMuscleKey]
+  );
+
+  const translateExerciseName = (rawName = '') => {
+    if (!rawName) return 'Ejercicio';
+    return t(rawName, { ns: 'exercise_names', defaultValue: rawName });
+  };
 
   return (
     <section className="mb-6 overflow-hidden rounded-[28px] border border-glass-border bg-bg-secondary shadow-sm">
@@ -430,7 +596,7 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
             <span className="block font-extrabold text-text-primary">Volumen muscular semanal</span>
             <span className="mt-1 block text-xs leading-relaxed text-text-secondary">
               {isExpanded
-                ? 'Distingue series directas e indirectas (como tríceps en press de banca o bíceps en remos) para no inflar el volumen.'
+                ? 'Toca cualquier músculo para ver qué subgrupos cuentan en la suma y en qué rutina están.'
                 : `${greenCount} músculos en rango · ${alertCount} a revisar`}
             </span>
             <span className="mt-2 flex flex-wrap items-center gap-2">
@@ -472,15 +638,23 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
           <div className="grid gap-2.5 sm:grid-cols-2">
             {volumeRows.rows.map(row => {
               const colors = row.status === 'red'
-                ? { text: 'text-red-600 dark:text-red-400', fill: 'bg-red-500', surface: 'border-red-500/20 bg-red-500/5', icon: <AlertTriangle size={14} /> }
+                ? { text: 'text-red-600 dark:text-red-400', fill: 'bg-red-500', surface: 'border-red-500/20 bg-red-500/5 hover:bg-red-500/10', icon: <AlertTriangle size={14} /> }
                 : row.status === 'orange'
-                  ? { text: 'text-orange-600 dark:text-orange-400', fill: 'bg-orange-500', surface: 'border-orange-500/20 bg-orange-500/5', icon: <AlertTriangle size={14} /> }
-                  : { text: 'text-emerald-600 dark:text-emerald-400', fill: 'bg-emerald-500', surface: 'border-emerald-500/15 bg-emerald-500/5', icon: <CheckCircle2 size={14} /> };
+                  ? { text: 'text-orange-600 dark:text-orange-400', fill: 'bg-orange-500', surface: 'border-orange-500/20 bg-orange-500/5 hover:bg-orange-500/10', icon: <AlertTriangle size={14} /> }
+                  : { text: 'text-emerald-600 dark:text-emerald-400', fill: 'bg-emerald-500', surface: 'border-emerald-500/15 bg-emerald-500/5 hover:bg-emerald-500/10', icon: <CheckCircle2 size={14} /> };
 
               return (
-                <article key={row.key} className={`rounded-2xl border p-3.5 ${colors.surface}`}>
+                <button
+                  key={row.key}
+                  type="button"
+                  onClick={() => setSelectedMuscleKey(row.key)}
+                  className={`group w-full rounded-2xl border p-3.5 text-left transition-all duration-200 active:scale-[0.99] ${colors.surface}`}
+                >
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <h3 className="truncate text-sm font-bold text-text-primary">{row.label}</h3>
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <h3 className="truncate text-sm font-bold text-text-primary">{row.label}</h3>
+                      <ChevronRight size={14} className="shrink-0 text-text-muted transition-transform group-hover:translate-x-0.5" />
+                    </span>
                     <span className={`inline-flex shrink-0 items-center gap-1 text-[10px] font-bold ${colors.text}`}>
                       {colors.icon} {row.statusLabel}
                     </span>
@@ -503,16 +677,204 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
                   {(row.status !== 'green' || (row.directSets < goalRange.min && row.indirectSets > 0)) && (
                     <p className={`mt-2 text-[11px] leading-relaxed ${colors.text}`}>{row.recommendation}</p>
                   )}
-                </article>
+                </button>
               );
             })}
           </div>
         )}
 
         <p className="mt-4 text-[10px] leading-relaxed text-text-muted">
-          Se muestran las series directas por músculo y, aparte (+ind.), las de ejercicios compuestos donde actúa como músculo secundario (p. ej. tríceps en press de banca o bíceps en dominadas). El trabajo indirecto ayuda a alcanzar el mínimo efectivo sin penalizar por exceso. {goalRange.advice}
+          Toca cualquier músculo para ver el detalle por rutina y ejercicio. Se muestran las series directas y, aparte (+ind.), las de ejercicios compuestos donde actúa como músculo secundario. {goalRange.advice}
         </p>
       </div>
+
+      {selectedRow && (
+        <ModalPortal>
+          <div
+            className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 !pt-[calc(1rem+var(--safe-top,env(safe-area-inset-top,0px)))] sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]"
+            onClick={() => setSelectedMuscleKey(null)}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="muscle-volume-breakdown-title"
+              className="relative mt-auto mb-0 sm:my-0 w-[90%] sm:w-full max-w-lg max-h-[calc(90dvh-var(--safe-top,env(safe-area-inset-top,0px)))] sm:max-h-[85vh] flex flex-col bg-bg-primary rounded-t-[32px] rounded-b-none sm:rounded-[32px] border border-glass-border ring-1 ring-black/5 dark:ring-white/10 shadow-2xl overflow-hidden animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.2s_ease-out]"
+              onClick={event => event.stopPropagation()}
+            >
+              {/* Barra indicadora de deslizar hacia abajo en móvil */}
+              <div className="shrink-0 bg-bg-secondary pt-3 sm:hidden">
+                <div
+                  className="mx-auto mb-1 h-1.5 w-12 rounded-full bg-black/15 dark:bg-white/20"
+                  aria-hidden="true"
+                />
+              </div>
+
+              {/* Cabecera */}
+              <div className="flex items-start justify-between gap-3 border-b border-glass-border bg-bg-secondary px-5 py-4 shrink-0">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 id="muscle-volume-breakdown-title" className="text-lg font-black text-text-primary sm:text-xl">
+                      {selectedRow.label}
+                    </h2>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                      selectedRow.status === 'red'
+                        ? 'bg-red-500/15 text-red-600 dark:text-red-400'
+                        : selectedRow.status === 'orange'
+                          ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400'
+                          : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                    }`}>
+                      {selectedRow.status === 'red' || selectedRow.status === 'orange' ? <AlertTriangle size={12} /> : <CheckCircle2 size={12} />}
+                      {selectedRow.statusLabel}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    Objetivo semanal ({goalRange.label.toLowerCase()}): <span className="font-bold text-text-primary">{goalRange.min}–{goalRange.max} series</span>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedMuscleKey(null)}
+                  aria-label="Cerrar desglose"
+                  className="rounded-full p-2 text-text-secondary transition hover:bg-bg-primary hover:text-text-primary border border-transparent hover:border-glass-border shrink-0"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Contenido scrolleable */}
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 pb-[calc(1.5rem+var(--safe-bottom,env(safe-area-inset-bottom,0px)))] sm:pb-6 space-y-5">
+                {/* Resumen numérico */}
+                <div className="grid grid-cols-3 gap-2.5">
+                  <div className="rounded-2xl border border-glass-border bg-bg-secondary p-3 text-center">
+                    <span className="block text-xl font-black tabular-nums text-text-primary">{selectedRow.directSets}</span>
+                    <span className="text-[10px] font-bold text-text-secondary">Series directas</span>
+                  </div>
+                  <div className="rounded-2xl border border-glass-border bg-bg-secondary p-3 text-center">
+                    <span className="block text-xl font-black tabular-nums text-text-secondary">+{selectedRow.indirectSets}</span>
+                    <span className="text-[10px] font-bold text-text-secondary">Indirectas</span>
+                  </div>
+                  <div className="rounded-2xl border border-accent/20 bg-accent/10 p-3 text-center">
+                    <span className="block text-xl font-black tabular-nums text-accent">{selectedRow.effectiveSets}</span>
+                    <span className="text-[10px] font-bold text-accent">Efectivas est.</span>
+                  </div>
+                </div>
+
+                {/* Músculos que cuentan en la suma */}
+                <div className="rounded-2xl border border-glass-border bg-bg-secondary/70 p-4">
+                  <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-text-secondary">
+                    <Layers size={14} className="text-accent shrink-0" />
+                    <span>Músculos que cuentan en la suma</span>
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {(selectedRow.includedMuscles || [selectedRow.label]).map(muscleName => (
+                      <span
+                        key={muscleName}
+                        className="rounded-full border border-glass-border bg-bg-primary px-2.5 py-1 text-[11px] font-semibold text-text-primary"
+                      >
+                        {muscleName}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="mt-2.5 text-[11px] leading-relaxed text-text-secondary">
+                    Las series donde <strong>{selectedRow.label.toLowerCase()}</strong> es el músculo principal suman al 100% como <strong>directas</strong>. Cuando participa como músculo secundario en ejercicios compuestos, se registran aparte como <strong>indirectas (+ind.)</strong>.
+                  </p>
+                </div>
+
+                {/* Desglose por rutina */}
+                <div>
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-text-secondary">
+                      <FolderKanban size={14} className="text-accent shrink-0" />
+                      <span>Rutinas donde se trabaja ({selectedRow.routineGroups.length})</span>
+                    </div>
+                  </div>
+
+                  {selectedRow.routineGroups.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-glass-border bg-bg-secondary/40 px-4 py-6 text-center">
+                      <Dumbbell className="mx-auto mb-2 text-text-muted" size={20} />
+                      <p className="text-xs font-bold text-text-primary">Sin ejercicios para {selectedRow.label.toLowerCase()}</p>
+                      <p className="mt-1 text-[11px] text-text-secondary">
+                        Ninguna de tus rutinas activas incluye ejercicios que trabajen este grupo muscular directa o indirectamente.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {selectedRow.routineGroups.map(group => (
+                        <div
+                          key={group.routineId}
+                          className="overflow-hidden rounded-2xl border border-glass-border bg-bg-secondary"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-glass-border bg-black/5 px-4 py-2.5 dark:bg-white/5">
+                            <span className="truncate text-xs font-extrabold text-text-primary">
+                              {group.routineName}
+                            </span>
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                              {group.directSets > 0 && (
+                                <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-accent">
+                                  {group.directSets} {group.directSets === 1 ? 'directa' : 'directas'}
+                                </span>
+                              )}
+                              {group.indirectSets > 0 && (
+                                <span className="rounded-full bg-black/10 px-2.5 py-0.5 text-text-secondary dark:bg-white/10">
+                                  +{group.indirectSets} ind.
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="divide-y divide-glass-border">
+                            {group.exercises.map(item => {
+                              const isDirect = item.role === 'direct';
+                              const otherPrimary = item.primaryLabels.filter(Boolean).join(', ');
+                              const allInvolved = [
+                                ...new Set([...item.primaryLabels, ...item.secondaryLabels, ...item.rawLabels])
+                              ].filter(Boolean);
+
+                              return (
+                                <div key={item.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs font-bold text-text-primary">
+                                      {translateExerciseName(item.rawExerciseName)}
+                                    </p>
+                                    <p className="mt-0.5 text-[11px] text-text-secondary">
+                                      {isDirect ? (
+                                        <>
+                                          Músculo principal: <span className="font-semibold text-text-primary">{otherPrimary || selectedRow.label}</span>
+                                          {item.secondaryLabels.length > 0 && (
+                                            <span className="text-text-muted"> · Secundario: {item.secondaryLabels.join(', ')}</span>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <>
+                                          Secundario en ejercicio de <span className="font-semibold text-text-primary">{otherPrimary || allInvolved[0] || 'compuesto'}</span>
+                                        </>
+                                      )}
+                                    </p>
+                                  </div>
+
+                                  <span
+                                    className={`shrink-0 rounded-xl px-2.5 py-1 text-[11px] font-extrabold tabular-nums ${
+                                      isDirect
+                                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                        : 'bg-black/5 text-text-secondary dark:bg-white/10'
+                                    }`}
+                                  >
+                                    {isDirect ? `${item.sets} ${item.sets === 1 ? 'serie' : 'series'}` : `+${item.sets} ind.`}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
     </section>
   );
 };
