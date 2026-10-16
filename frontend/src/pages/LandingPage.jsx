@@ -68,7 +68,7 @@ const useIntersectionObserver = (options = {}) => {
 
 // --- ANIMACIONES SVG FLOTANTES ---
 const FloatingHeroElements = () => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-10 hidden sm:block transform-gpu" aria-hidden="true">
+    <div className="landing-floating-elements absolute inset-0 pointer-events-none overflow-hidden z-10 hidden sm:block transform-gpu" aria-hidden="true">
         <style>{`
             @keyframes float-1 {
                 0% { transform: translateY(0px) rotate(0deg) translateZ(0); }
@@ -137,7 +137,7 @@ const FloatingHeroElements = () => (
 const GymBot = ({ isDocked }) => (
     <div
         aria-hidden="true"
-        className={`fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-top sm:origin-right transform-gpu will-change-transform
+        className={`landing-gym-bot fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-top sm:origin-right transform-gpu will-change-transform
             ${isDocked
                 ? 'top-1/2 -translate-y-1/2 right-8 sm:right-10 lg:right-10 scale-[0.25] sm:scale-[0.40] opacity-20 sm:opacity-40 translate-x-0' 
                 : 'top-28 sm:top-[25%] right-1/2 translate-x-1/2 sm:translate-x-0 sm:right-16 lg:right-24 scale-50 sm:scale-100 opacity-100'
@@ -235,7 +235,7 @@ const ScrollRevealCard = ({ children, delay = 0, className = "" }) => {
 
 const FeatureCard = ({ icon: Icon, title, desc, delay }) => (
     <ScrollRevealCard delay={delay} className="h-full">
-        <div className="h-full p-6 sm:p-8 rounded-[32px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl flex flex-col items-center text-center hover:ring-accent/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
+        <div className="landing-liquid-glass h-full p-6 sm:p-8 rounded-[32px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl flex flex-col items-center text-center hover:ring-accent/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
             <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform-gpu" />
             <div className="relative z-10 p-4 rounded-[20px] bg-accent/10 text-accent mb-6 group-hover:bg-accent group-hover:text-accent-contrast transition-all duration-500 group-hover:scale-110 ring-1 ring-accent/30 shadow-sm transform-gpu">
                 <Icon size={32} strokeWidth={1.5} />
@@ -248,7 +248,7 @@ const FeatureCard = ({ icon: Icon, title, desc, delay }) => (
 
 const BentoCard = ({ children, className = "", delay = 0, bgIcon: BgIcon, bgIconColor = "text-text-primary" }) => (
     <ScrollRevealCard delay={delay} className={className}>
-        <div className="h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl hover:ring-accent/50 transition-all duration-500 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
+        <div className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl hover:ring-accent/50 transition-all duration-500 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none transform-gpu"></div>
 
             {BgIcon && (
@@ -313,6 +313,7 @@ const MockupGallery = () => {
                                 alt={img.alt}
                                 className="w-full h-auto object-contain rounded-[3rem]"
                                 loading="lazy"
+                                decoding="async"
                             />
                         </div>
                     ))}
@@ -398,7 +399,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
     };
 
     return (
-        <div className="absolute inset-0 z-[100] bg-bg-primary overflow-hidden">
+        <div className="landing-page absolute inset-0 z-[100] bg-bg-primary overflow-hidden">
 
             {/* Fondo de cristal eliminado por optimización de rendimiento */}
 
@@ -425,14 +426,20 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                 <div className="relative z-10 flex flex-col min-h-full">
 
-                    {/* --- Círculos de colores (Optimizados sin animación pesada) --- */}
-                    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
-                        <div className="absolute top-[0%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 transform-gpu" style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }} />
-                        <div className="absolute top-[20%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 transform-gpu" style={{ background: 'radial-gradient(circle, #3b82f6, transparent)' }} />
-                        <div className="absolute top-[40%] left-[-5%] w-[700px] h-[700px] rounded-full blur-[150px] opacity-10 dark:opacity-15 transform-gpu" style={{ background: 'radial-gradient(circle, #a855f7, transparent)' }} />
-                        <div className="absolute top-[65%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 transform-gpu" style={{ background: 'radial-gradient(circle, #10b981, transparent)' }} />
-                        <div className="absolute top-[85%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 transform-gpu" style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }} />
-                        <div className="absolute bottom-[0%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 transform-gpu" style={{ background: 'radial-gradient(circle, #f59e0b, transparent)' }} />
+                    {/* Fondo atmosférico estático: gradientes nativos, sin seis capas con blur */}
+                    <div
+                        className="landing-ambient-bg absolute inset-0 pointer-events-none z-0"
+                        aria-hidden="true"
+                        style={{
+                            backgroundImage: [
+                                'radial-gradient(ellipse 42% 18% at 12% 6%, var(--color-accent-transparent), transparent 100%)',
+                                'radial-gradient(ellipse 38% 16% at 88% 24%, rgba(59, 130, 246, 0.12), transparent 100%)',
+                                'radial-gradient(ellipse 45% 18% at 16% 53%, rgba(168, 85, 247, 0.12), transparent 100%)',
+                                'radial-gradient(ellipse 42% 18% at 82% 82%, rgba(16, 185, 129, 0.10), transparent 100%)',
+                                'radial-gradient(ellipse 40% 18% at 88% 100%, rgba(245, 158, 11, 0.09), transparent 100%)'
+                            ].join(', ')
+                        }}
+                    >
                     </div>
 
                     {/* --- NAVBAR --- */}
@@ -657,6 +664,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                                                 src={userImage}
                                                                 alt={`Usuario ${index + 1}`}
                                                                 className="w-full h-full object-cover"
+                                                                loading="lazy"
+                                                                decoding="async"
                                                                 onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
                                                             />
                                                         ) : null}
@@ -683,7 +692,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                     <div className="w-full rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 relative hover:ring-accent/50 transition-all duration-700 text-left isolate">
                                         
                                         {/* Capa de cristal y recorte */}
-                                        <div className="absolute inset-0 rounded-[32px] bg-black/5 dark:bg-white/5 backdrop-blur-xl overflow-hidden pointer-events-none -z-10">
+                                        <div className="landing-liquid-glass absolute inset-0 rounded-[32px] bg-black/5 dark:bg-white/5 backdrop-blur-xl overflow-hidden pointer-events-none -z-10">
                                             <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-transparent to-purple-500/10 opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
                                             <div className="absolute -top-24 -right-24 opacity-[0.04] group-hover:opacity-[0.08] group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 text-accent">
                                                 <ShieldCheck size={400} />
@@ -763,7 +772,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                 
                                 <div className="shrink-0 relative group">
                                     <div className="w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden ring-4 ring-accent/20 bg-accent/5 shadow-2xl relative z-10 transition-transform duration-700 group-hover:scale-[1.03]">
-                                        <img src="/trainer-profile.jpg" alt="Entrenador" className="w-full h-full object-cover rounded-full" />
+                                                    <img src="/trainer-profile.jpg" alt="Entrenador" loading="lazy" decoding="async" className="w-full h-full object-cover rounded-full" />
                                     </div>
                                     <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-accent text-accent-contrast px-6 py-2 rounded-full font-black text-sm tracking-widest uppercase shadow-lg whitespace-nowrap z-20 flex items-center gap-2">
                                         <ShieldCheck size={16} /> Preparador Oficial
@@ -824,7 +833,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                         {/* --- SECCIÓN: TRANSPARENCIA Y USO DE DATOS --- */}
                         <div className="w-full mt-32 max-w-5xl mx-auto px-4 text-left relative z-10">
                             <ScrollRevealCard>
-                                <div className="p-8 md:p-12 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl relative overflow-hidden transform-gpu">
+                                <div className="landing-liquid-glass p-8 md:p-12 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl relative overflow-hidden transform-gpu">
                                     <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
                                         <Shield size={200} />
                                     </div>

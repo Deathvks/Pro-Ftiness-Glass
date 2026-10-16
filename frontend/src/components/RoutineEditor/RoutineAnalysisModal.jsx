@@ -1,15 +1,25 @@
 import ModalPortal from '../ModalPortal';
 /* frontend/src/components/RoutineEditor/RoutineAnalysisModal.jsx */
 import React, { useMemo, useState, useEffect } from 'react';
-import { X, Activity, Layers, Sparkles, AlertCircle, Loader2, ArrowUpRight, ArrowDownRight, Dumbbell, Target, Flame } from 'lucide-react';
+import { X, Activity, Layers, Sparkles, AlertCircle, Loader2, ArrowUpRight, ArrowDownRight, Dumbbell, Target, Flame, Lightbulb, CheckCircle2, CircleDot, ClipboardList } from 'lucide-react';
 import { analyzeRoutine } from '../../utils/trainerLogic';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { askTrainerAI } from '../../services/aiService';
 import useModalLock from '../../hooks/useModalLock';
 
+const MUSCLE_LABELS = {
+  chest: 'Pecho', pecho: 'Pecho', pectoral: 'Pecho', back: 'Espalda', espalda: 'Espalda', dorsal: 'Espalda', lats: 'Dorsal',
+  shoulders: 'Hombros', hombros: 'Hombros', deltoides: 'Deltoides', biceps: 'Bíceps', 'bíceps': 'Bíceps',
+  triceps: 'Tríceps', 'tríceps': 'Tríceps', legs: 'Piernas', pierna: 'Piernas', quads: 'Cuádriceps',
+  hamstrings: 'Isquios', glutes: 'Glúteos', gluteos: 'Glúteos', calves: 'Gemelos', core: 'Core', abs: 'Abdominales',
+  forearm: 'Antebrazo', forearms: 'Antebrazos', traps: 'Trapecio', trapezoids: 'Trapecio', other: 'Otros', unknown: 'Sin clasificar'
+};
+const formatPlannedSets = value => Number.isInteger(value) ? value : value.toFixed(1);
+
 const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
   const { resolvedTheme } = useAppTheme();
-  const analysis = useMemo(() => analyzeRoutine(exercises), [exercises]);
+  const [analysisAnswers, setAnalysisAnswers] = useState({});
+  const analysis = useMemo(() => analyzeRoutine(exercises, analysisAnswers), [exercises, analysisAnswers]);
 
   const [aiResponse, setAiResponse] = useState(null);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
@@ -101,9 +111,17 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
     setIsLoadingAi(true);
     setAiError(null);
     try {
-      const context = exercises.map((e) => `- ${e.name} (${e.sets || 0} series de ${e.reps || 0} reps)`).join('\n');
+      const context = exercises.map((exercise) => {
+        const plannedSets = Array.isArray(exercise.sets)
+          ? exercise.sets.length || 3
+          : Number(exercise.sets) || 3;
+        const muscleGroup = Array.isArray(exercise.muscle_group)
+          ? exercise.muscle_group.join(', ')
+          : exercise.muscle_group || exercise.target || exercise.category || 'sin clasificar';
+        return `- ${exercise.name}: ${plannedSets} series, ${exercise.reps || 'repeticiones no indicadas'} reps, descanso ${exercise.rest_seconds || 'no indicado'} s, grupo muscular: ${muscleGroup}`;
+      }).join('\n');
 
-      const prompt = "Analiza esta sesión de entrenamiento asumiendo que es parte de una rutina dividida (split). Enfócate solo en evaluar el volumen, la selección de ejercicios y el equilibrio biomecánico de los músculos que ya están incluidos, sin quejarte de los músculos que faltan. Dame 3 sugerencias breves y directas de mejora.";
+      const prompt = 'Analiza esta sesión como parte de una rutina dividida; no critiques la ausencia de músculos que pueden entrenarse en otros días. Responde en español con los apartados «Valoración general», «Puntos fuertes» y «Ajustes recomendados». Propón hasta 3 ajustes concretos, indicando el ejercicio o grupo al que afectan, qué cambiarías y por qué. Usa solo los datos proporcionados, señala cuando algo no se pueda concluir y no inventes ejercicios, cargas ni objetivos.';
 
       const res = await askTrainerAI(prompt, context);
       setAiResponse(res.response);
@@ -145,6 +163,35 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
   };
 
   const isLimitReached = remainingUses === 0 || aiError && aiError.toLowerCase().includes('agotado');
+  const focusType = analysis
+    ? ['push', 'pull', 'legs', 'core'].reduce((best, type) => analysis.stats[type] > analysis.stats[best] ? type : best, 'push')
+    : 'push';
+  const focusLabel = { push: 'Empuje', pull: 'Tracción', legs: 'Pierna', core: 'Core' }[focusType];
+  const averageSets = exercises.length ? (analysis.stats.totalSets / exercises.length).toFixed(1) : '0';
+  const muscleEntries = analysis
+    ? Object.entries(analysis.stats.muscles)
+      .filter(([muscle]) => !['unknown', 'other'].includes(muscle))
+      .sort((a, b) => b[1] - a[1])
+    : [];
+  const previewSuggestions = analysis ? [...analysis.suggestions] : [];
+  const unclassifiedSets = analysis ? (analysis.stats.muscles.unknown || 0) + (analysis.stats.muscles.other || 0) : 0;
+  const topMuscle = muscleEntries[0];
+  if (analysis && topMuscle && analysis.stats.totalSets >= 8 && topMuscle[1] / analysis.stats.totalSets >= 0.5) {
+    const percentage = Math.round((topMuscle[1] / analysis.stats.totalSets) * 100);
+    const label = MUSCLE_LABELS[topMuscle[0]] || topMuscle[0];
+    previewSuggestions.push({
+      type: 'tip',
+      title: `Especialización en ${label}`,
+      text: `${label} concentra ${percentage}% de las series. Es coherente en un día de especialización; si buscas una sesión más equilibrada, reparte parte del volumen entre otros grupos.`
+    });
+  }
+  if (unclassifiedSets > 0) {
+    previewSuggestions.push({
+      type: 'tip',
+      title: 'Completa los grupos musculares',
+      text: `${unclassifiedSets} ${unclassifiedSets === 1 ? 'serie no tiene' : 'series no tienen'} un grupo muscular reconocido. Asignarlo mejora la precisión del reparto y de las recomendaciones.`
+    });
+  }
 
   return (
     // Añadido pb-20 para asegurar que no se solape con navbars inferiores en móviles
@@ -178,8 +225,16 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
              </div> :
 
             <>
-              {/* Stats Grid Flashy */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className={`flex items-start gap-3 rounded-[20px] border border-accent/20 bg-accent/5 p-4 ${isOled ? 'text-gray-300' : 'text-text-secondary'}`}>
+                <div className="rounded-xl bg-accent/10 p-2 text-accent"><Sparkles className="h-5 w-5" /></div>
+                <div>
+                  <h3 className={`text-sm font-extrabold ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>Vista previa de la rutina</h3>
+                  <p className="mt-1 text-xs leading-relaxed">Revisa el volumen y el reparto muscular. Estas observaciones se calculan antes de pedir el análisis personalizado a la IA.</p>
+                </div>
+              </div>
+
+              {/* Resumen de estructura */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div className={`p-5 rounded-[24px] border relative overflow-hidden flex flex-col gap-1 transition-transform duration-300 hover:scale-[1.02] ${innerBorderClass} ${isOled ? 'bg-gradient-to-br from-white/10 to-transparent' : 'bg-gradient-to-br from-bg-tertiary to-bg-secondary'}`}>
                   <div className="absolute top-0 right-0 p-4 opacity-10">
                     <Layers className="w-16 h-16" />
@@ -190,25 +245,27 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
                   </div>
                 </div>
 
+                <div className={`p-5 rounded-[24px] border relative overflow-hidden flex flex-col gap-1 ${innerBorderClass} ${isOled ? 'bg-white/5' : 'bg-bg-tertiary'}`}>
+                  <div className="absolute top-0 right-0 p-4 opacity-10"><ClipboardList className="w-14 h-14" /></div>
+                  <span className={`text-[10px] uppercase tracking-widest font-bold z-10 ${isOled || isDark ? 'text-gray-400' : 'text-text-secondary'}`}>Ejercicios</span>
+                  <span className={`text-3xl font-black tracking-tighter z-10 mt-1 ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>{exercises.length}</span>
+                </div>
+
+                <div className={`p-5 rounded-[24px] border relative overflow-hidden flex flex-col gap-1 ${innerBorderClass} ${isOled ? 'bg-white/5' : 'bg-bg-tertiary'}`}>
+                  <div className="absolute top-0 right-0 p-4 opacity-10"><Activity className="w-14 h-14" /></div>
+                  <span className={`text-[10px] uppercase tracking-widest font-bold z-10 ${isOled || isDark ? 'text-gray-400' : 'text-text-secondary'}`}>Media por ejercicio</span>
+                  <span className={`text-3xl font-black tracking-tighter z-10 mt-1 ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>{averageSets}</span>
+                  <span className="text-[10px] text-text-muted">series</span>
+                </div>
+
                 <div className={`p-5 rounded-[24px] border relative overflow-hidden flex flex-col gap-1 transition-transform duration-300 hover:scale-[1.02] ${innerBorderClass} ${isOled ? 'bg-gradient-to-bl from-accent/20 to-transparent border-accent/30' : 'bg-gradient-to-bl from-accent/10 to-bg-secondary border-accent/20'}`}>
                   <div className="absolute top-0 right-0 p-4 opacity-20">
                     <Target className="w-16 h-16 text-accent" />
                   </div>
                   <span className={`text-[10px] uppercase tracking-widest font-bold z-10 ${isOled || isDark ? 'text-accent/80' : 'text-accent'}`}>Enfoque Principal</span>
                   <div className="flex items-center gap-2 z-10 mt-2">
-                    {(() => {
-                      const max = Math.max(analysis.stats.push, analysis.stats.pull, analysis.stats.legs);
-                      const focus = max === analysis.stats.push ? 'push' : max === analysis.stats.pull ? 'pull' : 'legs';
-                      const label = focus === 'push' ? 'Empuje' : focus === 'pull' ? 'Tracción' : 'Pierna';
-                      return (
-                        <>
-                          <div className={`p-1.5 rounded-full bg-black/20 backdrop-blur-sm`}>
-                            {getTypeIcon(focus)}
-                          </div>
-                          <span className={`text-xl font-extrabold tracking-tight ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>{label}</span>
-                        </>
-                      );
-                    })()}
+                    <div className="p-1.5 rounded-full bg-black/20 backdrop-blur-sm">{focusType === 'core' ? <CircleDot className="h-4 w-4 text-amber-400" /> : getTypeIcon(focusType)}</div>
+                    <span className={`text-xl font-extrabold tracking-tight ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>{analysis.stats[focusType] > 0 ? focusLabel : 'Variado'}</span>
                   </div>
                 </div>
               </div>
@@ -220,16 +277,16 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
                   Distribución Muscular
                 </h3>
                 <div className="space-y-4">
-                  {['push', 'pull', 'legs'].map((type) => {
+                  {['push', 'pull', 'legs', 'core'].map((type) => {
                     const percentage = Math.max((analysis.stats[type] / Math.max(analysis.stats.totalSets, 1)) * 100, 0);
                     return (
                       <div key={type} className="space-y-2 group cursor-default">
                         <div className="flex justify-between items-center text-sm">
                           <div className={`flex items-center gap-2 font-bold ${isOled || isDark ? 'text-white/90' : 'text-text-primary'}`}>
-                            {getTypeIcon(type)}
-                            <span>{type === 'push' ? 'Empuje' : type === 'pull' ? 'Tracción' : 'Pierna'}</span>
+                            {type === 'core' ? <CircleDot className="w-4 h-4 text-amber-400" /> : getTypeIcon(type)}
+                            <span>{{ push: 'Empuje', pull: 'Tracción', legs: 'Pierna', core: 'Core' }[type]}</span>
                           </div>
-                          <span className={`font-black tracking-tight ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>{analysis.stats[type]} <span className={`text-xs font-medium ${isOled || isDark ? 'text-gray-500' : 'text-text-tertiary'}`}>series</span></span>
+                          <span className={`font-black tracking-tight ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>{formatPlannedSets(analysis.stats[type])} <span className={`text-xs font-medium ${isOled || isDark ? 'text-gray-500' : 'text-text-tertiary'}`}>series eq.</span></span>
                         </div>
                         <div className={`h-2.5 w-full rounded-full overflow-hidden ${progressTrackClass} shadow-inner relative`}>
                           <div 
@@ -243,7 +300,88 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
                     );
                   })}
                 </div>
+
+                {muscleEntries.length > 0 && (
+                  <div className={`rounded-[24px] border p-5 ${innerBorderClass} ${isOled ? 'bg-white/5' : 'bg-bg-tertiary'}`}>
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <h3 className={`text-xs font-bold uppercase tracking-widest ${isOled || isDark ? 'text-gray-400' : 'text-text-secondary'}`}>Series por músculo</h3>
+                      <span className="text-[10px] font-semibold text-text-muted">Series equivalentes</span>
+                    </div>
+                    <div className="space-y-3">
+                      {muscleEntries.slice(0, 6).map(([muscle, sets]) => {
+                        const percentage = Math.min((sets / Math.max(analysis.stats.totalSets, 1)) * 100, 100);
+                        const label = MUSCLE_LABELS[muscle] || muscle.replace(/[_-]/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
+                        return (
+                          <div key={muscle}>
+                            <div className="mb-1.5 flex items-center justify-between gap-3 text-xs">
+                              <span className={`font-bold ${isOled || isDark ? 'text-white/90' : 'text-text-primary'}`}>{label}</span>
+                              <span className="font-extrabold text-text-secondary">{formatPlannedSets(sets)} <span className="font-medium text-text-muted">series · {Math.round(percentage)}%</span></span>
+                            </div>
+                            <div className={`h-2 overflow-hidden rounded-full ${progressTrackClass}`}>
+                              <div className="h-full rounded-full bg-accent transition-all duration-700" style={{ width: animateBars ? `${percentage}%` : '0%' }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {(analysis.questions.length > 0 || previewSuggestions.length > 0) && (
+                <div className="space-y-3">
+                  {analysis.questions.map(question => (
+                    <div key={question.id} className={`rounded-[24px] border border-sky-500/20 bg-sky-500/5 p-5 ${isOled ? 'text-gray-300' : 'text-text-secondary'}`}>
+                      <div className="mb-3 flex items-start gap-2.5">
+                        <CircleDot className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" />
+                        <p className={`text-sm font-bold ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>{question.text}</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pl-7">
+                        {question.options.map(option => (
+                          <button
+                            key={String(option.value)}
+                            type="button"
+                            onClick={() => setAnalysisAnswers(previous => ({ ...previous, [question.id]: option.value }))}
+                            className={`rounded-full px-3.5 py-2 text-xs font-bold transition-colors ${analysisAnswers[question.id] === option.value ? 'bg-accent text-accent-contrast' : 'bg-glass-bg text-text-secondary hover:text-text-primary'}`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  {previewSuggestions.length > 0 && (
+                    <div className={`rounded-[24px] border p-5 ${innerBorderClass} ${isOled ? 'bg-white/5' : 'bg-bg-tertiary'}`}>
+                      <h3 className={`mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${isOled || isDark ? 'text-gray-300' : 'text-text-secondary'}`}>
+                        <Lightbulb className="h-4 w-4 text-amber-400" /> Recomendaciones previas
+                      </h3>
+                      <div className="space-y-2.5">
+                        {previewSuggestions.map((suggestion, index) => {
+                          const isWarning = suggestion.type === 'warning';
+                          const Icon = isWarning ? AlertCircle : suggestion.type === 'tip' ? Lightbulb : CheckCircle2;
+                          return (
+                            <div key={`${suggestion.title}-${index}`} className={`flex items-start gap-3 rounded-2xl p-3.5 ${isWarning ? 'bg-amber-500/10' : 'bg-accent/5'}`}>
+                              <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${isWarning ? 'text-amber-500' : 'text-accent'}`} />
+                              <div>
+                                <p className={`text-xs font-extrabold ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>{suggestion.title}</p>
+                                <p className="mt-1 text-xs leading-relaxed text-text-secondary">{suggestion.text}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {analysis.questions.length === 0 && previewSuggestions.length === 0 && (
+                <div className={`flex items-start gap-3 rounded-[20px] border p-4 ${innerBorderClass} ${isOled ? 'bg-white/5' : 'bg-bg-tertiary'}`}>
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                  <p className="text-xs leading-relaxed text-text-secondary">No hay alertas automáticas con los datos disponibles. La IA puede valorar el objetivo, el orden y la selección de ejercicios al continuar.</p>
+                </div>
+              )}
 
               {/* IA Real */}
               <div className="space-y-3 pt-2">

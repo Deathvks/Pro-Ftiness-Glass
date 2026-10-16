@@ -1,7 +1,7 @@
 /* frontend/src/pages/Nutrition.jsx */
 import React, { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, X, Scale, Image as ImageIcon, IceCream, AlertTriangle, Check, CheckCircle2, Target, PieChart, LayoutGrid } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Droplet, Flame, Beef, Wheat, Salad, Edit, Trash2, Zap, X, Scale, Image as ImageIcon, IceCream, AlertTriangle, Check, CheckCircle2, Target, PieChart, LayoutGrid, Copy } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import Spinner from '../components/Spinner';
@@ -19,6 +19,15 @@ import { generateSmartNutritionCoachPlan } from '../utils/smartNutritionCoach';
 import { useToast } from '../hooks/useToast';
 import * as nutritionService from '../services/nutritionService';
 import PromoBanner from '../components/PromoBanner';
+import CustomSelect from '../components/CustomSelect';
+import DatePicker from '../components/DatePicker';
+
+const MEAL_TYPE_LABELS = {
+    breakfast: 'Desayuno',
+    lunch: 'Almuerzo',
+    dinner: 'Cena',
+    snack: 'Snacks'
+};
 
 const DateNavigator = ({ selectedDate, onDateChange }) => {
     const today = new Date();
@@ -141,8 +150,44 @@ const Nutrition = ({ setView, navParams }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [logToDelete, setLogToDelete] = useState(null);
     const [mealGroupToDelete, setMealGroupToDelete] = useState(null);
+    const [mealCopy, setMealCopy] = useState(null);
+    const [mealCopySourceLogs, setMealCopySourceLogs] = useState([]);
+    const [isLoadingMealCopySource, setIsLoadingMealCopySource] = useState(false);
+    const [isCopyingMeal, setIsCopyingMeal] = useState(false);
     const [showCreatinaTracker, setShowCreatinaTracker] = useState(false);
     const [showNutritionCoachModal, setShowNutritionCoachModal] = useState(false);
+
+    useEffect(() => {
+        if (!mealCopy) return undefined;
+        let cancelled = false;
+
+        // El log diario ya contiene la respuesta más reciente para la fecha abierta.
+        // Usarlo aquí evita que una consulta paralela deje la comida recién añadida
+        // fuera del selector de copia.
+        if (mealCopy.sourceDate === selectedDate) {
+            setMealCopySourceLogs(nutritionLog.filter(log => log.meal_type === mealCopy.sourceMealType));
+            setIsLoadingMealCopySource(false);
+            return undefined;
+        }
+
+        setIsLoadingMealCopySource(true);
+        setMealCopySourceLogs([]);
+
+        nutritionService.getNutritionLogsByDate(mealCopy.sourceDate)
+            .then(data => {
+                if (cancelled) return;
+                const sourceLogs = Array.isArray(data?.nutrition) ? data.nutrition : [];
+                setMealCopySourceLogs(sourceLogs.filter(log => log.meal_type === mealCopy.sourceMealType));
+            })
+            .catch(error => {
+                if (!cancelled) addToast(error.message || 'No se pudo cargar esa comida.', 'error');
+            })
+            .finally(() => {
+                if (!cancelled) setIsLoadingMealCopySource(false);
+            });
+
+        return () => { cancelled = true; };
+    }, [mealCopy?.sourceDate, mealCopy?.sourceMealType, selectedDate, nutritionLog, addToast]);
  
     // --- Restaurar modal de Smart Nutrition Coach si volvemos de Asesoría ---
     useEffect(() => {
@@ -439,6 +484,65 @@ const Nutrition = ({ setView, navParams }) => {
             addToast('Error al eliminar las comidas.', 'error');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const openMealCopy = (destinationMealType) => {
+        setMealCopy({
+            destinationMealType,
+            // Empezar por el día que el usuario está viendo permite copiar
+            // alimentos entre franjas del mismo registro diario.
+            sourceDate: selectedDate,
+            sourceMealType: destinationMealType
+        });
+    };
+
+    const handleCopyMeal = async () => {
+        if (!mealCopy || mealCopySourceLogs.length === 0 || isCopyingMeal) return;
+        setIsCopyingMeal(true);
+
+        try {
+            const responses = await Promise.allSettled(mealCopySourceLogs.map(log => nutritionService.addFoodLog({
+                description: log.description,
+                calories: log.calories,
+                protein_g: log.protein_g,
+                carbs_g: log.carbs_g,
+                fats_g: log.fats_g,
+                sugars_g: log.sugars_g ?? log.sugar_g,
+                weight_g: log.weight_g,
+                image_url: log.image_url,
+                micronutrients: log.micronutrients,
+                calories_per_100g: log.calories_per_100g,
+                protein_per_100g: log.protein_per_100g,
+                carbs_per_100g: log.carbs_per_100g,
+                fat_per_100g: log.fat_per_100g,
+                sugars_per_100g: log.sugars_per_100g,
+                log_date: selectedDate,
+                meal_type: mealCopy.destinationMealType
+            })));
+
+            const copiedCount = responses.filter(result => result.status === 'fulfilled').length;
+            responses.forEach(result => {
+                if (result.status === 'fulfilled' && result.value?.gamification) {
+                    processGamificationEvents(result.value.gamification);
+                }
+            });
+
+            if (copiedCount > 0) {
+                await fetchDataForDate(selectedDate);
+                const destinationName = { breakfast: 'desayuno', lunch: 'almuerzo', dinner: 'cena', snack: 'snack' }[mealCopy.destinationMealType];
+                addToast(copiedCount === mealCopySourceLogs.length
+                    ? `Se copiaron ${copiedCount} alimentos al ${destinationName}.`
+                    : `Se copiaron ${copiedCount} de ${mealCopySourceLogs.length} alimentos al ${destinationName}.`,
+                copiedCount === mealCopySourceLogs.length ? 'success' : 'warning');
+                setMealCopy(null);
+            } else {
+                addToast('No se pudieron copiar los alimentos.', 'error');
+            }
+        } catch (error) {
+            addToast(error.message || 'No se pudieron copiar los alimentos.', 'error');
+        } finally {
+            setIsCopyingMeal(false);
         }
     };
 
@@ -975,6 +1079,14 @@ const Nutrition = ({ setView, navParams }) => {
                                         )}
                                     </div>
                                     <div className="flex gap-2">
+                                        <button
+                                            onClick={() => openMealCopy(mealType)}
+                                            className="p-1.5 rounded-[12px] text-text-secondary hover:text-accent hover:bg-accent/10 transition-colors"
+                                            title={`Copiar alimentos de ${MEAL_TYPE_LABELS[mealType]?.toLowerCase()}`}
+                                            aria-label={`Copiar alimentos de ${MEAL_TYPE_LABELS[mealType]?.toLowerCase()}`}
+                                        >
+                                            <Copy size={18} />
+                                        </button>
                                         {logs.length > 1 && (
                                             <button
                                                 onClick={() => setMealGroupToDelete(mealType)}
@@ -987,7 +1099,7 @@ const Nutrition = ({ setView, navParams }) => {
                                         <button
                                             id={mealType === 'breakfast' ? 'add-food-btn' : undefined}
                                             onClick={() => setModal({ type: 'food', data: { mealType } })}
-                                            className="p-1.5 rounded-[12px] bg-accent/10 text-accent border border-accent/20 hover:bg-accent/20 transition-colors"
+                                            className="p-1.5 rounded-[12px] bg-accent/10 text-accent border border-accent/10 hover:bg-accent/20 transition-colors"
                                             title="Añadir comida"
                                         >
                                             <Plus size={20} />
@@ -1093,9 +1205,9 @@ const Nutrition = ({ setView, navParams }) => {
             )}
 
             {viewLog && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 !pt-[calc(1rem+var(--safe-top,env(safe-area-inset-top,0px)))] !pb-[calc(1rem+var(--safe-bottom,env(safe-area-inset-bottom,0px)))] bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
                     <div className="absolute inset-0" onClick={() => setViewLog(null)} />
-                    <GlassCard className="glass w-full max-w-md p-0 overflow-hidden relative z-10 animate-[slide-up_0.3s_ease-out] flex flex-col max-h-[85vh] sm:max-h-[90vh] rounded-[32px] shadow-2xl ring-1 ring-black/5 dark:ring-white/10 border-none bg-bg-primary">
+                    <GlassCard className="glass w-full max-w-md p-0 overflow-hidden relative z-10 animate-[slide-up_0.3s_ease-out] flex flex-col max-h-[calc(100dvh_-_var(--safe-top,env(safe-area-inset-top,0px))_-_var(--safe-bottom,env(safe-area-inset-bottom,0px))_-_2rem)] sm:max-h-[90vh] rounded-[32px] shadow-2xl ring-1 ring-black/5 dark:ring-white/10 border-none bg-bg-primary">
 
                         <div className="relative h-64 bg-bg-secondary flex items-center justify-center shrink-0 border-b border-black/5 dark:border-white/10">
                             {getLogImage(viewLog) && (
@@ -1206,6 +1318,108 @@ const Nutrition = ({ setView, navParams }) => {
                     logToEdit={modal.data?.id ? modal.data : null}
                     isLoading={isSubmitting}
                 />
+            )}
+
+            {mealCopy && (
+                <div
+                    className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]"
+                    onClick={() => !isCopyingMeal && setMealCopy(null)}
+                >
+                    <GlassCard
+                        className="glass relative z-10 w-full max-w-md rounded-[28px] p-5 sm:p-6 bg-bg-primary border-none ring-1 ring-black/5 dark:ring-white/10 shadow-2xl"
+                        onClick={event => event.stopPropagation()}
+                    >
+                        <div className="flex items-start justify-between gap-4 mb-5">
+                            <div>
+                                <h3 className="text-lg sm:text-xl font-extrabold text-text-primary">Copiar comida</h3>
+                                <p className="text-sm text-text-secondary mt-1">
+                                    Añade los alimentos a {MEAL_TYPE_LABELS[mealCopy.destinationMealType]?.toLowerCase()} del {selectedDate}.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setMealCopy(null)}
+                                disabled={isCopyingMeal}
+                                className="p-2 rounded-full text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-50"
+                                aria-label="Cerrar"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <label className="block">
+                                <span className="block text-xs font-bold text-text-secondary mb-2">Copiar desde la fecha</span>
+                                <DatePicker
+                                    value={mealCopy.sourceDate}
+                                    maxDate={selectedDate}
+                                    onChange={sourceDate => setMealCopy(current => ({ ...current, sourceDate }))}
+                                />
+                            </label>
+
+                            <label className="block">
+                                <span className="block text-xs font-bold text-text-secondary mb-2">Tipo de comida que quieres copiar</span>
+                                <CustomSelect
+                                    value={mealCopy.sourceMealType}
+                                    onChange={sourceMealType => setMealCopy(current => ({ ...current, sourceMealType }))}
+                                    options={Object.entries(MEAL_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
+                                    placeholder="Selecciona el tipo de comida"
+                                    className="w-full"
+                                    triggerClassName="w-full rounded-[16px] px-4 py-3 text-text-primary text-left outline-none transition flex items-center justify-between gap-2 border border-black/5 dark:border-white/10 bg-bg-secondary hover:bg-bg-secondary/80"
+                                />
+                            </label>
+
+                            <div className="rounded-[16px] bg-black/5 dark:bg-white/5 p-3 min-h-14">
+                                {isLoadingMealCopySource ? (
+                                    <div className="flex justify-center py-2"><Spinner size={22} /></div>
+                                ) : mealCopySourceLogs.length > 0 ? (
+                                    <div>
+                                        <p className="text-xs font-bold text-text-primary mb-2">
+                                            {mealCopySourceLogs.length} alimentos de {MEAL_TYPE_LABELS[mealCopy.sourceMealType]?.toLowerCase()}
+                                        </p>
+                                        <div className="max-h-48 space-y-2 overflow-y-auto pr-1">
+                                            {mealCopySourceLogs.map(log => (
+                                                <div key={log.id} className="flex items-center gap-3 rounded-xl bg-bg-secondary/60 p-2">
+                                                    <MealImage
+                                                        src={getLogImage(log)}
+                                                        alt={log.description}
+                                                        className="h-12 w-12 rounded-xl"
+                                                    />
+                                                    <div className="min-w-0">
+                                                        <p className="truncate text-xs font-semibold text-text-primary">{log.description}</p>
+                                                        <p className="mt-0.5 text-[10px] text-text-secondary">{Math.round(log.calories || 0)} kcal</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-text-muted text-center py-2">No hay alimentos de ese tipo en esa fecha.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-5">
+                            <button
+                                type="button"
+                                onClick={() => setMealCopy(null)}
+                                disabled={isCopyingMeal}
+                                className="flex-1 py-3 rounded-[16px] bg-black/5 dark:bg-white/5 text-text-secondary font-bold disabled:opacity-50"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleCopyMeal}
+                                disabled={isCopyingMeal || isLoadingMealCopySource || mealCopySourceLogs.length === 0 || (mealCopy.sourceDate === selectedDate && mealCopy.sourceMealType === mealCopy.destinationMealType)}
+                                className="flex-1 py-3 rounded-[16px] bg-accent text-accent-contrast font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {isCopyingMeal ? <Spinner size={18} /> : <Copy size={16} />}
+                                Copiar {mealCopySourceLogs.length || ''}
+                            </button>
+                        </div>
+                    </GlassCard>
+                </div>
             )}
 
             {modal.type === 'sugar' && (

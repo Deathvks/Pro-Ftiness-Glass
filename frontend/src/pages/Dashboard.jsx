@@ -119,6 +119,33 @@ const getWeightTrendData = (current, previous, goal) => {
   return { icon: isGaining ? ArrowUp : ArrowDown, color, bg };
 };
 
+const getStreakCountdown = (lastActivityDate, now = new Date()) => {
+  if (!lastActivityDate) return null;
+
+  const [year, month, day] = String(lastActivityDate).slice(0, 10).split('-').map(Number);
+  if (!year || !month || !day) return null;
+
+  // La racha permite descansar sábado y domingo. El plazo vence al terminar
+  // el siguiente día laborable disponible tras el último entrenamiento.
+  const nextTrainingDay = new Date(year, month - 1, day);
+  do {
+    nextTrainingDay.setDate(nextTrainingDay.getDate() + 1);
+  } while (nextTrainingDay.getDay() === 0 || nextTrainingDay.getDay() === 6);
+
+  const deadline = new Date(nextTrainingDay);
+  deadline.setDate(deadline.getDate() + 1);
+  deadline.setHours(0, 0, 0, 0);
+
+  const remaining = deadline.getTime() - now.getTime();
+  if (remaining <= 0) return { expired: true };
+
+  const totalMinutes = Math.ceil(remaining / 60000);
+  const days = Math.floor(totalMinutes / (24 * 60));
+  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+  const minutes = totalMinutes % 60;
+  return { expired: false, days, hours, minutes };
+};
+
 const BentoStatCard = ({ title, value, unit, icon: Icon, onClick, subtext, iconColor = "text-accent", onInfoClick }) => (
   <GlassCard
     onClick={onClick}
@@ -195,6 +222,7 @@ const Dashboard = ({ setView }) => {
   const [showPRModal, setShowPRModal] = useState(false);
   const [showPRList, setShowPRList] = useState(false);
   const [showExerciseLibrary, setShowExerciseLibrary] = useState(false); // NUEVO
+  const [streakCountdown, setStreakCountdown] = useState(null);
   const [selectedPR, setSelectedPR] = useState(null);
   const [isSharing, setIsSharing] = useState(false);
 
@@ -203,6 +231,41 @@ const Dashboard = ({ setView }) => {
   const streakCheckedRef = useRef(false);
 
   const [timeUntilSunday, setTimeUntilSunday] = useState(null);
+
+  useEffect(() => {
+    const updateStreakCountdown = () => {
+      setStreakCountdown(getStreakCountdown(gamification?.lastActivityDate));
+    };
+
+    updateStreakCountdown();
+    const interval = setInterval(updateStreakCountdown, 60000);
+    return () => clearInterval(interval);
+  }, [gamification?.lastActivityDate]);
+
+  const showStreakTimeRemaining = (event) => {
+    event.stopPropagation();
+
+    if (!levelData.streak) {
+      addToast(t('Completa un entrenamiento para iniciar tu racha.', { defaultValue: 'Completa un entrenamiento para iniciar tu racha.' }), 'info');
+      return;
+    }
+
+    if (!streakCountdown) {
+      addToast(t('Completa un entrenamiento para mantener tu racha.', { defaultValue: 'Completa un entrenamiento para mantener tu racha.' }), 'info');
+      return;
+    }
+
+    if (streakCountdown.expired) {
+      addToast(t('El plazo para mantenerla terminó. Entrena cuanto antes para recuperarla.', { defaultValue: 'El plazo para mantenerla terminó. Entrena cuanto antes para recuperarla.' }), 'info');
+      return;
+    }
+
+    const time = `${streakCountdown.days ? `${streakCountdown.days} d ` : ''}${streakCountdown.hours} h ${streakCountdown.minutes} min`;
+    addToast(t('Te quedan {{time}} para entrenar y mantener la racha. Los fines de semana están protegidos.', {
+      defaultValue: 'Te quedan {{time}} para entrenar y mantener la racha. Los fines de semana están protegidos.',
+      time
+    }), 'info');
+  };
 
   useEffect(() => {
     const updateTimer = () => {
@@ -574,9 +637,19 @@ const Dashboard = ({ setView }) => {
             <div className={`transition-all duration-500 mb-1 ${levelData.streak > 0 ? 'text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.6)]' : 'text-text-muted opacity-30'}`}>
               <Flame size={26} fill={levelData.streak > 0 ? "currentColor" : "none"} />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary">
-              {levelData.streak} {t('DÍAS', { defaultValue: 'DÍAS' })}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary">
+                {levelData.streak} {t('DÍAS', { defaultValue: 'DÍAS' })}
+              </span>
+              <button
+                type="button"
+                aria-label={t('Información de la racha', { defaultValue: 'Información de la racha' })}
+                onClick={showStreakTimeRemaining}
+                className="text-text-muted hover:text-accent transition-colors"
+              >
+                <Info size={12} />
+              </button>
+            </div>
           </div>
         </GlassCard>
       </div>

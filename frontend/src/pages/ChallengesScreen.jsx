@@ -110,7 +110,7 @@ const ChallengesScreen = ({ setView }) => {
                             Volver
                         </button>
                     </div>
-                    <header className="px-6 pt-4 md:pt-6 pb-4 glassCardClass">
+                    <header id="tutorial-challenges-header" className="px-6 pt-4 md:pt-6 pb-4 glassCardClass">
                         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight mb-2">
                             Retos y Misiones
                         </h1>
@@ -120,7 +120,7 @@ const ChallengesScreen = ({ setView }) => {
                     
                     {/* Referrals Infinite Challenge Card */}
                     <div className="mb-4">
-                        <div className="relative group overflow-hidden rounded-[20px] bg-accent shadow-xl shadow-accent/30 border border-white/20 p-6 transform transition-all duration-300 hover:scale-[1.02] cursor-pointer" onClick={handleCopyReferral}>
+                        <div id="tutorial-challenges-referral" className="relative group overflow-hidden rounded-[20px] bg-accent shadow-xl shadow-accent/30 border border-white/20 p-6 transform transition-all duration-300 hover:scale-[1.02] cursor-pointer" onClick={handleCopyReferral}>
                             <div className="absolute inset-0 bg-black/10 mix-blend-overlay"></div>
                             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30 mix-blend-overlay"></div>
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-20 rounded-full blur-2xl transform translate-x-10 -translate-y-10 group-hover:opacity-30 transition-opacity"></div>
@@ -154,20 +154,23 @@ const ChallengesScreen = ({ setView }) => {
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex gap-3 mb-8">
+                    <div id="tutorial-challenges-tabs" className="flex gap-3 mb-8">
                         <button 
+                            data-tutorial="challenges-tab-daily"
                             className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'daily' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
                             onClick={() => setActiveTab('daily')}
                         >
                             Diarios
                         </button>
                         <button 
+                            data-tutorial="challenges-tab-general"
                             className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'general' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
                             onClick={() => setActiveTab('general')}
                         >
                             Generales
                         </button>
                         <button 
+                            data-tutorial="challenges-tab-completed"
                             className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'completed' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
                             onClick={() => setActiveTab('completed')}
                         >

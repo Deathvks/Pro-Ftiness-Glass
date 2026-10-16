@@ -251,6 +251,7 @@ export const useAppTheme = () => {
       else if (effectiveTheme === 'light') classTheme = 'light';
 
       root.classList.add(`${classTheme}-theme`);
+      root.classList.toggle('galaxy-effects-enabled', useAppStore.getState().galaxyEffectsEnabled);
 
       if (effectiveTheme !== 'light' && (effectiveTheme !== 'desert' || isDesertDark) && effectiveTheme !== 'ocean') {
         root.classList.add('dark');

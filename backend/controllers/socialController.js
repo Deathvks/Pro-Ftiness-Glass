@@ -9,6 +9,18 @@ const {
     WorkoutLike, WorkoutComment, WorkoutLogDetail, WorkoutLogSet 
 } = models;
 
+const publicUserData = (user) => {
+    if (!user) return user;
+    const data = typeof user.toJSON === 'function' ? user.toJSON() : { ...user };
+    if (data.role === 'admin') {
+        data.role = 'user';
+        data.trainer_id = null;
+        delete data.isAdmin;
+        delete data.is_admin;
+    }
+    return data;
+};
+
 export const searchUsers = async (req, res) => {
     try {
         const { query } = req.query;
@@ -42,8 +54,8 @@ export const searchUsers = async (req, res) => {
             profile_image_url: user.profile_image_url,
             level: user.show_level_xp ? user.level : null,
             xp: user.show_level_xp ? user.xp : null,
-            role: user.role,
-            trainer_id: user.trainer_id
+            role: user.role === 'admin' ? 'user' : user.role,
+            trainer_id: user.role === 'admin' ? null : user.trainer_id
         }));
 
         res.json(results);
@@ -138,8 +150,8 @@ export const getFriendRequests = async (req, res) => {
             profile_image_url: user.profile_image_url,
             level: user.show_level_xp ? user.level : null,
             xp: user.show_level_xp ? user.xp : null,
-            role: user.role,
-            trainer_id: user.trainer_id
+            role: user.role === 'admin' ? 'user' : user.role,
+            trainer_id: user.role === 'admin' ? null : user.trainer_id
         });
 
         const formattedReceived = received.map(req => ({
@@ -253,8 +265,8 @@ export const getFriends = async (req, res) => {
                 profile_image_url: friend.profile_image_url,
                 level: friend.show_level_xp ? friend.level : null,
                 xp: friend.show_level_xp ? friend.xp : null,
-                role: friend.role,
-                trainer_id: friend.trainer_id
+                role: friend.role === 'admin' ? 'user' : friend.role,
+                trainer_id: friend.role === 'admin' ? null : friend.trainer_id
             };
         });
 
@@ -359,8 +371,8 @@ export const getPublicProfile = async (req, res) => {
             id: user.id,
             username: user.username,
             profile_image_url: user.profile_image_url,
-            role: user.role,
-            trainer_id: user.trainer_id,
+            role: isMe || user.role !== 'admin' ? user.role : 'user',
+            trainer_id: isMe || user.role !== 'admin' ? user.trainer_id : null,
             is_friend: isFriend && !isMe, 
             is_me: isMe,
             bio: user.bio,
@@ -412,9 +424,9 @@ export const getLeaderboard = async (req, res) => {
             },
             order: [['xp', 'DESC']],
             limit: 50,
-            attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'role', 'trainer_id']
+            attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'streak', 'role', 'trainer_id']
         });
-        res.json(users);
+        res.json(users.map(publicUserData));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -485,7 +497,7 @@ export const getFeed = async (req, res) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['id', 'username', 'profile_image_url', 'role', 'trainer_id']
+                    attributes: ['id', 'username', 'profile_image_url', 'streak', 'role', 'trainer_id']
                 },
                 {
                     model: Routine,
@@ -558,6 +570,12 @@ export const getFeed = async (req, res) => {
         const formattedFeed = logs.map(log => {
             const logData = log.toJSON();
             const likes = logData.Likes || [];
+
+            logData.user = publicUserData(logData.user);
+            logData.Comments = (logData.Comments || []).map(comment => ({
+                ...comment,
+                user: publicUserData(comment.user)
+            }));
 
             // Añadir ejercicios, series e imágenes usando el diccionario rápido
             if (logData.WorkoutLogDetails) {

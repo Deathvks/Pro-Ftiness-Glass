@@ -1,6 +1,6 @@
 /* frontend/src/components/Feed.jsx */
 import React, { useState, useEffect } from 'react';
-import { Activity, Clock, Zap, Heart, MessageCircle, Send, Trash2, Dumbbell, Download } from 'lucide-react';
+import { Activity, Clock, Zap, Heart, MessageCircle, Send, Trash2, Dumbbell, Download, Flame } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import GlassCard from './GlassCard';
 import Spinner from './Spinner';
@@ -186,7 +186,12 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                     <p className="font-bold text-text-primary text-base sm:text-lg truncate group-hover:text-accent transition-colors">
                                         {authorUser?.username || 'Usuario'} {isMe && <span className="text-text-tertiary font-medium ml-1 text-xs sm:text-sm">(Tú)</span>}
                                     </p>
-                                    <p className="text-xs sm:text-sm text-text-secondary font-medium truncate mt-0.5">{timeAgo(log.workout_date)}</p>
+                                    <div className="flex items-center gap-2 mt-0.5 min-w-0">
+                                        <p className="text-xs sm:text-sm text-text-secondary font-medium truncate">{timeAgo(log.workout_date)}</p>
+                                        <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs text-orange-500 font-bold shrink-0" title="Racha de entrenamientos">
+                                            <Flame size={12} fill="currentColor" /> {authorUser?.streak ?? 0}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

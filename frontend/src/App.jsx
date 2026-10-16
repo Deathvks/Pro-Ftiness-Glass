@@ -32,6 +32,7 @@ import SEOHead from './components/SEOHead';
 import StoryViewer from './components/StoryViewer';
 import SecurityDashboard from './pages/SecurityDashboard';
 import PermissionModal from './components/PermissionModal'; 
+import PageTutorialPlayback from './components/PageTutorialPlayback';
 
 import OnboardingScreen from './pages/OnboardingScreen';
 import LandingPage from './pages/LandingPage'; 
@@ -43,7 +44,6 @@ const Progress = lazy(() => import('./pages/Progress'));
 const Routines = lazy(() => import('./pages/Routines'));
 const Workout = lazy(() => import('./pages/Workout'));
 const Nutrition = lazy(() => import('./pages/Nutrition'));
-const TemplateDiets = lazy(() => import('./pages/TemplateDiets'));
 const SettingsScreen = lazy(() => import('./pages/SettingsScreen'));
 const PhysicalProfileEditor = lazy(() => import('./pages/PhysicalProfileEditor'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
@@ -311,7 +311,6 @@ export default function App() {
       terms: { key: 'Términos del Servicio', default: 'Términos del Servicio' },
       twoFactorSetup: { key: 'Seguridad 2FA', default: 'Seguridad 2FA' },
       notifications: { key: 'Notificaciones', default: 'Notificaciones' },
-      templateDiets: { key: 'Dietas Plantilla', default: 'Dietas Plantilla' },
       social: { key: 'Comunidad', default: 'Comunidad' },
       publicProfile: { key: 'Perfil Público', default: 'Perfil Público' },
       quickCardio: { key: 'Cardio Rápido', default: 'Cardio Rápido' },
@@ -342,10 +341,9 @@ export default function App() {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigateInternal} />;
       case 'progress': return <Progress darkMode={resolvedTheme !== 'light'} setView={navigateInternal} />;
-      case 'routines': return <Routines setView={navigateInternal} />;
+      case 'routines': return <Routines setView={navigateInternal} mainContentRef={mainContentRef} />;
       case 'workout': return <Workout timer={timer} setView={navigateInternal} navParams={navParams} />;
       case 'nutrition': return <Nutrition setView={navigateInternal} navParams={navParams} />;
-      case 'templateDiets': return <TemplateDiets setView={navigateInternal} />;
       case 'social': return <Social setView={navigateInternal} />;
       case 'publicProfile': return <PublicProfile userId={navParams?.userId} onBack={() => navigateInternal('social')} />;
       case 'hub': return <Hub setView={navigateInternal} />;
@@ -488,6 +486,7 @@ export default function App() {
           userProfile={userProfileWithStory}
           profileImgSrc={profileImgSrc}
         />
+        <PageTutorialPlayback view={view} navParams={navParams} setView={navigateInternal} />
         {isResting && (
           restTimerMode === 'minimized' ? <DynamicIslandTimer /> : <RestTimerModal />
         )}
@@ -585,13 +584,16 @@ export default function App() {
               Sesión Caducada
             </h2>
             <p className="text-text-secondary mb-8 text-[15px] leading-relaxed">
-              Tu sesión ha expirado por seguridad o has cerrado sesión. Por favor, recarga para continuar.
+              Tu sesión ha expirado por seguridad o se ha cerrado. Inicia sesión de nuevo para continuar.
             </p>
             <button 
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                performLogout();
+                navigate('/login', { replace: true });
+              }}
               className="w-full bg-accent text-accent-contrast font-bold py-3.5 px-4 rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-md shadow-accent/20"
             >
-              Recargar Aplicación
+              Volver a iniciar sesión
             </button>
           </div>
         </div>

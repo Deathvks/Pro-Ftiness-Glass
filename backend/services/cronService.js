@@ -49,6 +49,60 @@ const notifyUser = async (userId, payload) => {
 };
 
 /**
+ * Notifica por push a cuentas nuevas que cumplieron 24 horas y llevan un
+ * tiempo sin actividad. Si vuelven a la app, el prompt se muestra allí.
+ */
+const checkNewUserRatingPrompt = () => {
+  cron.schedule('*/5 * * * *', async () => {
+    try {
+      const now = Date.now();
+      const eligibleAt = now - 24 * 60 * 60 * 1000;
+      const windowStart = eligibleAt - 10 * 60 * 1000;
+      const inactiveBefore = new Date(now - 15 * 60 * 1000);
+
+      const users = await db.User.findAll({
+        where: {
+          role: { [Op.ne]: 'admin' },
+          created_at: { [Op.between]: [new Date(windowStart), new Date(eligibleAt)] },
+          [Op.or]: [
+            { lastSeen: { [Op.lt]: inactiveBefore } },
+            { lastSeen: null }
+          ]
+        },
+        attributes: ['id'],
+        include: [{
+          model: db.PushSubscription,
+          as: 'PushSubscriptions',
+          required: true,
+          attributes: []
+        }]
+      });
+
+      for (const user of users) {
+        const [existingRating, existingPrompt] = await Promise.all([
+          db.AppRating.findOne({ where: { user_id: user.id }, attributes: ['id'] }),
+          db.Notification.findOne({
+            where: { user_id: user.id, type: 'app_rating_prompt' },
+            attributes: ['id']
+          })
+        ]);
+
+        if (existingRating || existingPrompt) continue;
+
+        await createNotification(user.id, {
+          type: 'app_rating_prompt',
+          title: '¿Qué te parece Pro Fitness Glass?',
+          message: 'Ya llevas 24 horas con la app. Cuando vuelvas, cuéntanos qué te parece.',
+          data: { url: '/', action: 'open_rating_prompt' }
+        });
+      }
+    } catch (error) {
+      console.error('[Cron] Error enviando el prompt de valoración:', error.message);
+    }
+  });
+};
+
+/**
  * TAREA 1: Recordatorio de Nutrición
  * (Minuto 0)
  */
@@ -532,6 +586,7 @@ const checkChatBotReminders = () => {
 
 export const startCronJobs = () => {
   console.log('[Cron] Iniciando tareas (Optimizado)...');
+  checkNewUserRatingPrompt();
   checkNutritionGoals();
   checkCreatineReminder();
   checkTrainingReminder();

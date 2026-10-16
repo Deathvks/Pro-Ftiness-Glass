@@ -82,7 +82,15 @@ const apiClient = async (endpoint, options = {}) => {
                 }
             }
 
-            if (response.status === 401 && !endpoint.includes('/auth/login')) {
+            // Solo expirar la sesión si la respuesta corresponde al token que
+            // sigue activo. Peticiones antiguas pueden responder después de
+            // cerrar sesión o iniciar una sesión nueva.
+            if (
+                response.status === 401 &&
+                token &&
+                useAppStore.getState().token === token &&
+                !endpoint.startsWith('/auth/')
+            ) {
                 useAppStore.getState().handleSessionExpiry();
                 // --- CAMBIO: Interrumpir flujo inmediatamente ---
                 throw new Error('Sesión expirada');

@@ -121,11 +121,14 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
       </div>
     );
 
-    const roleConfig = getUserRoleRingConfig(userProfile);
+    const roleConfig = getUserRoleRingConfig(userProfile, userProfile);
 
     if (hasStories && hasUnseen) {
+      const storyRingClass = roleConfig.type === 'admin'
+        ? `${roleConfig.borderClass} ${roleConfig.glowClass}`
+        : 'bg-accent shadow-md shadow-accent/40';
       return (
-        <div className="w-10 h-10 rounded-full p-[2px] shrink-0 transition-all duration-300 cursor-pointer bg-accent shadow-md shadow-accent/40 animate-pulse-slow">
+        <div className={`w-10 h-10 rounded-full p-[2px] shrink-0 transition-all duration-300 cursor-pointer ${storyRingClass} animate-pulse-slow`}>
             <div className="w-full h-full rounded-full p-[1.5px] bg-bg-primary dark:bg-[#121214] overflow-hidden flex items-center justify-center">
               <div className="w-full h-full rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
                 {InnerContent}

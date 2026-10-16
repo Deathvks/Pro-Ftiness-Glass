@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useLayoutEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   Plus,
@@ -37,6 +37,7 @@ import { useTranslation } from 'react-i18next';
 import TemplateRoutines from './TemplateRoutines';
 import PromoBanner from '../components/PromoBanner';
 import ManualExercisesManager from '../components/ManualExercisesManager';
+import WeeklyMuscleVolumeCard from '../components/Routines/WeeklyMuscleVolumeCard';
 import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
 import RoutineAIGeneratorModal from '../components/RoutineAIGeneratorModal';
 import RoutineTourGuide from '../components/RoutineTourGuide';
@@ -340,7 +341,7 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
   );
 };
 
-const Routines = ({ setView }) => {
+const Routines = ({ setView, mainContentRef }) => {
   const { addToast } = useToast();
   const { t } = useTranslation('exercise_names');
 
@@ -460,6 +461,15 @@ const Routines = ({ setView }) => {
       localStorage.removeItem(LS_KEY_EDITING);
     }
   }, [editingRoutine]);
+
+  useLayoutEffect(() => {
+    if (!editingRoutine) return;
+    const scrollContainer = mainContentRef?.current;
+    if (!scrollContainer) return;
+
+    scrollContainer.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    scrollContainer.scrollTop = 0;
+  }, [editingRoutine, mainContentRef]);
 
   const lastUsedMap = useMemo(() => {
     const map = new Map();
@@ -660,8 +670,17 @@ const Routines = ({ setView }) => {
   };
 
   const handleStartWorkout = async (routine) => {
-    if (activeWorkout && activeWorkout.routineId === routine.id) {
+    const openWorkoutAtTop = () => {
+      const scrollContainer = mainContentRef?.current;
+      if (scrollContainer) {
+        scrollContainer.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        scrollContainer.scrollTop = 0;
+      }
       setView('workout');
+    };
+
+    if (activeWorkout && activeWorkout.routineId === routine.id) {
+      openWorkoutAtTop();
       return;
     }
 
@@ -685,14 +704,14 @@ const Routines = ({ setView }) => {
         const currentActive = useAppStore.getState().activeWorkout;
         if (currentActive) {
           setIsLoading(false);
-          setView('workout');
+          openWorkoutAtTop();
         } else if (attempts < maxAttempts) {
           attempts++;
           setTimeout(checkAndNavigate, 50);
         } else {
           setIsLoading(false);
           console.warn("Timeout esperando activeWorkout, navegando de todas formas...");
-          setView('workout');
+          openWorkoutAtTop();
         }
       };
 
@@ -846,6 +865,7 @@ const Routines = ({ setView }) => {
         )}
 
         <button
+            id="tutorial-routines-manual-exercises-tab"
             onClick={() => setActiveTab('manualExercises')}
             className={getTabClass('manualExercises')}
           >
@@ -900,6 +920,7 @@ const Routines = ({ setView }) => {
               <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
             </div>
           </button>
+          <WeeklyMuscleVolumeCard routines={routines || []} goal={userProfile?.goal} />
           <div className="mb-8 flex flex-col gap-5">
             <div className="max-w-md relative" id="routines-search">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary z-10 pointer-events-none" size={18} />

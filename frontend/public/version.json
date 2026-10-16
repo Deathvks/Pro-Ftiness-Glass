@@ -1,5 +1,5 @@
 {
-  "version": "7.4.29",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.29/app-release.apk",
+  "version": "7.4.30",
+  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.30/app-release.apk",
   "notes": "Filtros de periodo corregidos en Tu Progreso: corte por fecha calendario real (1M, 3M, 6M, 1A), eliminación del fallback que mostraba todo el historial, mensajes vacíos contextuales con enlace a ver todo, PR y 1RM siempre históricos, parsing robusto de timestamps y tooltips mejorados."
 }

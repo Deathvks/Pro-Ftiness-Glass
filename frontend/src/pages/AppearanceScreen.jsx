@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { 
-  Palette, Sun, Moon, MonitorCog, Smartphone, Check, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, LockOpen, Lock, Info, Vibrate, Droplet
+  Palette, Sun, Moon, MonitorCog, Smartphone, Check, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, LockOpen, Lock, Info, Vibrate, Droplet, Sparkles, Battery, Gauge, X
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6'; 
 import useAppStore from '../store/useAppStore';
@@ -11,6 +11,46 @@ import GlassCard from '../components/GlassCard';
 import { useToast } from '../hooks/useToast';
 import LevelBadge from '../components/LevelBadge';
 import ConfirmationModal from '../components/ConfirmationModal';
+import ModalPortal from '../components/ModalPortal';
+import useModalLock from '../hooks/useModalLock';
+
+const GalaxyEffectsWarningModal = ({ onConfirm, onCancel }) => {
+  useModalLock();
+
+  return (
+    <ModalPortal>
+      <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 !pt-[calc(1rem+var(--safe-top))]" onClick={onCancel}>
+        <section
+          aria-labelledby="galaxy-effects-title"
+          className="relative mt-auto w-full max-w-sm rounded-t-[32px] rounded-b-none border border-glass-border bg-bg-primary p-6 pt-3 pb-[calc(1.5rem+var(--safe-bottom))] text-center shadow-2xl animate-[slide-up_0.3s_ease-out] sm:mt-0 sm:rounded-[32px] sm:p-8 sm:animate-[scale-in_0.3s_ease-out]"
+          onClick={event => event.stopPropagation()}
+        >
+          <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-black/10 dark:bg-white/20 sm:hidden" aria-hidden="true" />
+          <button type="button" onClick={onCancel} aria-label="Cerrar" className="absolute right-4 top-4 rounded-full p-2 text-text-secondary transition hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/5 sm:right-5 sm:top-5">
+            <X size={20} />
+          </button>
+          <div className="mb-5 flex justify-center">
+            <div className="rounded-[20px] bg-accent/10 p-4 text-accent ring-1 ring-accent/20">
+              <Sparkles size={30} strokeWidth={1.8} />
+            </div>
+          </div>
+          <h2 id="galaxy-effects-title" className="mb-3 text-xl font-extrabold tracking-tight text-text-primary">Efectos animados de Galaxia</h2>
+          <p className="mb-5 text-sm leading-relaxed text-text-secondary">
+            Las estrellas en movimiento y los meteoros pueden exigir más al dispositivo, aumentar el consumo de batería y reducir la fluidez en algunos móviles. Puedes desactivarlos cuando quieras desde Personalización.
+          </p>
+          <div className="mb-6 flex items-center justify-center gap-5 text-[11px] font-semibold text-text-muted">
+            <span className="inline-flex items-center gap-1.5"><Gauge size={15} className="text-accent" /> Más carga gráfica</span>
+            <span className="inline-flex items-center gap-1.5"><Battery size={15} className="text-accent" /> Consumo de batería</span>
+          </div>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row">
+            <button type="button" onClick={onCancel} className="w-full rounded-xl bg-black/5 px-5 py-3 text-sm font-bold text-text-secondary transition hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10">Ahora no</button>
+            <button type="button" onClick={onConfirm} className="w-full rounded-xl bg-accent px-5 py-3 text-sm font-bold text-accent-contrast shadow-lg shadow-accent/20 transition hover:brightness-110">Activar efectos</button>
+          </div>
+        </section>
+      </div>
+    </ModalPortal>
+  );
+};
 
 // --- Constantes de Apariencia ---
 const ACCENT_OPTIONS = [
@@ -144,7 +184,7 @@ const AccentButton = ({ opt, isLocked, isSelected, onClick }) => (
 );
 
 export default function AppearanceScreen({ setView }) {
-  const { userProfile, hapticsEnabled, setHapticsEnabled } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, hapticsEnabled: state.hapticsEnabled, setHapticsEnabled: state.setHapticsEnabled })));
+  const { userProfile, hapticsEnabled, setHapticsEnabled, galaxyEffectsEnabled, setGalaxyEffectsEnabled } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, hapticsEnabled: state.hapticsEnabled, setHapticsEnabled: state.setHapticsEnabled, galaxyEffectsEnabled: state.galaxyEffectsEnabled, setGalaxyEffectsEnabled: state.setGalaxyEffectsEnabled })));
   const { addToast } = useToast();
   const { 
     theme, activeTheme, setTheme, accent, setAccent, 
@@ -154,6 +194,16 @@ export default function AppearanceScreen({ setView }) {
   
   const [showThemeReloadModal, setShowThemeReloadModal] = useState(false);
   const [pendingThemeAction, setPendingThemeAction] = useState(null);
+  const [showGalaxyEffectsWarning, setShowGalaxyEffectsWarning] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(() => typeof window !== 'undefined' && window.matchMedia('(hover: none), (pointer: coarse)').matches);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(hover: none), (pointer: coarse)');
+    const updateTouchDevice = event => setIsTouchDevice(event.matches);
+    setIsTouchDevice(mediaQuery.matches);
+    mediaQuery.addEventListener?.('change', updateTouchDevice);
+    return () => mediaQuery.removeEventListener?.('change', updateTouchDevice);
+  }, []);
 
   const isGalaxyUnlocked = (userProfile?.referralCount || 0) >= 5 || userProfile?.role === 'admin';
   const isGalaxyActive = activeTheme === 'galaxy';
@@ -216,11 +266,11 @@ export default function AppearanceScreen({ setView }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* 1) Apariencia de la App: a la izquierda en PC, abajo en móvil */}
-        <GlassCard className={`${glassCardClass} order-2 lg:order-1 lg:col-span-7 xl:col-span-7`}>
+        <GlassCard id="tutorial-appearance-panel" className={`${glassCardClass} order-2 lg:order-1 lg:col-span-7 xl:col-span-7`}>
           <SectionTitle icon={Palette} title="Apariencia de la App" />
 
           {/* Temas Base */}
-          <div className="mb-8">
+          <div id="tutorial-appearance-base-themes" className="mb-8">
             <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 ml-1">Tema Principal</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {['system', 'light', 'dark', 'oled'].map((mode) => (
@@ -245,7 +295,7 @@ export default function AppearanceScreen({ setView }) {
           </div>
 
           {/* Acentos */}
-          <div className="mb-8">
+          <div id="tutorial-appearance-accents" className="mb-8">
             <div className={`transition-all duration-300 ${isGalaxyActive || isDesertActive || isOceanActive ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
               
               {/* Por defecto */}
@@ -390,7 +440,7 @@ export default function AppearanceScreen({ setView }) {
           </div>
           
           {/* Vibración UI */}
-          <div>
+          <div id="tutorial-appearance-haptics">
             <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 ml-1">Experiencia UX</h3>
             <SwitchItem
               icon={Vibrate}
@@ -407,7 +457,7 @@ export default function AppearanceScreen({ setView }) {
         </GlassCard>
 
         {/* 2) Mis Temas: a la derecha en PC, arriba y desplegable/solapable en móvil */}
-        <GlassCard className={`${glassCardClass} order-1 lg:order-2 lg:col-span-5 xl:col-span-5`}>
+        <GlassCard id="tutorial-appearance-my-themes" className={`${glassCardClass} order-1 lg:order-2 lg:col-span-5 xl:col-span-5`}>
           {/* Cabecera / Trigger Móvil de Desplegar/Solapar */}
           <div 
             onClick={() => {
@@ -516,6 +566,20 @@ export default function AppearanceScreen({ setView }) {
               <p className="text-[10px] sm:text-xs text-[#a855f7] font-bold mt-4 ml-1 flex items-center gap-1.5">
                 <Info size={14} /> El Tema Galaxia usa su propio acento estelar (desactiva el acento manual).
               </p>
+            )}
+            {isTouchDevice && isGalaxyActive && (
+              <div className="mt-4 border-t border-[#a855f7]/15 pt-4">
+                <SwitchItem
+                  icon={FaMeteor}
+                  title="Estrellas animadas y meteoros"
+                  subtitle="Añade movimiento al fondo del tema Galaxia"
+                  checked={galaxyEffectsEnabled}
+                  onChange={() => {
+                    if (galaxyEffectsEnabled) setGalaxyEffectsEnabled(false);
+                    else setShowGalaxyEffectsWarning(true);
+                  }}
+                />
+              </div>
             )}
           </div>
 
@@ -696,6 +760,15 @@ export default function AppearanceScreen({ setView }) {
               setPendingThemeAction(null);
             }}
             confirmText="Recargar"
+          />
+        )}
+        {showGalaxyEffectsWarning && (
+          <GalaxyEffectsWarningModal
+            onConfirm={() => {
+              setGalaxyEffectsEnabled(true);
+              setShowGalaxyEffectsWarning(false);
+            }}
+            onCancel={() => setShowGalaxyEffectsWarning(false)}
           />
         )}
       </div>

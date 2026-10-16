@@ -7,7 +7,7 @@ import {
     ChevronRight, ChevronLeft, Plus, Camera, Image as ImageIcon,
     Globe, Zap, ShieldAlert, Clock, Lock, Video as VideoIcon,
     Settings, Shield, PlusCircle, Hash, Copy, ArrowLeft, LogOut, Trash2,
-    Activity, Crop
+    Activity, Crop, Flame
 } from 'lucide-react';
 import Cropper from 'react-easy-crop';
 import { Capacitor } from '@capacitor/core';
@@ -1151,7 +1151,7 @@ export default function Social({ setView }) {
             
             <div className="flex flex-col">
                 <div className="flex text-[10px] sm:text-xs text-text-muted pb-3 mb-2 uppercase tracking-widest font-bold border-b border-black/5 dark:border-white/10 px-1 sm:px-2">
-                    <span className="w-6 sm:w-10 text-center">#</span><span className="flex-1 pl-2">Atleta</span><span className="w-12 sm:w-16 text-right">Nivel</span><span className="w-16 sm:w-24 text-right">XP</span>
+                    <span className="w-6 sm:w-10 text-center">#</span><span className="flex-1 pl-2">Atleta</span><span className="w-12 sm:w-16 text-right">Nivel</span><span className="w-12 sm:w-20 text-right">Racha</span><span className="w-16 sm:w-24 text-right">XP</span>
                 </div>
                 {socialLeaderboard.map((user, index) => {
                     const isMe = user.id === userProfile?.id;
@@ -1170,6 +1170,9 @@ export default function Social({ setView }) {
                                 <div className="scale-[0.55] sm:scale-[0.65] origin-right">
                                     <LevelBadge level={user.level || 1} size="sm" />
                                 </div>
+                            </div>
+                            <div className="w-12 sm:w-20 text-right text-[11px] sm:text-sm text-orange-500 font-extrabold flex items-center justify-end gap-1 shrink-0">
+                                <Flame size={13} className="shrink-0" fill="currentColor" /> {user.streak || 0}
                             </div>
                             <div className="w-16 sm:w-24 text-right text-xs sm:text-sm text-text-primary font-mono font-bold tracking-tight shrink-0">{user.xp?.toLocaleString()}</div>
                         </div>

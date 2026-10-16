@@ -23,10 +23,11 @@ const SectionTitle = ({ icon: Icon, title }) => (
   </div>
 );
 
-const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action }) => {
+const SettingsItem = ({ id, icon: Icon, title, subtitle, onClick, action }) => {
   const Component = onClick ? 'button' : 'div';
   return (
     <Component
+      id={id}
       onClick={onClick}
       className={`flex items-center gap-3 sm:gap-4 w-full p-4 rounded-[20px] transition-all duration-300 group text-left
       ${onClick ? 'cursor-pointer hover:-translate-y-1 hover:shadow-md bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10' : 'bg-black/5 dark:bg-white/5 text-text-primary'}`}
@@ -82,7 +83,7 @@ export default function SupportScreen({ setView }) {
   const glassCardClass = "glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300 mb-6";
 
   return (
-    <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-4xl mx-auto animate-[fade-in_0.3s_ease-out]">
+    <div id="tutorial-support-main" className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-4xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
         <title>Soporte - Pro Fitness Glass</title>
       </Helmet>
@@ -121,6 +122,7 @@ export default function SupportScreen({ setView }) {
             </a>
 
             <SettingsItem
+              id="tutorial-support-bug"
               icon={Bug}
               title="Reportar un problema"
               subtitle="¿Algo no funciona bien?"

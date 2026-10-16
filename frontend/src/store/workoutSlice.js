@@ -723,7 +723,11 @@ export const createWorkoutSlice = (set, get) => ({
     const activeWorkout = state.activeWorkout;
     if (!activeWorkout || !activeWorkout.startTime) return;
 
-    const elapsed = Date.now() - new Date(activeWorkout.startTime).getTime();
+    const elapsed =
+      (state.workoutAccumulatedTime || 0) +
+      (!state.isWorkoutPaused && state.workoutStartTime
+        ? Date.now() - state.workoutStartTime
+        : 0);
     const duration_seconds = Math.floor(elapsed / 1000);
     // Estimación genérica si el usuario no introduce calorías (aprox 400 kcal/h)
     const calories_burned = Math.round((duration_seconds / 3600) * 400);
@@ -739,9 +743,9 @@ export const createWorkoutSlice = (set, get) => ({
     ));
 
     if (!isAnySetFilled) {
-        // Si no hay datos, limpiamos la sesión sin guardarla
+        // Al alcanzar el límite sin datos, cancelamos y retiramos la sesión activa.
         state.clearWorkoutState();
-        return;
+        return { success: false, cancelled: true, message: 'Entrenamiento cancelado sin datos.' };
     }
 
     const safeParseFloat = (value) => parseFloat(String(value).replace(',', '.')) || 0;
@@ -776,7 +780,13 @@ export const createWorkoutSlice = (set, get) => ({
             })),
     };
 
-    await state.logWorkout(workoutData);
+    const result = await state.logWorkout(workoutData);
+    if (result?.success) {
+      // logWorkout limpia el almacenamiento, pero el autolímite también debe
+      // limpiar el estado en memoria para retirar el entrenamiento activo.
+      get().clearWorkoutState();
+    }
+    return result;
   },
 
   logWorkout: async (workoutData) => {

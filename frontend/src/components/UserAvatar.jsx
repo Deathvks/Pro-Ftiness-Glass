@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { User } from 'lucide-react';
 import { getUserRoleRingConfig } from '../utils/userRoleUtils';
+import useAppStore from '../store/useAppStore';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_HOST = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
@@ -29,9 +30,10 @@ const UserAvatar = ({
     onClick
 }) => {
     const [error, setError] = useState(false);
+    const viewerProfile = useAppStore(state => state.userProfile);
 
     const sizeClass = SIZE_MAP[size] || (typeof size === 'number' ? `w-${size} h-${size}` : 'w-10 h-10');
-    const roleConfig = getUserRoleRingConfig(user);
+    const roleConfig = getUserRoleRingConfig(user, viewerProfile);
 
     const getSecureImageUrl = () => {
         const rawUrl = user?.profile_image_url || user?.avatar || user?.profile_image;

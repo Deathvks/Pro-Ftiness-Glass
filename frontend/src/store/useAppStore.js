@@ -47,6 +47,27 @@ const useAppStore = create((set, get) => ({
         set({ hapticsEnabled: enabled });
     },
 
+    // --- Efectos de galaxia en dispositivos táctiles ---
+    galaxyEffectsEnabled: (() => {
+        try {
+            return localStorage.getItem('galaxyEffectsEnabled') === 'true';
+        } catch (e) {
+            return false;
+        }
+    })(),
+
+    setGalaxyEffectsEnabled: (enabled) => {
+        try {
+            localStorage.setItem('galaxyEffectsEnabled', JSON.stringify(enabled));
+        } catch (e) {
+            console.warn('Error saving Galaxy effects preference', e);
+        }
+        if (typeof document !== 'undefined') {
+            document.documentElement.classList.toggle('galaxy-effects-enabled', enabled);
+        }
+        set({ galaxyEffectsEnabled: enabled });
+    },
+
     // --- Configuración Global: Tour Guiado General ---
     tourCompleted: (() => {
         try {

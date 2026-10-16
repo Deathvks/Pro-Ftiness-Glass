@@ -335,7 +335,8 @@ export default function AsesoriaScreen({ onBack }) {
   );
 
   return (
-    <div 
+    <div
+      id="tutorial-advice-main"
       className="fixed inset-0 z-50 md:inset-auto md:top-[100px] md:bottom-[60px] md:left-1/2 md:-translate-x-1/2 w-full md:w-[90%] md:max-w-xl flex flex-col md:border md:border-glass-border md:rounded-[32px] shadow-2xl overflow-hidden bg-bg-primary animate-fade-in isolate"
     >
       {/* Header */}
@@ -374,7 +375,7 @@ export default function AsesoriaScreen({ onBack }) {
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+      <div id="tutorial-advice-conversation" className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
         {loading ? (
           <div className="flex justify-center p-8">
             <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>

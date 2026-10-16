@@ -13,7 +13,7 @@ const normalizeKey = (text) => {
         .trim();
 };
 
-const MuscleHeatmap = ({ muscleData = {}, darkMode = true, isSwipingRef = null }) => {
+const MuscleHeatmap = ({ muscleData = {}, darkMode = true, isSwipingRef = null, compact = false }) => {
     const [modelType, setModelType] = useState('anterior');
     const [selectedMuscleLabel, setSelectedMuscleLabel] = useState(null);
 
@@ -119,11 +119,11 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true, isSwipingRef = null }
 
     return (
         <div
-            className={`relative group cursor-pointer transition-all duration-300 select-none bg-black/5 dark:bg-white/5 backdrop-blur-md rounded-[32px] ring-1 ring-black/5 dark:ring-white/10 overflow-hidden shadow-inner ${!darkMode ? 'light-mode' : ''}`}
+            className={`relative group cursor-pointer transition-all duration-300 select-none bg-black/5 dark:bg-white/5 backdrop-blur-md ${compact ? 'rounded-[24px]' : 'rounded-[32px]'} ring-1 ring-black/5 dark:ring-white/10 overflow-hidden shadow-inner ${!darkMode ? 'light-mode' : ''}`}
             onClick={handleContainerClick}
         >
             {/* Badge Frente / Espalda */}
-            <div className="absolute top-4 right-4 z-10 pointer-events-none">
+            <div className={`absolute ${compact ? 'top-3 right-3' : 'top-4 right-4'} z-10 pointer-events-none`}>
                 <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full transition-colors bg-black/10 dark:bg-white/10 text-text-primary ring-1 ring-black/5 dark:ring-white/10 shadow-sm backdrop-blur-md">
                     {modelType === 'anterior' ? 'Frente' : 'Espalda'}
                 </span>
@@ -140,8 +140,8 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true, isSwipingRef = null }
                 </div>
             )}
 
-            <div className="w-full flex justify-center items-center py-12 px-6">
-                <div style={{ width: '100%', maxWidth: '240px', height: '400px' }} className="transition-transform duration-500">
+            <div className={`w-full flex justify-center items-center ${compact ? 'py-8 px-3' : 'py-12 px-6'}`}>
+                <div style={{ width: '100%', maxWidth: compact ? '190px' : '240px', height: compact ? '300px' : '400px' }} className="transition-transform duration-500">
                     <Model
                         data={formattedData}
                         type={modelType}
@@ -154,8 +154,8 @@ const MuscleHeatmap = ({ muscleData = {}, darkMode = true, isSwipingRef = null }
                 </div>
             </div>
 
-            <div className="absolute bottom-4 w-full text-center text-[10px] font-bold uppercase tracking-widest text-text-tertiary opacity-60">
-                Click en fondo para girar
+            <div className={`absolute ${compact ? 'bottom-2' : 'bottom-4'} w-full text-center text-[10px] font-bold uppercase tracking-widest text-text-tertiary opacity-60`}>
+                Toca el mapa para girar
             </div>
         </div>
     );

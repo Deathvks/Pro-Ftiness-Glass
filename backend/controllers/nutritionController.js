@@ -295,7 +295,7 @@ const addFoodLog = async (req, res, next) => {
       }
 
       // Check Protein target
-      const totalProtein = await NutritionLog.sum('protein', { where: { user_id: userId, log_date: log_date } }) || 0;
+      const totalProtein = await NutritionLog.sum('protein_g', { where: { user_id: userId, log_date: log_date } }) || 0;
       if (user && user.target_protein > 0 && totalProtein >= user.target_protein) {
         const protRes = await trackChallenge(userId, 'daily_protein', 1);
         if (protRes.completedNow && protRes.xpResult) {

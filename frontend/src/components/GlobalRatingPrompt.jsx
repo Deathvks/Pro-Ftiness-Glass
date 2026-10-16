@@ -1,71 +1,88 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { CapgoInAppReview } from '@capgo/capacitor-in-app-review';
 import AppRatingModal from './AppRatingModal';
+import { getMyRating } from '../services/ratingService';
 
-const GlobalRatingPrompt = () => {
+const DAY_MS = 24 * 60 * 60 * 1000;
+const PROMPT_COOLDOWN_MS = 6 * DAY_MS;
+
+const GlobalRatingPrompt = ({ userProfile, canShow = true }) => {
     const [showWebModal, setShowWebModal] = useState(false);
 
     useEffect(() => {
-        const checkRatingPrompt = async () => {
-            // Wait a few seconds so it doesn't interrupt app launch immediately
-            await new Promise(resolve => setTimeout(resolve, 5000));
+        const userId = userProfile?.id;
+        const registeredAt = Date.parse(userProfile?.created_at || userProfile?.createdAt || '');
+        if (!userId || !Number.isFinite(registeredAt)) return undefined;
 
-            const hasRated = localStorage.getItem('has_rated_app');
-            if (hasRated === 'true') return;
+        let timeoutId;
+        let isCancelled = false;
+        const ratedKey = `has_rated_app_${userId}`;
+        const lastPromptKey = `last_rating_prompt_time_${userId}`;
 
-            const now = new Date();
-            // Monday = 1, 10:00 AM
-            // Check if it's past Monday 10:00 AM in the current week
-            // Or simply prompt if it's Monday and hour is >= 10
-            
-            // Simpler: Check if it's Monday (1) and hour is 10 or more. 
-            // Also ensure we only ask once a week max (if they say "later")
-            
-            const lastPromptTimestamp = localStorage.getItem('last_rating_prompt_time');
-            if (lastPromptTimestamp) {
-                const daysSinceLastPrompt = (now.getTime() - parseInt(lastPromptTimestamp)) / (1000 * 3600 * 24);
-                // If we asked them less than 6 days ago, don't ask again
-                if (daysSinceLastPrompt < 6) return;
+        const checkPrompt = async () => {
+            const eligibleAt = registeredAt + DAY_MS;
+            const untilEligible = eligibleAt - Date.now();
+            if (untilEligible > 0) {
+                timeoutId = setTimeout(checkPrompt, untilEligible);
+                return;
             }
 
-            const isMonday = now.getDay() === 1;
-            const isAfter10 = now.getHours() >= 10;
-            const isTuesdayToSunday = now.getDay() !== 1 && now.getDay() !== 0; 
-            
-            // If it's Monday after 10 AM, or any day in the middle of the week (if they haven't seen it this week)
-            if ((isMonday && isAfter10) || isTuesdayToSunday) {
-                
-                // Show prompt!
-                localStorage.setItem('last_rating_prompt_time', now.getTime().toString());
+            // Keep this prompt behind every existing blocking modal and active workout.
+            if (!canShow) return;
 
-                if (Capacitor.isNativePlatform()) {
-                    try {
-                        await CapgoInAppReview.requestReview();
-                        // Assume they rated, so we don't bother them again. Native API handles its own quotas anyway.
-                        localStorage.setItem('has_rated_app', 'true');
-                    } catch (error) {
-                        console.error('InAppReview error:', error);
-                        // Fallback to our custom modal just in case
-                        setShowWebModal(true);
-                    }
-                } else {
-                    // Show custom web modal
-                    setShowWebModal(true);
+            if (localStorage.getItem(ratedKey) === 'true') return;
+
+            try {
+                const savedRating = await getMyRating();
+                if (isCancelled) return;
+                if (savedRating?.rating > 0) {
+                    localStorage.setItem(ratedKey, 'true');
+                    return;
                 }
+            } catch (error) {
+                console.warn('No se pudo comprobar la valoración guardada:', error);
             }
+
+            if (isCancelled) return;
+
+            const lastPrompt = Number(localStorage.getItem(lastPromptKey) || 0);
+            const cooldownRemaining = lastPrompt + PROMPT_COOLDOWN_MS - Date.now();
+            if (lastPrompt && cooldownRemaining > 0) {
+                timeoutId = setTimeout(checkPrompt, cooldownRemaining);
+                return;
+            }
+
+            localStorage.setItem(lastPromptKey, String(Date.now()));
+
+            if (Capacitor.isNativePlatform()) {
+                try {
+                    await CapgoInAppReview.requestReview();
+                    if (!isCancelled) localStorage.setItem(ratedKey, 'true');
+                } catch (error) {
+                    console.error('InAppReview error:', error);
+                    if (!isCancelled) setShowWebModal(true);
+                }
+                return;
+            }
+
+            setShowWebModal(true);
         };
 
-        checkRatingPrompt();
-    }, []);
+        checkPrompt();
+        return () => {
+            isCancelled = true;
+            if (timeoutId) clearTimeout(timeoutId);
+        };
+    }, [userProfile?.id, userProfile?.created_at, userProfile?.createdAt, canShow]);
 
     return (
-        <AppRatingModal 
-            visible={showWebModal} 
-            onClose={() => setShowWebModal(false)} 
+        <AppRatingModal
+            visible={showWebModal}
+            userId={userProfile?.id}
+            onClose={() => setShowWebModal(false)}
         />
     );
 };
 
 export default GlobalRatingPrompt;
-

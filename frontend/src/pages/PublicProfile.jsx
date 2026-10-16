@@ -567,7 +567,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
                 <div className="z-10">
                     {(() => {
-                        const roleConfig = getUserRoleRingConfig(profile);
+                        const roleConfig = getUserRoleRingConfig(profile, myProfile);
                         return (
                             <>
                                 <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary mb-2 flex items-center justify-center gap-3 flex-wrap">

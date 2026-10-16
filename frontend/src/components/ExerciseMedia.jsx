@@ -11,7 +11,7 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -
  * Componente para mostrar la imagen o vÃƒÂ­deo del ejercicio.
  * Acepta 'details' (el objeto del ejercicio), 'src' directo, y 'className'.
  */
-const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, className = '', fitMode = 'cover', forceAuto = false, forceImage = false, disableAnimation = false }) => {
+const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, className = '', fitMode = 'cover', forceAuto = false, forceImage = false, disableAnimation = false, transparentBackground = false, fillContain = false, roundedMedia = false }) => {
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
   
@@ -179,7 +179,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     const isAuto = fitMode === 'auto' || forceAuto;
     const aspectRatioClass = isAuto ? 'w-full h-auto min-h-[200px] max-h-[70vh]' : 'w-full h-full';
     
-    const finalBgClass = fitMode === 'cover' ? 'bg-transparent' : 'bg-black/5 dark:bg-white/5';
+    const finalBgClass = fitMode === 'cover' || transparentBackground ? 'bg-transparent' : 'bg-black/5 dark:bg-white/5';
     const containerClasses = `${aspectRatioClass} relative rounded-[24px] overflow-hidden ${finalBgClass} flex items-center justify-center ${className}`;
 
     // LÃƒÂ³gica mÃƒÂ¡gica para eliminar el fondo blanco de los dibujos de Wger
@@ -196,9 +196,12 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     };
 
     const isContain = fitMode === 'contain' || (imageToRender && imageToRender.includes('wger.de'));
+    const imageRadiusClass = roundedMedia ? 'rounded-[20px]' : '';
     const imgBaseClass = isAuto 
       ? 'w-full h-auto' 
-      : (isContain ? 'absolute inset-0 m-auto max-w-[90%] max-h-[90%] object-contain' : 'absolute inset-0 w-full h-full');
+      : (isContain
+          ? `absolute inset-0 ${fillContain ? 'w-full h-full' : 'm-auto max-w-[90%] max-h-[90%]'} object-contain ${imageRadiusClass}`
+          : `absolute inset-0 w-full h-full ${imageRadiusClass}`);
 
     if (finalImagesUrls.length > 0) {
       const hasMultiple = finalImagesUrls.length > 1 && !disableAnimation;
@@ -219,7 +222,11 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
           {finalImagesUrls.map((url, idx) => {
             const isUrlContain = fitMode === 'contain' || url.includes('wger.de');
             const posClass = isAuto && idx === 0 ? 'relative' : 'absolute inset-0';
-            const sizeClass = isAuto ? 'w-full h-auto' : (isUrlContain ? 'm-auto max-w-[90%] max-h-[90%] object-contain' : 'w-full h-full');
+            const sizeClass = isAuto
+              ? 'w-full h-auto'
+              : (isUrlContain
+                  ? `${fillContain ? 'w-full h-full' : 'm-auto max-w-[90%] max-h-[90%]'} object-contain ${imageRadiusClass}`
+                  : `w-full h-full ${imageRadiusClass}`);
             
             let visibilityStyle = {};
             let visibilityClass = '';
@@ -287,6 +294,10 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   return prevProps.src === nextProps.src &&
          prevProps.videoSrc === nextProps.videoSrc &&
          prevProps.className === nextProps.className &&
+         prevProps.fitMode === nextProps.fitMode &&
+         prevProps.transparentBackground === nextProps.transparentBackground &&
+         prevProps.fillContain === nextProps.fillContain &&
+         prevProps.roundedMedia === nextProps.roundedMedia &&
          extractMedia(prevProps.details) === extractMedia(nextProps.details);
 });
 

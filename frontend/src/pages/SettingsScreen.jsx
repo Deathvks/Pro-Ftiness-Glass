@@ -280,10 +280,11 @@ export default function SettingsScreen({
 
       <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
         {/* --- TABS LATERALES / HORIZONTALES --- */}
-        <div className="w-full md:w-64 shrink-0 flex md:flex-col gap-3 md:gap-2 overflow-x-auto md:overflow-visible py-3 md:py-1 px-2 md:px-1 hide-scrollbar md:sticky md:top-4 md:z-20 mb-6 md:mb-0">
+        <div id="tutorial-settings-tabs" className="w-full md:w-64 shrink-0 flex md:flex-col gap-3 md:gap-2 overflow-x-auto md:overflow-visible py-3 md:py-1 px-2 md:px-1 hide-scrollbar md:sticky md:top-4 md:z-20 mb-6 md:mb-0">
           {SETTINGS_TABS.map(tab => (
             <button
               key={tab.id}
+              data-tutorial={`settings-tab-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2.5 px-5 py-3 md:p-4 rounded-[20px] transition-all duration-300 font-bold whitespace-nowrap outline-none shrink-0
                 ${activeTab === tab.id
@@ -301,7 +302,7 @@ export default function SettingsScreen({
         </div>
 
         {/* --- CONTENIDO --- */}
-        <div className="flex-1 w-full flex flex-col gap-6 lg:gap-8">
+        <div id="tutorial-settings-content" className="flex-1 w-full flex flex-col gap-6 lg:gap-8">
 
           {activeTab === 'notifications' && (
           <GlassCard className={glassCardClass}>
@@ -393,15 +394,10 @@ export default function SettingsScreen({
               <SettingsItem
                 icon={Play}
                 title="Tutoriales"
-                subtitle="Volver a ver las guías interactivas"
+                subtitle="Guías visuales de cada sección"
                 onClick={() => {
-                  const state = useAppStore.getState();
-                  if(state.resetTour) state.resetTour();
-                  if(state.resetNutritionTour) state.resetNutritionTour();
-                  if(state.resetRoutineTour) state.resetRoutineTour();
-                  if(state.resetSocialTour) state.resetSocialTour();
-                  if(state.resetHubTour) state.resetHubTour();
-                  window.location.href = '/';
+                  sessionStorage.setItem('open_tutorials_on_hub', 'true');
+                  setView('hub');
                 }}
               />
 

@@ -13,23 +13,26 @@ import {
   ChatBubbleLeftRightIcon,
   ShieldCheckIcon
 } from '@heroicons/react/24/outline';
+import { BookOpenIcon } from '@heroicons/react/24/outline';
 import AppRatingModal from '../components/AppRatingModal';
 import { HeartIcon } from '@heroicons/react/24/solid';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
 import HubTourGuide from '../components/HubTourGuide';
 import apiClient from '../services/apiClient';
+import TutorialsCenter from '../components/TutorialsCenter';
+import { TUTORIAL_COMPLETION_ACTIONS } from '../data/tutorials';
 const CoachingPromoModal = lazy(() => import('../components/CoachingPromoModal'));
 
-const HubButton = ({ id, icon: Icon, title, description, onClick, isComingSoon, badge }) => (
+const HubButton = ({ id, icon: Icon, title, description, onClick, isComingSoon, badge, highlight = false }) => (
   <button 
     id={id}
     onClick={onClick}
     disabled={isComingSoon}
-    className={`w-full flex items-center justify-between p-4 glass rounded-2xl transition-all duration-300 ${isComingSoon ? 'opacity-60 cursor-not-allowed' : 'active:scale-95 hover:bg-glass-border/30'}`}
+    className={`w-full flex items-center justify-between p-4 glass rounded-2xl transition-all duration-300 ${highlight ? 'border-accent ring-2 ring-accent/60 shadow-lg shadow-accent/20' : ''} ${isComingSoon ? 'opacity-60 cursor-not-allowed' : 'active:scale-95 hover:bg-glass-border/30'}`}
   >
     <div className="flex items-center gap-4">
-      <div className="w-12 h-12 rounded-full bg-accent/10 text-accent flex items-center justify-center shrink-0">
+      <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${highlight ? 'bg-accent text-accent-contrast shadow-md shadow-accent/30' : 'bg-accent/10 text-accent'}`}>
         <Icon className="w-6 h-6" />
       </div>
       <div className="text-left">
@@ -40,7 +43,9 @@ const HubButton = ({ id, icon: Icon, title, description, onClick, isComingSoon, 
               Pronto
             </span>
           )}
-          {badge && !isComingSoon && (
+          {highlight && !isComingSoon ? (
+            <span className="rounded-full bg-accent px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-accent-contrast shadow-sm">Pulsa aquí</span>
+          ) : badge && !isComingSoon && (
             <span className="inline-block w-2.5 h-2.5 shrink-0 bg-accent rounded-full animate-pulse shadow-[0_0_8px_rgba(0,0,0,0.5)] dark:shadow-[0_0_8px_rgba(255,255,255,0.3)] mt-0.5 relative">
               <span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-75"></span>
             </span>
@@ -64,6 +69,40 @@ export default function Hub({ setView }) {
   const [visitedAsesoria, setVisitedAsesoria] = React.useState(true);
   const [showCoachingPromo, setShowCoachingPromo] = useState(false);
   const [showRating, setShowRating] = useState(false);
+  const [showTutorials, setShowTutorials] = useState(false);
+  const [hasOpenedTutorials, setHasOpenedTutorials] = useState(false);
+
+  useEffect(() => {
+    if (!userProfile?.id) return;
+    setHasOpenedTutorials(localStorage.getItem(`tutorials_opened_from_hub_${userProfile.id}`) === 'true');
+  }, [userProfile?.id]);
+
+  const handleOpenTutorials = () => {
+    if (userProfile?.id) {
+      localStorage.setItem(`tutorials_opened_from_hub_${userProfile.id}`, 'true');
+    }
+    setHasOpenedTutorials(true);
+    setShowTutorials(true);
+  };
+
+  useEffect(() => {
+    if (sessionStorage.getItem('open_tutorials_on_hub') === 'true') {
+      sessionStorage.removeItem('open_tutorials_on_hub');
+      setShowTutorials(true);
+    }
+  }, []);
+
+  const startTutorial = (tutorial) => {
+    const store = useAppStore.getState();
+    const completionAction = TUTORIAL_COMPLETION_ACTIONS[tutorial.id];
+    if (completionAction && store[completionAction]) store[completionAction]();
+    if (tutorial.id === 'routines') {
+      localStorage.setItem('routinesForceTab', 'myRoutines');
+      localStorage.setItem('routinesSelectedFolder', 'all');
+    }
+    setShowTutorials(false);
+    setView(tutorial.view, { tutorialId: tutorial.id, returnToHub: true });
+  };
 
   React.useEffect(() => {
     if (userProfile?.id) {
@@ -116,6 +155,15 @@ export default function Hub({ setView }) {
 
         {/* Grid de Accesos Directos */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+          <HubButton
+            id="hub-tutorials"
+            icon={BookOpenIcon}
+            title="Tutoriales"
+            description="Guías visuales de cada sección"
+            onClick={handleOpenTutorials}
+            highlight={!hasOpenedTutorials}
+          />
           
           <HubButton 
             id="hub-progress"
@@ -137,6 +185,7 @@ export default function Hub({ setView }) {
                   setView('asesoria');
                 }}
                 badge={!visitedAsesoria || unreadChats > 0}
+                highlight={!visitedAsesoria || unreadChats > 0}
               />
           )}
 
@@ -228,6 +277,13 @@ export default function Hub({ setView }) {
           <Suspense fallback={null}>
             <CoachingPromoModal onClose={handleCloseCoachingPromo} />
           </Suspense>
+        )}
+        {showTutorials && (
+          <TutorialsCenter
+            userRole={userProfile?.role}
+            onClose={() => setShowTutorials(false)}
+            onStart={startTutorial}
+          />
         )}
         <HubTourGuide />
       </div>

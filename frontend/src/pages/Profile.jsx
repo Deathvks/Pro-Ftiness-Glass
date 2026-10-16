@@ -421,10 +421,10 @@ const Profile = ({ onCancel, setView, navigate }) => {
         <title>{`Editar Perfil: ${formData.username || "Usuario"} - Pro Fitness Glass`}</title>
       </Helmet>
 
-      <div className="w-full max-w-2xl mx-auto px-4 pb-28 sm:p-6 lg:p-10 animate-[fade-in_0.3s_ease-out] mt-2 sm:mt-0">
+      <div id="tutorial-profile-header" className="w-full max-w-2xl mx-auto px-4 pb-28 sm:p-6 lg:p-10 animate-[fade-in_0.3s_ease-out] mt-2 sm:mt-0">
         
         {/* Header - Avatar */}
-        <div className="flex flex-col items-center mt-6 mb-8">
+        <div id="tutorial-profile-identity" className="flex flex-col items-center mt-6 mb-8">
             <input
               type="file"
               ref={fileInputRef}
@@ -433,7 +433,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
               className="hidden"
             />
             {(() => {
-              const roleConfig = getUserRoleRingConfig(userProfile);
+              const roleConfig = getUserRoleRingConfig(userProfile, userProfile);
               return (
                 <>
                   <div
@@ -477,7 +477,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
         </div>
 
         {/* Group 1: Datos Básicos */}
-        <div className="mb-6">
+        <div id="tutorial-profile-form" className="mb-6">
             <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 px-4">Datos Básicos</h2>
             <div className="bg-bg-secondary rounded-[24px] shadow-sm ring-1 ring-glass-border overflow-hidden">
                 <div className="group flex items-center justify-between p-4 border-b border-glass-border">

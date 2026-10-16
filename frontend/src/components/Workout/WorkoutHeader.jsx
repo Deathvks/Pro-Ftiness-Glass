@@ -90,9 +90,15 @@ const WorkoutHeader = ({
         </div>
       ) : isCssGradient ? (
         // Opción B: Es un degradado CSS
-        <div className="absolute inset-0 z-0" style={{ background: routineImage }}>
-          {/* Usamos el color de fondo primario para el overlay para adaptarlo al tema (claro/oscuro) */}
-          <div className="absolute inset-0 backdrop-blur-sm opacity-80" style={{ backgroundColor: 'var(--bg-primary)' }} />
+        <div
+          className="absolute inset-0 z-0 overflow-hidden rounded-[inherit]"
+          style={{ background: routineImage }}
+        >
+          {/* Atenuamos el degradado sin filtros, que podían dejar halos en las esquinas recortadas. */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ backgroundColor: 'var(--bg-primary)', opacity: 0.8 }}
+          />
         </div>
       ) : (
         // Opción C: No hay imagen

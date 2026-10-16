@@ -13,16 +13,31 @@ export const analyzeRoutine = (exercises = [], answers = {}) => {
     let sets = (ex.sets && Array.isArray(ex.sets)) ? (ex.sets.length || 3) : (typeof ex.sets === 'number' ? ex.sets : 3);
     stats.totalSets += sets;
     
-    // Identificamos músculo
-    let muscle = ex.muscle_group || ex.target || 'unknown';
-    if ((!muscle || muscle === 'other') && ex.name) muscle = inferMuscleFromName(ex.name);
-    
-    const muscleKey = muscle ? muscle.toLowerCase() : 'unknown';
-    stats.muscles[muscleKey] = (stats.muscles[muscleKey] || 0) + sets;
+    // Un ejercicio puede indicar varios músculos separados por coma.
+    let muscles = Array.isArray(ex.muscle_group)
+      ? ex.muscle_group
+      : String(ex.muscle_group || ex.target || '').split(',');
+    muscles = [...new Set(muscles.map(muscle => String(muscle).trim().toLowerCase()).filter(Boolean))];
+    if ((!muscles.length || muscles.every(muscle => ['other', 'unknown'].includes(muscle))) && ex.name) {
+      muscles = [inferMuscleFromName(ex.name)];
+    }
+    if (!muscles.length) muscles = ['unknown'];
 
-    // Agrupamos por patrón
-    const group = getGroupFromMuscle(muscleKey);
-    if (group) stats[group] = (stats[group] || 0) + sets;
+    // Repartimos el volumen entre los músculos declarados para evitar contar dos veces
+    // las series de un ejercicio compuesto en la distribución porcentual.
+    const setsPerMuscle = sets / muscles.length;
+    muscles.forEach(muscle => {
+      stats.muscles[muscle] = (stats.muscles[muscle] || 0) + setsPerMuscle;
+    });
+
+    // Si los músculos pertenecen a más de un patrón, dividimos también esa carga.
+    const groups = [...new Set(muscles.map(getGroupFromMuscle).filter(Boolean))];
+    if (groups.length) {
+      const setsPerGroup = sets / groups.length;
+      groups.forEach(group => {
+        stats[group] = (stats[group] || 0) + setsPerGroup;
+      });
+    }
   });
 
   const suggestions = [];

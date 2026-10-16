@@ -921,7 +921,23 @@ export default function MainAppLayout({
         </div>
       )}
       
-      <GlobalRatingPrompt />
+      <GlobalRatingPrompt
+        userProfile={userProfile}
+        canShow={
+          !showWelcomeModal &&
+          !show2FAPromo &&
+          !tourActive &&
+          cookieConsent !== null &&
+          !showEmailVerificationModal &&
+          !showCodeVerificationModal &&
+          !isGlobalModalOpen &&
+          !showAIModal &&
+          !showAccentUnlockModal &&
+          !showLogoutConfirm &&
+          !pendingMilestone &&
+          !activeWorkout
+        }
+      />
       
       <Sidebar
         view={view}

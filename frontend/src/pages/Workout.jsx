@@ -1,8 +1,10 @@
 /* frontend/src/pages/Workout.jsx */
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Activity, Maximize2 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
+import { useAppTheme } from '../hooks/useAppTheme';
 import { calculateCalories } from '../utils/helpers';
 import Spinner from '../components/Spinner';
 
@@ -14,7 +16,8 @@ import ExerciseSearch from '../components/RoutineEditor/ExerciseSearch';
 import WorkoutExerciseDetailModal from './WorkoutExerciseDetailModal';
 import PlateCalculatorModal from '../components/PlateCalculatorModal';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
-import WorkoutHeatmapModal from '../components/Workout/WorkoutHeatmapModal';
+import WorkoutHeatmapModal, { getWorkoutMuscleData } from '../components/Workout/WorkoutHeatmapModal';
+import MuscleHeatmap from '../components/MuscleHeatmap/MuscleHeatmap';
 import WorkoutReviewModal from '../components/Workout/WorkoutReviewModal';
 
 // --- IMPORTS DE COMPONENTES MODULARIZADOS ---
@@ -31,6 +34,7 @@ const QuickCardio = React.lazy(() => import('./QuickCardio'));
 const Workout = ({ timer, setView, navParams }) => {
     const { addToast } = useToast();
     const { t } = useTranslation(['exercise_names', 'exercise_descriptions']);
+    const { resolvedTheme } = useAppTheme();
 
     // --- 1. Estado de Zustand (Global) ---
     const {
@@ -176,6 +180,11 @@ const Workout = ({ timer, setView, navParams }) => {
     const hasWorkoutStarted = workoutStartTime !== null;
     const isSimpleWorkout =
         !activeWorkout?.exercises || activeWorkout.exercises.length === 0;
+
+    const workoutMuscleData = useMemo(
+        () => getWorkoutMuscleData(activeWorkout?.exercises || []),
+        [activeWorkout?.exercises]
+    );
 
     const exerciseGroups = useMemo(() => {
         if (isSimpleWorkout) return [];
@@ -395,6 +404,42 @@ const Workout = ({ timer, setView, navParams }) => {
                 onShowCalculator={() => setShowCalculatorModal(true)}
                 onShowHeatmap={() => setShowHeatmapModal(true)}
             />
+
+            {!isSimpleWorkout && Object.keys(workoutMuscleData).length > 0 && (
+                <section className="mb-7 overflow-hidden rounded-[28px] border border-accent/20 bg-gradient-to-br from-accent/10 via-bg-secondary to-bg-primary shadow-lg shadow-black/5">
+                    <div className="flex items-center justify-between gap-3 px-4 pt-4 sm:px-5 sm:pt-5">
+                        <div className="flex min-w-0 items-center gap-3">
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent">
+                                <Activity size={21} />
+                            </span>
+                            <div className="min-w-0">
+                                <h2 className="font-bold text-text-primary">Mapa muscular</h2>
+                                <p className="text-xs text-text-secondary">Volumen previsto para esta sesión</p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowHeatmapModal(true)}
+                            className="flex shrink-0 items-center gap-1.5 rounded-full border border-accent/20 bg-bg-primary/70 px-3 py-2 text-xs font-semibold text-accent transition hover:bg-accent/10"
+                        >
+                            <Maximize2 size={14} />
+                            Ver ampliado
+                        </button>
+                    </div>
+                    <div className="grid items-center gap-3 px-3 pb-4 pt-2 sm:grid-cols-[minmax(0,1fr)_220px] sm:px-5 sm:pb-5">
+                        <p className="order-2 px-2 text-sm leading-relaxed text-text-secondary sm:order-1 sm:px-0">
+                            La intensidad del color muestra qué músculos acumulan más series. Toca el mapa para alternar entre frente y espalda.
+                        </p>
+                        <div className="order-1 mx-auto w-full max-w-[220px] sm:order-2">
+                            <MuscleHeatmap
+                                muscleData={workoutMuscleData}
+                                darkMode={resolvedTheme !== 'light'}
+                                compact
+                            />
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {/* Banner recordatorio de la nota de la sesión anterior */}
             {previousWorkoutNote && !dismissedPreviousNote && (

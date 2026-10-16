@@ -1,19 +1,26 @@
 /* frontend/src/utils/userRoleUtils.js */
 
 /**
- * Determina el tipo de rol/membresía de un usuario:
- * - 'admin': Administrador de la plataforma
+ * Determina la apariencia pública del rol/membresía de un usuario.
+ * Los administradores de la plataforma se presentan como usuarios normales.
  * - 'trainer': Entrenador oficial
  * - 'asesoria': Usuario miembro de la asesoría con preparador
  * - 'user': Usuario estándar / atleta
  */
-export const getUserRoleType = (user) => {
+export const getUserRoleType = (user, viewer = null) => {
   if (!user) return 'user';
 
   const role = String(user.role || '').toLowerCase().trim();
+  const viewerRole = String(viewer?.role || '').toLowerCase().trim();
+  const isViewerSelf = user.id != null && viewer?.id != null && String(user.id) === String(viewer.id);
 
-  // 1. Admin
-  if (role === 'admin' || user.isAdmin === true) {
+  // El propio administrador conserva su distintivo; para el resto es un usuario normal.
+  if (role === 'admin' || user.isAdmin === true || user.is_admin === true) {
+    return isViewerSelf && viewerRole === 'admin' ? 'admin' : 'user';
+  }
+  // Algunas respuestas públicas ya ocultan el rol. Si es el usuario actual,
+  // usamos su rol autenticado para mostrarle su propio distintivo.
+  if (isViewerSelf && viewerRole === 'admin') {
     return 'admin';
   }
 
@@ -41,8 +48,8 @@ export const getUserRoleType = (user) => {
  * Devuelve la configuración visual estilo historias de Instagram para el avatar según su rol:
  * Borde con degradado de colores específicos + glow + textos
  */
-export const getUserRoleRingConfig = (user) => {
-  const roleType = getUserRoleType(user);
+export const getUserRoleRingConfig = (user, viewer = null) => {
+  const roleType = getUserRoleType(user, viewer);
 
   switch (roleType) {
     case 'admin':

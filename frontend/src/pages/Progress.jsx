@@ -421,10 +421,11 @@ const Progress = ({ darkMode, setView }) => {
                 </h1>
 
                 {/* NUEVO CONTENEDOR DE PESTAÑAS (PILLS) */}
-                <div ref={tabsRef} className="flex overflow-x-auto pb-4 pt-1 px-1 -mx-1 gap-2.5 no-scrollbar mask-linear-fade items-center no-swipe-tabs scroll-smooth">
+                <div id="tutorial-progress-tabs" ref={tabsRef} className="flex overflow-x-auto pb-4 pt-1 px-1 -mx-1 gap-2.5 no-scrollbar mask-linear-fade items-center no-swipe-tabs scroll-smooth">
                     {TABS.map(tab => (
                         <button 
                             key={tab.id}
+                            data-tutorial={`progress-tab-${tab.id}`}
                             onClick={() => {
                                 setSwipeAnim('swipeFadeIn');
                                 setViewType(tab.id);
@@ -441,7 +442,8 @@ const Progress = ({ darkMode, setView }) => {
                 </div>
             </div>
 
-            <div 
+            <div
+                id="tutorial-progress-panel"
                 key={viewType} 
                 ref={contentRef}
                 style={{ animation: `${swipeAnim || 'swipeFadeIn'} 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards` }}

@@ -213,7 +213,7 @@ export default function TrainerPanel({ setView }) {
   }
 
   return (
-    <div className="w-full h-full pb-[calc(var(--safe-bottom)+90px)] md:pb-0 animate-fade-in overflow-y-auto flex flex-col">
+    <div id="tutorial-trainer-panel" className="w-full h-full pb-[calc(var(--safe-bottom)+90px)] md:pb-0 animate-fade-in overflow-y-auto flex flex-col">
       <Helmet>
         <title>Panel de Entrenador - Pro Fitness Glass</title>
       </Helmet>

@@ -174,10 +174,10 @@ export const createDataSlice = (set, get) => ({
           console.log('[fetchInitialData] Error de red detectado, reintentando en 3s...');
           setTimeout(() => { get().fetchInitialData(); }, 3000);
         } else {
-          console.log('[fetchInitialData] Error no recuperable, forzando cierre de sesión preventivo.');
-          if (get().handleSessionExpiry) {
-            get().handleSessionExpiry();
-          }
+          // Los errores de API distintos de 401 (por ejemplo, 403 o 500)
+          // no significan que el token haya caducado. apiClient ya gestiona
+          // el 401 de la sesión activa y activa el aviso de sesión.
+          console.error('[fetchInitialData] Error de API al cargar el perfil; se mantiene la sesión.');
         }
       } finally {
       set({ isLoading: false });

@@ -22,7 +22,7 @@ export const useAppNavigation = (isInitialLoad) => {
 
     const validPaths = [
       '/', '/login', '/register', '/forgot-password', '/forgotPassword', '/reset-password', '/privacy', '/terms',
-      '/dashboard', '/progress', '/routines', '/workout', '/nutrition', '/templateDiets',
+      '/dashboard', '/progress', '/routines', '/workout', '/nutrition',
       '/social', '/hub', '/quickCardio', '/active-cardio', '/settings', '/appearance',
       '/support', '/socialLinks', '/challenges', '/physicalProfileEditor', '/profile',
       '/adminPanel', '/securityDashboard', '/trainerPanel', '/twoFactorSetup', '/notifications',
