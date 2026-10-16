@@ -343,6 +343,176 @@ const classifyExerciseMuscles = (exercise) => {
 
 // Peso que aporta una serie indirecta/sinergista para alcanzar el volumen mínimo efectivo
 const INDIRECT_SET_FACTOR = 0.35;
+const EXCLUSIONS_STORAGE_KEY = 'weekly_volume_exclusions_v1';
+const EXCLUSIONS_EVENT_NAME = 'weekly_volume_exclusions_changed';
+
+export const getRoutineVolumeKey = (routine, fallbackIdx = 0) =>
+  String(routine?.id ?? routine?.routine_id ?? routine?.name ?? `routine-${fallbackIdx}`);
+
+export const getExerciseVolumeKey = (exercise, index = 0) =>
+  String(
+    exercise?.id ??
+    exercise?.routine_exercise_id ??
+    exercise?.tempId ??
+    `${exercise?.name || 'ex'}-${exercise?.exercise_order ?? index}`
+  );
+
+const readStoredExclusions = () => {
+  if (typeof window === 'undefined') {
+    return { excludedRoutines: {}, excludedExercises: {} };
+  }
+  try {
+    const raw = window.localStorage.getItem(EXCLUSIONS_STORAGE_KEY);
+    if (!raw) return { excludedRoutines: {}, excludedExercises: {} };
+    const parsed = JSON.parse(raw);
+    return {
+      excludedRoutines: parsed?.excludedRoutines && typeof parsed.excludedRoutines === 'object' ? parsed.excludedRoutines : {},
+      excludedExercises: parsed?.excludedExercises && typeof parsed.excludedExercises === 'object' ? parsed.excludedExercises : {}
+    };
+  } catch {
+    return { excludedRoutines: {}, excludedExercises: {} };
+  }
+};
+
+const writeStoredExclusions = (nextState) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(EXCLUSIONS_STORAGE_KEY, JSON.stringify(nextState));
+    window.dispatchEvent(new CustomEvent(EXCLUSIONS_EVENT_NAME, { detail: nextState }));
+  } catch {
+    // ignore storage errors
+  }
+};
+
+export const isExerciseIncludedInVolume = (exclusions, routineKey, exerciseKey) => {
+  if (!exclusions) return true;
+  if (exclusions.excludedRoutines?.[routineKey]) return false;
+  if (exclusions.excludedExercises?.[routineKey]?.[exerciseKey]) return false;
+  return true;
+};
+
+export const getRoutineInclusionStats = (exclusions, routine, fallbackIdx = 0) => {
+  const routineKey = getRoutineVolumeKey(routine, fallbackIdx);
+  const exercises = getRoutineExercises(routine);
+  const total = exercises.length;
+  if (total === 0) {
+    const isRoutineExcluded = Boolean(exclusions?.excludedRoutines?.[routineKey]);
+    return { routineKey, total: 0, included: 0, status: isRoutineExcluded ? 'none' : 'all' };
+  }
+  let included = 0;
+  exercises.forEach((ex, idx) => {
+    const exKey = getExerciseVolumeKey(ex, idx);
+    if (isExerciseIncludedInVolume(exclusions, routineKey, exKey)) {
+      included += 1;
+    }
+  });
+  const status = included === 0 ? 'none' : included === total ? 'all' : 'partial';
+  return { routineKey, total, included, status };
+};
+
+export const useWeeklyVolumeExclusions = () => {
+  const [exclusions, setExclusions] = React.useState(() => readStoredExclusions());
+
+  React.useEffect(() => {
+    const handleUpdate = (event) => {
+      setExclusions(event?.detail || readStoredExclusions());
+    };
+    const handleStorage = (event) => {
+      if (event.key === EXCLUSIONS_STORAGE_KEY) {
+        setExclusions(readStoredExclusions());
+      }
+    };
+    window.addEventListener(EXCLUSIONS_EVENT_NAME, handleUpdate);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener(EXCLUSIONS_EVENT_NAME, handleUpdate);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
+
+  const updateExclusions = React.useCallback((updater) => {
+    const current = readStoredExclusions();
+    const next = typeof updater === 'function' ? updater(current) : updater;
+    writeStoredExclusions(next);
+    setExclusions(next);
+  }, []);
+
+  const setRoutineAllIncluded = React.useCallback((routine, includeAll, fallbackIdx = 0) => {
+    const routineKey = getRoutineVolumeKey(routine, fallbackIdx);
+    const exercises = getRoutineExercises(routine);
+    updateExclusions((prev) => {
+      const nextRoutines = { ...(prev.excludedRoutines || {}) };
+      const nextExercises = { ...(prev.excludedExercises || {}) };
+      if (includeAll) {
+        delete nextRoutines[routineKey];
+        delete nextExercises[routineKey];
+      } else {
+        nextRoutines[routineKey] = true;
+        const mapForRoutine = {};
+        exercises.forEach((ex, idx) => {
+          mapForRoutine[getExerciseVolumeKey(ex, idx)] = true;
+        });
+        nextExercises[routineKey] = mapForRoutine;
+      }
+      return { excludedRoutines: nextRoutines, excludedExercises: nextExercises };
+    });
+  }, [updateExclusions]);
+
+  const toggleExerciseIncluded = React.useCallback((routine, exercise, exIdx = 0, fallbackRoutineIdx = 0) => {
+    const routineKey = getRoutineVolumeKey(routine, fallbackRoutineIdx);
+    const exercises = getRoutineExercises(routine);
+    const targetExKey = getExerciseVolumeKey(exercise, exIdx);
+
+    updateExclusions((prev) => {
+      const nextRoutines = { ...(prev.excludedRoutines || {}) };
+      const nextExercises = { ...(prev.excludedExercises || {}) };
+      const wasRoutineExcluded = Boolean(nextRoutines[routineKey]);
+      const currentRoutineExMap = { ...(nextExercises[routineKey] || {}) };
+
+      if (wasRoutineExcluded) {
+        // Si toda la rutina estaba excluida y el usuario activa este ejercicio,
+        // marcamos los demás como excluidos y dejamos este incluido.
+        delete nextRoutines[routineKey];
+        exercises.forEach((ex, idx) => {
+          const k = getExerciseVolumeKey(ex, idx);
+          if (k !== targetExKey) {
+            currentRoutineExMap[k] = true;
+          } else {
+            delete currentRoutineExMap[k];
+          }
+        });
+      } else {
+        const isCurrentlyExcluded = Boolean(currentRoutineExMap[targetExKey]);
+        if (isCurrentlyExcluded) {
+          delete currentRoutineExMap[targetExKey];
+        } else {
+          currentRoutineExMap[targetExKey] = true;
+        }
+      }
+
+      // Comprobar si ahora todos están excluidos o todos incluidos
+      const excludedCount = exercises.filter((ex, idx) => currentRoutineExMap[getExerciseVolumeKey(ex, idx)]).length;
+      if (exercises.length > 0 && excludedCount === exercises.length) {
+        nextRoutines[routineKey] = true;
+        nextExercises[routineKey] = currentRoutineExMap;
+      } else if (excludedCount === 0) {
+        delete nextRoutines[routineKey];
+        delete nextExercises[routineKey];
+      } else {
+        delete nextRoutines[routineKey];
+        nextExercises[routineKey] = currentRoutineExMap;
+      }
+
+      return { excludedRoutines: nextRoutines, excludedExercises: nextExercises };
+    });
+  }, [updateExclusions]);
+
+  return {
+    exclusions,
+    setRoutineAllIncluded,
+    toggleExerciseIncluded
+  };
+};
 
 const formatMuscleTag = (rawTag = '') => {
   const clean = String(rawTag).trim();
@@ -356,10 +526,215 @@ const formatMuscleTag = (rawTag = '') => {
   return clean.replace(/[_-]/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
 };
 
+export const RoutineVolumeFilterModal = ({ routine, routines = [], onClose }) => {
+  const { t } = useTranslation(['exercise_names']);
+  const { exclusions, setRoutineAllIncluded, toggleExerciseIncluded } = useWeeklyVolumeExclusions();
+  const isSingleRoutine = Boolean(routine);
+  const targetRoutines = useMemo(
+    () => (isSingleRoutine ? [routine] : (Array.isArray(routines) ? routines : [])),
+    [isSingleRoutine, routine, routines]
+  );
+
+  useModalLock(true);
+
+  const translateExerciseName = (rawName = '') => {
+    if (!rawName) return 'Ejercicio';
+    return t(rawName, { ns: 'exercise_names', defaultValue: rawName });
+  };
+
+  return (
+    <ModalPortal>
+      <div
+        className="fixed inset-0 z-[115] flex items-end sm:items-center justify-center p-0 !pt-[calc(1rem+var(--safe-top,env(safe-area-inset-top,0px)))] sm:p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]"
+        onClick={onClose}
+      >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="routine-volume-filter-title"
+          className="relative mt-auto mb-0 sm:my-0 w-[90%] sm:w-full max-w-lg max-h-[calc(90dvh-var(--safe-top,env(safe-area-inset-top,0px)))] sm:max-h-[85vh] flex flex-col bg-bg-primary rounded-t-[32px] rounded-b-none sm:rounded-[32px] border border-glass-border ring-1 ring-black/5 dark:ring-white/10 shadow-2xl overflow-hidden animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.2s_ease-out]"
+          onClick={event => event.stopPropagation()}
+        >
+          {/* Barra superior para deslizar hacia abajo en móvil */}
+          <div className="shrink-0 bg-bg-secondary pt-3 sm:hidden">
+            <div
+              className="mx-auto mb-1 h-1.5 w-12 rounded-full bg-black/15 dark:bg-white/20"
+              aria-hidden="true"
+            />
+          </div>
+
+          {/* Cabecera */}
+          <div className="flex items-start justify-between gap-3 border-b border-glass-border bg-bg-secondary px-5 py-4 shrink-0">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent">
+                  <Activity size={17} />
+                </span>
+                <h2 id="routine-volume-filter-title" className="truncate text-base font-black text-text-primary sm:text-lg">
+                  {isSingleRoutine ? (routine.name || routine.routine_name || 'Rutina') : 'Recuento semanal por rutina'}
+                </h2>
+              </div>
+              <p className="mt-1 text-xs text-text-secondary">
+                {isSingleRoutine
+                  ? 'Elige qué ejercicios de esta rutina entran en la suma de series semanales (por defecto entran todos).'
+                  : 'Marca qué rutinas o ejercicios individuales quieres incluir en el cálculo semanal.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar configuración de recuento"
+              className="rounded-full p-2 text-text-secondary transition hover:bg-bg-primary hover:text-text-primary border border-transparent hover:border-glass-border shrink-0"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Lista de rutinas y sus ejercicios */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 pb-[calc(1.5rem+var(--safe-bottom,env(safe-area-inset-bottom,0px)))] sm:pb-6 space-y-4">
+            {targetRoutines.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-glass-border p-6 text-center text-xs text-text-secondary">
+                No hay rutinas disponibles para configurar.
+              </div>
+            ) : (
+              targetRoutines.map((itemRoutine, rIdx) => {
+                const exercises = getRoutineExercises(itemRoutine);
+                const stats = getRoutineInclusionStats(exclusions, itemRoutine, rIdx);
+
+                return (
+                  <div
+                    key={stats.routineKey}
+                    className="overflow-hidden rounded-2xl border border-glass-border bg-bg-secondary"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-glass-border bg-black/5 px-4 py-3 dark:bg-white/5">
+                      <div className="min-w-0">
+                        {!isSingleRoutine && (
+                          <h3 className="truncate text-sm font-extrabold text-text-primary">
+                            {itemRoutine.name || itemRoutine.routine_name || `Rutina ${rIdx + 1}`}
+                          </h3>
+                        )}
+                        <span className="text-xs font-bold text-text-secondary">
+                          Incluidos en el recuento:{' '}
+                          <strong className={stats.included > 0 ? 'text-accent' : 'text-text-muted'}>
+                            {stats.included} de {stats.total}
+                          </strong>{' '}
+                          {stats.total === 1 ? 'ejercicio' : 'ejercicios'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setRoutineAllIncluded(itemRoutine, true, rIdx)}
+                          disabled={stats.status === 'all'}
+                          className={`rounded-full px-3 py-1 text-[11px] font-extrabold transition ${
+                            stats.status === 'all'
+                              ? 'bg-accent text-accent-contrast opacity-60 cursor-default'
+                              : 'bg-accent/15 text-accent hover:bg-accent/25'
+                          }`}
+                        >
+                          Todos
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRoutineAllIncluded(itemRoutine, false, rIdx)}
+                          disabled={stats.status === 'none'}
+                          className={`rounded-full px-3 py-1 text-[11px] font-extrabold transition ${
+                            stats.status === 'none'
+                              ? 'bg-red-500/20 text-red-500 opacity-60 cursor-default'
+                              : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
+                          }`}
+                        >
+                          Ninguno
+                        </button>
+                      </div>
+                    </div>
+
+                    {exercises.length === 0 ? (
+                      <div className="px-4 py-4 text-center text-xs text-text-muted">
+                        Esta rutina no tiene ejercicios.
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-glass-border">
+                        {exercises.map((ex, exIdx) => {
+                          const exKey = getExerciseVolumeKey(ex, exIdx);
+                          const included = isExerciseIncludedInVolume(exclusions, stats.routineKey, exKey);
+                          const sets = getPlannedSets(ex);
+                          const { primary, secondary } = classifyExerciseMuscles(ex);
+                          const primaryLabels = primary.map(k => MUSCLE_BY_KEY.get(k)?.label || formatMuscleTag(k));
+                          const secondaryLabels = secondary.map(k => MUSCLE_BY_KEY.get(k)?.label || formatMuscleTag(k));
+
+                          return (
+                            <button
+                              key={exKey}
+                              type="button"
+                              onClick={() => toggleExerciseIncluded(itemRoutine, ex, exIdx, rIdx)}
+                              className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors ${
+                                included
+                                  ? 'bg-transparent hover:bg-black/5 dark:hover:bg-white/5'
+                                  : 'bg-black/[0.02] opacity-55 hover:opacity-80 dark:bg-white/[0.02]'
+                              }`}
+                            >
+                              <div className="flex min-w-0 flex-1 items-center gap-3">
+                                <span
+                                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-xs font-black transition-colors ${
+                                    included
+                                      ? 'border-accent bg-accent text-accent-contrast'
+                                      : 'border-glass-border bg-bg-primary text-transparent'
+                                  }`}
+                                >
+                                  ✓
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <p className={`truncate text-xs font-bold ${included ? 'text-text-primary' : 'text-text-secondary line-through'}`}>
+                                    {translateExerciseName(ex.name)}
+                                  </p>
+                                  <p className="mt-0.5 truncate text-[11px] text-text-secondary">
+                                    {primaryLabels.length > 0 ? (
+                                      <>
+                                        {primaryLabels.join(', ')}
+                                        {secondaryLabels.length > 0 && (
+                                          <span className="text-text-muted"> · +{secondaryLabels.join(', ')} (ind.)</span>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <span>Sin grupo asignado</span>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <span
+                                className={`shrink-0 rounded-xl px-2.5 py-1 text-[11px] font-extrabold tabular-nums ${
+                                  included
+                                    ? 'bg-accent/15 text-accent'
+                                    : 'bg-black/5 text-text-muted dark:bg-white/5'
+                                }`}
+                              >
+                                {sets} {sets === 1 ? 'serie' : 'series'}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    </ModalPortal>
+  );
+};
+
 const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
   const { t } = useTranslation(['exercise_names']);
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedMuscleKey, setSelectedMuscleKey] = useState(null);
+  const [showRoutineFilterModal, setShowRoutineFilterModal] = useState(false);
+  const { exclusions } = useWeeklyVolumeExclusions();
   const goalRange = getGoalRange(goal);
 
   useModalLock(Boolean(selectedMuscleKey));
@@ -371,18 +746,30 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
     const detectedSubMuscles = Object.fromEntries(TRACKED_MUSCLES.map(muscle => [muscle.key, new Set()]));
     const extraMuscles = new Map();
     let routinesCounted = 0;
+    let totalRoutinesWithExercises = 0;
+    let excludedExercisesCount = 0;
 
     (Array.isArray(routines) ? routines : []).forEach((routine, routineIdx) => {
       const exercises = getRoutineExercises(routine);
       if (exercises.length === 0) return;
 
-      routinesCounted += 1;
+      totalRoutinesWithExercises += 1;
+      const routineKey = getRoutineVolumeKey(routine, routineIdx);
       const routineId = routine.id ?? `routine-${routineIdx}`;
       const routineName = routine.name || routine.routine_name || `Rutina ${routineIdx + 1}`;
+      let hasIncludedExerciseInRoutine = false;
 
       exercises.forEach((exercise, exIdx) => {
+        const exKey = getExerciseVolumeKey(exercise, exIdx);
+        if (!isExerciseIncludedInVolume(exclusions, routineKey, exKey)) {
+          excludedExercisesCount += 1;
+          return;
+        }
+
         const sets = getPlannedSets(exercise);
         if (!sets) return;
+
+        hasIncludedExerciseInRoutine = true;
 
         const { primary, secondary, extra } = classifyExerciseMuscles(exercise);
         const rawMuscleString = exercise.muscle_group || exercise.exercise?.muscle_group || exercise.exercise_details?.muscle_group || exercise.target || '';
@@ -468,6 +855,10 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
           });
         }
       });
+
+      if (hasIncludedExerciseInRoutine) {
+        routinesCounted += 1;
+      }
     });
 
     const rows = [
@@ -564,8 +955,13 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
     const statusOrder = { red: 0, orange: 1, green: 2 };
     withStatus.sort((a, b) => statusOrder[a.status] - statusOrder[b.status] || b.directSets - a.directSets || b.indirectSets - a.indirectSets);
 
-    return { rows: withStatus, routinesCounted };
-  }, [routines, goalRange]);
+    return {
+      rows: withStatus,
+      routinesCounted,
+      totalRoutinesWithExercises,
+      excludedExercisesCount
+    };
+  }, [routines, goalRange, exclusions]);
 
   const greenCount = volumeRows.rows.filter(row => row.status === 'green').length;
   const alertCount = volumeRows.rows.length - greenCount;
@@ -613,22 +1009,40 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
       </button>
 
       <div id="weekly-muscle-volume-content" hidden={!isExpanded} className="p-4 sm:p-5">
-        <div className="mb-4 grid grid-cols-3 gap-2">
-          <div className="rounded-2xl bg-black/5 p-3 dark:bg-white/5">
-            <span className="block text-lg font-black text-text-primary">{volumeRows.routinesCounted}</span>
-            <span className="text-[10px] font-semibold text-text-secondary">Rutinas/semana</span>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="grid flex-1 grid-cols-3 gap-2 min-w-[240px]">
+            <div className="rounded-2xl bg-black/5 p-3 dark:bg-white/5">
+              <span className="block text-lg font-black text-text-primary">{volumeRows.routinesCounted}</span>
+              <span className="text-[10px] font-semibold text-text-secondary">Rutinas activas</span>
+            </div>
+            <div className="rounded-2xl bg-emerald-500/10 p-3">
+              <span className="block text-lg font-black text-emerald-600 dark:text-emerald-400">{greenCount}</span>
+              <span className="text-[10px] font-semibold text-text-secondary">En rango</span>
+            </div>
+            <div className={`rounded-2xl p-3 ${alertCount ? 'bg-orange-500/10' : 'bg-black/5 dark:bg-white/5'}`}>
+              <span className={`block text-lg font-black ${alertCount ? 'text-orange-600 dark:text-orange-400' : 'text-text-primary'}`}>{alertCount}</span>
+              <span className="text-[10px] font-semibold text-text-secondary">A revisar</span>
+            </div>
           </div>
-          <div className="rounded-2xl bg-emerald-500/10 p-3">
-            <span className="block text-lg font-black text-emerald-600 dark:text-emerald-400">{greenCount}</span>
-            <span className="text-[10px] font-semibold text-text-secondary">En rango</span>
-          </div>
-          <div className={`rounded-2xl p-3 ${alertCount ? 'bg-orange-500/10' : 'bg-black/5 dark:bg-white/5'}`}>
-            <span className={`block text-lg font-black ${alertCount ? 'text-orange-600 dark:text-orange-400' : 'text-text-primary'}`}>{alertCount}</span>
-            <span className="text-[10px] font-semibold text-text-secondary">A revisar</span>
-          </div>
+
+          {volumeRows.totalRoutinesWithExercises > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowRoutineFilterModal(true)}
+              className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-2xl border border-accent/25 bg-accent/10 px-4 py-2.5 text-xs font-extrabold text-accent transition hover:bg-accent/20"
+            >
+              <FolderKanban size={15} />
+              <span>Elegir rutinas y ejercicios</span>
+              {volumeRows.excludedExercisesCount > 0 && (
+                <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px]">
+                  {volumeRows.excludedExercisesCount} excl.
+                </span>
+              )}
+            </button>
+          )}
         </div>
 
-        {volumeRows.routinesCounted === 0 ? (
+        {volumeRows.totalRoutinesWithExercises === 0 ? (
           <div className="rounded-2xl border border-dashed border-glass-border px-4 py-6 text-center">
             <Dumbbell className="mx-auto mb-2 text-text-muted" size={22} />
             <p className="text-sm font-bold text-text-primary">Aún no hay rutinas con ejercicios</p>
@@ -684,9 +1098,16 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
         )}
 
         <p className="mt-4 text-[10px] leading-relaxed text-text-muted">
-          Toca cualquier músculo para ver el detalle por rutina y ejercicio. Se muestran las series directas y, aparte (+ind.), las de ejercicios compuestos donde actúa como músculo secundario. {goalRange.advice}
+          Toca cualquier músculo para ver el detalle por rutina y ejercicio. También puedes elegir en cada rutina qué ejercicios entran en el recuento semanal. {goalRange.advice}
         </p>
       </div>
+
+      {showRoutineFilterModal && (
+        <RoutineVolumeFilterModal
+          routines={routines}
+          onClose={() => setShowRoutineFilterModal(false)}
+        />
+      )}
 
       {selectedRow && (
         <ModalPortal>
@@ -792,9 +1213,9 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
                   {selectedRow.routineGroups.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-glass-border bg-bg-secondary/40 px-4 py-6 text-center">
                       <Dumbbell className="mx-auto mb-2 text-text-muted" size={20} />
-                      <p className="text-xs font-bold text-text-primary">Sin ejercicios para {selectedRow.label.toLowerCase()}</p>
+                      <p className="text-xs font-bold text-text-primary">Sin ejercicios activos para {selectedRow.label.toLowerCase()}</p>
                       <p className="mt-1 text-[11px] text-text-secondary">
-                        Ninguna de tus rutinas activas incluye ejercicios que trabajen este grupo muscular directa o indirectamente.
+                        Ninguno de los ejercicios incluidos en el recuento semanal trabaja este grupo muscular.
                       </p>
                     </div>
                   ) : (

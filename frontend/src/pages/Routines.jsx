@@ -24,7 +24,8 @@ import {
   Sparkles,
   Flame,
   TrendingUp,
-  ArrowRight
+  ArrowRight,
+  Activity
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -37,7 +38,13 @@ import { useTranslation } from 'react-i18next';
 import TemplateRoutines from './TemplateRoutines';
 import PromoBanner from '../components/PromoBanner';
 import ManualExercisesManager from '../components/ManualExercisesManager';
-import WeeklyMuscleVolumeCard from '../components/Routines/WeeklyMuscleVolumeCard';
+import WeeklyMuscleVolumeCard, {
+  RoutineVolumeFilterModal,
+  useWeeklyVolumeExclusions,
+  getRoutineInclusionStats,
+  getExerciseVolumeKey,
+  isExerciseIncludedInVolume
+} from '../components/Routines/WeeklyMuscleVolumeCard';
 import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
 import RoutineAIGeneratorModal from '../components/RoutineAIGeneratorModal';
 import RoutineTourGuide from '../components/RoutineTourGuide';
@@ -415,6 +422,9 @@ const Routines = ({ setView, mainContentRef }) => {
     }
     return localStorage.getItem('routinesActiveTab') || 'myRoutines';
   });
+
+  const { exclusions } = useWeeklyVolumeExclusions();
+  const [volumeFilterRoutine, setVolumeFilterRoutine] = useState(null);
 
   const isAnyWorkoutActive = activeWorkout !== null && activeWorkout !== undefined;
 
@@ -1104,6 +1114,32 @@ const Routines = ({ setView, mainContentRef }) => {
                           <Copy size={18} />
                         </button>
 
+                        {totalExercises > 0 && (() => {
+                          const vStats = getRoutineInclusionStats(exclusions, routine);
+                          const badgeColor = vStats.status === 'all'
+                            ? 'text-accent bg-accent/10 hover:bg-accent/20'
+                            : vStats.status === 'partial'
+                              ? 'text-amber-500 bg-amber-500/10 hover:bg-amber-500/20'
+                              : 'text-text-muted bg-black/5 dark:bg-white/5 hover:text-text-primary';
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => setVolumeFilterRoutine(routine)}
+                              className={`px-3 py-2 rounded-[14px] text-xs font-extrabold flex items-center gap-1.5 transition-colors ${badgeColor}`}
+                              title="Elegir qué ejercicios entran en las series semanales"
+                            >
+                              <Activity size={15} />
+                              <span>
+                                {vStats.status === 'all'
+                                  ? `Series sem.: Todos (${vStats.total})`
+                                  : vStats.status === 'none'
+                                    ? 'Series sem.: Ninguno'
+                                    : `Series sem.: ${vStats.included}/${vStats.total}`}
+                              </span>
+                            </button>
+                          );
+                        })()}
+
                         <div className="flex-1"></div>
 
                         {!routine.is_from_trainer && (
@@ -1117,33 +1153,68 @@ const Routines = ({ setView, mainContentRef }) => {
                           )}
                       </div>
 
-                      {exerciseGroups.length > 0 && (
-                        <div className="mb-5 bg-black/5 dark:bg-white/5 rounded-[20px] p-4">
-                          <div className="flex flex-col gap-4">
-                            {exerciseGroups.map((group, groupIndex) => (
-                              <div key={groupIndex}>
-                                {group.length > 1 && (
-                                  <div className="mb-2 inline-flex items-center gap-1.5 text-accent text-[10px] uppercase font-bold tracking-wider bg-accent/10 px-2 py-0.5 rounded-[8px]">
-                                    <Link2 size={12} /> Superserie
-                                  </div>
-                                )}
-                                <ul className={`flex flex-col gap-2.5 ${group.length > 1 ? 'pl-3 border-l-2 border-accent/30' : ''}`}>
-                                  {group.map((ex) => (
-                                    <li key={ex.id || ex.tempId} className="flex items-center justify-between text-sm">
-                                      <span className="truncate font-semibold text-text-primary pr-3">
-                                        {t(ex.name)}
-                                      </span>
-                                      <span className="text-text-secondary font-bold text-xs whitespace-nowrap bg-black/5 dark:bg-white/10 px-2 py-1 rounded-[8px]">
-                                        {ex.sets}×{ex.reps}
-                                      </span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ))}
+                      {exerciseGroups.length > 0 && (() => {
+                        const vStats = getRoutineInclusionStats(exclusions, routine);
+                        return (
+                          <div className="mb-5 bg-black/5 dark:bg-white/5 rounded-[20px] p-4">
+                            <button
+                              type="button"
+                              onClick={() => setVolumeFilterRoutine(routine)}
+                              className="mb-3 flex w-full items-center justify-between gap-2 border-b border-black/5 pb-2.5 text-left transition hover:opacity-85 dark:border-white/10"
+                            >
+                              <span className="flex items-center gap-1.5 text-[11px] font-bold text-text-secondary">
+                                <Activity size={13} className={vStats.included > 0 ? 'text-accent' : 'text-text-muted'} />
+                                <span>
+                                  Recuento semanal:{' '}
+                                  <strong className={vStats.included > 0 ? 'text-text-primary' : 'text-text-muted'}>
+                                    {vStats.status === 'all'
+                                      ? `Todos (${vStats.total}/${vStats.total})`
+                                      : vStats.status === 'none'
+                                        ? `Ninguno (0/${vStats.total})`
+                                        : `${vStats.included} de ${vStats.total}`}
+                                  </strong>
+                                </span>
+                              </span>
+                              <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[10px] font-extrabold text-accent">
+                                Elegir
+                              </span>
+                            </button>
+                            <div className="flex flex-col gap-4">
+                              {exerciseGroups.map((group, groupIndex) => (
+                                <div key={groupIndex}>
+                                  {group.length > 1 && (
+                                    <div className="mb-2 inline-flex items-center gap-1.5 text-accent text-[10px] uppercase font-bold tracking-wider bg-accent/10 px-2 py-0.5 rounded-[8px]">
+                                      <Link2 size={12} /> Superserie
+                                    </div>
+                                  )}
+                                  <ul className={`flex flex-col gap-2.5 ${group.length > 1 ? 'pl-3 border-l-2 border-accent/30' : ''}`}>
+                                    {group.map((ex, exIdx) => {
+                                      const originalIdx = exercisesToGroup.indexOf(ex);
+                                      const exKey = getExerciseVolumeKey(ex, originalIdx >= 0 ? originalIdx : exIdx);
+                                      const isIncluded = isExerciseIncludedInVolume(exclusions, vStats.routineKey, exKey);
+                                      return (
+                                        <li
+                                          key={ex.id || ex.tempId || exKey}
+                                          className={`flex items-center justify-between text-sm transition-opacity ${
+                                            isIncluded ? '' : 'opacity-45'
+                                          }`}
+                                        >
+                                          <span className={`truncate font-semibold pr-3 ${isIncluded ? 'text-text-primary' : 'text-text-secondary line-through'}`}>
+                                            {t(ex.name)}
+                                          </span>
+                                          <span className="text-text-secondary font-bold text-xs whitespace-nowrap bg-black/5 dark:bg-white/10 px-2 py-1 rounded-[8px]">
+                                            {ex.sets}×{ex.reps}
+                                          </span>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       <div className="mt-auto pt-2">
                         <button
@@ -1210,7 +1281,14 @@ const Routines = ({ setView, mainContentRef }) => {
       {activeTab === 'explore' && <TemplateRoutines setView={setView} />}
 
       {activeTab === 'manualExercises' && <ManualExercisesManager />}
-{showPrivacyModal && (
+      {volumeFilterRoutine && (
+        <RoutineVolumeFilterModal
+          routine={volumeFilterRoutine}
+          onClose={() => setVolumeFilterRoutine(null)}
+        />
+      )}
+
+      {showPrivacyModal && (
         <GlobalPrivacyModal onClose={() => setShowPrivacyModal(false)} />
       )}
 
