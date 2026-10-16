@@ -1,5 +1,5 @@
 {
-  "version": "7.4.30",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.30/app-release.apk",
-  "notes": "Filtros de periodo corregidos en Tu Progreso: corte por fecha calendario real (1M, 3M, 6M, 1A), eliminación del fallback que mostraba todo el historial, mensajes vacíos contextuales con enlace a ver todo, PR y 1RM siempre históricos, parsing robusto de timestamps y tooltips mejorados."
+  "version": "7.5.0",
+  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.5.0/app-release.apk",
+  "notes": "Nuevo análisis de volumen muscular semanal basado en las series planificadas en las rutinas guardadas, con recomendaciones según tu objetivo. Incluye mejoras en entrenamiento, nutrición, tutoriales, comunidad y personalización."
 }

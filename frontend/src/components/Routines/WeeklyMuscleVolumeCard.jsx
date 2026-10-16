@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { Activity, AlertTriangle, CheckCircle2, ChevronDown, Dumbbell, Target } from 'lucide-react';
-import { analyzeRoutine } from '../../utils/trainerLogic';
 import { MUSCLE_NAMES_ES } from '../../utils/muscleUtils';
 
 const GOAL_RANGES = {
@@ -73,6 +72,19 @@ const getRoutineExercises = (routine) => {
   }));
 };
 
+const getPlannedSets = (exercise) => {
+  const rawSets = exercise?.sets ?? exercise?.set_count ?? exercise?.number_of_sets;
+  if (Array.isArray(rawSets)) return rawSets.length;
+  const sets = Number(rawSets);
+  return Number.isFinite(sets) && sets > 0 ? sets : 0;
+};
+
+const getExerciseMuscles = (exercise) => {
+  const rawMuscles = exercise.muscle_group || exercise.exercise?.muscle_group || exercise.exercise_details?.muscle_group || exercise.target || '';
+  const muscles = Array.isArray(rawMuscles) ? rawMuscles : String(rawMuscles).split(/[,;/]/);
+  return [...new Set(muscles.map(normalizeKey).filter(muscle => muscle && !['unknown', 'other', 'otro', 'sin clasificar'].includes(muscle)))];
+};
+
 const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const goalRange = getGoalRange(goal);
@@ -87,22 +99,25 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
       if (exercises.length === 0) return;
 
       routinesCounted += 1;
-      const analysis = analyzeRoutine(exercises);
-      Object.entries(analysis?.stats?.muscles || {}).forEach(([rawKey, sets]) => {
-        const normalizedKey = normalizeKey(rawKey);
-        if (!normalizedKey || ['unknown', 'other', 'otro', 'sin clasificar'].includes(normalizedKey)) return;
+      exercises.forEach(exercise => {
+        const sets = getPlannedSets(exercise);
+        if (!sets) return;
 
-        const canonicalKey = ALIAS_TO_MUSCLE.get(normalizedKey);
-        if (canonicalKey) {
-          totals[canonicalKey] += Number(sets) || 0;
-          return;
-        }
+        getExerciseMuscles(exercise).forEach(normalizedKey => {
+          const canonicalKey = ALIAS_TO_MUSCLE.get(normalizedKey);
+          if (canonicalKey) {
+            totals[canonicalKey] += sets;
+            return;
+          }
 
-        const label = MUSCLE_NAMES_ES[rawKey] || rawKey.replace(/[_-]/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
-        extraMuscles.set(normalizedKey, {
-          key: `extra:${normalizedKey}`,
-          label,
-          sets: (extraMuscles.get(normalizedKey)?.sets || 0) + (Number(sets) || 0)
+          const rawLabel = String(exercise.muscle_group || exercise.exercise?.muscle_group || exercise.exercise_details?.muscle_group || exercise.target || normalizedKey);
+          const label = MUSCLE_NAMES_ES[rawLabel] || rawLabel.replace(/[_-]/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
+          const existing = extraMuscles.get(normalizedKey);
+          extraMuscles.set(normalizedKey, {
+            key: `extra:${normalizedKey}`,
+            label,
+            sets: (existing?.sets || 0) + sets
+          });
         });
       });
     });
@@ -164,7 +179,7 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
             <span className="block font-extrabold text-text-primary">Volumen muscular semanal</span>
             <span className="mt-1 block text-xs leading-relaxed text-text-secondary">
               {isExpanded
-                ? 'Suma tus rutinas guardadas, contando cada una una vez por semana.'
+                ? 'Suma las series planificadas en tus rutinas guardadas, contando cada rutina una vez por semana.'
                 : `${greenCount} músculos en rango · ${alertCount} a revisar`}
             </span>
             <span className="mt-2 flex flex-wrap items-center gap-2">
@@ -221,7 +236,7 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
                   </div>
                   <div className="mb-2 flex items-baseline justify-between gap-2">
                     <span className={`text-xl font-black tabular-nums ${colors.text}`}>{row.sets}</span>
-                    <span className="text-[10px] font-semibold text-text-muted">series · objetivo {goalRange.min}–{goalRange.max}</span>
+                    <span className="text-[10px] font-semibold text-text-muted">series planificadas · objetivo {goalRange.min}–{goalRange.max}</span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
                     <div className={`h-full rounded-full ${colors.fill}`} style={{ width: `${row.progress}%` }} />
@@ -236,7 +251,7 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
         )}
 
         <p className="mt-4 text-[10px] leading-relaxed text-text-muted">
-          Estimación orientativa: las series de ejercicios con varios músculos se reparten entre ellos. {goalRange.advice}
+          El cálculo usa las series definidas en cada rutina, no las series realizadas en tus entrenamientos. Si un ejercicio está asociado a varios músculos, sus series cuentan para cada uno. {goalRange.advice}
         </p>
       </div>
     </section>
