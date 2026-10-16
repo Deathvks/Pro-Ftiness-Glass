@@ -32,8 +32,11 @@ export const getWorkoutMuscleData = (exercises = []) => {
 
     if (keysToCount.length === 0) keysToCount = guessMuscleFromText(exercise.name);
     const sets = Array.isArray(exercise.sets) ? exercise.sets.length : parseInt(exercise.sets, 10) || 3;
-    keysToCount.forEach(key => {
-      if (key) scores[key] = (scores[key] || 0) + sets;
+    keysToCount.forEach((key, index) => {
+      if (key) {
+        const weight = index === 0 ? 1 : 0.4;
+        scores[key] = (scores[key] || 0) + sets * weight;
+      }
     });
   });
 
@@ -60,11 +63,11 @@ const WorkoutHeatmapModal = ({ exercises = [], onClose }) => {
   return (
     <ModalPortal>
       <div
-        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]"
+        className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 !pt-[calc(1rem+var(--safe-top,env(safe-area-inset-top,0px)))] sm:p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]"
         onClick={onClose}
       >
         <div
-          className="relative mt-auto mb-[calc(var(--safe-bottom,_env(safe-area-inset-bottom,_0px))_+_12px)] sm:my-0 w-[90vw] sm:w-full max-w-md max-h-[calc(90dvh_-_var(--safe-top,_env(safe-area-inset-top,_0px))_-_12px)] sm:max-h-[80vh] animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out] bg-bg-primary rounded-[32px] border border-glass-border shadow-2xl overflow-hidden flex flex-col"
+          className="relative mt-auto mb-0 sm:my-0 w-full sm:max-w-md max-h-[calc(92dvh_-_var(--safe-top,_env(safe-area-inset-top,_0px)))] sm:max-h-[80vh] animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.3s_ease-out] bg-bg-primary rounded-t-[32px] rounded-b-none sm:rounded-[32px] border border-glass-border shadow-2xl overflow-hidden flex flex-col"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="shrink-0 bg-bg-secondary pt-3 sm:hidden">
@@ -118,7 +121,7 @@ const WorkoutHeatmapModal = ({ exercises = [], onClose }) => {
             }
         </div>
 
-        <div className="p-4 border-t border-glass-border text-center text-xs text-text-secondary bg-bg-secondary shrink-0">
+        <div className="px-4 pt-4 pb-[calc(1rem+var(--safe-bottom,env(safe-area-inset-bottom,0px)))] sm:pb-4 border-t border-glass-border text-center text-xs text-text-secondary bg-bg-secondary shrink-0">
           La intensidad del color indica el volumen de series en esta sesión.
         </div>
       </div>

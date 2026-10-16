@@ -1,5 +1,5 @@
 {
-  "version": "7.5.1",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.5.1/app-release.apk",
-  "notes": "Cálculo inteligente de series semanales (distinguiendo trabajo directo e indirecto para no inflar músculos secundarios como tríceps o bíceps) y ajuste visual del centro de tutoriales en móvil."
+  "version": "7.5.2",
+  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.5.2/app-release.apk",
+  "notes": "Ajuste del modal de mapa muscular en entrenamiento para que ocupe desde abajo sin espacios en móvil, junto con mejoras en el cálculo de series semanales (directas vs indirectas)."
 }
