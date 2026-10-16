@@ -108,12 +108,12 @@ export default function TutorialsCenter({ userRole, onClose, onStart }) {
 
   return (
     <ModalPortal>
-      <div className="fixed inset-0 z-[9998] flex items-end justify-center bg-black/65 backdrop-blur-md !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))] px-3 sm:items-center sm:p-4" onClick={onClose}>
+      <div className="fixed inset-0 z-[9998] flex items-end justify-center bg-black/65 backdrop-blur-md p-0 !pt-[calc(1rem+var(--safe-top))] sm:items-center sm:p-4 sm:!pb-[calc(1rem+var(--safe-bottom))]" onClick={onClose}>
         <section
           role="dialog"
           aria-modal="true"
           aria-labelledby="tutorials-center-title"
-          className="mt-auto flex max-h-[calc(100dvh-var(--safe-top)-var(--safe-bottom)-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-t-[32px] border border-black/5 bg-bg-primary shadow-2xl dark:border-white/5 sm:mt-0 sm:max-h-[92vh] sm:rounded-[32px]"
+          className="mt-auto flex max-h-[calc(100dvh-var(--safe-top)-1rem)] w-full max-w-5xl flex-col overflow-hidden rounded-t-[32px] rounded-b-none border-t border-black/5 bg-bg-primary shadow-2xl animate-[slide-up_0.3s_ease-out] dark:border-white/5 sm:mt-0 sm:max-h-[92vh] sm:rounded-[32px] sm:border sm:animate-[scale-in_0.2s_ease-out]"
           onClick={event => event.stopPropagation()}
         >
           <header className="shrink-0 border-b border-black/5 bg-bg-primary/95 p-5 backdrop-blur-xl dark:border-white/5 sm:p-7">
@@ -166,7 +166,7 @@ export default function TutorialsCenter({ userRole, onClose, onStart }) {
             </div>
           </header>
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(1.5rem+var(--safe-bottom))] sm:p-6">
             {visibleTutorials.length ? (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
                 {visibleTutorials.map(tutorial => <TutorialCard key={tutorial.id} tutorial={tutorial} onSelect={onStart} />)}

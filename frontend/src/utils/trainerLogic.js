@@ -18,25 +18,40 @@ export const analyzeRoutine = (exercises = [], answers = {}) => {
       ? ex.muscle_group
       : String(ex.muscle_group || ex.target || '').split(',');
     muscles = [...new Set(muscles.map(muscle => String(muscle).trim().toLowerCase()).filter(Boolean))];
-    if ((!muscles.length || muscles.every(muscle => ['other', 'unknown'].includes(muscle))) && ex.name) {
-      muscles = [inferMuscleFromName(ex.name)];
+    const inferredPrimary = ex.name ? inferMuscleFromName(ex.name) : 'unknown';
+    if ((!muscles.length || muscles.every(muscle => ['other', 'unknown'].includes(muscle))) && inferredPrimary !== 'unknown') {
+      muscles = [inferredPrimary];
     }
     if (!muscles.length) muscles = ['unknown'];
 
-    // Repartimos el volumen entre los músculos declarados para evitar contar dos veces
-    // las series de un ejercicio compuesto en la distribución porcentual.
-    const setsPerMuscle = sets / muscles.length;
-    muscles.forEach(muscle => {
-      stats.muscles[muscle] = (stats.muscles[muscle] || 0) + setsPerMuscle;
-    });
+    // Damos prioridad al músculo principal del ejercicio y un peso menor a los secundarios/sinergistas
+    const primaryMuscle = (inferredPrimary !== 'unknown' && inferredPrimary !== 'other')
+      ? inferredPrimary
+      : muscles[0];
+    const secondaryMuscles = muscles.filter(m => m !== primaryMuscle);
 
-    // Si los músculos pertenecen a más de un patrón, dividimos también esa carga.
-    const groups = [...new Set(muscles.map(getGroupFromMuscle).filter(Boolean))];
-    if (groups.length) {
-      const setsPerGroup = sets / groups.length;
-      groups.forEach(group => {
-        stats[group] = (stats[group] || 0) + setsPerGroup;
+    if (secondaryMuscles.length === 0) {
+      stats.muscles[primaryMuscle] = (stats.muscles[primaryMuscle] || 0) + sets;
+    } else {
+      const primaryShare = sets * 0.75;
+      const secondaryShare = (sets * 0.25) / secondaryMuscles.length;
+      stats.muscles[primaryMuscle] = (stats.muscles[primaryMuscle] || 0) + primaryShare;
+      secondaryMuscles.forEach(muscle => {
+        stats.muscles[muscle] = (stats.muscles[muscle] || 0) + secondaryShare;
       });
+    }
+
+    const primaryGroup = getGroupFromMuscle(primaryMuscle);
+    if (primaryGroup) {
+      stats[primaryGroup] = (stats[primaryGroup] || 0) + sets;
+    } else {
+      const groups = [...new Set(muscles.map(getGroupFromMuscle).filter(Boolean))];
+      if (groups.length) {
+        const setsPerGroup = sets / groups.length;
+        groups.forEach(group => {
+          stats[group] = (stats[group] || 0) + setsPerGroup;
+        });
+      }
     }
   });
 

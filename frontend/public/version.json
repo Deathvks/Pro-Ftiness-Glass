@@ -1,5 +1,5 @@
 {
-  "version": "7.5.0",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.5.0/app-release.apk",
-  "notes": "Nuevo análisis de volumen muscular semanal basado en las series planificadas en las rutinas guardadas, con recomendaciones según tu objetivo. Incluye mejoras en entrenamiento, nutrición, tutoriales, comunidad y personalización."
+  "version": "7.5.1",
+  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.5.1/app-release.apk",
+  "notes": "Cálculo inteligente de series semanales (distinguiendo trabajo directo e indirecto para no inflar músculos secundarios como tríceps o bíceps) y ajuste visual del centro de tutoriales en móvil."
 }
