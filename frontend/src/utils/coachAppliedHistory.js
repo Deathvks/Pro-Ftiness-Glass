@@ -24,13 +24,50 @@ export const getAllAppliedCoachHistory = () => {
 };
 
 /**
- * Obtiene la última recomendación aplicada para un ejercicio específico.
+ * Construye clave compuesta por ejercicio y rutina cuando existe contexto de rutina.
  */
-export const getAppliedCoachStrategy = (exerciseName) => {
+const buildRoutineStorageKey = (exerciseName, routineId, routineName) => {
+  const baseKey = normalizeKey(exerciseName);
+  const rIdKey = routineId ? normalizeKey(routineId) : '';
+  const rNameKey = routineName ? normalizeKey(routineName) : '';
+  if (rIdKey) return `${baseKey}__routine_id_${rIdKey}`;
+  if (rNameKey) return `${baseKey}__routine_name_${rNameKey}`;
+  return baseKey;
+};
+
+/**
+ * Obtiene la última recomendación aplicada para un ejercicio específico.
+ * Si se indica rutina activa, busca únicamente estrategias aplicadas en dicha rutina.
+ */
+export const getAppliedCoachStrategy = (exerciseName, currentRoutineId = null, currentRoutineName = null) => {
   if (!exerciseName) return null;
   const history = getAllAppliedCoachHistory();
-  const key = normalizeKey(exerciseName);
-  return history[key] || null;
+  const baseKey = normalizeKey(exerciseName);
+
+  if (currentRoutineId || currentRoutineName) {
+    if (currentRoutineId) {
+      const byId = history[`${baseKey}__routine_id_${normalizeKey(currentRoutineId)}`];
+      if (byId) return byId;
+    }
+    if (currentRoutineName) {
+      const byName = history[`${baseKey}__routine_name_${normalizeKey(currentRoutineName)}`];
+      if (byName) return byName;
+    }
+
+    const fallback = history[baseKey];
+    if (!fallback) return null;
+
+    // Si el registro tiene rutina asociada, comprobar que coincida con la rutina actual
+    if (fallback.routineId || fallback.routineName) {
+      const matchesId = currentRoutineId && fallback.routineId && String(fallback.routineId) === String(currentRoutineId);
+      const matchesName = currentRoutineName && fallback.routineName && normalizeKey(fallback.routineName) === normalizeKey(currentRoutineName);
+      return (matchesId || matchesName) ? fallback : null;
+    }
+
+    return fallback;
+  }
+
+  return history[baseKey] || null;
 };
 
 /**
@@ -42,9 +79,13 @@ export const saveAppliedCoachStrategy = (exerciseName, strategyData) => {
   try {
     const history = getAllAppliedCoachHistory();
     const key = normalizeKey(exerciseName);
+    const routineId = strategyData.routineId || null;
+    const routineName = strategyData.routineName || null;
 
     const record = {
       exerciseName,
+      routineId: routineId ? String(routineId) : null,
+      routineName: routineName || null,
       strategyId: strategyData.id || strategyData.strategyId || 'custom',
       strategyTitle: strategyData.title || strategyData.strategyTitle || 'Estrategia personalizada',
       suggestedWeight: strategyData.suggestedWeight !== undefined ? strategyData.suggestedWeight : null,
@@ -60,6 +101,12 @@ export const saveAppliedCoachStrategy = (exerciseName, strategyData) => {
     };
 
     history[key] = record;
+    if (routineId) {
+      history[`${key}__routine_id_${normalizeKey(routineId)}`] = record;
+    }
+    if (routineName) {
+      history[`${key}__routine_name_${normalizeKey(routineName)}`] = record;
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
 
     if (typeof window !== 'undefined') {
@@ -115,18 +162,23 @@ export const formatTimeAgo = (diffHours, calendarDaysDiff) => {
  * 2. Próximo día con descanso adecuado:
  *    - Si aplicó recomendación: "Según lo trabajado en la sesión anterior, ahora deberías poder hacer X".
  * 3. En siguientes sesiones: Seguimiento adaptativo hasta llegar al "OK Verde" cuando rompe el estancamiento o progresa.
- * 4. Día 1 / Sin recomendación: "Debes mejorar esto X..."
+ * 4. Día 1 / Sin historial en la rutina actual: Avisa de que está pendiente de recoger datos en esta rutina y que toque para ver recomendaciones.
  */
 export const evaluateExerciseFollowUpAndRecovery = ({
   exerciseName,
   sessions = [],
+  allSessions = null,
+  routineContext = null,
   currentTrend = null,
   lastApplied = null,
   userProfile = null
 }) => {
   const lastSession = sessions && sessions.length > 0 ? sessions[0] : null;
+  const hasRoutineSessions = Boolean(sessions && sessions.length > 0);
+  const totalGlobalSessions = Array.isArray(allSessions) ? allSessions.length : (routineContext?.distinctRoutines?.reduce((acc, r) => acc + (r.count || 0), 0) || sessions.length);
+  const hasOtherRoutineHistory = !hasRoutineSessions && totalGlobalSessions > 0;
 
-  // 1. Cálculo del tiempo transcurrido desde la última sesión registrada
+  // 1. Cálculo del tiempo transcurrido desde la última sesión registrada en esta rutina
   let diffMs = null;
   let diffHours = null;
   let calendarDaysDiff = null;
@@ -154,10 +206,64 @@ export const evaluateExerciseFollowUpAndRecovery = ({
   }
 
   const targetText = lastApplied ? formatTargetText(lastApplied) : '';
-  const trendStatus = currentTrend?.status || 'first_time';
+  const trendStatus = currentTrend?.status || (hasRoutineSessions ? 'calibrating' : 'first_time');
+
+  const appliedAtTime = lastApplied?.appliedAt ? new Date(lastApplied.appliedAt).getTime() : 0;
+  const isCurrentSessionApplied = appliedAtTime > 0 && (Date.now() - appliedAtTime) < (4 * 60 * 60 * 1000); // Aplicado en las últimas 4h
+
+  // Si se aplicó la recomendación para la sesión actual, reflejar inmediatamente el estado verde
+  if (isCurrentSessionApplied && lastApplied) {
+    return {
+      type: 'ok_green',
+      status: 'ok_green',
+      badge: 'Estrategia Aplicada',
+      badgeShort: 'Plan Activo',
+      title: `Estrategia activa: ${lastApplied.strategyTitle}`,
+      message: `Has configurado tus series según la recomendación del entrenador (${targetText || 'Pauta ajustada'}). ¡A por ello!`,
+      actionHint: 'Completa tus series con esta pauta para consolidar el progreso.',
+      targetText,
+      color: 'emerald',
+      isTooSoon: false,
+      diffHours,
+      calendarDaysDiff,
+      timeAgoText: 'Ahora',
+      lastApplied,
+      lastSession,
+      isOkGreen: true,
+      isWarning: false
+    };
+  }
 
   // ============================================================
-  // CONDICIÓN A: INTENTADO HACE POCO (< 36-40h / hoy o ayer)
+  // SIN HISTORIAL EN ESTA RUTINA: PENDIENTE DE RECOGER DATOS
+  // ============================================================
+  if (!hasRoutineSessions || trendStatus === 'first_time') {
+    const routineLabel = routineContext?.currentRoutineName ? `"${routineContext.currentRoutineName}"` : 'esta rutina';
+    return {
+      type: 'calibrating',
+      status: 'calibrating',
+      badge: 'Pendiente de recoger datos',
+      badgeShort: 'Pendiente de datos',
+      title: `Sin historial en ${routineLabel} · Pendiente de recoger datos`,
+      message: hasOtherRoutineHistory
+        ? 'Aún no se han registrado datos de este ejercicio en esta rutina (aunque tengas registros en otras). Toca aquí para ver las recomendaciones iniciales y los detalles.'
+        : 'Aún no se han registrado datos de este ejercicio en esta rutina. Toca aquí para ver las recomendaciones iniciales y los detalles.',
+      actionHint: 'Toca para ver la carga inicial recomendada para hoy.',
+      targetText: '',
+      color: 'accent',
+      isTooSoon: false,
+      diffHours: null,
+      calendarDaysDiff: null,
+      timeAgoText: '',
+      lastApplied: null,
+      lastSession: null,
+      isOkGreen: false,
+      isWarning: false
+    };
+  }
+
+  // ============================================================
+  // CONDICIÓN A: INTENTADO HACE POCO EN ESTA RUTINA (< 36-40h / hoy o ayer)
   // ============================================================
   if (isTooSoon) {
     // Subcaso A1: En la sesión anterior salió mal / fatiga / estancamiento
@@ -208,39 +314,14 @@ export const evaluateExerciseFollowUpAndRecovery = ({
   }
 
   // ============================================================
-  // CONDICIÓN B: TIEMPO DE RECUPERACIÓN ÓPTIMO (>= 48h o sin registros)
+  // CONDICIÓN B: TIEMPO DE RECUPERACIÓN ÓPTIMO (>= 48h con historial en esta rutina)
   // ============================================================
 
   // B1. OK VERDE: El usuario ha aplicado la pauta para este entrenamiento o superó el estancamiento
-  const appliedAtTime = lastApplied?.appliedAt ? new Date(lastApplied.appliedAt).getTime() : 0;
-  const isCurrentSessionApplied = appliedAtTime > 0 && (Date.now() - appliedAtTime) < (4 * 60 * 60 * 1000); // Aplicado en las últimas 4h
   const hasAchievedTarget = lastApplied && lastSession && (
     (lastApplied.suggestedWeight !== null && lastSession.topWeight >= lastApplied.suggestedWeight) ||
     trendStatus === 'progressing'
   );
-
-  // Si se aplicó la recomendación para la sesión actual, reflejar inmediatamente el estado verde
-  if (isCurrentSessionApplied && lastApplied) {
-    return {
-      type: 'ok_green',
-      status: 'ok_green',
-      badge: 'Estrategia Aplicada',
-      badgeShort: 'Plan Activo',
-      title: `Estrategia activa: ${lastApplied.strategyTitle}`,
-      message: `Has configurado tus series según la recomendación del entrenador (${targetText || 'Pauta ajustada'}). ¡A por ello!`,
-      actionHint: 'Completa tus series con esta pauta para consolidar el progreso.',
-      targetText,
-      color: 'emerald',
-      isTooSoon: false,
-      diffHours,
-      calendarDaysDiff,
-      timeAgoText: 'Ahora',
-      lastApplied,
-      lastSession,
-      isOkGreen: true,
-      isWarning: false
-    };
-  }
 
   if (trendStatus === 'progressing' || hasAchievedTarget) {
     const progressionDetail = currentTrend?.badgeText || (currentTrend?.deltaWeight > 0 ? `+${currentTrend.deltaWeight} kg` : 'en progresión');
@@ -319,14 +400,14 @@ export const evaluateExerciseFollowUpAndRecovery = ({
     };
   }
 
-  // B4. CALIBRACIÓN / PRIMERA VEZ
+  // B4. CALIBRACIÓN CON 1 SESIÓN PREVIA EN ESTA RUTINA
   return {
     type: 'calibrating',
     status: 'calibrating',
     badge: 'Calibración Inicial',
-    badgeShort: 'Info Objetivo',
-    title: 'Estableciendo umbral de partida',
-    message: 'Registra tus marcas hoy manteniendo 1-2 repeticiones en reserva (RIR 1-2) para calibrar tus futuras progresiones.',
+    badgeShort: 'Ver recomendación',
+    title: 'Estableciendo base en esta rutina (1 sesión previa)',
+    message: 'Ya contamos con tu primera referencia en esta rutina. Toca aquí para ver las recomendaciones y detalles para tu sesión de hoy.',
     actionHint: null,
     targetText: '',
     color: 'accent',

@@ -54,12 +54,18 @@ const WorkoutExerciseCard = ({
     if (!exercise?.name || !workoutLog) return { trend: null, followUp: null };
     const currentRoutineId = activeWorkout?.routine_id || activeWorkout?.routineId || activeWorkout?.id || null;
     const currentRoutineName = activeWorkout?.routine_name || activeWorkout?.routineName || activeWorkout?.name || null;
-    const sessions = getExerciseHistorySessions(exercise.name, workoutLog, currentRoutineId, currentRoutineName);
-    const diagnosedTrend = diagnoseExerciseTrend(sessions, currentRoutineId);
-    const lastApplied = getAppliedCoachStrategy(exercise.name);
+    const allSessions = getExerciseHistorySessions(exercise.name, workoutLog, currentRoutineId, currentRoutineName);
+    const rCtx = allSessions.routineContext;
+    const targetSessions = (currentRoutineId || currentRoutineName)
+      ? (rCtx?.sameRoutineSessions || [])
+      : allSessions;
+    const diagnosedTrend = diagnoseExerciseTrend(targetSessions, currentRoutineId);
+    const lastApplied = getAppliedCoachStrategy(exercise.name, currentRoutineId, currentRoutineName);
     const evaluatedFollowUp = evaluateExerciseFollowUpAndRecovery({
       exerciseName: exercise.name,
-      sessions,
+      sessions: targetSessions,
+      allSessions,
+      routineContext: rCtx,
       currentTrend: diagnosedTrend,
       lastApplied,
       userProfile
@@ -206,7 +212,7 @@ const WorkoutExerciseCard = ({
                     ? 'bg-amber-500/15 hover:bg-amber-500/25 ring-1 ring-amber-500/40 text-amber-600 dark:text-amber-400 animate-pulse'
                     : followUp.type === 'recovery_notice'
                     ? 'bg-blue-500/15 hover:bg-blue-500/25 ring-1 ring-blue-500/40 text-blue-600 dark:text-blue-400'
-                    : followUp.type === 'next_session_target'
+                    : followUp.type === 'next_session_target' || followUp.type === 'calibrating'
                     ? 'bg-accent/15 hover:bg-accent/25 ring-1 ring-accent/40 text-accent'
                     : 'bg-amber-500/15 hover:bg-amber-500/25 ring-1 ring-amber-500/40 text-amber-600 dark:text-amber-400 animate-pulse'
                 }`}
@@ -220,6 +226,8 @@ const WorkoutExerciseCard = ({
                   <Clock size={15} strokeWidth={2.5} className="text-blue-600 dark:text-blue-400 shrink-0" />
                 ) : followUp.type === 'next_session_target' ? (
                   <TrendingUp size={15} strokeWidth={2.5} className="text-accent shrink-0 group-hover:scale-110 transition-transform" />
+                ) : followUp.type === 'calibrating' ? (
+                  <Sparkles size={15} strokeWidth={2.5} className="text-accent shrink-0 group-hover:scale-110 transition-transform" />
                 ) : (
                   <AlertTriangle size={15} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 shrink-0" />
                 )}
@@ -248,7 +256,7 @@ const WorkoutExerciseCard = ({
               ? 'bg-amber-500/15 hover:bg-amber-500/20 ring-1 ring-amber-500/40'
               : followUp.type === 'recovery_notice'
               ? 'bg-blue-500/10 hover:bg-blue-500/15 ring-1 ring-blue-500/30'
-              : followUp.type === 'next_session_target'
+              : followUp.type === 'next_session_target' || followUp.type === 'calibrating'
               ? 'bg-accent/10 hover:bg-accent/15 ring-1 ring-accent/30'
               : 'bg-amber-500/10 hover:bg-amber-500/15 ring-1 ring-amber-500/30'
           }`}
@@ -263,7 +271,7 @@ const WorkoutExerciseCard = ({
                     ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
                     : followUp.type === 'recovery_notice'
                     ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
-                    : followUp.type === 'next_session_target'
+                    : followUp.type === 'next_session_target' || followUp.type === 'calibrating'
                     ? 'bg-accent/20 text-accent'
                     : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
                 }`}
@@ -276,6 +284,8 @@ const WorkoutExerciseCard = ({
                   <Clock size={18} strokeWidth={2.5} />
                 ) : followUp.type === 'next_session_target' ? (
                   <TrendingUp size={18} strokeWidth={2.5} />
+                ) : followUp.type === 'calibrating' ? (
+                  <Sparkles size={18} strokeWidth={2.5} />
                 ) : (
                   <AlertTriangle size={18} strokeWidth={2.5} />
                 )}
@@ -290,7 +300,7 @@ const WorkoutExerciseCard = ({
                       ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
                       : followUp.type === 'recovery_notice'
                       ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
-                      : followUp.type === 'next_session_target'
+                      : followUp.type === 'next_session_target' || followUp.type === 'calibrating'
                       ? 'bg-accent/15 text-accent'
                       : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
                   }`}>

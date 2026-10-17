@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Clock, Flame, Repeat, Target, AlertTriangle, CheckCircle2, TrendingUp } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import GlassCard from '../GlassCard';
@@ -200,12 +200,18 @@ const WorkoutSupersetCard = ({
                     {group.map((ex) => {
                         const currentRoutineId = activeWorkout?.routine_id || activeWorkout?.routineId || activeWorkout?.id || null;
                         const currentRoutineName = activeWorkout?.routine_name || activeWorkout?.routineName || activeWorkout?.name || null;
-                        const exSessions = getExerciseHistorySessions(ex.name, workoutLog, currentRoutineId, currentRoutineName);
+                        const exAllSessions = getExerciseHistorySessions(ex.name, workoutLog, currentRoutineId, currentRoutineName);
+                        const exRCtx = exAllSessions.routineContext;
+                        const exSessions = (currentRoutineId || currentRoutineName)
+                            ? (exRCtx?.sameRoutineSessions || [])
+                            : exAllSessions;
                         const exTrend = diagnoseExerciseTrend(exSessions, currentRoutineId);
-                        const exLastApplied = getAppliedCoachStrategy(ex.name);
+                        const exLastApplied = getAppliedCoachStrategy(ex.name, currentRoutineId, currentRoutineName);
                         const exFollowUp = evaluateExerciseFollowUpAndRecovery({
                             exerciseName: ex.name,
                             sessions: exSessions,
+                            allSessions: exAllSessions,
+                            routineContext: exRCtx,
                             currentTrend: exTrend,
                             lastApplied: exLastApplied,
                             userProfile
@@ -234,7 +240,7 @@ const WorkoutSupersetCard = ({
                                 <span className="text-[10px] text-text-muted uppercase tracking-wide mt-0.5 truncate">
                                     {ex.sets} Series × {ex.reps} Reps
                                 </span>
-                                {exFollowUp && exFollowUp.type !== 'calibrating' && (
+                                {exFollowUp && (
                                     <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full mt-1 w-fit ${
                                         exFollowUp.type === 'ok_green'
                                             ? 'bg-emerald-500/15 text-emerald-400'

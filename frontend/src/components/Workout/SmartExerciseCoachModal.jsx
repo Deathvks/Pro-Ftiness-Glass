@@ -127,6 +127,8 @@ const SmartExerciseCoachModal = ({
       suggestedSets: activeSuggestedSets,
       perSetPlan: activeStrategy?.perSetPlan || null,
       exerciseName: exercise.name,
+      routineId: currentRoutineId,
+      routineName: currentRoutineName,
       goal: userGoal.key,
       trendStatus: trend.status,
       baselineWeight: sessions?.[0]?.topWeight ?? currentTopWeight,
@@ -382,7 +384,7 @@ const SmartExerciseCoachModal = ({
                       : trend.isProgressing
                       ? `¡Gran progresión! Has aumentado tu fuerza (${trend.badgeText})`
                       : trend.status === 'first_time'
-                      ? `Sin marcas previas: Calibración inicial para ${userGoal.label}`
+                      ? `Sin historial en ${routineContext?.currentRoutineName || 'esta rutina'}: Pendiente de recoger datos`
                       : `1 sesión previa: Estableciendo base para ${userGoal.label}`}
                   </h3>
                 </div>

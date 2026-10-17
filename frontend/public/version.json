@@ -1,5 +1,5 @@
 {
-  "version": "7.5.4",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.5.4/app-release.apk",
-  "notes": "Selector por rutina y ejercicio para elegir cuáles entran en el recuento de series semanales (todos, ninguno o ejercicios individuales)."
+  "version": "7.5.5",
+  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.5.5/app-release.apk",
+  "notes": "Aviso en la tarjeta de ejercicio cuando aún no hay historial registrado en la rutina actual, invitando a tocar para ver recomendaciones iniciales sin mezclar diagnósticos de otras rutinas."
 }

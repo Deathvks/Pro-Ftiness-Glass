@@ -411,11 +411,29 @@ export const diagnoseExerciseTrend = (sessions, currentRoutineId = null) => {
     };
   }
 
-  // Priorizar sesiones de la misma rutina si existen en routineContext
+  // Priorizar sesiones de la misma rutina si existe contexto de rutina activa
   let targetSessions = sessions;
   const rCtx = sessions.routineContext;
-  if (rCtx?.sameRoutineSessions && rCtx.sameRoutineSessions.length > 0) {
+  if (rCtx && (currentRoutineId || rCtx.currentRoutineId || rCtx.currentRoutineName)) {
+    targetSessions = rCtx.sameRoutineSessions || [];
+  } else if (rCtx?.sameRoutineSessions && rCtx.sameRoutineSessions.length > 0) {
     targetSessions = rCtx.sameRoutineSessions;
+  }
+
+  if (targetSessions.length === 0) {
+    return {
+      status: 'first_time',
+      label: 'Sesión Inicial',
+      badgeText: 'Pendiente de datos',
+      colorClass: 'text-accent border-accent/30 bg-accent/10',
+      isWarning: false,
+      isProgressing: false,
+      delta1RM: 0,
+      deltaWeight: 0,
+      deltaReps: 0,
+      weeksStagnant: 0,
+      pctChange: 0
+    };
   }
 
   if (targetSessions.length === 1) {
@@ -538,10 +556,12 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   const trend = diagnoseExerciseTrend(targetSessions, currentRoutineId);
 
   // Comprobar si hubo una estrategia aplicada previamente para seguimiento continuo y recuperación
-  const lastAppliedStrategy = getAppliedCoachStrategy(exercise.name);
+  const lastAppliedStrategy = getAppliedCoachStrategy(exercise.name, currentRoutineId, currentRoutineName);
   const followUp = evaluateExerciseFollowUpAndRecovery({
     exerciseName: exercise.name,
     sessions: targetSessions,
+    allSessions: sessions,
+    routineContext: rCtx,
     currentTrend: trend,
     lastApplied: lastAppliedStrategy,
     userProfile
