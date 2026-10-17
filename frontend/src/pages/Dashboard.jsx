@@ -704,7 +704,7 @@ const Dashboard = ({ setView }) => {
                 {latestPRs.length > 1
                   ? t('Pulsa para verlos todos', { defaultValue: 'Pulsa para verlos todos' })
                   : (latestPRs.length === 1
-                    ? t(latestPRs[0].exercise_name || latestPRs[0].exerciseName, { ns: 'exercise_names', defaultValue: latestPRs[0].exercise_name || latestPRs[0].exerciseName })
+                    ? (latestPRs[0].exercise_name || latestPRs[0].exerciseName)
                     : t('Aún sin récords', { defaultValue: 'Aún sin récords' }))}
               </p>
             </div>
@@ -714,7 +714,7 @@ const Dashboard = ({ setView }) => {
 
 
       <div className="mb-10">
-        <DashboardInsights />
+        <DashboardInsights setView={setView} />
       </div>
 
       <div id="tour-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">

@@ -1,4 +1,4 @@
 {
-  "version": "7.6.0",
-  "releaseNotes": "Eliminación de los diccionarios de traducción de ejercicios obsoletos (ya en español nativo) para aligerar el bundle, reducir el tamaño de precarga del Service Worker y acelerar la búsqueda y carga de la aplicación."
+  "version": "7.6.1",
+  "releaseNotes": "Tarjetas de seguimiento inteligente en el Dashboard con indicadores en verde de progreso y avisos por rutina/ejercicio y nutrición, incluyendo enlaces directos para iniciar cada rutina o abrir el diagnóstico nutricional."
 }
