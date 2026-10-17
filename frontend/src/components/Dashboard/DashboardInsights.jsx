@@ -12,7 +12,10 @@ import {
   ArrowRight,
   Salad,
   Sparkles,
-  Clock
+  Clock,
+  ChevronDown,
+  ChevronUp,
+  Layers
 } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -274,6 +277,8 @@ const DashboardInsights = ({ setView }) => {
     setView('nutrition', { reopenNutritionCoach: true });
   };
 
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const {
     progressingByRoutine,
     warningsByRoutine,
@@ -289,21 +294,213 @@ const DashboardInsights = ({ setView }) => {
     totalProgressingCount === 0 &&
     totalWarningCount === 0;
 
+  const hasAnyWarning =
+    totalWarningCount > 0 ||
+    (Boolean(nutritionPlan?.isWarning) && hasAnyNutritionActivity) ||
+    !hasAnyNutritionActivity;
+
+  const hasGreenProgress =
+    totalProgressingCount > 0 ||
+    Boolean(nutritionPlan?.isOptimal) ||
+    (hasAnyNutritionActivity && optimalPillars.length > 0);
+
   return (
-    <div className="w-full flex flex-col gap-4 animate-[fade-in_0.4s_ease-out]">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 sm:gap-2 mb-1 px-1">
-        <div className="flex items-center gap-2.5">
-          <Lightbulb className="text-accent shrink-0" size={20} strokeWidth={2.5} />
-          <h3 className="text-lg sm:text-xl font-extrabold text-text-primary tracking-tight">
-            Seguimiento y Progreso
-          </h3>
+    <div className="w-full flex flex-col gap-3.5 animate-[fade-in_0.4s_ease-out]">
+      <div className="flex items-center justify-between gap-2 mb-0.5 px-1">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2.5 min-w-0">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="text-accent shrink-0" size={20} strokeWidth={2.5} />
+            <h3 className="text-lg sm:text-xl font-extrabold text-text-primary tracking-tight truncate">
+              Seguimiento y Progreso
+            </h3>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted pl-[28px] sm:pl-0">
+            Entrenamiento y Nutrición
+          </span>
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted pl-[30px] sm:pl-0">
-          Entrenamiento y Nutrición
-        </span>
+
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-extrabold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-text-primary ring-1 ring-black/10 dark:ring-white/15 transition-all active:scale-95 cursor-pointer shrink-0"
+        >
+          <Layers size={13} className="text-accent shrink-0" />
+          <span>{isExpanded ? 'Plegar resumen' : 'Estirar'}</span>
+          {isExpanded ? (
+            <ChevronUp size={14} className="shrink-0" />
+          ) : (
+            <ChevronDown size={14} className="shrink-0" />
+          )}
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {!isExpanded ? (
+        /* VISTA SOLAPADA POR DEFECTO CON RESUMEN COMPACTO */
+        <div
+          onClick={() => setIsExpanded(true)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setIsExpanded(true);
+            }
+          }}
+          className="relative pb-3.5 cursor-pointer group select-none"
+        >
+          {/* Capas inferiores para efecto visual de tarjetas solapadas */}
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-x-5 bottom-0 h-8 rounded-[24px] glass transition-all duration-300 group-hover:translate-y-0.5 opacity-45 scale-[0.96] ring-1 ${
+              hasAnyWarning
+                ? 'ring-amber-500/30 bg-amber-500/10'
+                : 'ring-emerald-500/30 bg-emerald-500/10'
+            }`}
+          />
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-x-2.5 bottom-1.5 h-8 rounded-[25px] glass transition-all duration-300 group-hover:translate-y-0.5 opacity-75 scale-[0.98] ring-1 ${
+              hasGreenProgress
+                ? 'ring-emerald-500/35 bg-emerald-500/10'
+                : 'ring-amber-500/35 bg-amber-500/10'
+            }`}
+          />
+
+          {/* Tarjeta principal del resumen solapado */}
+          <GlassCard
+            className={`glass relative z-10 flex flex-col gap-3 p-4 sm:p-5 rounded-[26px] border-none shadow-md transition-all duration-300 ring-1 ${
+              totalWarningCount > 0 || (nutritionPlan?.isWarning && hasAnyNutritionActivity)
+                ? 'ring-amber-500/40 bg-amber-500/10'
+                : hasGreenProgress
+                ? 'ring-emerald-500/35 bg-emerald-500/10'
+                : 'ring-accent/35 bg-accent/10'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`p-2.5 rounded-[16px] shrink-0 ring-1 ${
+                    totalWarningCount > 0 || (nutritionPlan?.isWarning && hasAnyNutritionActivity)
+                      ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 ring-amber-500/30'
+                      : hasGreenProgress
+                      ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-emerald-500/30'
+                      : 'bg-accent/20 text-accent ring-accent/30'
+                  }`}
+                >
+                  {totalWarningCount > 0 || (nutritionPlan?.isWarning && hasAnyNutritionActivity) ? (
+                    <AlertTriangle size={19} strokeWidth={2.5} />
+                  ) : hasGreenProgress ? (
+                    <CheckCircle2 size={19} strokeWidth={2.5} />
+                  ) : (
+                    <Dumbbell size={19} strokeWidth={2.5} />
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary block">
+                    Resumen rápido · Tarjetas solapadas
+                  </span>
+                  <h4 className="text-sm sm:text-base font-black text-text-primary leading-tight truncate">
+                    {totalProgressingCount > 0 && totalWarningCount > 0
+                      ? `${totalProgressingCount} en verde y ${totalWarningCount} ${
+                          totalWarningCount === 1 ? 'aviso' : 'avisos'
+                        } en rutinas`
+                      : totalWarningCount > 0
+                      ? `${totalWarningCount} ${
+                          totalWarningCount === 1
+                            ? 'ejercicio requiere'
+                            : 'ejercicios requieren'
+                        } ajuste en tus rutinas`
+                      : totalProgressingCount > 0
+                      ? `¡Mejorando en ${totalProgressingCount} ${
+                          totalProgressingCount === 1 ? 'ejercicio' : 'ejercicios'
+                        }!`
+                      : 'Estado de tu entrenamiento y nutrición de hoy'}
+                  </h4>
+                </div>
+              </div>
+
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-black/10 dark:bg-white/10 text-text-primary text-[11px] font-black shrink-0">
+                <span className="hidden sm:inline">Estirar detalles</span>
+                <span className="sm:hidden">Estirar</span>
+                <ChevronDown size={14} className="shrink-0" />
+              </span>
+            </div>
+
+            {/* Píldoras de resumen compacto (Ejercicios + Nutrición) */}
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              {totalProgressingCount > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[11px] font-extrabold">
+                  <CheckCircle2 size={12} className="shrink-0" />
+                  <span>
+                    {totalProgressingCount}{' '}
+                    {totalProgressingCount === 1 ? 'ejercicio' : 'ejercicios'} en verde (
+                    {progressingByRoutine.length}{' '}
+                    {progressingByRoutine.length === 1 ? 'rutina' : 'rutinas'})
+                  </span>
+                </span>
+              )}
+
+              {totalWarningCount > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px] font-extrabold">
+                  <AlertTriangle size={12} className="shrink-0" />
+                  <span>
+                    {totalWarningCount}{' '}
+                    {totalWarningCount === 1 ? 'aviso' : 'avisos'} en{' '}
+                    {warningsByRoutine.map((r) => r.routineName).join(', ')}
+                  </span>
+                </span>
+              )}
+
+              {showWelcomeCard && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-accent/15 ring-1 ring-accent/30 text-accent text-[11px] font-extrabold">
+                  <Dumbbell size={12} className="shrink-0" />
+                  <span>Inicia una rutina para activar seguimiento</span>
+                </span>
+              )}
+
+              {nutritionPlan && (
+                <>
+                  {nutritionPlan.isOptimal ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[11px] font-extrabold">
+                      <Sparkles size={12} className="shrink-0" />
+                      <span>Nutrición en verde ({nutritionPlan.optimalCount} pilares OK)</span>
+                    </span>
+                  ) : nutritionPlan.isWarning && hasAnyNutritionActivity ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px] font-extrabold">
+                      <AlertTriangle size={12} className="shrink-0" />
+                      <span>
+                        Nutrición: {warningPillars.length}{' '}
+                        {warningPillars.length === 1 ? 'aviso' : 'avisos'} hoy
+                      </span>
+                    </span>
+                  ) : hasAnyNutritionActivity && optimalPillars.length > 0 ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[11px] font-extrabold">
+                      <TrendingUp size={12} className="shrink-0" />
+                      <span>
+                        Nutrición en progreso ({optimalPillars.length} en verde)
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px] font-extrabold">
+                      <Salad size={12} className="shrink-0" />
+                      <span>Nutrición de hoy sin registrar</span>
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-black/10 dark:border-white/10 flex items-center justify-between gap-2 text-[11px] font-semibold text-text-secondary">
+              <span>
+                Toca para estirar las tarjetas y ver qué ejercicios, rutinas y enlaces directos tienes disponibles
+              </span>
+              <ChevronDown size={14} className="shrink-0 text-text-primary" />
+            </div>
+          </GlassCard>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-[fade-in_0.25s_ease-out]">
         {/* ============================================================
             1. PROGRESO EN VERDE DE EJERCICIOS
            ============================================================ */}
@@ -714,7 +911,19 @@ const DashboardInsights = ({ setView }) => {
             </div>
           </GlassCard>
         )}
+
+        <div className="lg:col-span-2 flex justify-center pt-1">
+          <button
+            type="button"
+            onClick={() => setIsExpanded(false)}
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-extrabold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-text-secondary hover:text-text-primary ring-1 ring-black/10 dark:ring-white/15 transition-all active:scale-95 cursor-pointer"
+          >
+            <ChevronUp size={14} />
+            <span>Solapar tarjetas en resumen</span>
+          </button>
+        </div>
       </div>
+      )}
     </div>
   );
 };

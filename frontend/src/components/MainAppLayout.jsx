@@ -314,15 +314,20 @@ export default function MainAppLayout({
         const currentIndex = navItems.findIndex(i => i.id === view);
         const dir = (prevIndex !== -1 && currentIndex !== -1 && currentIndex < prevIndex) ? 'left' : 'right';
 
-        swipeContainerRef.current.style.transition = 'none';
-        swipeContainerRef.current.style.transform = `translate3d(${dir === 'right' ? '28vw' : '-28vw'}, 0, 0)`;
+        const container = swipeContainerRef.current;
+        container.style.willChange = 'transform';
+        container.style.transition = 'none';
+        container.style.transform = `translate3d(${dir === 'right' ? '100vw' : '-100vw'}, 0, 0)`;
+
+        // Forzar reflow síncrono para que el navegador fije la posición inicial fuera de pantalla sin tirones
+        void container.offsetWidth;
 
         requestAnimationFrame(() => {
           if (!swipeContainerRef.current) {
             isTransitioningRef.current = false;
             return;
           }
-          swipeContainerRef.current.style.transition = 'transform 0.18s cubic-bezier(0.22, 1, 0.36, 1)';
+          swipeContainerRef.current.style.transition = 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)';
           swipeContainerRef.current.style.transform = 'translate3d(0, 0, 0)';
 
           setTimeout(() => {
@@ -330,14 +335,16 @@ export default function MainAppLayout({
             if (swipeContainerRef.current) {
               swipeContainerRef.current.style.transform = '';
               swipeContainerRef.current.style.transition = '';
+              swipeContainerRef.current.style.willChange = '';
             }
-          }, 180);
+          }, 320);
         });
       } else {
         isTransitioningRef.current = false;
         if (swipeContainerRef.current) {
           swipeContainerRef.current.style.transform = '';
           swipeContainerRef.current.style.transition = '';
+          swipeContainerRef.current.style.willChange = '';
         }
       }
       prevViewRef.current = view;
@@ -392,6 +399,7 @@ export default function MainAppLayout({
     contentTouchStartRef.current = {
       x: e.touches[0].clientX,
       y: e.touches[0].clientY,
+      currentIndex,
     };
     isSwipingContentRef.current = false;
   };
@@ -411,12 +419,20 @@ export default function MainAppLayout({
       }
       if (Math.abs(dx) > 10) {
         isSwipingContentRef.current = true;
+        swipeContainerRef.current.style.willChange = 'transform';
         swipeContainerRef.current.style.transition = 'none';
+
+        // Precargar las vistas adyacentes en cuanto empieza el gesto para evitar cualquier tirón al soltar
+        const idx = contentTouchStartRef.current.currentIndex;
+        if (preloadView && idx !== -1) {
+          if (idx + 1 < navItems.length) preloadView(navItems[idx + 1].id);
+          if (idx - 1 >= 0) preloadView(navItems[idx - 1].id);
+        }
       }
     }
 
     if (isSwipingContentRef.current) {
-      const currentIndex = navItems.findIndex(item => item.id === view);
+      const currentIndex = contentTouchStartRef.current.currentIndex;
       let transformX = -dx;
 
       if ((currentIndex === 0 && dx < 0) || (currentIndex === navItems.length - 1 && dx > 0)) {
@@ -434,14 +450,15 @@ export default function MainAppLayout({
 
     const resetSwipe = () => {
       if (swipeContainerRef.current) {
-        swipeContainerRef.current.style.transition = 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)';
+        swipeContainerRef.current.style.transition = 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)';
         swipeContainerRef.current.style.transform = `translate3d(0, 0, 0)`;
         setTimeout(() => {
           if (swipeContainerRef.current) {
             swipeContainerRef.current.style.transform = '';
             swipeContainerRef.current.style.transition = '';
+            swipeContainerRef.current.style.willChange = '';
           }
-        }, 300);
+        }, 280);
       }
     };
 
@@ -452,7 +469,7 @@ export default function MainAppLayout({
     }
 
     const dx = contentTouchStartRef.current.x - contentTouchEndRef.current.x; 
-    const currentIndex = navItems.findIndex(item => item.id === view);
+    const currentIndex = contentTouchStartRef.current.currentIndex ?? navItems.findIndex(item => item.id === view);
     let navigated = false;
     let nextId = null;
 
@@ -467,18 +484,19 @@ export default function MainAppLayout({
     }
 
     if (navigated && nextId) {
+      isTransitioningRef.current = true;
       if (preloadView) preloadView(nextId);
       const screenWidth = window.innerWidth;
-      const exitX = dx > 0 ? -Math.round(screenWidth * 0.35) : Math.round(screenWidth * 0.35);
+      const exitX = dx > 0 ? -screenWidth : screenWidth;
       
       if (swipeContainerRef.current) {
-        swipeContainerRef.current.style.transition = 'transform 0.12s ease-out';
+        swipeContainerRef.current.style.transition = 'transform 0.18s ease-out';
         swipeContainerRef.current.style.transform = `translate3d(${exitX}px, 0, 0)`;
       }
 
       setTimeout(() => {
         handleNavClick(nextId, { fromSwipe: true });
-      }, 100);
+      }, 180);
     } else {
       resetSwipe();
     }

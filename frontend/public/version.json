@@ -1,4 +1,4 @@
 {
-  "version": "7.6.3",
-  "releaseNotes": "Actualización del modal de bienvenida con las novedades de hoy explicadas de forma clara y sencilla."
+  "version": "7.6.4",
+  "releaseNotes": "Tarjetas de seguimiento solapadas con resumen desplegable en el Dashboard y deslizamiento fluido entre páginas en móvil."
 }
