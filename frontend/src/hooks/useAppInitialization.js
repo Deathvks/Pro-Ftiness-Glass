@@ -4,11 +4,16 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 
 const NativeTimer = Capacitor.isNativePlatform() ? registerPlugin('NativeTimer') : null;
 
 export const useAppInitialization = ({ setView, setAuthView, view }) => {
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(() => {
+    const state = useAppStore.getState();
+    if (!state.isAuthenticated) return false;
+    return !(state.userProfile && 'role' in state.userProfile);
+  });
   const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false);
   const [showCodeVerificationModal, setShowCodeVerificationModal] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState('');
@@ -25,7 +30,7 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
     checkWelcomeModal,
     fetchDataForDate,
     checkCookieConsent,
-  } = useAppStore(state => ({
+  } = useAppStore(useShallow(state => ({
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
     isLoading: state.isLoading,
@@ -33,7 +38,7 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
     checkWelcomeModal: state.checkWelcomeModal,
     fetchDataForDate: state.fetchDataForDate,
     checkCookieConsent: state.checkCookieConsent,
-  }));
+  })));
 
   useEffect(() => {
     checkCookieConsent();
@@ -66,32 +71,43 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
   }, [checkAndRequestPermissions]);
 
   useEffect(() => {
+    const resolveTargetView = (profile, activeWorkout) => {
+      if (activeWorkout) return 'workout';
+      const lastView = localStorage.getItem('lastView');
+      if (profile?.goal) {
+        if (lastView === 'adminPanel' && profile?.role !== 'admin') {
+          return 'dashboard';
+        }
+        if (
+          lastView &&
+          !['login', 'register', 'forgotPassword', 'resetPassword', 'onboarding', 'physicalProfileEditor'].includes(lastView)
+        ) {
+          return lastView;
+        }
+      } else if (lastView === 'onboarding') {
+        return 'onboarding';
+      }
+      return 'dashboard';
+    };
+
     const loadInitialDataAndSetView = async () => {
+      const initialState = useAppStore.getState();
+      const cachedProfile = initialState.userProfile;
+      const hasFullCachedProfile = Boolean(cachedProfile && 'role' in cachedProfile);
+
+      if (hasFullCachedProfile) {
+        const immediateTarget = resolveTargetView(cachedProfile, initialState.activeWorkout);
+        setView(immediateTarget);
+        setIsInitialLoad(false);
+        fetchInitialData();
+        return;
+      }
+
       await fetchInitialData(); 
       
       const loadedUserProfile = useAppStore.getState().userProfile;
       const loadedActiveWorkout = useAppStore.getState().activeWorkout;
-      
-      let targetView = 'dashboard'; 
-      
-      if (loadedActiveWorkout) {
-        targetView = 'workout'; 
-      } else {
-        const lastView = localStorage.getItem('lastView');
-        
-        if (loadedUserProfile?.goal) {
-          if (lastView === 'adminPanel' && loadedUserProfile?.role !== 'admin') {
-            targetView = 'dashboard'; 
-          } else if (
-            lastView &&
-            !['login', 'register', 'forgotPassword', 'resetPassword', 'onboarding', 'physicalProfileEditor'].includes(lastView)
-          ) {
-            targetView = lastView;
-          }
-        } else {
-            if (lastView === 'onboarding') targetView = 'onboarding';
-        }
-      }
+      const targetView = resolveTargetView(loadedUserProfile, loadedActiveWorkout);
       
       setView(targetView);
       setIsInitialLoad(false);

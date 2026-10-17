@@ -74,6 +74,7 @@ const LoadingFallback = () => (
 export default function MainAppLayout({
   view,
   navigate,
+  preloadView,
   mainContentRef,
   currentTitle,
   currentViewComponent,
@@ -233,25 +234,32 @@ export default function MainAppLayout({
     return () => node.removeEventListener('scroll', handleScroll);
   }, [mainContentRef, view]);
 
-  // OBSERVADOR DE MODALES (Para ocultar Navbar y Header)
+  const wasSwipeNavRef = useRef(false);
+
+  // OBSERVADOR DE MODALES (Para ocultar Navbar y Header sin recalcular estilos en cada cambio de clase/transform)
   useEffect(() => {
     let rafId;
     const checkModals = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        const overlays = Array.from(document.querySelectorAll('.fixed.inset-0'));
-        const hasModal = overlays.some(el => {
-           const style = window.getComputedStyle(el);
-           const zIndex = parseInt(style.zIndex, 10) || 0;
-           return zIndex >= 40 && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
-        });
-        setIsGlobalModalOpen(hasModal);
+        const overlays = document.querySelectorAll('.fixed.inset-0');
+        let hasModal = false;
+        for (let i = 0; i < overlays.length; i++) {
+          const el = overlays[i];
+          const style = window.getComputedStyle(el);
+          const zIndex = parseInt(style.zIndex, 10) || 0;
+          if (zIndex >= 40 && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
+            hasModal = true;
+            break;
+          }
+        }
+        setIsGlobalModalOpen(prev => (prev === hasModal ? prev : hasModal));
       });
     };
 
     checkModals();
     const observer = new MutationObserver(() => checkModals());
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+    observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {
       observer.disconnect();
@@ -259,23 +267,25 @@ export default function MainAppLayout({
     };
   }, []);
 
-  const handleNavClick = (itemId) => {
+  const handleNavClick = (itemId, options = {}) => {
+    if (preloadView) preloadView(itemId);
+
     if (itemId === 'routines') {
       localStorage.removeItem('routinesEditingState_v2');
       localStorage.setItem('routinesForceTab', 'myRoutines');
       localStorage.removeItem('quickCardioOrigin');
     }
-    
-    startTransition(() => {
-      if (view === itemId) {
-        if (mainContentRef && mainContentRef.current) {
-          mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-        setViewResetKey(prev => prev + 1);
-      } else {
-        navigate(itemId);
+
+    wasSwipeNavRef.current = Boolean(options.fromSwipe);
+
+    if (view === itemId) {
+      if (mainContentRef && mainContentRef.current) {
+        mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       }
-    });
+      setViewResetKey(prev => prev + 1);
+    } else {
+      navigate(itemId);
+    }
   };
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
@@ -292,38 +302,43 @@ export default function MainAppLayout({
     }
   }, [notifications]);
 
-  // EFECTO DE TRANSICIÓN ANIMADA
+  // EFECTO DE TRANSICIÓN ANIMADA (Solo cuando se navega deslizando con el dedo; al pulsar navbar/sidebar es instantáneo)
   useEffect(() => {
     if (prevViewRef.current !== view) {
-      isTransitioningRef.current = true;
-      const prevIndex = navItems.findIndex(i => i.id === prevViewRef.current);
-      const currentIndex = navItems.findIndex(i => i.id === view);
-      
-      let dir = 'right';
-      if (prevIndex !== -1 && currentIndex !== -1) {
-        dir = currentIndex > prevIndex ? 'right' : 'left';
-      }
+      const shouldAnimateSlide = wasSwipeNavRef.current;
+      wasSwipeNavRef.current = false;
 
-      if (swipeContainerRef.current) {
+      if (shouldAnimateSlide && swipeContainerRef.current) {
+        isTransitioningRef.current = true;
+        const prevIndex = navItems.findIndex(i => i.id === prevViewRef.current);
+        const currentIndex = navItems.findIndex(i => i.id === view);
+        const dir = (prevIndex !== -1 && currentIndex !== -1 && currentIndex < prevIndex) ? 'left' : 'right';
+
         swipeContainerRef.current.style.transition = 'none';
-        swipeContainerRef.current.style.transform = `translate3d(${dir === 'right' ? '100vw' : '-100vw'}, 0, 0)`;
-        
-        void swipeContainerRef.current.offsetWidth; 
-        
+        swipeContainerRef.current.style.transform = `translate3d(${dir === 'right' ? '28vw' : '-28vw'}, 0, 0)`;
+
         requestAnimationFrame(() => {
-          swipeContainerRef.current.style.transition = 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)';
+          if (!swipeContainerRef.current) {
+            isTransitioningRef.current = false;
+            return;
+          }
+          swipeContainerRef.current.style.transition = 'transform 0.18s cubic-bezier(0.22, 1, 0.36, 1)';
           swipeContainerRef.current.style.transform = 'translate3d(0, 0, 0)';
-          
+
           setTimeout(() => {
             isTransitioningRef.current = false;
             if (swipeContainerRef.current) {
               swipeContainerRef.current.style.transform = '';
               swipeContainerRef.current.style.transition = '';
             }
-          }, 350);
+          }, 180);
         });
       } else {
         isTransitioningRef.current = false;
+        if (swipeContainerRef.current) {
+          swipeContainerRef.current.style.transform = '';
+          swipeContainerRef.current.style.transition = '';
+        }
       }
       prevViewRef.current = view;
     }
@@ -452,17 +467,18 @@ export default function MainAppLayout({
     }
 
     if (navigated && nextId) {
+      if (preloadView) preloadView(nextId);
       const screenWidth = window.innerWidth;
-      const exitX = dx > 0 ? -screenWidth : screenWidth;
+      const exitX = dx > 0 ? -Math.round(screenWidth * 0.35) : Math.round(screenWidth * 0.35);
       
       if (swipeContainerRef.current) {
-        swipeContainerRef.current.style.transition = 'transform 0.2s ease-out';
+        swipeContainerRef.current.style.transition = 'transform 0.12s ease-out';
         swipeContainerRef.current.style.transform = `translate3d(${exitX}px, 0, 0)`;
       }
 
       setTimeout(() => {
-        handleNavClick(nextId);
-      }, 200);
+        handleNavClick(nextId, { fromSwipe: true });
+      }, 100);
     } else {
       resetSwipe();
     }
@@ -942,6 +958,7 @@ export default function MainAppLayout({
       <Sidebar
         view={view}
         navigate={handleNavClick}
+        preloadView={preloadView}
         navItems={navItems}
         userProfile={userProfile}
         BACKEND_BASE_URL={BACKEND_BASE_URL}
@@ -1022,6 +1039,8 @@ export default function MainAppLayout({
                 className={`flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${view === 'notifications' ? 'w-0 opacity-0 mr-0 translate-x-4' : 'w-10 opacity-100 mr-0 translate-x-0'}`}
               >
                 <button
+                  onMouseEnter={() => preloadView && preloadView('notifications')}
+                  onTouchStart={() => preloadView && preloadView('notifications')}
                   onClick={() => handleNavClick('notifications')}
                   className="relative w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200 outline-none focus:outline-none"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -1128,6 +1147,8 @@ export default function MainAppLayout({
               return (
                 <button
                   key={item.id}
+                  onMouseEnter={() => preloadView && preloadView(item.id)}
+                  onTouchStart={() => preloadView && preloadView(item.id)}
                   onClick={() => handleNavClick(item.id)}
                   className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-colors duration-300 ease-out active:scale-90 outline-none focus:outline-none ring-0 ${isVisuallyActive ? '' : 'text-text-secondary'}`}
                   style={{ color: isVisuallyActive ? 'var(--color-accent)' : undefined, animationDelay: `${index * 100}ms`, animationFillMode: 'both', WebkitTapHighlightColor: 'transparent' }}

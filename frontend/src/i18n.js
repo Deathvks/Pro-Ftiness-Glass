@@ -9,7 +9,6 @@ import exerciseNamesES from './locales/es/exercise_names.json';
 import exerciseMusclesES from './locales/es/exercise_muscles.json';
 import exerciseEquipmentES from './locales/es/exercise_equipment.json';
 import exerciseUiES from './locales/es/exercise_ui.json';
-import exerciseDescriptionsES from './locales/es/exercises.json'; // Este ahora solo tiene descripciones
 // --- FIN DE LA MODIFICACIÓN ---
 
 i18n
@@ -55,7 +54,7 @@ i18n
         exercise_muscles: exerciseMusclesES,
         exercise_equipment: exerciseEquipmentES,
         exercise_ui: exerciseUiES,
-        exercise_descriptions: exerciseDescriptionsES,
+        exercise_descriptions: {},
         // --- FIN DE LA MODIFICACIÓN ---
       },
       // Puedes añadir más idiomas aquí
@@ -73,5 +72,25 @@ i18n
       caches: ['localStorage'],
     }
   });
+
+// Cargar las descripciones largas de ejercicios de forma diferida para no bloquear el arranque inicial
+const loadExerciseDescriptions = () => {
+  import('./locales/es/exercises.json')
+    .then((mod) => {
+      const data = mod?.default || mod;
+      if (data) {
+        i18n.addResourceBundle('es', 'exercise_descriptions', data, true, true);
+      }
+    })
+    .catch(() => {});
+};
+
+if (typeof window !== 'undefined') {
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(loadExerciseDescriptions, { timeout: 2000 });
+  } else {
+    setTimeout(loadExerciseDescriptions, 400);
+  }
+}
 
 export default i18n;

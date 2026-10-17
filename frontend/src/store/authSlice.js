@@ -3,9 +3,24 @@ import * as authService from '../services/authService';
 import * as userService from '../services/userService';
 import { APP_VERSION } from '../config/version';
 
+const INITIAL_CACHE_KEY = 'pfg_cached_initial_state_v1';
+
+const getCachedUserProfile = () => {
+    try {
+        if (!localStorage.getItem('pro_fitness_token')) return null;
+        const raw = localStorage.getItem(INITIAL_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return parsed?.userProfile && typeof parsed.userProfile === 'object' ? parsed.userProfile : null;
+    } catch {
+        return null;
+    }
+};
+
 // Esta función se encarga de limpiar el almacenamiento local relacionado con la sesión.
 const clearAuthStorage = () => {
     localStorage.removeItem('pro_fitness_token');
+    localStorage.removeItem(INITIAL_CACHE_KEY);
     localStorage.removeItem('lastView');
     localStorage.removeItem('templateRoutinesSearchQuery');
     localStorage.removeItem('templateRoutinesSelectedCategory');
@@ -14,12 +29,14 @@ const clearAuthStorage = () => {
 };
 
 // Definimos el "slice" o parte del store que gestiona la autenticación y el perfil.
-export const createAuthSlice = (set, get) => ({
+export const createAuthSlice = (set, get) => {
+    const cachedProfile = getCachedUserProfile();
+    return {
     // --- ESTADO INICIAL ---
     isAuthenticated: !!localStorage.getItem('pro_fitness_token'),
     token: localStorage.getItem('pro_fitness_token'),
-    userProfile: null,
-    isLoading: true,
+    userProfile: cachedProfile,
+    isLoading: !cachedProfile,
     showWelcomeModal: false,
     show2FAPromo: false,
     tourActive: false,
@@ -367,4 +384,5 @@ export const createAuthSlice = (set, get) => ({
         localStorage.removeItem('cookie_consent');
         set({ cookieConsent: null });
     },
-});
+    };
+};

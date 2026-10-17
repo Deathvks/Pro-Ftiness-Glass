@@ -22,49 +22,91 @@ import { useLocalNotifications } from './hooks/useLocalNotifications';
 import AuthScreens from './components/AuthScreens';
 import MainAppLayout from './components/MainAppLayout';
 import InitialLoadingSkeleton from './components/InitialLoadingSkeleton';
-import TwoFactorPromoModal from './components/TwoFactorPromoModal';
 import RestTimerModal from './components/RestTimerModal';
 import DynamicIslandTimer from './components/DynamicIslandTimer';
 import VersionUpdater from './components/VersionUpdater';
 import APKUpdater from './components/APKUpdater';
 import AndroidDownloadPrompt from './components/AndroidDownloadPrompt';
 import SEOHead from './components/SEOHead';
-import StoryViewer from './components/StoryViewer';
-import SecurityDashboard from './pages/SecurityDashboard';
 import PermissionModal from './components/PermissionModal'; 
-import PageTutorialPlayback from './components/PageTutorialPlayback';
-
-import OnboardingScreen from './pages/OnboardingScreen';
-import LandingPage from './pages/LandingPage'; 
-import AsesoriaScreen from './pages/AsesoriaScreen';
 import NotFoundPage from './pages/NotFoundPage';
 
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Progress = lazy(() => import('./pages/Progress'));
-const Routines = lazy(() => import('./pages/Routines'));
-const Workout = lazy(() => import('./pages/Workout'));
-const Nutrition = lazy(() => import('./pages/Nutrition'));
-const SettingsScreen = lazy(() => import('./pages/SettingsScreen'));
-const PhysicalProfileEditor = lazy(() => import('./pages/PhysicalProfileEditor'));
-const AdminPanel = lazy(() => import('./pages/AdminPanel'));
-const AdminNotifications = lazy(() => import('./pages/AdminNotifications'));
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
-const TermsPage = lazy(() => import('./pages/TermsPage'));
-const Profile = lazy(() => import('./pages/Profile'));
-const TwoFactorSetup = lazy(() => import('./pages/TwoFactorSetup'));
-const NotificationsScreen = lazy(() => import('./pages/NotificationsScreen'));
-const Social = lazy(() => import('./pages/Social'));
-const PublicProfile = lazy(() => import('./pages/PublicProfile'));
-const QuickCardio = lazy(() => import('./pages/QuickCardio'));
-const ActiveCardioSession = lazy(() => import('./pages/ActiveCardioSession'));
-const TrainerPanel = lazy(() => import('./components/TrainerPanel/TrainerPanel'));
-const Hub = lazy(() => import('./pages/Hub'));
-const ResetPasswordScreen = lazy(() => import('./pages/ResetPasswordScreen'));
-const SharedRoutinePreview = lazy(() => import('./pages/SharedRoutinePreview'));
-const AppearanceScreen = lazy(() => import('./pages/AppearanceScreen'));
-const SupportScreen = lazy(() => import('./pages/SupportScreen'));
-const SocialLinksScreen = lazy(() => import('./pages/SocialLinksScreen'));
-const ChallengesScreen = lazy(() => import('./pages/ChallengesScreen'));
+const TwoFactorPromoModal = lazy(() => import('./components/TwoFactorPromoModal'));
+const StoryViewer = lazy(() => import('./components/StoryViewer'));
+const SecurityDashboard = lazy(() => import('./pages/SecurityDashboard'));
+const PageTutorialPlayback = lazy(() => import('./components/PageTutorialPlayback'));
+const OnboardingScreen = lazy(() => import('./pages/OnboardingScreen'));
+const LandingPage = lazy(() => import('./pages/LandingPage')); 
+const AsesoriaScreen = lazy(() => import('./pages/AsesoriaScreen'));
+
+const VIEW_CHUNK_LOADERS = {
+  dashboard: () => import('./pages/Dashboard'),
+  progress: () => import('./pages/Progress'),
+  routines: () => import('./pages/Routines'),
+  workout: () => import('./pages/Workout'),
+  nutrition: () => import('./pages/Nutrition'),
+  settings: () => import('./pages/SettingsScreen'),
+  physicalProfileEditor: () => import('./pages/PhysicalProfileEditor'),
+  adminPanel: () => import('./pages/AdminPanel'),
+  adminNotifications: () => import('./pages/AdminNotifications'),
+  privacyPolicy: () => import('./pages/PrivacyPolicy'),
+  terms: () => import('./pages/TermsPage'),
+  profile: () => import('./pages/Profile'),
+  twoFactorSetup: () => import('./pages/TwoFactorSetup'),
+  notifications: () => import('./pages/NotificationsScreen'),
+  social: () => import('./pages/Social'),
+  publicProfile: () => import('./pages/PublicProfile'),
+  quickCardio: () => import('./pages/QuickCardio'),
+  'active-cardio': () => import('./pages/ActiveCardioSession'),
+  trainerPanel: () => import('./components/TrainerPanel/TrainerPanel'),
+  hub: () => import('./pages/Hub'),
+  resetPassword: () => import('./pages/ResetPasswordScreen'),
+  sharedRoutine: () => import('./pages/SharedRoutinePreview'),
+  appearance: () => import('./pages/AppearanceScreen'),
+  support: () => import('./pages/SupportScreen'),
+  socialLinks: () => import('./pages/SocialLinksScreen'),
+  challenges: () => import('./pages/ChallengesScreen'),
+  asesoria: () => import('./pages/AsesoriaScreen'),
+};
+
+const preloadedViews = new Set();
+export const preloadViewChunk = (viewId) => {
+  if (!viewId || preloadedViews.has(viewId)) return;
+  const loader = VIEW_CHUNK_LOADERS[viewId];
+  if (loader) {
+    preloadedViews.add(viewId);
+    loader().catch(() => {
+      preloadedViews.delete(viewId);
+    });
+  }
+};
+
+const Dashboard = lazy(VIEW_CHUNK_LOADERS.dashboard);
+const Progress = lazy(VIEW_CHUNK_LOADERS.progress);
+const Routines = lazy(VIEW_CHUNK_LOADERS.routines);
+const Workout = lazy(VIEW_CHUNK_LOADERS.workout);
+const Nutrition = lazy(VIEW_CHUNK_LOADERS.nutrition);
+const SettingsScreen = lazy(VIEW_CHUNK_LOADERS.settings);
+const PhysicalProfileEditor = lazy(VIEW_CHUNK_LOADERS.physicalProfileEditor);
+const AdminPanel = lazy(VIEW_CHUNK_LOADERS.adminPanel);
+const AdminNotifications = lazy(VIEW_CHUNK_LOADERS.adminNotifications);
+const PrivacyPolicy = lazy(VIEW_CHUNK_LOADERS.privacyPolicy);
+const TermsPage = lazy(VIEW_CHUNK_LOADERS.terms);
+const Profile = lazy(VIEW_CHUNK_LOADERS.profile);
+const TwoFactorSetup = lazy(VIEW_CHUNK_LOADERS.twoFactorSetup);
+const NotificationsScreen = lazy(VIEW_CHUNK_LOADERS.notifications);
+const Social = lazy(VIEW_CHUNK_LOADERS.social);
+const PublicProfile = lazy(VIEW_CHUNK_LOADERS.publicProfile);
+const QuickCardio = lazy(VIEW_CHUNK_LOADERS.quickCardio);
+const ActiveCardioSession = lazy(VIEW_CHUNK_LOADERS['active-cardio']);
+const TrainerPanel = lazy(VIEW_CHUNK_LOADERS.trainerPanel);
+const Hub = lazy(VIEW_CHUNK_LOADERS.hub);
+const ResetPasswordScreen = lazy(VIEW_CHUNK_LOADERS.resetPassword);
+const SharedRoutinePreview = lazy(VIEW_CHUNK_LOADERS.sharedRoutine);
+const AppearanceScreen = lazy(VIEW_CHUNK_LOADERS.appearance);
+const SupportScreen = lazy(VIEW_CHUNK_LOADERS.support);
+const SocialLinksScreen = lazy(VIEW_CHUNK_LOADERS.socialLinks);
+const ChallengesScreen = lazy(VIEW_CHUNK_LOADERS.challenges);
 
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
@@ -336,13 +378,47 @@ export default function App() {
   }, [view, t]);
 
   const fullPageTitle = `${currentTitle} - Pro Fitness Glass`;
+  const workoutTimer = view === 'workout' ? timer : 0;
+
+  // Precargar los módulos de la barra de navegación y del menú lateral en segundo plano tras pintar la vista inicial
+  useEffect(() => {
+    if (!isAuthenticated || isInitialLoad) return;
+
+    const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub'];
+    const secondaryNavViews = ['workout', 'progress', 'profile', 'settings', 'notifications', 'challenges', 'appearance'];
+
+    // Asegurar que la vista activa empiece primero
+    preloadViewChunk(view);
+
+    const timeouts = [];
+    const schedulePreload = (views, startDelayMs, stepMs) => {
+      views.forEach((v, idx) => {
+        if (v === view) return;
+        const tid = setTimeout(() => {
+          if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+            window.requestIdleCallback(() => preloadViewChunk(v), { timeout: 1500 });
+          } else {
+            preloadViewChunk(v);
+          }
+        }, startDelayMs + idx * stepMs);
+        timeouts.push(tid);
+      });
+    };
+
+    schedulePreload(primaryNavViews, 150, 120);
+    schedulePreload(secondaryNavViews, 900, 180);
+
+    return () => {
+      timeouts.forEach(clearTimeout);
+    };
+  }, [isAuthenticated, isInitialLoad, view]);
 
   const currentViewComponent = useMemo(() => {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigateInternal} />;
       case 'progress': return <Progress darkMode={resolvedTheme !== 'light'} setView={navigateInternal} />;
       case 'routines': return <Routines setView={navigateInternal} mainContentRef={mainContentRef} />;
-      case 'workout': return <Workout timer={timer} setView={navigateInternal} navParams={navParams} />;
+      case 'workout': return <Workout timer={workoutTimer} setView={navigateInternal} navParams={navParams} />;
       case 'nutrition': return <Nutrition setView={navigateInternal} navParams={navParams} />;
       case 'social': return <Social setView={navigateInternal} />;
       case 'publicProfile': return <PublicProfile userId={navParams?.userId} onBack={() => navigateInternal('social')} />;
@@ -411,7 +487,7 @@ export default function App() {
       case 'not-found': return <NotFoundPage navigate={navigateInternal} />;
       default: return <Dashboard setView={navigateInternal} />;
     }
-  }, [view, navigateInternal, theme, resolvedTheme, timer, accent, handleLogoutClick, userProfile, handleBackFromPolicy, handleCancelProfile, navParams]);
+  }, [view, navigateInternal, theme, resolvedTheme, workoutTimer, accent, handleLogoutClick, userProfile, handleBackFromPolicy, handleCancelProfile, navParams]);
 
   const profileImgSrc = useMemo(() => {
     if (!userProfile?.profile_image_url) return null;
@@ -437,14 +513,6 @@ export default function App() {
     { id: 'hub', label: t('Menú', { defaultValue: 'Menú' }), badge: !visitedHub || (unreadChats > 0), icon: (active) => active ? <SquaresSolid className="w-6 h-6" /> : <SquaresOutline className="w-6 h-6" /> },
   ], [t, visitedHub, unreadChats]);
 
-    const mainViews = useMemo(() => ({
-      dashboard: <Dashboard setView={navigateInternal} />,
-      social: <Social navigate={navigateInternal} />,
-      nutrition: <Nutrition setView={navigateInternal} />,
-      routines: <Routines setView={navigateInternal} />,
-      hub: <Hub setView={navigateInternal} />
-    }), [navigateInternal]);
-
   const AuthenticatedAppContent = useMemo(() => {
     // Si el perfil no tiene la propiedad 'role', significa que es el objeto parcial del login
     // y todava no se ha ejecutado fetchInitialData. Mostramos el skeleton para evitar parpadeos.
@@ -453,11 +521,19 @@ export default function App() {
     }
 
     if (!userProfile.goal && userProfile.role !== 'trainee') {
-      return <OnboardingScreen />;
+      return (
+        <Suspense fallback={<InitialLoadingSkeleton />}>
+          <OnboardingScreen />
+        </Suspense>
+      );
     }
 
     if (view === 'active-cardio') {
-      return <ActiveCardioSession activityId={navParams?.activityId} setView={navigateInternal} />;
+      return (
+        <Suspense fallback={<InitialLoadingSkeleton />}>
+          <ActiveCardioSession activityId={navParams?.activityId} setView={navigateInternal} />
+        </Suspense>
+      );
     }
 
     const userProfileWithStory = {
@@ -470,10 +546,10 @@ export default function App() {
         <MainAppLayout
           view={view}
           navigate={navigateInternal}
+          preloadView={preloadViewChunk}
           mainContentRef={mainContentRef}
           currentTitle={currentTitle}
           currentViewComponent={currentViewComponent}
-          mainViews={mainViews}
           navItems={navItems}
           handleLogoutClick={handleLogoutClick}
           showLogoutConfirm={showLogoutConfirm}
@@ -486,21 +562,27 @@ export default function App() {
           userProfile={userProfileWithStory}
           profileImgSrc={profileImgSrc}
         />
-        <PageTutorialPlayback view={view} navParams={navParams} setView={navigateInternal} />
+        <Suspense fallback={null}>
+          <PageTutorialPlayback view={view} navParams={navParams} setView={navigateInternal} />
+        </Suspense>
         {isResting && (
           restTimerMode === 'minimized' ? <DynamicIslandTimer /> : <RestTimerModal />
         )}
         {show2FAPromo && (
-          <TwoFactorPromoModal
-            onClose={handleClose2FAPromo}
-            onConfigure={handleConfigure2FA}
-          />
+          <Suspense fallback={null}>
+            <TwoFactorPromoModal
+              onClose={handleClose2FAPromo}
+              onConfigure={handleConfigure2FA}
+            />
+          </Suspense>
         )}
         {viewingMyStory && (
+          <Suspense fallback={null}>
             <StoryViewer 
-                userId={userProfile.id} 
-                onClose={() => setViewingMyStory(false)} 
+              userId={userProfile.id} 
+              onClose={() => setViewingMyStory(false)} 
             />
+          </Suspense>
         )}
 
         <PermissionModal 
@@ -624,7 +706,11 @@ export default function App() {
 
         <Route path="/" element={
             !isAuthenticated ? (
-                isInstalledApp ? <Navigate to="/login" replace /> : <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
+                isInstalledApp ? <Navigate to="/login" replace /> : (
+                  <Suspense fallback={<InitialLoadingSkeleton />}>
+                    <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
+                  </Suspense>
+                )
             ) : (
                 <Navigate to="/dashboard" replace />
             )

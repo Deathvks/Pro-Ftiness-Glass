@@ -6,8 +6,10 @@ import StoryViewer from './StoryViewer';
 import AIInfoModal from './AIInfoModal';
 import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 
-const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, isRed, shouldTruncate, className = '', isCollapsed, badge }) => (
+const SidebarItem = ({ label, icon, isActive, onClick, onPreload, onIconClick, badgeCount, isRed, shouldTruncate, className = '', isCollapsed, badge }) => (
   <button
+    onMouseEnter={onPreload}
+    onTouchStart={onPreload}
     onClick={onClick}
     title={isCollapsed ? label : undefined}
     className={`flex items-center w-full rounded-2xl text-[15px] font-semibold transition-all duration-300 group text-left overflow-hidden ${
@@ -46,7 +48,7 @@ const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, 
   </button>
 );
 
-const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '', handleLogoutClick, unreadCount = 0 }) => {
+const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_BASE_URL = '', handleLogoutClick, unreadCount = 0 }) => {
   const socialRequests = useAppStore(state => state.socialRequests);
   const myStories = useAppStore(state => state.myStories);
   
@@ -186,6 +188,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
                 label={item.label}
                 icon={item.icon}
                 isActive={view === item.id}
+                onPreload={() => preloadView && preloadView(item.id)}
                 onClick={() => navigate(item.id)}
                 badgeCount={item.id === 'social' ? (socialRequests?.received?.length || 0) : 0}
                 isCollapsed={isCollapsed}
@@ -227,6 +230,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
                 label="Notificaciones"
                 icon={<BellIcon className="w-5 h-5" />}
                 isActive={view === 'notifications'}
+                onPreload={() => preloadView && preloadView('notifications')}
                 onClick={() => navigate('notifications')}
                 badgeCount={unreadCount}
                 isCollapsed={isCollapsed}
@@ -246,6 +250,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
                 label={userProfile?.username || 'Perfil'}
                 icon={getProfileIcon()}
                 isActive={view === 'profile'}
+                onPreload={() => preloadView && preloadView('profile')}
                 onClick={() => navigate('profile')}
                 onIconClick={hasStories ? () => setViewingStory(true) : undefined}
                 shouldTruncate={true}

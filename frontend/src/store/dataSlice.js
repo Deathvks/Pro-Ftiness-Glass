@@ -13,23 +13,63 @@ import * as personalRecordService from '../services/personalRecordService';
 
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
+const INITIAL_CACHE_KEY = 'pfg_cached_initial_state_v1';
+let lastDateFetchInfo = { date: null, timestamp: 0 };
+
+const readInitialCache = () => {
+  try {
+    if (typeof window === 'undefined' || !localStorage.getItem('pro_fitness_token')) return null;
+    const raw = localStorage.getItem(INITIAL_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeInitialCache = (partial) => {
+  try {
+    if (typeof window === 'undefined' || !localStorage.getItem('pro_fitness_token')) return;
+    const existing = readInitialCache() || {};
+    const merged = {
+      ...existing,
+      ...partial,
+      updatedAt: Date.now(),
+    };
+    if (Array.isArray(merged.workoutLog) && merged.workoutLog.length > 40) {
+      merged.workoutLog = merged.workoutLog.slice(0, 40);
+    }
+    if (Array.isArray(merged.personalRecords) && merged.personalRecords.length > 60) {
+      merged.personalRecords = merged.personalRecords.slice(0, 60);
+    }
+    localStorage.setItem(INITIAL_CACHE_KEY, JSON.stringify(merged));
+  } catch {
+    // Ignore storage quota errors silently
+  }
+};
+
+const cachedData = readInitialCache();
+const todayStr = getTodayDateString();
+const isCachedToday = cachedData?.cachedDate === todayStr;
+
 const initialState = {
-  routines: [],
-  workoutLog: [],
-  bodyWeightLog: [],
-  bodyMeasurementsLog: [],
+  routines: Array.isArray(cachedData?.routines) ? cachedData.routines : [],
+  workoutLog: Array.isArray(cachedData?.workoutLog) ? cachedData.workoutLog : [],
+  bodyWeightLog: Array.isArray(cachedData?.bodyWeightLog) ? cachedData.bodyWeightLog : [],
+  bodyMeasurementsLog: Array.isArray(cachedData?.bodyMeasurementsLog) ? cachedData.bodyMeasurementsLog : [],
   prNotification: null,
-  nutritionLog: [],
-  waterLog: { quantity_ml: 0 },
-  selectedDate: getTodayDateString(),
+  nutritionLog: isCachedToday && Array.isArray(cachedData?.nutritionLog) ? cachedData.nutritionLog : [],
+  waterLog: isCachedToday && cachedData?.waterLog ? cachedData.waterLog : { quantity_ml: 0 },
+  selectedDate: todayStr,
   nutritionSummary: { nutrition: [], water: [] },
-  favoriteMeals: [],
-  recentMeals: [],
+  favoriteMeals: Array.isArray(cachedData?.favoriteMeals) ? cachedData.favoriteMeals : [],
+  recentMeals: Array.isArray(cachedData?.recentMeals) ? cachedData.recentMeals : [],
   templateRoutines: {},
-  todaysCreatineLog: [],
-  creatineStats: null,
+  todaysCreatineLog: isCachedToday && Array.isArray(cachedData?.todaysCreatineLog) ? cachedData.todaysCreatineLog : [],
+  creatineStats: cachedData?.creatineStats || null,
   allExercises: [],
-  personalRecords: [], // Estado inicial array vacío
+  personalRecords: Array.isArray(cachedData?.personalRecords) ? cachedData.personalRecords : [], // Estado inicial array vacío
 };
 
 export const createDataSlice = (set, get) => ({
@@ -78,16 +118,21 @@ export const createDataSlice = (set, get) => ({
       return;
     }
 
-    set({ isLoading: true });
+    const existingProfile = get().userProfile;
+    const hasHydratedProfile = Boolean(existingProfile && 'role' in existingProfile);
+    if (!hasHydratedProfile) {
+      set({ isLoading: true });
+    }
+
     try {
       const profileData = await userService.getMyProfile();
 
-      // Actualizar silenciosamente la zona horaria si ha cambiado
+      // Actualizar silenciosamente la zona horaria sin bloquear el arranque
       try {
         const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (profileData.timezone !== currentTimezone) {
-            await userService.updateUserProfile({ timezone: currentTimezone }).catch(console.error);
             profileData.timezone = currentTimezone;
+            userService.updateUserProfile({ timezone: currentTimezone }).catch(console.error);
         }
       } catch (e) {
         console.warn('Could not detect timezone', e);
@@ -95,9 +140,11 @@ export const createDataSlice = (set, get) => ({
 
       get().checkWelcomeModal();
 
-      set({ userProfile: profileData, isAuthenticated: true });
+      // Desbloqueamos inmediatamente la interfaz con el perfil cargado
+      set({ userProfile: profileData, isAuthenticated: true, isLoading: false });
+      writeInitialCache({ userProfile: profileData });
 
-      // Obtener el conteo de chats no leídos
+      // Obtener el conteo de chats no leídos en segundo plano
       if (get().fetchUnreadChats) {
         get().fetchUnreadChats();
       }
@@ -121,71 +168,89 @@ export const createDataSlice = (set, get) => ({
       }
 
       if (profileData?.id) {
-        await get().checkCookieConsent(profileData.id);
+        Promise.resolve(get().checkCookieConsent(profileData.id)).catch(() => {});
       }
 
       if (profileData.goal) {
-        const today = get().selectedDate;
+        const today = get().selectedDate || getTodayDateString();
+        lastDateFetchInfo = { date: today, timestamp: Date.now() };
 
-        const [
-          routines,
-          workouts,
-          bodyweight,
-          measurements,
-          nutrition,
-          favoriteMeals,
-          recentMeals,
-          todaysCreatine,
-          creatineStats,
-          prsResponse
-        ] = await Promise.all([
-          routineService.getRoutines(),
-          workoutService.getWorkouts(),
-          bodyWeightService.getHistory(),
-          bodyMeasurementService.getHistory(),
-          nutritionService.getNutritionLogsByDate(today),
-          favoriteMealService.getFavoriteMeals(),
-          nutritionService.getRecentMeals(),
-          creatinaService.getCreatinaLogs({ startDate: today, endDate: today }),
-          creatinaService.getCreatinaStats(),
-          personalRecordService.getPersonalRecords(1, 'all').catch(() => [])
-        ]);
-        
-        // BLINDAJE: Detectamos estructura paginada { records: [...] }
-        const safePRs = prsResponse?.records || (Array.isArray(prsResponse) ? prsResponse : []);
+        // Fase 1 (Rápida, en paralelo sin bloquear el render): Rutinas y datos del día actual
+        Promise.all([
+          routineService.getRoutines().catch(() => null),
+          nutritionService.getNutritionLogsByDate(today).catch(() => null),
+          creatinaService.getCreatinaLogs({ startDate: today, endDate: today }).catch(() => null),
+          favoriteMealService.getFavoriteMeals().catch(() => null),
+          nutritionService.getRecentMeals().catch(() => null),
+        ]).then(([routines, nutrition, todaysCreatine, favoriteMeals, recentMeals]) => {
+          const fastUpdate = {};
+          if (routines) fastUpdate.routines = routines;
+          if (nutrition) {
+            fastUpdate.nutritionLog = nutrition.nutrition || [];
+            fastUpdate.waterLog = nutrition.water || { quantity_ml: 0 };
+          }
+          if (todaysCreatine) fastUpdate.todaysCreatineLog = todaysCreatine.data || [];
+          if (favoriteMeals) fastUpdate.favoriteMeals = favoriteMeals;
+          if (recentMeals) fastUpdate.recentMeals = recentMeals;
 
-        set({
-          routines: routines || [],
-          workoutLog: workouts || [],
-          bodyWeightLog: bodyweight || [],
-          bodyMeasurementsLog: measurements || [],
-          nutritionLog: nutrition.nutrition || [],
-          waterLog: nutrition.water || { quantity_ml: 0 },
-          favoriteMeals,
-          recentMeals: recentMeals || [],
-          todaysCreatineLog: todaysCreatine.data || [],
-          creatineStats: creatineStats.data || null,
-          personalRecords: safePRs
-        });
+          if (Object.keys(fastUpdate).length > 0) {
+            set(fastUpdate);
+            writeInitialCache({ ...fastUpdate, cachedDate: today });
+          }
+        }).catch((err) => console.error('Error en carga rápida inicial:', err));
+
+        // Fase 2 (Históricos pesados en segundo plano): Entrenamientos, peso, medidas y récords
+        Promise.all([
+          workoutService.getWorkouts().catch(() => null),
+          bodyWeightService.getHistory().catch(() => null),
+          bodyMeasurementService.getHistory().catch(() => null),
+          creatinaService.getCreatinaStats().catch(() => null),
+          personalRecordService.getPersonalRecords(1, 'all').catch(() => null),
+        ]).then(([workouts, bodyweight, measurements, creatineStats, prsResponse]) => {
+          const heavyUpdate = {};
+          if (workouts) heavyUpdate.workoutLog = workouts;
+          if (bodyweight) heavyUpdate.bodyWeightLog = bodyweight;
+          if (measurements) heavyUpdate.bodyMeasurementsLog = measurements;
+          if (creatineStats) heavyUpdate.creatineStats = creatineStats.data || null;
+          if (prsResponse) {
+            heavyUpdate.personalRecords = prsResponse?.records || (Array.isArray(prsResponse) ? prsResponse : []);
+          }
+
+          if (Object.keys(heavyUpdate).length > 0) {
+            set(heavyUpdate);
+            writeInitialCache(heavyUpdate);
+          }
+        }).catch((err) => console.error('Error en carga de historial inicial:', err));
       }
-        } catch (error) {
-        console.error("Error al cargar datos iniciales (posiblemente de red):", error);
-        if (error?.message?.includes('fetch') || error?.message?.includes('network') || error?.name === 'TypeError' || error?.isMaintenance) {
-          console.log('[fetchInitialData] Error de red detectado, reintentando en 3s...');
-          setTimeout(() => { get().fetchInitialData(); }, 3000);
-        } else {
-          // Los errores de API distintos de 401 (por ejemplo, 403 o 500)
-          // no significan que el token haya caducado. apiClient ya gestiona
-          // el 401 de la sesión activa y activa el aviso de sesión.
-          console.error('[fetchInitialData] Error de API al cargar el perfil; se mantiene la sesión.');
-        }
-      } finally {
+    } catch (error) {
+      console.error("Error al cargar datos iniciales (posiblemente de red):", error);
+      if (error?.message?.includes('fetch') || error?.message?.includes('network') || error?.name === 'TypeError' || error?.isMaintenance) {
+        console.log('[fetchInitialData] Error de red detectado, reintentando en 3s...');
+        setTimeout(() => { get().fetchInitialData(); }, 3000);
+      } else {
+        console.error('[fetchInitialData] Error de API al cargar el perfil; se mantiene la sesión.');
+      }
+    } finally {
       set({ isLoading: false });
     }
   },
 
-  fetchDataForDate: async (date) => {
-    set({ selectedDate: date, isLoading: true });
+  fetchDataForDate: async (date, options = {}) => {
+    const isSameDate = get().selectedDate === date;
+    const now = Date.now();
+    // Evitar peticiones duplicadas si acabamos de cargar esta misma fecha hace menos de 45s
+    if (!options.force && isSameDate && lastDateFetchInfo.date === date && (now - lastDateFetchInfo.timestamp) < 45000) {
+      return;
+    }
+    lastDateFetchInfo = { date, timestamp: now };
+
+    const shouldShowBlockingLoader = !isSameDate;
+    if (shouldShowBlockingLoader) {
+      set({ selectedDate: date, isLoading: true });
+    } else {
+      set({ selectedDate: date });
+    }
+
     try {
       const [nutrition, todaysCreatine, favoriteMeals, recentMeals] = await Promise.all([
         nutritionService.getNutritionLogsByDate(date),
@@ -193,17 +258,23 @@ export const createDataSlice = (set, get) => ({
         favoriteMealService.getFavoriteMeals(),
         nutritionService.getRecentMeals()
       ]);
-      set({
+      const nextState = {
         nutritionLog: nutrition.nutrition || [],
         waterLog: nutrition.water || { quantity_ml: 0 },
         todaysCreatineLog: todaysCreatine.data || [],
         favoriteMeals: favoriteMeals || [],
         recentMeals: recentMeals || []
-      });
+      };
+      set(nextState);
+      if (date === getTodayDateString()) {
+        writeInitialCache({ ...nextState, cachedDate: date });
+      }
     } catch (error) {
       console.error("Error al cargar datos de nutrición:", error);
     } finally {
-      set({ isLoading: false });
+      if (shouldShowBlockingLoader) {
+        set({ isLoading: false });
+      }
     }
   },
 

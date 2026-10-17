@@ -34,6 +34,7 @@ import RoutineEditor from './RoutineEditor';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import TemplateRoutines from './TemplateRoutines';
 import PromoBanner from '../components/PromoBanner';
@@ -364,7 +365,7 @@ const Routines = ({ setView, mainContentRef }) => {
     completedRoutineIdsToday,
     fetchTodaysCompletedRoutines,
     userProfile, // <-- Añadido para acceder al goal
-  } = useAppStore((state) => ({
+  } = useAppStore(useShallow((state) => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
     fetchInitialData: state.fetchInitialData,
@@ -376,7 +377,7 @@ const Routines = ({ setView, mainContentRef }) => {
     completedRoutineIdsToday: state.completedRoutineIdsToday,
     fetchTodaysCompletedRoutines: state.fetchTodaysCompletedRoutines,
     userProfile: state.userProfile, // <-- Añadido
-  }));
+  })));
 
   const LS_KEY_EDITING = 'routinesEditingState_v2';
 
