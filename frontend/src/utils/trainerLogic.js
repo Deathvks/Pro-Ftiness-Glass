@@ -221,7 +221,7 @@ export const checkStagnation = (history = []) => {
       title: '⚠️ Estancamiento de Rendimiento',
       text: 'Llevas 3 sesiones sin lograr superar tus marcas.',
       actions: [
-        'Intenta añadir micro-discos (0.5kg o 1.25kg) en lugar de hacer saltos grandes de peso.',
+        'Intenta hacer saltos pequeños de carga (a partir de 1.25 kg) en lugar de hacer saltos grandes de peso.',
         'Céntrate en progresar sumando repeticiones con este peso antes de intentar volver a subir la carga.',
         'Aumenta el tiempo de descanso entre tus series efectivas a 2-3 minutos.'
       ]

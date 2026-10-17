@@ -883,8 +883,8 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   const isCalibratingSession = targetSessions.length === 0;
   const canUseTopSetBackoff = plannedSets >= 3 && !isBodyweight && currentTopWeight >= 15;
 
-  // Incremento realista de gimnasio según carga actual
-  const realisticIncrement = currentTopWeight < 15 ? 1.25 : 2.5;
+  // Incremento realista de gimnasio según material y carga actual (discos parten de 1.25 kg)
+  const realisticIncrement = equipmentType === 'barbell' ? 2.5 : (currentTopWeight < 15 ? 1.25 : 2.5);
   const nextWeight = Math.round((currentTopWeight + realisticIncrement) * 10) / 10;
 
   // Contexto de rutina
@@ -916,29 +916,16 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   };
 
   if (equipmentType === 'barbell') {
-    if (realisticIncrement === 2.5) {
-      coachingEquipmentHint = 'Al ser un ejercicio con barra, el salto habitual es de +2.5 kg en total (colocando 1.25 kg a cada lado de la barra); si dispones de micro-discos puedes hacer un salto menor, o progresar sumando repeticiones.';
-      linearDetailMotive = `Subir +2.5 kg en total (1.25 kg a cada lado de la barra) en todas tus series introduce una tensión mecánica constante, el estímulo principal para forzar nueva síntesis proteica muscular.`;
-      linearDetailDescription = `Sube a ${nextWeight} kg en todas tus series de trabajo (+1.25 kg a cada lado de la barra para sumar +2.5 kg totales).`;
-      plateNote = {
-        standardJump: realisticIncrement,
-        equipmentType,
-        title: `Saltos de discos en barra (+${realisticIncrement} kg)`,
-        text: `Nota sobre barra: En barra estándar, el salto habitual son dos discos de 1.25 kg (1.25 kg a cada lado = +2.5 kg en total). Si tu gimnasio cuenta con micro-discos (0.5 kg por lado = +1 kg total), úsalos para una progresión más suave. Si +2.5 kg te resulta muy pesado hoy, la opción óptima es progresar sumando repeticiones con tu peso actual.`
-      };
-    } else {
-      // realisticIncrement === 1.25 en barra: ¡NUNCA decir 1.25 kg por lado!
-      coachingEquipmentHint = 'Te sugerimos un incremento suave de +1.25 kg en total (no por lado). Si en tu gimnasio los discos más pequeños para barra son de 1.25 kg por lado (+2.5 kg totales), elige la opción de sumar +1 repetición hasta poder dar el salto.';
-      linearDetailMotive = `Subir +${realisticIncrement} kg en total (usando micro-discos de ~0.5 kg a cada lado de la barra) en todas tus series introduce una tensión mecánica progresiva sin deteriorar la técnica.`;
-      linearDetailDescription = `Sube a ${nextWeight} kg en todas tus series de trabajo (+${realisticIncrement} kg en total sobre la barra, no por lado).`;
-      plateNote = {
-        standardJump: realisticIncrement,
-        equipmentType,
-        title: `Salto suave en barra (+${realisticIncrement} kg en total)`,
-        text: `Nota sobre barra: El incremento recomendado es de +${realisticIncrement} kg en total (no a cada lado). Si tu gimnasio dispone de micro-discos (~0.5 kg por lado), úsalos. Si los discos más pequeños de tu gimnasio son de 1.25 kg por lado (+2.5 kg totales), elige la opción de "+1 Repetición" con tu peso actual para no forzar el doble de salto.`
-      };
-    }
-    repsOptionMotive = `Si el salto de discos en la barra te resulta todavía pesado, consolidar 1 repetición más con los mismos ${currentTopWeight} kg aumenta el tonelaje efectivo con cero riesgo articular.`;
+    coachingEquipmentHint = 'Al ser un ejercicio con barra, el salto mínimo con discos de 1.25 kg es de +2.5 kg en total (colocando 1.25 kg a cada lado de la barra); si ese salto aún te resulta pesado, progresa sumando repeticiones.';
+    linearDetailMotive = `Subir +2.5 kg en total (un disco de 1.25 kg a cada lado de la barra) en todas tus series introduce una tensión mecánica constante, el estímulo principal para forzar nueva síntesis proteica muscular.`;
+    linearDetailDescription = `Sube a ${nextWeight} kg en todas tus series de trabajo (+1.25 kg a cada lado de la barra para sumar +2.5 kg totales).`;
+    plateNote = {
+      standardJump: realisticIncrement,
+      equipmentType,
+      title: `Saltos de discos en barra (+${realisticIncrement} kg)`,
+      text: `Nota sobre barra: Como los discos pequeños parten de 1.25 kg, en barra el salto mínimo simétrico es de +2.5 kg en total (1.25 kg a cada lado). Si subir +2.5 kg te resulta todavía muy exigente hoy, elige la opción de "+1 Repetición" con tu peso actual.`
+    };
+    repsOptionMotive = `Si añadir un disco de 1.25 kg a cada lado de la barra (+2.5 kg totales) te resulta todavía pesado, consolidar 1 repetición más con los mismos ${currentTopWeight} kg aumenta el tonelaje efectivo con cero riesgo articular.`;
     repsOptionDescription = `Mantén los ${currentTopWeight} kg y busca 1 repetición adicional (${targetReps + 1} reps) por serie antes de añadir más discos a la barra.`;
   } else if (equipmentType === 'pulley') {
     coachingEquipmentHint = `Al ser un ejercicio en polea, puedes subir +${realisticIncrement} kg usando el selector intermedio o acoplando una micro-pesa en la torre; si tu polea da saltos más grandes entre placas, progresa sumando repeticiones.`;
