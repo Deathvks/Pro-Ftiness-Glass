@@ -317,9 +317,19 @@ export const evaluateExerciseFollowUpAndRecovery = ({
   // CONDICIÓN B: TIEMPO DE RECUPERACIÓN ÓPTIMO (>= 48h con historial en esta rutina)
   // ============================================================
 
+  // Comprobar si la estrategia aplicada sigue vigente para la sesión actual/inmediata,
+  // o si el usuario ya registró entrenamientos posteriores por su cuenta sin pulsar "Aplicar".
+  const lastSessionTime = lastSession?.date ? new Date(lastSession.date).getTime() : 0;
+  const isAppliedStillRelevant = Boolean(
+    lastApplied &&
+    appliedAtTime > 0 &&
+    (!lastSessionTime || (lastSessionTime - appliedAtTime) <= (12 * 60 * 60 * 1000))
+  );
+  const activeApplied = isAppliedStillRelevant ? lastApplied : null;
+
   // B1. OK VERDE: El usuario ha aplicado la pauta para este entrenamiento o superó el estancamiento
-  const hasAchievedTarget = lastApplied && lastSession && (
-    (lastApplied.suggestedWeight !== null && lastSession.topWeight >= lastApplied.suggestedWeight) ||
+  const hasAchievedTarget = activeApplied && lastSession && (
+    (activeApplied.suggestedWeight !== null && lastSession.topWeight >= activeApplied.suggestedWeight) ||
     trendStatus === 'progressing'
   );
 
@@ -330,10 +340,10 @@ export const evaluateExerciseFollowUpAndRecovery = ({
       status: 'ok_green',
       badge: '¡OK Verde! Progreso Confirmado',
       badgeShort: '¡OK Verde!',
-      title: '¡Objetivo superado! Rompiste el estancamiento',
-      message: lastApplied
-        ? `Según lo trabajado en tus sesiones anteriores, aplicaste "${lastApplied.strategyTitle}" y lograste el objetivo (${progressionDetail}). Tu rendimiento está completamente normalizado y en progresión positiva.`
-        : `¡Excelente ritmo! Tu rendimiento está progresando de manera óptima (${progressionDetail}). Mantén esta sobrecarga gradual.`,
+      title: '¡Objetivo superado! Progreso registrado',
+      message: activeApplied
+        ? `Según lo trabajado en tus sesiones anteriores, aplicaste "${activeApplied.strategyTitle}" y lograste el objetivo (${progressionDetail}). Tu rendimiento está completamente normalizado y en progresión positiva.`
+        : `Según los datos registrados en tus entrenamientos (${lastSession?.topWeight > 0 ? `${lastSession.topWeight} kg × ${lastSession.topReps} reps` : `${lastSession?.topReps || 0} reps`}), tu rendimiento está progresando (${progressionDetail}). Toca para ver tu nuevo objetivo ajustado.`,
       actionHint: 'Consolida la técnica y continúa aplicando sobrecarga progresiva sin apresurar los saltos de peso.',
       targetText,
       color: 'emerald',
@@ -341,7 +351,7 @@ export const evaluateExerciseFollowUpAndRecovery = ({
       diffHours,
       calendarDaysDiff,
       timeAgoText,
-      lastApplied,
+      lastApplied: activeApplied,
       lastSession,
       isOkGreen: true,
       isWarning: false
@@ -349,14 +359,14 @@ export const evaluateExerciseFollowUpAndRecovery = ({
   }
 
   // B2. SIGUIENTE SESIÓN TRAS APLICAR RECOMENDACIÓN (Fase de adaptación hacia el objetivo)
-  if (lastApplied) {
+  if (activeApplied) {
     return {
       type: 'next_session_target',
       status: 'next_session_target',
       badge: 'Objetivo Sesión Anterior',
       badgeShort: 'Tu objetivo',
       title: 'Objetivo según lo trabajado en la sesión anterior',
-      message: `Según lo trabajado en la sesión anterior (aplicaste "${lastApplied.strategyTitle}"), ahora deberías poder hacer ${targetText}.`,
+      message: `Según lo trabajado en la sesión anterior (aplicaste "${activeApplied.strategyTitle}"), ahora deberías poder hacer ${targetText}.`,
       actionHint: 'Aplica el objetivo planificado y registra tus repeticiones para evaluar el avance hacia el OK verde.',
       targetText,
       color: 'accent',
@@ -364,14 +374,14 @@ export const evaluateExerciseFollowUpAndRecovery = ({
       diffHours,
       calendarDaysDiff,
       timeAgoText,
-      lastApplied,
+      lastApplied: activeApplied,
       lastSession,
       isOkGreen: false,
       isWarning: false
     };
   }
 
-  // B3. DÍA 1 / SIN RECOMENDACIÓN APLICADA: DETECTADO ESTANCAMIENTO O FATIGA
+  // B3. DETECTADO ESTANCAMIENTO O FATIGA EN LOS ENTRENAMIENTOS REGISTRADOS
   if (currentTrend?.isWarning) {
     const isStagnant = trendStatus === 'stagnant';
     const weeksStagnant = currentTrend.weeksStagnant || 1;
@@ -400,14 +410,21 @@ export const evaluateExerciseFollowUpAndRecovery = ({
     };
   }
 
-  // B4. CALIBRACIÓN CON 1 SESIÓN PREVIA EN ESTA RUTINA
+  // B4. CON 1 SESIÓN PREVIA REGISTRADA EN ESTA RUTINA (SIN HABER PULSADO "APLICAR")
+  const prevMarkText = lastSession
+    ? `${lastSession.topWeight > 0 ? `${lastSession.topWeight} kg` : 'peso corporal'} × ${lastSession.topReps} reps`
+    : null;
   return {
-    type: 'calibrating',
+    type: 'next_session_target',
     status: 'calibrating',
-    badge: 'Calibración Inicial',
-    badgeShort: 'Ver recomendación',
-    title: 'Estableciendo base en esta rutina (1 sesión previa)',
-    message: 'Ya contamos con tu primera referencia en esta rutina. Toca aquí para ver las recomendaciones y detalles para tu sesión de hoy.',
+    badge: 'Recomendación Ajustada',
+    badgeShort: 'Ver objetivo',
+    title: prevMarkText
+      ? `Objetivo ajustado según tu última sesión (${prevMarkText})`
+      : 'Estableciendo base en esta rutina (1 sesión previa)',
+    message: prevMarkText
+      ? `Recogimos tu marca anterior de ${prevMarkText} en esta rutina y hemos ajustado tus recomendaciones para hoy. Toca aquí para ver los detalles.`
+      : 'Ya contamos con tu primera referencia en esta rutina. Toca aquí para ver las recomendaciones y detalles para tu sesión de hoy.',
     actionHint: null,
     targetText: '',
     color: 'accent',

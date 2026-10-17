@@ -858,8 +858,71 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
       }
 
       strategyOptions = calibOptions;
+    } else if (missedTargetInPrevious || trend.status === 'decreasing') {
+      // Ajuste automático según los datos reales recogidos del último entrenamiento (no se alcanzaron las reps objetivo o hubo fatiga)
+      suggestedWeight = currentTopWeight;
+      suggestedReps = targetReps;
+      suggestedSets = plannedSets;
+      actionDirection = 'maintain';
+      intensityLabel = 'Consolidar Control';
+      intensityDesc = 'Parar 1-2 reps antes de fallar';
+      suggestedRir = '1-2 reps en recámara';
+      suggestedRest = '120 - 180 seg';
+      weightChangeNote = `Consolidar ${currentTopWeight} kg`;
+      actionTitle = missedTargetInPrevious
+        ? `Consolidar ${currentTopWeight} kg (lograste ${actualPreviousReps}/${targetReps} reps)`
+        : `Consolidar ${currentTopWeight} kg (ajuste por fatiga previa)`;
+      coachingAdvice = missedTargetInPrevious
+        ? `Según los datos recogidos de tu último entrenamiento en ${activeRoutineName}, registraste ${actualPreviousReps} repeticiones con ${currentTopWeight} kg (objetivo: ${targetReps} reps). Hemos ajustado automáticamente tu recomendación de hoy para consolidar los ${currentTopWeight} kg y alcanzar las ${targetReps} repeticiones antes de subir peso.`
+        : `Según el historial recogido de tus entrenamientos en ${activeRoutineName}, detectamos una ligera caída de rendimiento en la última sesión. Hemos reajustado tu recomendación para afianzar los ${currentTopWeight} kg con buena técnica hoy.`;
+      actionSteps = [
+        `Mantén ${currentTopWeight} kg buscando completar las ${targetReps} repeticiones con técnica limpia.`,
+        'Una vez consolides el rango de repeticiones completo en tus entrenamientos, el sistema te sugerirá automáticamente el siguiente salto de carga.',
+        'Descansa entre 2 y 3 minutos entre series.'
+      ];
+
+      const consolidateAutoOption = {
+        id: 'strat_auto_consolidate_normal',
+        title: `🟢 Consolidar ${currentTopWeight} kg (Buscar ${targetReps} reps)`,
+        tag: 'Recomendada según tu último entreno',
+        badge: `Mantener ${currentTopWeight}kg`,
+        suggestedWeight: currentTopWeight,
+        suggestedReps: targetReps,
+        suggestedSets: plannedSets,
+        motive: `Basado en tus registros reales (${actualPreviousReps || targetReps} reps con ${currentTopWeight} kg), afianzar el rango de ${targetReps} repeticiones antes de añadir discos garantiza progreso real sin sobrecarga articular.`,
+        description: `Mantén los ${currentTopWeight} kg hoy para completar las ${targetReps} repeticiones por serie.`
+      };
+
+      const linearOption = {
+        id: 'strat_linear_normal',
+        title: `🟢 Sobrecarga Lineal (+${realisticIncrement} kg a ${nextWeight} kg)`,
+        tag: 'Subir Carga',
+        badge: `Todas a ${nextWeight}kg`,
+        suggestedWeight: nextWeight,
+        suggestedReps: targetReps,
+        suggestedSets: plannedSets,
+        motive: `Si hoy te sientes con mucha energía, puedes probar el salto de +${realisticIncrement} kg.`,
+        description: `Sube a ${nextWeight} kg en todas tus series de trabajo.`
+      };
+
+      strategyOptions = [consolidateAutoOption, linearOption];
+      if (canUseTopSetBackoff) {
+        const progTopReps = Math.max(5, targetReps - 2);
+        strategyOptions.push({
+          id: 'strat_topset_normal',
+          title: '🟢 Top Set + Back-off (Pico de Sobrecarga)',
+          tag: 'Alternativa Escalonada',
+          badge: `1ª ${nextWeight}kg · Resto ${currentTopWeight}kg`,
+          suggestedWeight: nextWeight,
+          suggestedReps: progTopReps,
+          suggestedSets: plannedSets,
+          perSetPlan: generateTopSetBackoffPlan(plannedSets, nextWeight, progTopReps, currentTopWeight, targetReps),
+          motive: `Toca ${nextWeight} kg solo en la 1ª serie y mantén ${currentTopWeight} kg en las restantes.`,
+          description: `1ª serie a ${nextWeight} kg (${progTopReps} reps) y series 2-${plannedSets} a ${currentTopWeight} kg (${targetReps} reps).`
+        });
+      }
     } else {
-      // Progresión normal con carga previa registrada en esta rutina
+      // Progresión normal calculada automáticamente a partir de los entrenamientos registrados en esta rutina
       suggestedWeight = nextWeight;
       suggestedReps = targetReps;
       suggestedSets = plannedSets;
@@ -870,7 +933,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
       suggestedRest = '120 - 180 seg';
       weightChangeNote = `+${realisticIncrement} kg`;
       actionTitle = `Sobrecarga Progresiva: Sube a ${nextWeight} kg`;
-      coachingAdvice = `Al haber asimilado tu carga previa en ${activeRoutineName}, tus fibras musculares ya toleran esa tensión. En barras estándar los discos mínimos habituales son de 1.25 kg por lado (+2.5 kg totales). Si dispones de micro-discos (+0.5 kg por lado = +1 kg total) úsalos; si no, aplica el salto realista de +2.5 kg o progresa en repeticiones.`;
+      coachingAdvice = `A partir de los datos recogidos en tus entrenamientos de ${activeRoutineName} (última marca: ${currentTopWeight > 0 ? `${currentTopWeight} kg` : 'peso corporal'} × ${actualPreviousReps || targetReps} reps), hemos ajustado automáticamente tu recomendación. En barras estándar los discos mínimos habituales son de 1.25 kg por lado (+2.5 kg totales); si tienes micro-discos úsalos, o progresa sumando repeticiones.`;
       actionSteps = [
         `Trabaja con ${nextWeight} kg buscando mantener una técnica estricta.`,
         `Si notas el salto de peso muy exigente, mantén el rango de ${Math.max(6, targetReps - 2)}-${targetReps} reps parando 1-2 antes del fallo.`,
