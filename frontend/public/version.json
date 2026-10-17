@@ -1,4 +1,4 @@
 {
-  "version": "7.6.5",
-  "releaseNotes": "Corrección en el aviso de XP del Login Diario (+25 XP) y sincronización de notificaciones de experiencia."
+  "version": "7.6.6",
+  "releaseNotes": "Detección de material del ejercicio (barra, polea, mancuernas, máquina) en el modal de seguimiento y corrección en los textos de salto de peso (+1.25 kg vs +2.5 kg)."
 }

@@ -74,6 +74,280 @@ export const roundToWeightStep = (w) => {
 };
 
 /**
+ * Listas explícitas de respaldo por nombre de ejercicio para distinguir con precisión
+ * qué ejercicios utilizan barra, polea, mancuernas, máquina o peso corporal,
+ * incluso si el campo `equipment` / `material` no estuviera definido en algún ejercicio.
+ */
+export const BARBELL_EXERCISE_LIST = [
+  'con barra',
+  'en barra',
+  'barra z',
+  'barra ez',
+  'barra recta',
+  'barra olímpica',
+  'barra olimpica',
+  'barra hexagonal',
+  'trap bar',
+  'barra t',
+  't-bar',
+  'landmine',
+  'multipower',
+  'smith',
+  'press de banca',
+  'press banca',
+  'bench press',
+  'press inclinado con barra',
+  'press declinado con barra',
+  'press cerrado',
+  'press militar',
+  'overhead press',
+  'push press',
+  'sentadilla con barra',
+  'sentadilla libre',
+  'sentadilla trasera',
+  'sentadilla frontal',
+  'back squat',
+  'front squat',
+  'sentadilla zercher',
+  'peso muerto',
+  'peso muerto convencional',
+  'peso muerto sumo',
+  'peso muerto rumano',
+  'deadlift',
+  'rack pull',
+  'buenos días',
+  'buenos dias',
+  'good morning',
+  'hip thrust',
+  'puente de glúteo con barra',
+  'puente de gluteo con barra',
+  'remo con barra',
+  'remo pendlay',
+  'remo yates',
+  'remo en punta',
+  'remo en barra t',
+  'curl con barra',
+  'curl barra',
+  'curl predicador con barra',
+  'curl araña con barra',
+  'press francés',
+  'press frances',
+  'rompecráneos',
+  'rompecraneos',
+  'skullcrusher',
+  'encogimientos con barra',
+  'remo al mentón con barra',
+  'remo al menton con barra',
+  'clean',
+  'snatch',
+  'thruster'
+];
+
+export const PULLEY_EXERCISE_LIST = [
+  'polea',
+  'poleas',
+  'cable',
+  'cables',
+  'cuerda',
+  'jalón',
+  'jalon',
+  'pulldown',
+  'lat pulldown',
+  'cruce de poleas',
+  'cruces en polea',
+  'cruce de polea',
+  'crossover',
+  'face pull',
+  'facepull',
+  'tríceps en polea',
+  'triceps en polea',
+  'extensión de tríceps en polea',
+  'extension de triceps en polea',
+  'extensión en polea',
+  'extension en polea',
+  'curl en polea',
+  'curl bayesian',
+  'bayesian',
+  'remo gironda',
+  'remo en polea',
+  'remo sentado en polea',
+  'pull-over en polea',
+  'pullover en polea',
+  'patada de glúteo en polea',
+  'patada en polea',
+  'elevación lateral en polea',
+  'elevacion lateral en polea',
+  'leñador en polea',
+  'woodchopper',
+  'crunch en polea'
+];
+
+export const DUMBBELL_EXERCISE_LIST = [
+  'mancuerna',
+  'mancuernas',
+  'dumbbell',
+  'dumbbells',
+  'pesa rusa',
+  'pesas rusas',
+  'kettlebell',
+  'goblet',
+  'curl martillo',
+  'martillo',
+  'hammer curl',
+  'curl concentrado',
+  'curl alterno',
+  'curl inclinado con mancuernas',
+  'curl zottman',
+  'press arnold',
+  'arnold press',
+  'press con mancuernas',
+  'press inclinado con mancuernas',
+  'aperturas con mancuernas',
+  'apertura con mancuernas',
+  'pullover con mancuerna',
+  'zancada con mancuernas',
+  'zancadas con mancuernas',
+  'sentadilla búlgara',
+  'sentadilla bulgara',
+  'elevaciones laterales',
+  'elevación lateral',
+  'elevacion lateral',
+  'elevaciones frontales',
+  'pájaros',
+  'pajaros',
+  'remo con mancuerna',
+  'remo a una mano',
+  'remo kroc',
+  'patada de tríceps',
+  'patada de triceps',
+  'copa a dos manos',
+  'extensión tras nuca con mancuerna',
+  'encogimientos con mancuernas',
+  'paso del granjero',
+  'farmer walk'
+];
+
+export const MACHINE_EXERCISE_LIST = [
+  'máquina',
+  'maquina',
+  'machine',
+  'prensa',
+  'leg press',
+  'sentadilla hack',
+  'hack squat',
+  'sentadilla péndulo',
+  'sentadilla pendulo',
+  'belt squat',
+  'extensión de cuádriceps',
+  'extension de cuadriceps',
+  'leg extension',
+  'curl femoral',
+  'isquios en máquina',
+  'leg curl',
+  'abductor',
+  'abductores',
+  'aductor',
+  'aductores',
+  'contractora',
+  'pec deck',
+  'peck deck',
+  'chest press',
+  'press en máquina',
+  'remo en máquina',
+  'gemelo en máquina',
+  'gemelo sentado',
+  'gemelo de pie en máquina',
+  'jaca'
+];
+
+export const BODYWEIGHT_EXERCISE_LIST = [
+  'peso corporal',
+  'corporal',
+  'bodyweight',
+  'calistenia',
+  'dominada',
+  'dominadas',
+  'pull-up',
+  'chin-up',
+  'flexiones',
+  'flexión',
+  'flexion',
+  'push-up',
+  'fondos en paralelas',
+  'plancha',
+  'plank',
+  'burpee',
+  'muscle-up'
+];
+
+/**
+ * Clasifica el material / equipamiento real del ejercicio combinando:
+ * 1) El campo `equipment` / `material` del ejercicio (o del catálogo `allExercises`).
+ * 2) Las listas explícitas de nombres de ejercicios (`BARBELL_EXERCISE_LIST`, `PULLEY_EXERCISE_LIST`, etc.).
+ *
+ * Retorna: 'barbell' | 'pulley' | 'dumbbell' | 'machine' | 'bodyweight' | 'other'
+ */
+export const detectExerciseEquipmentType = (exercise, allExercises = []) => {
+  if (!exercise) return 'other';
+
+  const rawName = String(exercise.name || exercise.exercise_name || '').toLowerCase().trim();
+
+  // Buscar material directo en el objeto o en el catálogo global de ejercicios
+  let rawEquipment = String(
+    exercise.equipment ||
+    exercise.material ||
+    exercise.exercise_details?.equipment ||
+    exercise.exercise_details?.material ||
+    exercise.Exercise?.equipment ||
+    ''
+  ).toLowerCase().trim();
+
+  if ((!rawEquipment || rawEquipment === 'other' || rawEquipment === 'none' || rawEquipment === 'desconocido') && Array.isArray(allExercises) && allExercises.length > 0 && rawName) {
+    const matched = allExercises.find(
+      (ex) => String(ex?.name || '').toLowerCase().trim() === rawName
+    );
+    if (matched?.equipment) {
+      rawEquipment = String(matched.equipment).toLowerCase().trim();
+    }
+  }
+
+  // 1. Prioridad a menciones específicas en el nombre del ejercicio cuando desambiguan variantes
+  // (ej. "Peso muerto rumano con mancuernas" o "Elevación lateral en polea")
+  if (rawName.includes('polea') || rawName.includes('cable')) return 'pulley';
+  if (rawName.includes('mancuerna') || rawName.includes('dumbbell') || rawName.includes('kettlebell') || rawName.includes('pesa rusa')) return 'dumbbell';
+  if (rawName.includes('máquina') || rawName.includes('maquina') || rawName.includes('prensa') || rawName.includes('contractora') || rawName.includes('pec deck')) return 'machine';
+  if (rawName.includes('barra') || rawName.includes('barbell') || rawName.includes('multipower') || rawName.includes('smith')) return 'barbell';
+
+  // 2. Clasificación por el campo de material / equipamiento ("barra", "polea" / "poleas", "mancuerna", "máquina", etc.)
+  if (rawEquipment) {
+    if (rawEquipment.includes('polea') || rawEquipment.includes('cable') || rawEquipment.includes('cuerda')) {
+      return 'pulley';
+    }
+    if (rawEquipment.includes('mancuerna') || rawEquipment.includes('dumbbell') || rawEquipment.includes('pesa rusa') || rawEquipment.includes('kettlebell')) {
+      return 'dumbbell';
+    }
+    if (rawEquipment.includes('barra') || rawEquipment.includes('barbell') || rawEquipment.includes('ez') || rawEquipment.includes('multipower') || rawEquipment.includes('smith')) {
+      return 'barbell';
+    }
+    if (rawEquipment.includes('máquina') || rawEquipment.includes('maquina') || rawEquipment.includes('machine') || rawEquipment.includes('disco') || rawEquipment.includes('placa')) {
+      return 'machine';
+    }
+    if (rawEquipment.includes('corporal') || rawEquipment.includes('bodyweight') || rawEquipment.includes('ninguno')) {
+      return 'bodyweight';
+    }
+  }
+
+  // 3. Respaldo mediante las listas explícitas en el fichero por si algún ejercicio no tiene material asignado
+  if (PULLEY_EXERCISE_LIST.some((kw) => rawName.includes(kw))) return 'pulley';
+  if (DUMBBELL_EXERCISE_LIST.some((kw) => rawName.includes(kw))) return 'dumbbell';
+  if (MACHINE_EXERCISE_LIST.some((kw) => rawName.includes(kw))) return 'machine';
+  if (BARBELL_EXERCISE_LIST.some((kw) => rawName.includes(kw))) return 'barbell';
+  if (BODYWEIGHT_EXERCISE_LIST.some((kw) => rawName.includes(kw))) return 'bodyweight';
+
+  return 'other';
+};
+
+/**
  * Auditoría del rango de repeticiones planificado respecto al objetivo del usuario.
  */
 export const auditRepsForGoal = (targetReps, goalKey) => {
@@ -539,9 +813,11 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   const { 
     currentRoutineId = null, 
     currentRoutineName = null, 
-    difficultyFeedback = 'normal' 
+    difficultyFeedback = 'normal',
+    allExercises = []
   } = (typeof options === 'object' && options !== null) ? options : {};
 
+  const equipmentType = detectExerciseEquipmentType(exercise, allExercises);
   const goalInfo = normalizeUserGoal(userProfile?.goal);
   const sessions = getExerciseHistorySessions(exercise.name, workoutLog, currentRoutineId, currentRoutineName);
 
@@ -607,9 +883,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   const isCalibratingSession = targetSessions.length === 0;
   const canUseTopSetBackoff = plannedSets >= 3 && !isBodyweight && currentTopWeight >= 15;
 
-  // Incremento realista de gimnasio:
-  // En barras estándar, los discos mínimos en el 95% de los gimnasios son de 1.25 kg por lado (+2.5 kg totales).
-  // Solo en pesos muy ligeros (< 15 kg, mancuernas de aislamiento o poleas con micro-pin) se usan saltos de 1.25 kg.
+  // Incremento realista de gimnasio según carga actual
   const realisticIncrement = currentTopWeight < 15 ? 1.25 : 2.5;
   const nextWeight = Math.round((currentTopWeight + realisticIncrement) * 10) / 10;
 
@@ -628,11 +902,93 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
       : null
   } : null;
 
-  // Nota explicativa sobre discos y barras
-  const plateNote = {
+  // Textos adaptados al tipo de material (barra, polea, mancuernas, máquina) y al salto exacto (+1.25 kg vs +2.5 kg)
+  let coachingEquipmentHint = '';
+  let linearDetailMotive = '';
+  let linearDetailDescription = '';
+  let repsOptionMotive = '';
+  let repsOptionDescription = '';
+  let plateNote = {
     standardJump: realisticIncrement,
-    text: `Nota sobre discos: En barra estándar, el salto mínimo habitual son discos de 1.25 kg por lado (+2.5 kg totales). Si tu gimnasio cuenta con micro-discos (+0.5 kg por lado = +1 kg total) o polea con micro-pin, úsalos para una progresión más suave. Si +2.5 kg te resulta muy pesado, la opción óptima es progresar sumando repeticiones con tu peso actual.`
+    equipmentType,
+    title: `Salto de carga recomendado (+${realisticIncrement} kg)`,
+    text: ''
   };
+
+  if (equipmentType === 'barbell') {
+    if (realisticIncrement === 2.5) {
+      coachingEquipmentHint = 'Al ser un ejercicio con barra, el salto habitual es de +2.5 kg en total (colocando 1.25 kg a cada lado de la barra); si dispones de micro-discos puedes hacer un salto menor, o progresar sumando repeticiones.';
+      linearDetailMotive = `Subir +2.5 kg en total (1.25 kg a cada lado de la barra) en todas tus series introduce una tensión mecánica constante, el estímulo principal para forzar nueva síntesis proteica muscular.`;
+      linearDetailDescription = `Sube a ${nextWeight} kg en todas tus series de trabajo (+1.25 kg a cada lado de la barra para sumar +2.5 kg totales).`;
+      plateNote = {
+        standardJump: realisticIncrement,
+        equipmentType,
+        title: `Saltos de discos en barra (+${realisticIncrement} kg)`,
+        text: `Nota sobre barra: En barra estándar, el salto habitual son dos discos de 1.25 kg (1.25 kg a cada lado = +2.5 kg en total). Si tu gimnasio cuenta con micro-discos (0.5 kg por lado = +1 kg total), úsalos para una progresión más suave. Si +2.5 kg te resulta muy pesado hoy, la opción óptima es progresar sumando repeticiones con tu peso actual.`
+      };
+    } else {
+      // realisticIncrement === 1.25 en barra: ¡NUNCA decir 1.25 kg por lado!
+      coachingEquipmentHint = 'Te sugerimos un incremento suave de +1.25 kg en total (no por lado). Si en tu gimnasio los discos más pequeños para barra son de 1.25 kg por lado (+2.5 kg totales), elige la opción de sumar +1 repetición hasta poder dar el salto.';
+      linearDetailMotive = `Subir +${realisticIncrement} kg en total (usando micro-discos de ~0.5 kg a cada lado de la barra) en todas tus series introduce una tensión mecánica progresiva sin deteriorar la técnica.`;
+      linearDetailDescription = `Sube a ${nextWeight} kg en todas tus series de trabajo (+${realisticIncrement} kg en total sobre la barra, no por lado).`;
+      plateNote = {
+        standardJump: realisticIncrement,
+        equipmentType,
+        title: `Salto suave en barra (+${realisticIncrement} kg en total)`,
+        text: `Nota sobre barra: El incremento recomendado es de +${realisticIncrement} kg en total (no a cada lado). Si tu gimnasio dispone de micro-discos (~0.5 kg por lado), úsalos. Si los discos más pequeños de tu gimnasio son de 1.25 kg por lado (+2.5 kg totales), elige la opción de "+1 Repetición" con tu peso actual para no forzar el doble de salto.`
+      };
+    }
+    repsOptionMotive = `Si el salto de discos en la barra te resulta todavía pesado, consolidar 1 repetición más con los mismos ${currentTopWeight} kg aumenta el tonelaje efectivo con cero riesgo articular.`;
+    repsOptionDescription = `Mantén los ${currentTopWeight} kg y busca 1 repetición adicional (${targetReps + 1} reps) por serie antes de añadir más discos a la barra.`;
+  } else if (equipmentType === 'pulley') {
+    coachingEquipmentHint = `Al ser un ejercicio en polea, puedes subir +${realisticIncrement} kg usando el selector intermedio o acoplando una micro-pesa en la torre; si tu polea da saltos más grandes entre placas, progresa sumando repeticiones.`;
+    linearDetailMotive = `Subir +${realisticIncrement} kg en la polea en todas tus series introduce una tensión mecánica constante, el estímulo principal para forzar nueva síntesis proteica muscular.`;
+    linearDetailDescription = `Sube a ${nextWeight} kg en todas tus series de trabajo (+${realisticIncrement} kg en el selector de la polea o con micro-pesa).`;
+    repsOptionMotive = `En muchas poleas el salto de una placa a la siguiente es de 2.5 a 5 kg; consolidar 1 repetición más con los mismos ${currentTopWeight} kg aumenta tu fuerza sin forzar un salto brusco de placa.`;
+    repsOptionDescription = `Mantén los ${currentTopWeight} kg en la polea y busca 1 repetición adicional (${targetReps + 1} reps) por serie antes de bajar el pin a la siguiente placa.`;
+    plateNote = {
+      standardJump: realisticIncrement,
+      equipmentType,
+      title: `Saltos de carga en polea (+${realisticIncrement} kg)`,
+      text: `Nota sobre poleas: El incremento ideal sugerido es de +${realisticIncrement} kg en total usando el selector gradual o una micro-pesa acoplable sobre las placas. Si la torre de tu gimnasio salta de 5 en 5 kg y no tiene ajuste intermedio, elige la opción de "+1 Repetición" con tu peso actual.`
+    };
+  } else if (equipmentType === 'dumbbell') {
+    coachingEquipmentHint = `Al trabajar con mancuernas, busca un incremento de +${realisticIncrement} kg pasando a la siguiente mancuerna disponible; si el salto en el rack de tu gimnasio es mayor y te resulta muy pesado, progresa sumando repeticiones.`;
+    linearDetailMotive = `Subir +${realisticIncrement} kg con las mancuernas en todas tus series introduce una tensión mecánica constante, el estímulo principal para forzar nueva síntesis proteica muscular.`;
+    linearDetailDescription = `Sube a ${nextWeight} kg en todas tus series de trabajo (+${realisticIncrement} kg pasando a la siguiente mancuerna).`;
+    repsOptionMotive = `Cuando el salto al siguiente par de mancuernas del gimnasio es demasiado exigente, sumar 1 repetición más con los mismos ${currentTopWeight} kg consolida tu fuerza con total control articular.`;
+    repsOptionDescription = `Mantén las mancuernas de ${currentTopWeight} kg y busca 1 repetición adicional (${targetReps + 1} reps) por serie antes de pasar a las siguientes mancuernas.`;
+    plateNote = {
+      standardJump: realisticIncrement,
+      equipmentType,
+      title: `Saltos de carga en mancuernas (+${realisticIncrement} kg)`,
+      text: `Nota sobre mancuernas: El incremento sugerido es de +${realisticIncrement} kg. Si el rack de mancuernas de tu gimnasio salta de 2 en 2 kg o de 2.5 en 2.5 kg y notas el cambio muy brusco, la opción óptima es elegir "+1 Repetición" con tus mancuernas actuales hasta dominar el peso.`
+    };
+  } else if (equipmentType === 'machine') {
+    coachingEquipmentHint = `Al ser un ejercicio en máquina, sube +${realisticIncrement} kg en total en el selector o soporte de carga; si el salto mínimo de la máquina es mayor, progresa sumando repeticiones.`;
+    linearDetailMotive = `Subir +${realisticIncrement} kg en total en la máquina en todas tus series introduce una tensión mecánica constante, el estímulo principal para forzar nueva síntesis proteica muscular.`;
+    linearDetailDescription = `Sube a ${nextWeight} kg en todas tus series de trabajo (+${realisticIncrement} kg en total en la máquina).`;
+    repsOptionMotive = `Si el salto entre niveles de la máquina es demasiado grande, consolidar 1 repetición más con los mismos ${currentTopWeight} kg aumenta el estímulo muscular sin sobrecargar las articulaciones.`;
+    repsOptionDescription = `Mantén los ${currentTopWeight} kg en la máquina y busca 1 repetición adicional (${targetReps + 1} reps) por serie antes de subir la carga.`;
+    plateNote = {
+      standardJump: realisticIncrement,
+      equipmentType,
+      title: `Saltos de carga en máquina (+${realisticIncrement} kg)`,
+      text: `Nota sobre máquinas: El incremento recomendado es de +${realisticIncrement} kg en total. Si tu máquina es de placas con saltos mayores, utiliza el selector gradual si dispone de él o elige la opción de "+1 Repetición" con tu carga actual.`
+    };
+  } else {
+    coachingEquipmentHint = `Te sugerimos un incremento progresivo de +${realisticIncrement} kg en total; si el salto mínimo de tu material es mayor, puedes progresar sumando repeticiones.`;
+    linearDetailMotive = `Subir +${realisticIncrement} kg en total en todas tus series introduce una tensión mecánica constante, el estímulo principal para forzar nueva síntesis proteica muscular.`;
+    linearDetailDescription = `Sube a ${nextWeight} kg en todas tus series de trabajo (+${realisticIncrement} kg en total sobre tu marca anterior).`;
+    repsOptionMotive = `Si el salto mínimo de peso de tu material es demasiado grande, consolidar 1 repetición más con los mismos ${currentTopWeight} kg aumenta el tonelaje efectivo con cero riesgo articular.`;
+    repsOptionDescription = `Mantén los ${currentTopWeight} kg y busca 1 repetición adicional (${targetReps + 1} reps) por serie antes de subir de peso.`;
+    plateNote = {
+      standardJump: realisticIncrement,
+      equipmentType,
+      title: `Salto de carga recomendado (+${realisticIncrement} kg)`,
+      text: `Nota sobre progresión: El incremento recomendado es de +${realisticIncrement} kg en total (no por lado). Si el material que utilizas tiene saltos mínimos mayores, elige la opción de "+1 Repetición" con tu peso actual para progresar con seguridad.`
+    };
+  }
 
   let suggestedWeight = currentTopWeight;
   let suggestedSets = plannedSets;
@@ -706,7 +1062,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
         suggestedWeight: currentTopWeight,
         suggestedReps: safeReducedReps,
         suggestedSets: plannedSets,
-        motive: `Si prefieres mantener los ${currentTopWeight} kg, recortar a ${safeReducedReps} repeticiones evita el fallo forzado y mantiene la barra a máxima velocidad concéntrica.`,
+        motive: `Si prefieres mantener los ${currentTopWeight} kg, recortar a ${safeReducedReps} repeticiones evita el fallo forzado y mantiene el movimiento a máxima velocidad concéntrica.`,
         description: `Mantén ${currentTopWeight} kg pero detén cada serie en ${safeReducedReps} repeticiones limpias, parando 1 o 2 antes del agotamiento.`
       }
     ];
@@ -823,7 +1179,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
       actionSteps = [
         `Prueba con ${currentTopWeight > 0 ? `${currentTopWeight} kg` : 'peso corporal'} en tu primera serie de trabajo.`,
         'Detén la serie cuando sientas que podrías hacer como mucho 1 o 2 repeticiones más.',
-        'Si notas el peso muy ligero, sube 2.5 kg en la siguiente serie; si te cuesta, mantén o baja un poco.'
+        `Si notas el peso muy ligero, sube +${realisticIncrement} kg en la siguiente serie; si te cuesta, mantén o baja un poco.`
       ];
 
       const calibOptions = [
@@ -889,7 +1245,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
         suggestedWeight: currentTopWeight,
         suggestedReps: targetReps,
         suggestedSets: plannedSets,
-        motive: `Basado en tus registros reales (${actualPreviousReps || targetReps} reps con ${currentTopWeight} kg), afianzar el rango de ${targetReps} repeticiones antes de añadir discos garantiza progreso real sin sobrecarga articular.`,
+        motive: `Basado en tus registros reales (${actualPreviousReps || targetReps} reps con ${currentTopWeight} kg), afianzar el rango de ${targetReps} repeticiones antes de subir carga garantiza progreso real sin sobrecarga articular.`,
         description: `Mantén los ${currentTopWeight} kg hoy para completar las ${targetReps} repeticiones por serie.`
       };
 
@@ -901,8 +1257,8 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
         suggestedWeight: nextWeight,
         suggestedReps: targetReps,
         suggestedSets: plannedSets,
-        motive: `Si hoy te sientes con mucha energía, puedes probar el salto de +${realisticIncrement} kg.`,
-        description: `Sube a ${nextWeight} kg en todas tus series de trabajo.`
+        motive: `Si hoy te sientes con mucha energía, puedes probar el salto de +${realisticIncrement} kg en total.`,
+        description: linearDetailDescription
       };
 
       strategyOptions = [consolidateAutoOption, linearOption];
@@ -933,7 +1289,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
       suggestedRest = '120 - 180 seg';
       weightChangeNote = `+${realisticIncrement} kg`;
       actionTitle = `Sobrecarga Progresiva: Sube a ${nextWeight} kg`;
-      coachingAdvice = `A partir de los datos recogidos en tus entrenamientos de ${activeRoutineName} (última marca: ${currentTopWeight > 0 ? `${currentTopWeight} kg` : 'peso corporal'} × ${actualPreviousReps || targetReps} reps), hemos ajustado automáticamente tu recomendación. En barras estándar los discos mínimos habituales son de 1.25 kg por lado (+2.5 kg totales); si tienes micro-discos úsalos, o progresa sumando repeticiones.`;
+      coachingAdvice = `A partir de los datos recogidos en tus entrenamientos de ${activeRoutineName} (última marca: ${currentTopWeight > 0 ? `${currentTopWeight} kg` : 'peso corporal'} × ${actualPreviousReps || targetReps} reps), hemos ajustado automáticamente tu recomendación. ${coachingEquipmentHint}`;
       actionSteps = [
         `Trabaja con ${nextWeight} kg buscando mantener una técnica estricta.`,
         `Si notas el salto de peso muy exigente, mantén el rango de ${Math.max(6, targetReps - 2)}-${targetReps} reps parando 1-2 antes del fallo.`,
@@ -948,8 +1304,8 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
         suggestedWeight: nextWeight,
         suggestedReps: targetReps,
         suggestedSets: plannedSets,
-        motive: `Subir +${realisticIncrement} kg (1.25 kg a cada lado de la barra o micro-discos) en todas tus series introduce una tensión mecánica constante, el estímulo principal para forzar nueva síntesis proteica muscular.`,
-        description: `Sube a ${nextWeight} kg en todas tus series de trabajo (+1.25 kg por lado o micro-discos si tienes).`
+        motive: linearDetailMotive,
+        description: linearDetailDescription
       };
 
       const repsOption = {
@@ -960,8 +1316,8 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
         suggestedWeight: currentTopWeight,
         suggestedReps: targetReps + 1,
         suggestedSets: plannedSets,
-        motive: `Si el salto de discos de tu gimnasio es demasiado grande, consolidar 1 repetición más con los mismos ${currentTopWeight} kg aumenta el tonelaje efectivo con cero riesgo articular.`,
-        description: `Mantén los ${currentTopWeight} kg y busca 1 repetición adicional (${targetReps + 1} reps) por serie antes de meter más discos.`
+        motive: repsOptionMotive,
+        description: repsOptionDescription
       };
 
       if (canUseTopSetBackoff) {

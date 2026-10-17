@@ -1,5 +1,5 @@
 /* frontend/src/components/Workout/SmartExerciseCoachModal.jsx */
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { 
   X, 
   TrendingUp, 
@@ -29,6 +29,8 @@ import {
   Layers
 } from 'lucide-react';
 import ModalPortal from '../ModalPortal';
+import useAppStore from '../../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { generateSmartCoachPlan } from '../../utils/smartProgressionCoach';
 import { saveAppliedCoachStrategy } from '../../utils/coachAppliedHistory';
 import { formatDateToShort } from '../../utils/dateUtils';
@@ -49,14 +51,28 @@ const SmartExerciseCoachModal = ({
   const [showHistory, setShowHistory] = useState(false);
   const [difficultyFeedback, setDifficultyFeedback] = useState('normal'); // 'normal' | 'struggling' | 'cannot_reach'
 
+  const { allExercises, getOrFetchAllExercises } = useAppStore(
+    useShallow((state) => ({
+      allExercises: state.allExercises || [],
+      getOrFetchAllExercises: state.getOrFetchAllExercises
+    }))
+  );
+
+  useEffect(() => {
+    if ((!allExercises || allExercises.length === 0) && getOrFetchAllExercises) {
+      getOrFetchAllExercises().catch(() => {});
+    }
+  }, [allExercises, getOrFetchAllExercises]);
+
   const plan = useMemo(() => {
     if (!exercise) return null;
     return generateSmartCoachPlan(exercise, userProfile, workoutLog, {
       currentRoutineId,
       currentRoutineName,
-      difficultyFeedback
+      difficultyFeedback,
+      allExercises
     });
-  }, [exercise, userProfile, workoutLog, currentRoutineId, currentRoutineName, difficultyFeedback]);
+  }, [exercise, userProfile, workoutLog, currentRoutineId, currentRoutineName, difficultyFeedback, allExercises]);
 
   // Selección de estrategia interactiva
   const [selectedStrategyId, setSelectedStrategyId] = useState(null);
@@ -677,7 +693,7 @@ const SmartExerciseCoachModal = ({
                   </button>
                 </div>
                 <p className="leading-relaxed">
-                  No hace falta llegar al agotamiento extremo ni fallar la barra en cada serie. La ciencia demuestra que parar cuando sientes que te quedaban <strong className="text-text-primary font-bold">1 o 2 repeticiones en la recámara</strong> da el mismo crecimiento muscular pero sin agotar tu sistema nervioso ni lesionarte.
+                  No hace falta llegar al agotamiento extremo ni fallar en cada serie. La ciencia demuestra que parar cuando sientes que te quedaban <strong className="text-text-primary font-bold">1 o 2 repeticiones en la recámara</strong> da el mismo crecimiento muscular pero sin agotar tu sistema nervioso ni lesionarte.
                 </p>
                 <div className="p-2.5 rounded-[12px] bg-bg-secondary space-y-1.5 text-[11px]">
                   <p className="flex items-start gap-2">
@@ -746,7 +762,7 @@ const SmartExerciseCoachModal = ({
               </div>
             )}
 
-            {/* NOTA EDUCATIVA SOBRE DISCOS Y BARRAS */}
+            {/* NOTA EDUCATIVA SOBRE SALTOS DE CARGA SEGÚN EL MATERIAL */}
             {plateNote && (
               <div className="p-3 sm:p-3.5 rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 flex items-start gap-2.5">
                 <div className="p-1.5 rounded-[10px] bg-accent/20 text-accent shrink-0 mt-0.5">
@@ -754,7 +770,7 @@ const SmartExerciseCoachModal = ({
                 </div>
                 <div className="min-w-0 space-y-0.5">
                   <span className="text-[10px] font-black uppercase tracking-wider text-text-muted block">
-                    Saltos de discos en gimnasio (+{plateNote.standardJump} kg)
+                    {plateNote.title || `Salto de carga recomendado (+${plateNote.standardJump} kg)`}
                   </span>
                   <p className="text-[11px] text-text-secondary font-medium leading-relaxed">
                     {plateNote.text}
