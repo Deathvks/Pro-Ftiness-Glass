@@ -300,7 +300,7 @@ const WelcomeModal = ({ onClose }) => {
                   letterSpacing: '-0.5px',
                   lineHeight: 1.15
                 }}>
-                Evolución Inteligente
+                Tu Progreso al Día
               </h1>
 
               <p style={{
@@ -311,7 +311,7 @@ const WelcomeModal = ({ onClose }) => {
                   maxWidth: '320px',
                   marginInline: 'auto'
                 }}>
-                Descubre las recomendaciones con IA para romper el estancamiento, nuevos bordes de usuario en comunidad y rachas de entrenamiento protegidas en fin de semana.
+                Hemos mejorado el seguimiento de tus entrenamientos y nutrición, el control de tus series semanales y la rapidez de toda la app.
               </p>
             </div>
 
@@ -321,7 +321,7 @@ const WelcomeModal = ({ onClose }) => {
             {/*  Feature Cards  */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
 
-              {/* Recomendaciones Inteligentes y Progresión */}
+              {/* 01: Seguimiento en el Dashboard */}
               <div className="wm-feature-card wm-feature-1" style={{
                   background: 'linear-gradient(135deg, #080814 0%, #121226 100%)',
                   border: '1px solid rgba(168,85,247,0.35)',
@@ -345,54 +345,54 @@ const WelcomeModal = ({ onClose }) => {
                   <Brain size={18} style={{ color: '#a855f7' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>Recomendaciones Inteligentes</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>Resumen de Progreso en Inicio</p>
                   <p style={{ fontSize: '13px', color: 'rgba(203,213,225,0.9)', margin: 0, lineHeight: 1.55 }}>
-                    Detección de estancamiento y sobrecarga progresiva. La IA analiza tus cargas reales previas y te sugiere pesos, reps y ajuste dinámico de series para hoy con 1 toque.
+                    Revisa de un vistazo en el Dashboard tus mejoras en verde o qué ejercicios y nutrición necesitan atención, con acceso directo para iniciar tu rutina.
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#a855f7' }}>01</span>
               </div>
 
-              {/* Nuevos Bordes por Usuario */}
+              {/* 02: Control de Series Semanales */}
               <div className="wm-feature-card wm-feature-2" style={{ border: '1px solid var(--glass-border)' }}>
                 <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #3b82f6, #06b6d4)' }} />
                 <div className="wm-icon-wrap" style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)' }}>
-                  <Palette size={18} style={{ color: '#3b82f6' }} />
+                  <Flame size={18} style={{ color: '#3b82f6' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>Bordes Dinámicos en Comunidad</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>Series Semanales a tu Medida</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Avatares con anillos degradados diferenciados estilo historias en el muro y publicaciones. Reconoce al instante la categoría y membresía de cada atleta y preparador.
+                    Toca cualquier músculo en Rutinas para ver qué ejercicios cuentan en tu volumen semanal y elige fácilmente cuáles quieres incluir o excluir.
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#3b82f6' }}>02</span>
               </div>
 
-              {/* Rachas y Fines de Semana */}
+              {/* 03: Navegación y Carga Instantánea */}
               <div className="wm-feature-card wm-feature-3" style={{ border: '1px solid var(--glass-border)' }}>
                 <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #f97316, #eab308)' }} />
                 <div className="wm-icon-wrap" style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)' }}>
-                  <Flame size={18} style={{ color: '#f97316' }} />
+                  <Sparkles size={18} style={{ color: '#f97316' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f97316', margin: '0 0 4px', textTransform: 'uppercase' }}>Rachas Protegidas en Fines de Semana</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f97316', margin: '0 0 4px', textTransform: 'uppercase' }}>App Mucho Más Rápida</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Las rachas se vinculan 100% a entrenamientos completados. Sábados y domingos quedan protegidos como días de descanso sin romper tu racha ni falsas alertas.
+                    Hemos agilizado el arranque de la aplicación y el cambio entre apartados del menú para que te muevas por la web y el móvil sin esperas.
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#f97316' }}>03</span>
               </div>
 
-              {/* Historias 9:16 y Muro */}
+              {/* 04: Avisos Adaptados a tus Temas */}
               <div className="wm-feature-card wm-feature-4" style={{ border: '1px solid var(--glass-border)' }}>
                 <div className="wm-accent-line" style={{ background: '#10b981' }} />
                 <div className="wm-icon-wrap" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)' }}>
-                  <Sparkles size={18} style={{ color: '#10b981' }} />
+                  <Palette size={18} style={{ color: '#10b981' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#10b981', margin: '0 0 4px', textTransform: 'uppercase' }}>Historias 9:16 y Fluidez Total</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#10b981', margin: '0 0 4px', textTransform: 'uppercase' }}>Avisos con el Estilo de tu Tema</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Encuadre y recorte vertical 9:16 perfeccionado sin cierres accidentales, importación directa de rutinas de amigos y máxima rapidez de respuesta en cada vista.
+                    Las notificaciones y avisos de nuevos récords ahora se adaptan a los colores de tu tema activo (Galaxia, Desierto, Océano, OLED, Claro y Oscuro).
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#10b981' }}>04</span>

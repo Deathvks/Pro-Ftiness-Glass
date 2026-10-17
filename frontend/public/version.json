@@ -1,4 +1,4 @@
 {
-  "version": "7.6.2",
-  "releaseNotes": "Mejora del diseño responsive en móvil del encabezado y botones de Seguimiento y Progreso en el Dashboard."
+  "version": "7.6.3",
+  "releaseNotes": "Actualización del modal de bienvenida con las novedades de hoy explicadas de forma clara y sencilla."
 }
