@@ -6,7 +6,6 @@ import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '../hooks/useToast';
 import CustomSelect from '../components/CustomSelect';
-import exerciseTranslations from '../locales/es/exercise_names.json';
 import { useAppTheme } from '../hooks/useAppTheme';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
@@ -24,10 +23,6 @@ const processMediaUrl = (url) => {
   return `${BACKEND_BASE_URL}/${cleanUrl}`;
 };
 
-const EXTRA_TRANSLATIONS = {
-  "Incline Dumbbell Press": "Press Inclinado con Mancuernas",
-};
-
 const DEFAULT_ROUTINES = {
   "Rutinas Básicas": [
     {
@@ -35,11 +30,11 @@ const DEFAULT_ROUTINES = {
       name: "Full Body (Mancuernas)",
       description: "Rutina de cuerpo completo utilizando principalmente mancuernas, basada en tu biblioteca.",
       TemplateRoutineExercises: [
-        { id: "d1", name: "Dumbbell Front Squat", sets: 3, reps: "10-12" },
-        { id: "d2", name: "Dumbbell Bench Press", sets: 3, reps: "10-12" },
-        { id: "d3", name: "Dumbbell Romanian Deadlift", sets: 3, reps: "10-12" },
-        { id: "d4", name: "Shoulder Press (Dumbbell)", sets: 3, reps: "10-12" },
-        { id: "d5", name: "Dumbbell Bent Over Row", sets: 3, reps: "10-12" }
+        { id: "d1", name: "Sentadilla Frontal con Mancuernas", sets: 3, reps: "10-12" },
+        { id: "d2", name: "Press de Banca con Mancuernas", sets: 3, reps: "10-12" },
+        { id: "d3", name: "Peso Muerto Rumano con Mancuernas", sets: 3, reps: "10-12" },
+        { id: "d4", name: "Press de Hombros con Mancuernas", sets: 3, reps: "10-12" },
+        { id: "d5", name: "Remo con Mancuernas", sets: 3, reps: "10-12" }
       ]
     },
     {
@@ -47,12 +42,12 @@ const DEFAULT_ROUTINES = {
       name: "Torso (Upper Body)",
       description: "Entrenamiento enfocado en pecho, espalda, hombros y brazos.",
       TemplateRoutineExercises: [
-        { id: "d6", name: "Dumbbell Bench Press", sets: 4, reps: "8-12" },
-        { id: "d7", name: "Chin-ups", sets: 3, reps: "Al fallo" },
-        { id: "d8", name: "Shoulder Press (Dumbbell)", sets: 3, reps: "10-12" },
-        { id: "d9", name: "Dumbbell Lateral Raise", sets: 3, reps: "12-15" },
-        { id: "d10", name: "Triceps Pushdown", sets: 3, reps: "12-15" },
-        { id: "d11", name: "Dumbbell Bicep Curl", sets: 3, reps: "12-15" }
+        { id: "d6", name: "Press de Banca con Mancuernas", sets: 4, reps: "8-12" },
+        { id: "d7", name: "Dominadas Supinas", sets: 3, reps: "Al fallo" },
+        { id: "d8", name: "Press de Hombros con Mancuernas", sets: 3, reps: "10-12" },
+        { id: "d9", name: "Elevaciones Laterales con Mancuernas", sets: 3, reps: "12-15" },
+        { id: "d10", name: "Extensión de Tríceps en Polea", sets: 3, reps: "12-15" },
+        { id: "d11", name: "Curl de Bíceps con Mancuernas", sets: 3, reps: "12-15" }
       ]
     },
     {
@@ -60,11 +55,11 @@ const DEFAULT_ROUTINES = {
       name: "Pierna (Lower Body)",
       description: "Entrenamiento completo de tren inferior.",
       TemplateRoutineExercises: [
-        { id: "d12", name: "Dumbbell Front Squat", sets: 4, reps: "8-10" },
-        { id: "d13", name: "Dumbbell Rear Lunge", sets: 3, reps: "10-12" },
-        { id: "d14", name: "Dumbbell Romanian Deadlift", sets: 3, reps: "10-12" },
-        { id: "d15", name: "Dumbbell Hip Thrust", sets: 3, reps: "12-15" },
-        { id: "d16", name: "Seated Dumbbell Calf Raise", sets: 4, reps: "15-20" }
+        { id: "d12", name: "Sentadilla Frontal con Mancuernas", sets: 4, reps: "8-10" },
+        { id: "d13", name: "Zancada Trasera con Mancuernas", sets: 3, reps: "10-12" },
+        { id: "d14", name: "Peso Muerto Rumano con Mancuernas", sets: 3, reps: "10-12" },
+        { id: "d15", name: "Hip Thrust con Mancuernas", sets: 3, reps: "12-15" },
+        { id: "d16", name: "Elevación de Gemelos Sentado con Mancuernas", sets: 4, reps: "15-20" }
       ]
     }
   ]
@@ -168,7 +163,7 @@ const TemplateRoutines = ({ setView }) => {
   useEffect(() => { localStorage.setItem('templateRoutinesSelectedDifficulty', selectedDifficulty); }, [selectedDifficulty]);
   useEffect(() => { localStorage.setItem('templateRoutinesShowFilters', showFilters.toString()); }, [showFilters]);
 
-  const getDisplayName = (originalName) => exerciseTranslations[originalName] || EXTRA_TRANSLATIONS[originalName] || originalName;
+  const getDisplayName = (originalName) => originalName;
 
   const prepareExercisesForCopy = (templateExercises) => {
     return templateExercises.map((ex) => {

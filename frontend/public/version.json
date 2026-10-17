@@ -1,5 +1,4 @@
 {
-  "version": "7.5.9",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.5.9/app-release.apk",
-  "notes": "Adaptación completa de las notificaciones toast a todos los temas (Claro, Oscuro, OLED, Galaxia, Desierto y Océano) con alto contraste y legibilidad."
+  "version": "7.6.0",
+  "releaseNotes": "Eliminación de los diccionarios de traducción de ejercicios obsoletos (ya en español nativo) para aligerar el bundle, reducir el tamaño de precarga del Service Worker y acelerar la búsqueda y carga de la aplicación."
 }

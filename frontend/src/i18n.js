@@ -1,31 +1,51 @@
 /* frontend/src/i18n.js */
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
 
-// --- INICIO DE LA MODIFICACIÓN ---
-// Importa los nuevos archivos de traducción modularizados
-import exerciseNamesES from './locales/es/exercise_names.json';
-import exerciseMusclesES from './locales/es/exercise_muscles.json';
-import exerciseEquipmentES from './locales/es/exercise_equipment.json';
-import exerciseUiES from './locales/es/exercise_ui.json';
-// --- FIN DE LA MODIFICACIÓN ---
+const exerciseUiES = {
+  search_placeholder: "Buscar ejercicio...",
+  filter_muscle: "Filtrar por músculo",
+  filter_equipment: "Filtrar por equipamiento",
+  all_muscles: "Todos los músculos",
+  all_equipment: "Todo el equipamiento",
+  no_description: "Sin descripción",
+  added: "Añadido",
+  add_to_cart: "Seleccionar",
+  back: "Volver",
+  muscle_group: "Grupo Muscular",
+  equipment: "Equipamiento",
+  description: "Descripción",
+  no_description_available: "No hay descripción disponible.",
+  sets: "Series",
+  reps: "Reps",
+  rest_s: "Desc. (s)",
+  added_back_to_list: "Añadido (Volver a la lista)",
+  review_exercises: "Revisar Ejercicios",
+  cart_empty: "No has seleccionado ningún ejercicio.",
+  add_n_exercises: "Añadir {{count}} Ejercicio",
+  add_n_exercises_plural: "Añadir {{count}} Ejercicios",
+  add_exercises_title: "Añadir Ejercicios",
+  view_cart: "Ver Selección",
+  hide_filters: "Ocultar Filtros",
+  show_filters: "Mostrar Filtros",
+  no_exercises_found: "No se encontraron ejercicios.",
+  added_toast: "{{exerciseName}} añadido a la rutina",
+  cart_empty_toast: "No has seleccionado ningún ejercicio.",
+  today_s_plan: "Plan de Hoy",
+  n_sets: "{{count}} Series",
+  n_reps: "{{count}} Repeticiones",
+  n_rest: "{{count}} seg. Descanso"
+};
 
 i18n
-  // Detecta el idioma del navegador
-  .use(LanguageDetector)
-  // Pasa la instancia de i18n a react-i18next.
   .use(initReactI18next)
-  // Inicializa i18next
   .init({
-    debug: false, // Desactiva logs en consola
-    fallbackLng: 'es', // Idioma por defecto si no se detecta o falta traducción
+    debug: false,
+    lng: 'es',
+    fallbackLng: 'es',
     interpolation: {
-      escapeValue: false, // React ya se encarga de escapar
+      escapeValue: false,
     },
-    
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Define los 'namespaces' (grupos de traducciones)
     ns: [
       'translation',
       'exercise_names',
@@ -35,11 +55,8 @@ i18n
       'exercise_descriptions',
     ],
     defaultNS: 'translation',
-    // --- FIN DE LA MODIFICACIÓN ---
-
     resources: {
       es: {
-        // Namespace por defecto 'translation'
         translation: {
           exerciseDefaults: {
             name: "Ejercicio sin nombre",
@@ -48,49 +65,13 @@ i18n
             equipment: "Desconocido",
           }
         },
-        // --- INICIO DE LA MODIFICACIÓN ---
-        // Mapea cada import a su namespace correspondiente
-        exercise_names: exerciseNamesES,
-        exercise_muscles: exerciseMusclesES,
-        exercise_equipment: exerciseEquipmentES,
+        exercise_names: {},
+        exercise_muscles: {},
+        exercise_equipment: {},
         exercise_ui: exerciseUiES,
         exercise_descriptions: {},
-        // --- FIN DE LA MODIFICACIÓN ---
       },
-      // Puedes añadir más idiomas aquí
-      // en: {
-      //   translation: { ... }
-      // }
     },
-    // Opciones del detector de idioma
-    detection: {
-      // Orden y desde dónde detectar el idioma
-      order: ['localStorage', 'navigator', 'htmlTag'],
-      // Clave para guardar en localStorage
-      lookupLocalStorage: 'i18nextLng',
-      // Caché a usar
-      caches: ['localStorage'],
-    }
   });
-
-// Cargar las descripciones largas de ejercicios de forma diferida para no bloquear el arranque inicial
-const loadExerciseDescriptions = () => {
-  import('./locales/es/exercises.json')
-    .then((mod) => {
-      const data = mod?.default || mod;
-      if (data) {
-        i18n.addResourceBundle('es', 'exercise_descriptions', data, true, true);
-      }
-    })
-    .catch(() => {});
-};
-
-if (typeof window !== 'undefined') {
-  if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(loadExerciseDescriptions, { timeout: 2000 });
-  } else {
-    setTimeout(loadExerciseDescriptions, 400);
-  }
-}
 
 export default i18n;

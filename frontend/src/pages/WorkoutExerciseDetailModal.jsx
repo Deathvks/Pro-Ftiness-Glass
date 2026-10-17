@@ -5,12 +5,11 @@ import ExerciseMedia from '../components/ExerciseMedia';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
-import { normalizeText } from '../utils/helpers';
 import { askTrainerAI } from '../services/aiService';
 import ModalPortal from '../components/ModalPortal';
 
 const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
-  const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_descriptions', 'exercise_muscles']);
+  const { t } = useTranslation('exercise_ui');
 
   const { getOrFetchAllExercises } = useAppStore(useShallow(state => ({
     getOrFetchAllExercises: state.getOrFetchAllExercises,
@@ -89,38 +88,19 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     fetchMissingDetails();
   }, [localIsLoading, nameKey, getOrFetchAllExercises]);
 
-  const getTranslatedDescription = () => {
-    const rawDesc = localDetails.description || localDetails.description_es;
-    if (!rawDesc) return null;
-
-    const descKey = normalizeText(rawDesc);
-
-    const translated = t(descKey, {
-      ns: 'exercise_descriptions',
-      defaultValue: null,
-      nsSeparator: false,
-      keySeparator: false
-    });
-
-    return translated || rawDesc;
-  };
-
-  const description = getTranslatedDescription();
-  const titleKey = localDetails.name || exercise.name;
-  const translatedName = t(titleKey, { ns: 'exercise_names', defaultValue: titleKey });
+  const description = localDetails.description || localDetails.description_es || null;
+  const translatedName = localDetails.name || exercise.name;
 
   // --- CORRECCIÓN DE PRIORIDAD ---
   const rawMuscleGroup =
     exercise.muscle_group || exercise.muscles || exercise.target ||
     localDetails.muscle_group || localDetails.muscles || localDetails.target ||
-    localDetails.category || 'Other';
+    localDetails.category || 'Otro';
 
   const muscleGroupLabel = rawMuscleGroup
     .split(',')
-    .map(m => {
-      const trimmed = m.trim();
-      return t(trimmed, { ns: 'exercise_muscles', defaultValue: trimmed });
-    })
+    .map(m => m.trim())
+    .filter(Boolean)
     .join(', ');
 
   // --- LÓGICA DE LA IA ---
