@@ -1,4 +1,4 @@
 {
-  "version": "7.6.4",
-  "releaseNotes": "Tarjetas de seguimiento solapadas con resumen desplegable en el Dashboard y deslizamiento fluido entre páginas en móvil."
+  "version": "7.6.5",
+  "releaseNotes": "Corrección en el aviso de XP del Login Diario (+25 XP) y sincronización de notificaciones de experiencia."
 }

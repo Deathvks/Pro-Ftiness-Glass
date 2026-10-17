@@ -189,7 +189,7 @@ const Dashboard = ({ setView }) => {
     updateTodayBodyWeight, startWorkout, startSimpleWorkout, nutritionLog,
     waterLog, todaysCreatineLog, fetchDataForDate,
     completedRoutineIdsToday, activeWorkout, gamification,
-    checkStreak, addXp, personalRecords
+    checkStreak, addXp, addGamificationEvents, personalRecords
   } = useAppStore(useShallow(state => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
@@ -208,6 +208,7 @@ const Dashboard = ({ setView }) => {
     gamification: state.gamification,
     checkStreak: state.checkStreak,
     addXp: state.addXp,
+    addGamificationEvents: state.addGamificationEvents,
     personalRecords: state.personalRecords || []
   })));
 
@@ -443,8 +444,10 @@ const Dashboard = ({ setView }) => {
   const handleSaveWater = async (quantity_ml) => {
     setModal({ type: 'submitting' });
     try {
-      await nutritionService.upsertWaterLog({ log_date: new Date().toISOString().split('T')[0], quantity_ml });
-      if (addXp) addXp(5);
+      const res = await nutritionService.upsertWaterLog({ log_date: new Date().toISOString().split('T')[0], quantity_ml });
+      if (res?.gamification?.length && addGamificationEvents) {
+        addGamificationEvents(res.gamification);
+      }
       addToast(t('Registro actualizado.', { defaultValue: 'Registro actualizado.' }), 'success');
       await fetchDataForDate(new Date().toISOString().split('T')[0]);
     } catch (error) {

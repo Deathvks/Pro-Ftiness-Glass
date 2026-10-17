@@ -38,15 +38,44 @@ export const getLevelProgress = (currentXp, currentLevel) => {
     };
 };
 
+const readCachedGamification = () => {
+    try {
+        if (typeof window === 'undefined' || !localStorage.getItem('pro_fitness_token')) return null;
+        const raw = localStorage.getItem('pfg_cached_initial_state_v1');
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        const profile = parsed?.userProfile;
+        if (!profile || typeof profile !== 'object') return null;
+        let badges = [];
+        if (Array.isArray(profile.unlocked_badges)) {
+            badges = profile.unlocked_badges;
+        } else if (typeof profile.unlocked_badges === 'string') {
+            try { badges = JSON.parse(profile.unlocked_badges) || []; } catch { badges = []; }
+        }
+        return {
+            xp: Number(profile.xp) || 0,
+            level: Number(profile.level) || 1,
+            streak: Number(profile.streak) || 0,
+            lastActivityDate: normalizeDate(profile.last_activity_date),
+            unlockedBadges: badges,
+            lastLoginCheckDate: localStorage.getItem('pfg_last_login_check_date') || null,
+        };
+    } catch {
+        return null;
+    }
+};
+
+const cachedGamification = readCachedGamification();
+
 export const createGamificationSlice = (set, get) => ({
     gamification: {
-        xp: 0,
-        level: 1,
-        streak: 0,
+        xp: cachedGamification?.xp ?? 0,
+        level: cachedGamification?.level ?? 1,
+        streak: cachedGamification?.streak ?? 0,
         workoutsCount: 0,
-        lastActivityDate: null,
-        lastLoginCheckDate: null,
-        unlockedBadges: [],
+        lastActivityDate: cachedGamification?.lastActivityDate ?? null,
+        lastLoginCheckDate: cachedGamification?.lastLoginCheckDate ?? null,
+        unlockedBadges: cachedGamification?.unlockedBadges ?? [],
         gamificationEvents: [],
         isCheckingStreak: false,
     },
@@ -179,27 +208,33 @@ export const createGamificationSlice = (set, get) => ({
         set(s => ({ gamification: { ...s.gamification, isCheckingStreak: true } }));
 
         try {
-            // Notificamos login diario. El backend sincroniza la racha y otorga XP de login si aplica sin tocar last_activity_date
+            // Notificamos login diario. El backend sincroniza la racha y otorga 25 XP de login si aplica sin tocar last_activity_date
             const response = await apiClient('/users/me/gamification', {
                 body: {
                     reason: 'Login Diario'
                 }
             });
 
+            try {
+                localStorage.setItem('pfg_last_login_check_date', today);
+            } catch { /* ignore */ }
+
             if (response && response.data) {
                 const serverData = response.data;
-                const previousXp = get().gamification.xp || 0;
+                const wasIgnored = Boolean(response.ignored);
+                const rawAwarded = response.xpAdded ?? serverData.xpAdded ?? (wasIgnored ? 0 : 25);
+                const xpAwarded = wasIgnored ? 0 : Math.min(Math.max(0, Number(rawAwarded) || 0), 25);
 
                 set((state) => {
                     const currentEvents = state.gamification.gamificationEvents || [];
                     const newEvents = [...currentEvents];
 
-                    // Si el servidor dice que tenemos más XP que antes, generamos evento
-                    if (serverData.xp > previousXp) {
+                    // Solo mostramos el aviso si realmente se acaban de otorgar los 25 XP del Login Diario hoy
+                    if (!wasIgnored && xpAwarded > 0) {
                         newEvents.push({
                             id: Date.now() + Math.random(),
                             type: 'xp',
-                            amount: serverData.xp - previousXp,
+                            amount: xpAwarded,
                             reason: 'Login Diario'
                         });
                     }

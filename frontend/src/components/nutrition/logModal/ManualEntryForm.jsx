@@ -361,7 +361,6 @@ const ManualEntryForm = ({
         };
         onSaveSingle([dataToSave]);
 
-        if (addXp) addXp(15, 'Comida registrada');
         addToast('Comida guardada correctamente', 'success');
     };
 

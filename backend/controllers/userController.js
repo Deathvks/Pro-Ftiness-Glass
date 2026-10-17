@@ -210,12 +210,14 @@ export const updateGamificationStats = async (req, res, next) => {
       return res.json({
         message: xpResult.xpAdded > 0 ? 'Login diario procesado (+XP)' : 'Login diario ya registrado hoy',
         success: true,
+        xpAdded: xpResult.xpAdded || 0,
         data: {
           xp: user.xp,
           level: user.level,
           streak: user.streak,
           last_activity_date: returnDate,
-          unlocked_badges: currentBadges
+          unlocked_badges: currentBadges,
+          xpAdded: xpResult.xpAdded || 0
         },
         ignored: xpResult.xpAdded === 0
       });
