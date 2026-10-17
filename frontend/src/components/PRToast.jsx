@@ -1,29 +1,23 @@
 /* frontend/src/components/PRToast.jsx */
 import React from 'react';
-// --- INICIO DE LA MODIFICACIÓN ---
 import { useTranslation } from 'react-i18next';
-// --- FIN DE LA MODIFICACIÓN ---
-import { Award, X, Share2 } from 'lucide-react'; // Importar Share2
-import GlassCard from './GlassCard';
+import { Award, X, Share2 } from 'lucide-react';
+import { useAppTheme } from '../hooks/useAppTheme';
+import { getToastThemePalette } from '../contexts/ToastProvider';
 
 const PRToast = ({ newPRs, onClose }) => {
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // Usamos el namespace 'exercise_names' para traducir las claves
   const { t } = useTranslation('exercise_names');
-  // --- FIN DE LA MODIFICACIÓN ---
+  const { resolvedTheme } = useAppTheme();
+  const palette = getToastThemePalette(resolvedTheme);
 
   if (!newPRs || newPRs.length === 0) {
     return null;
   }
 
-  // Función para manejar el compartido
   const handleShare = async () => {
-    // --- INICIO DE LA MODIFICACIÓN ---
-    // Traducimos el nombre del ejercicio aquí también
     const prText = newPRs
       .map((pr) => `  • ${t(pr.exercise)}: ${pr.weight} kg`)
       .join('\n');
-    // --- FIN DE LA MODIFICACIÓN ---
 
     const shareTitle = '¡Nuevo Récord Personal!';
     const shareText = `¡He conseguido ${
@@ -43,8 +37,6 @@ const PRToast = ({ newPRs, onClose }) => {
         console.error('Error al compartir PR:', error);
       }
     } else {
-      // Fallback simple para navegadores no compatibles
-      // Evitamos alert()
       console.warn(
         'La función de compartir no está disponible en este navegador.'
       );
@@ -54,43 +46,64 @@ const PRToast = ({ newPRs, onClose }) => {
   return (
     <div className="fixed bottom-24 md:bottom-10 left-4 right-4 md:left-auto md:right-10 z-[100] animate-[fade-in-up_0.5s_ease-out] flex justify-center md:block pointer-events-none">
       <div className="pointer-events-auto w-full max-w-sm">
-        <GlassCard className="w-full p-4 border-accent-border shadow-2xl">
-          <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 text-accent mt-1">
-            <Award size={24} />
+        <div
+          className="w-full p-4 rounded-[24px] transition-all"
+          style={{
+            backgroundColor: palette.bgBase,
+            backgroundImage: palette.bgGradient,
+            backdropFilter: 'blur(20px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+            border: `1px solid ${palette.borderColor}`,
+            boxShadow: palette.shadow,
+          }}
+        >
+          <div className="flex items-start gap-3.5">
+            <div
+              className="flex-shrink-0 p-2.5 rounded-2xl flex items-center justify-center"
+              style={{
+                backgroundColor: 'var(--color-accent-transparent)',
+                border: '1px solid var(--color-accent-border)',
+                color: 'var(--text-accent, var(--color-accent))',
+              }}
+            >
+              <Award size={22} strokeWidth={2.4} />
+            </div>
+            <div className="flex-grow min-w-0">
+              <h3
+                className="font-extrabold text-base tracking-tight leading-snug"
+                style={{ color: palette.textColor }}
+              >
+                ¡Nuevo Récord Personal!
+              </h3>
+              <ul
+                className="mt-1 text-xs sm:text-sm font-semibold list-disc pl-4 space-y-0.5"
+                style={{ color: palette.subtextColor }}
+              >
+                {newPRs.map((pr, index) => (
+                  <li key={index}>
+                    <strong style={{ color: palette.textColor }}>{t(pr.exercise)}:</strong> {pr.weight} kg
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button
+              onClick={handleShare}
+              className="p-1.5 rounded-xl transition-opacity hover:opacity-100 opacity-75"
+              style={{ color: palette.textColor }}
+              title="Compartir Récord"
+            >
+              <Share2 size={18} />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-xl transition-opacity hover:opacity-100 opacity-75"
+              style={{ color: palette.textColor }}
+              title="Cerrar"
+            >
+              <X size={18} />
+            </button>
           </div>
-          <div className="flex-grow">
-            <h3 className="font-bold text-lg text-text-primary">
-              ¡Nuevo Récord Personal!
-            </h3>
-            <ul className="mt-1 text-sm text-text-secondary list-disc pl-5">
-              {newPRs.map((pr, index) => (
-                <li key={index}>
-                  {/* --- INICIO DE LA MODIFICACIÓN --- */}
-                  <strong>{t(pr.exercise)}:</strong> {pr.weight} kg
-                  {/* --- FIN DE LA MODIFICACIÓN --- */}
-                </li>
-              ))}
-            </ul>
-          </div>
-          {/* Botón de compartir añadido */}
-          <button
-            onClick={handleShare}
-            className="p-1 -m-1 text-text-muted hover:text-text-primary"
-            title="Compartir Récord"
-          >
-            <Share2 size={18} />
-          </button>
-          {/* Botón de cerrar original */}
-          <button
-            onClick={onClose}
-            className="p-1 -m-1 text-text-muted hover:text-text-primary"
-            title="Cerrar"
-          >
-            <X size={18} />
-          </button>
         </div>
-        </GlassCard>
       </div>
     </div>
   );

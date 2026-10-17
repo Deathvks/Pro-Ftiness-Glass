@@ -1,5 +1,5 @@
 {
-  "version": "7.5.8",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.5.8/app-release.apk",
-  "notes": "Optimización de carga inicial instantánea con hidratación desde caché local, carga progresiva no bloqueante y precarga inteligente de secciones del navbar y sidebar."
+  "version": "7.5.9",
+  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.5.9/app-release.apk",
+  "notes": "Adaptación completa de las notificaciones toast a todos los temas (Claro, Oscuro, OLED, Galaxia, Desierto y Océano) con alto contraste y legibilidad."
 }
