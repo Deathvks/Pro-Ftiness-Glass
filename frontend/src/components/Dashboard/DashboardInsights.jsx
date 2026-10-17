@@ -291,14 +291,14 @@ const DashboardInsights = ({ setView }) => {
 
   return (
     <div className="w-full flex flex-col gap-4 animate-[fade-in_0.4s_ease-out]">
-      <div className="flex items-center justify-between gap-2 mb-1 px-1">
-        <div className="flex items-center gap-2">
-          <Lightbulb className="text-accent" size={20} strokeWidth={2.5} />
-          <h3 className="text-lg font-extrabold text-text-primary tracking-tight">
-            Seguimiento Inteligente y Progreso
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 sm:gap-2 mb-1 px-1">
+        <div className="flex items-center gap-2.5">
+          <Lightbulb className="text-accent shrink-0" size={20} strokeWidth={2.5} />
+          <h3 className="text-lg sm:text-xl font-extrabold text-text-primary tracking-tight">
+            Seguimiento y Progreso
           </h3>
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted pl-[30px] sm:pl-0">
           Entrenamiento y Nutrición
         </span>
       </div>
@@ -505,14 +505,14 @@ const DashboardInsights = ({ setView }) => {
                   )}
                 </div>
 
-                <div className="pt-2 border-t border-emerald-500/20 flex items-center justify-between gap-2">
+                <div className="pt-2.5 border-t border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <span className="text-[11px] font-semibold text-text-secondary">
                     Consulta el desglose completo en el seguimiento nutricional
                   </span>
                   <button
                     type="button"
                     onClick={handleOpenNutritionCoach}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-black transition-all active:scale-95 cursor-pointer shrink-0"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-black transition-all active:scale-95 cursor-pointer shrink-0"
                   >
                     <span>Ver seguimiento</span>
                     <ArrowRight size={13} />
@@ -579,7 +579,7 @@ const DashboardInsights = ({ setView }) => {
                   <button
                     type="button"
                     onClick={handleOpenNutritionCoach}
-                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 text-black hover:brightness-110 text-xs font-black transition-all active:scale-95 cursor-pointer shadow-sm shrink-0"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 text-black hover:brightness-110 text-xs font-black transition-all active:scale-95 cursor-pointer shadow-sm shrink-0"
                   >
                     <span>Ir a Nutrición</span>
                     <ArrowRight size={13} />
@@ -622,14 +622,14 @@ const DashboardInsights = ({ setView }) => {
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-emerald-500/20 flex items-center justify-between gap-2">
+                <div className="pt-2.5 border-t border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <span className="text-[11px] font-semibold text-text-secondary">
                     Revisa las sugerencias para completar el resto del día
                   </span>
                   <button
                     type="button"
                     onClick={handleOpenNutritionCoach}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-black transition-all active:scale-95 cursor-pointer shrink-0"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-black transition-all active:scale-95 cursor-pointer shrink-0"
                   >
                     <span>Ver seguimiento</span>
                     <ArrowRight size={13} />
@@ -657,14 +657,14 @@ const DashboardInsights = ({ setView }) => {
                   </p>
                 </div>
 
-                <div className="pt-2 border-t border-amber-500/20 flex items-center justify-between gap-2">
+                <div className="pt-2.5 border-t border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300/90">
                     Abre Nutrición para registrar y ver detalles:
                   </span>
                   <button
                     type="button"
                     onClick={() => setView && setView('nutrition')}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 text-black hover:brightness-110 text-xs font-black transition-all active:scale-95 cursor-pointer shadow-sm shrink-0"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 text-black hover:brightness-110 text-xs font-black transition-all active:scale-95 cursor-pointer shadow-sm shrink-0"
                   >
                     <span>Ir a Nutrición</span>
                     <ArrowRight size={13} />
@@ -699,14 +699,14 @@ const DashboardInsights = ({ setView }) => {
               </p>
             </div>
 
-            <div className="pt-2 border-t border-accent/20 flex items-center justify-between gap-2">
+            <div className="pt-2.5 border-t border-accent/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <span className="text-[11px] font-semibold text-text-secondary">
                 Para ver detalles de cada ejercicio, inicia tu rutina:
               </span>
               <button
                 type="button"
                 onClick={() => setView && setView('routines', { forceTab: 'myRoutines' })}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent text-accent-contrast hover:brightness-110 text-xs font-black transition-all active:scale-95 cursor-pointer shadow-sm shrink-0"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent text-accent-contrast hover:brightness-110 text-xs font-black transition-all active:scale-95 cursor-pointer shadow-sm shrink-0"
               >
                 <span>Ver Rutinas</span>
                 <ArrowRight size={13} />

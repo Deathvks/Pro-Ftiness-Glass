@@ -1,4 +1,4 @@
 {
-  "version": "7.6.1",
-  "releaseNotes": "Tarjetas de seguimiento inteligente en el Dashboard con indicadores en verde de progreso y avisos por rutina/ejercicio y nutrición, incluyendo enlaces directos para iniciar cada rutina o abrir el diagnóstico nutricional."
+  "version": "7.6.2",
+  "releaseNotes": "Mejora del diseño responsive en móvil del encabezado y botones de Seguimiento y Progreso en el Dashboard."
 }
