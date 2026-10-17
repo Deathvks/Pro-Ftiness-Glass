@@ -565,16 +565,16 @@ export const RoutineVolumeFilterModal = ({ routine, routines = [], onClose }) =>
 
           {/* Cabecera */}
           <div className="flex items-start justify-between gap-3 border-b border-glass-border bg-bg-secondary px-5 py-4 shrink-0">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start gap-2.5">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent">
                   <Activity size={17} />
                 </span>
-                <h2 id="routine-volume-filter-title" className="truncate text-base font-black text-text-primary sm:text-lg">
+                <h2 id="routine-volume-filter-title" className="break-words text-base font-black leading-snug text-text-primary sm:text-lg">
                   {isSingleRoutine ? (routine.name || routine.routine_name || 'Rutina') : 'Recuento semanal por rutina'}
                 </h2>
               </div>
-              <p className="mt-1 text-xs text-text-secondary">
+              <p className="mt-1.5 text-xs text-text-secondary">
                 {isSingleRoutine
                   ? 'Elige qué ejercicios de esta rutina entran en la suma de series semanales (por defecto entran todos).'
                   : 'Marca qué rutinas o ejercicios individuales quieres incluir en el cálculo semanal.'}
@@ -607,9 +607,9 @@ export const RoutineVolumeFilterModal = ({ routine, routines = [], onClose }) =>
                     className="overflow-hidden rounded-2xl border border-glass-border bg-bg-secondary"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-glass-border bg-black/5 px-4 py-3 dark:bg-white/5">
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         {!isSingleRoutine && (
-                          <h3 className="truncate text-sm font-extrabold text-text-primary">
+                          <h3 className="break-words text-sm font-extrabold leading-snug text-text-primary">
                             {itemRoutine.name || itemRoutine.routine_name || `Rutina ${rIdx + 1}`}
                           </h3>
                         )}
@@ -1226,7 +1226,7 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
                           className="overflow-hidden rounded-2xl border border-glass-border bg-bg-secondary"
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-glass-border bg-black/5 px-4 py-2.5 dark:bg-white/5">
-                            <span className="truncate text-xs font-extrabold text-text-primary">
+                            <span className="break-words text-xs font-extrabold leading-snug text-text-primary">
                               {group.routineName}
                             </span>
                             <div className="flex items-center gap-1.5 text-[10px] font-bold">
