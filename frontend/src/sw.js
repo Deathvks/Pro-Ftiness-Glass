@@ -24,7 +24,18 @@ registerRoute(
   ({ request, url }) => request.mode === 'navigate' && !url.pathname.startsWith('/sitemap.xml') && !url.pathname.startsWith('/robots.txt'),
   async ({ request }) => {
     try {
-      const response = await matchPrecache('/index.html') || await fetch(request);
+      let response;
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        response = await fetch(request, { signal: controller.signal, cache: 'no-cache' });
+        clearTimeout(timeoutId);
+      } catch {
+        response = await matchPrecache('/index.html');
+      }
+      if (!response || !response.ok) {
+        response = await matchPrecache('/index.html') || await fetch(request);
+      }
       if (!response) return fetch(request);
       
       const html = await response.text();

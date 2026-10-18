@@ -33,7 +33,11 @@ const SWUpdaterCore = ({ initialChunkError }) => {
     }
     if (targetVersion) {
       const lastReloaded = sessionStorage.getItem('pfg_auto_reloaded_version');
-      if (lastReloaded === targetVersion) return true;
+      if (lastReloaded === targetVersion) {
+        // Ya se intentó auto-recargar para esta versión pero la caché sigue en la versión anterior.
+        // Devolvemos false para mostrar el modal de actualización en lugar de quedar en bucle silencioso.
+        return false;
+      }
       sessionStorage.setItem('pfg_auto_reloaded_version', targetVersion);
     }
     isReloadingRef.current = true;
@@ -201,7 +205,29 @@ const SWUpdaterCore = ({ initialChunkError }) => {
 
   if (!needRefresh && !isChunkError) return null;
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
+    try {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.update().catch(() => {});
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+        }
+      }
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(
+          names
+            .filter((n) => n.includes('precache') || n.includes('workbox') || n.includes('vite'))
+            .map((n) => caches.delete(n))
+        );
+      }
+    } catch (e) {
+      console.warn('Error clearing caches on manual update', e);
+    }
+    sessionStorage.removeItem('pfg_auto_reloaded_version');
     if (updateServiceWorker) {
       updateServiceWorker(true);
     }
