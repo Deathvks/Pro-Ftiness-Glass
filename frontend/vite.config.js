@@ -112,7 +112,6 @@ export default defineConfig({
           'assets/index-*.js',
           'assets/index-*.css',
           'assets/vendor-react-*.js',
-          'assets/vendor-core-*.js',
           'assets/vendor-icons-*.js',
           'assets/Dashboard-*.js'
         ],
@@ -133,40 +132,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 1500, 
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return;
-          if (
-            id.includes('/node_modules/react/') ||
-            id.includes('/node_modules/react-dom/') ||
-            id.includes('/node_modules/scheduler/') ||
-            id.includes('/node_modules/react-router') ||
-            id.includes('\\node_modules\\react\\') ||
-            id.includes('\\node_modules\\react-dom\\') ||
-            id.includes('\\node_modules\\scheduler\\') ||
-            id.includes('\\node_modules\\react-router')
-          ) {
-            return 'vendor-react';
-          }
-          if (id.includes('framer-motion') || id.includes('motion-dom') || id.includes('motion-utils')) {
-            return 'vendor-motion';
-          }
-          if (
-            id.includes('i18next') ||
-            id.includes('socket.io-client') ||
-            id.includes('engine.io-client') ||
-            id.includes('socket.io-parser')
-          ) {
-            return 'vendor-core';
-          }
-          if (id.includes('recharts') || id.includes('d3-')) {
-            return 'vendor-recharts';
-          }
-          if (id.includes('leaflet') || id.includes('react-leaflet')) {
-            return 'vendor-leaflet';
-          }
-          if (id.includes('lucide-react')) {
-            return 'vendor-icons';
-          }
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-recharts': ['recharts'],
+          'vendor-leaflet': ['leaflet', 'react-leaflet'],
+          'vendor-icons': ['lucide-react']
         }
       }
     }

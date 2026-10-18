@@ -1,4 +1,4 @@
 {
-  "version": "7.7.2",
-  "releaseNotes": "Alineación óptica perfecta de la insignia de rol junto al nombre de usuario en el Perfil Público y Perfil en escritorio y móvil."
+  "version": "7.7.3",
+  "releaseNotes": "Corrección de orden de inicialización de módulos React en el empaquetado de producción."
 }
