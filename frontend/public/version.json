@@ -1,4 +1,4 @@
 {
-  "version": "7.7.6",
-  "releaseNotes": "Precarga instantánea de pantallas principales (Nutrición, Rutinas, Social, Entreno) y mejoras de caché."
+  "version": "7.7.7",
+  "releaseNotes": "Detección y actualización automática de versión en Web y PWA al entrar, salir o navegar."
 }

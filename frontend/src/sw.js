@@ -13,6 +13,12 @@ import { clientsClaim } from 'workbox-core';
 self.skipWaiting(); // <-- Obliga a instalar la nueva versión sin esperar
 clientsClaim();
 
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // 2. Limpieza de cachés antiguas y precarga
 registerRoute(
   ({ request, url }) => request.mode === 'navigate' && !url.pathname.startsWith('/sitemap.xml') && !url.pathname.startsWith('/robots.txt'),
