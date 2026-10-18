@@ -16,7 +16,7 @@ export const getToastThemePalette = (resolvedTheme) => {
         textColor: '#faf5ff',
         subtextColor: '#e2e8f0',
         borderColor: 'rgba(168, 85, 247, 0.42)',
-        shadow: '0 16px 40px rgba(6, 5, 18, 0.75), 0 0 24px rgba(168, 85, 247, 0.20), inset 0 1px 1px rgba(216, 180, 254, 0.28)',
+        shadow: 'none',
         accentBar: 'linear-gradient(180deg, #c084fc 0%, #60a5fa 100%)',
       };
     case 'desert':
@@ -27,7 +27,7 @@ export const getToastThemePalette = (resolvedTheme) => {
         textColor: '#3e2723',
         subtextColor: '#5d4037',
         borderColor: 'rgba(180, 130, 82, 0.42)',
-        shadow: '0 14px 36px rgba(92, 64, 51, 0.20), inset 0 1px 1px rgba(255, 255, 255, 0.9)',
+        shadow: 'none',
         accentBar: 'linear-gradient(180deg, #b45309 0%, #d97706 100%)',
       };
     case 'desert-dark':
@@ -38,7 +38,7 @@ export const getToastThemePalette = (resolvedTheme) => {
         textColor: '#fff8ee',
         subtextColor: '#f3dcc0',
         borderColor: 'rgba(210, 180, 140, 0.40)',
-        shadow: '0 16px 40px rgba(15, 8, 4, 0.75), inset 0 1px 1px rgba(245, 222, 179, 0.22)',
+        shadow: 'none',
         accentBar: 'linear-gradient(180deg, #f5deb3 0%, #d2b48c 100%)',
       };
     case 'ocean':
@@ -49,7 +49,7 @@ export const getToastThemePalette = (resolvedTheme) => {
         textColor: '#082f49',
         subtextColor: '#0c4a6e',
         borderColor: 'rgba(14, 165, 233, 0.40)',
-        shadow: '0 14px 36px rgba(8, 47, 73, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.92)',
+        shadow: 'none',
         accentBar: 'linear-gradient(180deg, #0284c7 0%, #0ea5e9 100%)',
       };
     case 'ocean-dark':
@@ -60,7 +60,7 @@ export const getToastThemePalette = (resolvedTheme) => {
         textColor: '#f0f9ff',
         subtextColor: '#e0f2fe',
         borderColor: 'rgba(56, 189, 248, 0.40)',
-        shadow: '0 16px 40px rgba(2, 18, 32, 0.75), inset 0 1px 1px rgba(186, 230, 253, 0.24)',
+        shadow: 'none',
         accentBar: 'linear-gradient(180deg, #38bdf8 0%, #0ea5e9 100%)',
       };
     case 'oled':
@@ -71,7 +71,7 @@ export const getToastThemePalette = (resolvedTheme) => {
         textColor: '#ffffff',
         subtextColor: '#e4e4e7',
         borderColor: 'rgba(255, 255, 255, 0.16)',
-        shadow: '0 18px 44px rgba(0, 0, 0, 0.88), inset 0 1px 1px rgba(255, 255, 255, 0.10)',
+        shadow: 'none',
         accentBar: null,
       };
     case 'light':
@@ -82,7 +82,7 @@ export const getToastThemePalette = (resolvedTheme) => {
         textColor: '#0f172a',
         subtextColor: '#334155',
         borderColor: 'rgba(15, 23, 42, 0.10)',
-        shadow: '0 14px 36px rgba(15, 23, 42, 0.14), inset 0 1px 1px rgba(255, 255, 255, 0.95)',
+        shadow: 'none',
         accentBar: null,
       };
     case 'dark':
@@ -94,7 +94,7 @@ export const getToastThemePalette = (resolvedTheme) => {
         textColor: '#f8fafc',
         subtextColor: '#cbd5e1',
         borderColor: 'rgba(255, 255, 255, 0.14)',
-        shadow: '0 16px 40px rgba(0, 0, 0, 0.58), inset 0 1px 1px rgba(255, 255, 255, 0.12)',
+        shadow: 'none',
         accentBar: null,
       };
   }
@@ -146,7 +146,7 @@ const ThemedToastCard = ({ titleText, message, type }) => {
         border: `1px solid ${palette.borderColor}`,
         borderRadius: '24px',
         padding: '14px 16px',
-        boxShadow: palette.shadow,
+        boxShadow: 'none',
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
@@ -212,17 +212,21 @@ const ToastProvider = ({ children }) => {
 
   // --- ESTILOS GLOBALES DE LIMPIEZA Y Z-INDEX SUPREMO ---
   const globalCleanStyles = `
-    .custom-toast-root {
+    .custom-toast-root,
+    [data-sileo-toast] {
       background: transparent !important;
       box-shadow: none !important;
+      filter: none !important;
       border: none !important;
       padding: 0 !important;
       margin: 0 !important;
       z-index: 2147483647 !important;
       overflow: visible !important;
     }
-    .custom-toast-root > svg {
-      display: none !important; /* Oculta los iconos por defecto de Sileo */
+    .custom-toast-root > svg,
+    .custom-toast-root [data-sileo-canvas],
+    .custom-toast-root [data-sileo-header] {
+      display: none !important; /* Oculta el lienzo/sombra y cabecera por defecto de Sileo */
     }
     
     /* FIX DEFINITIVO PARA EL NOTCH */
@@ -235,6 +239,7 @@ const ToastProvider = ({ children }) => {
 
     [data-sonner-toast] {
       z-index: 2147483647 !important;
+      box-shadow: none !important;
     }
   `;
 

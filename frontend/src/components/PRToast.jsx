@@ -54,7 +54,7 @@ const PRToast = ({ newPRs, onClose }) => {
             backdropFilter: 'blur(20px) saturate(160%)',
             WebkitBackdropFilter: 'blur(20px) saturate(160%)',
             border: `1px solid ${palette.borderColor}`,
-            boxShadow: palette.shadow,
+            boxShadow: 'none',
           }}
         >
           <div className="flex items-start gap-3.5">

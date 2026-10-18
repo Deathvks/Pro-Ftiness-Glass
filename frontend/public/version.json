@@ -1,4 +1,4 @@
 {
-  "version": "7.6.8",
-  "releaseNotes": "Evaluación estricta de historial antes de recomendar subir peso (+1.25 kg o +2.5 kg en barra): comprueba todas las series, estancamientos, descanso y colchón de repeticiones para no recomendar subidas prematuras."
+  "version": "7.6.9",
+  "releaseNotes": "Eliminación de las sombras alrededor de las notificaciones toast."
 }
