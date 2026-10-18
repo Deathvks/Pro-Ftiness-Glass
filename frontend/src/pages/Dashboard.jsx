@@ -302,12 +302,11 @@ const Dashboard = ({ setView }) => {
   }, []);
 
   useEffect(() => {
-    if (checkStreak && !streakCheckedRef.current) {
-      checkStreak(new Date().toISOString().split('T')[0]);
+    if (!streakCheckedRef.current) {
       streakCheckedRef.current = true;
       cancelLoginReminder();
     }
-  }, [checkStreak, cancelLoginReminder]);
+  }, [cancelLoginReminder]);
 
   const levelData = useMemo(() => {
     const level = gamification?.level || 1;

@@ -1,5 +1,5 @@
 /* frontend/src/components/MainAppLayout.jsx */
-import React, { Suspense, useEffect, useState, useRef, startTransition } from 'react';
+import React, { Suspense, lazy, useEffect, useState, useRef, startTransition } from 'react';
 import { SparklesIcon, BellIcon, Cog8ToothIcon as SettingsIcon, UserIcon, ChevronLeftIcon } from '@heroicons/react/24/outline';
 import { BoltIcon as Zap, CheckCircleIcon } from '@heroicons/react/24/solid';
 import useAppStore from '../store/useAppStore';
@@ -17,18 +17,19 @@ import ModalPortal from './ModalPortal';
 import { Palette } from 'lucide-react';
 import Spinner from './Spinner';
 import PRToast from './PRToast';
-import ConfirmationModal from './ConfirmationModal';
-import WelcomeModal from './WelcomeModal';
-import EmailVerificationModal from './EmailVerificationModal';
-import EmailVerification from './EmailVerification';
-import CookieConsentBanner from './CookieConsentBanner';
 import AndroidDownloadPrompt from './AndroidDownloadPrompt';
 import APKUpdater from './APKUpdater';
-import AIInfoModal from './AIInfoModal';
-import MilestoneLevelUpModal from './MilestoneLevelUpModal';
-import ReferralSuccessAnimation from './ReferralSuccessAnimation';
-import GlobalRatingPrompt from './GlobalRatingPrompt';
 import UserAvatar from './UserAvatar';
+
+const ConfirmationModal = lazy(() => import('./ConfirmationModal'));
+const WelcomeModal = lazy(() => import('./WelcomeModal'));
+const EmailVerificationModal = lazy(() => import('./EmailVerificationModal'));
+const EmailVerification = lazy(() => import('./EmailVerification'));
+const CookieConsentBanner = lazy(() => import('./CookieConsentBanner'));
+const AIInfoModal = lazy(() => import('./AIInfoModal'));
+const MilestoneLevelUpModal = lazy(() => import('./MilestoneLevelUpModal'));
+const ReferralSuccessAnimation = lazy(() => import('./ReferralSuccessAnimation'));
+const GlobalRatingPrompt = lazy(() => import('./GlobalRatingPrompt'));
 
 // Constantes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -722,14 +723,16 @@ export default function MainAppLayout({
     }
   };
 
-  // --- RESTO DE EFECTOS ---
+  // --- RESTO DE EFECTOS (diferidos ligeramente para no saturar conexiones en Ctrl+Shift+R) ---
   useEffect(() => {
-    if (userProfile) {
+    if (!userProfile?.id) return;
+    const timerId = setTimeout(() => {
       fetchNotifications();
       fetchFriendRequests();
       subscribeToSocialEvents();
-    }
-  }, [fetchNotifications, fetchFriendRequests, subscribeToSocialEvents, userProfile]);
+    }, 400);
+    return () => clearTimeout(timerId);
+  }, [fetchNotifications, fetchFriendRequests, subscribeToSocialEvents, userProfile?.id]);
 
   useEffect(() => {
     if (gamificationEvents && gamificationEvents.length > 0) {
@@ -832,11 +835,9 @@ export default function MainAppLayout({
   ]);
 
   useEffect(() => {
-    if (!userProfile) return;
+    if (!userProfile?.id) return;
     
-    const socket = initSocket();
-    if (!socket) return;
-
+    let activeSocket = null;
     const handleGamificationEvent = async (data) => {
       if (data.type === 'referral_success') {
         useAppStore.getState().addReferralAnimation(data);
@@ -855,7 +856,6 @@ export default function MainAppLayout({
       }
       
       if (data.type === 'challenge_completed' || data.type === 'referral_success') {
-        
         try {
           const profileData = await userService.getMyProfile();
           if (profileData && setGamificationData) {
@@ -873,19 +873,27 @@ export default function MainAppLayout({
       }
     };
 
-      const handleChatEvent = () => {
-        const fetchUnreadChats = useAppStore.getState().fetchUnreadChats;
-        if (fetchUnreadChats) fetchUnreadChats();
-      };
+    const handleChatEvent = () => {
+      const fetchUnreadChats = useAppStore.getState().fetchUnreadChats;
+      if (fetchUnreadChats) fetchUnreadChats();
+    };
 
-      socket.on('GAMIFICATION_EVENT', handleGamificationEvent);
-      socket.on('chat_message', handleChatEvent);
-      
-      return () => {
-        socket.off('GAMIFICATION_EVENT', handleGamificationEvent);
-        socket.off('chat_message', handleChatEvent);
-      };
-    }, [userProfile, addToast, setGamificationData]);
+    const timerId = setTimeout(() => {
+      activeSocket = initSocket();
+      if (!activeSocket) return;
+      activeSocket.on('GAMIFICATION_EVENT', handleGamificationEvent);
+      activeSocket.on('chat_message', handleChatEvent);
+      subscribeToSocialEvents();
+    }, 450);
+
+    return () => {
+      clearTimeout(timerId);
+      if (activeSocket) {
+        activeSocket.off('GAMIFICATION_EVENT', handleGamificationEvent);
+        activeSocket.off('chat_message', handleChatEvent);
+      }
+    };
+  }, [userProfile?.id, addToast, setGamificationData, subscribeToSocialEvents]);
 
   useEffect(() => {
     if (userProfile && userProfile.email && userProfile.email.endsWith('@x-auth.local')) {
@@ -955,23 +963,25 @@ export default function MainAppLayout({
         </div>
       )}
       
-      <GlobalRatingPrompt
-        userProfile={userProfile}
-        canShow={
-          !showWelcomeModal &&
-          !show2FAPromo &&
-          !tourActive &&
-          cookieConsent !== null &&
-          !showEmailVerificationModal &&
-          !showCodeVerificationModal &&
-          !isGlobalModalOpen &&
-          !showAIModal &&
-          !showAccentUnlockModal &&
-          !showLogoutConfirm &&
-          !pendingMilestone &&
-          !activeWorkout
-        }
-      />
+      <Suspense fallback={null}>
+        <GlobalRatingPrompt
+          userProfile={userProfile}
+          canShow={
+            !showWelcomeModal &&
+            !show2FAPromo &&
+            !tourActive &&
+            cookieConsent !== null &&
+            !showEmailVerificationModal &&
+            !showCodeVerificationModal &&
+            !isGlobalModalOpen &&
+            !showAIModal &&
+            !showAccentUnlockModal &&
+            !showLogoutConfirm &&
+            !pendingMilestone &&
+            !activeWorkout
+          }
+        />
+      </Suspense>
       
       <Sidebar
         view={view}
@@ -1188,34 +1198,36 @@ export default function MainAppLayout({
         </div>
       </div>
 
-      {pendingMilestone && (
-        <MilestoneLevelUpModal 
-          level={pendingMilestone} 
-          onClose={handleMilestoneClose} 
-        />
-      )}
+      <Suspense fallback={null}>
+        {pendingMilestone && (
+          <MilestoneLevelUpModal 
+            level={pendingMilestone} 
+            onClose={handleMilestoneClose} 
+          />
+        )}
 
-      <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
+        <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 
-      {showWelcomeModal && cookieConsent !== null && !show2FAPromo && !tourActive && (
-        <WelcomeModal onClose={closeWelcomeModal} />
-      )}
-      
-      {showAIModal && (
-        <AIInfoModal onClose={() => setShowAIModal(false)} />
-      )}
+        {showWelcomeModal && cookieConsent !== null && !show2FAPromo && !tourActive && (
+          <WelcomeModal onClose={closeWelcomeModal} />
+        )}
+        
+        {showAIModal && (
+          <AIInfoModal onClose={() => setShowAIModal(false)} />
+        )}
 
-      {cookieConsent === null && (
-        <CookieConsentBanner 
-          onAccept={handleAcceptCookies} 
-          onDecline={handleDeclineCookies} 
-          onShowPolicy={handleShowPolicy} 
-        />
-      )}
+        {cookieConsent === null && (
+          <CookieConsentBanner 
+            onAccept={handleAcceptCookies} 
+            onDecline={handleDeclineCookies} 
+            onShowPolicy={handleShowPolicy} 
+          />
+        )}
 
-      {showLogoutConfirm && (
-        <ConfirmationModal message="¿Estás seguro de que quieres cerrar sesión?" onConfirm={confirmLogout} onCancel={() => setShowLogoutConfirm(false)} confirmText="Cerrar Sesión" />
-      )}
+        {showLogoutConfirm && (
+          <ConfirmationModal message="¿Estás seguro de que quieres cerrar sesión?" onConfirm={confirmLogout} onCancel={() => setShowLogoutConfirm(false)} confirmText="Cerrar Sesión" />
+        )}
+      </Suspense>
 
       {/* Botón "Volver al Entreno" — bottom usa --safe-bottom en lugar de env() directo */}
       {activeWorkout && workoutStartTime && view !== 'workout' && (
@@ -1234,13 +1246,15 @@ export default function MainAppLayout({
         v{APP_VERSION}
       </div>
 
-      {showEmailVerificationModal && userProfile && (
-        <EmailVerificationModal currentEmail={verificationEmail} onEmailUpdated={(newEmail) => { setVerificationEmail(newEmail); setShowEmailVerificationModal(false); setShowCodeVerificationModal(true); }} onCodeSent={() => { setShowEmailVerificationModal(false); setShowCodeVerificationModal(true); }} />
-      )}
+      <Suspense fallback={null}>
+        {showEmailVerificationModal && userProfile && (
+          <EmailVerificationModal currentEmail={verificationEmail} onEmailUpdated={(newEmail) => { setVerificationEmail(newEmail); setShowEmailVerificationModal(false); setShowCodeVerificationModal(true); }} onCodeSent={() => { setShowEmailVerificationModal(false); setShowCodeVerificationModal(true); }} />
+        )}
 
-      {showCodeVerificationModal && (
-        <EmailVerification email={verificationEmail} onSuccess={() => { setShowCodeVerificationModal(false); fetchInitialData(); }} onBack={() => { setShowCodeVerificationModal(false); setShowEmailVerificationModal(true); }} backButtonText="Volver" />
-      )}
+        {showCodeVerificationModal && (
+          <EmailVerification email={verificationEmail} onSuccess={() => { setShowCodeVerificationModal(false); fetchInitialData(); }} onBack={() => { setShowCodeVerificationModal(false); setShowEmailVerificationModal(true); }} backButtonText="Volver" />
+        )}
+      </Suspense>
 
       <AndroidDownloadPrompt />
       <APKUpdater />
@@ -1324,7 +1338,9 @@ export default function MainAppLayout({
         </ModalPortal>
       )}
 
-      <ReferralSuccessAnimation />
+      <Suspense fallback={null}>
+        <ReferralSuccessAnimation />
+      </Suspense>
     </div>
   );
 }

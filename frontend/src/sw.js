@@ -74,6 +74,21 @@ registerRoute(
   })
 );
 
+// A2. Chunks estáticos con hash (/assets/*.js y /assets/*.css) -> StaleWhileRevalidate bajo demanda
+// Evita descargar 96 archivos de golpe al instalar el SW durante un Ctrl+Shift+R
+registerRoute(
+  ({ url, request }) =>
+    url.origin === self.location.origin &&
+    url.pathname.startsWith('/assets/') &&
+    (request.destination === 'script' || request.destination === 'style' || /\.(js|css)$/i.test(url.pathname)),
+  new StaleWhileRevalidate({
+    cacheName: 'vite-hashed-assets',
+    plugins: [
+      new ExpirationPlugin({ maxEntries: 120, maxAgeSeconds: 30 * 24 * 60 * 60 }),
+    ],
+  })
+);
+
 // B. Imágenes estáticas LOCALES (logo, iconos, etc.)
 // IMPORTANTE: Excluimos '/uploads/', VÍDEOS y ORÍGENES EXTERNOS para evitar errores de CORS/Opaque.
 registerRoute(

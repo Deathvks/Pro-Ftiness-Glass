@@ -56,13 +56,45 @@ const apiClient = async (endpoint, options = {}) => {
         }
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos de timeout para tareas pesadas
-    config.signal = controller.signal;
+    const isGetRequest = config.method === 'GET';
+    const executeFetchWithTimeout = async (timeoutMs) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+                ...config,
+                signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+            return res;
+        } catch (err) {
+            clearTimeout(timeoutId);
+            throw err;
+        }
+    };
 
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-        clearTimeout(timeoutId);
+        let response;
+        if (isGetRequest) {
+            try {
+                // En recargas forzadas (Ctrl+Shift+R), si un socket TCP queda colgado más de 6s,
+                // abortamos y reintentamos automáticamente en una conexión limpia sin esperar 30s.
+                response = await executeFetchWithTimeout(6000);
+            } catch (firstErr) {
+                const msg = (firstErr?.message || '').toLowerCase();
+                const isStalledOrTransient =
+                    firstErr?.name === 'AbortError' ||
+                    msg.includes('failed to fetch') ||
+                    msg.includes('networkerror');
+                if (isStalledOrTransient && (typeof navigator === 'undefined' || navigator.onLine !== false)) {
+                    response = await executeFetchWithTimeout(15000);
+                } else {
+                    throw firstErr;
+                }
+            }
+        } else {
+            response = await executeFetchWithTimeout(30000);
+        }
 
         if (!response.ok) {
             // Si la respuesta es un error (ej: 4xx, 5xx), intentamos leer el cuerpo del error.
@@ -135,8 +167,6 @@ const apiClient = async (endpoint, options = {}) => {
 
         return response.json();
     } catch (error) {
-        clearTimeout(timeoutId);
-
         const errMessage = (error.message || '').toLowerCase();
         const isNetworkFailure = 
             error.name === 'AbortError' || 

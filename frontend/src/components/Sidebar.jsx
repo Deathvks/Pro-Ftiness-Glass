@@ -1,10 +1,11 @@
 /* frontend/src/components/Sidebar.jsx */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, ArrowRightOnRectangleIcon as LogOut, SparklesIcon, BellIcon, UserIcon } from '@heroicons/react/24/outline';
 import useAppStore from '../store/useAppStore';
-import StoryViewer from './StoryViewer';
-import AIInfoModal from './AIInfoModal';
 import { getUserRoleRingConfig } from '../utils/userRoleUtils';
+
+const StoryViewer = lazy(() => import('./StoryViewer'));
+const AIInfoModal = lazy(() => import('./AIInfoModal'));
 
 const SidebarItem = ({ label, icon, isActive, onClick, onPreload, onIconClick, badgeCount, isRed, shouldTruncate, className = '', isCollapsed, badge }) => (
   <button
@@ -157,13 +158,15 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
 
   return (
     <>
-        {viewingStory && userProfile && (
-            <StoryViewer userId={userProfile.id} onClose={() => setViewingStory(false)} />
-        )}
+        <Suspense fallback={null}>
+            {viewingStory && userProfile && (
+                <StoryViewer userId={userProfile.id} onClose={() => setViewingStory(false)} />
+            )}
 
-        {showAIModal && (
-            <AIInfoModal onClose={() => setShowAIModal(false)} />
-        )}
+            {showAIModal && (
+                <AIInfoModal onClose={() => setShowAIModal(false)} />
+            )}
+        </Suspense>
 
         <nav className={`hidden md:flex flex-col h-full border-r border-glass-border bg-glass-bg backdrop-blur-glass shadow-lg overflow-y-auto overflow-x-hidden z-40 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[88px] px-3 py-6' : 'w-64 lg:w-72 p-6'}`}>
         

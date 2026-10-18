@@ -93,6 +93,7 @@ const corsOptions = {
     }
   },
   credentials: true,
+  maxAge: 86400, // Cachear preflight OPTIONS 24h para evitar tormenta de peticiones en recargas
   optionsSuccessStatus: 200
 };
 

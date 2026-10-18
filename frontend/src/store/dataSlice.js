@@ -11,6 +11,8 @@ import * as creatinaService from '../services/creatinaService';
 import * as exerciseService from '../services/exerciseService';
 import * as personalRecordService from '../services/personalRecordService';
 
+let initialFetchInFlight = null;
+
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
 const INITIAL_CACHE_KEY = 'pfg_cached_initial_state_v1';
@@ -118,121 +120,135 @@ export const createDataSlice = (set, get) => ({
       return;
     }
 
+    if (initialFetchInFlight) {
+      return initialFetchInFlight;
+    }
+
+    const todayAtStart = get().selectedDate || getTodayDateString();
+    // Reservar fecha desde el inicio para evitar que Dashboard dispare fetchDataForDate duplicado
+    lastDateFetchInfo = { date: todayAtStart, timestamp: Date.now() };
+
     const existingProfile = get().userProfile;
     const hasHydratedProfile = Boolean(existingProfile && 'role' in existingProfile);
     if (!hasHydratedProfile) {
       set({ isLoading: true });
     }
 
-    try {
-      const profileData = await userService.getMyProfile();
-
-      // Actualizar silenciosamente la zona horaria sin bloquear el arranque
+    initialFetchInFlight = (async () => {
       try {
-        const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        if (profileData.timezone !== currentTimezone) {
-            profileData.timezone = currentTimezone;
-            userService.updateUserProfile({ timezone: currentTimezone }).catch(console.error);
+        const profileData = await userService.getMyProfile();
+
+        // Actualizar silenciosamente la zona horaria sin bloquear el arranque
+        try {
+          const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          if (profileData.timezone !== currentTimezone) {
+              profileData.timezone = currentTimezone;
+              userService.updateUserProfile({ timezone: currentTimezone }).catch(console.error);
+          }
+        } catch (e) {
+          console.warn('Could not detect timezone', e);
         }
-      } catch (e) {
-        console.warn('Could not detect timezone', e);
-      }
 
-      get().checkWelcomeModal();
+        get().checkWelcomeModal();
 
-      // Desbloqueamos inmediatamente la interfaz con el perfil cargado
-      set({ userProfile: profileData, isAuthenticated: true, isLoading: false });
-      writeInitialCache({ userProfile: profileData });
+        // Desbloqueamos inmediatamente la interfaz con el perfil cargado
+        set({ userProfile: profileData, isAuthenticated: true, isLoading: false });
+        writeInitialCache({ userProfile: profileData });
 
-      // Obtener el conteo de chats no leídos en segundo plano
-      if (get().fetchUnreadChats) {
-        get().fetchUnreadChats();
-      }
+        if (profileData && get().setGamificationData) {
+          get().setGamificationData({
+            xp: profileData.xp,
+            level: profileData.level,
+            streak: profileData.streak,
+            last_activity_date: profileData.last_activity_date,
+            unlocked_badges: profileData.unlocked_badges
+          });
 
-      if (profileData && get().setGamificationData) {
-        get().setGamificationData({
-          xp: profileData.xp,
-          level: profileData.level,
-          streak: profileData.streak,
-          last_activity_date: profileData.last_activity_date,
-          unlocked_badges: profileData.unlocked_badges
-        });
+          const today = getTodayDateString();
+          if (get().checkStreak) get().checkStreak(today);
 
-        const today = getTodayDateString();
-        if (get().checkStreak) get().checkStreak(today);
-
-        const hasFirstLoginBadge = profileData.unlocked_badges && profileData.unlocked_badges.includes('first_login');
-        if (get().unlockBadge && !hasFirstLoginBadge) {
-          get().unlockBadge('first_login');
+          const hasFirstLoginBadge = profileData.unlocked_badges && profileData.unlocked_badges.includes('first_login');
+          if (get().unlockBadge && !hasFirstLoginBadge) {
+            get().unlockBadge('first_login');
+          }
         }
+
+        if (profileData?.id) {
+          Promise.resolve(get().checkCookieConsent(profileData.id)).catch(() => {});
+        }
+
+        if (profileData.goal) {
+          const today = get().selectedDate || getTodayDateString();
+          lastDateFetchInfo = { date: today, timestamp: Date.now() };
+
+          // Fase 1 (Rápida, máximo 5 peticiones simultáneas para no saturar el límite de 6 conexiones del navegador)
+          Promise.all([
+            routineService.getRoutines().catch(() => null),
+            nutritionService.getNutritionLogsByDate(today).catch(() => null),
+            creatinaService.getCreatinaLogs({ startDate: today, endDate: today }).catch(() => null),
+            favoriteMealService.getFavoriteMeals().catch(() => null),
+            nutritionService.getRecentMeals().catch(() => null),
+          ]).then(([routines, nutrition, todaysCreatine, favoriteMeals, recentMeals]) => {
+            const fastUpdate = {};
+            if (routines) fastUpdate.routines = routines;
+            if (nutrition) {
+              fastUpdate.nutritionLog = nutrition.nutrition || [];
+              fastUpdate.waterLog = nutrition.water || { quantity_ml: 0 };
+            }
+            if (todaysCreatine) fastUpdate.todaysCreatineLog = todaysCreatine.data || [];
+            if (favoriteMeals) fastUpdate.favoriteMeals = favoriteMeals;
+            if (recentMeals) fastUpdate.recentMeals = recentMeals;
+
+            if (Object.keys(fastUpdate).length > 0) {
+              set(fastUpdate);
+              writeInitialCache({ ...fastUpdate, cachedDate: today });
+            }
+          }).catch((err) => console.error('Error en carga rápida inicial:', err))
+          .finally(() => {
+            // Fase 2 (Históricos pesados en segundo plano, justo después de liberar conexiones de Fase 1)
+            if (get().fetchUnreadChats) {
+              get().fetchUnreadChats();
+            }
+            Promise.all([
+              workoutService.getWorkouts().catch(() => null),
+              bodyWeightService.getHistory().catch(() => null),
+              bodyMeasurementService.getHistory().catch(() => null),
+              creatinaService.getCreatinaStats().catch(() => null),
+              personalRecordService.getPersonalRecords(1, 'all').catch(() => null),
+            ]).then(([workouts, bodyweight, measurements, creatineStats, prsResponse]) => {
+              const heavyUpdate = {};
+              if (workouts) heavyUpdate.workoutLog = workouts;
+              if (bodyweight) heavyUpdate.bodyWeightLog = bodyweight;
+              if (measurements) heavyUpdate.bodyMeasurementsLog = measurements;
+              if (creatineStats) heavyUpdate.creatineStats = creatineStats.data || null;
+              if (prsResponse) {
+                heavyUpdate.personalRecords = prsResponse?.records || (Array.isArray(prsResponse) ? prsResponse : []);
+              }
+
+              if (Object.keys(heavyUpdate).length > 0) {
+                set(heavyUpdate);
+                writeInitialCache(heavyUpdate);
+              }
+            }).catch((err) => console.error('Error en carga de historial inicial:', err));
+          });
+        } else if (get().fetchUnreadChats) {
+          get().fetchUnreadChats();
+        }
+      } catch (error) {
+        console.error("Error al cargar datos iniciales (posiblemente de red):", error);
+        if (error?.message?.includes('fetch') || error?.message?.includes('network') || error?.name === 'TypeError' || error?.isMaintenance) {
+          console.log('[fetchInitialData] Error de red detectado, reintentando en 2s...');
+          setTimeout(() => { get().fetchInitialData(); }, 2000);
+        } else {
+          console.error('[fetchInitialData] Error de API al cargar el perfil; se mantiene la sesión.');
+        }
+      } finally {
+        initialFetchInFlight = null;
+        set({ isLoading: false });
       }
+    })();
 
-      if (profileData?.id) {
-        Promise.resolve(get().checkCookieConsent(profileData.id)).catch(() => {});
-      }
-
-      if (profileData.goal) {
-        const today = get().selectedDate || getTodayDateString();
-        lastDateFetchInfo = { date: today, timestamp: Date.now() };
-
-        // Fase 1 (Rápida, en paralelo sin bloquear el render): Rutinas y datos del día actual
-        Promise.all([
-          routineService.getRoutines().catch(() => null),
-          nutritionService.getNutritionLogsByDate(today).catch(() => null),
-          creatinaService.getCreatinaLogs({ startDate: today, endDate: today }).catch(() => null),
-          favoriteMealService.getFavoriteMeals().catch(() => null),
-          nutritionService.getRecentMeals().catch(() => null),
-        ]).then(([routines, nutrition, todaysCreatine, favoriteMeals, recentMeals]) => {
-          const fastUpdate = {};
-          if (routines) fastUpdate.routines = routines;
-          if (nutrition) {
-            fastUpdate.nutritionLog = nutrition.nutrition || [];
-            fastUpdate.waterLog = nutrition.water || { quantity_ml: 0 };
-          }
-          if (todaysCreatine) fastUpdate.todaysCreatineLog = todaysCreatine.data || [];
-          if (favoriteMeals) fastUpdate.favoriteMeals = favoriteMeals;
-          if (recentMeals) fastUpdate.recentMeals = recentMeals;
-
-          if (Object.keys(fastUpdate).length > 0) {
-            set(fastUpdate);
-            writeInitialCache({ ...fastUpdate, cachedDate: today });
-          }
-        }).catch((err) => console.error('Error en carga rápida inicial:', err));
-
-        // Fase 2 (Históricos pesados en segundo plano): Entrenamientos, peso, medidas y récords
-        Promise.all([
-          workoutService.getWorkouts().catch(() => null),
-          bodyWeightService.getHistory().catch(() => null),
-          bodyMeasurementService.getHistory().catch(() => null),
-          creatinaService.getCreatinaStats().catch(() => null),
-          personalRecordService.getPersonalRecords(1, 'all').catch(() => null),
-        ]).then(([workouts, bodyweight, measurements, creatineStats, prsResponse]) => {
-          const heavyUpdate = {};
-          if (workouts) heavyUpdate.workoutLog = workouts;
-          if (bodyweight) heavyUpdate.bodyWeightLog = bodyweight;
-          if (measurements) heavyUpdate.bodyMeasurementsLog = measurements;
-          if (creatineStats) heavyUpdate.creatineStats = creatineStats.data || null;
-          if (prsResponse) {
-            heavyUpdate.personalRecords = prsResponse?.records || (Array.isArray(prsResponse) ? prsResponse : []);
-          }
-
-          if (Object.keys(heavyUpdate).length > 0) {
-            set(heavyUpdate);
-            writeInitialCache(heavyUpdate);
-          }
-        }).catch((err) => console.error('Error en carga de historial inicial:', err));
-      }
-    } catch (error) {
-      console.error("Error al cargar datos iniciales (posiblemente de red):", error);
-      if (error?.message?.includes('fetch') || error?.message?.includes('network') || error?.name === 'TypeError' || error?.isMaintenance) {
-        console.log('[fetchInitialData] Error de red detectado, reintentando en 3s...');
-        setTimeout(() => { get().fetchInitialData(); }, 3000);
-      } else {
-        console.error('[fetchInitialData] Error de API al cargar el perfil; se mantiene la sesión.');
-      }
-    } finally {
-      set({ isLoading: false });
-    }
+    return initialFetchInFlight;
   },
 
   fetchDataForDate: async (date, options = {}) => {
