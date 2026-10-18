@@ -1,4 +1,4 @@
 {
-  "version": "7.7.8",
-  "releaseNotes": "Optimización extrema de recarga forzada (Ctrl+Shift+R) en login/registro y precarga limpia del Service Worker."
+  "version": "7.7.9",
+  "releaseNotes": "Optimización drástica de carga y recarga con Shift en Nutrición y Comunidad mediante carga diferida de escáner de códigos, visor de historias y modales secundarios."
 }

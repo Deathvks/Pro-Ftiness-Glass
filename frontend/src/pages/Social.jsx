@@ -9,7 +9,7 @@ import {
     Settings, Shield, PlusCircle, Hash, Copy, ArrowLeft, LogOut, Trash2,
     Activity, Crop, Flame
 } from 'lucide-react';
-import Cropper from 'react-easy-crop';
+const Cropper = React.lazy(() => import('react-easy-crop'));
 import { Capacitor } from '@capacitor/core';
 import { Camera as CapCamera } from '@capacitor/camera';
 import useAppStore from '../store/useAppStore';
@@ -20,11 +20,11 @@ import Spinner from '../components/Spinner';
 import ModalPortal from '../components/ModalPortal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import UserAvatar from '../components/UserAvatar';
-import StoryViewer from '../components/StoryViewer';
+const StoryViewer = React.lazy(() => import('../components/StoryViewer'));
 import socialService from '../services/socialService';
 import Feed from '../components/Feed';
-import PermissionModal from '../components/PermissionModal';
-import SocialTourGuide from '../components/SocialTourGuide';
+const PermissionModal = React.lazy(() => import('../components/PermissionModal'));
+const SocialTourGuide = React.lazy(() => import('../components/SocialTourGuide'));
 import LevelBadge from '../components/LevelBadge';
 
 // --- CONFIGURACIÓN DE PUERTO (Backend default 3001) ---
@@ -273,21 +273,23 @@ const StoryCropModal = ({ imageSrc, onComplete, onCancel }) => {
 
             {/* Cropper Container */}
             <div className="relative flex-1 bg-black overflow-hidden">
-                <Cropper
-                    image={imageSrc}
-                    crop={crop}
-                    zoom={zoom}
-                    aspect={9 / 16}
-                    cropShape="rect"
-                    showGrid={true}
-                    objectFit="cover"
-                    minZoom={1}
-                    maxZoom={3}
-                    zoomWithScroll={true}
-                    onCropChange={setCrop}
-                    onCropComplete={onCropCompleteCallback}
-                    onZoomChange={setZoom}
-                />
+                <React.Suspense fallback={<div className="w-full h-full flex items-center justify-center text-white"><Spinner size={32} /></div>}>
+                    <Cropper
+                        image={imageSrc}
+                        crop={crop}
+                        zoom={zoom}
+                        aspect={9 / 16}
+                        cropShape="rect"
+                        showGrid={true}
+                        objectFit="cover"
+                        minZoom={1}
+                        maxZoom={3}
+                        zoomWithScroll={true}
+                        onCropChange={setCrop}
+                        onCropComplete={onCropCompleteCallback}
+                        onZoomChange={setZoom}
+                    />
+                </React.Suspense>
             </div>
 
             {/* Controles y Botones de acción */}
@@ -639,11 +641,13 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                 />
             )}
 
-            <PermissionModal
-                isOpen={showPermissionModal}
-                onClose={() => setShowPermissionModal(false)}
-                permissionName="Galería / Cámara"
-            />
+            <React.Suspense fallback={null}>
+                <PermissionModal
+                    isOpen={showPermissionModal}
+                    onClose={() => setShowPermissionModal(false)}
+                    permissionName="Galería / Cámara"
+                />
+            </React.Suspense>
         </>
     );
 };
@@ -765,15 +769,21 @@ export default function Social({ setView }) {
         subscribeToSocialEvents
      } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, socialFriends: state.socialFriends, socialRequests: state.socialRequests, socialSearchResults: state.socialSearchResults, socialLeaderboard: state.socialLeaderboard, isSocialLoading: state.isSocialLoading, searchUsers: state.searchUsers, fetchFriends: state.fetchFriends, fetchFriendRequests: state.fetchFriendRequests, sendFriendRequest: state.sendFriendRequest, respondFriendRequest: state.respondFriendRequest, removeFriend: state.removeFriend, fetchLeaderboard: state.fetchLeaderboard, stories: state.stories, myStories: state.myStories, fetchStories: state.fetchStories, uploadStory: state.uploadStory, subscribeToStories: state.subscribeToStories, subscribeToSocialEvents: state.subscribeToSocialEvents })));
 
-    // Carga inicial (sin las historias)
+    // Carga inicial (sin las historias ni leaderboard innecesario)
     useEffect(() => {
         fetchFriends();
         fetchFriendRequests();
-        fetchLeaderboard();
         subscribeToStories();
         subscribeToSocialEvents();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Cargar leaderboard solo al acceder a la pestaña de ranking
+    useEffect(() => {
+        if (activeTab === 'leaderboard') {
+            fetchLeaderboard();
+        }
+    }, [activeTab, fetchLeaderboard]);
 
     // Carga de historias EXACTAMENTE cuando ya tenemos nuestro ID
     useEffect(() => {
@@ -1316,7 +1326,9 @@ export default function Social({ setView }) {
 
     return (
         <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-28 md:pb-8 animate-[fade-in_0.5s_ease-out]">
-            <SocialTourGuide />
+            <React.Suspense fallback={null}>
+                <SocialTourGuide />
+            </React.Suspense>
 
             {/* --- Modales --- */}
             {deleteConfirmation.isOpen && (
@@ -1357,7 +1369,9 @@ export default function Social({ setView }) {
             
             {/* Visor de Historias */}
             {viewingStoryUserId && (
-                <StoryViewer userId={viewingStoryUserId} onClose={() => setViewingStoryUserId(null)} />
+                <React.Suspense fallback={null}>
+                    <StoryViewer userId={viewingStoryUserId} onClose={() => setViewingStoryUserId(null)} />
+                </React.Suspense>
             )}
 
             {/* Modal Crear Grupo */}

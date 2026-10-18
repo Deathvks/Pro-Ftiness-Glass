@@ -7,14 +7,13 @@ import StatCard from '../components/StatCard';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
-import WaterLogModal from '../components/WaterLogModal';
-import NutritionLogModal from '../components/NutritionLogModal';
-import FoodScannerModal from '../components/FoodScannerModal';
+const WaterLogModal = React.lazy(() => import('../components/WaterLogModal'));
+const NutritionLogModal = React.lazy(() => import('../components/NutritionLogModal'));
 import ConfirmationModal from '../components/ConfirmationModal';
-import CreatinaTracker from '../components/CreatinaTracker';
-import SugarTargetModal from '../components/SugarTargetModal';
-import NutritionTourGuide from '../components/NutritionTourGuide';
-import SmartNutritionCoachModal from '../components/nutrition/SmartNutritionCoachModal';
+const CreatinaTracker = React.lazy(() => import('../components/CreatinaTracker'));
+const SugarTargetModal = React.lazy(() => import('../components/SugarTargetModal'));
+const NutritionTourGuide = React.lazy(() => import('../components/NutritionTourGuide'));
+const SmartNutritionCoachModal = React.lazy(() => import('../components/nutrition/SmartNutritionCoachModal'));
 import { generateSmartNutritionCoachPlan } from '../utils/smartNutritionCoach';
 import { useToast } from '../hooks/useToast';
 import * as nutritionService from '../services/nutritionService';
@@ -703,7 +702,9 @@ const Nutrition = ({ setView, navParams }) => {
     return (
         <div className="w-full max-w-7xl mx-auto px-4 pt-4 pb-28 sm:p-6 sm:pb-8 lg:p-10 lg:pb-10 animate-[fade-in_0.5s_ease-out]">
 
-            <NutritionTourGuide />
+            <React.Suspense fallback={null}>
+                <NutritionTourGuide />
+            </React.Suspense>
 
             <Helmet>
                 <title>Registro de Nutrición - Pro Fitness Glass</title>
@@ -1302,22 +1303,26 @@ const Nutrition = ({ setView, navParams }) => {
             )}
 
             {modal.type === 'water' && (
-                <WaterLogModal
-                    initialQuantity={waterLog?.quantity_ml || 0}
-                    onClose={() => setModal({ type: null, data: null })}
-                    onSave={handleSaveWater}
-                    isLoading={isSubmitting}
-                />
+                <React.Suspense fallback={null}>
+                    <WaterLogModal
+                        initialQuantity={waterLog?.quantity_ml || 0}
+                        onClose={() => setModal({ type: null, data: null })}
+                        onSave={handleSaveWater}
+                        isLoading={isSubmitting}
+                    />
+                </React.Suspense>
             )}
 
             {modal.type === 'food' && (
-                <NutritionLogModal
-                    onClose={() => setModal({ type: null, data: null })}
-                    onSave={handleSaveFood}
-                    mealType={modal.data?.mealType}
-                    logToEdit={modal.data?.id ? modal.data : null}
-                    isLoading={isSubmitting}
-                />
+                <React.Suspense fallback={null}>
+                    <NutritionLogModal
+                        onClose={() => setModal({ type: null, data: null })}
+                        onSave={handleSaveFood}
+                        mealType={modal.data?.mealType}
+                        logToEdit={modal.data?.id ? modal.data : null}
+                        isLoading={isSubmitting}
+                    />
+                </React.Suspense>
             )}
 
             {mealCopy && (
@@ -1423,12 +1428,14 @@ const Nutrition = ({ setView, navParams }) => {
             )}
 
             {modal.type === 'sugar' && (
-                <SugarTargetModal
-                    isOpen={true}
-                    onClose={() => setModal({ type: null, data: null })}
-                    currentSugar={totals.sugar}
-                    maxSugar={sugarTarget}
-                />
+                <React.Suspense fallback={null}>
+                    <SugarTargetModal
+                        isOpen={true}
+                        onClose={() => setModal({ type: null, data: null })}
+                        currentSugar={totals.sugar}
+                        maxSugar={sugarTarget}
+                    />
+                </React.Suspense>
             )}
 
             {logToDelete && (
@@ -1453,51 +1460,55 @@ const Nutrition = ({ setView, navParams }) => {
             )}
 
             {showCreatinaTracker && (
-                <CreatinaTracker
-                    onClose={() => setShowCreatinaTracker(false)}
-                    selectedDate={selectedDate}
-                />
+                <React.Suspense fallback={null}>
+                    <CreatinaTracker
+                        onClose={() => setShowCreatinaTracker(false)}
+                        selectedDate={selectedDate}
+                    />
+                </React.Suspense>
             )}
 
             {showNutritionCoachModal && (
-                <SmartNutritionCoachModal
-                    userProfile={userProfile}
-                    totals={totals}
-                    targets={{
-                        calorieTarget,
-                        proteinTarget,
-                        carbsTarget,
-                        fatsTarget,
-                        sugarTarget,
-                        waterTarget,
-                        creatineTarget
-                    }}
-                    waterLog={waterLog}
-                    todaysCreatineLog={todaysCreatineLog}
-                    meals={meals}
-                    nutritionLog={nutritionLog}
-                    selectedDate={selectedDate}
-                    latestWeight={latestWeight}
-                    onClose={() => setShowNutritionCoachModal(false)}
-                    onNavigateAsesoria={() => {
-                        setShowNutritionCoachModal(false);
-                        try {
-                            sessionStorage.setItem('asesoria_return_context', JSON.stringify({
-                                view: 'nutrition',
-                                reopenNutritionCoach: true
-                            }));
-                        } catch (e) {}
-                        if (setView) {
-                            setView('asesoria', {
-                                returnView: 'nutrition',
-                                returnParams: { reopenNutritionCoach: true }
-                            });
-                        }
-                    }}
-                    onApplyStrategy={(strategy) => {
-                        addToast(`Pauta aplicada: ${strategy.title}`, 'success');
-                    }}
-                />
+                <React.Suspense fallback={null}>
+                    <SmartNutritionCoachModal
+                        userProfile={userProfile}
+                        totals={totals}
+                        targets={{
+                            calorieTarget,
+                            proteinTarget,
+                            carbsTarget,
+                            fatsTarget,
+                            sugarTarget,
+                            waterTarget,
+                            creatineTarget
+                        }}
+                        waterLog={waterLog}
+                        todaysCreatineLog={todaysCreatineLog}
+                        meals={meals}
+                        nutritionLog={nutritionLog}
+                        selectedDate={selectedDate}
+                        latestWeight={latestWeight}
+                        onClose={() => setShowNutritionCoachModal(false)}
+                        onNavigateAsesoria={() => {
+                            setShowNutritionCoachModal(false);
+                            try {
+                                sessionStorage.setItem('asesoria_return_context', JSON.stringify({
+                                    view: 'nutrition',
+                                    reopenNutritionCoach: true
+                                }));
+                            } catch (e) {}
+                            if (setView) {
+                                setView('asesoria', {
+                                    returnView: 'nutrition',
+                                    returnParams: { reopenNutritionCoach: true }
+                                });
+                            }
+                        }}
+                        onApplyStrategy={(strategy) => {
+                            addToast(`Pauta aplicada: ${strategy.title}`, 'success');
+                        }}
+                    />
+                </React.Suspense>
             )}
 
         </div>

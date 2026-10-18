@@ -2,7 +2,7 @@ import ModalPortal from './ModalPortal';
 /* frontend/src/components/NutritionLogModal.jsx */
 import React, { useState, useEffect } from 'react';
 import { X, Search, BookMarked, Clock, Edit, QrCode, Plus } from 'lucide-react';
-import BarcodeScanner from './BarcodeScanner';
+const BarcodeScanner = React.lazy(() => import('./BarcodeScanner'));
 import Spinner from './Spinner';
 import ConfirmationModal from './ConfirmationModal';
 import { useNutritionModal } from '../hooks/useNutritionModal';
@@ -133,7 +133,11 @@ const NutritionLogModal = ({ mealType, onClose, onSave, logToEdit, isLoading }) 
 
   const renderContent = () => {
     if (showScanner) {
-      return <BarcodeScanner onScanSuccess={handleScanSuccess} onClose={() => setShowScanner(false)} />;
+      return (
+        <React.Suspense fallback={<div className="flex justify-center items-center py-12"><Spinner size={32} /></div>}>
+          <BarcodeScanner onScanSuccess={handleScanSuccess} onClose={() => setShowScanner(false)} />
+        </React.Suspense>
+      );
     }
     switch (activeTab) {
       case 'search':
