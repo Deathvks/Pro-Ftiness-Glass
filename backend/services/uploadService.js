@@ -54,6 +54,26 @@ export const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 }
 });
 
+export const uploadProfileImage = (req, res, next) => {
+  const isPrivileged = req.user && (req.user.role === 'admin' || req.user.role === 'entrenador');
+
+  const profileMulter = multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: isPrivileged ? undefined : { fileSize: 5 * 1024 * 1024 }
+  }).single('profileImage');
+
+  profileMulter(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'La foto de perfil excede el tamaño máximo permitido de 5MB.' });
+      }
+      return res.status(400).json({ error: err.message || 'Error al procesar la subida de la imagen.' });
+    }
+    next();
+  });
+};
+
 export const uploadMemory = multer({
   storage: multer.memoryStorage(),
   fileFilter: fileFilter,
@@ -103,7 +123,7 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
     const isExercisePic = dir.includes('exercises');
 
     if (!isExercisePic) {
-      const { data, info } = await sharp(file.path)
+      const { data, info } = await sharp(file.path, { limitInputPixels: false })
         .resize(224, 224, { fit: 'cover' })
         .removeAlpha()
         .raw()
@@ -136,13 +156,13 @@ export const processUploadedFile = async (file, isHDRRequested = false) => {
     const newPath = path.join(dir, newFilename);
 
     const isProfilePic = dir.includes('profiles');
-    const imagePipeline = sharp(file.path);
+    const imagePipeline = sharp(file.path, { limitInputPixels: false });
     const metadata = await imagePipeline.metadata();
     
     const isSourceHighDepth = metadata.depth === 'ushort' || metadata.depth === 'float';
     const shouldProcessAsHDR = isHDRRequested && isSourceHighDepth;
 
-    let finalPipeline = sharp(file.path).rotate();
+    let finalPipeline = sharp(file.path, { limitInputPixels: false }).rotate();
 
     if (isProfilePic) {
       finalPipeline = finalPipeline.resize(300, 300, {

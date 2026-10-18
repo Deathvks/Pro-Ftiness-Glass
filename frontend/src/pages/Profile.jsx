@@ -128,6 +128,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
     }),
   );
   const { addToast } = useToast();
+  const isPrivileged = userProfile?.role === 'admin' || userProfile?.role === 'entrenador';
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -227,7 +228,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) {
+      if (!isPrivileged && file.size > 5 * 1024 * 1024) {
         addToast('La imagen es demasiado grande (máx 5MB).', 'error');
         return;
       }
@@ -283,7 +284,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
       }
     }
 
-    if (profileImageFile && profileImageFile.size > 5 * 1024 * 1024) {
+    if (!isPrivileged && profileImageFile && profileImageFile.size > 5 * 1024 * 1024) {
       newErrors.image = 'La imagen no debe pesar más de 5MB.';
     }
     
@@ -429,7 +430,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
               type="file"
               ref={fileInputRef}
               onChange={handleImageChange}
-              accept="image/png, image/jpeg, image/webp"
+              accept="image/*"
               className="hidden"
             />
             {(() => {

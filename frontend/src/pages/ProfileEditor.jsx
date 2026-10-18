@@ -36,11 +36,12 @@ const ProfileEditor = ({ onDone }) => {
              newErrors.username = 'Solo letras, números, _, . y - (sin espacios).';
         }
 
-        if (profileImage && profileImage.size > 2 * 1024 * 1024) { // 2MB
-            newErrors.profileImage = 'La imagen no debe pesar más de 2MB.';
+        const isPrivileged = user?.role === 'admin' || user?.role === 'entrenador';
+        if (!isPrivileged && profileImage && profileImage.size > 5 * 1024 * 1024) {
+            newErrors.profileImage = 'La imagen no debe pesar más de 5MB.';
         }
-        if (profileImage && !['image/jpeg', 'image/png', 'image/webp'].includes(profileImage.type)) {
-            newErrors.profileImage = 'Solo se permiten imágenes JPG, PNG o WebP.';
+        if (profileImage && !profileImage.type.startsWith('image/')) {
+            newErrors.profileImage = 'Solo se permiten imágenes válidas.';
         }
 
         return newErrors;

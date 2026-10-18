@@ -3,7 +3,7 @@ import express from 'express';
 import userController from '../controllers/userController.js';
 import { body, validationResult } from 'express-validator';
 import authenticateToken from '../middleware/authenticateToken.js';
-import { upload } from '../services/uploadService.js';
+import { upload, uploadProfileImage } from '../services/uploadService.js';
 import fs from 'fs/promises';
 
 const router = express.Router();
@@ -65,7 +65,7 @@ router.put(
 // PUT /api/users/me/account (Actualizar datos de la cuenta)
 router.put(
     '/me/account',
-    upload.single('profileImage'), // Delega la subida al servicio centralizado
+    uploadProfileImage, // Sin límite para admin/entrenador, 5MB para usuarios estándar, con moderación IA
     [
         body('name')
             .optional({ checkFalsy: true })
