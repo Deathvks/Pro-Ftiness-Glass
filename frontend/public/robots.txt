@@ -1,5 +1,5 @@
 User-agent: *
 Allow: /
-Disallow:
+Disallow: /api/
 
-Sitemap: https://pro-fitness-glass.zeabur.app/sitemap.xml
+Sitemap: https://pro-fitness-glass.zeabur.app/sitemap.xml

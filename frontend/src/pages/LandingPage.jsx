@@ -6,6 +6,7 @@ import {
     Instagram, Youtube, Github, Globe, Download, Sparkles, Bot, Apple, Check, ShieldCheck
 } from 'lucide-react';
 import { FaGooglePlay } from 'react-icons/fa';
+import { Helmet } from 'react-helmet-async';
 
 import packageJson from '../../package.json';
 import socialService from '../services/socialService';
@@ -265,14 +266,14 @@ const BentoCard = ({ children, className = "", delay = 0, bgIcon: BgIcon, bgIcon
 const MockupGallery = () => {
     const scrollRef = useRef(null);
     const images = [
-        { src: '/aver.jpg', alt: 'Dashboard' },
-        { src: '/entrenamiento.png', alt: 'Entrenamiento' },
-        { src: '/graficas.png', alt: 'Gráficas' },
-        { src: '/nutrición.png', alt: 'Nutrición' },
-        { src: '/social.png', alt: 'Social' },
-        { src: '/perfil.png', alt: 'Perfil' },
-        { src: '/ajustes.png', alt: 'Ajustes' },
-        { src: '/mapa.png', alt: 'Mapa' }
+        { src: '/aver.jpg', alt: 'Panel de inicio y resumen diario de progreso en Pro Fitness Glass' },
+        { src: '/entrenamiento.png', alt: 'Registro de entrenamientos, series, repeticiones y pesos en el gimnasio' },
+        { src: '/graficas.png', alt: 'Gráficas de evolución de fuerza, volumen y peso corporal' },
+        { src: '/nutrición.png', alt: 'Seguimiento nutricional de calorías, proteínas, carbohidratos, grasas e hidratación con IA' },
+        { src: '/social.png', alt: 'Comunidad fitness, ranking de amigos, rachas y retos semanales' },
+        { src: '/perfil.png', alt: 'Perfil de atleta con nivel XP, insignias desbloqueadas y récords personales' },
+        { src: '/ajustes.png', alt: 'Personalización de temas visuales Liquid Glass, Galaxia, OLED y acentos dinámicos' },
+        { src: '/mapa.png', alt: 'Mapa térmico anatómico de fatiga y recuperación muscular' }
     ];
 
     const scroll = (direction) => {
@@ -400,6 +401,14 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
     return (
         <div className="landing-page absolute inset-0 z-[100] bg-bg-primary overflow-hidden">
+            <Helmet>
+                <title>Pro Fitness Glass | App de Entrenamiento, Rutinas de Gimnasio y Nutrición con IA</title>
+                <meta
+                    name="description"
+                    content="Registra tus entrenamientos de gimnasio, crea rutinas inteligentes, controla calorías y macros con IA y sigue tu evolución física gratis en Pro Fitness Glass."
+                />
+                <link rel="canonical" href="https://pro-fitness-glass.zeabur.app/" />
+            </Helmet>
 
             {/* Fondo de cristal eliminado por optimización de rendimiento */}
 
