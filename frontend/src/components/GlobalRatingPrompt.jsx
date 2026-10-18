@@ -5,6 +5,7 @@ import AppRatingModal from './AppRatingModal';
 import { getMyRating } from '../services/ratingService';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const INITIAL_DELAY_MS = 2 * DAY_MS;
 const PROMPT_COOLDOWN_MS = 6 * DAY_MS;
 
 const GlobalRatingPrompt = ({ userProfile, canShow = true }) => {
@@ -21,7 +22,7 @@ const GlobalRatingPrompt = ({ userProfile, canShow = true }) => {
         const lastPromptKey = `last_rating_prompt_time_${userId}`;
 
         const checkPrompt = async () => {
-            const eligibleAt = registeredAt + DAY_MS;
+            const eligibleAt = registeredAt + INITIAL_DELAY_MS;
             const untilEligible = eligibleAt - Date.now();
             if (untilEligible > 0) {
                 timeoutId = setTimeout(checkPrompt, untilEligible);
