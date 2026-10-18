@@ -104,16 +104,10 @@ export default defineConfig({
       filename: 'sw.js',
       injectManifest: {
         globPatterns: [
-          'index.html',
-          'manifest.webmanifest',
+          '**/*.{js,css,html,ico,svg,webmanifest}',
           'favicon-32x32.png',
           'pwa-*.webp',
-          'logo.webp',
-          'assets/index-*.js',
-          'assets/index-*.css',
-          'assets/vendor-react-*.js',
-          'assets/vendor-icons-*.js',
-          'assets/Dashboard-*.js'
+          'logo.webp'
         ],
       },
       devOptions: {

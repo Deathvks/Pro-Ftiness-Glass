@@ -11,7 +11,7 @@ import db from './models/index.js';
 import errorHandler from './middleware/errorHandler.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
+import { exec } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -199,21 +199,24 @@ import chatController from './controllers/chatController.js';
 const isProductionDB = process.env.NODE_ENV === 'production' || !!process.env.MYSQL_HOST;
 (isProductionDB ? db.sequelize.authenticate() : db.sequelize.sync())
   .then(() => {
-    
-    if (process.env.NODE_ENV === 'production' || process.env.MYSQL_HOST) {
-      try {
-        console.log('Ejecutando migraciones pendientes en producción...');
-        execSync('npx --yes sequelize-cli db:migrate --env production', { stdio: 'inherit' });
-        console.log('Migraciones completadas exitosamente.');
-      } catch (err) {
-        console.error('Error al ejecutar migraciones automáticas:', err.message);
-      }
-    }
     httpServer.listen(PORT, () => {
       console.log(`🚀 Server (HTTP + Socket.io) running on port ${PORT}`);
     });
     startCronJobs();
-    
+
+    if (process.env.NODE_ENV === 'production' || process.env.MYSQL_HOST) {
+      console.log('Ejecutando migraciones pendientes en producción (en segundo plano)...');
+      exec('npx --yes sequelize-cli db:migrate --env production', (err, stdout, stderr) => {
+        if (stdout) console.log(stdout);
+        if (stderr) console.error(stderr);
+        if (err) {
+          console.error('Error al ejecutar migraciones automáticas:', err.message);
+        } else {
+          console.log('Migraciones completadas exitosamente.');
+        }
+      });
+    }
+
     // Retroactively send bot replies for "sin compromiso" users
     chatController.runRetroactiveBotReplies();
   })

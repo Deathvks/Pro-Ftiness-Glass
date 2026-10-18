@@ -203,9 +203,10 @@ export const createDataSlice = (set, get) => ({
               set(fastUpdate);
               writeInitialCache({ ...fastUpdate, cachedDate: today });
             }
-          }).catch((err) => console.error('Error en carga rápida inicial:', err))
-          .finally(() => {
-            // Fase 2 (Históricos pesados en segundo plano, justo después de liberar conexiones de Fase 1)
+          }).catch((err) => console.error('Error en carga rápida inicial:', err));
+
+          // Fase 2 (Históricos pesados en segundo plano)
+          setTimeout(() => {
             if (get().fetchUnreadChats) {
               get().fetchUnreadChats();
             }
@@ -230,7 +231,7 @@ export const createDataSlice = (set, get) => ({
                 writeInitialCache(heavyUpdate);
               }
             }).catch((err) => console.error('Error en carga de historial inicial:', err));
-          });
+          }, 150);
         } else if (get().fetchUnreadChats) {
           get().fetchUnreadChats();
         }
