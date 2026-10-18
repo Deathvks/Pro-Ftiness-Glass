@@ -36,9 +36,8 @@ const SidebarItem = ({ label, icon, isActive, onClick, onPreload, onIconClick, b
         <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]" />
       )}
       {badgeCount === 0 && badge && (
-        <span className="absolute -top-1 -right-2 w-2.5 h-2.5">
-          <span className="absolute inset-0 bg-accent rounded-full animate-pulse shadow-sm"></span>
-          <span className="absolute inset-0 bg-accent rounded-full animate-ping opacity-75"></span>
+        <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg] z-10">
+          <span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-75"></span>
         </span>
       )}
     </div>

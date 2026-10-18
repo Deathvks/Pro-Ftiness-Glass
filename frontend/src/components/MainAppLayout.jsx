@@ -1174,7 +1174,11 @@ export default function MainAppLayout({
                   <div className={`transition-transform duration-300 ${isVisuallyActive ? 'scale-125' : 'group-hover:scale-110'} relative`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
                     {typeof item.icon === 'function' ? item.icon(isVisuallyActive) : item.icon}
                     {pendingCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>}
-                    {pendingCount === 0 && item.badge && <span className="absolute -top-1 -right-2 w-2 h-2 bg-accent rounded-full animate-pulse shadow-[0_0_8px_var(--color-accent-transparent)]"></span>}
+                    {pendingCount === 0 && item.badge && (
+                      <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg] z-10">
+                        <span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-75"></span>
+                      </span>
+                    )}
                   </div>
                 </button>
               );

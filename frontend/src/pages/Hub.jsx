@@ -83,6 +83,7 @@ export default function Hub({ setView }) {
     }
     setHasOpenedTutorials(true);
     setShowTutorials(true);
+    window.dispatchEvent(new Event('hub-badges-updated'));
   };
 
   useEffect(() => {
@@ -182,6 +183,7 @@ export default function Hub({ setView }) {
                 onClick={() => {
                   localStorage.setItem(`visited_asesoria_${userProfile?.id}`, 'true');
                   setVisitedAsesoria(true);
+                  window.dispatchEvent(new Event('hub-badges-updated'));
                   setView('asesoria');
                 }}
                 badge={!visitedAsesoria || unreadChats > 0}
@@ -194,7 +196,14 @@ export default function Hub({ setView }) {
             icon={TrophyIcon}
             title="Retos y Misiones"
             description="Gana XP y sube de nivel"
-            onClick={() => setView('challenges')}
+            onClick={() => {
+              if (userProfile?.id) {
+                localStorage.setItem(`visited_challenges_v2_${userProfile.id}`, 'true');
+              }
+              setVisitedChallenges(true);
+              window.dispatchEvent(new Event('hub-badges-updated'));
+              setView('challenges');
+            }}
             badge={!visitedChallenges}
           />
 

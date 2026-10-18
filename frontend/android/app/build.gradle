@@ -7,8 +7,8 @@ android {
         applicationId "com.profitnessglass.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 473
-        versionName "7.6.9"
+        versionCode 474
+        versionName "7.7.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

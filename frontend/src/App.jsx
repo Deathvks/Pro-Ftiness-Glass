@@ -191,11 +191,29 @@ export default function App() {
     checkWelcomeModal: state.checkWelcomeModal,
   })));
 
+  const computeHasSeenAllHubHighlights = useCallback(() => {
+    if (!userProfile?.id) return true;
+    const uid = userProfile.id;
+    const hubSeen = localStorage.getItem(`visited_hub_${uid}`) === 'true';
+    const tutorialsSeen = localStorage.getItem(`tutorials_opened_from_hub_${uid}`) === 'true';
+    const challengesSeen = localStorage.getItem(`visited_challenges_v2_${uid}`) === 'true';
+    const asesoriaSeen = ['trainer', 'admin'].includes(userProfile?.role) || localStorage.getItem(`visited_asesoria_${uid}`) === 'true';
+    return hubSeen && tutorialsSeen && challengesSeen && asesoriaSeen;
+  }, [userProfile?.id, userProfile?.role]);
+
   useEffect(() => {
-    if (userProfile?.id) {
-      setVisitedHub(localStorage.getItem(`visited_hub_${userProfile.id}`) === 'true');
-    }
-  }, [userProfile?.id]);
+    if (!userProfile?.id) return;
+    const syncHubBadge = () => {
+      setVisitedHub(computeHasSeenAllHubHighlights());
+    };
+    syncHubBadge();
+    window.addEventListener('hub-badges-updated', syncHubBadge);
+    window.addEventListener('storage', syncHubBadge);
+    return () => {
+      window.removeEventListener('hub-badges-updated', syncHubBadge);
+      window.removeEventListener('storage', syncHubBadge);
+    };
+  }, [userProfile?.id, computeHasSeenAllHubHighlights]);
 
   const isInstalledApp = useMemo(() => {
     return Capacitor.isNativePlatform() || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
@@ -326,11 +344,11 @@ export default function App() {
   }, [myStories, navigateInternal]);
 
   useEffect(() => {
-    if (view === 'hub' && !visitedHub && userProfile?.id) {
+    if (view === 'hub' && userProfile?.id) {
       localStorage.setItem(`visited_hub_${userProfile.id}`, 'true');
-      setVisitedHub(true);
+      setVisitedHub(computeHasSeenAllHubHighlights());
     }
-  }, [view, visitedHub, userProfile?.id]);
+  }, [view, userProfile?.id, computeHasSeenAllHubHighlights]);
 
   const currentTitle = useMemo(() => {
     const titleMap = {

@@ -1,4 +1,4 @@
 {
-  "version": "7.6.9",
-  "releaseNotes": "Eliminación de las sombras alrededor de las notificaciones toast."
+  "version": "7.7.0",
+  "releaseNotes": "Indicador circular de color de acento en el icono del Hub (Navbar y Sidebar) mientras Tutoriales u otras secciones destacadas del Hub estén pendientes de abrir."
 }
