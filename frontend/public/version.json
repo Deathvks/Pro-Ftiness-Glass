@@ -1,4 +1,4 @@
 {
-  "version": "7.7.1",
-  "releaseNotes": "Optimización de recarga forzada (Ctrl+Shift+R): división de paquetes principales, precarga ligera del Service Worker, secuenciación de conexiones API y reintento automático de sockets bloqueados."
+  "version": "7.7.2",
+  "releaseNotes": "Alineación óptica perfecta de la insignia de rol junto al nombre de usuario en el Perfil Público y Perfil en escritorio y móvil."
 }

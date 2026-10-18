@@ -569,19 +569,19 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                     {(() => {
                         const roleConfig = getUserRoleRingConfig(profile, myProfile);
                         return (
-                            <>
-                                <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary mb-2 flex items-center justify-center gap-3 flex-wrap">
+                            <div className="mb-2 flex items-center justify-center gap-2.5 flex-wrap">
+                                <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary leading-none">
                                     {profile.username}
-                                    <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ring-1 ${roleConfig.badgeBg}`}>
-                                        {roleConfig.label}
-                                    </span>
-                                    {userStory && (
-                                        <span className="text-[10px] bg-accent text-accent-contrast px-2 py-1 rounded-full uppercase tracking-widest font-black shadow-md shadow-accent/30">
-                                            Historia
-                                        </span>
-                                    )}
                                 </h2>
-                            </>
+                                <span className={`inline-flex items-center justify-center text-[10px] sm:text-xs font-black uppercase tracking-wider leading-none px-2.5 py-1 rounded-full ring-1 translate-y-[1px] sm:translate-y-[2px] ${roleConfig.badgeBg}`}>
+                                    {roleConfig.label}
+                                </span>
+                                {userStory && (
+                                    <span className="inline-flex items-center justify-center text-[10px] bg-accent text-accent-contrast leading-none px-2.5 py-1 rounded-full uppercase tracking-widest font-black shadow-md shadow-accent/30 translate-y-[1px] sm:translate-y-[2px]">
+                                        Historia
+                                    </span>
+                                )}
+                            </div>
                         );
                     })()}
                     <p className="text-text-secondary text-sm font-medium flex items-center justify-center gap-2">

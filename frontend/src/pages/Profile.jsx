@@ -464,9 +464,9 @@ const Profile = ({ onCancel, setView, navigate }) => {
                   >
                       Editar foto
                   </button>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h1 className="text-2xl font-bold text-text-primary">{userProfile.username || 'Usuario'}</h1>
-                    <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ring-1 ${roleConfig.badgeBg}`}>
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <h1 className="text-2xl font-bold text-text-primary leading-none">{userProfile.username || 'Usuario'}</h1>
+                    <span className={`inline-flex items-center justify-center text-[10px] sm:text-[11px] font-black uppercase tracking-wider leading-none px-2.5 py-1 rounded-full ring-1 translate-y-[1px] sm:translate-y-[1.5px] ${roleConfig.badgeBg}`}>
                       {roleConfig.label}
                     </span>
                   </div>
