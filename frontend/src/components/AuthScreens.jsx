@@ -3,9 +3,15 @@ import React, { Suspense, lazy, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Spinner from './Spinner';
 
-// Lazy loading para optimizar carga inicial
-const LoginScreen = lazy(() => import('../pages/LoginScreen'));
-const RegisterScreen = lazy(() => import('../pages/RegisterScreen'));
+// Lazy loading con precarga inmediata cuando no hay sesión activa para evitar esperas en /login y /register
+const hasActiveToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('pro_fitness_token'));
+const loginChunkPromise = !hasActiveToken ? import('../pages/LoginScreen') : null;
+const registerChunkPromise = !hasActiveToken && typeof window !== 'undefined' && window.location.pathname.includes('register')
+  ? import('../pages/RegisterScreen')
+  : null;
+
+const LoginScreen = lazy(() => loginChunkPromise || import('../pages/LoginScreen'));
+const RegisterScreen = lazy(() => registerChunkPromise || import('../pages/RegisterScreen'));
 const ForgotPasswordScreen = lazy(() => import('../pages/ForgotPasswordScreen'));
 // ResetPasswordScreen se maneja independientemente en App.jsx por ruta directa,
 // pero lo mantenemos aquí como fallback de seguridad.

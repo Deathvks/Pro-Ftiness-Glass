@@ -17,15 +17,15 @@ const isNewerVersion = (current, remote) => {
   return false;
 };
 
-const VersionUpdater = () => {
-  const [isChunkError, setIsChunkError] = useState(false);
+const SWUpdaterCore = ({ initialChunkError }) => {
+  const [isChunkError, setIsChunkError] = useState(initialChunkError);
   const swRegRef = useRef(null);
   const isCheckingRef = useRef(false);
   const lastCheckTimeRef = useRef(0);
   const isReloadingRef = useRef(false);
 
   const triggerSafeReload = useCallback((targetVersion) => {
-    if (isReloadingRef.current) return;
+    if (isReloadingRef.current) return true;
     const { activeWorkout, workoutStartTime } = useAppStore.getState();
     // Si el usuario está en mitad de un entrenamiento activo, no recargamos de golpe sin avisar
     if (activeWorkout && workoutStartTime) {
@@ -239,6 +239,54 @@ const VersionUpdater = () => {
       </div>
     </div>
   </ModalPortal>;
+};
+
+const VersionUpdater = () => {
+  const [swReady, setSwReady] = useState(false);
+  const [initialChunkError, setInitialChunkError] = useState(false);
+
+  useEffect(() => {
+    let timerId;
+    const enableSW = () => {
+      timerId = setTimeout(() => setSwReady(true), 1200);
+    };
+
+    if (document.readyState === 'complete') {
+      enableSW();
+    } else {
+      window.addEventListener('load', enableSW, { once: true });
+    }
+
+    const handleError = (error) => {
+      const msg = error?.message || '';
+      const isChunkLoadError =
+        msg.includes('Loading chunk') ||
+        msg.includes('dynamically imported module') ||
+        msg.includes('MIME type');
+
+      if (isChunkLoadError) {
+        console.warn('ChunkLoadError detectado tempranamente.');
+        setInitialChunkError(true);
+        setSwReady(true);
+      }
+    };
+
+    const handleRejection = (e) => handleError(e.reason);
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleRejection);
+
+    return () => {
+      clearTimeout(timerId);
+      window.removeEventListener('load', enableSW);
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleRejection);
+    };
+  }, []);
+
+  if (!swReady && !initialChunkError) return null;
+
+  return <SWUpdaterCore initialChunkError={initialChunkError} />;
 };
 
 export default VersionUpdater;

@@ -80,6 +80,28 @@ registerRoute(
   })
 );
 
+// A2. Chunks secundarios con hash (/assets/*.js y /assets/*.css) -> StaleWhileRevalidate seguro
+registerRoute(
+  ({ url, request }) =>
+    url.origin === self.location.origin &&
+    url.pathname.startsWith('/assets/') &&
+    (request.destination === 'script' || request.destination === 'style' || /\.(js|css)$/i.test(url.pathname)),
+  new StaleWhileRevalidate({
+    cacheName: 'vite-hashed-assets',
+    plugins: [
+      {
+        cacheWillUpdate: async ({ response }) => {
+          if (!response || response.status !== 200) return null;
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('text/html')) return null;
+          return response;
+        },
+      },
+      new ExpirationPlugin({ maxEntries: 120, maxAgeSeconds: 30 * 24 * 60 * 60 }),
+    ],
+  })
+);
+
 // B. Imágenes estáticas LOCALES (logo, iconos, etc.)
 // IMPORTANTE: Excluimos '/uploads/', VÍDEOS y ORÍGENES EXTERNOS para evitar errores de CORS/Opaque.
 registerRoute(

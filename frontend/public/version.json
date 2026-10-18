@@ -1,4 +1,4 @@
 {
-  "version": "7.7.7",
-  "releaseNotes": "Detección y actualización automática de versión en Web y PWA al entrar, salir o navegar."
+  "version": "7.7.8",
+  "releaseNotes": "Optimización extrema de recarga forzada (Ctrl+Shift+R) en login/registro y precarga limpia del Service Worker."
 }
