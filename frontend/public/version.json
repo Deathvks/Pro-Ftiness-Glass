@@ -1,4 +1,4 @@
 {
-  "version": "7.8.7",
-  "releaseNotes": "Nuevo localizador de gimnasio en el Dashboard con búsqueda en tiempo real, detección GPS de cercanía y persistencia."
+  "version": "7.8.8",
+  "releaseNotes": "Priorización de gimnasios de España, búsqueda directa de Fitness Park Las Ramblas y mejoras en el buscador de centros."
 }
