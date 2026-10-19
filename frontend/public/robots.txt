@@ -1,5 +1,24 @@
 User-agent: *
-Allow: /
+Allow: /$
+Allow: /privacy
+Allow: /terms
 Disallow: /api/
+Disallow: /dashboard
+Disallow: /workout
+Disallow: /routines
+Disallow: /nutrition
+Disallow: /progress
+Disallow: /social
+Disallow: /settings
+Disallow: /profile
+Disallow: /admin
+Disallow: /login
+Disallow: /register
+Disallow: /forgotPassword
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /asesoria
+Disallow: /hub
+Disallow: /share/
 
-Sitemap: https://pro-fitness-glass.zeabur.app/sitemap.xml
+Sitemap: https://pro-fitness-glass.zeabur.app/sitemap.xml

@@ -106,6 +106,10 @@ const SharedRoutinePreview = () => {
   if (error || !routine) {
     return (
       <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-bg-primary p-6 text-center">
+        <Helmet>
+          <title>Rutina no disponible - Pro Fitness Glass</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
         <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mb-6 animate-bounce-slow">
           <AlertTriangle size={40} className="text-red-500" />
         </div>

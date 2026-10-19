@@ -1,5 +1,6 @@
 /* frontend/src/components/AuthScreens.jsx */
 import React, { Suspense, lazy, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import Spinner from './Spinner';
 
@@ -58,6 +59,9 @@ const AuthScreens = ({ authView, setAuthView }) => {
 
   return (
     <div className="flex flex-col min-h-screen bg-bg-primary animate-fade-in">
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="flex-grow flex flex-col">
         <Suspense
           fallback={

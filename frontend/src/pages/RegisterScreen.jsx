@@ -621,7 +621,7 @@ const RegisterScreen = ({ showLogin }) => {
 
     return (
         <>
-            <SEOHead title="Registrarse - Pro Fitness Glass" description="Crea tu cuenta gratis en Pro Fitness Glass." route="register" />
+            <SEOHead title="Registrarse - Pro Fitness Glass" description="Crea tu cuenta gratis en Pro Fitness Glass." route="register" noIndex={true} />
 
             <SplitLayout onShowPolicy={() => setShowPolicy(true)}>
                 <img src="/logo.webp" alt="Pro Fitness Glass Logo" className="w-16 h-16 sm:w-20 sm:h-20 lg:w-16 lg:h-16 mx-auto mb-2 sm:mb-3 lg:mb-2 object-contain drop-shadow-md transition-transform duration-500 hover:scale-105" />

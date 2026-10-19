@@ -38,6 +38,7 @@ const ForgotPasswordScreen = ({ showLogin }) => {
                 title="Recuperar Contraseña - Pro Fitness Glass" 
                 description="Recupera el acceso a tu cuenta de Pro Fitness Glass."
                 route="forgot-password"
+                noIndex={true}
             />
 
             <div className="auth-container flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
