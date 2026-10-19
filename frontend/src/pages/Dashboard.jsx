@@ -22,6 +22,7 @@ import BodyWeightModal from '../components/BodyWeightModal';
 import SugarTargetModal from '../components/SugarTargetModal';
 import GymLocationModal from '../components/GymLocationModal';
 import { enrichGymWithMedia } from '../utils/gymMedia';
+import { SpainFlag, CanariasFlag, isCanarias } from '../components/Flags';
 import { isSameDay } from '../utils/helpers';
 import useAppStore from '../store/useAppStore';
 import { getLevelProgress } from '../store/gamificationSlice';
@@ -687,6 +688,13 @@ const Dashboard = ({ setView }) => {
               <span className="truncate max-w-[190px] sm:max-w-[280px]">
                 {currentGym?.name || t('Localizar gimnasio', { defaultValue: 'Localizar gimnasio' })}
               </span>
+              {currentGym && (
+                isCanarias(currentGym) ? (
+                  <CanariasFlag className="w-3.5 h-2.5 hidden xs:inline-block" />
+                ) : (
+                  <SpainFlag className="w-3.5 h-2.5 hidden xs:inline-block" />
+                )
+              )}
               {currentGym?.distanceFormatted && (
                 <span className="text-[10px] text-accent font-bold bg-accent/15 px-1.5 py-0.5 rounded-full hidden xs:inline">
                   {currentGym.distanceFormatted}

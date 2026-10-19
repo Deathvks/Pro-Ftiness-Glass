@@ -1,4 +1,4 @@
 {
-  "version": "7.8.10",
-  "releaseNotes": "Corrección de alineación del borde de rol de usuario en la foto de perfil del sidebar al hacer hover."
+  "version": "7.8.11",
+  "releaseNotes": "Banderas vectoriales de España y Canarias, filtros territoriales y detección de gimnasios canarios."
 }
