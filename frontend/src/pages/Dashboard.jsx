@@ -7,7 +7,8 @@ import {
   Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints,
   Bike, Activity, Droplet, Beef, Zap, CheckCircle, XCircle,
   ArrowUp, ArrowDown, Minus, ChevronRight, Trophy as TrophyLucide, Check, Crown,
-  LayoutGrid, IceCream, TriangleAlert, Info, Share2, X, Loader2, Lock, List, Copy, ListFilter
+  LayoutGrid, IceCream, TriangleAlert, Info, Share2, X, Loader2, Lock, List, Copy, ListFilter,
+  MapPin
 } from 'lucide-react';
 import { FaChartPie, FaTrophy } from 'react-icons/fa';
 import { FaMeteor } from 'react-icons/fa6'; 
@@ -19,6 +20,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import GlassCard from '../components/GlassCard';
 import BodyWeightModal from '../components/BodyWeightModal';
 import SugarTargetModal from '../components/SugarTargetModal';
+import GymLocationModal from '../components/GymLocationModal';
 import { isSameDay } from '../utils/helpers';
 import useAppStore from '../store/useAppStore';
 import { getLevelProgress } from '../store/gamificationSlice';
@@ -226,6 +228,51 @@ const Dashboard = ({ setView }) => {
   const [streakCountdown, setStreakCountdown] = useState(null);
   const [selectedPR, setSelectedPR] = useState(null);
   const [isSharing, setIsSharing] = useState(false);
+  const [showGymModal, setShowGymModal] = useState(false);
+  const [currentGym, setCurrentGym] = useState(() => {
+    try {
+      const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
+      const saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
+    const loadGym = () => {
+      try {
+        const saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
+        setCurrentGym(saved ? JSON.parse(saved) : null);
+      } catch {
+        setCurrentGym(null);
+      }
+    };
+    loadGym();
+    window.addEventListener('storage', loadGym);
+    window.addEventListener('user-gym-updated', loadGym);
+    return () => {
+      window.removeEventListener('storage', loadGym);
+      window.removeEventListener('user-gym-updated', loadGym);
+    };
+  }, [userProfile?.id]);
+
+  const handleSaveGym = (gymData) => {
+    const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
+    localStorage.setItem(userKey, JSON.stringify(gymData));
+    localStorage.setItem('user_gym', JSON.stringify(gymData));
+    setCurrentGym(gymData);
+    window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: gymData }));
+  };
+
+  const handleRemoveGym = () => {
+    const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
+    localStorage.removeItem(userKey);
+    localStorage.removeItem('user_gym');
+    setCurrentGym(null);
+    window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: null }));
+  };
 
   const prCardRef = useRef(null);
   const weeklyRecapRef = useRef(null);
@@ -601,9 +648,31 @@ const Dashboard = ({ setView }) => {
               {userProfile?.username || t('Atleta', { defaultValue: 'Atleta' })}
             </span>
           </div>
-          <p className="text-xs font-bold text-text-secondary uppercase tracking-widest drop-shadow-md">
-            {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </p>
+          <div className="flex flex-wrap items-center gap-2 pt-0.5">
+            <p className="text-xs font-bold text-text-secondary uppercase tracking-widest drop-shadow-md">
+              {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
+            <span className="text-text-muted hidden sm:inline">•</span>
+            <button
+              onClick={() => setShowGymModal(true)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all duration-200 active:scale-95 group shadow-sm text-xs font-semibold ${
+                currentGym
+                  ? 'bg-accent/10 border-accent/30 text-text-primary hover:bg-accent/20 hover:border-accent/50'
+                  : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/10 text-text-secondary hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10'
+              }`}
+              title={currentGym ? `${currentGym.name}${currentGym.address ? ` - ${currentGym.address}` : ''}` : t('Localizar gimnasio', { defaultValue: 'Localizar gimnasio' })}
+            >
+              <MapPin className="w-3.5 h-3.5 text-accent shrink-0 group-hover:scale-110 transition-transform" />
+              <span className="truncate max-w-[190px] sm:max-w-[280px]">
+                {currentGym?.name || t('Localizar gimnasio', { defaultValue: 'Localizar gimnasio' })}
+              </span>
+              {currentGym?.distanceFormatted && (
+                <span className="text-[10px] text-accent font-bold bg-accent/15 px-1.5 py-0.5 rounded-full hidden xs:inline">
+                  {currentGym.distanceFormatted}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         <GlassCard
@@ -964,6 +1033,15 @@ const Dashboard = ({ setView }) => {
       {showWeightModal && <BodyWeightModal onClose={() => setShowWeightModal(false)} onSave={todaysWeightLog ? updateTodayBodyWeight : logBodyWeight} existingLog={todaysWeightLog} />}
       {modal.type === 'water' && <WaterLogModal initialQuantity={waterLog?.quantity_ml || 0} onSave={handleSaveWater} onClose={() => setModal({ type: null })} isLoading={modal.type === 'submitting'} />}
       {modal.type === 'creatine' && <CreatinaTracker onClose={() => { setModal({ type: null }); fetchDataForDate(new Date().toISOString().split('T')[0]); }} selectedDate={new Date().toISOString().split('T')[0]} />}
+      {showGymModal && (
+        <GymLocationModal
+          isOpen={showGymModal}
+          onClose={() => setShowGymModal(false)}
+          currentGym={currentGym}
+          onSave={handleSaveGym}
+          onRemove={handleRemoveGym}
+        />
+      )}
 
       <div style={{ position: 'fixed', left: '-20000px', top: '-20000px' }}>
         <div ref={weeklyRecapRef} style={{ width: '1080px', height: '1920px' }}>
