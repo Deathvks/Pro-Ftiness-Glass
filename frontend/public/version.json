@@ -1,4 +1,4 @@
 {
-  "version": "7.8.11",
-  "releaseNotes": "Banderas vectoriales de España y Canarias, filtros territoriales y detección de gimnasios canarios."
+  "version": "7.8.12",
+  "releaseNotes": "Ajuste definitivo del avatar en la barra lateral con coordenadas fijas y eliminación de desajustes en hover."
 }

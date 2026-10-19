@@ -7,24 +7,29 @@ import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 const StoryViewer = lazy(() => import('./StoryViewer'));
 const AIInfoModal = lazy(() => import('./AIInfoModal'));
 
-const SidebarItem = ({ label, icon, isActive, onClick, onPreload, onIconClick, badgeCount, isRed, shouldTruncate, className = '', isCollapsed, badge, scaleIcon = true }) => (
+const SidebarItem = ({ label, icon, isActive, onClick, onPreload, onIconClick, badgeCount, isRed, shouldTruncate, className = '', isCollapsed, badge, scaleIcon = true, disableTranslate = false }) => (
   <button
     onMouseEnter={onPreload}
     onTouchStart={onPreload}
     onClick={onClick}
     title={isCollapsed ? label : undefined}
-    className={`flex items-center w-full rounded-2xl text-[15px] font-semibold transition-all duration-300 group text-left overflow-hidden ${
+    className={`flex items-center w-full rounded-2xl text-[15px] font-semibold transition-colors duration-200 group text-left overflow-hidden ${
       isCollapsed ? 'justify-center p-3.5' : 'px-4 py-3.5 gap-4'
     } ${className} ${
       isRed
         ? 'text-text-secondary hover:bg-red-500/10 hover:text-red-500'
         : isActive
-        ? 'glass shadow-sm translate-x-1 text-text-primary'
-        : 'text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 hover:translate-x-1'
+        ? `glass shadow-sm text-text-primary ${disableTranslate ? '' : 'translate-x-1'}`
+        : `text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 ${disableTranslate ? '' : 'hover:translate-x-1'}`
     }`}
   >
     <div 
-        className={`relative flex items-center justify-center shrink-0 transition-transform duration-300 ${scaleIcon ? (isActive ? 'scale-110' : 'group-hover:scale-110 active:scale-95') : (isActive ? 'scale-100' : 'active:scale-95')}`} style={{ color: isActive ? 'var(--color-accent)' : undefined }}
+        className={`relative flex items-center justify-center shrink-0 ${
+          scaleIcon 
+            ? `transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110 active:scale-95'}` 
+            : 'active:scale-95'
+        }`} 
+        style={{ color: isActive ? 'var(--color-accent)' : undefined }}
         onClick={(e) => {
             if (onIconClick) {
                 e.stopPropagation();
@@ -90,21 +95,13 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
   };
 
   const getProfileIcon = () => {
-    if (imgError) {
-        return (
-            <div className={`rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-bg-secondary ${hasStories ? 'w-full h-full' : 'w-9 h-9 border border-glass-border'}`}>
-               <UserIcon className={`text-text-secondary ${hasStories ? 'w-[18px] h-[18px]' : 'w-5 h-5'}`} />
-            </div>
-        );
-    }
-
     const imageUrl = userProfile?.profile_image_url?.startsWith('http')
       ? userProfile.profile_image_url
       : userProfile?.profile_image_url 
         ? `${BACKEND_BASE_URL}${userProfile.profile_image_url}` 
         : null;
 
-    const InnerContent = imageUrl ? (
+    const InnerContent = (imageUrl && !imgError) ? (
       <img 
         key={imageUrl}
         src={imageUrl} 
@@ -112,8 +109,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
         className="w-full h-full object-cover rounded-full select-none pointer-events-none" 
         referrerPolicy="no-referrer"
         loading="eager"
-        onError={(e) => {
-            e.target.style.display = 'none'; 
+        onError={() => {
             setImgError(true);
         }}
       />
@@ -130,25 +126,28 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
         ? `${roleConfig.borderClass} ${roleConfig.glowClass}`
         : 'bg-accent shadow-md shadow-accent/40';
       return (
-        <div className={`w-10 h-10 rounded-full p-[2px] shrink-0 aspect-square flex items-center justify-center relative select-none transform-gpu transition-shadow duration-300 cursor-pointer ${storyRingClass} animate-pulse-slow`}>
-            <div className="w-full h-full rounded-full p-[1.5px] bg-bg-primary dark:bg-[#121214] overflow-hidden flex items-center justify-center">
-              <div className="w-full h-full rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
-                {InnerContent}
-              </div>
-            </div>
+        <div 
+          className="w-10 h-10 shrink-0 aspect-square relative select-none cursor-pointer"
+          title={`${userProfile?.username || 'Perfil'} • Historias sin ver`}
+        >
+          <div className={`absolute inset-0 rounded-full ${storyRingClass} animate-pulse-slow pointer-events-none`} />
+          <div className="absolute inset-[2px] rounded-full bg-bg-primary dark:bg-[#121214] pointer-events-none" />
+          <div className="absolute inset-[4px] rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
+            {InnerContent}
+          </div>
         </div>
       );
     }
 
     return (
       <div 
-        className={`w-10 h-10 rounded-full p-[2px] shrink-0 aspect-square flex items-center justify-center relative select-none transform-gpu transition-all duration-300 group-hover:brightness-105 ${roleConfig.borderClass} ${roleConfig.glowClass}`}
+        className="w-10 h-10 shrink-0 aspect-square relative select-none"
         title={`${userProfile?.username || 'Perfil'} • ${roleConfig.title}`}
       >
-        <div className="w-full h-full rounded-full p-[1.5px] bg-bg-primary dark:bg-[#121214] overflow-hidden flex items-center justify-center">
-          <div className="w-full h-full rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
-            {InnerContent}
-          </div>
+        <div className={`absolute inset-0 rounded-full ${roleConfig.borderClass} ${roleConfig.glowClass} pointer-events-none`} />
+        <div className="absolute inset-[2px] rounded-full bg-bg-primary dark:bg-[#121214] pointer-events-none" />
+        <div className="absolute inset-[4px] rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
+          {InnerContent}
         </div>
       </div>
     );
@@ -258,6 +257,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
                 shouldTruncate={true}
                 isCollapsed={isCollapsed}
                 scaleIcon={false}
+                disableTranslate={true}
             />
 
             <SidebarItem
