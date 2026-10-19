@@ -1,6 +1,6 @@
 {
   "name": "pro-ftiness-glass-backend",
-  "version": "7.8.8",
+  "version": "7.8.9",
   "description": "Backend for Pro Ftiness Glass",
   "main": "server.js",
   "type": "module",

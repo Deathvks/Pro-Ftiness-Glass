@@ -4,6 +4,7 @@ import ModalPortal from './ModalPortal';
 import useModalLock from '../hooks/useModalLock';
 import { MapPin, Search, X, Navigation, Dumbbell, Trash2, Check, Loader2, Sparkles, Building2 } from 'lucide-react';
 import { getCurrentLocation, calculateDistance, formatDistance } from '../utils/gpsUtils';
+import { enrichGymWithMedia } from '../utils/gymMedia';
 import { useToast } from '../hooks/useToast';
 
 // Base de datos de clubes de cadenas populares en España (Fitness Park, etc.) para búsqueda instantánea
@@ -250,7 +251,7 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
         const key = `${normalizeText(item.name)}_${item.lat?.toFixed(3)}_${item.lng?.toFixed(3)}`;
         if (!seen.has(key)) {
           seen.add(key);
-          uniqueResults.push(item);
+          uniqueResults.push(enrichGymWithMedia(item));
         }
       }
 
@@ -307,14 +308,18 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
   };
 
   const handleSelectGym = (gym) => {
-    const gymData = {
+    const gymData = enrichGymWithMedia({
       name: gym.name,
       address: gym.address,
       lat: gym.lat || null,
       lng: gym.lng || null,
       distanceFormatted: gym.distanceFormatted || null,
+      image: gym.image || null,
+      logo: gym.logo || null,
+      brand: gym.brand || null,
+      brandColor: gym.brandColor || null,
       updatedAt: new Date().toISOString()
-    };
+    });
     onSave(gymData);
     addToast(`Gimnasio guardado: ${gymData.name}`, 'success');
     onClose();
@@ -322,14 +327,14 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
 
   const handleSaveCustom = () => {
     if (!query.trim()) return;
-    const gymData = {
+    const gymData = enrichGymWithMedia({
       name: query.trim(),
       address: userCoords ? 'Ubicación personalizada' : '',
       lat: userCoords?.lat || null,
       lng: userCoords?.lng || null,
       isCustom: true,
       updatedAt: new Date().toISOString()
-    };
+    });
     onSave(gymData);
     addToast(`Gimnasio guardado: ${gymData.name}`, 'success');
     onClose();
@@ -340,6 +345,8 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
     addToast('Gimnasio desvinculado', 'info');
     onClose();
   };
+
+  const activeGym = currentGym ? enrichGymWithMedia(currentGym) : null;
 
   if (!isOpen) return null;
 
@@ -388,28 +395,75 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
             </button>
           </div>
 
-          {/* Gimnasio actual guardado (si existe) */}
-          {currentGym && (
-            <div className="mb-4 p-3.5 rounded-2xl bg-accent/5 border border-accent/20 flex items-center justify-between gap-3 shrink-0">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-accent/20 text-accent flex items-center justify-center shrink-0">
-                  <Check size={16} strokeWidth={3} />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-accent">Gimnasio actual</span>
-                  <h4 className="text-sm font-bold text-text-primary truncate">{currentGym.name}</h4>
-                  {currentGym.address && (
-                    <p className="text-xs text-text-secondary truncate">{currentGym.address}</p>
-                  )}
-                </div>
+          {/* Gimnasio actual guardado (con foto de club y logo oficial) */}
+          {activeGym && (
+            <div className="mb-4 relative rounded-2xl overflow-hidden border border-accent/30 shadow-lg group shrink-0">
+              {/* Imagen de fondo del club con gradiente */}
+              <div className="absolute inset-0">
+                <img
+                  src={activeGym.image}
+                  alt={activeGym.name}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/80 to-black/55 backdrop-blur-[0.5px]" />
               </div>
-              <button
-                onClick={handleRemoveCurrent}
-                className="p-2 rounded-xl text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
-                title="Quitar gimnasio"
-              >
-                <Trash2 size={16} />
-              </button>
+
+              {/* Contenido sobre la imagen */}
+              <div className="relative p-3.5 flex items-center justify-between gap-3 text-white">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="relative w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-1 flex items-center justify-center shrink-0 shadow-md overflow-hidden">
+                    {activeGym.logo ? (
+                      <img
+                        src={activeGym.logo}
+                        alt={activeGym.brand || 'Logo'}
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      style={{ display: activeGym.logo ? 'none' : 'flex' }}
+                      className="w-full h-full items-center justify-center text-accent"
+                    >
+                      <Dumbbell size={20} />
+                    </div>
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-accent bg-accent/25 px-2 py-0.5 rounded-full border border-accent/40 shadow-sm flex items-center gap-1">
+                        <Check size={11} strokeWidth={3} />
+                        Gimnasio habitual
+                      </span>
+                      {activeGym.distanceFormatted && (
+                        <span className="text-[10px] font-bold text-white/90 bg-white/15 px-1.5 py-0.5 rounded-full">
+                          {activeGym.distanceFormatted}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="text-sm font-bold text-white truncate drop-shadow-sm mt-1">
+                      {activeGym.name}
+                    </h4>
+                    {activeGym.address && (
+                      <p className="text-xs text-white/75 truncate drop-shadow-sm">
+                        {activeGym.address}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleRemoveCurrent}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-red-500/80 text-white/80 hover:text-white transition-all shrink-0 border border-white/10 hover:border-red-500 shadow-sm"
+                  title="Quitar gimnasio"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
           )}
 
@@ -487,13 +541,43 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
                   <button
                     key={gym.id}
                     onClick={() => handleSelectGym(gym)}
-                    className="w-full text-left p-3 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-accent/10 hover:border-accent/30 border border-transparent transition-all group flex items-center justify-between gap-3 active:scale-[0.98]"
+                    className="w-full text-left p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-accent/10 hover:border-accent/30 border border-transparent transition-all group flex items-center justify-between gap-3 active:scale-[0.98]"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-black/5 dark:bg-white/10 text-text-secondary group-hover:text-accent group-hover:bg-accent/20 flex items-center justify-center shrink-0 transition-colors">
-                        <Dumbbell size={16} />
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {/* Thumbnail con imagen real del gimnasio y badge de logo */}
+                      <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-black/10 dark:bg-white/10 border border-black/5 dark:border-white/10 shadow-sm">
+                        <img
+                          src={gym.image}
+                          alt={gym.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextElementSibling) {
+                              e.currentTarget.nextElementSibling.style.display = 'flex';
+                            }
+                          }}
+                        />
+                        <div
+                          style={{ display: 'none' }}
+                          className="w-full h-full items-center justify-center text-text-secondary bg-black/5 dark:bg-white/5"
+                        >
+                          <Dumbbell size={18} />
+                        </div>
+
+                        {gym.logo && (
+                          <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-md p-0.5 bg-bg-primary shadow border border-glass-border flex items-center justify-center overflow-hidden">
+                            <img
+                              src={gym.logo}
+                              alt=""
+                              className="w-full h-full object-contain"
+                              onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
                       </div>
-                      <div className="min-w-0">
+
+                      <div className="min-w-0 flex-1">
                         <h4 className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors truncate">
                           {gym.name}
                         </h4>
@@ -517,26 +601,41 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
             )}
 
             {/* Opción de guardar nombre personalizado si el usuario ha escrito */}
-            {query.trim().length >= 2 && (
-              <button
-                onClick={handleSaveCustom}
-                className="w-full mt-2 text-left p-3 rounded-2xl bg-accent/5 hover:bg-accent/15 border border-dashed border-accent/40 transition-all flex items-center gap-3 group active:scale-[0.98]"
-              >
-                <div className="w-8 h-8 rounded-xl bg-accent/20 text-accent flex items-center justify-center shrink-0">
-                  <Sparkles size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-accent">Personalizado</span>
-                  <h4 className="text-sm font-bold text-text-primary truncate">
-                    Usar "{query.trim()}" como mi gimnasio
-                  </h4>
-                  <p className="text-xs text-text-muted">
-                    Guarda este nombre directamente si tu centro no aparece en las sugerencias
-                  </p>
-                </div>
-                <Check size={16} className="text-accent shrink-0 group-hover:scale-110 transition-transform" />
-              </button>
-            )}
+            {query.trim().length >= 2 && (() => {
+              const customPreview = enrichGymWithMedia(query.trim());
+              return (
+                <button
+                  onClick={handleSaveCustom}
+                  className="w-full mt-2 text-left p-2.5 rounded-2xl bg-accent/5 hover:bg-accent/15 border border-dashed border-accent/40 transition-all flex items-center gap-3 group active:scale-[0.98]"
+                >
+                  <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-accent/20 border border-accent/30 shadow-sm">
+                    <img
+                      src={customPreview.image}
+                      alt=""
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                    {customPreview.logo && (
+                      <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-md p-0.5 bg-bg-primary shadow border border-glass-border flex items-center justify-center overflow-hidden">
+                        <img src={customPreview.logo} alt="" className="w-full h-full object-contain" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-accent flex items-center gap-1">
+                      <Sparkles size={11} />
+                      Personalizado
+                    </span>
+                    <h4 className="text-sm font-bold text-text-primary truncate">
+                      Usar "{query.trim()}" como mi gimnasio
+                    </h4>
+                    <p className="text-xs text-text-muted">
+                      Guarda este nombre directamente con su foto e icono
+                    </p>
+                  </div>
+                  <Check size={16} className="text-accent shrink-0 group-hover:scale-110 transition-transform" />
+                </button>
+              );
+            })()}
 
             {/* Estado vacío inicial */}
             {!isSearching && results.length === 0 && !query && (

@@ -21,6 +21,7 @@ import GlassCard from '../components/GlassCard';
 import BodyWeightModal from '../components/BodyWeightModal';
 import SugarTargetModal from '../components/SugarTargetModal';
 import GymLocationModal from '../components/GymLocationModal';
+import { enrichGymWithMedia } from '../utils/gymMedia';
 import { isSameDay } from '../utils/helpers';
 import useAppStore from '../store/useAppStore';
 import { getLevelProgress } from '../store/gamificationSlice';
@@ -233,7 +234,7 @@ const Dashboard = ({ setView }) => {
     try {
       const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
       const saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
-      return saved ? JSON.parse(saved) : null;
+      return saved ? enrichGymWithMedia(JSON.parse(saved)) : null;
     } catch {
       return null;
     }
@@ -244,7 +245,7 @@ const Dashboard = ({ setView }) => {
     const loadGym = () => {
       try {
         const saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
-        setCurrentGym(saved ? JSON.parse(saved) : null);
+        setCurrentGym(saved ? enrichGymWithMedia(JSON.parse(saved)) : null);
       } catch {
         setCurrentGym(null);
       }
@@ -260,10 +261,11 @@ const Dashboard = ({ setView }) => {
 
   const handleSaveGym = (gymData) => {
     const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
-    localStorage.setItem(userKey, JSON.stringify(gymData));
-    localStorage.setItem('user_gym', JSON.stringify(gymData));
-    setCurrentGym(gymData);
-    window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: gymData }));
+    const enriched = enrichGymWithMedia(gymData);
+    localStorage.setItem(userKey, JSON.stringify(enriched));
+    localStorage.setItem('user_gym', JSON.stringify(enriched));
+    setCurrentGym(enriched);
+    window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: enriched }));
   };
 
   const handleRemoveGym = () => {
@@ -662,7 +664,26 @@ const Dashboard = ({ setView }) => {
               }`}
               title={currentGym ? `${currentGym.name}${currentGym.address ? ` - ${currentGym.address}` : ''}` : t('Localizar gimnasio', { defaultValue: 'Localizar gimnasio' })}
             >
-              <MapPin className="w-3.5 h-3.5 text-accent shrink-0 group-hover:scale-110 transition-transform" />
+              {currentGym?.logo || currentGym?.image ? (
+                <span className="relative w-4 h-4 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/20 bg-black/5 flex items-center justify-center">
+                  <img
+                    src={currentGym.logo || currentGym.image}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      if (e.currentTarget.nextElementSibling) {
+                        e.currentTarget.nextElementSibling.style.display = 'inline-flex';
+                      }
+                    }}
+                  />
+                  <span style={{ display: 'none' }} className="w-full h-full items-center justify-center">
+                    <MapPin className="w-3 h-3 text-accent" />
+                  </span>
+                </span>
+              ) : (
+                <MapPin className="w-3.5 h-3.5 text-accent shrink-0 group-hover:scale-110 transition-transform" />
+              )}
               <span className="truncate max-w-[190px] sm:max-w-[280px]">
                 {currentGym?.name || t('Localizar gimnasio', { defaultValue: 'Localizar gimnasio' })}
               </span>
