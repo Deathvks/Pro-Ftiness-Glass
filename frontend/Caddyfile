@@ -18,9 +18,18 @@
         Expires "0"
     }
 
-    # Caché agresivo inmutable para los assets con hash generado por Vite
+    # Si se solicita un asset en /assets/* que NO existe físicamente en disco, devolver 404 inmediato.
+    # Evita que chunks obsoletos devuelvan index.html con código 200 y se guarden en caché como JS roto.
+    @missingAsset {
+        path /assets/*
+        not file
+    }
+    respond @missingAsset 404
+
+    # Caché agresivo inmutable SOLO para los assets que realmente existen en disco
     @staticAssets {
         path /assets/*
+        file
     }
     header @staticAssets {
         Cache-Control "public, max-age=31536000, immutable"
@@ -29,6 +38,6 @@
     # Activa el servidor de archivos estáticos.
     file_server
 
-    # Redirige todas las rutas a index.html para que funcione el enrutador de React.
+    # Redirige todas las rutas de navegación a index.html para que funcione el enrutador de React.
     try_files {path} /index.html
 }

@@ -31,6 +31,26 @@ const SWUpdaterCore = ({ initialChunkError }) => {
     if (activeWorkout && workoutStartTime) {
       return false;
     }
+
+    const now = Date.now();
+    const lastReloadTime = parseInt(sessionStorage.getItem('pfg_last_safe_reload_time') || '0', 10);
+    const reloadCount = parseInt(sessionStorage.getItem('pfg_reload_count') || '0', 10);
+
+    // Protección anti-bucle: si ya se recargó hace menos de 8 segundos, NUNCA volver a recargar automáticamente
+    if (now - lastReloadTime < 8000) {
+      console.warn('[VersionUpdater] Prevención de bucle: última recarga fue hace menos de 8s.');
+      return false;
+    }
+
+    // Si ya se ha intentado recargar 2 veces en 40 segundos, mostrar modal en vez de bucle infinito
+    if (reloadCount >= 2 && now - lastReloadTime < 40000) {
+      console.warn('[VersionUpdater] Límite de auto-recargas alcanzado (2 en 40s). Deteniendo bucle.');
+      return false;
+    }
+
+    sessionStorage.setItem('pfg_last_safe_reload_time', String(now));
+    sessionStorage.setItem('pfg_reload_count', String(reloadCount + 1));
+
     if (targetVersion) {
       const lastReloaded = sessionStorage.getItem('pfg_auto_reloaded_version');
       if (lastReloaded === targetVersion) {
@@ -132,7 +152,7 @@ const SWUpdaterCore = ({ initialChunkError }) => {
     const handleControllerChange = () => {
       if (refreshing || isReloadingRef.current) return;
       refreshing = true;
-      if (!triggerSafeReload()) {
+      if (!triggerSafeReload('controller_change')) {
         setNeedRefresh(true);
       }
     };
@@ -172,11 +192,13 @@ const SWUpdaterCore = ({ initialChunkError }) => {
       const isChunkLoadError =
         msg.includes('Loading chunk') ||
         msg.includes('dynamically imported module') ||
-        msg.includes('MIME type');
+        msg.includes('MIME type') ||
+        msg.includes('SyntaxError') ||
+        msg.includes('Unexpected token');
 
       if (isChunkLoadError) {
         console.warn('ChunkLoadError detectado: Versión desactualizada.');
-        if (!triggerSafeReload()) {
+        if (!triggerSafeReload('chunk_error')) {
           setIsChunkError(true);
           setNeedRefresh(true);
         }
@@ -218,16 +240,14 @@ const SWUpdaterCore = ({ initialChunkError }) => {
       }
       if ('caches' in window) {
         const names = await caches.keys();
-        await Promise.all(
-          names
-            .filter((n) => n.includes('precache') || n.includes('workbox') || n.includes('vite'))
-            .map((n) => caches.delete(n))
-        );
+        await Promise.all(names.map((n) => caches.delete(n)));
       }
     } catch (e) {
       console.warn('Error clearing caches on manual update', e);
     }
     sessionStorage.removeItem('pfg_auto_reloaded_version');
+    sessionStorage.removeItem('pfg_last_safe_reload_time');
+    sessionStorage.removeItem('pfg_reload_count');
     if (updateServiceWorker) {
       updateServiceWorker(true);
     }
