@@ -7,7 +7,7 @@ import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 const StoryViewer = lazy(() => import('./StoryViewer'));
 const AIInfoModal = lazy(() => import('./AIInfoModal'));
 
-const SidebarItem = ({ label, icon, isActive, onClick, onPreload, onIconClick, badgeCount, isRed, shouldTruncate, className = '', isCollapsed, badge }) => (
+const SidebarItem = ({ label, icon, isActive, onClick, onPreload, onIconClick, badgeCount, isRed, shouldTruncate, className = '', isCollapsed, badge, scaleIcon = true }) => (
   <button
     onMouseEnter={onPreload}
     onTouchStart={onPreload}
@@ -24,7 +24,7 @@ const SidebarItem = ({ label, icon, isActive, onClick, onPreload, onIconClick, b
     }`}
   >
     <div 
-        className={`relative flex items-center justify-center shrink-0 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110 active:scale-95'}`} style={{ color: isActive ? 'var(--color-accent)' : undefined }}
+        className={`relative flex items-center justify-center shrink-0 transition-transform duration-300 ${scaleIcon ? (isActive ? 'scale-110' : 'group-hover:scale-110 active:scale-95') : (isActive ? 'scale-100' : 'active:scale-95')}`} style={{ color: isActive ? 'var(--color-accent)' : undefined }}
         onClick={(e) => {
             if (onIconClick) {
                 e.stopPropagation();
@@ -109,7 +109,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
         key={imageUrl}
         src={imageUrl} 
         alt="Perfil" 
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover rounded-full select-none pointer-events-none" 
         referrerPolicy="no-referrer"
         loading="eager"
         onError={(e) => {
@@ -118,7 +118,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
         }}
       />
     ) : (
-      <div className="w-full h-full bg-bg-secondary flex items-center justify-center">
+      <div className="w-full h-full bg-bg-secondary flex items-center justify-center rounded-full">
         <UserIcon className={`text-text-secondary ${hasStories ? 'w-[18px] h-[18px]' : 'w-5 h-5'}`} />
       </div>
     );
@@ -130,7 +130,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
         ? `${roleConfig.borderClass} ${roleConfig.glowClass}`
         : 'bg-accent shadow-md shadow-accent/40';
       return (
-        <div className={`w-10 h-10 rounded-full p-[2px] shrink-0 transition-all duration-300 cursor-pointer ${storyRingClass} animate-pulse-slow`}>
+        <div className={`w-10 h-10 rounded-full p-[2px] shrink-0 aspect-square flex items-center justify-center relative select-none transform-gpu transition-shadow duration-300 cursor-pointer ${storyRingClass} animate-pulse-slow`}>
             <div className="w-full h-full rounded-full p-[1.5px] bg-bg-primary dark:bg-[#121214] overflow-hidden flex items-center justify-center">
               <div className="w-full h-full rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
                 {InnerContent}
@@ -142,7 +142,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
 
     return (
       <div 
-        className={`w-10 h-10 rounded-full p-[2px] shrink-0 transition-all duration-300 ${roleConfig.borderClass} ${roleConfig.glowClass}`}
+        className={`w-10 h-10 rounded-full p-[2px] shrink-0 aspect-square flex items-center justify-center relative select-none transform-gpu transition-all duration-300 group-hover:brightness-105 ${roleConfig.borderClass} ${roleConfig.glowClass}`}
         title={`${userProfile?.username || 'Perfil'} • ${roleConfig.title}`}
       >
         <div className="w-full h-full rounded-full p-[1.5px] bg-bg-primary dark:bg-[#121214] overflow-hidden flex items-center justify-center">
@@ -257,6 +257,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
                 onIconClick={hasStories ? () => setViewingStory(true) : undefined}
                 shouldTruncate={true}
                 isCollapsed={isCollapsed}
+                scaleIcon={false}
             />
 
             <SidebarItem

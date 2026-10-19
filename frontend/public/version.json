@@ -1,4 +1,4 @@
 {
-  "version": "7.8.9",
-  "releaseNotes": "Imágenes reales y logos de marcas oficiales en el buscador y guardado de gimnasios."
+  "version": "7.8.10",
+  "releaseNotes": "Corrección de alineación del borde de rol de usuario en la foto de perfil del sidebar al hacer hover."
 }
