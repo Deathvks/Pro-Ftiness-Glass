@@ -20,5 +20,8 @@ Disallow: /reset-password
 Disallow: /asesoria
 Disallow: /hub
 Disallow: /share/
+Disallow: /explore
+Disallow: /*?*from=
+Disallow: /*?*utm_
 
 Sitemap: https://pro-fitness-glass.zeabur.app/sitemap.xml

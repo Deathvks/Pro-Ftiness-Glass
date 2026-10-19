@@ -766,11 +766,27 @@ export default function App() {
         } />
          <Route path="/forgot-password" element={<Navigate to="/forgotPassword" replace />} />
 
+        {/* Rutas autenticadas conocidas: si no hay sesión activa, redirigen a /login */}
+        {[
+          '/dashboard', '/workout', '/routines', '/nutrition', '/progress',
+          '/social', '/hub', '/settings', '/profile', '/appearance',
+          '/support', '/socialLinks', '/challenges', '/physicalProfileEditor',
+          '/adminPanel', '/securityDashboard', '/trainerPanel', '/twoFactorSetup',
+          '/notifications', '/asesoria', '/quickCardio', '/active-cardio'
+        ].map(p => (
+          <Route
+            key={p}
+            path={p}
+            element={isAuthenticated ? AuthenticatedAppContent : <Navigate to="/login" replace />}
+          />
+        ))}
+
+        {/* Catch-all: Si está autenticado, lo maneja la app. Si no está autenticado, muestra NotFoundPage con noindex para evitar Soft 404 en Googlebot */}
         <Route path="/*" element={
             isAuthenticated ? (
                 AuthenticatedAppContent
             ) : (
-                <Navigate to="/login" replace />
+                <NotFoundPage navigate={(route) => navigate(`/${route}`)} />
             )
         } />
       </Routes>
