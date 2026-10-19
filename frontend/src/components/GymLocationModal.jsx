@@ -1,11 +1,11 @@
 /* frontend/src/components/GymLocationModal.jsx */
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ModalPortal from './ModalPortal';
 import useModalLock from '../hooks/useModalLock';
 import { MapPin, Search, X, Navigation, Dumbbell, Trash2, Check, Loader2, Sparkles, Building2 } from 'lucide-react';
 import { getCurrentLocation, calculateDistance, formatDistance } from '../utils/gpsUtils';
 import { enrichGymWithMedia } from '../utils/gymMedia';
-import { SpainFlag, CanariasFlag, isCanarias } from './Flags';
+import { SpainTerritoryBadge } from './Flags';
 import { useToast } from '../hooks/useToast';
 
 // Base de datos de clubes de cadenas populares en España (Fitness Park, etc.) para búsqueda instantánea
@@ -19,6 +19,10 @@ const POPULAR_SPAIN_GYMS = [
   { name: 'Fitness Park Gran Canaria - Carvajal', brand: 'Fitness Park', address: 'Calle Carvajal, 35004 Las Palmas de Gran Canaria', city: 'Las Palmas de Gran Canaria', province: 'Las Palmas', lat: 28.1189, lng: -15.4265 },
   { name: 'Fitness Park Tenerife - La Cuesta', brand: 'Fitness Park', address: 'Carretera General Santa Cruz-Laguna, 38320 San Cristóbal de La Laguna', city: 'La Laguna', province: 'Santa Cruz de Tenerife', lat: 28.4652, lng: -16.2913 },
   { name: 'Fitness Park Tenerife - Las Chafiras', brand: 'Fitness Park', address: 'Av. Ten Bel, Pol. Ind. Las Chafiras, 38639 San Miguel de Abona', city: 'Las Chafiras', province: 'Santa Cruz de Tenerife', lat: 28.0833, lng: -16.6358 },
+
+  // Islas Baleares
+  { name: 'Fitness Park Palma de Mallorca - Aragó', brand: 'Fitness Park', address: 'Carrer d\'Aragó, 231, 07008 Palma de Mallorca', city: 'Palma de Mallorca', province: 'Illes Balears', lat: 39.5828, lng: 2.6715 },
+  { name: 'McFIT Palma de Mallorca', brand: 'McFIT', address: 'Camí dels Reis, 308, 07010 Palma de Mallorca', city: 'Palma de Mallorca', province: 'Illes Balears', lat: 39.5962, lng: 2.6457 },
 
   // Madrid
   { name: 'Fitness Park La Vaguada', brand: 'Fitness Park', address: 'Centro Comercial La Vaguada, Av. de Monforte de Lemos, 36, 28029 Madrid', city: 'Madrid', province: 'Madrid', lat: 40.4795, lng: -3.7082 },
@@ -80,7 +84,6 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
-  const [regionFilter, setRegionFilter] = useState('all'); // 'all' | 'canarias' | 'spain'
   const [isSearching, setIsSearching] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [userCoords, setUserCoords] = useState(null);
@@ -93,80 +96,11 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
     if (isOpen) {
       setQuery('');
       setResults([]);
-      setRegionFilter('all');
       setSearchError(null);
       setLocationError(null);
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [isOpen]);
-
-  // Carga instantánea al seleccionar filtros rápidos territoriales sin búsqueda escrita
-  useEffect(() => {
-    if (!isOpen) return;
-    if (regionFilter === 'canarias' && !query.trim()) {
-      const canariasList = POPULAR_SPAIN_GYMS.filter(g => isCanarias(g)).map(g => {
-        let distanceMeters = null;
-        let distanceFormatted = null;
-        if (userCoords?.lat && userCoords?.lng) {
-          distanceMeters = calculateDistance(userCoords.lat, userCoords.lng, g.lat, g.lng);
-          distanceFormatted = formatDistance(distanceMeters);
-        }
-        return enrichGymWithMedia({
-          id: `canarias_${g.name}`,
-          name: g.name,
-          address: g.address,
-          city: g.city,
-          province: g.province,
-          lat: g.lat,
-          lng: g.lng,
-          distanceMeters,
-          distanceFormatted,
-          isVerified: true,
-        });
-      });
-      if (userCoords?.lat && userCoords?.lng) {
-        canariasList.sort((a, b) => (a.distanceMeters || 999999) - (b.distanceMeters || 999999));
-      }
-      setResults(canariasList);
-    } else if (regionFilter === 'spain' && !query.trim()) {
-      const spainList = POPULAR_SPAIN_GYMS.filter(g => !isCanarias(g)).map(g => {
-        let distanceMeters = null;
-        let distanceFormatted = null;
-        if (userCoords?.lat && userCoords?.lng) {
-          distanceMeters = calculateDistance(userCoords.lat, userCoords.lng, g.lat, g.lng);
-          distanceFormatted = formatDistance(distanceMeters);
-        }
-        return enrichGymWithMedia({
-          id: `spain_${g.name}`,
-          name: g.name,
-          address: g.address,
-          city: g.city,
-          province: g.province,
-          lat: g.lat,
-          lng: g.lng,
-          distanceMeters,
-          distanceFormatted,
-          isVerified: true,
-        });
-      });
-      if (userCoords?.lat && userCoords?.lng) {
-        spainList.sort((a, b) => (a.distanceMeters || 999999) - (b.distanceMeters || 999999));
-      }
-      setResults(spainList);
-    } else if (regionFilter === 'all' && !query.trim() && !userCoords) {
-      setResults([]);
-    }
-  }, [regionFilter, query, userCoords, isOpen]);
-
-  const displayedResults = useMemo(() => {
-    if (regionFilter === 'canarias') {
-      return results.filter(g => isCanarias(g));
-    }
-    if (regionFilter === 'spain') {
-      return results.filter(g => !isCanarias(g));
-    }
-    return results;
-  }, [results, regionFilter]);
 
   const searchGyms = async (queryText, coords = null) => {
     const q = (queryText || '').trim();
@@ -448,19 +382,10 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
                   <h3 className="text-xl font-black text-text-primary tracking-tight">
                     Localiza tu Gimnasio
                   </h3>
-                  <div className="flex items-center gap-1.5">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500/10 text-text-primary border border-red-500/20 text-[11px] font-bold shadow-xs">
-                      <SpainFlag className="w-3.5 h-2.5" />
-                      España
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/10 text-text-primary border border-blue-500/20 text-[11px] font-bold shadow-xs">
-                      <CanariasFlag className="w-3.5 h-2.5" />
-                      Canarias
-                    </span>
-                  </div>
+                  <SpainTerritoryBadge />
                 </div>
                 <p className="text-xs text-text-secondary mt-0.5">
-                  Guarda tu gym habitual en España o Canarias para tenerlo siempre a mano
+                  Búsqueda en tiempo real en toda España (Península, Canarias y Baleares)
                 </p>
               </div>
             </div>
@@ -517,17 +442,6 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
                         <Check size={11} strokeWidth={3} />
                         Gimnasio habitual
                       </span>
-                      {isCanarias(activeGym) ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-blue-500/40 border border-blue-400/50 px-2 py-0.5 rounded-full shadow-xs">
-                          <CanariasFlag className="w-3.5 h-2.5" />
-                          Canarias
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-red-500/40 border border-red-400/50 px-2 py-0.5 rounded-full shadow-xs">
-                          <SpainFlag className="w-3.5 h-2.5" />
-                          España
-                        </span>
-                      )}
                       {activeGym.distanceFormatted && (
                         <span className="text-[10px] font-bold text-white/90 bg-white/15 px-1.5 py-0.5 rounded-full">
                           {activeGym.distanceFormatted}
@@ -578,47 +492,6 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
               )}
             </div>
 
-            {/* Filtros rápidos territoriales (Canarias / Península) */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-              <button
-                type="button"
-                onClick={() => setRegionFilter('all')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all shrink-0 border ${
-                  regionFilter === 'all'
-                    ? 'bg-accent text-accent-contrast border-accent shadow-sm'
-                    : 'bg-black/5 dark:bg-white/5 border-glass-border text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                <span>Todos</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setRegionFilter('canarias')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all shrink-0 border ${
-                  regionFilter === 'canarias'
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                    : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/25 hover:bg-blue-500/20'
-                }`}
-              >
-                <CanariasFlag className="w-3.5 h-2.5" />
-                <span>Canarias</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setRegionFilter('spain')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all shrink-0 border ${
-                  regionFilter === 'spain'
-                    ? 'bg-red-600 text-white border-red-600 shadow-sm'
-                    : 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/25 hover:bg-red-500/20'
-                }`}
-              >
-                <SpainFlag className="w-3.5 h-2.5" />
-                <span>Península / Baleares</span>
-              </button>
-            </div>
-
             {/* Botón de Ubicación GPS */}
             <button
               onClick={handleDetectLocation}
@@ -652,7 +525,7 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
             {isSearching && (
               <div className="flex flex-col items-center justify-center py-8 text-text-muted gap-2">
                 <Loader2 size={24} className="animate-spin text-accent" />
-                <span className="text-xs">Buscando gimnasios en tiempo real en España y Canarias...</span>
+                <span className="text-xs">Buscando gimnasios en tiempo real en España, Canarias y Baleares...</span>
               </div>
             )}
 
@@ -662,22 +535,12 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
               </div>
             )}
 
-            {!isSearching && displayedResults.length > 0 && (
+            {!isSearching && results.length > 0 && (
               <div className="space-y-1.5">
-                <p className="text-[10px] font-black uppercase tracking-wider text-text-muted px-1 flex items-center justify-between">
-                  <span>Sugerencias encontradas ({displayedResults.length})</span>
-                  {regionFilter === 'canarias' && (
-                    <span className="text-blue-500 flex items-center gap-1 normal-case font-bold">
-                      <CanariasFlag className="w-3.5 h-2.5" /> Canarias
-                    </span>
-                  )}
-                  {regionFilter === 'spain' && (
-                    <span className="text-red-500 flex items-center gap-1 normal-case font-bold">
-                      <SpainFlag className="w-3.5 h-2.5" /> Península / Baleares
-                    </span>
-                  )}
+                <p className="text-[10px] font-black uppercase tracking-wider text-text-muted px-1">
+                  Sugerencias encontradas ({results.length})
                 </p>
-                {displayedResults.map((gym) => (
+                {results.map((gym) => (
                   <button
                     key={gym.id}
                     onClick={() => handleSelectGym(gym)}
@@ -718,22 +581,9 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <h4 className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors truncate">
-                            {gym.name}
-                          </h4>
-                          {isCanarias(gym) ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded-full shrink-0">
-                              <CanariasFlag className="w-3.5 h-2.5" />
-                              Canarias
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded-full shrink-0">
-                              <SpainFlag className="w-3.5 h-2.5" />
-                              España
-                            </span>
-                          )}
-                        </div>
+                        <h4 className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors truncate">
+                          {gym.name}
+                        </h4>
                         <p className="text-xs text-text-muted truncate">
                           {gym.address}
                         </p>
@@ -800,7 +650,7 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
                   Escribe el nombre de tu gimnasio
                 </p>
                 <p className="text-xs text-text-muted max-w-xs">
-                  Priorizando gimnasios en España con resultados en tiempo real, dirección y distancia por GPS.
+                  Búsqueda en tiempo real en toda España, Canarias y Baleares con fotos reales, marcas y distancia por GPS.
                 </p>
               </div>
             )}

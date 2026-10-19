@@ -38,6 +38,47 @@ export const CanariasFlag = ({ className = 'w-4 h-2.5' }) => (
 );
 
 /**
+ * Bandera oficial de las Islas Baleares en formato SVG vectorial
+ * (Senyera de 9 barras con cantón morado y castillo estilizado)
+ */
+export const BalearesFlag = ({ className = 'w-4 h-2.5' }) => (
+  <span className={`inline-flex items-center justify-center overflow-hidden rounded-[2.5px] shadow-xs border border-black/15 dark:border-white/20 shrink-0 ${className}`}>
+    <svg viewBox="0 0 750 500" className="w-full h-full block" aria-label="Bandera de las Islas Baleares">
+      {/* 9 barras: fondo amarillo con 4 franjas rojas */}
+      <rect width="750" height="500" fill="#FABD00" />
+      <rect y="55.55" width="750" height="55.55" fill="#AD1519" />
+      <rect y="166.66" width="750" height="55.55" fill="#AD1519" />
+      <rect y="277.77" width="750" height="55.55" fill="#AD1519" />
+      <rect y="388.88" width="750" height="55.55" fill="#AD1519" />
+      {/* Cantón morado superior izquierdo */}
+      <rect x="0" y="0" width="375" height="250" fill="#6B2D5C" />
+      {/* Castillo estilizado */}
+      <g transform="translate(187, 125) scale(0.9)" fill="#FFFFFF">
+        <rect x="-42" y="-12" width="84" height="48" rx="2" />
+        <rect x="-38" y="-32" width="18" height="24" rx="2" />
+        <rect x="-9" y="-42" width="18" height="34" rx="2" />
+        <rect x="20" y="-32" width="18" height="24" rx="2" />
+        <rect x="-8" y="16" width="16" height="20" rx="2" fill="#6B2D5C" />
+      </g>
+    </svg>
+  </span>
+);
+
+/**
+ * Distintivo informativo unificado que indica que la búsqueda cubre toda España, Canarias y Baleares
+ */
+export const SpainTerritoryBadge = ({ className = '' }) => (
+  <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-glass-border text-xs font-semibold text-text-secondary select-none ${className}`}>
+    <div className="flex items-center -space-x-1 shrink-0">
+      <SpainFlag className="w-4 h-2.5 z-30" />
+      <CanariasFlag className="w-4 h-2.5 z-20" />
+      <BalearesFlag className="w-4 h-2.5 z-10" />
+    </div>
+    <span className="text-[11px] font-bold text-text-primary tracking-tight">España • Canarias • Baleares</span>
+  </div>
+);
+
+/**
  * Detecta si un gimnasio o ubicación pertenece al archipiélago de Canarias
  * tanto por coordenadas geográficas como por palabras clave en nombre o dirección.
  */
