@@ -465,6 +465,7 @@ export const removeFriend = async (req, res) => {
 export const getFeed = async (req, res) => {
     try {
         const userId = req.user.userId;
+        const includeOlder = req.query.includeOlder === 'true' || req.query.all === 'true';
 
         // 1. Obtener IDs de amigos aceptados
         const friendships = await Friendship.findAll({
@@ -478,21 +479,34 @@ export const getFeed = async (req, res) => {
         const friendIds = friendships.map(f => f.requester_id === userId ? f.addressee_id : f.requester_id);
         const feedUserIds = [...friendIds, userId];
 
+        // Ventana estricta de 7 días hacia atrás para optimizar el rendimiento del muro
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+
+        const whereClause = {
+            user_id: { [Op.in]: feedUserIds },
+            [Op.or]: [
+                { visibility: 'friends' },
+                { visibility: 'public' },
+                { visibility: null }
+            ]
+        };
+
+        if (!includeOlder) {
+            whereClause.workout_date = {
+                [Op.gte]: sevenDaysAgo
+            };
+        }
+
         // 2. Buscar los logs de entrenamiento de esas personas
         const logs = await WorkoutLog.findAll({
-            where: {
-                user_id: { [Op.in]: feedUserIds },
-                [Op.or]: [
-                    { visibility: 'friends' },
-                    { visibility: 'public' },
-                    { visibility: null }
-                ]
-            },
+            where: whereClause,
             order: [
                 ['workout_date', 'DESC'], 
                 [{ model: WorkoutComment, as: 'Comments' }, 'created_at', 'ASC'] 
             ],
-            limit: 20, // REDUCIDO DE 30 A 20: Menos carga en BD y red
+            limit: includeOlder ? 50 : 25,
             include: [
                 {
                     model: User,
@@ -605,7 +619,28 @@ export const getFeed = async (req, res) => {
             };
         });
 
-        res.json(formattedFeed);
+        // Comprobar si existen publicaciones más antiguas de 7 días disponibles
+        let hasOlderPosts = false;
+        if (!includeOlder) {
+            const olderLog = await WorkoutLog.findOne({
+                where: {
+                    user_id: { [Op.in]: feedUserIds },
+                    workout_date: { [Op.lt]: sevenDaysAgo },
+                    [Op.or]: [
+                        { visibility: 'friends' },
+                        { visibility: 'public' },
+                        { visibility: null }
+                    ]
+                },
+                attributes: ['id']
+            });
+            hasOlderPosts = !!olderLog;
+        }
+
+        res.json({
+            feed: formattedFeed,
+            hasOlder: hasOlderPosts
+        });
     } catch (error) {
         console.error("Error en getFeed:", error);
         res.status(500).json({ error: error.message });

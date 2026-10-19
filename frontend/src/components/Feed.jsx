@@ -1,5 +1,5 @@
 /* frontend/src/components/Feed.jsx */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Activity, Clock, Zap, Heart, MessageCircle, Send, Trash2, Dumbbell, Download, Flame } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import GlassCard from './GlassCard';
@@ -24,6 +24,13 @@ const getFullImageUrl = (path) => {
     return `${SERVER_URL}${cleanPath}`;
 };
 
+const isOlderThan7Days = (dateString) => {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    const now = new Date();
+    return (now.getTime() - date.getTime()) > (7 * 24 * 60 * 60 * 1000);
+};
+
 const timeAgo = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -45,6 +52,11 @@ const formatDuration = (seconds) => {
 export default function Feed({ setView, visibleStories = [], myStories = [] }) {
     const [feed, setFeed] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [hasOlder, setHasOlder] = useState(false);
+    const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+    const [isShowingOlder, setIsShowingOlder] = useState(false);
+    const isShowingOlderRef = useRef(false);
+
     const [activeCommentInput, setActiveCommentInput] = useState({});
     const [showComments, setShowComments] = useState({});
     const [isActionLoading, setIsActionLoading] = useState(false);
@@ -54,24 +66,37 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
     const { showToast } = useToast();
     const { t } = useTranslation('exercise_names');
 
-    const loadFeed = async () => {
+    const loadFeed = async (includeOlder = false) => {
         try {
-            const data = await socialService.getFeed();
-            setFeed(data || []);
+            if (includeOlder) {
+                setIsLoadingOlder(true);
+            } else {
+                setIsLoading(true);
+            }
+
+            const data = await socialService.getFeed({ includeOlder });
+            const posts = Array.isArray(data) ? data : (data?.feed || []);
+            const olderAvailable = Array.isArray(data) ? false : !!data?.hasOlder;
+
+            setFeed(posts);
+            setHasOlder(olderAvailable);
+            setIsShowingOlder(includeOlder);
+            isShowingOlderRef.current = includeOlder;
         } catch (error) {
             console.error(error);
             showToast('Error al cargar el muro', 'error');
         } finally {
             setIsLoading(false);
+            setIsLoadingOlder(false);
         }
     };
 
     useEffect(() => {
-        loadFeed();
+        loadFeed(false);
         const socket = getSocket();
 
         if (socket) {
-            const handleFeedUpdate = () => loadFeed();
+            const handleFeedUpdate = () => loadFeed(isShowingOlderRef.current);
             socket.on('feed_update', handleFeedUpdate);
             return () => socket.off('feed_update', handleFeedUpdate);
         }
@@ -82,7 +107,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
         setIsActionLoading(true);
         try {
             await socialService.toggleLike(workoutId);
-            await loadFeed();
+            await loadFeed(isShowingOlderRef.current);
         } catch (error) {
             showToast('Error al dar me gusta', 'error');
         } finally {
@@ -100,7 +125,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
             await socialService.addComment(workoutId, text);
             setActiveCommentInput(prev => ({ ...prev, [workoutId]: '' }));
             setShowComments(prev => ({ ...prev, [workoutId]: true }));
-            await loadFeed();
+            await loadFeed(isShowingOlderRef.current);
         } catch (error) {
             showToast('Error al comentar', 'error');
         } finally {
@@ -113,7 +138,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
         setIsActionLoading(true);
         try {
             await socialService.deleteComment(commentToDelete.commentId);
-            await loadFeed();
+            await loadFeed(isShowingOlderRef.current);
             showToast('Comentario eliminado con éxito', 'success');
         } catch (error) {
             showToast('Error al borrar el comentario', 'error');
@@ -146,18 +171,32 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
     if (isLoading) return <div className="flex justify-center py-10"><Spinner size={30} /></div>;
     
     if (feed.length === 0) return (
-        <GlassCard className="glass text-center p-10 sm:p-16 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] mt-4">
-            <div className="w-20 h-20 mx-auto bg-black/5 dark:bg-white/5 rounded-[24px] flex items-center justify-center mb-6 text-text-muted">
-                <Activity size={32} />
+        <GlassCard className="glass text-center p-8 sm:p-14 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] mt-4">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-black/5 dark:bg-white/5 rounded-[24px] flex items-center justify-center mb-5 text-text-muted">
+                <Clock size={32} />
             </div>
-            <p className="text-lg font-bold text-text-primary">No hay actividad reciente</p>
-            <p className="text-sm font-medium text-text-secondary mt-2">¡Sigue a más amigos o registra tu primer entrenamiento!</p>
+            <p className="text-lg font-bold text-text-primary">Sin actividad en los últimos 7 días</p>
+            <p className="text-sm font-medium text-text-secondary mt-1.5 mb-6 max-w-sm mx-auto">
+                No hay entrenamientos recientes de tus amigos ni tuyos esta semana.
+            </p>
+            {hasOlder ? (
+                <button
+                    onClick={() => loadFeed(true)}
+                    disabled={isLoadingOlder}
+                    className="inline-flex items-center gap-2 px-6 py-3.5 bg-accent text-accent-contrast rounded-2xl font-bold text-sm hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-accent/20 disabled:opacity-50"
+                >
+                    {isLoadingOlder ? <Spinner size={16} /> : <Clock size={16} />}
+                    <span>Cargar más (publicaciones anteriores)</span>
+                </button>
+            ) : (
+                <p className="text-xs font-medium text-text-muted">¡Sigue a más amigos o registra tu primer entrenamiento!</p>
+            )}
         </GlassCard>
     );
 
     return (
         <div className="space-y-6 sm:space-y-8">
-            {feed.map(log => {
+            {feed.map((log, index) => {
                 const isMe = log.user_id === userProfile?.id;
                 const authorUser = isMe
                     ? { ...log.user, ...userProfile, role: userProfile?.role || log.user?.role, trainer_id: userProfile?.trainer_id ?? log.user?.trainer_id }
@@ -173,8 +212,24 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                 // Clases del borde: si tiene historia -> borde naranja (accent). Si no -> sin borde adicional.
                 const ringClass = hasStory ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : "";
 
+                // Indicador visual de publicaciones más antiguas de 7 días cuando se despliegan
+                const isOlder = isOlderThan7Days(log.workout_date);
+                const prevLog = index > 0 ? feed[index - 1] : null;
+                const prevIsOlder = prevLog ? isOlderThan7Days(prevLog.workout_date) : false;
+                const showOlderDivider = isShowingOlder && isOlder && (!prevLog || !prevIsOlder);
+
                 return (
-                    <GlassCard key={log.id} className="glass p-5 sm:p-6 md:p-8 flex flex-col gap-5 animate-[fade-in_0.3s_ease-out] border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] hover:shadow-xl transition-all duration-300">
+                    <React.Fragment key={log.id}>
+                        {showOlderDivider && (
+                            <div className="flex items-center gap-3 py-2 my-2 animate-[fade-in_0.3s_ease-out]">
+                                <div className="flex-1 h-px bg-black/10 dark:bg-white/10"></div>
+                                <span className="text-[11px] sm:text-xs font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5 px-3.5 py-1.5 bg-black/5 dark:bg-white/5 rounded-full ring-1 ring-black/5 dark:ring-white/10">
+                                    <Clock size={13} className="text-accent" /> Publicaciones de más de 7 días
+                                </span>
+                                <div className="flex-1 h-px bg-black/10 dark:bg-white/10"></div>
+                            </div>
+                        )}
+                        <GlassCard className="glass p-5 sm:p-6 md:p-8 flex flex-col gap-5 animate-[fade-in_0.3s_ease-out] border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] hover:shadow-xl transition-all duration-300">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4 cursor-pointer group" onClick={() => goToProfile(log.user_id)}>
                                 <UserAvatar 
@@ -373,8 +428,34 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                             </div>
                         )}
                     </GlassCard>
+                </React.Fragment>
                 );
             })}
+
+            {hasOlder && !isShowingOlder && (
+                <div className="flex flex-col items-center justify-center pt-2 pb-6">
+                    <button
+                        onClick={() => loadFeed(true)}
+                        disabled={isLoadingOlder}
+                        className="flex items-center gap-2 px-6 py-3.5 bg-black/5 dark:bg-white/5 hover:bg-accent hover:text-accent-contrast text-text-primary rounded-2xl font-bold text-sm transition-all duration-300 shadow-sm hover:shadow-lg disabled:opacity-50 ring-1 ring-black/5 dark:ring-white/10 active:scale-95"
+                    >
+                        {isLoadingOlder ? (
+                            <>
+                                <Spinner size={16} />
+                                <span>Cargando publicaciones anteriores...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Clock size={16} />
+                                <span>Cargar más (publicaciones anteriores)</span>
+                            </>
+                        )}
+                    </button>
+                    <p className="text-[11px] font-medium text-text-muted mt-2">
+                        Mostrando últimos 7 días para un rendimiento óptimo
+                    </p>
+                </div>
+            )}
 
             {commentToDelete && (
                 <ConfirmationModal

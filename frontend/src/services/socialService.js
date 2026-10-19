@@ -90,8 +90,13 @@ const socialService = {
 
     // --- FEED / MURO ---
 
-    getFeed: async () => {
-        return await apiClient('/social/feed');
+    getFeed: async (params = {}) => {
+        const query = new URLSearchParams();
+        if (params && params.includeOlder) {
+            query.append('includeOlder', 'true');
+        }
+        const qs = query.toString() ? `?${query.toString()}` : '';
+        return await apiClient(`/social/feed${qs}`);
     },
 
     toggleLike: async (workoutId) => {
