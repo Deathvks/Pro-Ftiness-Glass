@@ -105,7 +105,7 @@ const CalculatedMacrosGraph = ({ calories, protein, carbs, fats, sugars }) => {
             <div className="flex flex-col sm:flex-row items-center gap-6">
                 <div className="relative w-28 h-28 shrink-0">
                     <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90">
-                        <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="currentColor" className="text-glass-border" strokeWidth="6" />
+                        <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="currentColor" className="text-black/10 dark:text-white/10 transition-colors duration-300" strokeWidth="6" />
                         {totalMacroCals > 0 && (
                             <>
                                 <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#ef4444" strokeWidth="6" strokeDasharray={`${Math.max(0, pPct)} ${100 - Math.max(0, pPct)}`} strokeDashoffset="0" className="transition-all duration-500 ease-out" />

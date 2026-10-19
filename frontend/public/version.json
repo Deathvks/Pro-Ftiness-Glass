@@ -1,4 +1,4 @@
 {
-  "version": "7.8.5",
-  "releaseNotes": "Ajuste de posición y tamaño del indicador de notificaciones del menú/hub para evitar superposición con el icono."
+  "version": "7.8.6",
+  "releaseNotes": "Adaptación dinámica de los fondos y pistas sin rellenar de los anillos de progreso de nutrición a todos los temas (Ocean, Desert, Galaxy, OLED, Light, Dark)."
 }

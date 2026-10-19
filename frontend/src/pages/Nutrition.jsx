@@ -891,7 +891,7 @@ const Nutrition = ({ setView, navParams }) => {
                                 <div className="flex flex-col items-center justify-center py-2 animate-[fade-in_0.3s_ease-out]" onClick={() => setHoveredMacro(null)}>
                                     <div className="relative w-48 h-48 sm:w-56 sm:h-56 mb-8">
                                         <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90 drop-shadow-lg">
-                                            <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="currentColor" className="text-glass-border opacity-50" strokeWidth="4" />
+                                            <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="currentColor" className="text-black/10 dark:text-white/10 transition-colors duration-300" strokeWidth="4" />
 
                                             {totalMacroCals > 0 && (
                                                 <>

@@ -22,14 +22,9 @@ const CircularProgress = ({ value, maxValue, label, icon, color, displayText, pu
             {/* CAMBIO: Aplicamos animate-pulse al contenedor común para sincronización perfecta */}
             <div className={`relative w-24 h-24 ${pulse ? 'animate-pulse' : ''}`}>
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                    {/* Fondo del círculo */}
-                    {/* CORRECCIÓN OLED: 
-                        - Light: gray-200
-                        - Dark: gray-800
-                        - OLED: text-white/10 (Blanco al 10% para un borde sutil visible sobre fondo negro)
-                    */}
+                    {/* Fondo del círculo adaptable a todos los temas (Ocean, Desert, Galaxy, OLED, Light, Dark) */}
                     <circle
-                        className="text-gray-200 dark:text-gray-800 [.oled-theme_&]:text-white/10 transition-colors duration-300"
+                        className="text-black/10 dark:text-white/10 transition-colors duration-300"
                         strokeWidth="8"
                         stroke="currentColor"
                         fill="transparent"
