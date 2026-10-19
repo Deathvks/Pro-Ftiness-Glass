@@ -1,4 +1,4 @@
 {
-  "version": "7.8.4",
-  "releaseNotes": "Corrección de bucles de recarga en caliente, protección de caché inmutable para assets obsoletos en servidor Caddy y blindaje del Service Worker."
+  "version": "7.8.5",
+  "releaseNotes": "Ajuste de posición y tamaño del indicador de notificaciones del menú/hub para evitar superposición con el icono."
 }
