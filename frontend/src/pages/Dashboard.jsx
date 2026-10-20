@@ -387,30 +387,41 @@ const Dashboard = ({ setView }) => {
   }, [sortedWeightLog, userProfile?.goal]);
 
   const { weeklySessions, weeklyTimeDisplay, weeklyCalories, weekDays, weeklyRecapData } = useMemo(() => {
-    const today = new Date();
-    const day = today.getDay();
-    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-    const startOfWeek = new Date(today.getFullYear(), today.getMonth(), diff);
-    startOfWeek.setHours(0, 0, 0, 0);
+    try {
+      const today = new Date();
+      const day = today.getDay();
+      const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+      const startOfWeek = new Date(today.getFullYear(), today.getMonth(), diff);
+      startOfWeek.setHours(0, 0, 0, 0);
 
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(startOfWeek);
-      d.setDate(startOfWeek.getDate() + i);
-      return d;
-    });
+      const days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(startOfWeek);
+        d.setDate(startOfWeek.getDate() + i);
+        return d;
+      });
 
-    const logs = workoutLog.filter(log => new Date(log.workout_date) >= startOfWeek);
-    const seconds = logs.reduce((acc, log) => acc + log.duration_seconds, 0);
-    const volume = logs.reduce((acc, log) => acc + (log.total_volume || 0), 0);
-    const calories = logs.reduce((acc, log) => acc + (log.calories_burned || 0), 0);
+      const logs = (workoutLog || []).filter(log => log && log.workout_date && new Date(log.workout_date) >= startOfWeek);
+      const seconds = logs.reduce((acc, log) => acc + (Number(log?.duration_seconds) || 0), 0);
+      const volume = logs.reduce((acc, log) => acc + (Number(log?.total_volume) || 0), 0);
+      const calories = logs.reduce((acc, log) => acc + (Number(log?.calories_burned) || 0), 0);
 
-    return {
-      weekDays: days,
-      weeklySessions: logs.length,
-      weeklyCalories: calories,
-      weeklyTimeDisplay: seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${(seconds / 3600).toFixed(1)} h`,
-      weeklyRecapData: { totalVolume: volume, totalWorkouts: logs.length, totalDuration: seconds, totalCalories: calories }
-    };
+      return {
+        weekDays: days,
+        weeklySessions: logs.length,
+        weeklyCalories: calories,
+        weeklyTimeDisplay: seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${(seconds / 3600).toFixed(1)} h`,
+        weeklyRecapData: { totalVolume: volume, totalWorkouts: logs.length, totalDuration: seconds, totalCalories: calories }
+      };
+    } catch (e) {
+      console.warn('[Dashboard] Error en weeklyRecap calculations:', e);
+      return {
+        weekDays: [],
+        weeklySessions: 0,
+        weeklyCalories: 0,
+        weeklyTimeDisplay: '0 min',
+        weeklyRecapData: { totalVolume: 0, totalWorkouts: 0, totalDuration: 0, totalCalories: 0 }
+      };
+    }
   }, [workoutLog]);
 
   const hasWeeklyData = weeklySessions > 0;
@@ -418,15 +429,24 @@ const Dashboard = ({ setView }) => {
   const canOpenWeeklyRecap = hasWeeklyData && isWeeklyRecapUnlocked;
 
   const latestPRs = useMemo(() => {
-    if (!Array.isArray(personalRecords) || personalRecords.length === 0) return [];
+    try {
+      if (!Array.isArray(personalRecords) || personalRecords.length === 0) return [];
 
-    const validRecords = personalRecords.filter(r => r.date);
-    if (validRecords.length === 0) return [];
+      const validRecords = personalRecords.filter(r => r && r.date);
+      if (validRecords.length === 0) return [];
 
-    const sorted = [...validRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
-    const latestDate = sorted[0].date.split('T')[0];
+      const sorted = [...validRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
+      const firstDateStr = String(sorted[0]?.date || '');
+      const latestDate = firstDateStr.includes('T') ? firstDateStr.split('T')[0] : firstDateStr;
 
-    return sorted.filter(r => r.date.split('T')[0] === latestDate);
+      return sorted.filter(r => {
+        const dStr = String(r?.date || '');
+        return (dStr.includes('T') ? dStr.split('T')[0] : dStr) === latestDate;
+      });
+    } catch (e) {
+      console.warn('[Dashboard] Error en latestPRs:', e);
+      return [];
+    }
   }, [personalRecords]);
 
   const prShareData = useMemo(() => {

@@ -88,105 +88,118 @@ const DashboardInsights = ({ setView }) => {
     let totalProgressingCount = 0;
     let totalWarningCount = 0;
 
-    if (!Array.isArray(routines) || routines.length === 0 || !Array.isArray(workoutLog) || workoutLog.length === 0) {
-      return {
-        progressingByRoutine,
-        warningsByRoutine,
-        totalProgressingCount: 0,
-        totalWarningCount: 0
-      };
-    }
+    try {
+      if (!Array.isArray(routines) || routines.length === 0 || !Array.isArray(workoutLog) || workoutLog.length === 0) {
+        return {
+          progressingByRoutine,
+          warningsByRoutine,
+          totalProgressingCount: 0,
+          totalWarningCount: 0
+        };
+      }
 
-    routines.forEach((routine) => {
-      const routineExercises =
-        routine.RoutineExercises || routine.exercises || [];
-      if (!Array.isArray(routineExercises) || routineExercises.length === 0) return;
+      routines.forEach((routine) => {
+        try {
+          if (!routine) return;
+          const routineExercises =
+            routine.RoutineExercises || routine.exercises || [];
+          if (!Array.isArray(routineExercises) || routineExercises.length === 0) return;
 
-      const routineProgressing = [];
-      const routineWarnings = [];
-      const seenNames = new Set();
+          const routineProgressing = [];
+          const routineWarnings = [];
+          const seenNames = new Set();
 
-      routineExercises.forEach((ex) => {
-        const exerciseName = (ex?.name || ex?.exercise_name || '').trim();
-        if (!exerciseName) return;
-        const normKey = exerciseName.toLowerCase();
-        if (seenNames.has(normKey)) return;
-        seenNames.add(normKey);
+          routineExercises.forEach((ex) => {
+            try {
+              const exerciseName = (ex?.name || ex?.exercise_name || '').trim();
+              if (!exerciseName) return;
+              const normKey = exerciseName.toLowerCase();
+              if (seenNames.has(normKey)) return;
+              seenNames.add(normKey);
 
-        const allSessions = getExerciseHistorySessions(
-          exerciseName,
-          workoutLog,
-          routine.id,
-          routine.name
-        );
-        const rCtx = allSessions.routineContext;
-        const targetSessions = rCtx?.sameRoutineSessions || [];
+              const allSessions = getExerciseHistorySessions(
+                exerciseName,
+                workoutLog,
+                routine.id,
+                routine.name
+              );
+              const rCtx = allSessions?.routineContext;
+              const targetSessions = rCtx?.sameRoutineSessions || [];
 
-        // Solo evaluamos ejercicios que ya tienen historial registrado en esta rutina
-        if (!targetSessions || targetSessions.length === 0) return;
+              // Solo evaluamos ejercicios que ya tienen historial registrado en esta rutina
+              if (!targetSessions || targetSessions.length === 0) return;
 
-        const diagnosedTrend = diagnoseExerciseTrend(targetSessions, routine.id);
-        const lastApplied = getAppliedCoachStrategy(
-          exerciseName,
-          routine.id,
-          routine.name
-        );
-        const followUp = evaluateExerciseFollowUpAndRecovery({
-          exerciseName,
-          sessions: targetSessions,
-          allSessions,
-          routineContext: rCtx,
-          currentTrend: diagnosedTrend,
-          lastApplied,
-          userProfile
-        });
+              const diagnosedTrend = diagnoseExerciseTrend(targetSessions, routine.id);
+              const lastApplied = getAppliedCoachStrategy(
+                exerciseName,
+                routine.id,
+                routine.name
+              );
+              const followUp = evaluateExerciseFollowUpAndRecovery({
+                exerciseName,
+                sessions: targetSessions,
+                allSessions,
+                routineContext: rCtx,
+                currentTrend: diagnosedTrend,
+                lastApplied,
+                userProfile
+              });
 
-                if (followUp?.isInactive || followUp?.isWarning) {
-          routineWarnings.push({
-            name: exerciseName,
-            isInactive: Boolean(followUp?.isInactive),
-            badge: followUp?.badgeShort || (followUp?.isInactive ? 'Inactividad' : 'Aviso'),
-            timeAgoText: followUp?.timeAgoText || null
+              if (followUp?.isInactive || followUp?.isWarning) {
+                routineWarnings.push({
+                  name: exerciseName,
+                  isInactive: Boolean(followUp?.isInactive),
+                  badge: followUp?.badgeShort || (followUp?.isInactive ? 'Inactividad' : 'Aviso'),
+                  timeAgoText: followUp?.timeAgoText || null
+                });
+                totalWarningCount++;
+              } else if (followUp?.isOkGreen || diagnosedTrend?.isProgressing) {
+                routineProgressing.push({
+                  name: exerciseName,
+                  badge:
+                    diagnosedTrend?.isProgressing && diagnosedTrend?.badgeText
+                      ? diagnosedTrend.badgeText
+                      : followUp?.badgeShort || '¡OK Verde!'
+                });
+                totalProgressingCount++;
+              } else if (diagnosedTrend?.isWarning) {
+                routineWarnings.push({
+                  name: exerciseName,
+                  isInactive: false,
+                  badge: 'Aviso',
+                  timeAgoText: null
+                });
+                totalWarningCount++;
+              }
+            } catch (exErr) {
+              console.warn('[DashboardInsights] Error procesando ejercicio individual:', exErr);
+            }
           });
-          totalWarningCount++;
-        } else if (followUp?.isOkGreen || diagnosedTrend?.isProgressing) {
-          routineProgressing.push({
-            name: exerciseName,
-            badge:
-              diagnosedTrend?.isProgressing && diagnosedTrend?.badgeText
-                ? diagnosedTrend.badgeText
-                : followUp?.badgeShort || '¡OK Verde!'
-          });
-          totalProgressingCount++;
-        } else if (diagnosedTrend?.isWarning) {
-          routineWarnings.push({
-            name: exerciseName,
-            isInactive: false,
-            badge: 'Aviso',
-            timeAgoText: null
-          });
-          totalWarningCount++;
+
+          if (routineProgressing.length > 0) {
+            progressingByRoutine.push({
+              routine,
+              routineId: routine.id,
+              routineName: routine.name,
+              exercises: routineProgressing
+            });
+          }
+
+          if (routineWarnings.length > 0) {
+            warningsByRoutine.push({
+              routine,
+              routineId: routine.id,
+              routineName: routine.name,
+              exercises: routineWarnings
+            });
+          }
+        } catch (rErr) {
+          console.warn('[DashboardInsights] Error procesando rutina:', rErr);
         }
       });
-
-      if (routineProgressing.length > 0) {
-        progressingByRoutine.push({
-          routine,
-          routineId: routine.id,
-          routineName: routine.name,
-          exercises: routineProgressing
-        });
-      }
-
-      if (routineWarnings.length > 0) {
-        warningsByRoutine.push({
-          routine,
-          routineId: routine.id,
-          routineName: routine.name,
-          exercises: routineWarnings
-        });
-      }
-    });
+    } catch (summaryErr) {
+      console.warn('[DashboardInsights] Error en exerciseTrackingSummary:', summaryErr);
+    }
 
     return {
       progressingByRoutine,
@@ -198,70 +211,80 @@ const DashboardInsights = ({ setView }) => {
 
   // 2. EVALUACIÓN DE NUTRICIÓN SEGÚN EL MODAL DE SEGUIMIENTO NUTRICIONAL
   const nutritionTracking = useMemo(() => {
-    const { gender, age, height, activity_level = 1.2, goal } = userProfile || {};
-    let calorieTarget = 2000;
-    let proteinTarget = Math.round(latestWeight * (goal === 'gain' ? 2.0 : 1.8));
-    let waterTarget = Math.round(latestWeight * 35);
-    let sugarTarget = 50;
+    try {
+      const { gender, age, height, activity_level = 1.2, goal } = userProfile || {};
+      let calorieTarget = 2000;
+      let proteinTarget = Math.round(latestWeight * (goal === 'gain' ? 2.0 : 1.8));
+      let waterTarget = Math.round(latestWeight * 35);
+      let sugarTarget = 50;
 
-    if (latestWeight && height && age && gender && goal) {
-      const bmr =
-        10 * latestWeight +
-        6.25 * height -
-        5 * age +
-        (gender === 'male' ? 5 : -161);
-      let cal = Math.round(bmr * activity_level);
-      if (goal === 'lose') cal -= 500;
-      if (goal === 'gain') cal += 500;
-      const protMult = goal === 'gain' ? 2.0 : goal === 'lose' ? 1.8 : 1.6;
-      calorieTarget = cal;
-      proteinTarget = Math.round(latestWeight * protMult);
-      waterTarget = Math.round(latestWeight * 35);
-      sugarTarget = Math.round((cal * 0.1) / 4);
+      if (latestWeight && height && age && gender && goal) {
+        const bmr =
+          10 * latestWeight +
+          6.25 * height -
+          5 * age +
+          (gender === 'male' ? 5 : -161);
+        let cal = Math.round(bmr * activity_level);
+        if (goal === 'lose') cal -= 500;
+        if (goal === 'gain') cal += 500;
+        const protMult = goal === 'gain' ? 2.0 : goal === 'lose' ? 1.8 : 1.6;
+        calorieTarget = cal;
+        proteinTarget = Math.round(latestWeight * protMult);
+        waterTarget = Math.round(latestWeight * 35);
+        sugarTarget = Math.round((cal * 0.1) / 4);
+      }
+
+      const totals = (nutritionLog || []).reduce(
+        (acc, log) => ({
+          calories: acc.calories + (Number(log?.calories) || 0),
+          protein: acc.protein + (parseFloat(log?.protein_g) || 0),
+          carbs: acc.carbs + (parseFloat(log?.carbs_g) || 0),
+          fats: acc.fats + (parseFloat(log?.fats_g) || 0),
+          sugar: acc.sugar + (parseFloat(log?.sugars_g || log?.sugar_g) || 0)
+        }),
+        { calories: 0, protein: 0, carbs: 0, fats: 0, sugar: 0 }
+      );
+
+      const hasAnyNutritionActivity =
+        (nutritionLog && nutritionLog.length > 0) ||
+        (waterLog?.quantity_ml || 0) > 0 ||
+        (todaysCreatineLog && todaysCreatineLog.length > 0);
+
+      const plan = generateSmartNutritionCoachPlan({
+        userProfile,
+        totals,
+        targets: {
+          calorieTarget,
+          proteinTarget,
+          waterTarget,
+          sugarTarget
+        },
+        waterLog,
+        todaysCreatineLog,
+        nutritionLog,
+        latestWeight
+      });
+
+      const optimalPillars = (plan?.pillars || []).filter(
+        (p) => p.status === 'optimal'
+      );
+      const warningPillars = (plan?.pillars || []).filter((p) => p.isWarning);
+
+      return {
+        plan,
+        hasAnyNutritionActivity,
+        optimalPillars,
+        warningPillars
+      };
+    } catch (e) {
+      console.warn('[DashboardInsights] Error en nutritionTracking:', e);
+      return {
+        plan: null,
+        hasAnyNutritionActivity: false,
+        optimalPillars: [],
+        warningPillars: []
+      };
     }
-
-    const totals = (nutritionLog || []).reduce(
-      (acc, log) => ({
-        calories: acc.calories + (Number(log.calories) || 0),
-        protein: acc.protein + (parseFloat(log.protein_g) || 0),
-        carbs: acc.carbs + (parseFloat(log.carbs_g) || 0),
-        fats: acc.fats + (parseFloat(log.fats_g) || 0),
-        sugar: acc.sugar + (parseFloat(log.sugars_g || log.sugar_g) || 0)
-      }),
-      { calories: 0, protein: 0, carbs: 0, fats: 0, sugar: 0 }
-    );
-
-    const hasAnyNutritionActivity =
-      (nutritionLog && nutritionLog.length > 0) ||
-      (waterLog?.quantity_ml || 0) > 0 ||
-      (todaysCreatineLog && todaysCreatineLog.length > 0);
-
-    const plan = generateSmartNutritionCoachPlan({
-      userProfile,
-      totals,
-      targets: {
-        calorieTarget,
-        proteinTarget,
-        waterTarget,
-        sugarTarget
-      },
-      waterLog,
-      todaysCreatineLog,
-      nutritionLog,
-      latestWeight
-    });
-
-    const optimalPillars = (plan?.pillars || []).filter(
-      (p) => p.status === 'optimal'
-    );
-    const warningPillars = (plan?.pillars || []).filter((p) => p.isWarning);
-
-    return {
-      plan,
-      hasAnyNutritionActivity,
-      optimalPillars,
-      warningPillars
-    };
   }, [
     userProfile,
     nutritionLog,

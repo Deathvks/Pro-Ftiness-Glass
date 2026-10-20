@@ -1,4 +1,4 @@
 {
-  "version": "7.8.19",
-  "releaseNotes": "Corrección de importación de Layers y ChevronDown en DashboardInsights."
+  "version": "7.8.20",
+  "releaseNotes": "Invalidación automática de caché entre versiones, blindaje de ErrorBoundary y prevención de bucles en Android."
 }

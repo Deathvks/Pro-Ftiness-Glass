@@ -3,11 +3,18 @@ import * as authService from '../services/authService';
 import * as userService from '../services/userService';
 import { APP_VERSION } from '../config/version';
 
+const CACHE_VERSION_KEY = 'pfg_cache_version';
 const INITIAL_CACHE_KEY = 'pfg_cached_initial_state_v1';
 
 const getCachedUserProfile = () => {
     try {
         if (!localStorage.getItem('pro_fitness_token')) return null;
+        const cachedVer = localStorage.getItem(CACHE_VERSION_KEY);
+        if (cachedVer !== APP_VERSION) {
+            localStorage.removeItem(INITIAL_CACHE_KEY);
+            localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
+            return null;
+        }
         const raw = localStorage.getItem(INITIAL_CACHE_KEY);
         if (!raw) return null;
         const parsed = JSON.parse(raw);
@@ -349,6 +356,12 @@ export const createAuthSlice = (set, get) => {
     checkWelcomeModal: () => {
         const lastSeenVersion = localStorage.getItem('lastSeenVersion');
         if (lastSeenVersion !== APP_VERSION) {
+            // Versión actualizada: limpiar caché previa para garantizar hidratación limpia desde el backend
+            localStorage.removeItem(INITIAL_CACHE_KEY);
+            localStorage.removeItem('pfg_crash_loop_count');
+            localStorage.removeItem('pfg_auto_reloaded_version');
+            localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
+            sessionStorage.clear();
             set({ showWelcomeModal: true });
         }
     },
@@ -356,6 +369,7 @@ export const createAuthSlice = (set, get) => {
     // Cierra el modal de bienvenida
     closeWelcomeModal: () => {
         localStorage.setItem('lastSeenVersion', APP_VERSION);
+        localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
         set({ showWelcomeModal: false });
     },
 

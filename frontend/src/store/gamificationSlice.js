@@ -1,5 +1,8 @@
 /* frontend/src/store/gamificationSlice.js */
 import apiClient from '../services/apiClient';
+import { APP_VERSION } from '../config/version';
+
+const CACHE_VERSION_KEY = 'pfg_cache_version';
 
 // --- HELPER PARA FECHAS ---
 const normalizeDate = (dateInput) => {
@@ -41,6 +44,8 @@ export const getLevelProgress = (currentXp, currentLevel) => {
 const readCachedGamification = () => {
     try {
         if (typeof window === 'undefined' || !localStorage.getItem('pro_fitness_token')) return null;
+        const cachedVer = localStorage.getItem(CACHE_VERSION_KEY);
+        if (cachedVer !== APP_VERSION) return null;
         const raw = localStorage.getItem('pfg_cached_initial_state_v1');
         if (!raw) return null;
         const parsed = JSON.parse(raw);

@@ -122,6 +122,11 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
 
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading && !isInitialLoad) {
+      // La aplicación ha cargado correctamente: limpiamos el contador de fallos recurrentes
+      try {
+        localStorage.removeItem('pfg_crash_loop_count');
+      } catch {}
+
       const isVerifiedDefined = userProfile.is_verified !== undefined && userProfile.is_verified !== null;
       
       if (isVerifiedDefined && userProfile.is_verified === false) {

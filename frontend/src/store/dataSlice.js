@@ -10,17 +10,28 @@ import * as templateRoutineService from '../services/templateRoutineService';
 import * as creatinaService from '../services/creatinaService';
 import * as exerciseService from '../services/exerciseService';
 import * as personalRecordService from '../services/personalRecordService';
+import { APP_VERSION } from '../config/version';
 
 let initialFetchInFlight = null;
 
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
+const CACHE_VERSION_KEY = 'pfg_cache_version';
 const INITIAL_CACHE_KEY = 'pfg_cached_initial_state_v1';
 let lastDateFetchInfo = { date: null, timestamp: 0 };
 
 const readInitialCache = () => {
   try {
     if (typeof window === 'undefined' || !localStorage.getItem('pro_fitness_token')) return null;
+    const cachedVer = localStorage.getItem(CACHE_VERSION_KEY);
+    if (cachedVer !== APP_VERSION) {
+      // Invalida la caché previa tras una actualización de versión para evitar inconsistencias de esquema
+      localStorage.removeItem(INITIAL_CACHE_KEY);
+      localStorage.removeItem('profitness_insights_expanded');
+      localStorage.removeItem('pfg_auto_reloaded_version');
+      localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
+      return null;
+    }
     const raw = localStorage.getItem(INITIAL_CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
@@ -33,6 +44,7 @@ const readInitialCache = () => {
 const writeInitialCache = (partial) => {
   try {
     if (typeof window === 'undefined' || !localStorage.getItem('pro_fitness_token')) return;
+    localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
     const existing = readInitialCache() || {};
     const merged = {
       ...existing,

@@ -3,6 +3,7 @@ import ModalPortal from './ModalPortal';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { Capacitor } from '@capacitor/core';
 import { APP_VERSION } from '../config/version';
 import useAppStore from '../store/useAppStore';
 
@@ -288,6 +289,12 @@ const SWUpdaterCore = ({ initialChunkError }) => {
 };
 
 const VersionUpdater = () => {
+  // En aplicaciones nativas (Android APK / Capacitor), las actualizaciones se gestionan mediante el paquete APK nativo.
+  // Desactivamos el Service Worker updater para evitar bucles o interferencias en el WebView.
+  if (Capacitor.isNativePlatform()) {
+    return null;
+  }
+
   const [swReady, setSwReady] = useState(false);
   const [initialChunkError, setInitialChunkError] = useState(false);
 
