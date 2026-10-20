@@ -286,7 +286,24 @@ const DashboardInsights = ({ setView }) => {
     setView('nutrition', { reopenNutritionCoach: true });
   };
 
+  const [isExpanded, setIsExpanded] = useState(() => {
+    try {
+      const saved = localStorage.getItem('profitness_insights_expanded');
+      return saved !== null ? saved === 'true' : false;
+    } catch {
+      return false;
+    }
+  });
 
+  const handleToggleExpanded = (val) => {
+    setIsExpanded((prev) => {
+      const next = typeof val === 'boolean' ? val : !prev;
+      try {
+        localStorage.setItem('profitness_insights_expanded', String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   const {
     progressingByRoutine,
@@ -303,7 +320,17 @@ const DashboardInsights = ({ setView }) => {
     totalProgressingCount === 0 &&
     totalWarningCount === 0;
 
+  const hasGreenProgress =
+    totalProgressingCount > 0 ||
+    Boolean(nutritionPlan?.isOptimal) ||
+    (hasAnyNutritionActivity && optimalPillars.length > 0);
 
+  const totalCardsCount = [
+    totalProgressingCount > 0,
+    totalWarningCount > 0,
+    Boolean(nutritionPlan),
+    showWelcomeCard
+  ].filter(Boolean).length || 1;
 
   return (
     <div className="w-full flex flex-col gap-3.5 animate-[fade-in_0.4s_ease-out]">
