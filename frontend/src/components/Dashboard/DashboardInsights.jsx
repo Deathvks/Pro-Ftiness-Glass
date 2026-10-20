@@ -13,7 +13,9 @@ import {
   Salad,
   Sparkles,
   Clock,
-  Calendar
+  Calendar,
+  ChevronDown,
+  Layers
 } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';

@@ -1,4 +1,4 @@
 {
-  "version": "7.8.18",
-  "releaseNotes": "Corrección de ReferenceError isExpanded en DashboardInsights y persistencia del estado solapado."
+  "version": "7.8.19",
+  "releaseNotes": "Corrección de importación de Layers y ChevronDown en DashboardInsights."
 }
