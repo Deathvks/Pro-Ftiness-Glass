@@ -1,4 +1,4 @@
 {
-  "version": "7.8.16",
-  "releaseNotes": "Eliminación completa del acordeón y botones redundantes de estirar en Seguimiento y Progreso: tarjetas fijas, limpias y siempre visibles en el dashboard."
+  "version": "7.8.17",
+  "releaseNotes": "Restaurado el diseño de tarjetas solapadas en el dashboard con una única acción limpia para desplegar y solapar sin controles redundantes."
 }

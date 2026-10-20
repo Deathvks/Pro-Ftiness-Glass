@@ -307,23 +307,189 @@ const DashboardInsights = ({ setView }) => {
 
   return (
     <div className="w-full flex flex-col gap-3.5 animate-[fade-in_0.4s_ease-out]">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 mb-1 px-1">
-        <div className="flex items-center gap-2.5">
+      <div className="flex items-center justify-between gap-2 mb-1 px-1">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-8 h-8 rounded-xl bg-accent/15 border border-accent/25 flex items-center justify-center text-accent shrink-0 shadow-sm">
             <Lightbulb size={18} strokeWidth={2.5} />
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-lg sm:text-xl font-extrabold text-text-primary tracking-tight">
-              Seguimiento y Progreso
-            </h3>
-            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
-              Entrenamiento y Nutrición
-            </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-lg sm:text-xl font-extrabold text-text-primary tracking-tight">
+                Seguimiento y Progreso
+              </h3>
+              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
+                Entrenamiento y Nutrición
+              </span>
+            </div>
           </div>
         </div>
+
+        {/* Único botón de cabecera solo cuando está desplegado para volver a solapar */}
+        {isExpanded && (
+          <button
+            type="button"
+            onClick={() => handleToggleExpanded(false)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-text-secondary hover:text-text-primary border border-glass-border transition-all active:scale-95 cursor-pointer shrink-0"
+            aria-label="Solapar tarjetas"
+          >
+            <Layers size={13} className="text-accent shrink-0" />
+            <span>Solapar</span>
+          </button>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-[fade-in_0.25s_ease-out]">
+      {!isExpanded ? (
+        /* VISTA DE TARJETAS SOLAPADAS CON PROFUNDIDAD Y UN SOLO ACCIÓN */
+        <div
+          onClick={() => handleToggleExpanded(true)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleToggleExpanded(true);
+            }
+          }}
+          className="relative pb-3 cursor-pointer group select-none transition-transform duration-300 active:scale-[0.99]"
+        >
+          {/* Capa 2 inferior solapada */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-5 bottom-0 h-10 rounded-[26px] glass transition-all duration-300 group-hover:translate-y-1 opacity-40 scale-[0.95] ring-1 ring-glass-border bg-bg-secondary/70 shadow-sm"
+          />
+
+          {/* Capa 1 intermedia solapada */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-2.5 bottom-1.5 h-10 rounded-[26px] glass transition-all duration-300 group-hover:translate-y-0.5 opacity-70 scale-[0.98] ring-1 ring-glass-border bg-bg-secondary/90 shadow-sm"
+          />
+
+          {/* Tarjeta principal solapada */}
+          <GlassCard
+            className={`glass relative z-10 flex flex-col gap-3 p-4 sm:p-5 rounded-[26px] border-none shadow-lg transition-all duration-300 ring-1 group-hover:shadow-xl group-hover:ring-accent/40 ${
+              totalWarningCount > 0 || (nutritionPlan?.isWarning && hasAnyNutritionActivity)
+                ? 'ring-amber-500/40 bg-amber-500/10'
+                : hasGreenProgress
+                ? 'ring-emerald-500/35 bg-emerald-500/10'
+                : 'ring-accent/35 bg-accent/10'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`p-2.5 rounded-[16px] shrink-0 ring-1 ${
+                    totalWarningCount > 0 || (nutritionPlan?.isWarning && hasAnyNutritionActivity)
+                      ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 ring-amber-500/30'
+                      : hasGreenProgress
+                      ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-emerald-500/30'
+                      : 'bg-accent/20 text-accent ring-accent/30'
+                  }`}
+                >
+                  {totalWarningCount > 0 || (nutritionPlan?.isWarning && hasAnyNutritionActivity) ? (
+                    <AlertTriangle size={20} strokeWidth={2.5} />
+                  ) : hasGreenProgress ? (
+                    <CheckCircle2 size={20} strokeWidth={2.5} />
+                  ) : (
+                    <Dumbbell size={20} strokeWidth={2.5} />
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-text-muted flex items-center gap-1.5 mb-0.5">
+                    <Layers size={11} className="text-accent shrink-0" />
+                    <span>{totalCardsCount > 1 ? `${totalCardsCount} tarjetas solapadas` : 'Tarjetas solapadas'}</span>
+                  </span>
+                  <h4 className="text-sm sm:text-base font-black text-text-primary leading-tight truncate">
+                    {totalProgressingCount > 0 && totalWarningCount > 0
+                      ? `${totalProgressingCount} en verde y ${totalWarningCount} ${
+                          totalWarningCount === 1 ? 'aviso' : 'avisos'
+                        } en rutinas`
+                      : totalWarningCount > 0
+                      ? `${totalWarningCount} ${
+                          totalWarningCount === 1
+                            ? 'ejercicio requiere'
+                            : 'ejercicios requieren'
+                        } ajuste en tus rutinas`
+                      : totalProgressingCount > 0
+                      ? `¡Mejorando en ${totalProgressingCount} ${
+                          totalProgressingCount === 1 ? 'ejercicio' : 'ejercicios'
+                        }!`
+                      : 'Estado de tu entrenamiento y nutrición de hoy'}
+                  </h4>
+                </div>
+              </div>
+
+              {/* Único botón indicador en la tarjeta solapada */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent text-accent-contrast text-xs font-black shadow-sm group-hover:brightness-110 transition-all shrink-0">
+                <span>Desplegar</span>
+                <ChevronDown size={14} className="shrink-0 group-hover:translate-y-0.5 transition-transform" />
+              </div>
+            </div>
+
+            {/* Píldoras de resumen del contenido solapado */}
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              {totalProgressingCount > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[11px] font-extrabold">
+                  <CheckCircle2 size={12} className="shrink-0" />
+                  <span>
+                    {totalProgressingCount}{' '}
+                    {totalProgressingCount === 1 ? 'ejercicio' : 'ejercicios'} en verde
+                  </span>
+                </span>
+              )}
+
+              {totalWarningCount > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px] font-extrabold">
+                  <AlertTriangle size={12} className="shrink-0" />
+                  <span>
+                    {totalWarningCount}{' '}
+                    {totalWarningCount === 1 ? 'aviso' : 'avisos'} en rutinas
+                  </span>
+                </span>
+              )}
+
+              {showWelcomeCard && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-accent/15 ring-1 ring-accent/30 text-accent text-[11px] font-extrabold">
+                  <Dumbbell size={12} className="shrink-0" />
+                  <span>Inicia una rutina para activar seguimiento</span>
+                </span>
+              )}
+
+              {nutritionPlan && (
+                <>
+                  {nutritionPlan.isOptimal ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[11px] font-extrabold">
+                      <Sparkles size={12} className="shrink-0" />
+                      <span>Nutrición en verde ({nutritionPlan.optimalCount} pilares OK)</span>
+                    </span>
+                  ) : nutritionPlan.isWarning && hasAnyNutritionActivity ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px] font-extrabold">
+                      <AlertTriangle size={12} className="shrink-0" />
+                      <span>
+                        Nutrición: {warningPillars.length}{' '}
+                        {warningPillars.length === 1 ? 'aviso' : 'avisos'} hoy
+                      </span>
+                    </span>
+                  ) : hasAnyNutritionActivity && optimalPillars.length > 0 ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[11px] font-extrabold">
+                      <TrendingUp size={12} className="shrink-0" />
+                      <span>
+                        Nutrición en progreso ({optimalPillars.length} en verde)
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px] font-extrabold">
+                      <Salad size={12} className="shrink-0" />
+                      <span>Nutrición de hoy sin registrar</span>
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+          </GlassCard>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 animate-[fade-in_0.25s_ease-out]">
         {/* ============================================================
             1. PROGRESO EN VERDE DE EJERCICIOS
            ============================================================ */}
@@ -745,6 +911,7 @@ const DashboardInsights = ({ setView }) => {
         )}
 
         </div>
+      )}
     </div>
   );
 };
