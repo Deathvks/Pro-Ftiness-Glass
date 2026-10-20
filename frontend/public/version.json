@@ -1,4 +1,4 @@
 {
-  "version": "7.8.15",
-  "releaseNotes": "Rediseño limpio y unificado de la sección Seguimiento y Progreso en el dashboard: tarjetas visibles por defecto, eliminación de estiramientos redundantes y controles elegantes."
+  "version": "7.8.16",
+  "releaseNotes": "Eliminación completa del acordeón y botones redundantes de estirar en Seguimiento y Progreso: tarjetas fijas, limpias y siempre visibles en el dashboard."
 }
