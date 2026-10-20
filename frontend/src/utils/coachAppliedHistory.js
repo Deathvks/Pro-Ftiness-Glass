@@ -151,7 +151,12 @@ export const formatTimeAgo = (diffHours, calendarDaysDiff) => {
     return `hace ${Math.round(diffHours)} horas (hoy)`;
   }
   if (calendarDaysDiff === 1) return 'hace 1 día (ayer)';
-  return `hace ${calendarDaysDiff} días`;
+  if (calendarDaysDiff < 7) return `hace ${calendarDaysDiff} días`;
+  if (calendarDaysDiff < 14) return `hace ${calendarDaysDiff} días (más de 1 semana)`;
+  if (calendarDaysDiff < 21) return `hace 2 semanas (${calendarDaysDiff} días)`;
+  if (calendarDaysDiff < 28) return `hace 3 semanas (${calendarDaysDiff} días)`;
+  if (calendarDaysDiff < 60) return `hace ${Math.floor(calendarDaysDiff / 7)} semanas (${calendarDaysDiff} días)`;
+  return `hace más de 2 meses (${calendarDaysDiff} días)`;
 };
 
 /**
@@ -311,6 +316,69 @@ export const evaluateExerciseFollowUpAndRecovery = ({
         isWarning: false
       };
     }
+  }
+
+  // ============================================================
+  // CONDICIÓN C: INACTIVIDAD PROLONGADA (10+ días o semanas sin hacer esta rutina)
+  // ============================================================
+  if (calendarDaysDiff !== null && calendarDaysDiff >= 10) {
+    const isSevere = calendarDaysDiff >= 28;
+    const isModerate = calendarDaysDiff >= 14;
+    const weeksCount = Math.floor(calendarDaysDiff / 7);
+    const routineLabel = routineContext?.currentRoutineName
+      ? `la rutina "${routineContext.currentRoutineName}"`
+      : 'esta rutina';
+
+    const badge = isSevere
+      ? `Inactividad: +${weeksCount} semanas`
+      : isModerate
+      ? `Inactividad: ${weeksCount} semanas`
+      : `Inactividad: ${calendarDaysDiff} días`;
+
+    const badgeShort = isSevere
+      ? `+1 mes sin ${routineContext?.currentRoutineName ? 'rutina' : 'entreno'}`
+      : isModerate
+      ? `${weeksCount} sem sin ${routineContext?.currentRoutineName ? 'rutina' : 'entreno'}`
+      : `${calendarDaysDiff}d sin ${routineContext?.currentRoutineName ? 'rutina' : 'entreno'}`;
+
+    const title = isSevere
+      ? `Llevas más de 1 mes sin hacer ${routineLabel} (${calendarDaysDiff} días)`
+      : isModerate
+      ? `Llevas ${weeksCount} semanas sin hacer ${routineLabel} (${calendarDaysDiff} días)`
+      : `Llevas ${calendarDaysDiff} días sin hacer ${routineLabel}`;
+
+    const message = isSevere
+      ? `Llevas ${timeAgoText} sin registrar este ejercicio en ${routineLabel}. Aunque la memoria muscular te permitirá recuperar tus marcas rápidamente, tus tendones y sistema neuromuscular requieren una readaptación progresiva. Te aconsejamos una carga moderada (-15% o peso cómodo) y parar a 2-3 reps del fallo (RIR 2-3) para evitar agujetas severas o sobrecargas.`
+      : isModerate
+      ? `Llevas ${timeAgoText} sin entrenar este ejercicio en ${routineLabel}. Tras 2-3 semanas de descanso, la tolerancia muscular y articular ha disminuido. No te recomendamos forzar subidas de peso hoy de golpe: lo óptimo es una sesión de reactivación manteniendo tu carga previa o un 10% menor con RIR 2-3.`
+      : `Llevas ${timeAgoText} sin realizar ${routineLabel}. Tus adaptaciones neuromusculares están algo frías. Te sugerimos realizar una serie de aproximación controlada y completar la sesión con margen (RIR 2) antes de volver a forzar saltos de peso.`;
+
+    const actionHint = isModerate || isSevere
+      ? 'Sesión de reactivación recomendada: prioriza sensaciones y RIR 2-3 antes de forzar récords.'
+      : 'Toma de contacto sugerida: mantén la carga previa con margen antes de subir peso.';
+
+    return {
+      type: 'inactivity_warning',
+      status: 'inactivity_warning',
+      badge,
+      badgeShort,
+      title,
+      message,
+      actionHint,
+      targetText,
+      color: 'amber',
+      isTooSoon: false,
+      isInactive: true,
+      inactiveDays: calendarDaysDiff,
+      inactiveWeeks: weeksCount,
+      diffHours,
+      calendarDaysDiff,
+      timeAgoText,
+      lastApplied,
+      lastSession,
+      isOkGreen: false,
+      isWarning: true
+    };
   }
 
   // ============================================================

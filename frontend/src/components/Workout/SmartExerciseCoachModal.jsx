@@ -188,7 +188,12 @@ const SmartExerciseCoachModal = ({
                 </span>
 
                 {/* Badge de Diagnóstico o Seguimiento */}
-                {followUp?.isOkGreen ? (
+                {followUp?.isInactive ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 animate-pulse">
+                    <Calendar size={13} className="shrink-0" />
+                    <span>{followUp.badge}</span>
+                  </span>
+                ) : followUp?.isOkGreen ? (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 size={13} className="shrink-0" />
                     <span>{followUp.badge}</span>
@@ -282,13 +287,13 @@ const SmartExerciseCoachModal = ({
               </div>
             )}
 
-            {/* 2. SEGUIMIENTO LONGITUDINAL Y ESTADO DE RECUPERACIÓN */}
-            {followUp && (followUp.isTooSoon || followUp.isOkGreen || followUp.type === 'next_session_target') && (
+            {/* 2. SEGUIMIENTO LONGITUDINAL Y ESTADO DE RECUPERACIÓN / INACTIVIDAD */}
+            {followUp && (followUp.isInactive || followUp.isTooSoon || followUp.isOkGreen || followUp.type === 'next_session_target') && (
               <div
                 className={`p-3.5 sm:p-4 rounded-[22px] ring-1 ring-black/5 dark:ring-white/10 border-none flex flex-col gap-2.5 shadow-sm ${
                   followUp.type === 'ok_green'
                     ? 'bg-emerald-500/10'
-                    : followUp.type === 'recovery_warning'
+                    : followUp.type === 'inactivity_warning' || followUp.type === 'recovery_warning'
                     ? 'bg-amber-500/15 ring-amber-500/30'
                     : followUp.type === 'recovery_notice'
                     ? 'bg-blue-500/10'
@@ -303,7 +308,7 @@ const SmartExerciseCoachModal = ({
                       className={`p-1.5 rounded-[10px] shrink-0 ${
                         followUp.type === 'ok_green'
                           ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                          : followUp.type === 'recovery_warning'
+                          : followUp.type === 'inactivity_warning' || followUp.type === 'recovery_warning'
                           ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
                           : followUp.type === 'recovery_notice'
                           ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
@@ -314,6 +319,8 @@ const SmartExerciseCoachModal = ({
                     >
                       {followUp.type === 'ok_green' ? (
                         <CheckCircle2 size={16} strokeWidth={2.5} />
+                      ) : followUp.type === 'inactivity_warning' ? (
+                        <Calendar size={16} strokeWidth={2.5} className="animate-pulse" />
                       ) : followUp.type === 'recovery_warning' ? (
                         <AlertTriangle size={16} strokeWidth={2.5} />
                       ) : followUp.type === 'recovery_notice' ? (
@@ -328,7 +335,7 @@ const SmartExerciseCoachModal = ({
                       className={`text-[10px] font-black uppercase tracking-wider ${
                         followUp.type === 'ok_green'
                           ? 'text-emerald-600 dark:text-emerald-400'
-                          : followUp.type === 'recovery_warning'
+                          : followUp.type === 'inactivity_warning' || followUp.type === 'recovery_warning'
                           ? 'text-amber-600 dark:text-amber-400'
                           : followUp.type === 'recovery_notice'
                           ? 'text-blue-600 dark:text-blue-400'

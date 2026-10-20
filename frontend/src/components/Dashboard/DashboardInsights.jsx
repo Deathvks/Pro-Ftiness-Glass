@@ -13,6 +13,7 @@ import {
   Salad,
   Sparkles,
   Clock,
+  Calendar,
   ChevronDown,
   ChevronUp,
   Layers
@@ -141,7 +142,15 @@ const DashboardInsights = ({ setView }) => {
           userProfile
         });
 
-        if (followUp?.isOkGreen || diagnosedTrend?.isProgressing) {
+                if (followUp?.isInactive || followUp?.isWarning) {
+          routineWarnings.push({
+            name: exerciseName,
+            isInactive: Boolean(followUp?.isInactive),
+            badge: followUp?.badgeShort || (followUp?.isInactive ? 'Inactividad' : 'Aviso'),
+            timeAgoText: followUp?.timeAgoText || null
+          });
+          totalWarningCount++;
+        } else if (followUp?.isOkGreen || diagnosedTrend?.isProgressing) {
           routineProgressing.push({
             name: exerciseName,
             badge:
@@ -150,9 +159,12 @@ const DashboardInsights = ({ setView }) => {
                 : followUp?.badgeShort || '¡OK Verde!'
           });
           totalProgressingCount++;
-        } else if (followUp?.isWarning || diagnosedTrend?.isWarning) {
+        } else if (diagnosedTrend?.isWarning) {
           routineWarnings.push({
-            name: exerciseName
+            name: exerciseName,
+            isInactive: false,
+            badge: 'Aviso',
+            timeAgoText: null
           });
           totalWarningCount++;
         }
@@ -631,14 +643,23 @@ const DashboardInsights = ({ setView }) => {
                         </button>
                       </div>
 
-                      <div className="flex flex-wrap gap-1.5">
+                                            <div className="flex flex-wrap gap-1.5">
                         {group.exercises.map((ex, idx) => (
                           <span
                             key={`${ex.name}-${idx}`}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300 text-[11px] font-bold"
                           >
-                            <AlertTriangle size={11} className="shrink-0" />
+                            {ex.isInactive ? (
+                              <Calendar size={11} className="shrink-0 animate-pulse text-amber-500" />
+                            ) : (
+                              <AlertTriangle size={11} className="shrink-0" />
+                            )}
                             <span>{ex.name}</span>
+                            {ex.badge && (
+                              <span className="text-[9.5px] px-1.5 py-0.5 rounded-full bg-amber-500/20 font-semibold opacity-90">
+                                {ex.badge}
+                              </span>
+                            )}
                           </span>
                         ))}
                       </div>

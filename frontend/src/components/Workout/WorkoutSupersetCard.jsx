@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, Flame, Repeat, Target, AlertTriangle, CheckCircle2, TrendingUp } from 'lucide-react';
+import { Clock, Flame, Repeat, Target, AlertTriangle, CheckCircle2, TrendingUp, Calendar } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import GlassCard from '../GlassCard';
 import useAppStore from '../../store/useAppStore';
@@ -244,7 +244,7 @@ const WorkoutSupersetCard = ({
                                     <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full mt-1 w-fit ${
                                         exFollowUp.type === 'ok_green'
                                             ? 'bg-emerald-500/15 text-emerald-400'
-                                            : exFollowUp.type === 'recovery_warning'
+                                            : exFollowUp.type === 'inactivity_warning' || exFollowUp.type === 'recovery_warning'
                                             ? 'bg-amber-500/15 text-amber-400'
                                             : exFollowUp.type === 'recovery_notice'
                                             ? 'bg-blue-500/15 text-blue-400'
@@ -267,7 +267,7 @@ const WorkoutSupersetCard = ({
                                         className={`p-1.5 rounded-md transition-colors flex items-center justify-center ${
                                             exFollowUp?.type === 'ok_green'
                                                 ? 'text-emerald-400 hover:bg-emerald-500/10'
-                                                : exFollowUp?.type === 'recovery_warning'
+                                                : exFollowUp?.type === 'inactivity_warning' || exFollowUp?.type === 'recovery_warning'
                                                 ? 'text-amber-400 hover:bg-amber-500/10'
                                                 : exFollowUp?.type === 'recovery_notice'
                                                 ? 'text-blue-400 hover:bg-blue-500/10'
@@ -283,6 +283,8 @@ const WorkoutSupersetCard = ({
                                     >
                                         {exFollowUp?.type === 'ok_green' ? (
                                             <CheckCircle2 size={16} strokeWidth={2.5} className="text-emerald-400" />
+                                        ) : exFollowUp?.type === 'inactivity_warning' ? (
+                                            <Calendar size={16} strokeWidth={2.5} className="text-amber-400 animate-pulse" />
                                         ) : exFollowUp?.type === 'recovery_warning' ? (
                                             <AlertTriangle size={16} strokeWidth={2.5} className="text-amber-400 animate-pulse" />
                                         ) : exFollowUp?.type === 'recovery_notice' ? (

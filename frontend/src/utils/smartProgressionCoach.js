@@ -668,13 +668,29 @@ export const getExerciseHistorySessions = (exerciseName, workoutLog, currentRout
   // Filtrado de sesiones de la MISMA rutina (por ID o por nombre)
   const sameRoutineSessions = sessions.filter(s => s.isCurrentRoutine);
 
+  // Extraer fecha del último entreno registrado para esta rutina
+  let lastRoutineDate = null;
+  if (Array.isArray(workoutLog) && (currentRIdStr || currentRNameNorm)) {
+    const routineLog = workoutLog.find(log => {
+      const rawId = log.routine_id || log.routineId;
+      const resolvedName = log.routine_name || log.routineName;
+      const matchesId = currentRIdStr && rawId && String(rawId) === currentRIdStr;
+      const matchesName = currentRNameNorm && resolvedName && resolvedName.toLowerCase().trim() === currentRNameNorm;
+      return matchesId || matchesName;
+    });
+    if (routineLog) {
+      lastRoutineDate = routineLog.workout_date || routineLog.date || routineLog.created_at || null;
+    }
+  }
+
   sessions.routineContext = {
     hasMultipleRoutines,
     distinctRoutines,
     currentRoutineId: currentRIdStr,
     currentRoutineName: currentRoutineName || null,
     sameRoutineSessionsCount: sameRoutineSessions.length,
-    sameRoutineSessions
+    sameRoutineSessions,
+    lastRoutineDate
   };
 
   return sessions;
@@ -961,6 +977,8 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   const isStagnant = trend.status === 'stagnant';
   const stagnantCount = trend.stagnantSessionsCount || 2;
   const isTooSoonToPush = Boolean(followUp?.isTooSoon);
+  const isInactive = Boolean(followUp?.isInactive);
+  const inactiveDays = followUp?.inactiveDays || 0;
   const jumpLabelText = equipmentType === 'barbell'
     ? `+${realisticIncrement} kg (1.25 kg a cada lado)`
     : `+${realisticIncrement} kg`;
@@ -1351,6 +1369,73 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
       };
 
       strategyOptions = [consolidateAutoOption, repsOption, linearOption];
+
+    // C2_B. Inactividad prolongada (10+ días o semanas sin hacer esta rutina): readaptación y reactivación segura
+    } else if (isInactive) {
+      const isSevere = inactiveDays >= 28;
+      const lightReactivationWeight = roundToWeightStep(currentTopWeight * (isSevere ? 0.85 : 0.9));
+
+      suggestedWeight = isSevere ? lightReactivationWeight : currentTopWeight;
+      suggestedReps = targetReps;
+      suggestedSets = plannedSets;
+      actionDirection = 'maintain';
+      intensityLabel = isSevere ? 'Re-adaptación Progresiva' : 'Reactivación Muscular';
+      intensityDesc = 'Parar 2-3 reps antes del fallo (RIR 2-3)';
+      suggestedRir = '2 - 3 reps en recámara';
+      suggestedRest = '120 - 180 seg';
+      weightChangeNote = isSevere
+        ? `${lightReactivationWeight} kg (toma de contacto)`
+        : `Mantener ${currentTopWeight} kg (reactivación)`;
+      actionTitle = isSevere
+        ? `Re-adaptación: Carga ligera tras más de 1 mes (${suggestedWeight} kg)`
+        : `Reactivación: Carga de control tras ${followUp?.timeAgoText || `${inactiveDays} días`}`;
+
+      coachingAdvice = followUp?.message || `Llevas ${followUp?.timeAgoText || `${inactiveDays} días`} sin realizar este ejercicio en ${activeRoutineName}. Tras este periodo de inactividad, no es recomendable buscar récords ni subir peso hoy de golpe. Realiza una sesión de reactivación controlada sin llegar al fallo para despertar el músculo y proteger tus tendones.`;
+
+      actionSteps = [
+        `Usa ${suggestedWeight} kg en tus series de hoy para evaluar cómo responde tu musculatura tras ${followUp?.timeAgoText || `${inactiveDays} días`}.`,
+        'Detén cada serie con al menos 2 o 3 repeticiones en recámara (sin llegar al fallo muscular).',
+        'En tu próxima sesión, una vez reactivado el patrón motor, el entrenador te habilitará volver a subir cargas.'
+      ];
+
+      strategyOptions = [
+        {
+          id: 'strat_reactivation_safe',
+          title: `🟢 Sesión de Reactivación (${suggestedWeight} kg × ${targetReps} reps con RIR 2-3)`,
+          tag: 'Recomendada (Vuelta al entreno)',
+          badge: `${suggestedWeight} kg · RIR 2-3`,
+          suggestedWeight: suggestedWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          motive: `Tras ${followUp?.timeAgoText || `${inactiveDays} días`} de inactividad, tus fibras musculares necesitan volver a familiarizarse con la tensión sin generar agujetas extremas ni sobrecargar los tendones.`,
+          description: `Realiza tus series con ${suggestedWeight} kg dejando 2 o 3 repeticiones de margen antes del fallo.`
+        },
+        {
+          id: 'strat_reactivation_conservative',
+          title: `🟡 Toma de Contacto Más Ligera (${lightReactivationWeight} kg, -10%)`,
+          tag: 'Más Margen',
+          badge: `${lightReactivationWeight} kg (-10%)`,
+          suggestedWeight: lightReactivationWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          motive: `Empezar un 10% por debajo de tu marca previa te asegura una sesión fluida, reactiva la memoria muscular y previene cualquier molestia articular.`,
+          description: `Comienza con ${lightReactivationWeight} kg con bajada controlada y máxima concentración técnica.`
+        }
+      ];
+
+      if (!isSevere && currentTopWeight > 0) {
+        strategyOptions.push({
+          id: 'strat_reactivation_test',
+          title: `🟢 Tantear Carga Previa (${currentTopWeight} kg solo si te notas al 100%)`,
+          tag: 'Solo si vas sobrado',
+          badge: `${currentTopWeight} kg`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          motive: `Opción disponible si durante el calentamiento te has notado con fuerza y energía plena, manteniendo siempre 1-2 reps en recámara.`,
+          description: `Haz tu 1ª serie con ${currentTopWeight} kg; si notas pesadez o falta de ritmo, baja a ${lightReactivationWeight} kg.`
+        });
+      }
 
     // C3. Entrenado hace menos de 36h (descanso incompleto): no recomendar subir discos sin haber supercompensado
     } else if (isTooSoonToPush) {

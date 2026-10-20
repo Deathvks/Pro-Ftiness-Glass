@@ -1,7 +1,7 @@
 import ModalPortal from '../ModalPortal';
 /* frontend/src/components/Workout/WorkoutExerciseCard.jsx */
 import React, { useState, useMemo } from 'react';
-import { Repeat, Flame, History, Target, Bell, Sparkles, AlertTriangle, CheckCircle2, Clock, ChevronRight, TrendingUp } from 'lucide-react';
+import { Repeat, Flame, History, Target, Bell, Sparkles, AlertTriangle, CheckCircle2, Clock, ChevronRight, TrendingUp, Calendar } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import WorkoutSetGrid from './WorkoutSetGrid';
 import useAppStore from '../../store/useAppStore';
@@ -220,6 +220,8 @@ const WorkoutExerciseCard = ({
               >
                 {followUp.type === 'ok_green' ? (
                   <CheckCircle2 size={15} strokeWidth={2.5} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                ) : followUp.type === 'inactivity_warning' ? (
+                  <Calendar size={15} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 shrink-0 animate-pulse" />
                 ) : followUp.type === 'recovery_warning' ? (
                   <AlertTriangle size={15} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 shrink-0" />
                 ) : followUp.type === 'recovery_notice' ? (
@@ -252,7 +254,7 @@ const WorkoutExerciseCard = ({
           className={`group/alert relative overflow-hidden rounded-[22px] p-3.5 sm:p-4 transition-all duration-300 cursor-pointer active:scale-[0.99] shadow-sm backdrop-blur-md ${
             followUp.type === 'ok_green'
               ? 'bg-emerald-500/10 hover:bg-emerald-500/15 ring-1 ring-emerald-500/30'
-              : followUp.type === 'recovery_warning'
+              : followUp.type === 'inactivity_warning' || followUp.type === 'recovery_warning'
               ? 'bg-amber-500/15 hover:bg-amber-500/20 ring-1 ring-amber-500/40'
               : followUp.type === 'recovery_notice'
               ? 'bg-blue-500/10 hover:bg-blue-500/15 ring-1 ring-blue-500/30'
@@ -267,7 +269,7 @@ const WorkoutExerciseCard = ({
                 className={`p-2 rounded-[14px] shrink-0 mt-0.5 transition-transform group-hover/alert:scale-105 ${
                   followUp.type === 'ok_green'
                     ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                    : followUp.type === 'recovery_warning'
+                    : followUp.type === 'inactivity_warning' || followUp.type === 'recovery_warning'
                     ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
                     : followUp.type === 'recovery_notice'
                     ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
@@ -278,6 +280,8 @@ const WorkoutExerciseCard = ({
               >
                 {followUp.type === 'ok_green' ? (
                   <CheckCircle2 size={18} strokeWidth={2.5} />
+                ) : followUp.type === 'inactivity_warning' ? (
+                  <Calendar size={18} strokeWidth={2.5} className="animate-pulse" />
                 ) : followUp.type === 'recovery_warning' ? (
                   <AlertTriangle size={18} strokeWidth={2.5} className="animate-pulse" />
                 ) : followUp.type === 'recovery_notice' ? (
