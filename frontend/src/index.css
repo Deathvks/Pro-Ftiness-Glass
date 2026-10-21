@@ -1213,13 +1213,11 @@ html.ocean-theme:not(.dark) .aurora-curtain {
   button.bg-accent:hover:not(:disabled), .btn-accent:hover:not(:disabled) {
     transform: translateY(-2px) !important;
     box-shadow: 0 8px 20px var(--color-accent-transparent), inset 0 2px 2px rgba(255, 255, 255, 0.5) !important;
-    filter: brightness(1.1) !important;
   }
 
   button.bg-accent:active:not(:disabled), .btn-accent:active:not(:disabled) {
     transform: translateY(1px) !important;
     box-shadow: 0 2px 8px var(--color-accent-transparent), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
-    filter: brightness(0.95) !important;
   }
 
   button.bg-accent:disabled, .btn-accent:disabled {
@@ -1238,6 +1236,7 @@ html.ocean-theme:not(.dark) .aurora-curtain {
     box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.5), inset 0 -1px 1px rgba(0, 0, 0, 0.2) !important;
     -webkit-box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.5), inset 0 -1px 1px rgba(0, 0, 0, 0.2) !important;
     border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    filter: none !important;
   }
 
   .form-error-text {
@@ -1704,7 +1703,6 @@ body .driver-popover-footer button.driver-popover-next-btn:hover,
 body .driver-popover-footer button.driver-popover-done-btn:hover { 
   transform: translateY(-2px) !important;
   box-shadow: 0 8px 20px var(--color-accent-transparent), inset 0 2px 2px rgba(255, 255, 255, 0.5) !important;
-  filter: brightness(1.1) !important;
 }
 
 /* Botón Cerrar (X) */
