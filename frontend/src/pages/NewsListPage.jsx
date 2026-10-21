@@ -232,7 +232,10 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
       </section>
 
       {/* CATEGORÍAS */}
-      <nav aria-label="Categorías de artículos" className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      <nav
+        aria-label="Categorías de artículos"
+        className="flex items-center gap-2.5 overflow-x-auto pt-2.5 pb-3 px-1.5 -mx-1.5 -mt-1 -mb-1 scrollbar-none touch-pan-x overscroll-x-contain"
+      >
         {CATEGORIES.map((cat) => {
           const isActive = currentCategory === cat;
           const count = cat === 'Todas' ? total : (categoryCounts[cat] || 0);
@@ -242,16 +245,16 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
               key={cat}
               type="button"
               onClick={() => handleSelectCategory(cat)}
-              className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer select-none ${
                 isActive
-                  ? 'bg-accent text-accent-contrast shadow-md shadow-accent/20 scale-105'
-                  : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/10'
+                  ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25 scale-105 hover:!translate-y-0 active:!translate-y-0 active:scale-95'
+                  : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/10 hover:border-black/15 dark:hover:border-white/20 active:scale-95 hover:!translate-y-0 active:!translate-y-0'
               }`}
             >
               <span>{cat}</span>
               {count > 0 && (
                 <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
                     isActive ? 'bg-black/20 text-white' : 'bg-black/5 dark:bg-white/10 text-text-tertiary'
                   }`}
                 >
