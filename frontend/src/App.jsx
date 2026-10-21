@@ -725,7 +725,7 @@ export default function App() {
         } />
         <Route path="/noticias" element={
             <Suspense fallback={<InitialLoadingSkeleton />}>
-                <NewsListPage onBack={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }} />
+                <NewsListPage onBack={() => navigate('/')} />
             </Suspense>
         } />
         <Route path="/noticias/:slug" element={

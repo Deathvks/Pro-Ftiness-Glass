@@ -312,36 +312,37 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           </p>
 
           {/* FIRMA DE AUTOR, FECHA Y BOTONES DE COMPARTIR (Línea de metadatos Xataka) */}
-          <div className="flex items-center justify-between py-4 border-y border-black/10 dark:border-white/10 flex-wrap gap-4 text-xs">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center font-black text-xs text-accent uppercase">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 border-y border-black/10 dark:border-white/10 gap-3 sm:gap-4 text-xs">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center font-black text-xs text-accent uppercase shrink-0">
                 {article.author_name.slice(0, 2)}
               </div>
-              <div>
-                <p className="font-bold text-text-primary">
+              <div className="min-w-0">
+                <p className="font-bold text-text-primary truncate">
                   Por <span className="text-accent">{article.author_name}</span>
                 </p>
-                <div className="flex items-center gap-2 text-text-tertiary text-[11px] mt-0.5">
-                  <span className="flex items-center gap-1">
-                    <Calendar size={12} />
-                    {format(new Date(article.published_at), "d 'de' MMMM, yyyy", { locale: es })}
+                <div className="flex items-center gap-1.5 sm:gap-2 text-text-tertiary text-[11px] mt-0.5 flex-nowrap overflow-x-auto scrollbar-none py-0.5">
+                  <span className="inline-flex items-center gap-1 whitespace-nowrap shrink-0">
+                    <Calendar size={11} className="shrink-0 text-text-secondary" />
+                    <span className="sm:hidden">{format(new Date(article.published_at), 'd MMM yyyy', { locale: es })}</span>
+                    <span className="hidden sm:inline">{format(new Date(article.published_at), "d 'de' MMMM, yyyy", { locale: es })}</span>
                   </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Clock size={12} />
-                    {article.reading_time} min de lectura
+                  <span className="text-text-tertiary/40 shrink-0 select-none">•</span>
+                  <span className="inline-flex items-center gap-1 whitespace-nowrap shrink-0">
+                    <Clock size={11} className="shrink-0 text-text-secondary" />
+                    <span>{article.reading_time} min<span className="hidden sm:inline"> de lectura</span></span>
                   </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <Eye size={12} />
-                    {article.views_count === 1 ? '1 lectura' : `${(article.views_count || 0).toLocaleString()} lecturas`}
+                  <span className="text-text-tertiary/40 shrink-0 select-none">•</span>
+                  <span className="inline-flex items-center gap-1 whitespace-nowrap shrink-0">
+                    <Eye size={11} className="shrink-0 text-text-secondary" />
+                    <span>{article.views_count === 1 ? '1 lectura' : `${(article.views_count || 0).toLocaleString()} lecturas`}</span>
                   </span>
                 </div>
               </div>
             </div>
 
             {/* Botones Sociales con colores de marca siempre activos */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
               <a
                 href={whatsappUrl}
                 target="_blank"

@@ -171,6 +171,16 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
 
   const gridArticles = useMemo(() => news, [news]);
 
+  const visiblePages = useMemo(() => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1]);
+    return Array.from(pages)
+      .filter((p) => p >= 1 && p <= totalPages)
+      .sort((a, b) => a - b);
+  }, [currentPage, totalPages]);
+
   return (
     <div
       ref={containerRef}
@@ -393,37 +403,44 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
             ))}
           </div>
 
-          {/* PAGINACIÓN ELEGANTE Y EQUILIBRADA */}
+          {/* PAGINACIÓN ELEGANTE Y RESPONSIVE (Totalmente adaptada a móviles) */}
           {totalPages > 1 && (
-            <div className="flex flex-col items-center justify-center gap-3 pt-8 pb-10 border-t border-black/5 dark:border-white/5 mt-8">
-              <div className="flex items-center gap-2">
+            <div className="w-full flex flex-col items-center justify-center gap-3 pt-8 pb-10 border-t border-black/5 dark:border-white/5 mt-8 px-1">
+              <div className="flex items-center justify-center gap-1.5 sm:gap-2 max-w-full">
                 <button
                   type="button"
                   disabled={currentPage <= 1}
                   onClick={() => handlePageChange(currentPage - 1)}
-                  className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-bold bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed border border-black/10 dark:border-white/10 transition-all cursor-pointer text-text-primary"
+                  className="inline-flex items-center justify-center gap-1 px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-bold bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed border border-black/10 dark:border-white/10 transition-all cursor-pointer text-text-primary shrink-0"
                   aria-label="Página anterior"
                 >
                   <ChevronLeft size={15} />
-                  <span>Anterior</span>
+                  <span className="hidden sm:inline">Anterior</span>
                 </button>
 
-                <div className="flex items-center gap-1.5 mx-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                <div className="flex items-center gap-1 sm:gap-1.5 mx-0.5 sm:mx-1 max-w-full overflow-x-auto py-0.5 scrollbar-none">
+                  {visiblePages.map((p, idx) => {
+                    const prev = visiblePages[idx - 1];
+                    const showEllipsis = prev && p - prev > 1;
                     const isActive = currentPage === p;
+
                     return (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => handlePageChange(p)}
-                        className={`w-9 h-9 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center ${
-                          isActive
-                            ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25 scale-105'
-                            : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/10'
-                        }`}
-                      >
-                        {p}
-                      </button>
+                      <React.Fragment key={p}>
+                        {showEllipsis && (
+                          <span className="text-text-tertiary text-xs px-0.5 select-none font-bold">…</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handlePageChange(p)}
+                          className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                            isActive
+                              ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25 scale-105'
+                              : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/10'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      </React.Fragment>
                     );
                   })}
                 </div>
@@ -432,15 +449,15 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                   type="button"
                   disabled={currentPage >= totalPages}
                   onClick={() => handlePageChange(currentPage + 1)}
-                  className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-black bg-accent text-accent-contrast hover:brightness-110 disabled:opacity-25 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md shadow-accent/25"
+                  className="inline-flex items-center justify-center gap-1 px-3 sm:px-4 py-2 rounded-xl text-xs font-black bg-accent text-accent-contrast hover:brightness-110 disabled:opacity-25 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md shadow-accent/25 shrink-0"
                   aria-label="Página siguiente"
                 >
-                  <span>Siguiente</span>
+                  <span className="hidden sm:inline">Siguiente</span>
                   <ChevronRight size={15} />
                 </button>
               </div>
 
-              <span className="text-[11px] font-semibold text-text-tertiary">
+              <span className="text-[11px] font-semibold text-text-tertiary text-center">
                 Página {currentPage} de {totalPages} · Mostrando {news.length} de {total} artículos
               </span>
             </div>
