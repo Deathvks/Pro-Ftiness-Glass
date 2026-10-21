@@ -37,6 +37,19 @@ export const fetchNewsBySlug = async (slug) => {
   return res.json();
 };
 
+export const recordArticleView = async (slug) => {
+  try {
+    const res = await fetch(`${API_URL}/news/article/${encodeURIComponent(slug)}/view`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+};
+
 export const toggleLikeArticle = async (slug, action = 'like') => {
   const res = await fetch(`${API_URL}/news/article/${encodeURIComponent(slug)}/like`, {
     method: 'POST',

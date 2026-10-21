@@ -67,6 +67,17 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           setLikesCount(data.article?.likes_count || 0);
           const alreadyLiked = localStorage.getItem(`liked_article_${data.article?.id}`) === 'true';
           setHasLiked(alreadyLiked);
+
+          // Registrar lectura real y única por sesión de navegación (evita inflar con F5 o React StrictMode)
+          const sessionKey = `viewed_news_session_${data.article?.id}`;
+          if (!sessionStorage.getItem(sessionKey)) {
+            sessionStorage.setItem(sessionKey, 'true');
+            newsService.recordArticleView(slug).then(res => {
+              if (res?.views_count !== undefined && isMounted) {
+                setArticle(prev => prev ? { ...prev, views_count: res.views_count } : prev);
+              }
+            });
+          }
         }
       } catch (err) {
         if (isMounted) {

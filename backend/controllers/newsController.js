@@ -106,10 +106,6 @@ export const getNewsBySlug = async (req, res) => {
       return res.status(404).json({ error: 'Noticia no encontrada.' });
     }
 
-    // Incrementar visualizaciones reales en base de datos
-    await article.increment('views_count', { by: 1 });
-    await article.reload();
-
     // Artículos relacionados en la misma categoría o más recientes
     const relatedNews = await News.findAll({
       where: {
@@ -129,6 +125,34 @@ export const getNewsBySlug = async (req, res) => {
   } catch (error) {
     console.error('Error al obtener noticia por slug:', error);
     return res.status(500).json({ error: 'Error al cargar la noticia.' });
+  }
+};
+
+/**
+ * Registrar una lectura única real en un artículo
+ */
+export const trackNewsView = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const article = await News.findOne({
+      where: { slug, is_published: true }
+    });
+
+    if (!article) {
+      return res.status(404).json({ error: 'Noticia no encontrada.' });
+    }
+
+    await article.increment('views_count', { by: 1 });
+    await article.reload();
+
+    return res.json({
+      success: true,
+      views_count: article.views_count
+    });
+  } catch (error) {
+    console.error('Error al registrar lectura de noticia:', error);
+    return res.status(500).json({ error: 'Error al registrar lectura.' });
   }
 };
 
