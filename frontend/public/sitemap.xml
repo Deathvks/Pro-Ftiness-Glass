@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
+  <!-- Portada / Landing -->
   <url>
     <loc>https://pro-fitness-glass.zeabur.app/</loc>
     <lastmod>2026-10-21</lastmod>
@@ -8,6 +9,7 @@
     <priority>1.0</priority>
   </url>
 
+  <!-- Hub de Noticias & Artículos -->
   <url>
     <loc>https://pro-fitness-glass.zeabur.app/noticias</loc>
     <lastmod>2026-10-21</lastmod>
@@ -15,8 +17,9 @@
     <priority>0.9</priority>
   </url>
 
+  <!-- Artículos Científicos de Fitness, Nutrición y Salud -->
   <url>
-    <loc>https://pro-fitness-glass.zeabur.app/noticias/guia-cientifica-creatina-monohidrato-dosis-beneficios-mitos</loc>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/deficit-calorico-inteligente-perder-grasa-preservar-musculo</loc>
     <lastmod>2026-10-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -30,12 +33,160 @@
   </url>
 
   <url>
-    <loc>https://pro-fitness-glass.zeabur.app/noticias/deficit-calorico-inteligente-perder-grasa-preservar-musculo</loc>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/guia-cientifica-creatina-monohidrato-dosis-beneficios-mitos</loc>
     <lastmod>2026-10-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/pro-fitness-glass-v7-8-novedades-motor-liquid-glass</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/magnesio-bisglicinato-recuperacion-sueno-profundo</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/nuevo-sistema-calificacion-feedback-pro-fitness-glass</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/cafeina-preentreno-dosis-milimetrica-rendimiento-fuerza</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/futuro-del-fitness-inteligencia-artificial-biosensores</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/carbohidratos-por-la-noche-engordan-mitos-metabolismo</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/rango-movimiento-completo-rom-estiramiento-hipertrofia</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/tiempo-descanso-entre-series-hipertrofia-fuerza</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/cuanta-agua-beber-con-creatina-hidratacion-celular</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/sentadilla-profunda-vs-paralela-hipertrofia-biomecanica</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/citrulina-malato-oxido-nitrico-congestion-fuerza</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/fallo-muscular-mito-hipertrofia-rir-optimo</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/cardio-en-ayunas-quema-grasa-evidencia-cientifica</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/ventana-anabolica-mito-batido-post-entreno</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/bcaas-aminoacidos-ramificados-mito-o-dinero-tirado</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/dieta-flexible-iifym-vs-comer-limpio-adherencia-psicologia</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/omega-3-hipertrofia-recuperacion-muscular-evidencia</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/proteina-vegetal-vs-animal-perfil-aminoacidos-leucina</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/dolor-lumbar-peso-muerto-sentadilla-butt-wink-solucion</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/cortisol-estres-cronico-testosterona-ganancia-muscular</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/noticias/grelina-leptina-hormonas-hambre-estrategias-definicion</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Legal & Privacidad -->
   <url>
     <loc>https://pro-fitness-glass.zeabur.app/privacy</loc>
     <lastmod>2026-10-21</lastmod>
