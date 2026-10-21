@@ -37,6 +37,19 @@ export const fetchNewsBySlug = async (slug) => {
   return res.json();
 };
 
+export const toggleLikeArticle = async (slug, action = 'like') => {
+  const res = await fetch(`${API_URL}/news/article/${encodeURIComponent(slug)}/like`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ action })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Error al actualizar valoración');
+  }
+  return res.json();
+};
+
 export const generateAINews = async ({ topic, category }) => {
   const res = await fetch(`${API_URL}/news/generate-ai`, {
     method: 'POST',

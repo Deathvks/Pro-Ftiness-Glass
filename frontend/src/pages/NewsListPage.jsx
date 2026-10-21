@@ -14,7 +14,9 @@ import {
   Flame,
   Layers,
   BookOpen,
-  LogIn
+  LogIn,
+  Eye,
+  ThumbsUp
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -343,9 +345,19 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-black/5 dark:border-white/10">
-                  <span className="text-xs font-bold text-text-tertiary">
-                    Por {featuredArticle.author_name}
-                  </span>
+                  <div className="flex items-center gap-3 text-xs text-text-tertiary">
+                    <span className="font-bold">Por {featuredArticle.author_name}</span>
+                    {(featuredArticle.views_count || 0) > 0 && (
+                      <span className="flex items-center gap-1 font-semibold">
+                        <Eye size={12} /> {featuredArticle.views_count} lecturas
+                      </span>
+                    )}
+                    {(featuredArticle.likes_count || 0) > 0 && (
+                      <span className="flex items-center gap-1 font-semibold text-accent">
+                        <ThumbsUp size={11} /> {featuredArticle.likes_count}
+                      </span>
+                    )}
+                  </div>
                   <span className="inline-flex items-center gap-1 text-xs font-extrabold text-accent group-hover:translate-x-1 transition-transform">
                     Leer artículo <ArrowRight size={15} />
                   </span>
@@ -400,11 +412,23 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                   </div>
 
                   <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-xs">
-                    <span className="text-[11px] text-text-tertiary truncate max-w-[150px]">
+                    <span className="text-[11px] text-text-tertiary truncate max-w-[130px]">
                       {art.author_name}
                     </span>
-                    <span className="font-bold text-accent inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                      Leer <ChevronRight size={14} />
+                    <div className="flex items-center gap-2 text-[11px] text-text-tertiary font-semibold">
+                      {(art.views_count || 0) > 0 && (
+                        <span className="flex items-center gap-0.5">
+                          <Eye size={11} /> {art.views_count}
+                        </span>
+                      )}
+                      {(art.likes_count || 0) > 0 && (
+                        <span className="flex items-center gap-0.5 text-accent">
+                          <ThumbsUp size={10} /> {art.likes_count}
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-bold text-accent inline-flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                      Leer <ChevronRight size={13} />
                     </span>
                   </div>
                 </div>

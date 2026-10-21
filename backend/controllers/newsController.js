@@ -59,7 +59,7 @@ export const getPublicNews = async (req, res) => {
       attributes: [
         'id', 'slug', 'title', 'summary', 'image_url', 'category',
         'tags', 'author_name', 'author_avatar', 'reading_time',
-        'views_count', 'published_at', 'updatedAt'
+        'views_count', 'likes_count', 'published_at', 'updatedAt'
       ]
     });
 
@@ -106,8 +106,9 @@ export const getNewsBySlug = async (req, res) => {
       return res.status(404).json({ error: 'Noticia no encontrada.' });
     }
 
-    // Incrementar visualizaciones en segundo plano
-    News.increment('views_count', { by: 1, where: { id: article.id } }).catch(() => {});
+    // Incrementar visualizaciones reales en base de datos
+    await article.increment('views_count', { by: 1 });
+    await article.reload();
 
     // Artículos relacionados en la misma categoría o más recientes
     const relatedNews = await News.findAll({
@@ -118,7 +119,7 @@ export const getNewsBySlug = async (req, res) => {
       },
       order: [['published_at', 'DESC']],
       limit: 3,
-      attributes: ['id', 'slug', 'title', 'summary', 'image_url', 'category', 'reading_time', 'published_at']
+      attributes: ['id', 'slug', 'title', 'summary', 'image_url', 'category', 'reading_time', 'views_count', 'likes_count', 'published_at']
     });
 
     return res.json({
@@ -128,6 +129,43 @@ export const getNewsBySlug = async (req, res) => {
   } catch (error) {
     console.error('Error al obtener noticia por slug:', error);
     return res.status(500).json({ error: 'Error al cargar la noticia.' });
+  }
+};
+
+/**
+ * Registrar o retirar valoración "Me ha servido" / Like en un artículo
+ */
+export const toggleLikeNews = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { action = 'like' } = req.body; // 'like' | 'unlike'
+
+    const article = await News.findOne({
+      where: { slug, is_published: true }
+    });
+
+    if (!article) {
+      return res.status(404).json({ error: 'Artículo no encontrado.' });
+    }
+
+    if (action === 'unlike') {
+      if (article.likes_count > 0) {
+        await article.decrement('likes_count', { by: 1 });
+      }
+    } else {
+      await article.increment('likes_count', { by: 1 });
+    }
+
+    await article.reload();
+
+    return res.json({
+      success: true,
+      likes_count: article.likes_count,
+      views_count: article.views_count
+    });
+  } catch (error) {
+    console.error('Error al actualizar valoración del artículo:', error);
+    return res.status(500).json({ error: 'Error al actualizar valoración del artículo.' });
   }
 };
 

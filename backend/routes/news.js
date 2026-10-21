@@ -10,6 +10,7 @@ const router = express.Router();
 // --- RUTAS PÚBLICAS (Accesibles para Googlebot, SEO y visitantes sin login) ---
 router.get('/', newsController.getPublicNews);
 router.get('/article/:slug', newsController.getNewsBySlug);
+router.post('/article/:slug/like', newsController.toggleLikeNews);
 
 // --- RUTAS ADMINISTRADOR (Gestión de noticias y generación con IA) ---
 router.post(

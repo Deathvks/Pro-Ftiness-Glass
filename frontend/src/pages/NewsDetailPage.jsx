@@ -64,8 +64,9 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
         if (isMounted) {
           setArticle(data.article);
           setRelatedNews(data.relatedNews || []);
-          const baseLikes = Math.max(15, Math.floor((data.article?.views_count || 60) * 0.18));
-          setLikesCount(baseLikes);
+          setLikesCount(data.article?.likes_count || 0);
+          const alreadyLiked = localStorage.getItem(`liked_article_${data.article?.id}`) === 'true';
+          setHasLiked(alreadyLiked);
         }
       } catch (err) {
         if (isMounted) {
@@ -123,11 +124,33 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
     }
   };
 
-  const handleToggleLike = () => {
-    if (!hasLiked) {
-      setHasLiked(true);
-      setLikesCount(prev => prev + 1);
+  const handleToggleLike = async () => {
+    if (!article) return;
+    const nextLiked = !hasLiked;
+    const action = nextLiked ? 'like' : 'unlike';
+
+    // Actualización optimista inmediata
+    setHasLiked(nextLiked);
+    setLikesCount(prev => nextLiked ? prev + 1 : Math.max(0, prev - 1));
+
+    if (nextLiked) {
+      localStorage.setItem(`liked_article_${article.id}`, 'true');
       addToast('¡Gracias por valorar este artículo!', 'success');
+    } else {
+      localStorage.removeItem(`liked_article_${article.id}`);
+      addToast('Valoración retirada', 'info');
+    }
+
+    try {
+      const res = await newsService.toggleLikeArticle(article.slug, action);
+      if (res && res.likes_count !== undefined) {
+        setLikesCount(res.likes_count);
+      }
+    } catch (err) {
+      console.error('Error al actualizar valoración en BD:', err);
+      // Revertir optimismo si falló la conexión
+      setHasLiked(!nextLiked);
+      setLikesCount(prev => nextLiked ? Math.max(0, prev - 1) : prev + 1);
     }
   };
 
@@ -280,26 +303,22 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                     <Clock size={12} />
                     {article.reading_time} min de lectura
                   </span>
-                  {article.views_count > 0 && (
-                    <>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <Eye size={12} />
-                        {article.views_count.toLocaleString()} lecturas
-                      </span>
-                    </>
-                  )}
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <Eye size={12} />
+                    {article.views_count === 1 ? '1 lectura' : `${(article.views_count || 0).toLocaleString()} lecturas`}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Botones Sociales */}
-            <div className="flex items-center gap-1.5">
+            {/* Botones Sociales con colores de marca siempre activos */}
+            <div className="flex items-center gap-2">
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-emerald-500/20 hover:text-emerald-500 text-text-secondary transition-colors"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#25D366]/15 text-[#25D366] border border-[#25D366]/30 hover:bg-[#25D366]/25 hover:scale-105 active:scale-95 transition-all shadow-xs"
                 title="Compartir en WhatsApp"
               >
                 <FaWhatsapp size={15} />
@@ -308,27 +327,27 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 href={twitterUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-black/15 dark:bg-white/10 text-text-primary border border-black/20 dark:border-white/20 hover:bg-black/25 dark:hover:bg-white/20 hover:scale-105 active:scale-95 transition-all shadow-xs"
                 title="Compartir en X"
               >
-                <FaXTwitter size={14} />
+                <FaXTwitter size={13} />
               </a>
               <a
                 href={telegramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-blue-500/20 hover:text-blue-400 text-text-secondary transition-colors"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#229ED9]/15 text-[#229ED9] border border-[#229ED9]/30 hover:bg-[#229ED9]/25 hover:scale-105 active:scale-95 transition-all shadow-xs"
                 title="Compartir en Telegram"
               >
-                <FaTelegram size={15} />
+                <FaTelegram size={14} />
               </a>
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="p-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-xs"
                 title="Copiar enlace"
               >
-                {copied ? <Check size={15} className="text-emerald-500" /> : <Copy size={15} />}
+                {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
               </button>
             </div>
           </div>
@@ -356,24 +375,26 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           <MarkdownContent content={article.content} fontSize={fontSize} />
         </section>
 
-        {/* VALORACIÓN INTERACTIVA "¿TE HA GUSTADO?" */}
+        {/* VALORACIÓN INTERACTIVA REAL "¿TE HA SERVIDO?" */}
         <div className="my-8 p-5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/10 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div>
-            <h4 className="text-sm font-bold text-text-primary">¿Te ha gustado este artículo?</h4>
-            <p className="text-xs text-text-secondary mt-0.5">Tu valoración nos ayuda a preparar más guías gratuitas.</p>
+            <h4 className="text-sm font-bold text-text-primary">¿Te ha resultado útil esta información?</h4>
+            <p className="text-xs text-text-secondary mt-0.5">Tu voto real se guarda en la base de datos para priorizar nuevos temas científicos.</p>
           </div>
           <button
             type="button"
             onClick={handleToggleLike}
-            className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 ${
+            className={`cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold transition-all active:scale-95 shadow-sm ${
               hasLiked
-                ? 'bg-accent text-accent-contrast shadow-sm'
+                ? 'bg-accent text-accent-contrast shadow-accent/20 scale-105'
                 : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary border border-black/10 dark:border-white/10'
             }`}
           >
-            <ThumbsUp size={14} />
-            <span>{hasLiked ? '¡Te ha gustado!' : 'Me ha servido'}</span>
-            <span className="opacity-75 font-mono">({likesCount})</span>
+            <ThumbsUp size={15} />
+            <span>{hasLiked ? '¡Marcado como útil!' : 'Me ha servido'}</span>
+            <span className="font-mono font-black text-xs px-1.5 py-0.5 rounded-full bg-black/10 dark:bg-white/10">
+              {likesCount}
+            </span>
           </button>
         </div>
 

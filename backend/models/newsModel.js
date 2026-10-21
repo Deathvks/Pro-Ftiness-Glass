@@ -60,6 +60,11 @@ const News = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
+    likes_count: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
     is_published: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
