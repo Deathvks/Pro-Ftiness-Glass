@@ -43,6 +43,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   const [searchInput, setSearchInput] = useState(currentSearch);
   const [news, setNews] = useState([]);
   const [total, setTotal] = useState(0);
+  const [totalAll, setTotalAll] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [categoryCounts, setCategoryCounts] = useState({});
   const [apiCategories, setApiCategories] = useState(DEFAULT_CATEGORIES);
@@ -94,6 +95,12 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           setTotal(data.total || 0);
           setTotalPages(data.totalPages || 1);
           setCategoryCounts(data.categoryCounts || {});
+          if (data.totalAll) {
+            setTotalAll(data.totalAll);
+          } else if (data.categoryCounts) {
+            const sum = Object.values(data.categoryCounts).reduce((acc, n) => acc + (Number(n) || 0), 0);
+            if (sum > 0) setTotalAll(sum);
+          }
           if (data.categories && Array.isArray(data.categories)) {
             setApiCategories(data.categories);
           }
@@ -270,7 +277,8 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
       >
         {categories.map((cat) => {
           const isActive = currentCategory === cat;
-          const count = cat === 'Todas' ? total : (categoryCounts[cat] || 0);
+          const allCount = totalAll || Object.values(categoryCounts).reduce((acc, n) => acc + (Number(n) || 0), 0) || total;
+          const count = cat === 'Todas' ? allCount : (categoryCounts[cat] || 0);
 
           return (
             <button

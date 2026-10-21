@@ -86,6 +86,7 @@ export const getPublicNews = async (req, res) => {
     return res.json({
       news: rows,
       total: count,
+      totalAll: allPublished.length,
       totalPages: Math.ceil(count / limit),
       currentPage: page,
       categories,
