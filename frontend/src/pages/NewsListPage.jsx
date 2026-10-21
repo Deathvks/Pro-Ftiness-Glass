@@ -27,7 +27,7 @@ import AdSenseSlot from '../components/News/AdSenseSlot';
 import * as newsService from '../services/newsService';
 import useAppStore from '../store/useAppStore';
 
-const CATEGORIES = ['Todas', 'Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
+const DEFAULT_CATEGORIES = ['Todas', 'Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
 const BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 
 export default function NewsListPage({ onBack, navigate: customNavigate }) {
@@ -45,11 +45,37 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [categoryCounts, setCategoryCounts] = useState({});
+  const [apiCategories, setApiCategories] = useState(DEFAULT_CATEGORIES);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Exactamente 6 artículos por página (2 filas completas de 3 columnas para una cuadrícula perfecta)
   const ITEMS_PER_PAGE = 6;
+
+  // Categorías calculadas dinámicamente: base + cualquier nueva categoría devuelta por la API o categoryCounts
+  const categories = useMemo(() => {
+    const list = [...DEFAULT_CATEGORIES];
+    if (apiCategories && Array.isArray(apiCategories)) {
+      apiCategories.forEach((cat) => {
+        const trimmed = (cat || '').trim();
+        if (trimmed && !list.includes(trimmed)) {
+          list.push(trimmed);
+        }
+      });
+    }
+    if (categoryCounts && typeof categoryCounts === 'object') {
+      Object.keys(categoryCounts).forEach((cat) => {
+        const trimmed = (cat || '').trim();
+        if (trimmed && !list.includes(trimmed)) {
+          list.push(trimmed);
+        }
+      });
+    }
+    if (currentCategory && currentCategory !== 'Todas' && !list.includes(currentCategory)) {
+      list.push(currentCategory);
+    }
+    return list;
+  }, [apiCategories, categoryCounts, currentCategory]);
 
   useEffect(() => {
     let isMounted = true;
@@ -68,6 +94,9 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           setTotal(data.total || 0);
           setTotalPages(data.totalPages || 1);
           setCategoryCounts(data.categoryCounts || {});
+          if (data.categories && Array.isArray(data.categories)) {
+            setApiCategories(data.categories);
+          }
         }
       } catch (err) {
         if (isMounted) {
@@ -229,7 +258,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
         aria-label="Categorías de artículos"
         className="flex items-center gap-2.5 overflow-x-auto pt-2.5 pb-3 px-1.5 -mx-1.5 -mt-1 -mb-1 scrollbar-none touch-pan-x overscroll-x-contain"
       >
-        {CATEGORIES.map((cat) => {
+        {categories.map((cat) => {
           const isActive = currentCategory === cat;
           const count = cat === 'Todas' ? total : (categoryCounts[cat] || 0);
 

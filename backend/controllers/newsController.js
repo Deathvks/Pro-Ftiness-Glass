@@ -63,22 +63,32 @@ export const getPublicNews = async (req, res) => {
       ]
     });
 
-    // Obtener recuento por categoría para las pestañas
+    // Obtener recuento por categoría para las pestañas dinámicas
     const allPublished = await News.findAll({
       where: { is_published: true },
       attributes: ['category']
     });
 
     const categoryCounts = allPublished.reduce((acc, curr) => {
-      acc[curr.category] = (acc[curr.category] || 0) + 1;
+      const cat = (curr.category || '').trim();
+      if (cat) {
+        acc[cat] = (acc[cat] || 0) + 1;
+      }
       return acc;
     }, {});
+
+    // Categorías base recomendadas
+    const DEFAULT_CATEGORIES = ['Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
+    const dbCategories = Object.keys(categoryCounts);
+    const extraCategories = dbCategories.filter(c => !DEFAULT_CATEGORIES.includes(c)).sort();
+    const categories = ['Todas', ...DEFAULT_CATEGORIES, ...extraCategories];
 
     return res.json({
       news: rows,
       total: count,
       totalPages: Math.ceil(count / limit),
       currentPage: page,
+      categories,
       categoryCounts
     });
   } catch (error) {

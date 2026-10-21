@@ -267,7 +267,14 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
               <ChevronLeft size={16} /> Noticias
             </button>
             <span>/</span>
-            <span className="uppercase tracking-wider text-accent">{article.category}</span>
+            <button
+              type="button"
+              onClick={() => navigate(`/noticias?category=${encodeURIComponent(article.category)}`)}
+              className="cursor-pointer uppercase tracking-wider text-accent hover:underline transition-colors font-bold"
+              title={`Ver artículos de ${article.category}`}
+            >
+              {article.category}
+            </button>
           </div>
 
           {/* Control de tamaño de fuente A/A+/A++ */}
@@ -285,9 +292,14 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
         {/* CABECERA EDITORIAL (TITULAR + ENTRADILLA) */}
         <header className="pt-2">
           {/* Categoría / Antetítulo */}
-          <span className="text-xs font-black uppercase tracking-widest text-accent mb-2 block">
+          <button
+            type="button"
+            onClick={() => navigate(`/noticias?category=${encodeURIComponent(article.category)}`)}
+            className="cursor-pointer text-xs font-black uppercase tracking-widest text-accent mb-2 block hover:underline transition-colors"
+            title={`Ver artículos de ${article.category}`}
+          >
             {article.category}
-          </span>
+          </button>
 
           {/* Gran Titular */}
           <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-black text-text-primary tracking-tight leading-[1.2] mb-4">

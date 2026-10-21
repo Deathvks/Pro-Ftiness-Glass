@@ -23,7 +23,7 @@ import Spinner from '../Spinner';
 import * as newsService from '../../services/newsService';
 import { useToast } from '../../hooks/useToast';
 
-const CATEGORIES = ['Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
+const DEFAULT_CATEGORIES = ['Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
 
 export default function AdminNewsManager() {
   const { addToast } = useToast();
@@ -35,6 +35,18 @@ export default function AdminNewsManager() {
   // Modos de vista: 'list' | 'editor' | 'ai'
   const [viewMode, setViewMode] = useState('list');
   const [editingArticle, setEditingArticle] = useState(null);
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [isCustomAiCategory, setIsCustomAiCategory] = useState(false);
+
+  // Categorías disponibles dinámicas: base + cualquier categoría creada en artículos
+  const availableCategories = React.useMemo(() => {
+    const set = new Set(DEFAULT_CATEGORIES);
+    articles.forEach(a => {
+      const c = (a.category || '').trim();
+      if (c) set.add(c);
+    });
+    return Array.from(set);
+  }, [articles]);
 
   // Formulario de edición / creación
   const [formData, setFormData] = useState({
@@ -74,6 +86,7 @@ export default function AdminNewsManager() {
 
   const handleOpenCreate = () => {
     setEditingArticle(null);
+    setIsCustomCategory(false);
     setFormData({
       title: '',
       slug: '',
@@ -92,12 +105,14 @@ export default function AdminNewsManager() {
     try {
       const full = await newsService.fetchNewsBySlug(art.slug);
       setEditingArticle(full.article);
+      const artCat = full.article.category || 'Entrenamiento';
+      setIsCustomCategory(!DEFAULT_CATEGORIES.includes(artCat) && !availableCategories.includes(artCat));
       setFormData({
         title: full.article.title || '',
         slug: full.article.slug || '',
         summary: full.article.summary || '',
         content: full.article.content || '',
-        category: full.article.category || 'Entrenamiento',
+        category: artCat,
         tags: full.article.tags || '',
         image_url: full.article.image_url || '',
         reading_time: full.article.reading_time || 5,
@@ -340,21 +355,51 @@ export default function AdminNewsManager() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-1.5">
-              Categoría:
-            </label>
-            <select
-              value={aiCategory}
-              onChange={(e) => setAiCategory(e.target.value)}
-              className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
-              disabled={isGeneratingAI}
-            >
-              {CATEGORIES.map(cat => (
-                <option key={cat} value={cat} className="bg-bg-primary text-text-primary">
-                  {cat}
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider">
+                Categoría:
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsCustomAiCategory(!isCustomAiCategory)}
+                className="text-[11px] font-bold text-accent hover:underline cursor-pointer"
+              >
+                {isCustomAiCategory ? 'Elegir existente' : '+ Crear nueva'}
+              </button>
+            </div>
+            {isCustomAiCategory ? (
+              <input
+                type="text"
+                value={aiCategory}
+                onChange={(e) => setAiCategory(e.target.value)}
+                placeholder="Nombre de nueva categoría (ej. Cardio, Biomecánica)"
+                className="w-full bg-black/5 dark:bg-white/5 border border-accent/40 rounded-2xl p-3.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                disabled={isGeneratingAI}
+              />
+            ) : (
+              <select
+                value={aiCategory}
+                onChange={(e) => {
+                  if (e.target.value === '__NEW__') {
+                    setIsCustomAiCategory(true);
+                    setAiCategory('');
+                  } else {
+                    setAiCategory(e.target.value);
+                  }
+                }}
+                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                disabled={isGeneratingAI}
+              >
+                {availableCategories.map(cat => (
+                  <option key={cat} value={cat} className="bg-bg-primary text-text-primary">
+                    {cat}
+                  </option>
+                ))}
+                <option value="__NEW__" className="bg-bg-primary text-accent font-bold">
+                  + Crear nueva categoría...
                 </option>
-              ))}
-            </select>
+              </select>
+            )}
           </div>
 
           <button
@@ -405,18 +450,48 @@ export default function AdminNewsManager() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-text-secondary mb-1">Categoría:</label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
-              >
-                {CATEGORIES.map(cat => (
-                  <option key={cat} value={cat} className="bg-bg-primary text-text-primary">
-                    {cat}
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-text-secondary">Categoría:</label>
+                <button
+                  type="button"
+                  onClick={() => setIsCustomCategory(!isCustomCategory)}
+                  className="text-[11px] font-bold text-accent hover:underline cursor-pointer"
+                >
+                  {isCustomCategory ? 'Elegir existente' : '+ Crear nueva'}
+                </button>
+              </div>
+              {isCustomCategory ? (
+                <input
+                  type="text"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  placeholder="Nombre de la nueva categoría (ej. Cardio, Biomecánica)"
+                  className="w-full bg-black/5 dark:bg-white/5 border border-accent/40 rounded-2xl p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                  required
+                />
+              ) : (
+                <select
+                  value={formData.category}
+                  onChange={(e) => {
+                    if (e.target.value === '__NEW__') {
+                      setIsCustomCategory(true);
+                      setFormData({ ...formData, category: '' });
+                    } else {
+                      setFormData({ ...formData, category: e.target.value });
+                    }
+                  }}
+                  className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                >
+                  {availableCategories.map(cat => (
+                    <option key={cat} value={cat} className="bg-bg-primary text-text-primary">
+                      {cat}
+                    </option>
+                  ))}
+                  <option value="__NEW__" className="bg-bg-primary text-accent font-bold">
+                    + Crear nueva categoría...
                   </option>
-                ))}
-              </select>
+                </select>
+              )}
             </div>
 
             <div className="sm:col-span-2">
