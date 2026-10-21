@@ -38,6 +38,7 @@ const apiClient = async (endpoint, options = {}) => {
 
     const config = {
         method: body ? 'POST' : 'GET',
+        credentials: 'include',
         ...customConfig,
         headers,
     };

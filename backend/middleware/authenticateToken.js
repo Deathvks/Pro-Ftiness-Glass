@@ -11,7 +11,7 @@ const { UserSession } = models;
 const authenticateToken = async (req, res, next) => {
     // Obtener el token del header 'Authorization'
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Formato "Bearer TOKEN"
+    const token = req.cookies?.token || (authHeader && authHeader.split(' ')[1]);
 
     // Si no hay token, denegar el acceso
     if (token == null) {

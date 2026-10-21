@@ -11,6 +11,8 @@ import { generateVerificationCode, sendVerificationEmail, sendPasswordResetEmail
 import { createNotification } from '../services/notificationService.js';
 import { syncUserStreak, unlockBadge, addXp, DAILY_LOGIN_XP } from '../services/gamificationService.js';
 
+import { setAuthCookie, clearAuthCookie } from '../utils/authCookies.js';
+
 const { User, UserSession } = models;
 
 // Inicializar cliente de Google
@@ -231,6 +233,7 @@ export const loginUser = async (req, res, next) => {
       data: { ip, userAgent, date: new Date() }
     });
 
+    setAuthCookie(res, token);
     res.json({ message: 'Inicio de sesión exitoso.', token });
 
   } catch (error) {
@@ -404,6 +407,7 @@ export const googleLogin = async (req, res, next) => {
       } catch (err) {
         console.error("Error logging successful google:", err);
       }
+      setAuthCookie(res, appToken);
       res.json({
       message: 'Inicio de sesión con Google exitoso.',
       token: appToken,
@@ -564,6 +568,7 @@ export const discordLogin = async (req, res, next) => {
       } catch (err) {
         console.error("Error logging successful discord:", err);
       }
+      setAuthCookie(res, appToken);
       res.json({
       message: 'Inicio de sesión con Discord exitoso.',
       token: appToken,
@@ -719,6 +724,7 @@ export const facebookLogin = async (req, res, next) => {
       } catch (err) {
         console.error("Error logging successful facebook:", err);
       }
+      setAuthCookie(res, appToken);
       res.json({
       message: 'Inicio de sesión con Facebook exitoso.',
       token: appToken,
@@ -899,6 +905,7 @@ export const xLogin = async (req, res, next) => {
       } catch (err) {
         console.error("Error logging successful x:", err);
       }
+      setAuthCookie(res, appToken);
       res.json({
       message: 'Inicio de sesión con X exitoso.',
       token: appToken,
@@ -1084,6 +1091,7 @@ export const githubLogin = async (req, res, next) => {
       } catch (err) {
         console.error("Error logging successful github:", err);
       }
+      setAuthCookie(res, appToken);
       res.json({
       message: 'Inicio de sesión con GitHub exitoso.',
       token: appToken,
@@ -1263,6 +1271,7 @@ export const spotifyLogin = async (req, res, next) => {
       } catch (err) {
         console.error("Error logging successful spotify:", err);
       }
+      setAuthCookie(res, appToken);
       res.json({
       message: 'Inicio de sesión con Spotify exitoso.',
       token: appToken,
@@ -1282,12 +1291,12 @@ export const spotifyLogin = async (req, res, next) => {
 };
 
 export const logoutUser = async (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = req.cookies?.token || (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]);
 
   if (token) {
     try { await UserSession.destroy({ where: { token } }); } catch (err) {}
   }
+  clearAuthCookie(res);
 
   res.json({ message: 'Cierre de sesión exitoso.' });
 };
@@ -1457,6 +1466,7 @@ export const verifyEmail = async (req, res, next) => {
         console.error("Error logging successful register:", err);
     }
 
+    setAuthCookie(res, token);
     return res.status(200).json({
       message: 'Email verificado exitosamente',
       token,

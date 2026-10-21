@@ -3,6 +3,7 @@ import 'dotenv/config';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import compression from 'compression'; // OPTIMIZACIÓN: Ahorro de ancho de banda (Gzip)
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -62,6 +63,7 @@ app.use(sniffingDetector);
 
 // OPTIMIZACIÓN: Compresión global antes de cualquier ruta o archivo estático
 app.use(compression());
+app.use(cookieParser());
 
 // --- Configuración CORS ---
 const isProduction = process.env.NODE_ENV === 'production';
@@ -69,6 +71,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 const allowedOrigins = [
   'capacitor://localhost',
   'https://localhost',
+  'https://pro-fitness-glass.zeabur.app',
+  'https://pro-fitness-glass.app',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
@@ -110,7 +114,11 @@ const io = new Server(httpServer, {
 });
 
 io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
+  let token = socket.handshake.auth?.token;
+  if (!token && socket.handshake.headers?.cookie) {
+    const match = socket.handshake.headers.cookie.match(/(?:^|;\s*)token=([^;]+)/);
+    if (match) token = match[1];
+  }
   if (!token) {
     console.error('Socket error: Token required for socket', socket.id);
     return next(new Error('Authentication error: Token required'));

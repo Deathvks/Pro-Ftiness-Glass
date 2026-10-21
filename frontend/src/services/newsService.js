@@ -22,6 +22,7 @@ const requestWithRetry = async (url, options = {}, retries = 1, timeoutMs = 1500
 
     try {
       const res = await fetch(url, {
+        credentials: 'include',
         ...options,
         signal: controller.signal
       });
@@ -102,6 +103,7 @@ export const recordArticleView = async (slug) => {
   try {
     const res = await fetch(`${API_URL}/news/article/${encodeURIComponent(slug)}/view`, {
       method: 'POST',
+      credentials: 'include',
       headers: getAuthHeaders()
     });
     if (!res.ok) return null;
@@ -116,6 +118,7 @@ export const toggleLikeArticle = async (slug, action = 'like') => {
     `${API_URL}/news/article/${encodeURIComponent(slug)}/like`,
     {
       method: 'POST',
+      credentials: 'include',
       headers: getAuthHeaders(),
       body: JSON.stringify({ action })
     },
@@ -128,6 +131,7 @@ export const generateAINews = async ({ topic, category }) => {
     `${API_URL}/news/generate-ai`,
     {
       method: 'POST',
+      credentials: 'include',
       headers: getAuthHeaders(),
       body: JSON.stringify({ topic, category })
     },
@@ -141,6 +145,7 @@ export const createNews = async (articleData) => {
     `${API_URL}/news`,
     {
       method: 'POST',
+      credentials: 'include',
       headers: getAuthHeaders(),
       body: JSON.stringify(articleData)
     },
