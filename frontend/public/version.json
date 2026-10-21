@@ -1,4 +1,4 @@
 {
-  "version": "7.8.37",
-  "releaseNotes": "Corrección de ReferenceError en useAppNavigation y sincronización limpia de rutas."
+  "version": "7.8.38",
+  "releaseNotes": "Navegación reactiva directa a Noticias sincronizada con React Router sin recargas ni bloqueos de vista."
 }

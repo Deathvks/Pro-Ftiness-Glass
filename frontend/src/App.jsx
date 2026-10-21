@@ -59,7 +59,7 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
         if ("caches" in window) {
           try {
             caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
-          } catch {}
+          } catch { /* ignore */ }
         }
         window.location.reload();
         setTimeout(() => {
@@ -176,7 +176,7 @@ export default function App() {
     handleBackFromPolicy,
     handleCancelProfile,
     handleShowPolicy
-  } = useAppNavigation(currentPath);
+  } = useAppNavigation(navigate);
 
   const { theme, setTheme, accent, setAccent, resolvedTheme, themeColor, headerColor } = useAppTheme();
   
