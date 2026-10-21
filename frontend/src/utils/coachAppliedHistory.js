@@ -452,17 +452,23 @@ export const evaluateExerciseFollowUpAndRecovery = ({
   // B3. DETECTADO ESTANCAMIENTO O FATIGA EN LOS ENTRENAMIENTOS REGISTRADOS
   if (currentTrend?.isWarning) {
     const isStagnant = trendStatus === 'stagnant';
-    const weeksStagnant = currentTrend.weeksStagnant || 1;
+    const stagnantCount = currentTrend.stagnantSessionsCount || 2;
+    const isBW = !lastSession?.topWeight || parseFloat(lastSession.topWeight) === 0;
+    const weightLabel = isBW ? 'peso corporal' : `${lastSession.topWeight} kg`;
     return {
       type: 'needs_improvement',
       status: isStagnant ? 'needs_improvement_stagnant' : 'needs_improvement_fatigue',
       badge: isStagnant ? 'Mejora Requerida' : 'Fatiga Detectada',
-      badgeShort: isStagnant ? 'Mismo peso !' : 'Aviso fatiga !',
+      badgeShort: isStagnant ? (isBW ? 'Mismas reps !' : 'Mismo peso !') : 'Aviso fatiga !',
       title: isStagnant
-        ? 'Debes mejorar este ejercicio: estancamiento detectado'
+        ? (isBW
+          ? 'Debes mejorar este ejercicio: meseta en repeticiones'
+          : 'Debes mejorar este ejercicio: estancamiento detectado')
         : 'Debes mejorar este ejercicio: fatiga acumulada',
       message: isStagnant
-        ? `Llevas ${weeksStagnant > 1 ? `${weeksStagnant} semanas` : 'varias sesiones'} repitiendo la misma carga (${lastSession?.topWeight || 0} kg). Tu musculatura se ha adaptado y necesita un estímulo planificado para seguir avanzando.`
+        ? (isBW
+          ? `Llevas ${stagnantCount} sesiones completando las mismas ${lastSession?.topReps || 0} repeticiones en peso corporal. Tu musculatura se ha habituado a este volumen y necesita un estímulo planificado para romper el techo de repeticiones.`
+          : `Llevas ${stagnantCount} sesiones repitiendo la misma carga (${weightLabel}). Tu musculatura se ha adaptado y necesita un estímulo planificado para seguir avanzando.`)
         : 'Hemos detectado una caída en tus métricas de fuerza en las últimas series. Tu sistema neuromuscular necesita un micro-ajuste táctico.',
       actionHint: null,
       targetText: '',

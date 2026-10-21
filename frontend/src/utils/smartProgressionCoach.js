@@ -281,6 +281,20 @@ export const BODYWEIGHT_EXERCISE_LIST = [
 ];
 
 /**
+ * Formatea una carga de forma inteligente: si es 0 devuelve "peso corporal" / "Peso corporal",
+ * si es mayor que 0 devuelve "X kg" o "Xkg".
+ */
+export const formatWeightDisplay = (weight, opts = {}) => {
+  const num = parseFloat(weight) || 0;
+  if (num <= 0) {
+    if (opts.badge || opts.capitalized) return 'Peso corporal';
+    return 'peso corporal';
+  }
+  if (opts.noSpace) return `${num}kg`;
+  return `${num} kg`;
+};
+
+/**
  * Clasifica el material / equipamiento real del ejercicio combinando:
  * 1) El campo `equipment` / `material` del ejercicio (o del catálogo `allExercises`).
  * 2) Las listas explícitas de nombres de ejercicios (`BARBELL_EXERCISE_LIST`, `PULLEY_EXERCISE_LIST`, etc.).
@@ -802,10 +816,11 @@ export const diagnoseExerciseTrend = (sessions, currentRoutineId = null) => {
 
   // 1. Progresando
   if (delta1RM >= 1.0 || deltaWeight > 0 || (Math.abs(deltaWeight) < 0.5 && deltaReps >= 1)) {
+    const isBW = s0.topWeight === 0;
     return {
       status: 'progressing',
-      label: 'En Progresión',
-      badgeText: `+${Math.abs(pctChange)}% fuerza`,
+      label: isBW ? 'Más Repeticiones' : 'En Progresión',
+      badgeText: isBW ? `+${deltaReps} rep${deltaReps > 1 ? 's' : ''}` : `+${Math.abs(pctChange)}% fuerza`,
       colorClass: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
       isWarning: false,
       isProgressing: true,
@@ -820,10 +835,11 @@ export const diagnoseExerciseTrend = (sessions, currentRoutineId = null) => {
 
   // 2. Disminuido / Fatiga
   if (delta1RM <= -2.0 || deltaWeight < -1.0 || (Math.abs(deltaWeight) < 0.5 && deltaReps <= -2)) {
+    const isBW = s0.topWeight === 0;
     return {
       status: 'decreasing',
-      label: 'Rendimiento Reducido',
-      badgeText: `${pctChange}% de fatiga`,
+      label: isBW ? 'Menos Repeticiones' : 'Rendimiento Reducido',
+      badgeText: isBW ? `${deltaReps} reps fatiga` : `${pctChange}% de fatiga`,
       colorClass: 'text-amber-400 border-amber-500/30 bg-amber-500/10',
       isWarning: true,
       isProgressing: false,
@@ -836,18 +852,23 @@ export const diagnoseExerciseTrend = (sessions, currentRoutineId = null) => {
     };
   }
 
-  // 3. Estancado (Mismo peso en varias sesiones)
+  // 3. Estancado (Mismo peso / mismas reps en varias sesiones)
+  const isBW = s0.topWeight === 0;
+  // Limitar weeksStagnant por stagnantSessionsCount para que una pausa de inactividad de 2 semanas no infle falsamente las semanas de estancamiento
+  const effectiveWeeks = Math.min(stagnantSessionsCount, weeksStagnant || 1);
   return {
     status: 'stagnant',
-    label: 'Mismo Peso',
-    badgeText: weeksStagnant > 1 ? `Mismo peso (${weeksStagnant} sem)` : 'Mismo peso reciente',
+    label: isBW ? 'Mismas Reps' : 'Mismo Peso',
+    badgeText: isBW
+      ? (stagnantSessionsCount > 1 ? `Mismas reps (${stagnantSessionsCount} ses)` : 'Mismas reps')
+      : (effectiveWeeks > 1 ? `Mismo peso (${effectiveWeeks} sem)` : 'Mismo peso reciente'),
     colorClass: 'text-amber-500 border-amber-500/30 bg-amber-500/10',
     isWarning: true,
     isProgressing: false,
     delta1RM,
     deltaWeight,
     deltaReps,
-    weeksStagnant: weeksStagnant || 1,
+    weeksStagnant: effectiveWeeks,
     stagnantSessionsCount: Math.max(2, stagnantSessionsCount),
     pctChange
   };
@@ -942,7 +963,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   }
 
   const currentTopWeight = calculatedInitialWeight;
-  const isBodyweight = currentTopWeight === 0;
+  const isBodyweight = currentTopWeight === 0 || equipmentType === 'bodyweight';
   const isCalibratingSession = targetSessions.length === 0;
   const canUseTopSetBackoff = plannedSets >= 3 && !isBodyweight && currentTopWeight >= 15;
 
@@ -1059,6 +1080,18 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
       title: `Saltos de carga en máquina (+${realisticIncrement} kg)`,
       text: `Nota sobre máquinas: El incremento recomendado es de +${realisticIncrement} kg en total. Si tu máquina es de placas con saltos mayores, utiliza el selector gradual si dispone de él o elige la opción de "+1 Repetición" con tu carga actual.`
     };
+  } else if (equipmentType === 'bodyweight' || currentTopWeight === 0) {
+    coachingEquipmentHint = 'Al ser un ejercicio de peso corporal (calistenia), la sobrecarga progresiva se logra sumando repeticiones limpias o aumentando el control excéntrico antes de añadir lastre.';
+    linearDetailMotive = 'Completar más repeticiones con peso corporal o añadir un lastre ligero (+1.25 a +2.5 kg) estimula la síntesis proteica muscular aumentando la tensión mecánica sin sobrecargar los tendones.';
+    linearDetailDescription = `Añade lastre ligero (+${realisticIncrement} kg con cinturón o mancuerna) en tus series de trabajo.`;
+    repsOptionMotive = `En ejercicios de peso corporal como ${exercise.name}, consolidar 1 repetición más con técnica limpia es la forma más segura y efectiva de progresar.`;
+    repsOptionDescription = `Mantén tu peso corporal y busca 1 repetición adicional (${targetReps + 1} reps) por serie antes de plantearte añadir lastre.`;
+    plateNote = {
+      standardJump: realisticIncrement,
+      equipmentType,
+      title: 'Progresión en ejercicios de peso corporal',
+      text: 'Nota sobre ejercicios corporales: Progresa primero alcanzando y superando el rango objetivo de repeticiones con técnica estricta. Si superas las 10-12 repeticiones con solvencia, puedes empezar a lastrarte gradualmente (+1.25 a +2.5 kg).'
+    };
   } else {
     coachingEquipmentHint = `Te sugerimos un incremento progresivo de +${realisticIncrement} kg en total; si el salto mínimo de tu material es mayor, puedes progresar sumando repeticiones.`;
     linearDetailMotive = `Subir +${realisticIncrement} kg en total en todas tus series introduce una tensión mecánica constante, el estímulo principal para forzar nueva síntesis proteica muscular.`;
@@ -1108,68 +1141,96 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   // CASO A: EL USUARIO INDICA "NO LLEGO" (🔴 CARGA ALTA / FALLO TÉCNICO)
   // ------------------------------------------------------------
   if (isCannotReach) {
-    suggestedWeight = reducedWeight > 0 ? reducedWeight : currentTopWeight;
-    suggestedReps = targetReps;
+    const isBW = isBodyweight;
+    suggestedWeight = isBW ? 0 : (reducedWeight > 0 ? reducedWeight : currentTopWeight);
+    suggestedReps = isBW ? safeReducedReps : targetReps;
     suggestedSets = plannedSets;
     actionDirection = 'down';
-    intensityLabel = 'Descarga Táctica';
-    intensityDesc = 'Priorizar técnica limpia';
+    intensityLabel = isBW ? 'Ajuste de Repeticiones' : 'Descarga Táctica';
+    intensityDesc = isBW ? 'Priorizar técnica y velocidad' : 'Priorizar técnica limpia';
     suggestedRir = '2 reps en recámara';
     suggestedRest = '120 - 150 seg';
-    weightChangeNote = reducedWeight > 0 ? `-${diffReducedKg} kg (-10%)` : 'Reducir repeticiones';
-    actionTitle = 'Descarga Táctica: -10% para clavar repeticiones con técnica limpia';
-    coachingAdvice = `Nos indicas que no llegas a las ${targetReps} repeticiones. Para evitar fallos técnicos o sobrecarga articular, lo más óptimo para tu progreso en ${activeRoutineName} es aplicar una ligera descarga y consolidar el rango de repeticiones con técnica limpia.`;
-    actionSteps = [
-      `Baja a ${suggestedWeight} kg para asegurar que completas las ${targetReps} reps con 2 repeticiones de margen antes de fallar.`,
-      'Concéntrate en la velocidad concéntrica y el control del movimiento.',
-      'Una descarga a tiempo previene semanas de estancamiento por sobreesfuerzo.'
-    ];
+    weightChangeNote = isBW ? `${safeReducedReps} reps (peso corporal)` : (reducedWeight > 0 ? `-${diffReducedKg} kg (-10%)` : 'Reducir repeticiones');
+    actionTitle = isBW
+      ? `Ajuste Táctico: ${safeReducedReps} reps en peso corporal para técnica limpia`
+      : 'Descarga Táctica: -10% para clavar repeticiones con técnica limpia';
+    coachingAdvice = isBW
+      ? `Nos indicas que no llegas a las ${targetReps} repeticiones en peso corporal. Para evitar tirones o trampas con inercia, ajustamos a ${safeReducedReps} repeticiones estrictas en ${activeRoutineName} para consolidar la fuerza base con técnica perfecta.`
+      : `Nos indicas que no llegas a las ${targetReps} repeticiones. Para evitar fallos técnicos o sobrecarga articular, lo más óptimo para tu progreso en ${activeRoutineName} es aplicar una ligera descarga y consolidar el rango de repeticiones con técnica limpia.`;
+    actionSteps = isBW
+      ? [
+        `Detén cada serie en ${safeReducedReps} repeticiones en peso corporal con técnica impecable.`,
+        'Concéntrate en la velocidad concéntrica y el control en la bajada.',
+        'Ajustar repeticiones a tiempo evita lesiones y consolida la base muscular.'
+      ]
+      : [
+        `Baja a ${suggestedWeight} kg para asegurar que completas las ${targetReps} reps con 2 repeticiones de margen antes de fallar.`,
+        'Concéntrate en la velocidad concéntrica y el control del movimiento.',
+        'Una descarga a tiempo previene semanas de estancamiento por sobreesfuerzo.'
+      ];
 
-    strategyOptions = [
-      {
-        id: 'strat_deload_cannot_reach',
-        title: `🔴 Descarga Táctica (-10% a ${reducedWeight} kg)`,
-        tag: 'Recomendada',
-        badge: `Todas a ${reducedWeight}kg`,
-        suggestedWeight: reducedWeight,
-        suggestedReps: targetReps,
-        suggestedSets: plannedSets,
-        motive: `Bajar un 10% la carga disipa la fatiga acumulada en articulaciones y tendones, permitiendo que tus fibras musculares completen las ${targetReps} reps con técnica impecable y margen de seguridad (parando 2 repeticiones antes de no poder más).`,
-        description: `Ajusta a ${reducedWeight} kg en todas las series para clavar las ${targetReps} repeticiones sin trampas.`
-      },
-      {
-        id: 'strat_reduce_reps_cannot_reach',
-        title: `🔴 Reducir Repeticiones (${safeReducedReps} reps con ${currentTopWeight} kg)`,
-        tag: 'Mantener Carga',
-        badge: `${safeReducedReps} reps con ${currentTopWeight}kg`,
-        suggestedWeight: currentTopWeight,
-        suggestedReps: safeReducedReps,
-        suggestedSets: plannedSets,
-        motive: `Si prefieres mantener los ${currentTopWeight} kg, recortar a ${safeReducedReps} repeticiones evita el fallo forzado y mantiene el movimiento a máxima velocidad concéntrica.`,
-        description: `Mantén ${currentTopWeight} kg pero detén cada serie en ${safeReducedReps} repeticiones limpias, parando 1 o 2 antes del agotamiento.`
+    if (isBW) {
+      strategyOptions = [
+        {
+          id: 'strat_reduce_reps_cannot_reach',
+          title: `🔴 Reducir a ${safeReducedReps} reps en Peso Corporal`,
+          tag: 'Recomendada',
+          badge: `${safeReducedReps} reps · Corporal`,
+          suggestedWeight: 0,
+          suggestedReps: safeReducedReps,
+          suggestedSets: plannedSets,
+          motive: `Recortar a ${safeReducedReps} repeticiones evita el fallo forzado y mantiene el movimiento a máxima velocidad concéntrica y rango completo.`,
+          description: `Mantén tu peso corporal pero detén cada serie en ${safeReducedReps} repeticiones limpias, parando 1 o 2 antes del agotamiento.`
+        }
+      ];
+    } else {
+      strategyOptions = [
+        {
+          id: 'strat_deload_cannot_reach',
+          title: `🔴 Descarga Táctica (-10% a ${reducedWeight} kg)`,
+          tag: 'Recomendada',
+          badge: `Todas a ${reducedWeight}kg`,
+          suggestedWeight: reducedWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          motive: `Bajar un 10% la carga disipa la fatiga acumulada en articulaciones y tendones, permitiendo que tus fibras musculares completen las ${targetReps} reps con técnica impecable y margen de seguridad (parando 2 repeticiones antes de no poder más).`,
+          description: `Ajusta a ${reducedWeight} kg en todas las series para clavar las ${targetReps} repeticiones sin trampas.`
+        },
+        {
+          id: 'strat_reduce_reps_cannot_reach',
+          title: `🔴 Reducir Repeticiones (${safeReducedReps} reps con ${currentTopWeight} kg)`,
+          tag: 'Mantener Carga',
+          badge: `${safeReducedReps} reps con ${currentTopWeight}kg`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: safeReducedReps,
+          suggestedSets: plannedSets,
+          motive: `Si prefieres mantener los ${currentTopWeight} kg, recortar a ${safeReducedReps} repeticiones evita el fallo forzado y mantiene el movimiento a máxima velocidad concéntrica.`,
+          description: `Mantén ${currentTopWeight} kg pero detén cada serie en ${safeReducedReps} repeticiones limpias, parando 1 o 2 antes del agotamiento.`
+        }
+      ];
+
+      if (canUseTopSetBackoff) {
+        const topCannotReps = Math.max(4, targetReps - 3);
+        strategyOptions.push({
+          id: 'strat_topset_cannot_reach',
+          title: '🔴 Top Set Reducido + Back-off Protector',
+          tag: 'Carga Mixta',
+          badge: `1ª ${currentTopWeight}kg · Resto ${reducedWeight}kg`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: topCannotReps,
+          suggestedSets: plannedSets,
+          perSetPlan: generateTopSetBackoffPlan(plannedSets, currentTopWeight, topCannotReps, reducedWeight, targetReps, '1 rep de margen', '2 reps de margen'),
+          motive: `Toca los ${currentTopWeight} kg únicamente en la 1ª serie a ${topCannotReps} reps para mantener el estímulo de fuerza sin quemarte, y realiza las series restantes a ${reducedWeight} kg para acumular volumen seguro.`,
+          description: `1ª serie a ${currentTopWeight} kg (${topCannotReps} reps) + ${plannedSets - 1} series a ${reducedWeight} kg (${targetReps} reps).`
+        });
       }
-    ];
-
-    if (canUseTopSetBackoff) {
-      const topCannotReps = Math.max(4, targetReps - 3);
-      strategyOptions.push({
-        id: 'strat_topset_cannot_reach',
-        title: '🔴 Top Set Reducido + Back-off Protector',
-        tag: 'Carga Mixta',
-        badge: `1ª ${currentTopWeight}kg · Resto ${reducedWeight}kg`,
-        suggestedWeight: currentTopWeight,
-        suggestedReps: topCannotReps,
-        suggestedSets: plannedSets,
-        perSetPlan: generateTopSetBackoffPlan(plannedSets, currentTopWeight, topCannotReps, reducedWeight, targetReps, '1 rep de margen', '2 reps de margen'),
-        motive: `Toca los ${currentTopWeight} kg únicamente en la 1ª serie a ${topCannotReps} reps para mantener el estímulo de fuerza sin quemarte, y realiza las series restantes a ${reducedWeight} kg para acumular volumen seguro.`,
-        description: `1ª serie a ${currentTopWeight} kg (${topCannotReps} reps) + ${plannedSets - 1} series a ${reducedWeight} kg (${targetReps} reps).`
-      });
     }
 
   // ------------------------------------------------------------
   // CASO B: EL USUARIO INDICA "ME CUESTA" (🟡 AL LÍMITE / CONSOLIDAR)
   // ------------------------------------------------------------
   } else if (isStruggling) {
+    const isBW = isBodyweight;
     suggestedWeight = currentTopWeight;
     suggestedReps = targetReps;
     suggestedSets = plannedSets;
@@ -1178,56 +1239,95 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     intensityDesc = 'Parar 1 rep antes del fallo';
     suggestedRir = '1 rep en recámara';
     suggestedRest = '120 - 180 seg';
-    weightChangeNote = `Consolidar ${currentTopWeight} kg`;
-    actionTitle = `Consolidar Carga: Afianza tus ${currentTopWeight} kg`;
-    coachingAdvice = actualPreviousReps > 0 && actualPreviousReps < targetReps
-      ? `En tu última sesión de ${activeRoutineName} completaste ${actualPreviousReps} de las ${targetReps} repeticiones planeadas. Antes de subir kilos o series, el objetivo prioritario para tu musculatura es afianzar unas sólidas ${targetReps} repeticiones con ${currentTopWeight} kg.`
-      : `Nos indicas que te cuesta llegar a las ${targetReps} repeticiones. Para no sobrecargar articulaciones ni forzar una serie con mala técnica, te recomendamos afianzar los ${currentTopWeight} kg completando las repeticiones sin subir carga hoy.`;
-    actionSteps = [
-      `Mantén los ${currentTopWeight} kg y céntrate en completar las ${targetReps} repeticiones con técnica perfecta.`,
-      'Detén la serie cuando sientas que te queda 1 repetición en reserva antes de fallar.',
-      'Si sientes mucha fatiga en las últimas series, descansa 3 minutos completos.'
-    ];
+    weightChangeNote = isBW ? 'Consolidar peso corporal' : `Consolidar ${currentTopWeight} kg`;
+    actionTitle = isBW
+      ? 'Consolidar Control: Afianza tus repeticiones en peso corporal'
+      : `Consolidar Carga: Afianza tus ${currentTopWeight} kg`;
+    coachingAdvice = isBW
+      ? (actualPreviousReps > 0 && actualPreviousReps < targetReps
+        ? `En tu última sesión de ${activeRoutineName} completaste ${actualPreviousReps} de las ${targetReps} repeticiones en peso corporal. Antes de plantearte añadir lastre o más volumen, el objetivo prioritario es afianzar unas sólidas ${targetReps} repeticiones limpias.`
+        : `Nos indicas que te cuesta llegar a las ${targetReps} repeticiones en peso corporal. Te recomendamos consolidar las repeticiones manteniendo buena técnica sin impulsos ni balanceos.`)
+      : (actualPreviousReps > 0 && actualPreviousReps < targetReps
+        ? `En tu última sesión de ${activeRoutineName} completaste ${actualPreviousReps} de las ${targetReps} repeticiones planeadas. Antes de subir kilos o series, el objetivo prioritario para tu musculatura es afianzar unas sólidas ${targetReps} repeticiones con ${currentTopWeight} kg.`
+        : `Nos indicas que te cuesta llegar a las ${targetReps} repeticiones. Para no sobrecargar articulaciones ni forzar una serie con mala técnica, te recomendamos afianzar los ${currentTopWeight} kg completando las repeticiones sin subir carga hoy.`);
+    actionSteps = isBW
+      ? [
+        `Mantén tu peso corporal y céntrate en completar las ${targetReps} repeticiones con técnica perfecta y sin balanceos.`,
+        'Detén la serie cuando sientas que te queda 1 repetición en reserva antes de fallar.',
+        'Si sientes mucha fatiga en las últimas series, descansa 3 minutos completos.'
+      ]
+      : [
+        `Mantén los ${currentTopWeight} kg y céntrate en completar las ${targetReps} repeticiones con técnica perfecta.`,
+        'Detén la serie cuando sientas que te queda 1 repetición en reserva antes de fallar.',
+        'Si sientes mucha fatiga en las últimas series, descansa 3 minutos completos.'
+      ];
 
-    strategyOptions = [
-      {
-        id: 'strat_consolidate_struggling',
-        title: `🟡 Consolidar ${currentTopWeight} kg (Buscar ${targetReps} reps)`,
-        tag: 'Recomendada',
-        badge: `Mantener ${currentTopWeight}kg`,
-        suggestedWeight: currentTopWeight,
-        suggestedReps: targetReps,
-        suggestedSets: plannedSets,
-        motive: `Afianzar las ${targetReps} repeticiones con los ${currentTopWeight} kg actuales consolida el control neuromuscular. Subir de peso cuando aún cuesta llegar solo provocaría acortar el recorrido o usar inercia.`,
-        description: `Mantén los ${currentTopWeight} kg y busca clavar las ${targetReps} repeticiones con control total y 1 repetición de margen.`
-      },
-      {
-        id: 'strat_pause_struggling',
-        title: `🟡 Pausa en Estiramiento a Reps Reducidas (${pauseReps} reps)`,
-        tag: 'Técnica & Tensión',
-        badge: `Pausa 2s · ${pauseReps} reps`,
-        suggestedWeight: currentTopWeight,
-        suggestedReps: pauseReps,
-        suggestedSets: plannedSets,
-        motive: `Hacer pausas de 2 segundos en el punto de estiramiento elimina el rebote y aumenta la dificultad un 15-20%. Como cuesta llegar a ${targetReps} reps, reducimos a ${pauseReps} reps para que la pausa isométrica sea 100% controlada sin riesgo de fallo prematuro.`,
-        description: `Mantén ${currentTopWeight} kg, haz ${pauseReps} reps y pausa 2 segundos abajo. Máximo estímulo muscular sin llegar al agotamiento.`
+    if (isBW) {
+      strategyOptions = [
+        {
+          id: 'strat_consolidate_struggling',
+          title: `🟡 Consolidar en Peso Corporal (Buscar ${targetReps} reps)`,
+          tag: 'Recomendada',
+          badge: `${targetReps} reps · Corporal`,
+          suggestedWeight: 0,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          motive: `Afianzar las ${targetReps} repeticiones con peso corporal consolida el control neuromuscular y la estabilidad articular sin riesgo de sobrecarga.`,
+          description: `Mantén tu peso corporal y busca clavar las ${targetReps} repeticiones con control total y 1 repetición de margen.`
+        },
+        {
+          id: 'strat_pause_struggling',
+          title: `🟡 Pausa en Estiramiento a Reps Reducidas (${pauseReps} reps)`,
+          tag: 'Técnica & Tensión',
+          badge: `Pausa 2s · ${pauseReps} reps`,
+          suggestedWeight: 0,
+          suggestedReps: pauseReps,
+          suggestedSets: plannedSets,
+          motive: `Hacer pausas de 2 segundos en el punto de máximo estiramiento elimina el balanceo o inercia y fortalece el inicio del movimiento. Reducimos a ${pauseReps} reps para que la pausa isométrica sea 100% controlada.`,
+          description: `Haz ${pauseReps} reps con peso corporal y pausa 2 segundos abajo con control estricto.`
+        }
+      ];
+    } else {
+      strategyOptions = [
+        {
+          id: 'strat_consolidate_struggling',
+          title: `🟡 Consolidar ${currentTopWeight} kg (Buscar ${targetReps} reps)`,
+          tag: 'Recomendada',
+          badge: `Mantener ${currentTopWeight}kg`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          motive: `Afianzar las ${targetReps} repeticiones con los ${currentTopWeight} kg actuales consolida el control neuromuscular. Subir de peso cuando aún cuesta llegar solo provocaría acortar el recorrido o usar inercia.`,
+          description: `Mantén los ${currentTopWeight} kg y busca clavar las ${targetReps} repeticiones con control total y 1 repetición de margen.`
+        },
+        {
+          id: 'strat_pause_struggling',
+          title: `🟡 Pausa en Estiramiento a Reps Reducidas (${pauseReps} reps)`,
+          tag: 'Técnica & Tensión',
+          badge: `Pausa 2s · ${pauseReps} reps`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: pauseReps,
+          suggestedSets: plannedSets,
+          motive: `Hacer pausas de 2 segundos en el punto de estiramiento elimina el rebote y aumenta la dificultad un 15-20%. Como cuesta llegar a ${targetReps} reps, reducimos a ${pauseReps} reps para que la pausa isométrica sea 100% controlada sin riesgo de fallo prematuro.`,
+          description: `Mantén ${currentTopWeight} kg, haz ${pauseReps} reps y pausa 2 segundos abajo. Máximo estímulo muscular sin llegar al agotamiento.`
+        }
+      ];
+
+      if (canUseTopSetBackoff) {
+        const struggleBackOff = roundToWeightStep(currentTopWeight * 0.9);
+        strategyOptions.push({
+          id: 'strat_topset_struggling',
+          title: '🟡 Top Set Protector + Back-off',
+          tag: 'Menos Fatiga',
+          badge: `1ª ${currentTopWeight}kg · Resto ${struggleBackOff}kg`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: Math.max(5, targetReps - 2),
+          suggestedSets: plannedSets,
+          perSetPlan: generateTopSetBackoffPlan(plannedSets, currentTopWeight, Math.max(5, targetReps - 2), struggleBackOff, targetReps, '1 rep de margen', '2 reps de margen'),
+          motive: `Hacer la 1ª serie a ${currentTopWeight} kg con ${Math.max(5, targetReps - 2)} reps aprovecha tu energía fresca, y descargar a ${struggleBackOff} kg en las series restantes te permite acumular volumen sin agotar tu sistema nervioso.`,
+          description: `Serie 1 a ${currentTopWeight} kg (${Math.max(5, targetReps - 2)} reps) + Series 2-${plannedSets} con descarga a ${struggleBackOff} kg para no agotarte.`
+        });
       }
-    ];
-
-    if (canUseTopSetBackoff) {
-      const struggleBackOff = roundToWeightStep(currentTopWeight * 0.9);
-      strategyOptions.push({
-        id: 'strat_topset_struggling',
-        title: '🟡 Top Set Protector + Back-off',
-        tag: 'Menos Fatiga',
-        badge: `1ª ${currentTopWeight}kg · Resto ${struggleBackOff}kg`,
-        suggestedWeight: currentTopWeight,
-        suggestedReps: Math.max(5, targetReps - 2),
-        suggestedSets: plannedSets,
-        perSetPlan: generateTopSetBackoffPlan(plannedSets, currentTopWeight, Math.max(5, targetReps - 2), struggleBackOff, targetReps, '1 rep de margen', '2 reps de margen'),
-        motive: `Hacer la 1ª serie a ${currentTopWeight} kg con ${Math.max(5, targetReps - 2)} reps aprovecha tu energía fresca, y descargar a ${struggleBackOff} kg en las series restantes te permite acumular volumen sin agotar tu sistema nervioso.`,
-        description: `Serie 1 a ${currentTopWeight} kg (${Math.max(5, targetReps - 2)} reps) + Series 2-${plannedSets} con descarga a ${struggleBackOff} kg para no agotarte.`
-      });
     }
 
   // ------------------------------------------------------------
@@ -1308,72 +1408,122 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
       intensityDesc = 'Parar 1-2 reps antes de fallar';
       suggestedRir = '1-2 reps en recámara';
       suggestedRest = '120 - 180 seg';
-      weightChangeNote = `Consolidar ${currentTopWeight} kg`;
+      weightChangeNote = isBodyweight ? 'Peso corporal' : `Consolidar ${currentTopWeight} kg`;
 
-      if (missedTargetInPrevious) {
-        actionTitle = `Consolidar ${currentTopWeight} kg (lograste ${actualPreviousReps}/${targetReps} reps)`;
-        coachingAdvice = `Según los datos recogidos de tu último entrenamiento en ${activeRoutineName}, registraste ${actualPreviousReps} repeticiones con ${currentTopWeight} kg (objetivo: ${targetReps} reps). No te recomendamos subir ${jumpLabelText} todavía: primero consolida los ${currentTopWeight} kg hasta clavar las ${targetReps} repeticiones.`;
-      } else if (trend.status === 'decreasing') {
-        actionTitle = `Consolidar ${currentTopWeight} kg (ajuste por fatiga previa)`;
-        coachingAdvice = `Según el historial de tus entrenamientos en ${activeRoutineName}, detectamos una caída de rendimiento en la última sesión. Antes de pensar en subir ${jumpLabelText}, hoy toca afianzar los ${currentTopWeight} kg con técnica limpia.`;
-      } else if (incompleteSetsInPrevious) {
-        actionTitle = `Consolidar todas las series a ${targetReps} reps con ${currentTopWeight} kg`;
-        coachingAdvice = `En tu última sesión lograste ${actualPreviousReps} reps en tu mejor serie con ${currentTopWeight} kg, pero en el resto de series caíste hasta ${minRepsInLastSession} repeticiones. Subir ${jumpLabelText} ahora sería precipitado; primero completa todas las ${plannedSets} series clavando las ${targetReps} repeticiones.`;
+      if (isBodyweight) {
+        if (missedTargetInPrevious) {
+          actionTitle = `Consolidar peso corporal (lograste ${actualPreviousReps}/${targetReps} reps)`;
+          coachingAdvice = `Según los datos recogidos de tu último entrenamiento en ${activeRoutineName}, completaste ${actualPreviousReps} repeticiones en peso corporal (objetivo: ${targetReps} reps). En calistenia, la clave es consolidar el rango completo de movimiento en todas las series antes de buscar añadir repeticiones forzadas o lastre.`;
+        } else if (trend.status === 'decreasing') {
+          actionTitle = 'Consolidar peso corporal (ajuste por fatiga previa)';
+          coachingAdvice = `Según tu historial en ${activeRoutineName}, detectamos una disminución de repeticiones en la última sesión (${trend.badgeText}). Antes de exigir más volumen, hoy toca afianzar tus repeticiones en peso corporal con técnica limpia, sin tirones ni balanceo.`;
+        } else if (incompleteSetsInPrevious) {
+          actionTitle = `Consolidar todas las series a ${targetReps} reps en peso corporal`;
+          coachingAdvice = `En tu última sesión lograste ${actualPreviousReps} reps en tu primera serie, pero en las siguientes caíste hasta ${minRepsInLastSession} repeticiones. Para progresar de verdad en peso corporal necesitas sostener las ${targetReps} repeticiones en todas las ${plannedSets} series.`;
+        } else {
+          actionTitle = 'Consolidar peso corporal con margen (sin llegar al fallo)';
+          coachingAdvice = `En tu último entreno completaste las ${targetReps} reps en peso corporal pero llegando al fallo muscular absoluto. Antes de avanzar, domina las ${targetReps} reps dejando al menos 1 repetición de margen técnico (RIR 1).`;
+        }
+
+        actionSteps = [
+          `Mantén tu peso corporal buscando completar todas las ${plannedSets} series a ${targetReps} repeticiones estrictas.`,
+          'Evita el balanceo (kipping) y realiza una fase excéntrica controlada de 2 segundos.',
+          'Descansa entre 2 y 3 minutos entre series para recuperar la potencia muscular.'
+        ];
+
+        const consolidateBwOption = {
+          id: 'strat_auto_consolidate_normal',
+          title: `🟢 Consolidar en Peso Corporal (${plannedSets}×${targetReps} reps sólidas)`,
+          tag: 'Recomendada según tu historial',
+          badge: `${targetReps} reps · Corporal`,
+          suggestedWeight: 0,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          motive: incompleteSetsInPrevious
+            ? `En la sesión anterior tus repeticiones cayeron de ${actualPreviousReps} a ${minRepsInLastSession} en las últimas series. Sostener ${targetReps} reps en todas las series es indispensable antes de plantear sobrecarga.`
+            : `Afianzar las ${targetReps} repeticiones estrictas en peso corporal garantiza adaptaciones tendinosas y articulares sólidas.`,
+          description: `Mantén tu peso corporal hoy para completar todas las series de ${targetReps} repeticiones con control.`
+        };
+
+        const repsBwOption = {
+          id: 'strat_reps_normal',
+          title: `🟢 Buscar +1 Rep en 1ª Serie (${targetReps + 1} reps en peso corporal)`,
+          tag: 'Progresión Suave',
+          badge: `+1 rep · Corporal`,
+          suggestedWeight: 0,
+          suggestedReps: targetReps + 1,
+          suggestedSets: plannedSets,
+          motive: `Si hoy llegas con energía fresca, intentar 1 repetición extra en la primera serie te permite testear si tu adaptación neuromuscular ya se ha completado.`,
+          description: `Intenta sacar ${targetReps + 1} reps en la 1ª serie y mantén ${targetReps} reps en el resto.`
+        };
+
+        strategyOptions = [consolidateBwOption, repsBwOption];
       } else {
-        actionTitle = `Consolidar ${currentTopWeight} kg con margen (sin llegar al fallo)`;
-        coachingAdvice = `En tu último entreno completaste las ${targetReps} reps con ${currentTopWeight} kg pero llegando al límite (0 reps en recámara). Antes de subir ${jumpLabelText}, domina los ${currentTopWeight} kg dejando 1-2 repeticiones de margen.`;
+        if (missedTargetInPrevious) {
+          actionTitle = `Consolidar ${currentTopWeight} kg (lograste ${actualPreviousReps}/${targetReps} reps)`;
+          coachingAdvice = `Según los datos recogidos de tu último entrenamiento en ${activeRoutineName}, registraste ${actualPreviousReps} repeticiones con ${currentTopWeight} kg (objetivo: ${targetReps} reps). No te recomendamos subir ${jumpLabelText} todavía: primero consolida los ${currentTopWeight} kg hasta clavar las ${targetReps} repeticiones.`;
+        } else if (trend.status === 'decreasing') {
+          actionTitle = `Consolidar ${currentTopWeight} kg (ajuste por fatiga previa)`;
+          coachingAdvice = `Según el historial de tus entrenamientos en ${activeRoutineName}, detectamos una caída de rendimiento en la última sesión. Antes de pensar en subir ${jumpLabelText}, hoy toca afianzar los ${currentTopWeight} kg con técnica limpia.`;
+        } else if (incompleteSetsInPrevious) {
+          actionTitle = `Consolidar todas las series a ${targetReps} reps con ${currentTopWeight} kg`;
+          coachingAdvice = `En tu última sesión lograste ${actualPreviousReps} reps en tu mejor serie con ${currentTopWeight} kg, pero en el resto de series caíste hasta ${minRepsInLastSession} repeticiones. Subir ${jumpLabelText} ahora sería precipitado; primero completa todas las ${plannedSets} series clavando las ${targetReps} repeticiones.`;
+        } else {
+          actionTitle = `Consolidar ${currentTopWeight} kg con margen (sin llegar al fallo)`;
+          coachingAdvice = `En tu último entreno completaste las ${targetReps} reps con ${currentTopWeight} kg pero llegando al límite (0 reps en recámara). Antes de subir ${jumpLabelText}, domina los ${currentTopWeight} kg dejando 1-2 repeticiones de margen.`;
+        }
+
+        actionSteps = [
+          `Mantén ${currentTopWeight} kg buscando completar todas las ${plannedSets} series a ${targetReps} repeticiones limpias.`,
+          'Cuando completes todas las series sin caer de repeticiones ni llegar al fallo forzado, el sistema te habilitará la subida de peso.',
+          'Descansa entre 2 y 3 minutos entre series.'
+        ];
+
+        const consolidateAutoOption = {
+          id: 'strat_auto_consolidate_normal',
+          title: `🟢 Consolidar ${currentTopWeight} kg (${plannedSets}×${targetReps} reps sólidas)`,
+          tag: 'Recomendada según tu historial',
+          badge: `Mantener ${currentTopWeight}kg`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          motive: incompleteSetsInPrevious
+            ? `En la sesión anterior tus repeticiones cayeron de ${actualPreviousReps} a ${minRepsInLastSession} en las últimas series. Completar todas las series a ${targetReps} reps con ${currentTopWeight} kg es indispensable antes de añadir discos.`
+            : `Afianzar el rango de ${targetReps} repeticiones con ${currentTopWeight} kg antes de subir carga garantiza progreso real sin sobrecarga articular.`,
+          description: `Mantén los ${currentTopWeight} kg hoy para completar todas las series de ${targetReps} repeticiones con solvencia.`
+        };
+
+        const repsOption = {
+          id: 'strat_reps_normal',
+          title: `🟢 Buscar +1 Repetición (${targetReps + 1} reps con ${currentTopWeight} kg)`,
+          tag: 'Progresión Suave',
+          badge: `+1 rep con ${currentTopWeight}kg`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps + 1,
+          suggestedSets: plannedSets,
+          motive: repsOptionMotive,
+          description: repsOptionDescription
+        };
+
+        const linearOption = {
+          id: 'strat_linear_normal',
+          title: `🟢 Sobrecarga Lineal (+${realisticIncrement} kg a ${nextWeight} kg)`,
+          tag: 'Solo si vas muy sobrado',
+          badge: `Todas a ${nextWeight}kg`,
+          suggestedWeight: nextWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          motive: `Opción disponible solo si hoy te sientes excepcionalmente fuerte y con margen para subir ${jumpLabelText}.`,
+          description: linearDetailDescription
+        };
+
+        strategyOptions = [consolidateAutoOption, repsOption, linearOption];
       }
-
-      actionSteps = [
-        `Mantén ${currentTopWeight} kg buscando completar todas las ${plannedSets} series a ${targetReps} repeticiones limpias.`,
-        'Cuando completes todas las series sin caer de repeticiones ni llegar al fallo forzado, el sistema te habilitará la subida de peso.',
-        'Descansa entre 2 y 3 minutos entre series.'
-      ];
-
-      const consolidateAutoOption = {
-        id: 'strat_auto_consolidate_normal',
-        title: `🟢 Consolidar ${currentTopWeight} kg (${plannedSets}×${targetReps} reps sólidas)`,
-        tag: 'Recomendada según tu historial',
-        badge: `Mantener ${currentTopWeight}kg`,
-        suggestedWeight: currentTopWeight,
-        suggestedReps: targetReps,
-        suggestedSets: plannedSets,
-        motive: incompleteSetsInPrevious
-          ? `En la sesión anterior tus repeticiones cayeron de ${actualPreviousReps} a ${minRepsInLastSession} en las últimas series. Completar todas las series a ${targetReps} reps con ${currentTopWeight} kg es indispensable antes de añadir discos.`
-          : `Afianzar el rango de ${targetReps} repeticiones con ${currentTopWeight} kg antes de subir carga garantiza progreso real sin sobrecarga articular.`,
-        description: `Mantén los ${currentTopWeight} kg hoy para completar todas las series de ${targetReps} repeticiones con solvencia.`
-      };
-
-      const repsOption = {
-        id: 'strat_reps_normal',
-        title: `🟢 Buscar +1 Repetición (${targetReps + 1} reps con ${currentTopWeight} kg)`,
-        tag: 'Progresión Suave',
-        badge: `+1 rep con ${currentTopWeight}kg`,
-        suggestedWeight: currentTopWeight,
-        suggestedReps: targetReps + 1,
-        suggestedSets: plannedSets,
-        motive: repsOptionMotive,
-        description: repsOptionDescription
-      };
-
-      const linearOption = {
-        id: 'strat_linear_normal',
-        title: `🟢 Sobrecarga Lineal (+${realisticIncrement} kg a ${nextWeight} kg)`,
-        tag: 'Solo si vas muy sobrado',
-        badge: `Todas a ${nextWeight}kg`,
-        suggestedWeight: nextWeight,
-        suggestedReps: targetReps,
-        suggestedSets: plannedSets,
-        motive: `Opción disponible solo si hoy te sientes excepcionalmente fuerte y con margen para subir ${jumpLabelText}.`,
-        description: linearDetailDescription
-      };
-
-      strategyOptions = [consolidateAutoOption, repsOption, linearOption];
 
     // C2_B. Inactividad prolongada (10+ días o semanas sin hacer esta rutina): readaptación y reactivación segura
     } else if (isInactive) {
       const isSevere = inactiveDays >= 28;
-      const lightReactivationWeight = roundToWeightStep(currentTopWeight * (isSevere ? 0.85 : 0.9));
+      const lightReactivationWeight = isBodyweight ? 0 : roundToWeightStep(currentTopWeight * (isSevere ? 0.85 : 0.9));
 
       suggestedWeight = isSevere ? lightReactivationWeight : currentTopWeight;
       suggestedReps = targetReps;
@@ -1383,58 +1533,102 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
       intensityDesc = 'Parar 2-3 reps antes del fallo (RIR 2-3)';
       suggestedRir = '2 - 3 reps en recámara';
       suggestedRest = '120 - 180 seg';
-      weightChangeNote = isSevere
-        ? `${lightReactivationWeight} kg (toma de contacto)`
-        : `Mantener ${currentTopWeight} kg (reactivación)`;
-      actionTitle = isSevere
-        ? `Re-adaptación: Carga ligera tras más de 1 mes (${suggestedWeight} kg)`
-        : `Reactivación: Carga de control tras ${followUp?.timeAgoText || `${inactiveDays} días`}`;
+      weightChangeNote = isBodyweight
+        ? 'Peso corporal (reactivación)'
+        : (isSevere
+          ? `${lightReactivationWeight} kg (toma de contacto)`
+          : `Mantener ${currentTopWeight} kg (reactivación)`);
+      actionTitle = isBodyweight
+        ? (isSevere
+          ? 'Re-adaptación: Peso corporal con margen tras más de 1 mes'
+          : `Reactivación: Peso corporal tras ${followUp?.timeAgoText || `${inactiveDays} días`}`)
+        : (isSevere
+          ? `Re-adaptación: Carga ligera tras más de 1 mes (${suggestedWeight} kg)`
+          : `Reactivación: Carga de control tras ${followUp?.timeAgoText || `${inactiveDays} días`}`);
 
-      coachingAdvice = followUp?.message || `Llevas ${followUp?.timeAgoText || `${inactiveDays} días`} sin realizar este ejercicio en ${activeRoutineName}. Tras este periodo de inactividad, no es recomendable buscar récords ni subir peso hoy de golpe. Realiza una sesión de reactivación controlada sin llegar al fallo para despertar el músculo y proteger tus tendones.`;
+      // ATENCIÓN: NUNCA duplicar followUp?.message aquí.
+      // followUp.message ya se muestra en la tarjeta superior de inactividad de la rutina.
+      // coachingAdvice debe aportar la referencia de rendimiento del ejercicio concreto:
+      if (isBodyweight) {
+        coachingAdvice = `En tu última sesión registrada de este ejercicio completaste ${actualPreviousReps || targetReps} repeticiones con peso corporal. Tras ${followUp?.timeAgoText || `${inactiveDays} días`} de pausa, tu tejido conectivo y fuerza neuromuscular necesitan reconectar con el patrón de movimiento. El plan de hoy es completar tus series en peso corporal parando 2 o 3 repeticiones antes de llegar al fallo (RIR 2-3), priorizando un rango de recorrido estricto para reanudar el estímulo sin provocar agujetas extremas.`;
+      } else {
+        coachingAdvice = `En tu última sesión de este ejercicio levantaste ${currentTopWeight} kg (${actualPreviousReps || targetReps} reps). Tras ${followUp?.timeAgoText || `${inactiveDays} días`} de pausa, el objetivo hoy no es batir marcas ni subir kilos, sino reactivar los husos neuromusculares y lubricar articulaciones con ${suggestedWeight} kg manteniendo 2-3 repeticiones de margen antes de fallar (RIR 2-3).`;
+      }
 
-      actionSteps = [
+      actionSteps = isBodyweight ? [
+        `Usa tu peso corporal en tus series de hoy para evaluar cómo responde tu musculatura tras ${followUp?.timeAgoText || `${inactiveDays} días`}.`,
+        'Detén cada serie con al menos 2 o 3 repeticiones en recámara (sin llegar al fallo muscular).',
+        'En tu próxima sesión, una vez reactivado el patrón motor, el entrenador te guiará para volver a progresar en repeticiones.'
+      ] : [
         `Usa ${suggestedWeight} kg en tus series de hoy para evaluar cómo responde tu musculatura tras ${followUp?.timeAgoText || `${inactiveDays} días`}.`,
         'Detén cada serie con al menos 2 o 3 repeticiones en recámara (sin llegar al fallo muscular).',
         'En tu próxima sesión, una vez reactivado el patrón motor, el entrenador te habilitará volver a subir cargas.'
       ];
 
-      strategyOptions = [
-        {
-          id: 'strat_reactivation_safe',
-          title: `🟢 Sesión de Reactivación (${suggestedWeight} kg × ${targetReps} reps con RIR 2-3)`,
-          tag: 'Recomendada (Vuelta al entreno)',
-          badge: `${suggestedWeight} kg · RIR 2-3`,
-          suggestedWeight: suggestedWeight,
-          suggestedReps: targetReps,
-          suggestedSets: plannedSets,
-          motive: `Tras ${followUp?.timeAgoText || `${inactiveDays} días`} de inactividad, tus fibras musculares necesitan volver a familiarizarse con la tensión sin generar agujetas extremas ni sobrecargar los tendones.`,
-          description: `Realiza tus series con ${suggestedWeight} kg dejando 2 o 3 repeticiones de margen antes del fallo.`
-        },
-        {
-          id: 'strat_reactivation_conservative',
-          title: `🟡 Toma de Contacto Más Ligera (${lightReactivationWeight} kg, -10%)`,
-          tag: 'Más Margen',
-          badge: `${lightReactivationWeight} kg (-10%)`,
-          suggestedWeight: lightReactivationWeight,
-          suggestedReps: targetReps,
-          suggestedSets: plannedSets,
-          motive: `Empezar un 10% por debajo de tu marca previa te asegura una sesión fluida, reactiva la memoria muscular y previene cualquier molestia articular.`,
-          description: `Comienza con ${lightReactivationWeight} kg con bajada controlada y máxima concentración técnica.`
-        }
-      ];
+      if (isBodyweight) {
+        strategyOptions = [
+          {
+            id: 'strat_reactivation_safe',
+            title: `🟢 Sesión de Reactivación en Peso Corporal (${targetReps} reps con RIR 2-3)`,
+            tag: 'Recomendada (Vuelta al entreno)',
+            badge: 'Corporal · RIR 2-3',
+            suggestedWeight: 0,
+            suggestedReps: targetReps,
+            suggestedSets: plannedSets,
+            motive: `Tras ${followUp?.timeAgoText || `${inactiveDays} días`} sin realizar este ejercicio, tus fibras musculares necesitan reactivarse con peso corporal sin provocar sobrecarga ni agujetas invalidantes.`,
+            description: 'Realiza tus series en peso corporal parando 2 o 3 repeticiones antes de no poder subir más.'
+          },
+          {
+            id: 'strat_reactivation_tempo',
+            title: '🟡 Tempo Controlado en Peso Corporal (Bajada en 3 seg)',
+            tag: 'Protección Tendinosa',
+            badge: 'Tempo 3s · Corporal',
+            suggestedWeight: 0,
+            suggestedReps: Math.max(4, targetReps - 2),
+            suggestedSets: plannedSets,
+            motive: 'Una bajada de 3 segundos en peso corporal reactiva los mecanorreceptores musculares y fortalece tendones sin necesidad de hacer repeticiones al límite.',
+            description: `Haz ${Math.max(4, targetReps - 2)} reps por serie con 3 segundos de bajada controlada y sin balanceo.`
+          }
+        ];
+      } else {
+        strategyOptions = [
+          {
+            id: 'strat_reactivation_safe',
+            title: `🟢 Sesión de Reactivación (${suggestedWeight} kg × ${targetReps} reps con RIR 2-3)`,
+            tag: 'Recomendada (Vuelta al entreno)',
+            badge: `${suggestedWeight} kg · RIR 2-3`,
+            suggestedWeight: suggestedWeight,
+            suggestedReps: targetReps,
+            suggestedSets: plannedSets,
+            motive: `Tras ${followUp?.timeAgoText || `${inactiveDays} días`} de inactividad, tus fibras musculares necesitan volver a familiarizarse con la tensión sin generar agujetas extremas ni sobrecargar los tendones.`,
+            description: `Realiza tus series con ${suggestedWeight} kg dejando 2 o 3 repeticiones de margen antes del fallo.`
+          },
+          {
+            id: 'strat_reactivation_conservative',
+            title: `🟡 Toma de Contacto Más Ligera (${lightReactivationWeight} kg, -10%)`,
+            tag: 'Más Margen',
+            badge: `${lightReactivationWeight} kg (-10%)`,
+            suggestedWeight: lightReactivationWeight,
+            suggestedReps: targetReps,
+            suggestedSets: plannedSets,
+            motive: 'Empezar un 10% por debajo de tu marca previa te asegura una sesión fluida, reactiva la memoria muscular y previene cualquier molestia articular.',
+            description: `Comienza con ${lightReactivationWeight} kg con bajada controlada y máxima concentración técnica.`
+          }
+        ];
 
-      if (!isSevere && currentTopWeight > 0) {
-        strategyOptions.push({
-          id: 'strat_reactivation_test',
-          title: `🟢 Tantear Carga Previa (${currentTopWeight} kg solo si te notas al 100%)`,
-          tag: 'Solo si vas sobrado',
-          badge: `${currentTopWeight} kg`,
-          suggestedWeight: currentTopWeight,
-          suggestedReps: targetReps,
-          suggestedSets: plannedSets,
-          motive: `Opción disponible si durante el calentamiento te has notado con fuerza y energía plena, manteniendo siempre 1-2 reps en recámara.`,
-          description: `Haz tu 1ª serie con ${currentTopWeight} kg; si notas pesadez o falta de ritmo, baja a ${lightReactivationWeight} kg.`
-        });
+        if (!isSevere && currentTopWeight > 0) {
+          strategyOptions.push({
+            id: 'strat_reactivation_test',
+            title: `🟢 Tantear Carga Previa (${currentTopWeight} kg solo si te notas al 100%)`,
+            tag: 'Solo si vas sobrado',
+            badge: `${currentTopWeight} kg`,
+            suggestedWeight: currentTopWeight,
+            suggestedReps: targetReps,
+            suggestedSets: plannedSets,
+            motive: 'Opción disponible si durante el calentamiento te has notado con fuerza y energía plena, manteniendo siempre 1-2 reps en recámara.',
+            description: `Haz tu 1ª serie con ${currentTopWeight} kg; si notas pesadez o falta de ritmo, baja a ${lightReactivationWeight} kg.`
+          });
+        }
       }
 
     // C3. Entrenado hace menos de 36h (descanso incompleto): no recomendar subir discos sin haber supercompensado
@@ -1447,114 +1641,206 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
       intensityDesc = 'Sin forzar subida de peso hoy';
       suggestedRir = '2 reps en recámara';
       suggestedRest = '120 - 150 seg';
-      weightChangeNote = `Mantener ${currentTopWeight} kg`;
-      actionTitle = `Mantener ${currentTopWeight} kg (descanso menor a 48h)`;
-      coachingAdvice = `Entrenaste este ejercicio ${followUp?.timeAgoText || 'hace muy poco'}. Aunque cumpliste tus repeticiones en la última sesión, tu musculatura y sistema nervioso aún están recuperándose (requieren 48-72h). No te recomendamos subir ${jumpLabelText} hoy: mantén ${currentTopWeight} kg con buena técnica.`;
-      actionSteps = [
+      weightChangeNote = isBodyweight ? 'Peso corporal' : `Mantener ${currentTopWeight} kg`;
+      actionTitle = isBodyweight
+        ? 'Mantener peso corporal (descanso menor a 48h)'
+        : `Mantener ${currentTopWeight} kg (descanso menor a 48h)`;
+      coachingAdvice = isBodyweight
+        ? `Entrenaste este ejercicio ${followUp?.timeAgoText || 'hace muy poco'}. Aunque cumpliste tus repeticiones en la última sesión, tu musculatura dorsal y sistema nervioso aún están recuperándose (requieren 48-72h). No fuerces hoy repeticiones al límite ni intentes añadir lastre: mantén tus series en peso corporal con técnica limpia y 2 reps de margen.`
+        : `Entrenaste este ejercicio ${followUp?.timeAgoText || 'hace muy poco'}. Aunque cumpliste tus repeticiones en la última sesión, tu musculatura y sistema nervioso aún están recuperándose (requieren 48-72h). No te recomendamos subir ${jumpLabelText} hoy: mantén ${currentTopWeight} kg con buena técnica.`;
+      actionSteps = isBodyweight ? [
+        'Mantén tu peso corporal hoy para no interferir con la recuperación muscular.',
+        'Deja al menos 2 repeticiones en recámara sin llegar al fallo.',
+        'En tu próxima sesión tras descansar 48-72h podrás atacar la subida de repeticiones.'
+      ] : [
         `Mantén los ${currentTopWeight} kg hoy para no interferir con la recuperación muscular.`,
         'Deja al menos 2 repeticiones en recámara sin llegar al fallo.',
         `En tu próxima sesión tras descansar 48-72h podrás atacar el salto a ${nextWeight} kg.`
       ];
 
-      strategyOptions = [
-        {
-          id: 'strat_recovery_maintain',
-          title: `🟢 Mantener Carga de Control (${currentTopWeight} kg × ${targetReps} reps)`,
-          tag: 'Recomendada (En recuperación)',
-          badge: `Mantener ${currentTopWeight}kg`,
-          suggestedWeight: currentTopWeight,
-          suggestedReps: targetReps,
-          suggestedSets: plannedSets,
-          motive: `Con menos de 48h de descanso la supercompensación no ha terminado. Mantener ${currentTopWeight} kg protege tus tendones y evita pinchar con un peso nuevo.`,
-          description: `Realiza tus series con ${currentTopWeight} kg buscando fluidez y control.`
-        },
-        {
-          id: 'strat_reps_normal',
-          title: `🟢 Sumar +1 Repetición (${targetReps + 1} reps con ${currentTopWeight} kg)`,
-          tag: 'Alternativa sin subir kilos',
-          badge: `+1 rep con ${currentTopWeight}kg`,
-          suggestedWeight: currentTopWeight,
-          suggestedReps: targetReps + 1,
-          suggestedSets: plannedSets,
-          motive: repsOptionMotive,
-          description: repsOptionDescription
-        }
-      ];
+      if (isBodyweight) {
+        strategyOptions = [
+          {
+            id: 'strat_recovery_maintain',
+            title: `🟢 Mantener Carga de Control (Peso corporal × ${targetReps} reps)`,
+            tag: 'Recomendada (En recuperación)',
+            badge: 'Corporal · RIR 2',
+            suggestedWeight: 0,
+            suggestedReps: targetReps,
+            suggestedSets: plannedSets,
+            motive: 'Con menos de 48h de descanso la supercompensación no ha terminado. Mantener peso corporal con margen protege tus tendones.',
+            description: 'Realiza tus series en peso corporal buscando fluidez y control sin llegar al límite.'
+          },
+          {
+            id: 'strat_reps_normal',
+            title: `🟢 Sumar +1 Repetición (${targetReps + 1} reps en peso corporal)`,
+            tag: 'Solo si vas muy fresco',
+            badge: '+1 rep · Corporal',
+            suggestedWeight: 0,
+            suggestedReps: targetReps + 1,
+            suggestedSets: plannedSets,
+            motive: 'Si a pesar del descanso breve te sientes en tu mejor estado físico, puedes probar a sacar 1 repetición extra en tu primera serie.',
+            description: `Busca ${targetReps + 1} reps en la 1ª serie y mantén ${targetReps} en las siguientes.`
+          }
+        ];
+      } else {
+        strategyOptions = [
+          {
+            id: 'strat_recovery_maintain',
+            title: `🟢 Mantener Carga de Control (${currentTopWeight} kg × ${targetReps} reps)`,
+            tag: 'Recomendada (En recuperación)',
+            badge: `Mantener ${currentTopWeight}kg`,
+            suggestedWeight: currentTopWeight,
+            suggestedReps: targetReps,
+            suggestedSets: plannedSets,
+            motive: `Con menos de 48h de descanso la supercompensación no ha terminado. Mantener ${currentTopWeight} kg protege tus tendones y evita pinchar con un peso nuevo.`,
+            description: `Realiza tus series con ${currentTopWeight} kg buscando fluidez y control.`
+          },
+          {
+            id: 'strat_reps_normal',
+            title: `🟢 Sumar +1 Repetición (${targetReps + 1} reps con ${currentTopWeight} kg)`,
+            tag: 'Alternativa sin subir kilos',
+            badge: `+1 rep con ${currentTopWeight}kg`,
+            suggestedWeight: currentTopWeight,
+            suggestedReps: targetReps + 1,
+            suggestedSets: plannedSets,
+            motive: repsOptionMotive,
+            description: repsOptionDescription
+          }
+        ];
+      }
 
     // C4. Estancamiento detectado (2+ sesiones repitiendo mismo peso y mismas reps): NO mandar subir peso a lo loco, primero desbloquear
     } else if (isStagnant) {
-      suggestedWeight = currentTopWeight;
-      suggestedReps = targetReps + 1;
-      suggestedSets = plannedSets;
-      actionDirection = 'maintain';
-      intensityLabel = 'Desbloqueo Progresivo';
-      intensityDesc = 'Romper meseta antes de subir kilos';
-      suggestedRir = '1 rep en recámara';
-      suggestedRest = '120 - 180 seg';
-      weightChangeNote = `+1 rep (${currentTopWeight} kg)`;
-      actionTitle = `Desbloqueo: Busca ${targetReps + 1} reps con ${currentTopWeight} kg antes de subir peso`;
-      coachingAdvice = `Llevas ${stagnantCount} sesiones seguidas repitiendo ${currentTopWeight} kg × ${actualPreviousReps} reps en ${activeRoutineName} sin lograr subir marcas. Si te recomendásemos meter ${jumpLabelText} ahora mismo a lo loco, perderías repeticiones y técnica. La forma inteligente de romper el estancamiento es sacar primero +1 repetición (${targetReps + 1} reps) con ${currentTopWeight} kg${canUseTopSetBackoff ? ` o tantear ${nextWeight} kg únicamente en la 1ª serie (Top Set)` : ''}.`;
-      actionSteps = [
-        `Mantén ${currentTopWeight} kg y concéntrate en arrancar 1 repetición más (${targetReps + 1} reps) que en tus sesiones anteriores.`,
-        'Descansa 2-3 minutos completos entre series para disipar la fatiga neural.',
-        `En cuanto rompas la barrera de repeticiones, el sistema te dará luz verde para subir a ${nextWeight} kg.`
-      ];
+      if (isBodyweight) {
+        suggestedWeight = 0;
+        suggestedReps = targetReps + 1;
+        suggestedSets = plannedSets;
+        actionDirection = 'maintain';
+        intensityLabel = 'Desbloqueo Progresivo';
+        intensityDesc = 'Romper meseta de repeticiones';
+        suggestedRir = '1 rep en recámara';
+        suggestedRest = '120 - 180 seg';
+        weightChangeNote = '+1 rep en corporal';
+        actionTitle = `Meseta en peso corporal: Desbloquea buscando ${targetReps + 1} reps`;
+        coachingAdvice = `Llevas ${stagnantCount} sesiones consecutivas completando ${actualPreviousReps || targetReps} repeticiones con peso corporal en ${activeRoutineName}. En ejercicios de calistenia, la meseta ocurre porque el sistema nervioso se habitúa al umbral de repeticiones habitual y deja de reclutar nuevas unidades motoras. Para desbloquear el progreso en ganancia muscular, aplicamos la Doble Progresión: tu meta hoy es arrancar 1 repetición más (${targetReps + 1} reps) en tu primera serie o aumentar el tiempo bajo tensión con bajada excéntrica controlada.`;
+        actionSteps = [
+          `Mantén tu peso corporal y da el 100% de enfoque en tu primera serie para alcanzar las ${targetReps + 1} repeticiones.`,
+          'En la fase de bajada cuenta 2-3 segundos de descenso controlado para activar más fibras musculares.',
+          'Descansa entre 2.5 y 3 minutos completos para restaurar los niveles de ATP en los músculos dorsales.'
+        ];
 
-      const unlockRepsOption = {
-        id: 'strat_reps_normal',
-        title: `🟢 Desbloqueo por Doble Progresión (+1 Rep a ${targetReps + 1} reps)`,
-        tag: 'Recomendada (Romper Estancamiento)',
-        badge: `${targetReps + 1} reps con ${currentTopWeight}kg`,
-        suggestedWeight: currentTopWeight,
-        suggestedReps: targetReps + 1,
-        suggestedSets: plannedSets,
-        motive: `Al llevar ${stagnantCount} sesiones clavado en ${currentTopWeight} kg × ${actualPreviousReps} reps, sumar 1 repetición rompe la adaptación neuromuscular sin el bloqueo que supondría añadir ${jumpLabelText} en todas las series.`,
-        description: repsOptionDescription
-      };
-
-      strategyOptions = [unlockRepsOption];
-
-      if (canUseTopSetBackoff) {
-        const progTopReps = Math.max(5, targetReps - 2);
-        strategyOptions.push({
-          id: 'strat_topset_normal',
-          title: '🟢 Top Set de Desbloqueo + Back-off',
-          tag: 'Estímulo Neural',
-          badge: `1ª ${nextWeight}kg · Resto ${currentTopWeight}kg`,
-          suggestedWeight: nextWeight,
-          suggestedReps: progTopReps,
+        const unlockBwRepsOption = {
+          id: 'strat_reps_normal',
+          title: `🟢 Desbloqueo por Doble Progresión (+1 Rep a ${targetReps + 1} reps)`,
+          tag: 'Recomendada (Romper Meseta)',
+          badge: `${targetReps + 1} reps · Corporal`,
+          suggestedWeight: 0,
+          suggestedReps: targetReps + 1,
           suggestedSets: plannedSets,
-          perSetPlan: generateTopSetBackoffPlan(plannedSets, nextWeight, progTopReps, currentTopWeight, targetReps),
-          motive: `En vez de subir a ${nextWeight} kg en todas las series, tocas ese peso solo en la 1ª serie a ${progTopReps} reps para despertar al sistema nervioso y vuelves a ${currentTopWeight} kg en el resto.`,
-          description: `1ª serie a ${nextWeight} kg (${progTopReps} reps) y series 2-${plannedSets} a ${currentTopWeight} kg (${targetReps} reps).`
-        });
-      }
+          motive: `Al llevar ${stagnantCount} sesiones clavado en ${actualPreviousReps || targetReps} reps en peso corporal, añadir 1 sola repetición extra rompe la habituación neuromuscular y reactiva la señal de hipertrofia.`,
+          description: `Mantén tu peso corporal y concéntrate en sacar ${targetReps + 1} repeticiones limpias en tu primera serie.`
+        };
 
-      if (stagnantCount >= 3 && reducedWeight > 0) {
-        strategyOptions.push({
-          id: 'strat_deload_stagnant',
-          title: `🟡 Descarga de Supercompensación (-10% a ${reducedWeight} kg)`,
-          tag: 'Llevas 3+ sesiones igual',
-          badge: `Todas a ${reducedWeight}kg`,
-          suggestedWeight: reducedWeight,
+        const eccentricBwOption = {
+          id: 'strat_eccentric_bw',
+          title: '🟡 Sobrecarga por Tempo Excéntrico (3s de bajada)',
+          tag: 'Mayor Tensión Mecánica',
+          badge: 'Tempo 3s · Corporal',
+          suggestedWeight: 0,
           suggestedReps: targetReps,
           suggestedSets: plannedSets,
-          motive: `Cuando llevas ${stagnantCount} sesiones bloqueado en el mismo peso, a menudo hay fatiga acumulada invisible. Bajar una sesión a ${reducedWeight} kg permite rebotar con más fuerza la semana siguiente.`,
-          description: `Baja hoy a ${reducedWeight} kg con velocidad explosiva para recargar articulaciones y sistema nervioso.`
+          motive: 'Frenar la fase excéntrica durante 3 segundos completos aumenta el tiempo bajo tensión y el estímulo hipertrófico sin necesidad de discos ni lastre.',
+          description: `Haz ${targetReps} reps con peso corporal bajando en 3 segundos estrictos en cada repetición.`
+        };
+
+        const lastreBwOption = {
+          id: 'strat_lastre_bw',
+          title: '🟢 Iniciar Sobrecarga con Lastre (+2.5 kg)',
+          tag: 'Paso a Calistenia Lastrada',
+          badge: '+2.5 kg lastre',
+          suggestedWeight: 2.5,
+          suggestedReps: Math.max(5, targetReps - 2),
+          suggestedSets: plannedSets,
+          motive: 'Si ya dominas las repeticiones en peso corporal y buscas romper la meseta por la vía de carga, añadir un micro-lastre de +2.5 kg despierta el reclutamiento de fibras de alta potencia.',
+          description: `Usa cinturón de lastre o mancuerna con 2.5 kg buscando ${Math.max(5, targetReps - 2)} reps estrictas.`
+        };
+
+        strategyOptions = [unlockBwRepsOption, eccentricBwOption, lastreBwOption];
+      } else {
+        suggestedWeight = currentTopWeight;
+        suggestedReps = targetReps + 1;
+        suggestedSets = plannedSets;
+        actionDirection = 'maintain';
+        intensityLabel = 'Desbloqueo Progresivo';
+        intensityDesc = 'Romper meseta antes de subir kilos';
+        suggestedRir = '1 rep en recámara';
+        suggestedRest = '120 - 180 seg';
+        weightChangeNote = `+1 rep (${currentTopWeight} kg)`;
+        actionTitle = `Desbloqueo: Busca ${targetReps + 1} reps con ${currentTopWeight} kg antes de subir peso`;
+        coachingAdvice = `Llevas ${stagnantCount} sesiones seguidas repitiendo ${currentTopWeight} kg × ${actualPreviousReps} reps en ${activeRoutineName} sin lograr subir marcas. Si te recomendásemos meter ${jumpLabelText} ahora mismo a lo loco, perderías repeticiones y técnica. La forma inteligente de romper el estancamiento es sacar primero +1 repetición (${targetReps + 1} reps) con ${currentTopWeight} kg${canUseTopSetBackoff ? ` o tantear ${nextWeight} kg únicamente en la 1ª serie (Top Set)` : ''}.`;
+        actionSteps = [
+          `Mantén ${currentTopWeight} kg y concéntrate en arrancar 1 repetición más (${targetReps + 1} reps) que en tus sesiones anteriores.`,
+          'Descansa 2-3 minutos completos entre series para disipar la fatiga neural.',
+          `En cuanto rompas la barrera de repeticiones, el sistema te dará luz verde para subir a ${nextWeight} kg.`
+        ];
+
+        const unlockRepsOption = {
+          id: 'strat_reps_normal',
+          title: `🟢 Desbloqueo por Doble Progresión (+1 Rep a ${targetReps + 1} reps)`,
+          tag: 'Recomendada (Romper Estancamiento)',
+          badge: `${targetReps + 1} reps con ${currentTopWeight}kg`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps + 1,
+          suggestedSets: plannedSets,
+          motive: `Al llevar ${stagnantCount} sesiones clavado en ${currentTopWeight} kg × ${actualPreviousReps} reps, sumar 1 repetición rompe la adaptación neuromuscular sin el bloqueo que supondría añadir ${jumpLabelText} en todas las series.`,
+          description: repsOptionDescription
+        };
+
+        strategyOptions = [unlockRepsOption];
+
+        if (canUseTopSetBackoff) {
+          const progTopReps = Math.max(5, targetReps - 2);
+          strategyOptions.push({
+            id: 'strat_topset_normal',
+            title: '🟢 Top Set de Desbloqueo + Back-off',
+            tag: 'Estímulo Neural',
+            badge: `1ª ${nextWeight}kg · Resto ${currentTopWeight}kg`,
+            suggestedWeight: nextWeight,
+            suggestedReps: progTopReps,
+            suggestedSets: plannedSets,
+            perSetPlan: generateTopSetBackoffPlan(plannedSets, nextWeight, progTopReps, currentTopWeight, targetReps),
+            motive: `En vez de subir a ${nextWeight} kg en todas las series, tocas ese peso solo en la 1ª serie a ${progTopReps} reps para despertar al sistema nervioso y vuelves a ${currentTopWeight} kg en el resto.`,
+            description: `1ª serie a ${nextWeight} kg (${progTopReps} reps) y series 2-${plannedSets} a ${currentTopWeight} kg (${targetReps} reps).`
+          });
+        }
+
+        if (stagnantCount >= 3 && reducedWeight > 0) {
+          strategyOptions.push({
+            id: 'strat_deload_stagnant',
+            title: `🟡 Descarga de Supercompensación (-10% a ${reducedWeight} kg)`,
+            tag: 'Llevas 3+ sesiones igual',
+            badge: `Todas a ${reducedWeight}kg`,
+            suggestedWeight: reducedWeight,
+            suggestedReps: targetReps,
+            suggestedSets: plannedSets,
+            motive: `Cuando llevas ${stagnantCount} sesiones bloqueado en el mismo peso, a menudo hay fatiga acumulada invisible. Bajar una sesión a ${reducedWeight} kg permite rebotar con más fuerza la semana siguiente.`,
+            description: `Baja hoy a ${reducedWeight} kg con velocidad explosiva para recargar articulaciones y sistema nervioso.`
+          });
+        }
+
+        strategyOptions.push({
+          id: 'strat_linear_normal',
+          title: `🟢 Sobrecarga Lineal (+${realisticIncrement} kg a ${nextWeight} kg)`,
+          tag: 'Solo si hoy te ves muy fuerte',
+          badge: `Todas a ${nextWeight}kg`,
+          suggestedWeight: nextWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          motive: linearDetailMotive,
+          description: linearDetailDescription
         });
       }
-
-      strategyOptions.push({
-        id: 'strat_linear_normal',
-        title: `🟢 Sobrecarga Lineal (+${realisticIncrement} kg a ${nextWeight} kg)`,
-        tag: 'Solo si hoy te ves muy fuerte',
-        badge: `Todas a ${nextWeight}kg`,
-        suggestedWeight: nextWeight,
-        suggestedReps: targetReps,
-        suggestedSets: plannedSets,
-        motive: linearDetailMotive,
-        description: linearDetailDescription
-      });
 
     // C5. Necesita ganar colchón de fuerza antes de dar el salto de discos (salto porcentual grande >8.5%, acaba de subir peso la sesión pasada o solo lleva 1 sesión)
     } else if (needsStrengthBufferBeforeJump) {
@@ -1629,66 +1915,123 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
 
     // C6. ¡PREPARADO DE VERDAD SEGÚN SU HISTORIAL! (Domina todas las series, sin estancamiento, descansado y con colchón de fuerza suficiente)
     } else {
-      suggestedWeight = nextWeight;
-      suggestedReps = targetReps;
-      suggestedSets = plannedSets;
-      actionDirection = 'up';
-      intensityLabel = 'Esfuerzo Alto';
-      intensityDesc = 'Parar 1-2 reps antes de fallar';
-      suggestedRir = '1-2 reps en recámara';
-      suggestedRest = '120 - 180 seg';
-      weightChangeNote = `+${realisticIncrement} kg`;
-      actionTitle = `Sobrecarga Progresiva: Sube a ${nextWeight} kg`;
-      coachingAdvice = `Tu historial en ${activeRoutineName} confirma que estás listo para subir de peso: completaste todas tus series con ${currentTopWeight} kg (llegando a ${actualPreviousReps} reps con solvencia y sin estancamiento). ${coachingEquipmentHint}`;
-      actionSteps = [
-        `Trabaja con ${nextWeight} kg (${jumpLabelText}) buscando mantener una técnica estricta.`,
-        `Si notas el salto de peso exigente en las últimas series, mantén el rango de ${Math.max(6, targetReps - 2)}-${targetReps} reps parando 1-2 antes del fallo.`,
-        'Descansa entre 2 y 3 minutos para restaurar tus reservas de fosfocreatina.'
-      ];
+      if (isBodyweight) {
+        suggestedWeight = 0;
+        suggestedReps = targetReps + 1;
+        suggestedSets = plannedSets;
+        actionDirection = 'up';
+        intensityLabel = 'Sobrecarga en Repeticiones';
+        intensityDesc = 'Buscar +1 rep con técnica estricta';
+        suggestedRir = '1 rep en recámara';
+        suggestedRest = '120 - 180 seg';
+        weightChangeNote = '+1 rep (peso corporal)';
+        actionTitle = 'Sobrecarga Progresiva: Supera tus marcas (+1 rep o iniciar lastre)';
+        coachingAdvice = `Tu historial en ${activeRoutineName} confirma un dominio excelente de las ${targetReps} reps con peso corporal. En calistenia, la sobrecarga progresiva se logra sumando repeticiones limpias (Doble Progresión) o iniciando un lastre ligero (+2.5 kg) para mantener el estímulo de hipertrofia.`;
+        actionSteps = [
+          `Concéntrate en sacar ${targetReps + 1} repeticiones limpias en tu primera serie de trabajo.`,
+          'Mantén la técnica estricta: barbilla arriba de la barra y bajada controlada sin usar inercia.',
+          'Si completas más de 10-12 reps con solvencia, tu musculatura está lista para la opción de añadir lastre (+2.5 kg).'
+        ];
 
-      const linearOption = {
-        id: 'strat_linear_normal',
-        title: `🟢 Sobrecarga Lineal (+${realisticIncrement} kg)`,
-        tag: 'Carga Uniforme',
-        badge: `Todas a ${nextWeight}kg`,
-        suggestedWeight: nextWeight,
-        suggestedReps: targetReps,
-        suggestedSets: plannedSets,
-        motive: linearDetailMotive,
-        description: linearDetailDescription
-      };
-
-      const repsOption = {
-        id: 'strat_reps_normal',
-        title: '🟢 Consolidar Carga (+1 Repetición)',
-        tag: 'Alternativa Suave',
-        badge: `+1 rep con ${currentTopWeight}kg`,
-        suggestedWeight: currentTopWeight,
-        suggestedReps: targetReps + 1,
-        suggestedSets: plannedSets,
-        motive: repsOptionMotive,
-        description: repsOptionDescription
-      };
-
-      if (canUseTopSetBackoff) {
-        const progTopReps = Math.max(5, targetReps - 2);
-        const topSetOption = {
-          id: 'strat_topset_normal',
-          title: '🟢 Top Set + Back-off (Pico de Sobrecarga)',
-          tag: 'Recomendada (Escalonada)',
-          badge: `1ª ${nextWeight}kg · Resto ${currentTopWeight}kg`,
-          suggestedWeight: nextWeight,
-          suggestedReps: progTopReps,
+        const bwPlusRepOption = {
+          id: 'strat_reps_normal',
+          title: `🟢 Doble Progresión: Sumar +1 Repetición (${targetReps + 1} reps)`,
+          tag: 'Recomendada',
+          badge: `${targetReps + 1} reps · Corporal`,
+          suggestedWeight: 0,
+          suggestedReps: targetReps + 1,
           suggestedSets: plannedSets,
-          perSetPlan: generateTopSetBackoffPlan(plannedSets, nextWeight, progTopReps, currentTopWeight, targetReps),
-          motive: `Subir a ${nextWeight} kg solo en la 1ª serie estimula la tensión mecánica máxima aprovechando tu energía intacta, mientras que las series siguientes a ${currentTopWeight} kg consolidan el volumen sin fatiga excesiva.`,
-          description: `Sube a ${nextWeight} kg en tu 1ª serie récord (${progTopReps} reps) y mantén ${currentTopWeight} kg en las series 2-${plannedSets} (${targetReps} reps) para no agotarte.`
+          motive: 'Sumar 1 repetición más en peso corporal eleva el volumen total de entrenamiento sin comprometer articulaciones ni sobrecargar el sistema conectivo.',
+          description: `Mantén tu peso corporal y busca alcanzar las ${targetReps + 1} repeticiones en tus series de hoy.`
         };
 
-        strategyOptions = [topSetOption, linearOption, repsOption];
+        const bwLastreOption = {
+          id: 'strat_lastre_normal',
+          title: '🟢 Iniciar Sobrecarga con Lastre (+2.5 kg)',
+          tag: 'Mayor Tensión Mecánica',
+          badge: '+2.5 kg lastre',
+          suggestedWeight: 2.5,
+          suggestedReps: Math.max(5, targetReps - 2),
+          suggestedSets: plannedSets,
+          motive: 'Si te sientes con energía máxima, pasar a calistenia lastrada con un micro-lastre de +2.5 kg acelera la hipertrofia dorsal.',
+          description: `Añade un cinturón con 2.5 kg y realiza ${Math.max(5, targetReps - 2)} reps con técnica impecable.`
+        };
+
+        const bwTempoOption = {
+          id: 'strat_pause_normal',
+          title: '🟡 Pausa en Contracción Máxima (2s arriba)',
+          tag: 'Calidad Técnica',
+          badge: 'Pausa 2s · Corporal',
+          suggestedWeight: 0,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          motive: 'Hacer una pausa isométrica de 2 segundos en el punto de máxima contracción maximiza el reclutamiento del dorsal ancho.',
+          description: `Haz ${targetReps} reps en peso corporal aguantando 2 segundos arriba en cada repetición.`
+        };
+
+        strategyOptions = [bwPlusRepOption, bwLastreOption, bwTempoOption];
       } else {
-        linearOption.tag = 'Recomendada';
-        strategyOptions = [linearOption, repsOption];
+        suggestedWeight = nextWeight;
+        suggestedReps = targetReps;
+        suggestedSets = plannedSets;
+        actionDirection = 'up';
+        intensityLabel = 'Esfuerzo Alto';
+        intensityDesc = 'Parar 1-2 reps antes de fallar';
+        suggestedRir = '1-2 reps en recámara';
+        suggestedRest = '120 - 180 seg';
+        weightChangeNote = `+${realisticIncrement} kg`;
+        actionTitle = `Sobrecarga Progresiva: Sube a ${nextWeight} kg`;
+        coachingAdvice = `Tu historial en ${activeRoutineName} confirma que estás listo para subir de peso: completaste todas tus series con ${currentTopWeight} kg (llegando a ${actualPreviousReps} reps con solvencia y sin estancamiento). ${coachingEquipmentHint}`;
+        actionSteps = [
+          `Trabaja con ${nextWeight} kg (${jumpLabelText}) buscando mantener una técnica estricta.`,
+          `Si notas el salto de peso exigente en las últimas series, mantén el rango de ${Math.max(6, targetReps - 2)}-${targetReps} reps parando 1-2 antes del fallo.`,
+          'Descansa entre 2 y 3 minutos para restaurar tus reservas de fosfocreatina.'
+        ];
+
+        const linearOption = {
+          id: 'strat_linear_normal',
+          title: `🟢 Sobrecarga Lineal (+${realisticIncrement} kg)`,
+          tag: 'Carga Uniforme',
+          badge: `Todas a ${nextWeight}kg`,
+          suggestedWeight: nextWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          motive: linearDetailMotive,
+          description: linearDetailDescription
+        };
+
+        const repsOption = {
+          id: 'strat_reps_normal',
+          title: '🟢 Consolidar Carga (+1 Repetición)',
+          tag: 'Alternativa Suave',
+          badge: `+1 rep con ${currentTopWeight}kg`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps + 1,
+          suggestedSets: plannedSets,
+          motive: repsOptionMotive,
+          description: repsOptionDescription
+        };
+
+        if (canUseTopSetBackoff) {
+          const progTopReps = Math.max(5, targetReps - 2);
+          const topSetOption = {
+            id: 'strat_topset_normal',
+            title: '🟢 Top Set + Back-off (Pico de Sobrecarga)',
+            tag: 'Recomendada (Escalonada)',
+            badge: `1ª ${nextWeight}kg · Resto ${currentTopWeight}kg`,
+            suggestedWeight: nextWeight,
+            suggestedReps: progTopReps,
+            suggestedSets: plannedSets,
+            perSetPlan: generateTopSetBackoffPlan(plannedSets, nextWeight, progTopReps, currentTopWeight, targetReps),
+            motive: `Subir a ${nextWeight} kg solo en la 1ª serie estimula la tensión mecánica máxima aprovechando tu energía intacta, mientras que las series siguientes a ${currentTopWeight} kg consolidan el volumen sin fatiga excesiva.`,
+            description: `Sube a ${nextWeight} kg en tu 1ª serie récord (${progTopReps} reps) y mantén ${currentTopWeight} kg en las series 2-${plannedSets} (${targetReps} reps) para no agotarte.`
+          };
+
+          strategyOptions = [topSetOption, linearOption, repsOption];
+        } else {
+          linearOption.tag = 'Recomendada';
+          strategyOptions = [linearOption, repsOption];
+        }
       }
     }
   }
@@ -1736,6 +2079,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     celebrationData,
     asesoriaRecommendation,
     followUp,
-    currentTopWeight
+    currentTopWeight,
+    isBodyweight
   };
 };

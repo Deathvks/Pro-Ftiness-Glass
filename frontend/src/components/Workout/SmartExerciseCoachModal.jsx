@@ -107,8 +107,11 @@ const SmartExerciseCoachModal = ({
     followUp,
     currentTopWeight,
     actualPreviousReps,
-    missedTargetInPrevious
+    missedTargetInPrevious,
+    isBodyweight
   } = plan;
+
+  const isBW = Boolean(isBodyweight || currentTopWeight === 0);
 
   // Métricas activas computadas según la estrategia seleccionada por el usuario
   const activeSuggestedWeight = activeStrategy?.suggestedWeight !== undefined && activeStrategy.suggestedWeight !== null
@@ -381,13 +384,17 @@ const SmartExerciseCoachModal = ({
             }`}>
               <div className="flex items-center gap-2">
                 <div className={`p-1.5 rounded-[10px] shrink-0 ${
-                  trend.isWarning 
+                  followUp?.isInactive
+                    ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
+                    : trend.isWarning 
                     ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' 
                     : trend.isProgressing 
                     ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
                     : 'bg-accent/20 text-accent'
                 }`}>
-                  {trend.isWarning ? (
+                  {followUp?.isInactive ? (
+                    <Clock size={15} strokeWidth={2.5} />
+                  ) : trend.isWarning ? (
                     <AlertTriangle size={15} strokeWidth={2.5} />
                   ) : trend.isProgressing ? (
                     <Sparkles size={15} />
@@ -400,8 +407,14 @@ const SmartExerciseCoachModal = ({
                     ¿Qué hemos detectado en tu rendimiento?
                   </span>
                   <h3 className="text-xs sm:text-sm font-black text-text-primary leading-tight">
-                    {trend.status === 'stagnant'
-                      ? `Estancamiento detectado: Llevas ${trend.weeksStagnant || 2} semanas levantando ${currentTopWeight > 0 ? `${currentTopWeight} kg` : 'peso corporal'}`
+                    {followUp?.isInactive
+                      ? (isBW
+                          ? `Reactivación tras pausa: Base en peso corporal (${actualPreviousReps || targets.suggestedReps} reps)`
+                          : `Reactivación tras pausa: Carga previa de ${currentTopWeight} kg (${actualPreviousReps || targets.suggestedReps} reps)`)
+                      : trend.status === 'stagnant'
+                      ? (isBW
+                          ? `Meseta en repeticiones: Llevas ${trend.stagnantSessionsCount || 2} sesiones con ${actualPreviousReps || targets.suggestedReps} reps en peso corporal`
+                          : `Estancamiento detectado: Llevas ${trend.weeksStagnant || 2} semanas levantando ${currentTopWeight} kg`)
                       : trend.status === 'decreasing'
                       ? `Aviso: Fatiga residual detectada (${trend.badgeText})`
                       : trend.isProgressing
@@ -540,25 +553,27 @@ const SmartExerciseCoachModal = ({
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
-                {/* 1. Peso Sugerido */}
+                {/* 1. Peso / Carga Sugerida */}
                 <div className="bg-accent/10 dark:bg-accent/15 p-3 rounded-[18px] flex flex-col justify-between">
                   <div className="flex items-center justify-between text-accent mb-0.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Peso</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider">
+                      {isBW && activeSuggestedWeight === 0 ? 'Carga' : 'Peso'}
+                    </span>
                     <Dumbbell size={14} />
                   </div>
                   <div className="my-0.5">
                     {activeStrategy?.perSetPlan ? (
                       <span className="text-sm sm:text-base font-black text-accent tracking-tight leading-tight block truncate">
-                        {activeStrategy.perSetPlan[0].weight}kg <span className="text-[10px] font-bold text-text-muted">/</span> {activeStrategy.perSetPlan[1]?.weight ?? activeStrategy.perSetPlan[0].weight}kg
+                        {activeStrategy.perSetPlan[0].weight > 0 ? `${activeStrategy.perSetPlan[0].weight}kg` : 'Corporal'} <span className="text-[10px] font-bold text-text-muted">/</span> {activeStrategy.perSetPlan[1]?.weight > 0 ? `${activeStrategy.perSetPlan[1].weight}kg` : 'Corporal'}
                       </span>
                     ) : (
                       <span className="text-xl sm:text-2xl font-black text-accent tracking-tight">
-                        {activeSuggestedWeight !== null ? `${activeSuggestedWeight} kg` : 'Calibrar'}
+                        {activeSuggestedWeight === 0 ? 'Corporal' : (activeSuggestedWeight !== null ? `${activeSuggestedWeight} kg` : 'Calibrar')}
                       </span>
                     )}
                   </div>
                   <span className="text-[10px] font-semibold text-text-secondary truncate">
-                    {activeStrategy?.perSetPlan ? '1ª Top · Resto Back-off' : (targets.weightChangeNote || 'Carga sugerida')}
+                    {activeStrategy?.perSetPlan ? '1ª Top · Resto Back-off' : (targets.weightChangeNote || (isBW ? 'Peso corporal' : 'Carga sugerida'))}
                   </span>
                 </div>
 
@@ -659,7 +674,7 @@ const SmartExerciseCoachModal = ({
 
                         <div className="flex items-baseline gap-1 my-0.5">
                           <span className="text-base sm:text-lg font-black text-text-primary tracking-tight">
-                            {s.weight} kg
+                            {s.weight > 0 ? `${s.weight} kg` : 'Corporal'}
                           </span>
                           <span className="text-xs font-bold text-text-secondary">
                             × {s.reps} reps
@@ -867,9 +882,11 @@ const SmartExerciseCoachModal = ({
                   <Check size={18} strokeWidth={3} className="shrink-0" />
                   <span className="truncate">
                     {activeStrategy?.perSetPlan && activeStrategy.perSetPlan.length > 0
-                      ? `Aplicar Top Set (${activeStrategy.perSetPlan[0].weight}kg / ${activeStrategy.perSetPlan[1]?.weight || activeStrategy.perSetPlan[0].weight}kg)`
+                      ? `Aplicar Top Set (${activeStrategy.perSetPlan[0].weight > 0 ? `${activeStrategy.perSetPlan[0].weight}kg` : 'Corporal'} / ${activeStrategy.perSetPlan[1]?.weight > 0 ? `${activeStrategy.perSetPlan[1].weight}kg` : 'Corporal'})`
                       : activeSuggestedWeight !== null && activeSuggestedWeight > 0
                         ? `Aplicar ${activeSuggestedWeight} kg (${activeSuggestedReps} reps)`
+                        : isBW
+                        ? `Aplicar en Corporal (${activeSuggestedReps} reps)`
                         : `Aplicar objetivo (${activeSuggestedReps} reps)`}
                   </span>
                 </button>
