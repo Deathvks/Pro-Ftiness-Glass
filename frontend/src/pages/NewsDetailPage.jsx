@@ -313,28 +313,27 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
 
           {/* FIRMA DE AUTOR, FECHA Y BOTONES DE COMPARTIR (Línea de metadatos Xataka) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 border-y border-black/10 dark:border-white/10 gap-3 sm:gap-4 text-xs">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center font-black text-xs text-accent uppercase shrink-0">
+            <div className="flex items-start sm:items-center gap-3 min-w-0 w-full sm:w-auto">
+              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center font-black text-xs text-accent uppercase shrink-0 mt-0.5 sm:mt-0">
                 {article.author_name.slice(0, 2)}
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="font-bold text-text-primary truncate">
                   Por <span className="text-accent">{article.author_name}</span>
                 </p>
-                <div className="flex items-center gap-1.5 sm:gap-2 text-text-tertiary text-[11px] mt-0.5 flex-nowrap overflow-x-auto scrollbar-none py-0.5">
-                  <span className="inline-flex items-center gap-1 whitespace-nowrap shrink-0">
-                    <Calendar size={11} className="shrink-0 text-text-secondary" />
-                    <span className="sm:hidden">{format(new Date(article.published_at), 'd MMM yyyy', { locale: es })}</span>
-                    <span className="hidden sm:inline">{format(new Date(article.published_at), "d 'de' MMMM, yyyy", { locale: es })}</span>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-text-tertiary text-xs sm:text-[11px] mt-1">
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                    <Calendar size={12} className="shrink-0 text-text-secondary" />
+                    <span>{format(new Date(article.published_at), "d 'de' MMMM, yyyy", { locale: es })}</span>
                   </span>
-                  <span className="text-text-tertiary/40 shrink-0 select-none">•</span>
-                  <span className="inline-flex items-center gap-1 whitespace-nowrap shrink-0">
-                    <Clock size={11} className="shrink-0 text-text-secondary" />
-                    <span>{article.reading_time} min<span className="hidden sm:inline"> de lectura</span></span>
+                  <span className="hidden sm:inline text-text-tertiary/40 select-none">•</span>
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                    <Clock size={12} className="shrink-0 text-text-secondary" />
+                    <span>{article.reading_time} min de lectura</span>
                   </span>
-                  <span className="text-text-tertiary/40 shrink-0 select-none">•</span>
-                  <span className="inline-flex items-center gap-1 whitespace-nowrap shrink-0">
-                    <Eye size={11} className="shrink-0 text-text-secondary" />
+                  <span className="hidden sm:inline text-text-tertiary/40 select-none">•</span>
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                    <Eye size={12} className="shrink-0 text-text-secondary" />
                     <span>{article.views_count === 1 ? '1 lectura' : `${(article.views_count || 0).toLocaleString()} lecturas`}</span>
                   </span>
                 </div>
@@ -342,7 +341,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
             </div>
 
             {/* Botones Sociales con colores de marca siempre activos */}
-            <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-center pt-1 sm:pt-0">
               <a
                 href={whatsappUrl}
                 target="_blank"
