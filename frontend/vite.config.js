@@ -2,7 +2,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-import Sitemap from 'vite-plugin-sitemap';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 
@@ -52,21 +51,6 @@ export default defineConfig({
       png: { quality: 75 },
       jpeg: { quality: 75 },
       webp: { quality: 75, lossless: false },
-    }),
-    Sitemap({
-      hostname: 'https://pro-fitness-glass.zeabur.app',
-      readable: true,
-      dynamicRoutes: [
-        '/privacy',   
-        '/terms'      
-      ],
-      robots: [
-        {
-          userAgent: '*',
-          allow: '/',
-          disallow: ['/admin', '/settings', '/dashboard', '/profile']
-        }
-      ]
     }),
     VitePWA({
       registerType: 'autoUpdate', // <-- CAMBIO AQUI: Actualización automática
