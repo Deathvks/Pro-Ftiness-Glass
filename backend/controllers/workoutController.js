@@ -4,6 +4,7 @@ import { Op } from 'sequelize';
 import models from '../models/index.js';
 import { processWorkoutGamification, processProgressiveOverload } from '../services/gamificationService.js';
 import { createNotification } from '../services/notificationService.js';
+import { sanitizePlainText } from '../utils/sanitizer.js';
 
 // --- Función para calcular 1RM ---
 const calculate1RM = (weight, reps) => {
@@ -128,7 +129,8 @@ export const logWorkoutSession = async (req, res, next) => {
       finalDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     }
 
-    const finalRoutineName = routineName || routine_name || 'Entrenamiento Sin Nombre';
+    const rawRoutineName = routineName || routine_name || 'Entrenamiento Sin Nombre';
+    const finalRoutineName = sanitizePlainText(rawRoutineName) || 'Entrenamiento Sin Nombre';
 
     const newWorkoutLog = await WorkoutLog.create({
       user_id: userId,
@@ -137,7 +139,7 @@ export const logWorkoutSession = async (req, res, next) => {
       workout_date: finalDate,
       duration_seconds,
       calories_burned,
-      notes,
+      notes: notes ? sanitizePlainText(notes) : null,
       visibility: visibility || 'friends' 
     }, { transaction: t });
 
@@ -179,7 +181,7 @@ export const logWorkoutSession = async (req, res, next) => {
 
       const newLogDetail = await WorkoutLogDetail.create({
         workout_log_id: newWorkoutLog.id,
-        exercise_name: exercise.exerciseName || exercise.name, // Asegurar que pilla el nombre correcto
+        exercise_name: sanitizePlainText(exercise.exerciseName || exercise.name || 'Ejercicio'),
         total_volume: totalVolume,
         best_set_weight: bestSetWeight,
         superset_group_id: exercise.superset_group_id,

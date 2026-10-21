@@ -5,6 +5,7 @@ import { io } from '../server.js';
 import { uploadVideoToCloudinary } from '../services/cloudinaryService.js';
 import { sendChatReplyEmail, sendNewClientMessageEmail } from '../services/emailService.js';
 import { createNotification } from '../services/notificationService.js';
+import { sanitizePlainText } from '../utils/sanitizer.js';
 
 const { User, Message, UploadLog } = models;
 
@@ -183,14 +184,15 @@ export const sendMessage = async (req, res, next) => {
     const { userId } = req.user;
     const { receiverId, content } = req.body;
 
-    if (!receiverId || !content || !content.trim()) {
+    const cleanContent = sanitizePlainText(content);
+    if (!receiverId || !cleanContent) {
       return res.status(400).json({ message: 'Faltan datos para enviar el mensaje.' });
     }
 
     const newMessage = await Message.create({
       sender_id: userId,
       receiver_id: receiverId,
-      content: content.trim()
+      content: cleanContent
     });
 
     const populatedMessage = await Message.findByPk(newMessage.id, {
@@ -210,7 +212,7 @@ export const sendMessage = async (req, res, next) => {
       });
     }
 
-    notifyUserIfNeeded(userId, receiverId, content.trim());
+    notifyUserIfNeeded(userId, receiverId, cleanContent);
 
     // --- LOGICA DEL BOT RESPONDEDOR ---
     console.log('[BOT] Checking bot reply for userId:', userId, 'content:', content.trim().substring(0, 50));
@@ -287,7 +289,11 @@ export const editMessage = async (req, res, next) => {
 
     if (!message) return res.status(404).json({ message: 'Mensaje no encontrado.' });
 
-    message.content = content.trim();
+    const cleanContent = sanitizePlainText(content);
+    if (!cleanContent) {
+      return res.status(400).json({ message: 'El contenido del mensaje no puede estar vacío.' });
+    }
+    message.content = cleanContent;
     await message.save();
 
     if (io) {

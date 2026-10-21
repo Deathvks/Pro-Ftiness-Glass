@@ -1,6 +1,6 @@
 {
   "name": "pro-ftiness-glass-backend",
-  "version": "7.8.25",
+  "version": "7.8.26",
   "description": "Backend for Pro Ftiness Glass",
   "main": "server.js",
   "type": "module",
@@ -41,6 +41,7 @@
     "nodemailer": "^6.9.14",
     "nsfwjs": "^4.2.1",
     "qrcode": "^1.5.4",
+    "sanitize-html": "^2.18.1",
     "sequelize": "^6.37.3",
     "sharp": "^0.33.4",
     "socket.io": "^4.8.3",

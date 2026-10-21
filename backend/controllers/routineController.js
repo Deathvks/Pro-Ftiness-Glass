@@ -4,6 +4,7 @@ import models from '../models/index.js';
 import { Op } from 'sequelize';
 import { addXp } from '../services/gamificationService.js';
 import { deleteFile } from '../services/imageService.js';
+import { sanitizePlainText } from '../utils/sanitizer.js';
 
 const {
   sequelize,
@@ -249,8 +250,8 @@ const processAndSaveExercises = async (
 
       // CORRECCIÓN APLICADA AQUÍ: Truncar para que MySQL no lance "Data too long"
       return {
-        name: exerciseName ? String(exerciseName).substring(0, 255) : "Ejercicio Manual",
-        muscle_group: muscleGroup ? String(muscleGroup).substring(0, 100) : "Varios",
+        name: exerciseName ? sanitizePlainText(String(exerciseName)).substring(0, 255) : "Ejercicio Manual",
+        muscle_group: muscleGroup ? sanitizePlainText(String(muscleGroup)).substring(0, 100) : "Varios",
         sets: ex.sets,
         reps: ex.reps,
         rest_seconds: ex.rest_seconds,
@@ -260,7 +261,7 @@ const processAndSaveExercises = async (
         routine_id: routineId,
         superset_group_id: ex.superset_group_id,
         exercise_order: ex.exercise_order,
-        reminder: ex.reminder || null, // <-- AÑADIDO: Guardar la meta/recordatorio
+        reminder: ex.reminder ? sanitizePlainText(String(ex.reminder)).substring(0, 500) : null,
       };
     })
   );
@@ -278,12 +279,18 @@ export const createRoutine = async (req, res, next) => {
   }
 
   const { name, description, is_public = false, exercises = [], image_url, folder, visibility, is_trainer_template = false } = req.body;
+  const cleanName = sanitizePlainText(name);
+  if (!cleanName) {
+    return res.status(400).json({ error: 'El nombre de la rutina es requerido.' });
+  }
+  const cleanDescription = description ? sanitizePlainText(description) : null;
+  const cleanFolder = folder ? sanitizePlainText(folder) : null;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
   try {
     const existingRoutine = await sequelize.models.Routine.findOne({
-      where: { name, user_id: userId },
+      where: { name: cleanName, user_id: userId },
       transaction: t,
     });
 
@@ -295,12 +302,12 @@ export const createRoutine = async (req, res, next) => {
     const newRoutine = await sequelize.models.Routine.create(
         {
           is_trainer_template,
-        name,
-        description,
+        name: cleanName,
+        description: cleanDescription,
         user_id: userId,
         is_public, 
         visibility: visibility || 'private', 
-        folder: folder || null,
+        folder: cleanFolder,
         downloads_count: 0,
         image_url: image_url || null
       },
@@ -341,13 +348,19 @@ export const updateRoutine = async (req, res, next) => {
 
   const { id } = req.params;
   const { name, description, is_public, exercises = [], image_url, folder, visibility } = req.body;
+  const cleanName = sanitizePlainText(name);
+  if (!cleanName) {
+    return res.status(400).json({ error: 'El nombre de la rutina es requerido.' });
+  }
+  const cleanDescription = description !== undefined ? (description ? sanitizePlainText(description) : null) : undefined;
+  const cleanFolder = folder !== undefined ? (folder ? sanitizePlainText(folder) : null) : undefined;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
   try {
     const existingRoutine = await sequelize.models.Routine.findOne({
       where: {
-        name,
+        name: cleanName,
         user_id: userId,
         id: { [Op.ne]: id },
       },
@@ -372,11 +385,13 @@ export const updateRoutine = async (req, res, next) => {
 
     const oldImageUrl = routine.image_url;
 
-    const updateData = { name, description };
+    const updateData = { name: cleanName };
+    if (cleanDescription !== undefined) updateData.description = cleanDescription;
+    if (cleanFolder !== undefined) updateData.folder = cleanFolder;
     if (typeof is_public !== 'undefined') updateData.is_public = is_public;
     if (typeof visibility !== 'undefined') updateData.visibility = visibility;
     if (typeof image_url !== 'undefined') updateData.image_url = image_url;
-    if (typeof folder !== 'undefined') updateData.folder = folder;
+
 
     await routine.update(updateData, { transaction: t });
 

@@ -3,6 +3,7 @@ import models from '../models/index.js';
 import { Op } from 'sequelize';
 import { createNotification } from '../services/notificationService.js';
 import jwt from 'jsonwebtoken';
+import { sanitizePlainText } from '../utils/sanitizer.js';
 
 const { 
     User, Friendship, WorkoutLog, Routine, RoutineExercise, ExerciseList, 
@@ -714,14 +715,14 @@ export const addComment = async (req, res) => {
         const userId = req.user.userId;
         const io = req.app.get('io');
 
-        if (!comment || comment.trim() === '') {
+        if (!comment || !sanitizePlainText(comment)) {
             return res.status(400).json({ error: 'El comentario no puede estar vacío' });
         }
 
         const newComment = await WorkoutComment.create({
             user_id: userId,
             workout_id: workoutId,
-            comment: comment.trim()
+            comment: sanitizePlainText(comment)
         });
 
         // Cargar usuario para devolver el comentario completo al frontend

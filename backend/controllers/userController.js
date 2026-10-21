@@ -7,6 +7,7 @@ import { createNotification } from '../services/notificationService.js';
 import { processUploadedFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/imageService.js';
 import { addXp, syncUserStreak, WEIGHT_UPDATE_XP } from '../services/gamificationService.js';
+import { sanitizePlainText } from '../utils/sanitizer.js';
 
 const {
   User,
@@ -317,7 +318,7 @@ export const updateMyProfile = async (req, res, next) => {
     }
 
     const updateData = {
-      gender, age, height, activity_level: activityLevel, goal, login_email_notifications
+      gender, age, height, activity_level: activityLevel, goal: goal ? sanitizePlainText(goal) : goal, login_email_notifications
     };
 
     if (timezone) updateData.timezone = timezone;
@@ -326,7 +327,15 @@ export const updateMyProfile = async (req, res, next) => {
     if (typeof show_badges !== 'undefined') updateData.show_badges = show_badges;
     if (typeof show_gym !== 'undefined') updateData.show_gym = show_gym;
     if (typeof gym_data !== 'undefined') {
-      updateData.gym_data = gym_data === null ? null : (typeof gym_data === 'object' ? JSON.stringify(gym_data) : String(gym_data));
+      if (typeof gym_data === 'object' && gym_data !== null) {
+        const cleanedGym = {};
+        for (const [k, v] of Object.entries(gym_data)) {
+          cleanedGym[k] = typeof v === 'string' ? sanitizePlainText(v) : v;
+        }
+        updateData.gym_data = JSON.stringify(cleanedGym);
+      } else {
+        updateData.gym_data = gym_data === null ? null : sanitizePlainText(String(gym_data));
+      }
     }
 
     await user.update(updateData, { transaction: t });
@@ -426,11 +435,11 @@ export const updateMyAccount = async (req, res, next) => {
     }
 
     if (name !== undefined && name !== user.name) {
-      fieldsToUpdate.name = name;
+      fieldsToUpdate.name = sanitizePlainText(name);
       changes.push('nombre');
     }
     if (username !== undefined && username !== user.username) {
-      fieldsToUpdate.username = username;
+      fieldsToUpdate.username = sanitizePlainText(username).replace(/[^a-zA-Z0-9_.-]/g, '');
       changes.push(`usuario`);
     }
     if (email !== undefined && email !== user.email) {
