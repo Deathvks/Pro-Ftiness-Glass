@@ -10,6 +10,18 @@ const NativeTimer = Capacitor.isNativePlatform() ? registerPlugin('NativeTimer')
 
 export const useAppInitialization = ({ setView, setAuthView, view }) => {
   const [isInitialLoad, setIsInitialLoad] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (
+        path.startsWith('/noticias') ||
+        path === '/privacy' ||
+        path === '/terms' ||
+        path.startsWith('/share/') ||
+        path === '/reset-password'
+      ) {
+        return false;
+      }
+    }
     const state = useAppStore.getState();
     if (!state.isAuthenticated) return false;
     return !(state.userProfile && 'role' in state.userProfile);
@@ -126,7 +138,16 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
         const loadedActiveWorkout = useAppStore.getState().activeWorkout;
         const targetView = resolveTargetView(loadedUserProfile, loadedActiveWorkout);
         
-        setView(targetView);
+        const isPublicPath = typeof window !== 'undefined' && (
+          window.location.pathname.startsWith('/noticias') ||
+          window.location.pathname === '/privacy' ||
+          window.location.pathname === '/terms' ||
+          window.location.pathname.startsWith('/share/') ||
+          window.location.pathname === '/reset-password'
+        );
+        if (!isPublicPath) {
+          setView(targetView);
+        }
         setIsInitialLoad(false);
       }
     };

@@ -13,6 +13,7 @@ import * as personalRecordService from '../services/personalRecordService';
 import { APP_VERSION } from '../config/version';
 
 let initialFetchInFlight = null;
+let initialFetchRetryCount = 0;
 
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
@@ -164,6 +165,7 @@ export const createDataSlice = (set, get) => ({
         get().checkWelcomeModal();
 
         // Desbloqueamos inmediatamente la interfaz con el perfil cargado
+        initialFetchRetryCount = 0;
         set({ userProfile: profileData, isAuthenticated: true, isLoading: false });
         writeInitialCache({ userProfile: profileData });
 
@@ -252,11 +254,16 @@ export const createDataSlice = (set, get) => ({
         if (error?.status === 404) {
           console.warn('[fetchInitialData] Usuario no encontrado en el backend. Cerrando sesión limpia...');
           get().handleLogout();
-        } else if (error?.message?.includes('fetch') || error?.message?.includes('network') || error?.name === 'TypeError' || error?.isMaintenance) {
+        } else if (
+          (error?.message?.includes('fetch') || error?.message?.includes('network') || error?.name === 'TypeError' || error?.isMaintenance) &&
+          initialFetchRetryCount < 2
+        ) {
+          initialFetchRetryCount++;
           console.log('[fetchInitialData] Error de red detectado, reintentando en 2s...');
           setTimeout(() => { get().fetchInitialData(); }, 2000);
         } else {
-          console.error('[fetchInitialData] Error de API al cargar el perfil; se mantiene la sesión.');
+          initialFetchRetryCount = 0;
+          console.error('[fetchInitialData] Error de API o límite de reintentos alcanzado; se detienen reintentos automáticos.');
         }
       } finally {
         initialFetchInFlight = null;

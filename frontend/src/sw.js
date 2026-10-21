@@ -27,7 +27,7 @@ registerRoute(
       let response;
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
         response = await fetch(request, { signal: controller.signal, cache: 'no-cache' });
         clearTimeout(timeoutId);
       } catch {

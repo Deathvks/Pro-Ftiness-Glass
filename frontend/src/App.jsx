@@ -724,13 +724,20 @@ export default function App() {
     };
   }, [isLandingPage, fullPageTitle, currentDescription]);
 
+  const isPublicRoute =
+    location.pathname.startsWith('/noticias') ||
+    location.pathname === '/privacy' ||
+    location.pathname === '/terms' ||
+    location.pathname.startsWith('/share/') ||
+    location.pathname === '/reset-password';
+
   return (
     <>
       <VersionUpdater />
       <APKUpdater />
       <AndroidDownloadPrompt />
 
-      {isInitialLoad ? (
+      {isInitialLoad && !isPublicRoute ? (
         <InitialLoadingSkeleton />
       ) : (
         <>
