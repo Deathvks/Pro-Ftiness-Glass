@@ -11,30 +11,91 @@ const getAuthHeaders = () => {
   };
 };
 
-export const fetchPublicNews = async ({ page = 1, limit = 9, category = '', search = '' } = {}) => {
+/**
+ * Petición HTTP resiliente con reintento automático y traducción humana de errores de red
+ */
+const requestWithRetry = async (url, options = {}, retries = 1, timeoutMs = 15000) => {
+  let attempts = 0;
+  while (attempts <= retries) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const res = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        let message = data.error;
+        if (!message) {
+          if (res.status === 404) message = 'El contenido solicitado no fue encontrado.';
+          else if (res.status >= 500) message = 'El servidor no está disponible en este momento. Inténtalo de nuevo más tarde.';
+          else message = `Error al procesar la solicitud (${res.status})`;
+        }
+        const error = new Error(message);
+        error.status = res.status;
+        throw error;
+      }
+
+      return await res.json();
+    } catch (err) {
+      clearTimeout(timeoutId);
+
+      const isAbort = err.name === 'AbortError';
+      const isNetwork =
+        isAbort ||
+        err.name === 'TypeError' ||
+        (err.message && (
+          err.message.toLowerCase().includes('failed to fetch') ||
+          err.message.toLowerCase().includes('network') ||
+          err.message.toLowerCase().includes('load failed')
+        ));
+
+      // Si es fallo de red (conexión inestable o microcorte) y quedan intentos, esperar y reintentar
+      if (isNetwork && attempts < retries) {
+        attempts++;
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        continue;
+      }
+
+      // Si agotamos intentos o es un fallo de red definitivo, devolver mensaje claro en español
+      if (isNetwork) {
+        const friendlyErr = new Error(
+          isAbort
+            ? 'El servidor tardó demasiado en responder. Comprueba tu conexión a internet.'
+            : 'No se pudo conectar con el servidor. Revisa tu conexión a internet o inténtalo en unos momentos.'
+        );
+        friendlyErr.isNetwork = true;
+        friendlyErr.status = 0;
+        throw friendlyErr;
+      }
+
+      throw err;
+    }
+  }
+};
+
+export const fetchPublicNews = async ({ page = 1, limit = 6, category = '', search = '' } = {}) => {
   const params = new URLSearchParams();
   if (page) params.append('page', page);
   if (limit) params.append('limit', limit);
   if (category && category !== 'Todas') params.append('category', category);
   if (search) params.append('search', search);
 
-  const res = await fetch(`${API_URL}/news?${params.toString()}`);
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Error al obtener noticias');
-  }
-  return res.json();
+  return requestWithRetry(`${API_URL}/news?${params.toString()}`, {
+    headers: getAuthHeaders()
+  }, 1);
 };
 
 export const fetchNewsBySlug = async (slug) => {
-  const res = await fetch(`${API_URL}/news/article/${encodeURIComponent(slug)}`, {
-    headers: getAuthHeaders()
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Error al obtener la noticia');
-  }
-  return res.json();
+  return requestWithRetry(
+    `${API_URL}/news/article/${encodeURIComponent(slug)}`,
+    { headers: getAuthHeaders() },
+    1
+  );
 };
 
 export const recordArticleView = async (slug) => {
@@ -51,65 +112,61 @@ export const recordArticleView = async (slug) => {
 };
 
 export const toggleLikeArticle = async (slug, action = 'like') => {
-  const res = await fetch(`${API_URL}/news/article/${encodeURIComponent(slug)}/like`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ action })
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Error al actualizar valoración');
-  }
-  return res.json();
+  return requestWithRetry(
+    `${API_URL}/news/article/${encodeURIComponent(slug)}/like`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ action })
+    },
+    0
+  );
 };
 
 export const generateAINews = async ({ topic, category }) => {
-  const res = await fetch(`${API_URL}/news/generate-ai`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ topic, category })
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Error al generar la noticia con IA');
-  }
-  return res.json();
+  return requestWithRetry(
+    `${API_URL}/news/generate-ai`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ topic, category })
+    },
+    0,
+    60000 // 60s timeout para generación con IA
+  );
 };
 
 export const createNews = async (articleData) => {
-  const res = await fetch(`${API_URL}/news`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(articleData)
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Error al crear la noticia');
-  }
-  return res.json();
+  return requestWithRetry(
+    `${API_URL}/news`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(articleData)
+    },
+    0
+  );
 };
 
 export const updateNews = async (id, articleData) => {
-  const res = await fetch(`${API_URL}/news/${id}`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(articleData)
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Error al actualizar la noticia');
-  }
-  return res.json();
+  return requestWithRetry(
+    `${API_URL}/news/${id}`,
+    {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(articleData)
+    },
+    0
+  );
 };
 
 export const deleteNews = async (id) => {
-  const res = await fetch(`${API_URL}/news/${id}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders()
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Error al eliminar la noticia');
-  }
-  return res.json();
+  return requestWithRetry(
+    `${API_URL}/news/${id}`,
+    {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    },
+    0
+  );
 };

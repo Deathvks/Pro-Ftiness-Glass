@@ -16,7 +16,9 @@ import {
   BookOpen,
   LogIn,
   Eye,
-  ThumbsUp
+  ThumbsUp,
+  WifiOff,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -49,6 +51,11 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   const [apiCategories, setApiCategories] = useState(DEFAULT_CATEGORIES);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const handleRetry = () => {
+    setReloadKey((prev) => prev + 1);
+  };
 
   // Exactamente 6 artículos por página (2 filas completas de 3 columnas para una cuadrícula perfecta)
   const ITEMS_PER_PAGE = 6;
@@ -116,7 +123,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
 
     loadNews();
     return () => { isMounted = false; };
-  }, [currentCategory, currentPage, currentSearch]);
+  }, [currentCategory, currentPage, currentSearch, reloadKey]);
 
   const handleSelectCategory = (cat) => {
     const next = new URLSearchParams(searchParams);
@@ -313,14 +320,28 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           <p className="text-xs font-medium text-text-tertiary animate-pulse">Cargando artículos...</p>
         </div>
       ) : error ? (
-        <div className="p-8 text-center rounded-3xl bg-red-500/10 border border-red-500/20 text-red-500">
-          <p className="font-bold">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-red-500 text-white rounded-full font-bold text-xs"
-          >
-            Reintentar
-          </button>
+        <div className="py-12 px-4 flex flex-col items-center justify-center">
+          <GlassCard className="p-8 max-w-md w-full text-center flex flex-col items-center justify-center gap-4 border-red-500/20 bg-red-500/5">
+            <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+              <WifiOff size={28} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-text-primary mb-1">
+                No pudimos conectar con el servidor
+              </h3>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                {error}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+            >
+              <RefreshCw size={14} />
+              Reintentar conexión
+            </button>
+          </GlassCard>
         </div>
       ) : news.length === 0 ? (
         <div className="py-20 text-center flex flex-col items-center justify-center gap-3">

@@ -13,7 +13,9 @@ import {
   ArrowLeft,
   BookOpen,
   ThumbsUp,
-  Type
+  Type,
+  WifiOff,
+  RefreshCw
 } from 'lucide-react';
 import { FaWhatsapp, FaXTwitter, FaTelegram } from 'react-icons/fa6';
 import { format } from 'date-fns';
@@ -38,6 +40,11 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
   const [prevArticle, setPrevArticle] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const handleRetry = () => {
+    setReloadKey((prev) => prev + 1);
+  };
   const [copied, setCopied] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [fontSize, setFontSize] = useState('normal'); // 'normal' | 'large' | 'xlarge'
@@ -86,7 +93,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
         }
       } catch (err) {
         if (isMounted) {
-          setError(err.message || 'Error al cargar la noticia');
+          setError(err);
         }
       } finally {
         if (isMounted) setIsLoading(false);
@@ -103,7 +110,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
     }
 
     return () => { isMounted = false; };
-  }, [slug]);
+  }, [slug, reloadKey]);
 
   const handleGoBack = () => {
     if (onBack) onBack();
@@ -205,6 +212,11 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
   }
 
   if (error || !article) {
+    const isNotFound = error?.status === 404 || (!error && !article);
+    const errorMessage = typeof error === 'string'
+      ? error
+      : error?.message || (isNotFound ? 'El artículo que buscas ha sido trasladado o ya no está disponible.' : 'No pudimos conectar con el servidor.');
+
     return (
       <div
         className="fixed inset-0 z-50 bg-bg-primary overflow-y-auto px-4 py-16 text-center flex flex-col items-center justify-center gap-4 custom-scrollbar"
@@ -215,18 +227,38 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           paddingBottom: 'var(--safe-bottom, env(safe-area-inset-bottom, 0px))'
         }}
       >
-        <BookOpen size={48} className="text-red-500 opacity-60" />
-        <h2 className="text-2xl font-black text-text-primary">Artículo no encontrado</h2>
-        <p className="text-text-secondary text-sm max-w-md">
-          {error || 'El artículo que buscas ha sido trasladado o ya no está disponible.'}
+        <div className={`w-16 h-16 rounded-3xl flex items-center justify-center ${isNotFound ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
+          {isNotFound ? <BookOpen size={32} /> : <WifiOff size={32} />}
+        </div>
+        <h2 className="text-2xl font-black text-text-primary">
+          {isNotFound ? 'Artículo no encontrado' : 'Problema de conexión'}
+        </h2>
+        <p className="text-text-secondary text-sm max-w-md leading-relaxed px-4">
+          {errorMessage}
         </p>
-        <button
-          type="button"
-          onClick={handleGoBack}
-          className="mt-2 px-6 py-2.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 cursor-pointer hover:scale-105 active:scale-95 transition-all"
-        >
-          Volver a Noticias
-        </button>
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
+          {!isNotFound && (
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+            >
+              <RefreshCw size={14} />
+              Reintentar
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleGoBack}
+            className={`px-6 py-2.5 rounded-full font-bold text-xs transition-all cursor-pointer ${
+              isNotFound
+                ? 'bg-accent text-accent-contrast shadow-md shadow-accent/20 hover:scale-105 active:scale-95'
+                : 'bg-glass-surface hover:bg-glass-surface-hover text-text-primary border border-glass-border hover:scale-105 active:scale-95'
+            }`}
+          >
+            Volver a Noticias
+          </button>
+        </div>
       </div>
     );
   }
