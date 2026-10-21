@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Star,
   ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle, Check,
-  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw, ShieldAlert, Bell, Mail, Cloud
+  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw, ShieldAlert, Bell, Mail, Cloud,
+  Newspaper
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
@@ -16,6 +17,7 @@ import AdminNotifications from './AdminNotifications';
 import AdminEmails from './AdminEmails';
 import SecurityDashboard from './SecurityDashboard';
 import AdminUploads from '../components/AdminUploads';
+import AdminNewsManager from '../components/Admin/AdminNewsManager';
 import CustomSelect from '../components/CustomSelect';
 import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getSystemStats } from '../services/adminService';
 import { getBugReports, deleteBugReport } from '../services/reportService';
@@ -554,6 +556,16 @@ const AdminPanel = ({ onCancel }) => {
         >
           <Cloud className="w-4 h-4 sm:w-5 sm:h-5" />
           Subidas
+        </button>
+        <button
+          onClick={() => setActiveTab('news')}
+          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'news'
+            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
+            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
+            }`}
+        >
+          <Newspaper className="w-4 h-4 sm:w-5 sm:h-5" />
+          Noticias
         </button>
         <button
           onClick={() => setActiveTab('security')}
@@ -1096,6 +1108,8 @@ const AdminPanel = ({ onCancel }) => {
           <AdminEmails />
         ) : activeTab === 'uploads' ? (
           <AdminUploads />
+        ) : activeTab === 'news' ? (
+          <AdminNewsManager />
         ) : activeTab === 'security' ? (
           <SecurityDashboard onBack={() => setActiveTab('users')} />
         ) : null}

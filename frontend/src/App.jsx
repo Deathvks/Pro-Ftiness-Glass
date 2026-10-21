@@ -67,6 +67,8 @@ const VIEW_CHUNK_LOADERS = {
   socialLinks: () => import('./pages/SocialLinksScreen'),
   challenges: () => import('./pages/ChallengesScreen'),
   asesoria: () => import('./pages/AsesoriaScreen'),
+  noticias: () => import('./pages/NewsListPage'),
+  noticiaDetalle: () => import('./pages/NewsDetailPage'),
 };
 
 const preloadedViews = new Set();
@@ -107,6 +109,8 @@ const AppearanceScreen = lazy(VIEW_CHUNK_LOADERS.appearance);
 const SupportScreen = lazy(VIEW_CHUNK_LOADERS.support);
 const SocialLinksScreen = lazy(VIEW_CHUNK_LOADERS.socialLinks);
 const ChallengesScreen = lazy(VIEW_CHUNK_LOADERS.challenges);
+const NewsListPage = lazy(VIEW_CHUNK_LOADERS.noticias);
+const NewsDetailPage = lazy(VIEW_CHUNK_LOADERS.noticiaDetalle);
 
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
@@ -383,6 +387,7 @@ export default function App() {
       quickCardio: { key: 'Cardio Rápido', default: 'Cardio Rápido' },
       'active-cardio': { key: 'Sesión Activa', default: 'Sesión Activa' },
       asesoria: { key: 'Asesoría', default: 'Asesoría' },
+      noticias: { key: 'Noticias y Artículos', default: 'Noticias y Artículos' },
     };
     const titleInfo = titleMap[view];
     if (titleInfo) return t(titleInfo.key, { defaultValue: titleInfo.default });
@@ -448,6 +453,7 @@ export default function App() {
       case 'social': return <Social setView={navigateInternal} />;
       case 'publicProfile': return <PublicProfile userId={navParams?.userId} onBack={() => navigateInternal('social')} setView={navigateInternal} />;
       case 'hub': return <Hub setView={navigateInternal} />;
+      case 'noticias': return <NewsListPage onBack={() => navigateInternal('hub')} navigate={navigateInternal} />;
       case 'quickCardio': return <QuickCardio onBack={() => navigateInternal('dashboard')} setView={navigateInternal} />;
       case 'active-cardio': return <ActiveCardioSession activityId={navParams?.activityId} setView={navigateInternal} />;
       case 'settings':
@@ -715,6 +721,16 @@ export default function App() {
         <Route path="/terms" element={
             <Suspense fallback={<div className="p-10">Cargando términos...</div>}>
                 <TermsPage />
+            </Suspense>
+        } />
+        <Route path="/noticias" element={
+            <Suspense fallback={<InitialLoadingSkeleton />}>
+                <NewsListPage onBack={() => navigate('/')} />
+            </Suspense>
+        } />
+        <Route path="/noticias/:slug" element={
+            <Suspense fallback={<InitialLoadingSkeleton />}>
+                <NewsDetailPage onBack={() => navigate('/noticias')} />
             </Suspense>
         } />
         <Route path="/reset-password" element={

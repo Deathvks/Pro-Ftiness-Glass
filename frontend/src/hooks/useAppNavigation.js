@@ -26,10 +26,10 @@ export const useAppNavigation = (isInitialLoad) => {
       '/social', '/hub', '/quickCardio', '/active-cardio', '/settings', '/appearance',
       '/support', '/socialLinks', '/challenges', '/physicalProfileEditor', '/profile',
       '/adminPanel', '/securityDashboard', '/trainerPanel', '/twoFactorSetup', '/notifications',
-      '/asesoria'
+      '/asesoria', '/noticias'
     ];
 
-    if (!validPaths.includes(path) && !path.match(/^\/profile\/\d+$/) && !path.startsWith('/share/routine/')) {
+    if (!validPaths.includes(path) && !path.match(/^\/profile\/\d+$/) && !path.startsWith('/share/routine/') && !path.startsWith('/noticias')) {
         return 'not-found';
     }
 
@@ -43,6 +43,7 @@ export const useAppNavigation = (isInitialLoad) => {
     if (path === '/notifications') return 'notifications';
     if (path === '/active-cardio') return 'active-cardio';
     if (path === '/asesoria') return 'asesoria';
+    if (path === '/noticias') return 'noticias';
 
     const savedView = localStorage.getItem('lastView');
     return savedView || 'dashboard';
@@ -116,6 +117,9 @@ export const useAppNavigation = (isInitialLoad) => {
     }
     else if (path === '/asesoria' && view !== 'asesoria') {
       setView('asesoria');
+    }
+    else if (path === '/noticias' && view !== 'noticias') {
+      setView('noticias');
     }
   }, [view, navParams.userId]);
 
@@ -216,6 +220,8 @@ export const useAppNavigation = (isInitialLoad) => {
         setView('workout');
       } else if (path === '/asesoria') {
         setView('asesoria');
+      } else if (path === '/noticias') {
+        setView('noticias');
       } else {
         setView('dashboard');
       }

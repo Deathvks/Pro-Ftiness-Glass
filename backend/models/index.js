@@ -31,6 +31,7 @@ import AppRating from './appRatingModel.js';
 import UserChallenge from './userChallengeModel.js';
 import Message from './messageModel.js';
 import UploadLog from './uploadLogModel.js';
+import News from './newsModel.js';
 
 // Nuevos modelos de Squads
 import Squad from './squadModel.js';
@@ -232,7 +233,8 @@ const models = {
   Message,
   SecurityLog,
   IpBlacklist,
-  UploadLog
+  UploadLog,
+  News
 };
 
 export default models;

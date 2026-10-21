@@ -43,6 +43,8 @@ import aiRoutes from './routes/ai.js';
 import trainerRoutes from './routes/trainerRoutes.js';
 import chatRoutes from './routes/chat.js';
 import securityRoutes from './routes/securityRoutes.js';
+import newsRoutes from './routes/news.js';
+import { seedInitialNewsIfEmpty, getSitemapNews } from './controllers/newsController.js';
 import { checkBlacklist, sniffingDetector } from './middleware/securityMonitor.js';
 import { startCronJobs } from './services/cronService.js';
 
@@ -189,6 +191,29 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/trainer', trainerRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/admin/security', securityRoutes);
+app.use('/api/news', newsRoutes);
+
+// Sitemap XML dinámico con todas las noticias indexables
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const newsItems = await getSitemapNews();
+    const baseUrl = 'https://pro-fitness-glass.zeabur.app';
+    const xml = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+      '  <url><loc>' + baseUrl + '/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>',
+      '  <url><loc>' + baseUrl + '/noticias</loc><changefreq>daily</changefreq><priority>0.9</priority></url>',
+      '  <url><loc>' + baseUrl + '/privacy</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>',
+      '  <url><loc>' + baseUrl + '/terms</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>',
+      ...newsItems.map(item => '  <url><loc>' + baseUrl + '/noticias/' + item.slug + '</loc><lastmod>' + new Date(item.updatedAt || item.published_at).toISOString().split('T')[0] + '</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>'),
+      '</urlset>'
+    ].join('\n');
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (e) {
+    res.status(500).send('Error generating sitemap');
+  }
+});
 
 app.use(errorHandler);
 
@@ -234,6 +259,7 @@ const isProductionDB = process.env.NODE_ENV === 'production' || !!process.env.MY
 
     // Retroactively send bot replies for "sin compromiso" users
     chatController.runRetroactiveBotReplies();
+    seedInitialNewsIfEmpty();
   })
   .catch(err => {
     console.error('❌ Database connection failed:', err.message);

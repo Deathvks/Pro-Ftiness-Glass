@@ -11,7 +11,8 @@ import {
   ShareIcon,
   UserGroupIcon,
   ChatBubbleLeftRightIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  NewspaperIcon
 } from '@heroicons/react/24/outline';
 import { BookOpenIcon } from '@heroicons/react/24/outline';
 import AppRatingModal from '../components/AppRatingModal';
@@ -222,6 +223,13 @@ export default function Hub({ setView }) {
             onClick={() => setView('socialLinks')}
           />
 
+          <HubButton 
+            id="hub-news"
+            icon={NewspaperIcon}
+            title="Noticias y Artículos"
+            description="Ciencia, nutrición y novedades"
+            onClick={() => setView('noticias')}
+          />
           <HubButton 
             icon={InformationCircleIcon}
             title="Soporte"
