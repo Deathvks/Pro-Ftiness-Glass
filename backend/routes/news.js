@@ -1,17 +1,27 @@
 /* backend/routes/news.js */
 import express from 'express';
 import { body } from 'express-validator';
+import rateLimit from 'express-rate-limit';
 import * as newsController from '../controllers/newsController.js';
 import authenticateToken from '../middleware/authenticateToken.js';
 import authorizeAdmin from '../middleware/authorizeAdmin.js';
 
 const router = express.Router();
 
+// Limitador para evitar spam de visitas o likes automatizados
+const newsInteractionLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minuto
+  max: 60, // máximo 60 interacciones por minuto por IP
+  message: { error: 'Demasiadas solicitudes. Por favor, espera un momento.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // --- RUTAS PÚBLICAS (Accesibles para Googlebot, SEO y visitantes sin login) ---
 router.get('/', newsController.getPublicNews);
 router.get('/article/:slug', newsController.getNewsBySlug);
-router.post('/article/:slug/view', newsController.trackNewsView);
-router.post('/article/:slug/like', newsController.toggleLikeNews);
+router.post('/article/:slug/view', newsInteractionLimiter, newsController.trackNewsView);
+router.post('/article/:slug/like', newsInteractionLimiter, newsController.toggleLikeNews);
 
 // --- RUTAS ADMINISTRADOR (Gestión de noticias y generación con IA) ---
 router.post(

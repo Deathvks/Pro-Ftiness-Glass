@@ -54,7 +54,7 @@ const deleteAllUserFiles = async (userId, userInstance) => {
 export const getMyProfile = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.user.userId, {
-      attributes: { exclude: ['password_hash'] },
+      attributes: { exclude: ['password_hash', 'two_factor_secret'] },
     });
 
     if (!user) {
@@ -121,7 +121,7 @@ export const exportMyData = async (req, res, next) => {
     const format = req.query.format || 'json';
 
     const [user, bodyWeightLogs, nutritionLogs, personalRecords, workoutLogs] = await Promise.all([
-      User.findByPk(userId, { attributes: { exclude: ['password_hash'] } }),
+      User.findByPk(userId, { attributes: { exclude: ['password_hash', 'two_factor_secret'] } }),
       BodyWeightLog.findAll({ where: { user_id: userId }, order: [['log_date', 'DESC']], raw: true }),
       NutritionLog.findAll({ where: { user_id: userId }, order: [['log_date', 'DESC']], raw: true }),
       PersonalRecord.findAll({ where: { user_id: userId }, raw: true }),
@@ -362,7 +362,7 @@ export const updateMyProfile = async (req, res, next) => {
       });
     }
 
-    const updatedUser = await User.findByPk(userId, { attributes: { exclude: ['password_hash'] } });
+    const updatedUser = await User.findByPk(userId, { attributes: { exclude: ['password_hash', 'two_factor_secret'] } });
     const userWithPass = await User.findByPk(userId, { attributes: ['password_hash'], raw: true });
     const userData = updatedUser.toJSON();
     userData.hasPassword = !!(userWithPass && userWithPass.password_hash);
@@ -460,7 +460,7 @@ export const updateMyAccount = async (req, res, next) => {
     }
 
     await user.reload();
-    const { password_hash, ...userWithoutPassword } = user.get({ plain: true });
+    const { password_hash, two_factor_secret, ...userWithoutPassword } = user.get({ plain: true });
     userWithoutPassword.hasPassword = !!user.password_hash;
     userWithoutPassword.referral_code = user.referral_code;
 
