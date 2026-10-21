@@ -26,7 +26,8 @@ import {
   Radio,
   ChevronDown,
   ChevronUp,
-  Layers
+  Layers,
+  RefreshCw
 } from 'lucide-react';
 import ModalPortal from '../ModalPortal';
 import useAppStore from '../../store/useAppStore';
@@ -80,8 +81,15 @@ const SmartExerciseCoachModal = ({
   // Asegurar que si cambia el plan o dificultad, se sincronice la estrategia seleccionada
   const activeStrategy = useMemo(() => {
     if (!plan?.strategyOptions || plan.strategyOptions.length === 0) return null;
-    const found = plan.strategyOptions.find(s => s.id === selectedStrategyId);
-    return found || plan.strategyOptions[0];
+    if (selectedStrategyId) {
+      const found = plan.strategyOptions.find(s => s.id === selectedStrategyId);
+      if (found) return found;
+    }
+    if (plan.isAlreadyAppliedInSession && plan.lastAppliedStrategy) {
+      const active = plan.strategyOptions.find(s => s.isCurrentActive || s.id === plan.lastAppliedStrategy.strategyId);
+      if (active) return active;
+    }
+    return plan.strategyOptions[0];
   }, [plan, selectedStrategyId]);
 
   const handleDifficultyChange = (newFeedback) => {
@@ -108,7 +116,9 @@ const SmartExerciseCoachModal = ({
     currentTopWeight,
     actualPreviousReps,
     missedTargetInPrevious,
-    isBodyweight
+    isBodyweight,
+    isAlreadyAppliedInSession,
+    lastAppliedStrategy
   } = plan;
 
   const isBW = Boolean(isBodyweight || currentTopWeight === 0);
@@ -384,7 +394,9 @@ const SmartExerciseCoachModal = ({
             }`}>
               <div className="flex items-center gap-2">
                 <div className={`p-1.5 rounded-[10px] shrink-0 ${
-                  followUp?.isInactive
+                  isAlreadyAppliedInSession
+                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                    : followUp?.isInactive
                     ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
                     : trend.isWarning 
                     ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' 
@@ -392,7 +404,9 @@ const SmartExerciseCoachModal = ({
                     ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
                     : 'bg-accent/20 text-accent'
                 }`}>
-                  {followUp?.isInactive ? (
+                  {isAlreadyAppliedInSession ? (
+                    <CheckCircle2 size={15} strokeWidth={2.5} />
+                  ) : followUp?.isInactive ? (
                     <Clock size={15} strokeWidth={2.5} />
                   ) : trend.isWarning ? (
                     <AlertTriangle size={15} strokeWidth={2.5} />
@@ -407,7 +421,9 @@ const SmartExerciseCoachModal = ({
                     ¿Qué hemos detectado en tu rendimiento?
                   </span>
                   <h3 className="text-xs sm:text-sm font-black text-text-primary leading-tight">
-                    {followUp?.isInactive
+                    {isAlreadyAppliedInSession
+                      ? `Estrategia activa para hoy: ${lastAppliedStrategy?.strategyTitle || 'Plan en curso'}`
+                      : followUp?.isInactive
                       ? (isBW
                           ? `Reactivación tras pausa: Base en peso corporal (${actualPreviousReps || targets.suggestedReps} reps)`
                           : `Reactivación tras pausa: Carga previa de ${currentTopWeight} kg (${actualPreviousReps || targets.suggestedReps} reps)`)
@@ -738,7 +754,11 @@ const SmartExerciseCoachModal = ({
             {strategyOptions && strategyOptions.length > 0 && (
               <div className="space-y-2">
                 <span className="text-[11px] font-black uppercase tracking-wider text-text-muted block px-1">
-                  {readOnly ? 'Estrategias recomendadas para tus próximas sesiones:' : 'Elige cómo quieres enfocar el ejercicio hoy:'}
+                  {isAlreadyAppliedInSession
+                    ? 'Estrategia activa para la sesión de hoy:'
+                    : readOnly 
+                    ? 'Estrategias recomendadas para tus próximas sesiones:' 
+                    : 'Elige cómo quieres enfocar el ejercicio hoy:'}
                 </span>
 
                 <div key={difficultyFeedback} className="grid grid-cols-1 gap-2">
@@ -749,13 +769,17 @@ const SmartExerciseCoachModal = ({
                         key={opt.id}
                         onClick={() => setSelectedStrategyId(opt.id)}
                         className={`p-3 sm:p-3.5 rounded-[20px] transition-all cursor-pointer flex items-start gap-3 select-none ${
-                          isSelected
+                          isSelected && opt.isCurrentActive
+                            ? 'bg-emerald-500/15 ring-2 ring-emerald-500 shadow-sm border-none'
+                            : isSelected
                             ? 'bg-accent/15 ring-1 ring-accent shadow-sm border-none'
                             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 border-none hover:bg-black/10 dark:hover:bg-white/10'
                         }`}
                       >
                         <div className={`mt-0.5 shrink-0 rounded-full w-5 h-5 flex items-center justify-center transition-all ${
-                          isSelected ? 'bg-accent text-accent-contrast' : 'bg-black/10 dark:bg-white/10 text-transparent'
+                          isSelected
+                            ? (opt.isCurrentActive ? 'bg-emerald-500 text-white' : 'bg-accent text-accent-contrast')
+                            : 'bg-black/10 dark:bg-white/10 text-transparent'
                         }`}>
                           <Check size={12} strokeWidth={3} />
                         </div>
@@ -767,7 +791,9 @@ const SmartExerciseCoachModal = ({
                             </span>
                             {opt.badge && (
                               <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                                isSelected ? 'bg-accent text-accent-contrast' : 'bg-black/10 dark:bg-white/10 text-text-secondary'
+                                isSelected
+                                  ? (opt.isCurrentActive ? 'bg-emerald-500 text-white' : 'bg-accent text-accent-contrast')
+                                  : 'bg-black/10 dark:bg-white/10 text-text-secondary'
                               }`}>
                                 {opt.badge}
                               </span>
@@ -873,32 +899,67 @@ const SmartExerciseCoachModal = ({
           {/* Footer Buttons */}
           <div className="p-4 sm:p-5 border-t border-black/5 dark:border-white/10 bg-bg-secondary flex items-center gap-3">
             {!readOnly && (onApplyStrategy || onApplyWeight) ? (
-              <>
-                <button
-                  type="button"
-                  onClick={handleApplySelection}
-                  className="flex-1 min-w-0 py-3.5 px-3 sm:px-4 rounded-[20px] bg-accent hover:brightness-110 active:scale-95 text-accent-contrast font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg shadow-accent/30 transition-all overflow-hidden"
-                >
-                  <Check size={18} strokeWidth={3} className="shrink-0" />
-                  <span className="truncate">
-                    {activeStrategy?.perSetPlan && activeStrategy.perSetPlan.length > 0
-                      ? `Aplicar Top Set (${activeStrategy.perSetPlan[0].weight > 0 ? `${activeStrategy.perSetPlan[0].weight}kg` : 'Corporal'} / ${activeStrategy.perSetPlan[1]?.weight > 0 ? `${activeStrategy.perSetPlan[1].weight}kg` : 'Corporal'})`
-                      : activeSuggestedWeight !== null && activeSuggestedWeight > 0
-                        ? `Aplicar ${activeSuggestedWeight} kg (${activeSuggestedReps} reps)`
-                        : isBW
-                        ? `Aplicar en Corporal (${activeSuggestedReps} reps)`
-                        : `Aplicar objetivo (${activeSuggestedReps} reps)`}
-                  </span>
-                </button>
+              isAlreadyAppliedInSession && (activeStrategy?.isCurrentActive || activeStrategy?.id === lastAppliedStrategy?.strategyId || !selectedStrategyId) ? (
+                <>
+                  <div className="flex-1 min-w-0 py-3.5 px-3 sm:px-4 rounded-[20px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-black text-xs sm:text-sm flex items-center justify-center gap-2 select-none shadow-sm">
+                    <CheckCircle2 size={18} strokeWidth={2.5} className="shrink-0" />
+                    <span className="truncate">Plan ya aplicado para hoy</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="py-3.5 px-5 sm:px-7 rounded-[20px] font-bold text-xs sm:text-sm bg-accent text-accent-contrast transition-all active:scale-95 shrink-0 shadow-lg shadow-accent/25"
+                    style={{ color: "var(--btn-accent-text, #000)" }}
+                  >
+                    Entendido
+                  </button>
+                </>
+              ) : isAlreadyAppliedInSession ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleApplySelection}
+                    className="flex-1 min-w-0 py-3.5 px-3 sm:px-4 rounded-[20px] bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg shadow-amber-500/30 transition-all overflow-hidden"
+                  >
+                    <RefreshCw size={17} className="shrink-0" />
+                    <span className="truncate">Cambiar a esta alternativa</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="py-3.5 px-4 sm:px-6 rounded-[20px] font-bold text-xs sm:text-sm bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-text-primary transition-all active:scale-95 shrink-0"
+                  >
+                    Cancelar
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleApplySelection}
+                    className="flex-1 min-w-0 py-3.5 px-3 sm:px-4 rounded-[20px] bg-accent hover:brightness-110 active:scale-95 text-accent-contrast font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg shadow-accent/30 transition-all overflow-hidden"
+                  >
+                    <Check size={18} strokeWidth={3} className="shrink-0" />
+                    <span className="truncate">
+                      {activeStrategy?.perSetPlan && activeStrategy.perSetPlan.length > 0
+                        ? `Aplicar Top Set (${activeStrategy.perSetPlan[0].weight > 0 ? `${activeStrategy.perSetPlan[0].weight}kg` : 'Corporal'} / ${activeStrategy.perSetPlan[1]?.weight > 0 ? `${activeStrategy.perSetPlan[1].weight}kg` : 'Corporal'})`
+                        : activeSuggestedWeight !== null && activeSuggestedWeight > 0
+                          ? `Aplicar ${activeSuggestedWeight} kg (${activeSuggestedReps} reps)`
+                          : isBW
+                          ? `Aplicar en Corporal (${activeSuggestedReps} reps)`
+                          : `Aplicar objetivo (${activeSuggestedReps} reps)`}
+                    </span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="py-3.5 px-4 sm:px-6 rounded-[20px] font-bold text-xs sm:text-sm bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-text-primary transition-all active:scale-95 shrink-0"
-                >
-                  Entendido
-                </button>
-              </>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="py-3.5 px-4 sm:px-6 rounded-[20px] font-bold text-xs sm:text-sm bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 text-text-primary transition-all active:scale-95 shrink-0"
+                  >
+                    Entendido
+                  </button>
+                </>
+              )
             ) : (
               <button
                 type="button"

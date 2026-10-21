@@ -1,4 +1,4 @@
 {
-  "version": "7.8.21",
-  "releaseNotes": "Ajuste del entrenador inteligente en ejercicios corporales (dominadas), corrección de texto duplicado en inactividad y explicación de estancamiento en calistenia."
+  "version": "7.8.22",
+  "releaseNotes": "Blindaje contra re-aplicación de sobrecarga en la misma sesión de entrenamiento y estado activo de pauta aplicada."
 }

@@ -594,7 +594,12 @@ const Workout = ({ timer, setView, navParams }) => {
                                 const parts = [];
                                 if (strategy.suggestedSets) parts.push(`${strategy.suggestedSets} series`);
                                 if (strategy.suggestedWeight !== null && strategy.suggestedWeight !== undefined) {
-                                    parts.push(`${strategy.suggestedWeight} kg (todas las series)`);
+                                    const w = parseFloat(strategy.suggestedWeight);
+                                    if (w > 0) {
+                                        parts.push(`${w} kg (todas las series)`);
+                                    } else {
+                                        parts.push('Peso corporal');
+                                    }
                                 }
                                 if (strategy.suggestedReps !== null && strategy.suggestedReps !== undefined) {
                                     parts.push(`${strategy.suggestedReps} reps`);

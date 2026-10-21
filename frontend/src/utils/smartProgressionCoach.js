@@ -1000,6 +1000,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   const isTooSoonToPush = Boolean(followUp?.isTooSoon);
   const isInactive = Boolean(followUp?.isInactive);
   const inactiveDays = followUp?.inactiveDays || 0;
+  const isAlreadyAppliedInSession = Boolean(followUp?.isOkGreen && lastAppliedStrategy);
   const jumpLabelText = equipmentType === 'barbell'
     ? `+${realisticIncrement} kg (1.25 kg a cada lado)`
     : `+${realisticIncrement} kg`;
@@ -1334,8 +1335,82 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   // CASO C: EL USUARIO INDICA "LLEGO BIEN" (🟢 EVALUACIÓN INTELIGENTE DE HISTORIAL)
   // ------------------------------------------------------------
   } else {
+    // C0. Estrategia ya aplicada en el entrenamiento activo actual (blindaje contra doble ajuste en la misma rutina)
+    if (isAlreadyAppliedInSession && lastAppliedStrategy) {
+      const activeWeight = lastAppliedStrategy.suggestedWeight !== undefined && lastAppliedStrategy.suggestedWeight !== null
+        ? lastAppliedStrategy.suggestedWeight
+        : currentTopWeight;
+      const activeReps = lastAppliedStrategy.suggestedReps || targetReps;
+      const activeSets = lastAppliedStrategy.suggestedSets || plannedSets;
+      const isAppliedBW = activeWeight === 0 || isBodyweight;
+
+      suggestedWeight = activeWeight;
+      suggestedReps = activeReps;
+      suggestedSets = activeSets;
+      actionDirection = 'maintain';
+      intensityLabel = 'Estrategia Activa';
+      intensityDesc = 'Configuración fijada para la sesión de hoy';
+      suggestedRir = lastAppliedStrategy.perSetPlan ? 'Según series' : '1-2 reps en recámara';
+      suggestedRest = '120 - 180 seg';
+      weightChangeNote = isAppliedBW
+        ? 'Peso corporal (activo)'
+        : `${activeWeight} kg (activo)`;
+      actionTitle = `Estrategia activa para hoy: ${lastAppliedStrategy.strategyTitle}`;
+      coachingAdvice = `Ya has aplicado la recomendación del entrenador para esta rutina (${formatTargetText(lastAppliedStrategy)}). Tus series de trabajo ya están configuradas en tu pantalla. Para desbloquear el siguiente ajuste de progresión (subir kilos o repeticiones), primero debes completar este entrenamiento y registrar tus series.`;
+      actionSteps = [
+        `Tus series de hoy están listas con ${formatTargetText(lastAppliedStrategy)}.`,
+        'Concéntrate en completar las repeticiones con técnica limpia y dejando margen antes del fallo.',
+        'Al terminar tu rutina, el sistema registrará los datos reales y te habilitará la siguiente progresión para tu próxima sesión.'
+      ];
+
+      const currentActiveOption = {
+        id: lastAppliedStrategy.strategyId || 'strat_active_current',
+        title: `🟢 ${lastAppliedStrategy.strategyTitle}`,
+        tag: 'Plan Activo para Hoy',
+        badge: isAppliedBW ? `${activeReps} reps · Corporal` : `${activeWeight}kg · Activa`,
+        suggestedWeight: activeWeight,
+        suggestedReps: activeReps,
+        suggestedSets: activeSets,
+        perSetPlan: lastAppliedStrategy.perSetPlan || null,
+        motive: 'Esta es la pauta que has fijado para tu sesión de hoy. Mantén el foco en completar las series con buena ejecución técnica.',
+        description: `Pauta activa para hoy: ${formatTargetText(lastAppliedStrategy)}.`,
+        isCurrentActive: true
+      };
+
+      const altOptions = [currentActiveOption];
+
+      if (lastAppliedStrategy.perSetPlan) {
+        altOptions.push({
+          id: 'strat_alt_uniform',
+          title: `🟡 Alternativa: Carga Uniforme (${isAppliedBW ? 'Corporal' : `${activeWeight} kg`} en todas las series)`,
+          tag: 'Cambiar a carga fija',
+          badge: isAppliedBW ? 'Corporal fijo' : `Todas a ${activeWeight}kg`,
+          suggestedWeight: activeWeight,
+          suggestedReps: activeReps,
+          suggestedSets: activeSets,
+          motive: 'Si prefieres no hacer series escalonadas (Top Set) hoy, puedes cambiar a realizar todas las series con la misma carga.',
+          description: `Todas las series a ${isAppliedBW ? 'peso corporal' : `${activeWeight} kg`} (${activeReps} reps).`,
+          isCurrentActive: false
+        });
+      } else {
+        altOptions.push({
+          id: 'strat_alt_conservative',
+          title: '🟡 Alternativa: Conservar Más Margen (-1 Repetición)',
+          tag: 'Más margen técnico',
+          badge: isAppliedBW ? `${Math.max(4, activeReps - 1)} reps · Corporal` : `${activeWeight}kg · -1 rep`,
+          suggestedWeight: activeWeight,
+          suggestedReps: Math.max(4, activeReps - 1),
+          suggestedSets: activeSets,
+          motive: 'Si notas cansancio acumulado antes de empezar, puedes ajustar el objetivo a 1 repetición menos para asegurar un RIR más seguro.',
+          description: `Haz ${Math.max(4, activeReps - 1)} repeticiones con control estricto dejando 2 reps en recámara.`,
+          isCurrentActive: false
+        });
+      }
+
+      strategyOptions = altOptions;
+
     // C1. Sesión de calibración inicial (sin registros previos en esta rutina)
-    if (isCalibratingSession) {
+    } else if (isCalibratingSession) {
       suggestedWeight = currentTopWeight;
       suggestedReps = targetReps;
       suggestedSets = plannedSets;
@@ -2080,6 +2155,8 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     asesoriaRecommendation,
     followUp,
     currentTopWeight,
-    isBodyweight
+    isBodyweight,
+    isAlreadyAppliedInSession,
+    lastAppliedStrategy
   };
 };

@@ -214,7 +214,11 @@ export const evaluateExerciseFollowUpAndRecovery = ({
   const trendStatus = currentTrend?.status || (hasRoutineSessions ? 'calibrating' : 'first_time');
 
   const appliedAtTime = lastApplied?.appliedAt ? new Date(lastApplied.appliedAt).getTime() : 0;
-  const isCurrentSessionApplied = appliedAtTime > 0 && (Date.now() - appliedAtTime) < (4 * 60 * 60 * 1000); // Aplicado en las últimas 4h
+  const lastSessionTime = lastSession?.date ? new Date(lastSession.date).getTime() : 0;
+  // Solo es la sesión actual en curso si se aplicó hace menos de 4 horas Y no hay una sesión guardada posterior a la aplicación
+  const isCurrentSessionApplied = appliedAtTime > 0 &&
+    (Date.now() - appliedAtTime) < (4 * 60 * 60 * 1000) &&
+    (!lastSessionTime || lastSessionTime <= appliedAtTime);
 
   // Si se aplicó la recomendación para la sesión actual, reflejar inmediatamente el estado verde
   if (isCurrentSessionApplied && lastApplied) {
@@ -387,7 +391,6 @@ export const evaluateExerciseFollowUpAndRecovery = ({
 
   // Comprobar si la estrategia aplicada sigue vigente para la sesión actual/inmediata,
   // o si el usuario ya registró entrenamientos posteriores por su cuenta sin pulsar "Aplicar".
-  const lastSessionTime = lastSession?.date ? new Date(lastSession.date).getTime() : 0;
   const isAppliedStillRelevant = Boolean(
     lastApplied &&
     appliedAtTime > 0 &&
