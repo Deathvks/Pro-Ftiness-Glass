@@ -1,4 +1,4 @@
 {
-  "version": "7.8.26",
-  "releaseNotes": "Mejoras críticas de ciberseguridad: cookies de sesión HttpOnly/SameSite y sanitización estricta contra inyecciones XSS persistentes en rutinas, perfiles, entrenamientos y chats."
+  "version": "7.8.27",
+  "releaseNotes": "Ajuste visual en el menú de categorías del blog de noticias: eliminación completa de sombras, bordes y halos en los botones de filtrado."
 }

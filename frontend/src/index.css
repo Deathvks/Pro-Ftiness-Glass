@@ -1229,6 +1229,24 @@ html.ocean-theme:not(.dark) .aurora-curtain {
     box-shadow: none !important;
   }
 
+  /* News category filter pills: completely flat, without shadows, borders, or edge halos */
+  .news-filter-btn,
+  button.news-filter-btn,
+  button.news-filter-btn:hover,
+  button.news-filter-btn:active,
+  button.news-filter-btn:focus,
+  button.news-filter-btn:focus-visible {
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+    border: none !important;
+    border-width: 0 !important;
+    border-color: transparent !important;
+    outline: none !important;
+    background-image: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
   .form-error-text {
     @apply text-red font-bold text-sm mt-1;
   }
