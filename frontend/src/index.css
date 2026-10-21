@@ -1229,14 +1229,15 @@ html.ocean-theme:not(.dark) .aurora-curtain {
     box-shadow: none !important;
   }
 
-  /* Completely eliminate the accent color shadow underneath the active news category pill */
+  /* Active news category pill: preserve true Liquid Glass relief and top reflection while eliminating the downward accent drop shadow cloud */
   button.news-category-active,
   button.news-category-active:hover,
   button.news-category-active:active,
   button.news-category-active:focus,
   button.news-category-active:focus-visible {
-    box-shadow: none !important;
-    -webkit-box-shadow: none !important;
+    box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.5), inset 0 -1px 1px rgba(0, 0, 0, 0.2) !important;
+    -webkit-box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.5), inset 0 -1px 1px rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
   }
 
   .form-error-text {

@@ -294,15 +294,15 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
               onClick={() => handleSelectCategory(cat)}
               className={`shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer select-none outline-none ${
                 isActive
-                  ? 'news-category-active bg-accent text-accent-contrast scale-105 !shadow-none'
-                  : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'
+                  ? 'news-category-active bg-accent text-accent-contrast scale-105'
+                  : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
               }`}
             >
               <span>{cat}</span>
               {count > 0 && (
                 <span
                   className={`px-1.5 py-0.5 rounded-full text-[10px] font-black transition-colors ${
-                    isActive ? 'bg-black/20 text-white' : 'bg-surface/80 dark:bg-white/10 text-text-tertiary'
+                    isActive ? 'bg-black/20 text-white' : 'bg-black/5 dark:bg-white/10 text-text-tertiary'
                   }`}
                 >
                   {count}
