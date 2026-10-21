@@ -198,24 +198,39 @@ import chatController from './controllers/chatController.js';
 
 const isProductionDB = process.env.NODE_ENV === 'production' || !!process.env.MYSQL_HOST;
 (isProductionDB ? db.sequelize.authenticate() : db.sequelize.sync())
-  .then(() => {
+  .then(async () => {
+    // Verificación defensiva inmediata de columnas de gimnasio en users
+    try {
+      const [cols] = await db.sequelize.query('DESCRIBE users').catch(() => [[]]);
+      const colNames = Array.isArray(cols) ? cols.map(c => c.Field) : [];
+      if (colNames.length > 0 && !colNames.includes('show_gym')) {
+        await db.sequelize.query('ALTER TABLE users ADD COLUMN show_gym TINYINT(1) NOT NULL DEFAULT 1').catch(() => {});
+        console.log('Columna show_gym añadida a users.');
+      }
+      if (colNames.length > 0 && !colNames.includes('gym_data')) {
+        await db.sequelize.query('ALTER TABLE users ADD COLUMN gym_data TEXT NULL').catch(() => {});
+        console.log('Columna gym_data añadida a users.');
+      }
+    } catch (schemaErr) {
+      console.warn('Verificación defensiva de esquema en users:', schemaErr.message);
+    }
+
     httpServer.listen(PORT, () => {
       console.log(`🚀 Server (HTTP + Socket.io) running on port ${PORT}`);
     });
     startCronJobs();
 
-    if (process.env.NODE_ENV === 'production' || process.env.MYSQL_HOST) {
-      console.log('Ejecutando migraciones pendientes en producción (en segundo plano)...');
-      exec('npx --yes sequelize-cli db:migrate --env production', (err, stdout, stderr) => {
-        if (stdout) console.log(stdout);
-        if (stderr) console.error(stderr);
-        if (err) {
-          console.error('Error al ejecutar migraciones automáticas:', err.message);
-        } else {
-          console.log('Migraciones completadas exitosamente.');
-        }
-      });
-    }
+    const migrateEnv = (process.env.NODE_ENV === 'production' || process.env.MYSQL_HOST) ? 'production' : 'development';
+    console.log(`Ejecutando migraciones pendientes (${migrateEnv})...`);
+    exec(`npx --yes sequelize-cli db:migrate --env ${migrateEnv}`, (err, stdout, stderr) => {
+      if (stdout) console.log(stdout);
+      if (stderr) console.error(stderr);
+      if (err) {
+        console.error('Error al ejecutar migraciones automáticas:', err.message);
+      } else {
+        console.log('Migraciones completadas exitosamente.');
+      }
+    });
 
     // Retroactively send bot replies for "sin compromiso" users
     chatController.runRetroactiveBotReplies();
