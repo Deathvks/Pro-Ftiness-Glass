@@ -118,7 +118,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
     else navigate('/noticias');
   };
 
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : `https://pro-fitness-glass.zeabur.app/noticias/${slug}`;
+  const currentUrl = `https://pro-fitness-glass.zeabur.app/noticias/${article?.slug || slug}`;
 
   const handleCopyLink = () => {
     if (navigator.clipboard) {

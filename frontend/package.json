@@ -1,7 +1,7 @@
 {
   "name": "pro-fitness-glass",
   "private": true,
-  "version": "7.8.33",
+  "version": "7.8.34",
   "type": "module",
   "engines": {
     "node": ">=20.0.0",
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerenderNews.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "tailwind:init": "node node_modules/tailwindcss/lib/cli.js init -p",
