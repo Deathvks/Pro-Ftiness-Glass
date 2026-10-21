@@ -10,6 +10,7 @@ import {
   Check,
   Copy,
   ArrowRight,
+  ArrowLeft,
   BookOpen,
   ThumbsUp,
   Type
