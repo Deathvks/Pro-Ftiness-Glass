@@ -1,4 +1,4 @@
 {
-  "version": "7.8.22",
-  "releaseNotes": "Blindaje contra re-aplicación de sobrecarga en la misma sesión de entrenamiento y estado activo de pauta aplicada."
+  "version": "7.8.23",
+  "releaseNotes": "Ajuste de relación de aspecto y fitMode contain para previsualizaciones de ejercicios en biblioteca (Admin y Entrenador)."
 }

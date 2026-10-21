@@ -48,7 +48,6 @@ const ExerciseListItem = ({
   });
 
   const cleanDescription = translatedDescription.replace(/<[^>]*>?/gm, '');
-  const isYoutubePreview = /(?:youtube\.com|youtu\.be)/i.test(exercise.video_url || '');
 
   return (
     <div 
@@ -57,17 +56,19 @@ const ExerciseListItem = ({
     >
       
       {/* Imagen / Medio (Arriba, ancho completo) */}
-      <div className={`w-full ${isReadOnly && !isYoutubePreview ? 'aspect-video' : 'aspect-square'} bg-transparent flex items-center justify-center overflow-hidden rounded-t-[24px] ${isReadOnly && !isYoutubePreview ? '' : 'transition-transform duration-500 group-hover:scale-105'}`}>
-        <ExerciseMedia 
-          details={exercise}
-          fitMode={isReadOnly && !isYoutubePreview ? 'contain' : 'cover'}
-          forceAuto={false}
-          disableAnimation={false}
-          transparentBackground={isReadOnly}
-          fillContain={isReadOnly && !isYoutubePreview}
-          roundedMedia={isReadOnly && !isYoutubePreview}
-          className="w-full h-full"
-        />
+      <div className="w-full aspect-video bg-transparent flex items-center justify-center overflow-hidden rounded-t-[24px]">
+        <div className="w-full h-full transition-transform duration-500 group-hover:scale-105 flex items-center justify-center">
+          <ExerciseMedia 
+            details={exercise}
+            fitMode="contain"
+            forceAuto={false}
+            disableAnimation={false}
+            transparentBackground={true}
+            fillContain={true}
+            roundedMedia={true}
+            className="w-full h-full"
+          />
+        </div>
       </div>
       
       {/* Zona de Textos y Botón (Abajo) */}

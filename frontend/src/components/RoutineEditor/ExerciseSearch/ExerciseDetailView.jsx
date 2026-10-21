@@ -263,7 +263,10 @@ const ExerciseDetailView = ({
             <div className="w-full relative">
               <ExerciseMedia
                 details={exercise}
-                fitMode="cover"
+                fitMode="contain"
+                forceAuto={true}
+                transparentBackground={true}
+                fillContain={true}
                 className="w-full"
                 playYouTube={true}
               />

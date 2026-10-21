@@ -185,7 +185,9 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     // LÃƒÂ³gica mÃƒÂ¡gica para eliminar el fondo blanco de los dibujos de Wger
     const getImageBlendClass = (url) => {
       if (!url) return '';
-      if (url === youtubeThumbnail) return 'object-cover';
+      if (url === youtubeThumbnail) {
+        return fitMode === 'contain' ? 'object-contain' : 'object-cover';
+      }
       
       let blendClass = isAuto ? 'object-contain' : `object-${fitMode}`;
       if (url.includes('wger.de')) {

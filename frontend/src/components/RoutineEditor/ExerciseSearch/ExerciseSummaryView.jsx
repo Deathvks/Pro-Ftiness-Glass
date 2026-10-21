@@ -169,12 +169,17 @@ const ExerciseSummaryView = ({
                   </button>
 
                   {/* Media (Top) */}
-                  <div className="w-full aspect-square bg-transparent flex items-center justify-center overflow-hidden cursor-pointer">
-                    <ExerciseMedia
-                      details={item.exercise}
-                      fitMode="cover"
-                      className="w-full h-full opacity-90 group-hover:opacity-100 transition-transform duration-500 group-hover:scale-[1.02]"
-                    />
+                  <div className="w-full aspect-video bg-transparent flex items-center justify-center overflow-hidden cursor-pointer rounded-t-[24px]">
+                    <div className="w-full h-full transition-transform duration-500 group-hover:scale-[1.02] flex items-center justify-center">
+                      <ExerciseMedia
+                        details={item.exercise}
+                        fitMode="contain"
+                        transparentBackground={true}
+                        fillContain={true}
+                        roundedMedia={true}
+                        className="w-full h-full opacity-90 group-hover:opacity-100"
+                      />
+                    </div>
                   </div>
 
                   {/* Contenido (Bottom) */}
