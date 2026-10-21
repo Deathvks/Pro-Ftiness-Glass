@@ -1229,6 +1229,16 @@ html.ocean-theme:not(.dark) .aurora-curtain {
     box-shadow: none !important;
   }
 
+  /* Completely eliminate the accent color shadow underneath the active news category pill */
+  button.news-category-active,
+  button.news-category-active:hover,
+  button.news-category-active:active,
+  button.news-category-active:focus,
+  button.news-category-active:focus-visible {
+    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+  }
+
   .form-error-text {
     @apply text-red font-bold text-sm mt-1;
   }

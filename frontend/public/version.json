@@ -1,4 +1,4 @@
 {
-  "version": "7.8.28",
-  "releaseNotes": "Botones de categorías en Noticias unificados con el estilo Liquid Glass con relieve y borde de cristal idéntico al resto de la aplicación."
+  "version": "7.8.29",
+  "releaseNotes": "Ajuste visual en Noticias: eliminación total de la sombra inferior de color de acento en el botón de categoría activo, manteniendo el estilo Liquid Glass con relieve en las pestañas."
 }
