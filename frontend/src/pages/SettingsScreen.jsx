@@ -171,7 +171,8 @@ export default function SettingsScreen({
 
 
   useEffect(() => {
-    if (highlight === 'social_privacy') {
+    const effectiveHighlight = highlight || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('highlight') : null);
+    if (effectiveHighlight === 'social_privacy') {
       setActiveTab('privacy'); // Cambiar a la pestaña correcta
       
       setTimeout(() => {

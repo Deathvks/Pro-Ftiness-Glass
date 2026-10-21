@@ -104,6 +104,13 @@ export const useAppNavigation = (isInitialLoad) => {
     else if (path === '/social' && view !== 'social') {
       setView('social');
     }
+    else if (path === '/settings' && view !== 'settings') {
+      setView('settings');
+      const searchHighlight = new URLSearchParams(window.location.search).get('highlight');
+      if (searchHighlight) {
+        setNavParams(prev => ({ ...prev, highlight: searchHighlight }));
+      }
+    }
     else if (path === '/workout' && view !== 'workout') {
       setView('workout');
     }
@@ -197,6 +204,10 @@ export const useAppNavigation = (isInitialLoad) => {
         setView('progress');
       } else if (path === '/settings') {
         setView('settings');
+        const searchHighlight = new URLSearchParams(window.location.search).get('highlight');
+        if (searchHighlight) {
+          setNavParams(prev => ({ ...prev, highlight: searchHighlight }));
+        }
       } else if (path === '/notifications') {
         setView('notifications');
       } else if (path === '/active-cardio') {

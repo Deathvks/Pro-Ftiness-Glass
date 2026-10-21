@@ -446,7 +446,7 @@ export default function App() {
       case 'workout': return <Workout timer={workoutTimer} setView={navigateInternal} navParams={navParams} />;
       case 'nutrition': return <Nutrition setView={navigateInternal} navParams={navParams} />;
       case 'social': return <Social setView={navigateInternal} />;
-      case 'publicProfile': return <PublicProfile userId={navParams?.userId} onBack={() => navigateInternal('social')} />;
+      case 'publicProfile': return <PublicProfile userId={navParams?.userId} onBack={() => navigateInternal('social')} setView={navigateInternal} />;
       case 'hub': return <Hub setView={navigateInternal} />;
       case 'quickCardio': return <QuickCardio onBack={() => navigateInternal('dashboard')} setView={navigateInternal} />;
       case 'active-cardio': return <ActiveCardioSession activityId={navParams?.activityId} setView={navigateInternal} />;

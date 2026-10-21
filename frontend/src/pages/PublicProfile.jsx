@@ -275,9 +275,14 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     }, [profile?.gym, relationshipStatus, myProfile]);
 
     const handleGoToSocialPrivacy = () => {
-        if (setView) {
+        if (typeof setView === 'function') {
             setView('settings', { highlight: 'social_privacy' });
-        } else {
+            return;
+        }
+        try {
+            window.history.pushState({ view: 'settings', params: { highlight: 'social_privacy' } }, '', '/settings?highlight=social_privacy');
+            window.dispatchEvent(new PopStateEvent('popstate', { state: { view: 'settings', params: { highlight: 'social_privacy' } } }));
+        } catch (e) {
             navigate('/settings?highlight=social_privacy');
         }
     };
