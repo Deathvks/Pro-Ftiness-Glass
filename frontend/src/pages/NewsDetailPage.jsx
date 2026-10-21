@@ -33,6 +33,8 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
 
   const [article, setArticle] = useState(null);
   const [relatedNews, setRelatedNews] = useState([]);
+  const [nextArticle, setNextArticle] = useState(null);
+  const [prevArticle, setPrevArticle] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -64,6 +66,8 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
         if (isMounted) {
           setArticle(data.article);
           setRelatedNews(data.relatedNews || []);
+          setNextArticle(data.nextArticle || null);
+          setPrevArticle(data.prevArticle || null);
           setLikesCount(data.article?.likes_count || 0);
           const alreadyLiked = localStorage.getItem(`liked_article_${data.article?.id}`) === 'true';
           setHasLiked(alreadyLiked);
@@ -445,6 +449,39 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
             </p>
           </div>
         </div>
+
+        {/* NAVEGACIÓN CONTINUA: ARTÍCULO ANTERIOR Y SIGUIENTE */}
+        {(prevArticle || nextArticle) && (
+          <nav aria-label="Navegación entre artículos" className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-8 pt-6 border-t border-black/10 dark:border-white/10">
+            {prevArticle ? (
+              <div
+                onClick={() => navigate(`/noticias/${prevArticle.slug}`)}
+                className="p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-all cursor-pointer group flex flex-col justify-between"
+              >
+                <span className="text-[11px] font-black uppercase tracking-wider text-text-tertiary flex items-center gap-1 mb-1">
+                  <ArrowLeft size={12} /> Noticia anterior
+                </span>
+                <span className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors line-clamp-2">
+                  {prevArticle.title}
+                </span>
+              </div>
+            ) : <div />}
+
+            {nextArticle ? (
+              <div
+                onClick={() => navigate(`/noticias/${nextArticle.slug}`)}
+                className="p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-all cursor-pointer group flex flex-col justify-between text-right"
+              >
+                <span className="text-[11px] font-black uppercase tracking-wider text-accent flex items-center justify-end gap-1 mb-1">
+                  Siguiente noticia <ArrowRight size={12} />
+                </span>
+                <span className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors line-clamp-2">
+                  {nextArticle.title}
+                </span>
+              </div>
+            ) : <div />}
+          </nav>
+        )}
 
         {/* ARTÍCULOS RELACIONADOS / TAMBIÉN TE PUEDE INTERESAR */}
         {relatedNews.length > 0 && (

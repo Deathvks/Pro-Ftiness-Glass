@@ -1,5 +1,5 @@
 /* frontend/src/pages/NewsListPage.jsx */
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -33,30 +33,33 @@ const BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 export default function NewsListPage({ onBack, navigate: customNavigate }) {
   const navigate = useNavigate();
   const containerRef = useRef(null);
+  const sentinelRef = useRef(null);
   const isAuthenticated = useAppStore(state => state.isAuthenticated);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const currentCategory = searchParams.get('category') || 'Todas';
-  const currentPage = parseInt(searchParams.get('page')) || 1;
   const currentSearch = searchParams.get('search') || '';
 
   const [searchInput, setSearchInput] = useState(currentSearch);
   const [news, setNews] = useState([]);
   const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
   const [categoryCounts, setCategoryCounts] = useState({});
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState(null);
 
-  // Cargar noticias al cambiar categoría, página o búsqueda
+  // Cargar primera página al cambiar categoría o búsqueda
   useEffect(() => {
     let isMounted = true;
-    const loadNews = async () => {
+    const loadInitialNews = async () => {
       setIsLoading(true);
       setError(null);
+      setPage(1);
       try {
         const data = await newsService.fetchPublicNews({
-          page: currentPage,
+          page: 1,
           limit: 9,
           category: currentCategory,
           search: currentSearch
@@ -64,8 +67,8 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
         if (isMounted) {
           setNews(data.news || []);
           setTotal(data.total || 0);
-          setTotalPages(data.totalPages || 1);
           setCategoryCounts(data.categoryCounts || {});
+          setHasMore(1 < (data.totalPages || 1));
         }
       } catch (err) {
         if (isMounted) {
@@ -76,15 +79,59 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
       }
     };
 
-    loadNews();
+    loadInitialNews();
     return () => { isMounted = false; };
-  }, [currentCategory, currentPage, currentSearch]);
+  }, [currentCategory, currentSearch]);
+
+  // Carga continua: obtener siguiente lote de noticias sin saltos bruscos
+  const handleLoadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore || isLoading) return;
+    setIsLoadingMore(true);
+    const nextPage = page + 1;
+
+    try {
+      const data = await newsService.fetchPublicNews({
+        page: nextPage,
+        limit: 9,
+        category: currentCategory,
+        search: currentSearch
+      });
+
+      setNews(prev => {
+        // Evitar duplicados por id
+        const existingIds = new Set(prev.map(item => item.id));
+        const uniqueNext = (data.news || []).filter(item => !existingIds.has(item.id));
+        return [...prev, ...uniqueNext];
+      });
+      setPage(nextPage);
+      setHasMore(nextPage < (data.totalPages || 1));
+    } catch (err) {
+      console.error('Error al cargar más noticias:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [isLoadingMore, hasMore, isLoading, page, currentCategory, currentSearch]);
+
+  // Observer para infinite scroll cuando el usuario llega al pie
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMore || isLoading || isLoadingMore) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore && !isLoadingMore && !isLoading) {
+        handleLoadMore();
+      }
+    }, {
+      rootMargin: '250px'
+    });
+
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, isLoading, isLoadingMore, handleLoadMore]);
 
   const handleSelectCategory = (cat) => {
     const next = new URLSearchParams(searchParams);
     if (cat === 'Todas') next.delete('category');
     else next.set('category', cat);
-    next.set('page', '1');
     setSearchParams(next);
   };
 
@@ -93,19 +140,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
     const next = new URLSearchParams(searchParams);
     if (searchInput.trim()) next.set('search', searchInput.trim());
     else next.delete('search');
-    next.set('page', '1');
     setSearchParams(next);
-  };
-
-  const handlePageChange = (newPage) => {
-    const next = new URLSearchParams(searchParams);
-    next.set('page', newPage.toString());
-    setSearchParams(next);
-    if (containerRef.current) {
-      containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
   };
 
   const handleArticleClick = (slug) => {
@@ -136,11 +171,11 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   }), []);
 
   const featuredArticle = useMemo(() => {
-    if (currentPage === 1 && !currentSearch && currentCategory === 'Todas' && news.length > 0) {
+    if (!currentSearch && currentCategory === 'Todas' && news.length > 0) {
       return news[0];
     }
     return null;
-  }, [currentPage, currentSearch, currentCategory, news]);
+  }, [currentSearch, currentCategory, news]);
 
   const gridArticles = useMemo(() => {
     if (featuredArticle) {
@@ -439,45 +474,35 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
             ))}
           </div>
 
-          {/* PAGINACIÓN */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 py-6">
-              <button
-                type="button"
-                disabled={currentPage <= 1}
-                onClick={() => handlePageChange(currentPage - 1)}
-                className="p-2.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                aria-label="Página anterior"
-              >
-                <ChevronLeft size={18} />
-              </button>
+          {/* CARGA CONTINUA / INFINITE SCROLL */}
+          <div ref={sentinelRef} className="py-8 flex flex-col items-center justify-center gap-3">
+            {isLoadingMore && (
+              <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-xs font-semibold text-text-secondary animate-pulse">
+                <Spinner size={16} />
+                <span>Cargando más artículos...</span>
+              </div>
+            )}
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => handlePageChange(p)}
-                  className={`w-9 h-9 rounded-full text-xs font-bold transition-all ${
-                    currentPage === p
-                      ? 'bg-accent text-accent-contrast shadow-md shadow-accent/20 scale-105'
-                      : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
+            {!hasMore && news.length > 0 && (
+              <div className="flex flex-col items-center gap-3 py-6 text-center">
+                <div className="w-12 h-1 rounded-full bg-accent/20 mb-1" />
+                <span className="text-xs font-semibold text-text-tertiary">
+                  Has visto todos los artículos disponibles
+                </span>
 
-              <button
-                type="button"
-                disabled={currentPage >= totalPages}
-                onClick={() => handlePageChange(currentPage + 1)}
-                className="p-2.5 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                aria-label="Página siguiente"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          )}
+                {currentCategory !== 'Todas' && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectCategory('Todas')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold bg-accent/10 hover:bg-accent/20 text-accent border border-accent/25 transition-all cursor-pointer mt-1"
+                  >
+                    <span>Explorar todas las categorías</span>
+                    <ArrowRight size={13} />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </>
       )}
       </div>

@@ -118,9 +118,24 @@ export const getNewsBySlug = async (req, res) => {
       attributes: ['id', 'slug', 'title', 'summary', 'image_url', 'category', 'reading_time', 'views_count', 'likes_count', 'published_at']
     });
 
+    // Noticia siguiente y anterior para navegación continua entre lecturas
+    const nextArticle = await News.findOne({
+      where: { is_published: true, id: { [Op.gt]: article.id } },
+      order: [['id', 'ASC']],
+      attributes: ['id', 'slug', 'title', 'category', 'image_url']
+    });
+
+    const prevArticle = await News.findOne({
+      where: { is_published: true, id: { [Op.lt]: article.id } },
+      order: [['id', 'DESC']],
+      attributes: ['id', 'slug', 'title', 'category', 'image_url']
+    });
+
     return res.json({
       article,
-      relatedNews
+      relatedNews,
+      nextArticle,
+      prevArticle
     });
   } catch (error) {
     console.error('Error al obtener noticia por slug:', error);
