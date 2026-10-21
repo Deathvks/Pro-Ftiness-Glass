@@ -715,7 +715,7 @@ export default function App() {
       <Routes>
         <Route path="/privacy" element={
             <Suspense fallback={<div className="p-10">Cargando política...</div>}>
-                <PrivacyPolicy onBack={() => navigate('/')} />
+                <PrivacyPolicy onBack={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }} />
             </Suspense>
         } />
         <Route path="/terms" element={
@@ -725,7 +725,7 @@ export default function App() {
         } />
         <Route path="/noticias" element={
             <Suspense fallback={<InitialLoadingSkeleton />}>
-                <NewsListPage onBack={() => navigate('/')} />
+                <NewsListPage onBack={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }} />
             </Suspense>
         } />
         <Route path="/noticias/:slug" element={
@@ -759,7 +759,7 @@ export default function App() {
 
         <Route path="/login" element={
             !isAuthenticated ? (
-                <AuthScreens authView="login" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => navigate('/')} />
+                <AuthScreens authView="login" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }} />
             ) : (
                 <Navigate to={location.state?.from || "/dashboard"} replace />
             )
@@ -767,7 +767,7 @@ export default function App() {
 
         <Route path="/register" element={
             !isAuthenticated ? (
-                <AuthScreens authView="register" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => navigate('/')} />
+                <AuthScreens authView="register" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }} />
             ) : (
                 <Navigate to={location.state?.from || "/dashboard"} replace />
             )
@@ -775,7 +775,7 @@ export default function App() {
 
         <Route path="/forgotPassword" element={
             !isAuthenticated ? (
-                <AuthScreens authView="forgotPassword" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => navigate('/')} />
+                <AuthScreens authView="forgotPassword" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }} />
             ) : (
                 <Navigate to={location.state?.from || "/dashboard"} replace />
             )

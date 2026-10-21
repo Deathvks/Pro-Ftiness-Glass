@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
     Dumbbell, Activity, Shield, ChevronRight, ChevronLeft, Utensils,
     LineChart, Users, Zap, Smartphone, Trophy, ArrowRight,
-    Instagram, Youtube, Github, Globe, Download, Sparkles, Bot, Apple, Check, ShieldCheck
+    Instagram, Youtube, Github, Globe, Download, Sparkles, Bot, Apple, Check, ShieldCheck, Newspaper
 } from 'lucide-react';
 import { FaGooglePlay } from 'react-icons/fa';
 import { Helmet } from 'react-helmet-async';
@@ -469,6 +469,14 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             </div>
 
                             <div className="flex items-center gap-3 sm:gap-5">
+                                <a
+                                    href="/noticias"
+                                    className="flex items-center gap-2 text-xs font-bold text-text-secondary hover:text-accent transition-colors mr-1 outline-none border-none focus:outline-none"
+                                    title="Noticias y Artículos de Fitness"
+                                >
+                                    <Newspaper size={16} className="md:hidden" />
+                                    <span className="hidden md:inline uppercase tracking-wider">Noticias</span>
+                                </a>
                                 <a
                                     href="/privacy"
                                     className="flex items-center gap-2.5 text-xs font-bold text-text-secondary hover:text-accent transition-colors mr-1 outline-none border-none focus:outline-none"
@@ -963,6 +971,10 @@ const LandingPage = ({ onLogin, onRegister }) => {
                         </div>
 
                         <div className="flex flex-col sm:flex-row justify-center gap-6 text-sm text-text-secondary font-bold mb-8 tracking-wide">
+                            <a href="/noticias" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
+                                Noticias y Artículos
+                            </a>
+                            <span className="hidden sm:block text-text-secondary/30">•</span>
                             <a href="/privacy" className="hover:text-accent transition-colors flex items-center justify-center gap-3">
                                 Política de Privacidad
                             </a>

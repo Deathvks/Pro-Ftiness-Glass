@@ -1,5 +1,5 @@
 /* frontend/src/pages/NewsDetailPage.jsx */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ChevronLeft,
@@ -30,6 +30,7 @@ import { useToast } from '../hooks/useToast';
 export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const containerRef = useRef(null);
   const { addToast } = useToast();
 
   const [article, setArticle] = useState(null);
@@ -60,7 +61,11 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
 
     if (slug) {
       loadArticle();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (containerRef.current) {
+        containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
 
     return () => { isMounted = false; };
@@ -110,7 +115,13 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3">
+      <div
+        className="fixed inset-0 z-50 bg-bg-primary flex flex-col items-center justify-center gap-3 px-4"
+        style={{
+          paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
+          paddingBottom: 'var(--safe-bottom, env(safe-area-inset-bottom, 0px))'
+        }}
+      >
         <Spinner size={40} />
         <p className="text-sm font-medium text-text-tertiary animate-pulse">Cargando artículo...</p>
       </div>
@@ -119,16 +130,24 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
 
   if (error || !article) {
     return (
-      <div className="min-h-[60vh] max-w-xl mx-auto px-4 py-16 text-center flex flex-col items-center justify-center gap-4">
+      <div
+        className="fixed inset-0 z-50 bg-bg-primary overflow-y-auto px-4 py-16 text-center flex flex-col items-center justify-center gap-4 custom-scrollbar"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+          paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
+          paddingBottom: 'var(--safe-bottom, env(safe-area-inset-bottom, 0px))'
+        }}
+      >
         <BookOpen size={48} className="text-red-500 opacity-60" />
         <h2 className="text-2xl font-black text-text-primary">Artículo no encontrado</h2>
-        <p className="text-text-secondary text-sm">
+        <p className="text-text-secondary text-sm max-w-md">
           {error || 'El artículo que buscas ha sido trasladado o ya no está disponible.'}
         </p>
         <button
           type="button"
           onClick={handleGoBack}
-          className="mt-2 px-6 py-2.5 rounded-full bg-accent text-accent-contrast font-bold text-xs"
+          className="mt-2 px-6 py-2.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 cursor-pointer hover:scale-105 active:scale-95 transition-all"
         >
           Volver a Noticias
         </button>
@@ -137,7 +156,17 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
   }
 
   return (
-    <article className="min-h-screen bg-bg-primary text-text-primary px-4 sm:px-6 py-6 max-w-4xl mx-auto flex flex-col gap-6 animate-[fade-in_0.4s_ease-out]">
+    <div
+      ref={containerRef}
+      className="fixed inset-0 z-50 bg-bg-primary overflow-y-auto overflow-x-hidden custom-scrollbar"
+      style={{
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'pan-y',
+        paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 2rem)'
+      }}
+    >
+      <article className="min-h-full px-4 sm:px-6 py-6 max-w-4xl mx-auto flex flex-col gap-6 animate-[fade-in_0.4s_ease-out]">
       {/* COMPONENTE SEO COMPLETO (Meta, Open Graph, Twitter, JSON-LD NewsArticle) */}
       <ArticleSEO article={article} />
 
@@ -345,6 +374,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           </div>
         </section>
       )}
-    </article>
+      </article>
+    </div>
   );
 }

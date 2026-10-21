@@ -1,5 +1,5 @@
 /* frontend/src/pages/NewsListPage.jsx */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -13,7 +13,8 @@ import {
   ArrowRight,
   Flame,
   Layers,
-  BookOpen
+  BookOpen,
+  LogIn
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -22,12 +23,15 @@ import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import AdSenseSlot from '../components/News/AdSenseSlot';
 import * as newsService from '../services/newsService';
+import useAppStore from '../store/useAppStore';
 
 const CATEGORIES = ['Todas', 'Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
 const BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 
 export default function NewsListPage({ onBack, navigate: customNavigate }) {
   const navigate = useNavigate();
+  const containerRef = useRef(null);
+  const isAuthenticated = useAppStore(state => state.isAuthenticated);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const currentCategory = searchParams.get('category') || 'Todas';
@@ -95,7 +99,11 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
     const next = new URLSearchParams(searchParams);
     next.set('page', newPage.toString());
     setSearchParams(next);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleArticleClick = (slug) => {
@@ -140,50 +148,72 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   }, [featuredArticle, news]);
 
   return (
-    <div className="min-h-screen bg-bg-primary text-text-primary px-4 sm:px-6 py-6 max-w-6xl mx-auto flex flex-col gap-8 animate-[fade-in_0.4s_ease-out]">
-      {/* SEO HEAD */}
-      <Helmet>
-        <title>Noticias y Artículos de Fitness y Nutrición | Pro Fitness Glass</title>
-        <meta
-          name="description"
-          content="Descubre artículos científicos sobre hipertrofia, suplementación, nutrición deportiva y novedades de Pro Fitness Glass."
-        />
-        <link rel="canonical" href={`${BASE_URL}/noticias`} />
-        <meta name="robots" content="index, follow" />
-        <meta property="og:title" content="Noticias y Artículos de Fitness y Nutrición | Pro Fitness Glass" />
-        <meta property="og:description" content="Guías científicas, suplementación y estrategias de nutrición deportiva contrastadas por la ciencia." />
-        <meta property="og:url" content={`${BASE_URL}/noticias`} />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content={`${BASE_URL}/logo.webp`} />
-        <script type="application/ld+json">{JSON.stringify(collectionSchema)}</script>
-      </Helmet>
-
-      {/* HEADER / NAV BAR */}
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleGoHome}
-            className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full ring-1 ring-black/10 dark:ring-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-xs font-bold text-text-secondary"
-          >
-            <ChevronLeft size={16} /> Volver a la App
-          </button>
-          <span className="text-xs text-text-tertiary">/</span>
-          <span className="text-xs font-bold uppercase tracking-wider text-accent">Blog & Noticias</span>
-        </div>
-
-        {/* Buscador */}
-        <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-72">
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Buscar artículos..."
-            className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full pl-9 pr-4 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+    <div
+      ref={containerRef}
+      className="fixed inset-0 z-50 bg-bg-primary overflow-y-auto overflow-x-hidden custom-scrollbar"
+      style={{
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'pan-y',
+        paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 2rem)'
+      }}
+    >
+      <div className="min-h-full px-4 sm:px-6 py-6 max-w-6xl mx-auto flex flex-col gap-8 animate-[fade-in_0.4s_ease-out]">
+        {/* SEO HEAD */}
+        <Helmet>
+          <title>Noticias y Artículos de Fitness y Nutrición | Pro Fitness Glass</title>
+          <meta
+            name="description"
+            content="Descubre artículos científicos sobre hipertrofia, suplementación, nutrición deportiva y novedades de Pro Fitness Glass."
           />
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
-        </form>
-      </header>
+          <link rel="canonical" href={`${BASE_URL}/noticias`} />
+          <meta name="robots" content="index, follow" />
+          <meta property="og:title" content="Noticias y Artículos de Fitness y Nutrición | Pro Fitness Glass" />
+          <meta property="og:description" content="Guías científicas, suplementación y estrategias de nutrición deportiva contrastadas por la ciencia." />
+          <meta property="og:url" content={`${BASE_URL}/noticias`} />
+          <meta property="og:type" content="website" />
+          <meta property="og:image" content={`${BASE_URL}/logo.webp`} />
+          <script type="application/ld+json">{JSON.stringify(collectionSchema)}</script>
+        </Helmet>
+
+        {/* HEADER / NAV BAR */}
+        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleGoHome}
+              className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full ring-1 ring-black/10 dark:ring-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-xs font-bold text-text-secondary"
+            >
+              <ChevronLeft size={16} /> {isAuthenticated ? 'Volver a la App' : 'Inicio'}
+            </button>
+            <span className="text-xs text-text-tertiary">/</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-accent">Blog & Noticias</span>
+          </div>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            {/* Buscador */}
+            <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-72">
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Buscar artículos..."
+                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full pl-9 pr-4 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+              />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+            </form>
+
+            {!isAuthenticated && (
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className="cursor-pointer shrink-0 hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 hover:scale-105 active:scale-95 transition-all"
+              >
+                <LogIn size={14} /> Iniciar Sesión
+              </button>
+            )}
+          </div>
+        </header>
 
       {/* TITULAR PRINCIPAL */}
       <section className="text-center sm:text-left py-2">
@@ -423,6 +453,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           )}
         </>
       )}
+      </div>
     </div>
   );
 }
