@@ -1227,16 +1227,28 @@ html.ocean-theme:not(.dark) .aurora-curtain {
     box-shadow: none !important;
   }
 
-  /* Active news category pill: preserve true Liquid Glass relief and top reflection while eliminating the downward accent drop shadow cloud */
+  /* Active news category pill: preserve true Liquid Glass relief and top reflection while eliminating any hover/active brightness, jump, or accent drop shadow */
   button.news-category-active,
+  button.news-category-active.bg-accent,
   button.news-category-active:hover,
+  button.news-category-active.bg-accent:hover,
+  button.news-category-active.bg-accent:hover:not(:disabled),
   button.news-category-active:active,
+  button.news-category-active.bg-accent:active,
+  button.news-category-active.bg-accent:active:not(:disabled),
   button.news-category-active:focus,
-  button.news-category-active:focus-visible {
+  button.news-category-active.bg-accent:focus,
+  button.news-category-active.bg-accent:focus:not(:disabled),
+  button.news-category-active:focus-visible,
+  button.news-category-active.bg-accent:focus-visible,
+  button.news-category-active.bg-accent:focus-visible:not(:disabled) {
     box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.5), inset 0 -1px 1px rgba(0, 0, 0, 0.2) !important;
     -webkit-box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.5), inset 0 -1px 1px rgba(0, 0, 0, 0.2) !important;
     border: 1px solid rgba(255, 255, 255, 0.35) !important;
     filter: none !important;
+    -webkit-filter: none !important;
+    transform: scale(1.05) !important;
+    outline: none !important;
   }
 
   .form-error-text {

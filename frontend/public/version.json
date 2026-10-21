@@ -1,4 +1,4 @@
 {
-  "version": "7.8.31",
+  "version": "7.8.32",
   "releaseNotes": "Ajuste visual en Noticias: eliminación total de la sombra inferior de color de acento en el botón de categoría activo, manteniendo el estilo Liquid Glass con relieve en las pestañas."
 }
