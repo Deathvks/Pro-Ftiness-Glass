@@ -315,7 +315,10 @@ const VersionUpdater = () => {
       const isChunkLoadError =
         msg.includes('Loading chunk') ||
         msg.includes('dynamically imported module') ||
-        msg.includes('MIME type');
+        msg.includes('MIME type') ||
+        msg.includes('SyntaxError') ||
+        msg.includes('Unexpected token') ||
+        msg.includes('is not valid JavaScript');
 
       if (isChunkLoadError) {
         console.warn('ChunkLoadError detectado tempranamente.');

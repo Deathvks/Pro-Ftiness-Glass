@@ -47,18 +47,24 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
         msg.includes("Loading chunk") ||
         msg.includes("Importing a module script failed") ||
         msg.includes("MIME type") ||
-        error?.name === "TypeError";
+        msg.includes("SyntaxError") ||
+        msg.includes("Unexpected token") ||
+        msg.includes("is not valid JavaScript") ||
+        error?.name === "TypeError" ||
+        error?.name === "SyntaxError";
 
       if (isChunkError && !hasRetried) {
         console.warn(`[lazyWithRetry] Recargando aplicación para cargar nueva versión de "${name}"...`);
         sessionStorage.setItem(retryKey, "true");
         if ("caches" in window) {
           try {
-            const keys = await caches.keys();
-            await Promise.all(keys.map(k => caches.delete(k)));
+            caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
           } catch {}
         }
         window.location.reload();
+        setTimeout(() => {
+          window.location.replace(window.location.href);
+        }, 1200);
         return new Promise(() => {});
       }
       throw error;
@@ -170,7 +176,7 @@ export default function App() {
     handleBackFromPolicy,
     handleCancelProfile,
     handleShowPolicy
-  } = useAppNavigation();
+  } = useAppNavigation(currentPath);
 
   const { theme, setTheme, accent, setAccent, resolvedTheme, themeColor, headerColor } = useAppTheme();
   
@@ -798,12 +804,24 @@ export default function App() {
         } />
         <Route path="/noticias" element={
             <Suspense fallback={<InitialLoadingSkeleton />}>
-                <NewsListPage onBack={() => navigate('/')} />
+                <NewsListPage
+                  onBack={() => {
+                    if (isAuthenticated) {
+                      navigateInternal('hub');
+                    } else {
+                      navigate('/');
+                    }
+                  }}
+                  navigate={navigateInternal}
+                />
             </Suspense>
         } />
         <Route path="/noticias/:slug" element={
             <Suspense fallback={<InitialLoadingSkeleton />}>
-                <NewsDetailPage onBack={() => navigate('/noticias')} />
+                <NewsDetailPage
+                  onBack={() => navigate('/noticias')}
+                  navigate={navigateInternal}
+                />
             </Suspense>
         } />
         <Route path="/reset-password" element={

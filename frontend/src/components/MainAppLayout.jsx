@@ -14,7 +14,7 @@ import * as userService from '../services/userService';
 // Componentes UI
 import Sidebar from './Sidebar';
 import ModalPortal from './ModalPortal';
-import { Palette } from 'lucide-react';
+import { Palette, RefreshCw } from 'lucide-react';
 import Spinner from './Spinner';
 import PRToast from './PRToast';
 import AndroidDownloadPrompt from './AndroidDownloadPrompt';
@@ -71,6 +71,76 @@ const LoadingFallback = () => (
     <Spinner size={40} />
   </div>
 );
+
+class ViewErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.warn('[ViewErrorBoundary] Error cargando vista:', error, errorInfo);
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.view !== this.props.view && this.state.hasError) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+
+  handleReload = () => {
+    if ('caches' in window) {
+      caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
+    }
+    sessionStorage.clear();
+    window.location.reload();
+  };
+
+  handleGoHome = () => {
+    this.setState({ hasError: false, error: null });
+    if (this.props.navigate) {
+      this.props.navigate('dashboard');
+    }
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-[55vh] flex flex-col items-center justify-center p-6 text-center animate-[fade-in_0.3s_ease-out]">
+          <div className="w-16 h-16 rounded-2xl bg-accent/15 text-accent flex items-center justify-center mb-4 shadow-lg shadow-accent/20">
+            <RefreshCw className="animate-spin-slow" size={32} />
+          </div>
+          <h2 className="text-xl font-bold text-text-primary mb-2">Actualización disponible</h2>
+          <p className="text-sm text-text-secondary max-w-sm mb-6 leading-relaxed">
+            Hemos actualizado la aplicación con una nueva versión. Recarga para ver esta sección o vuelve al inicio.
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={this.handleReload}
+              className="px-5 py-2.5 rounded-xl bg-accent text-accent-contrast font-bold text-sm shadow-md shadow-accent/25 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+            >
+              Recargar ahora
+            </button>
+            <button
+              type="button"
+              onClick={this.handleGoHome}
+              className="px-5 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-secondary hover:text-text-primary font-bold text-sm cursor-pointer hover:scale-105 active:scale-95 transition-all"
+            >
+              Volver al inicio
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 
 export default function MainAppLayout({
   view,
@@ -1111,11 +1181,13 @@ export default function MainAppLayout({
           )}
 
           <div className="w-full relative">
+            <ViewErrorBoundary view={view} navigate={navigate}>
             <Suspense fallback={<LoadingFallback />}>
               <React.Fragment key={`${view}-${viewResetKey}`}>
                 {currentViewComponent}
               </React.Fragment>
             </Suspense>
+            </ViewErrorBoundary>
 
             <div className="md:hidden w-full shrink-0" style={{ height: 'calc(80px + var(--safe-bottom))' }}></div>
           </div>

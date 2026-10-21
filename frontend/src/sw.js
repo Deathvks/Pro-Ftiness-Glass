@@ -101,6 +101,17 @@ registerRoute(
     cacheName: 'vite-hashed-assets',
     plugins: [
       {
+        fetchDidSucceed: async ({ response }) => {
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('text/html')) {
+            return new Response('Chunk no encontrado (nueva versión)', {
+              status: 404,
+              statusText: 'Not Found',
+              headers: { 'Content-Type': 'text/plain' }
+            });
+          }
+          return response;
+        },
         cacheWillUpdate: async ({ response }) => {
           if (!response || response.status !== 200) return null;
           const contentType = response.headers.get('content-type') || '';

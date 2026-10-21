@@ -1,7 +1,7 @@
 /* frontend/src/hooks/useAppNavigation.js */
 import { useState, useCallback, useEffect, useRef } from 'react';
 
-export const useAppNavigation = (isInitialLoad) => {
+export const useAppNavigation = (externalPath) => {
   // 1. Inicialización de estado
   const [view, setView] = useState(() => {
     // PRIORIDAD 0: Recuperar sesión activa de cardio si existe en localStorage
@@ -18,7 +18,7 @@ export const useAppNavigation = (isInitialLoad) => {
       }
     }
 
-        const path = window.location.pathname;
+        const path = externalPath || window.location.pathname;
 
     const validPaths = [
       '/', '/login', '/register', '/forgot-password', '/forgotPassword', '/reset-password', '/privacy', '/terms',
@@ -62,7 +62,7 @@ export const useAppNavigation = (isInitialLoad) => {
       } catch (e) { /* ignore */ }
     }
 
-    const path = window.location.pathname;
+    const path = externalPath || window.location.pathname;
     const profileMatch = path.match(/^\/profile\/(\d+)$/);
     if (profileMatch) {
       return { userId: profileMatch[1] };
@@ -79,7 +79,7 @@ export const useAppNavigation = (isInitialLoad) => {
 
   // --- SEGURIDAD ANTI-REDIRECCIÓN ---
   useEffect(() => {
-    const path = window.location.pathname;
+    const path = externalPath || window.location.pathname;
     const profileMatch = path.match(/^\/profile\/(\d+)$/);
 
     // Si detectamos que hay una sesión activa en localStorage pero no estamos en la vista, forzamos
@@ -121,7 +121,28 @@ export const useAppNavigation = (isInitialLoad) => {
     else if (path === '/noticias' && view !== 'noticias') {
       setView('noticias');
     }
-  }, [view, navParams.userId]);
+    else if ((path === '/' || path === '/dashboard') && view !== 'dashboard' && view !== 'active-cardio') {
+      setView('dashboard');
+    }
+    else if (path === '/hub' && view !== 'hub') {
+      setView('hub');
+    }
+    else if (path === '/progress' && view !== 'progress') {
+      setView('progress');
+    }
+    else if (path === '/routines' && view !== 'routines') {
+      setView('routines');
+    }
+    else if (path === '/nutrition' && view !== 'nutrition') {
+      setView('nutrition');
+    }
+    else if (path === '/trainerPanel' && view !== 'trainerPanel') {
+      setView('trainerPanel');
+    }
+    else if (path === '/adminPanel' && view !== 'adminPanel') {
+      setView('adminPanel');
+    }
+  }, [view, navParams.userId, externalPath]);
 
   // Función de navegación principal
   const navigate = useCallback((viewName, options = {}) => {
@@ -188,7 +209,7 @@ export const useAppNavigation = (isInitialLoad) => {
       history.scrollRestoration = 'manual';
     }
     const handlePopState = (event) => {
-      const path = window.location.pathname;
+      const path = externalPath || window.location.pathname;
       const profileMatch = path.match(/^\/profile\/(\d+)$/);
 
       if (event.state && event.state.params) {
@@ -222,6 +243,27 @@ export const useAppNavigation = (isInitialLoad) => {
         setView('asesoria');
       } else if (path === '/noticias') {
         setView('noticias');
+    }
+    else if ((path === '/' || path === '/dashboard') && view !== 'dashboard' && view !== 'active-cardio') {
+      setView('dashboard');
+    }
+    else if (path === '/hub' && view !== 'hub') {
+      setView('hub');
+    }
+    else if (path === '/progress' && view !== 'progress') {
+      setView('progress');
+    }
+    else if (path === '/routines' && view !== 'routines') {
+      setView('routines');
+    }
+    else if (path === '/nutrition' && view !== 'nutrition') {
+      setView('nutrition');
+    }
+    else if (path === '/trainerPanel' && view !== 'trainerPanel') {
+      setView('trainerPanel');
+    }
+    else if (path === '/adminPanel' && view !== 'adminPanel') {
+      setView('adminPanel');
       } else {
         setView('dashboard');
       }

@@ -161,9 +161,15 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   };
 
   const handleGoHome = () => {
-    if (onBack) onBack();
-    else if (customNavigate) customNavigate('dashboard');
-    else navigate('/');
+    if (onBack) {
+      onBack();
+      return;
+    }
+    if (customNavigate) {
+      customNavigate(isAuthenticated ? 'hub' : 'dashboard');
+      return;
+    }
+    navigate(isAuthenticated ? '/dashboard' : '/');
   };
 
   // Structured Data Schema para página de colección de artículos
