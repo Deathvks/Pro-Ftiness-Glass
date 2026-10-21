@@ -148,33 +148,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     const [viewingStory, setViewingStory] = useState(false);
     const [viewingRoutine, setViewingRoutine] = useState(null);
 
-    const activeGym = useMemo(() => {
-        if (profile?.gym) {
-            return enrichGymWithMedia(profile.gym);
-        }
-        if (relationshipStatus === 'me') {
-            if (myProfile?.gym_data) {
-                try {
-                    const parsed = typeof myProfile.gym_data === 'string' ? JSON.parse(myProfile.gym_data) : myProfile.gym_data;
-                    if (parsed) return enrichGymWithMedia(parsed);
-                } catch {}
-            }
-            try {
-                const userKey = myProfile?.id ? `user_gym_${myProfile.id}` : 'user_gym';
-                const saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
-                if (saved) return enrichGymWithMedia(JSON.parse(saved));
-            } catch {}
-        }
-        return null;
-    }, [profile?.gym, relationshipStatus, myProfile]);
-
-    const handleGoToSocialPrivacy = () => {
-        if (setView) {
-            setView('settings', { highlight: 'social_privacy' });
-        } else {
-            navigate('/settings?highlight=social_privacy');
-        }
-    };
 
     useEffect(() => {
         if (userId) {
@@ -280,6 +253,34 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         }
         return JSON.stringify(schema);
     }, [profile]);
+
+    const activeGym = useMemo(() => {
+        if (profile?.gym) {
+            return enrichGymWithMedia(profile.gym);
+        }
+        if (relationshipStatus === 'me') {
+            if (myProfile?.gym_data) {
+                try {
+                    const parsed = typeof myProfile.gym_data === 'string' ? JSON.parse(myProfile.gym_data) : myProfile.gym_data;
+                    if (parsed) return enrichGymWithMedia(parsed);
+                } catch {}
+            }
+            try {
+                const userKey = myProfile?.id ? `user_gym_${myProfile.id}` : 'user_gym';
+                const saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
+                if (saved) return enrichGymWithMedia(JSON.parse(saved));
+            } catch {}
+        }
+        return null;
+    }, [profile?.gym, relationshipStatus, myProfile]);
+
+    const handleGoToSocialPrivacy = () => {
+        if (setView) {
+            setView('settings', { highlight: 'social_privacy' });
+        } else {
+            navigate('/settings?highlight=social_privacy');
+        }
+    };
 
 
     const handleSendRequest = async () => {
