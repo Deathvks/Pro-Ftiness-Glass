@@ -374,6 +374,14 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
 
             {/* Botones Sociales con colores de marca siempre activos */}
             <div className="flex items-center gap-2 shrink-0 self-start sm:self-center pt-1 sm:pt-0">
+              <button
+                type="button"
+                onClick={handleShareNative}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-xs"
+                title="Compartir"
+              >
+                <Share2 size={14} />
+              </button>
               <a
                 href={whatsappUrl}
                 target="_blank"
