@@ -659,7 +659,7 @@ const TabButton = ({ id, icon: Icon, label, badge, isActive, onClick }) => (
         onClick={() => onClick(id)}
         className={`flex items-center gap-2 py-2.5 px-5 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-300 flex-shrink-0 outline-none
         ${isActive
-                ? 'bg-accent text-accent-contrast shadow-md shadow-accent/30 scale-105'
+                ? 'bg-accent text-accent-contrast scale-105'
                 : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
             }`}
     >
@@ -1102,7 +1102,7 @@ export default function Social({ setView }) {
                     <GlassCard className="glass p-3 rounded-full flex items-center gap-3 focus-within:ring-2 focus-within:ring-accent/50 transition-all border-none ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
                         <Search size={22} className="text-text-muted ml-3 shrink-0" />
                         <input type="text" placeholder="Buscar por nombre de usuario..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-transparent border-none outline-none text-text-primary flex-1 min-w-0 font-medium placeholder:text-text-muted py-2" />
-                        <button type="submit" disabled={isSocialLoading} className="bg-accent text-accent-contrast font-bold px-6 py-3 rounded-full active:scale-95 transition-all shadow-md shadow-accent/20 shrink-0">
+                        <button type="submit" disabled={isSocialLoading} className="bg-accent text-accent-contrast font-bold px-6 py-3 rounded-full active:scale-95 transition-all shrink-0">
                             {isSocialLoading ? <Spinner size={20} color="#fff" /> : 'Buscar'}
                         </button>
                     </GlassCard>
