@@ -1,4 +1,4 @@
 {
-  "version": "7.8.36",
-  "releaseNotes": "Solución de bloqueo de carga al actualizar versión en modo entrenador/admin y sincronización inmediata del botón Volver a la App en Noticias."
+  "version": "7.8.37",
+  "releaseNotes": "Corrección de ReferenceError en useAppNavigation y sincronización limpia de rutas."
 }

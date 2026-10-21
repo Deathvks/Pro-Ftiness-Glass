@@ -59,7 +59,7 @@ export const useAppNavigation = (externalPath) => {
         if (parsed && parsed.activityId) {
           return { activityId: parsed.activityId };
         }
-      } catch (e) { /* ignore */ }
+      } catch { /* ignore */ }
     }
 
     const path = externalPath || window.location.pathname;
@@ -93,7 +93,7 @@ export const useAppNavigation = (externalPath) => {
           setNavParams({ activityId: parsed.activityId });
           return;
         }
-      } catch (e) { }
+      } catch { /* ignore */ }
     }
 
     if (profileMatch) {
@@ -159,13 +159,15 @@ export const useAppNavigation = (externalPath) => {
       let newPath = '/';
       switch (viewName) {
         case 'dashboard': newPath = '/'; break;
-        case 'publicProfile':
+        case 'publicProfile': {
           const targetId = options.userId || navParams.userId;
           if (targetId) newPath = `/profile/${targetId}`;
           break;
-        case 'active-cardio':
+        }
+        case 'active-cardio': {
           newPath = '/active-cardio';
           break;
+        }
         default: newPath = `/${viewName}`; break;
       }
 
@@ -198,10 +200,10 @@ export const useAppNavigation = (externalPath) => {
   
 
   useEffect(() => {
-    if (!isInitialLoad && view !== 'privacyPolicy' && view !== 'publicProfile' && view !== 'active-cardio') {
+    if (view !== 'privacyPolicy' && view !== 'publicProfile' && view !== 'active-cardio') {
       localStorage.setItem('lastView', view);
     }
-  }, [view, isInitialLoad]);
+  }, [view]);
 
   // Manejo de botones Atrás/Adelante del navegador
   useEffect(() => {
@@ -243,27 +245,12 @@ export const useAppNavigation = (externalPath) => {
         setView('asesoria');
       } else if (path === '/noticias') {
         setView('noticias');
-    }
-    else if ((path === '/' || path === '/dashboard') && view !== 'dashboard' && view !== 'active-cardio') {
-      setView('dashboard');
-    }
-    else if (path === '/hub' && view !== 'hub') {
-      setView('hub');
-    }
-    else if (path === '/progress' && view !== 'progress') {
-      setView('progress');
-    }
-    else if (path === '/routines' && view !== 'routines') {
-      setView('routines');
-    }
-    else if (path === '/nutrition' && view !== 'nutrition') {
-      setView('nutrition');
-    }
-    else if (path === '/trainerPanel' && view !== 'trainerPanel') {
-      setView('trainerPanel');
-    }
-    else if (path === '/adminPanel' && view !== 'adminPanel') {
-      setView('adminPanel');
+      } else if (path === '/hub') {
+        setView('hub');
+      } else if (path === '/trainerPanel') {
+        setView('trainerPanel');
+      } else if (path === '/adminPanel') {
+        setView('adminPanel');
       } else {
         setView('dashboard');
       }
@@ -271,7 +258,7 @@ export const useAppNavigation = (externalPath) => {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [externalPath]);
 
   return {
     view,
