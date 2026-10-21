@@ -1,4 +1,4 @@
 {
-  "version": "7.8.27",
-  "releaseNotes": "Ajuste visual en el menú de categorías del blog de noticias: eliminación completa de sombras, bordes y halos en los botones de filtrado."
+  "version": "7.8.28",
+  "releaseNotes": "Botones de categorías en Noticias unificados con el estilo Liquid Glass con relieve y borde de cristal idéntico al resto de la aplicación."
 }

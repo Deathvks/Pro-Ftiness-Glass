@@ -280,7 +280,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
       {/* CATEGORÍAS */}
       <nav
         aria-label="Categorías de artículos"
-        className="flex items-center gap-2 overflow-x-auto py-2 scrollbar-none touch-pan-x overscroll-x-contain"
+        className="flex items-center gap-2.5 overflow-x-auto pb-3 pt-1 px-1 -mx-1 scrollbar-none touch-pan-x overscroll-x-contain"
       >
         {categories.map((cat) => {
           const isActive = currentCategory === cat;
@@ -292,17 +292,17 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
               key={cat}
               type="button"
               onClick={() => handleSelectCategory(cat)}
-              className={`news-filter-btn shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer select-none !border-none !shadow-none !ring-0 !outline-none ${
+              className={`shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-[20px] text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer select-none outline-none ${
                 isActive
-                  ? 'bg-accent text-accent-contrast'
-                  : 'bg-neutral-500/10 dark:bg-neutral-400/10 hover:bg-neutral-500/20 dark:hover:bg-neutral-400/20 text-text-secondary hover:text-text-primary'
+                  ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]'
+                  : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'
               }`}
             >
               <span>{cat}</span>
               {count > 0 && (
                 <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-black !border-none !shadow-none ${
-                    isActive ? 'bg-black/20 text-white' : 'bg-black/5 dark:bg-white/10 text-text-tertiary'
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-black transition-colors ${
+                    isActive ? 'bg-black/20 text-white' : 'bg-surface/80 dark:bg-white/10 text-text-tertiary'
                   }`}
                 >
                   {count}
