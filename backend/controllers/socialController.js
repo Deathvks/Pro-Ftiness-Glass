@@ -367,6 +367,17 @@ export const getPublicProfile = async (req, res) => {
                 }))
         }));
 
+        let parsedGym = null;
+        if (user.gym_data) {
+            try {
+                parsedGym = typeof user.gym_data === 'string' ? JSON.parse(user.gym_data) : user.gym_data;
+            } catch (e) {
+                parsedGym = null;
+            }
+        }
+
+        const isGymVisible = user.show_gym !== false;
+
         const data = {
             id: user.id,
             username: user.username,
@@ -379,7 +390,9 @@ export const getPublicProfile = async (req, res) => {
             createdAt: user.created_at,
             lastSeen: user.updated_at,
             show_level_xp: !!(user.show_level_xp || isMe), 
-            show_badges: !!(user.show_badges || isMe),     
+            show_badges: !!(user.show_badges || isMe),
+            show_gym: isGymVisible,
+            gym: (isGymVisible || isMe) ? parsedGym : null,     
             level: null,
             xp: null,
             streak: null,

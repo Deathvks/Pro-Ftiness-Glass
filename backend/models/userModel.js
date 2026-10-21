@@ -158,6 +158,15 @@ User.init({
     defaultValue: true,
     allowNull: false
   },
+  show_gym: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    allowNull: false
+  },
+  gym_data: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
 
   // --- 2FA ---
   two_factor_enabled: {

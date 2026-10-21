@@ -1,4 +1,4 @@
 {
-  "version": "7.8.23",
-  "releaseNotes": "Ajuste de relación de aspecto y fitMode contain para previsualizaciones de ejercicios en biblioteca (Admin y Entrenador)."
+  "version": "7.8.24",
+  "releaseNotes": "Visualización de gimnasio en perfil público, interruptor de privacidad social en ajustes y enlace directo."
 }

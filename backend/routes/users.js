@@ -56,7 +56,9 @@ router.put(
         body('goal').optional().isIn(['lose', 'maintain', 'gain']).withMessage('Objetivo inválido'),
         body('is_public_profile').optional().isBoolean(),
         body('show_level_xp').optional().isBoolean(),
-        body('show_badges').optional().isBoolean()
+        body('show_badges').optional().isBoolean(),
+        body('show_gym').optional().isBoolean(),
+        body('gym_data').optional()
     ],
     handleValidationErrors,
     userController.updateMyProfile

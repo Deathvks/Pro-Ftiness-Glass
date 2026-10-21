@@ -33,6 +33,7 @@ import TourGuide from '../components/TourGuide';
 import ExerciseSearch from '../components/RoutineEditor/ExerciseSearch';
 import LevelBadge from '../components/LevelBadge';
 import * as nutritionService from '../services/nutritionService';
+import * as userService from '../services/userService';
 import { useToast } from '../hooks/useToast';
 import { useLocalNotifications } from '../hooks/useLocalNotifications';
 import SEOHead from '../components/SEOHead';
@@ -244,7 +245,19 @@ const Dashboard = ({ setView }) => {
     const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
     const loadGym = () => {
       try {
-        const saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
+        let saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
+        if (!saved && userProfile?.gym_data) {
+          const remoteGym = typeof userProfile.gym_data === 'string' ? JSON.parse(userProfile.gym_data) : userProfile.gym_data;
+          if (remoteGym) {
+            saved = JSON.stringify(remoteGym);
+            localStorage.setItem(userKey, saved);
+          }
+        } else if (saved && userProfile && !userProfile.gym_data) {
+          try {
+            const parsedLocal = JSON.parse(saved);
+            userService.updateUserProfile({ gym_data: parsedLocal }).catch(() => {});
+          } catch {}
+        }
         setCurrentGym(saved ? enrichGymWithMedia(JSON.parse(saved)) : null);
       } catch {
         setCurrentGym(null);
@@ -257,7 +270,7 @@ const Dashboard = ({ setView }) => {
       window.removeEventListener('storage', loadGym);
       window.removeEventListener('user-gym-updated', loadGym);
     };
-  }, [userProfile?.id]);
+  }, [userProfile?.id, userProfile?.gym_data]);
 
   const handleSaveGym = (gymData) => {
     const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
@@ -266,6 +279,9 @@ const Dashboard = ({ setView }) => {
     localStorage.setItem('user_gym', JSON.stringify(enriched));
     setCurrentGym(enriched);
     window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: enriched }));
+    userService.updateUserProfile({ gym_data: enriched }).catch(err => {
+      console.warn('Error al guardar gimnasio en backend:', err);
+    });
   };
 
   const handleRemoveGym = () => {
@@ -274,6 +290,9 @@ const Dashboard = ({ setView }) => {
     localStorage.removeItem('user_gym');
     setCurrentGym(null);
     window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: null }));
+    userService.updateUserProfile({ gym_data: null }).catch(err => {
+      console.warn('Error al eliminar gimnasio en backend:', err);
+    });
   };
 
   const prCardRef = useRef(null);

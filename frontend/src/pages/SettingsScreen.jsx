@@ -227,10 +227,11 @@ export default function SettingsScreen({
     }
   };
 
-  const handleTogglePrivacy = async (key, label) => {
+  const handleTogglePrivacy = async (key, label, defaultValue = false) => {
     if (isUpdatingPrivacy) return;
     setIsUpdatingPrivacy(true);
-    const newValue = !userProfile?.[key];
+    const currentVal = userProfile?.[key] !== undefined ? !!userProfile[key] : defaultValue;
+    const newValue = !currentVal;
 
     const prevValue = userProfile?.[key];
     setUserProfile({ ...userProfile, [key]: newValue });
@@ -449,6 +450,14 @@ export default function SettingsScreen({
                   subtitle="Compartir tus logros"
                   checked={!!userProfile?.show_badges}
                   onChange={() => handleTogglePrivacy('show_badges', 'Insignias')}
+                  disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
+                />
+                <SwitchItem
+                  icon={MapPin}
+                  title="Mostrar Gimnasio"
+                  subtitle="Visible en tu perfil público para otros usuarios"
+                  checked={userProfile?.show_gym !== false}
+                  onChange={() => handleTogglePrivacy('show_gym', 'Mostrar gimnasio', true)}
                   disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
                 />
               </div>

@@ -88,6 +88,17 @@ export const getMyProfile = async (req, res, next) => {
       }
     }
 
+    if (userData.gym_data && typeof userData.gym_data === 'string') {
+      try {
+        userData.gym_data = JSON.parse(userData.gym_data);
+      } catch (e) {
+        // mantener
+      }
+    }
+    if (typeof userData.show_gym !== 'boolean') {
+      userData.show_gym = true;
+    }
+
     if (typeof userData.unlocked_badges === 'string') {
       try {
         userData.unlocked_badges = JSON.parse(userData.unlocked_badges);
@@ -296,7 +307,7 @@ export const updateMyProfile = async (req, res, next) => {
     const { userId } = req.user;
     const {
       gender, age, height, activityLevel, goal, weight, login_email_notifications,
-      is_public_profile, show_level_xp, show_badges, timezone
+      is_public_profile, show_level_xp, show_badges, show_gym, gym_data, timezone
     } = req.body;
 
     const user = await User.findByPk(userId);
@@ -313,6 +324,10 @@ export const updateMyProfile = async (req, res, next) => {
     if (typeof is_public_profile !== 'undefined') updateData.is_public_profile = is_public_profile;
     if (typeof show_level_xp !== 'undefined') updateData.show_level_xp = show_level_xp;
     if (typeof show_badges !== 'undefined') updateData.show_badges = show_badges;
+    if (typeof show_gym !== 'undefined') updateData.show_gym = show_gym;
+    if (typeof gym_data !== 'undefined') {
+      updateData.gym_data = gym_data === null ? null : (typeof gym_data === 'object' ? JSON.stringify(gym_data) : String(gym_data));
+    }
 
     await user.update(updateData, { transaction: t });
 
