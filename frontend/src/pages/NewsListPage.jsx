@@ -33,42 +33,41 @@ const BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 export default function NewsListPage({ onBack, navigate: customNavigate }) {
   const navigate = useNavigate();
   const containerRef = useRef(null);
-  const sentinelRef = useRef(null);
   const isAuthenticated = useAppStore(state => state.isAuthenticated);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const currentCategory = searchParams.get('category') || 'Todas';
+  const currentPage = parseInt(searchParams.get('page')) || 1;
   const currentSearch = searchParams.get('search') || '';
 
   const [searchInput, setSearchInput] = useState(currentSearch);
   const [news, setNews] = useState([]);
   const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [categoryCounts, setCategoryCounts] = useState({});
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState(null);
 
-  // Cargar primera página al cambiar categoría o búsqueda
+  // Exactamente 6 artículos por página (2 filas completas de 3 columnas para una cuadrícula perfecta)
+  const ITEMS_PER_PAGE = 6;
+
   useEffect(() => {
     let isMounted = true;
-    const loadInitialNews = async () => {
+    const loadNews = async () => {
       setIsLoading(true);
       setError(null);
-      setPage(1);
       try {
         const data = await newsService.fetchPublicNews({
-          page: 1,
-          limit: 9,
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
           category: currentCategory,
           search: currentSearch
         });
         if (isMounted) {
           setNews(data.news || []);
           setTotal(data.total || 0);
+          setTotalPages(data.totalPages || 1);
           setCategoryCounts(data.categoryCounts || {});
-          setHasMore(1 < (data.totalPages || 1));
         }
       } catch (err) {
         if (isMounted) {
@@ -79,59 +78,15 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
       }
     };
 
-    loadInitialNews();
+    loadNews();
     return () => { isMounted = false; };
-  }, [currentCategory, currentSearch]);
-
-  // Carga continua: obtener siguiente lote de noticias sin saltos bruscos
-  const handleLoadMore = useCallback(async () => {
-    if (isLoadingMore || !hasMore || isLoading) return;
-    setIsLoadingMore(true);
-    const nextPage = page + 1;
-
-    try {
-      const data = await newsService.fetchPublicNews({
-        page: nextPage,
-        limit: 9,
-        category: currentCategory,
-        search: currentSearch
-      });
-
-      setNews(prev => {
-        // Evitar duplicados por id
-        const existingIds = new Set(prev.map(item => item.id));
-        const uniqueNext = (data.news || []).filter(item => !existingIds.has(item.id));
-        return [...prev, ...uniqueNext];
-      });
-      setPage(nextPage);
-      setHasMore(nextPage < (data.totalPages || 1));
-    } catch (err) {
-      console.error('Error al cargar más noticias:', err);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [isLoadingMore, hasMore, isLoading, page, currentCategory, currentSearch]);
-
-  // Observer para infinite scroll cuando el usuario llega al pie
-  useEffect(() => {
-    if (!sentinelRef.current || !hasMore || isLoading || isLoadingMore) return;
-
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && hasMore && !isLoadingMore && !isLoading) {
-        handleLoadMore();
-      }
-    }, {
-      rootMargin: '250px'
-    });
-
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [hasMore, isLoading, isLoadingMore, handleLoadMore]);
+  }, [currentCategory, currentPage, currentSearch]);
 
   const handleSelectCategory = (cat) => {
     const next = new URLSearchParams(searchParams);
     if (cat === 'Todas') next.delete('category');
     else next.set('category', cat);
+    next.delete('page'); // Volver a página 1 al cambiar de tema
     setSearchParams(next);
   };
 
@@ -140,7 +95,22 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
     const next = new URLSearchParams(searchParams);
     if (searchInput.trim()) next.set('search', searchInput.trim());
     else next.delete('search');
+    next.delete('page');
     setSearchParams(next);
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages || newPage === currentPage) return;
+    const next = new URLSearchParams(searchParams);
+    if (newPage === 1) next.delete('page');
+    else next.set('page', newPage.toString());
+    setSearchParams(next);
+
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleArticleClick = (slug) => {
@@ -170,19 +140,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
     }
   }), []);
 
-  const featuredArticle = useMemo(() => {
-    if (!currentSearch && currentCategory === 'Todas' && news.length > 0) {
-      return news[0];
-    }
-    return null;
-  }, [currentSearch, currentCategory, news]);
-
-  const gridArticles = useMemo(() => {
-    if (featuredArticle) {
-      return news.slice(1);
-    }
-    return news;
-  }, [featuredArticle, news]);
+  const gridArticles = useMemo(() => news, [news]);
 
   return (
     <div
@@ -336,78 +294,10 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
         </div>
       ) : (
         <>
-          {/* ARTÍCULO DESTACADO (Hero Card) */}
-          {featuredArticle && (
-            <GlassCard
-              onClick={() => handleArticleClick(featuredArticle.slug)}
-              className="glass p-0 rounded-[32px] overflow-hidden border-none ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/40 transition-all cursor-pointer group shadow-lg hover:shadow-2xl grid grid-cols-1 lg:grid-cols-12"
-            >
-              <div className="lg:col-span-7 relative h-64 sm:h-80 lg:h-full overflow-hidden bg-black/10">
-                <img
-                  src={featuredArticle.image_url}
-                  alt={featuredArticle.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  loading="eager"
-                />
-                <div className="absolute top-4 left-4 z-10 flex gap-2">
-                  <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-accent text-accent-contrast shadow-md">
-                    Destacado
-                  </span>
-                  <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-black/60 backdrop-blur-md text-white border border-white/15">
-                    {featuredArticle.category}
-                  </span>
-                </div>
-              </div>
-
-              <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between gap-6">
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-3 text-xs text-text-tertiary">
-                    <span className="flex items-center gap-1 font-semibold">
-                      <Calendar size={13} />
-                      {format(new Date(featuredArticle.published_at), "d 'de' MMMM, yyyy", { locale: es })}
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1 font-semibold">
-                      <Clock size={13} />
-                      {featuredArticle.reading_time} min lectura
-                    </span>
-                  </div>
-
-                  <h2 className="text-2xl sm:text-3xl font-black text-text-primary group-hover:text-accent transition-colors leading-tight">
-                    {featuredArticle.title}
-                  </h2>
-
-                  <p className="text-text-secondary text-sm leading-relaxed line-clamp-3">
-                    {featuredArticle.summary}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-black/5 dark:border-white/10">
-                  <div className="flex items-center gap-3 text-xs text-text-tertiary">
-                    <span className="font-bold">Por {featuredArticle.author_name}</span>
-                    {(featuredArticle.views_count || 0) > 0 && (
-                      <span className="flex items-center gap-1 font-semibold">
-                        <Eye size={12} /> {featuredArticle.views_count} lecturas
-                      </span>
-                    )}
-                    {(featuredArticle.likes_count || 0) > 0 && (
-                      <span className="flex items-center gap-1 font-semibold text-accent">
-                        <ThumbsUp size={11} /> {featuredArticle.likes_count}
-                      </span>
-                    )}
-                  </div>
-                  <span className="inline-flex items-center gap-1 text-xs font-extrabold text-accent group-hover:translate-x-1 transition-transform">
-                    Leer artículo <ArrowRight size={15} />
-                  </span>
-                </div>
-              </div>
-            </GlassCard>
-          )}
-
           {/* ADSENSE BANNER INTERMEDIO */}
           <AdSenseSlot slotId="noticias-list-banner" format="auto" />
 
-          {/* GRID DE ARTÍCULOS */}
+          {/* GRID DE ARTÍCULOS (Simétrico de 3 columnas) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {gridArticles.map((art) => (
               <GlassCard
@@ -474,35 +364,58 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
             ))}
           </div>
 
-          {/* CARGA CONTINUA / INFINITE SCROLL */}
-          <div ref={sentinelRef} className="py-8 flex flex-col items-center justify-center gap-3">
-            {isLoadingMore && (
-              <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-xs font-semibold text-text-secondary animate-pulse">
-                <Spinner size={16} />
-                <span>Cargando más artículos...</span>
-              </div>
-            )}
+          {/* PAGINACIÓN ELEGANTE Y EQUILIBRADA */}
+          {totalPages > 1 && (
+            <div className="flex flex-col items-center justify-center gap-3 pt-8 pb-10 border-t border-black/5 dark:border-white/5 mt-8">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={currentPage <= 1}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-bold bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed border border-black/10 dark:border-white/10 transition-all cursor-pointer text-text-primary"
+                  aria-label="Página anterior"
+                >
+                  <ChevronLeft size={15} />
+                  <span>Anterior</span>
+                </button>
 
-            {!hasMore && news.length > 0 && (
-              <div className="flex flex-col items-center gap-3 py-6 text-center">
-                <div className="w-12 h-1 rounded-full bg-accent/20 mb-1" />
-                <span className="text-xs font-semibold text-text-tertiary">
-                  Has visto todos los artículos disponibles
-                </span>
+                <div className="flex items-center gap-1.5 mx-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                    const isActive = currentPage === p;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => handlePageChange(p)}
+                        className={`w-9 h-9 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center ${
+                          isActive
+                            ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25 scale-105'
+                            : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/10'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    );
+                  })}
+                </div>
 
-                {currentCategory !== 'Todas' && (
-                  <button
-                    type="button"
-                    onClick={() => handleSelectCategory('Todas')}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold bg-accent/10 hover:bg-accent/20 text-accent border border-accent/25 transition-all cursor-pointer mt-1"
-                  >
-                    <span>Explorar todas las categorías</span>
-                    <ArrowRight size={13} />
-                  </button>
-                )}
+                <button
+                  type="button"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-xs font-black bg-accent text-accent-contrast hover:brightness-110 disabled:opacity-25 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md shadow-accent/25"
+                  aria-label="Página siguiente"
+                >
+                  <span>Siguiente</span>
+                  <ChevronRight size={15} />
+                </button>
               </div>
-            )}
-          </div>
+
+              <span className="text-[11px] font-semibold text-text-tertiary">
+                Página {currentPage} de {totalPages} · Mostrando {news.length} de {total} artículos
+              </span>
+            </div>
+          )}
         </>
       )}
       </div>
