@@ -170,9 +170,18 @@ export const generateAINews = async (req, res) => {
     });
 
     const prompt = `Eres un redactor científico de fitness y nutrición de élite con profundo conocimiento en hipertrofia, biomecánica y dietética deportiva.
-Genera un artículo de blog/noticia de alta calidad, riguroso, práctico y perfectamente optimizado para SEO sobre el siguiente tema: "${topic}".
+Genera un artículo de blog/noticia de alta calidad, dinámico, ameno de leer y perfectamente optimizado para SEO sobre el siguiente tema: "${topic}".
 Categoría sugerida: ${category}.
-El contenido debe ser en Markdown bien formateado, con subtítulos (##), listas con viñetas, consejos prácticos y fundamentación científica. Extensión: 500-800 palabras.`;
+REGLAS EDITORIALES OBLIGATORIAS PARA QUE EL ARTÍCULO SEA VISUALMENTE ATRACTIVO Y NO SEA TEXTO MONÓTONO:
+1. Divide el texto con subtítulos claros usando ## (entre 3 y 5 secciones principales) y ### para subapartados.
+2. Incluye al menos 1 o 2 bloques de alerta Markdown con formato GitHub:
+   > [!TIP] para consejos de entrenamiento y trucos prácticos.
+   > [!IMPORTANT] para datos de evidencia científica cruciales.
+   > [!NOTE] para aclaraciones o mitos.
+3. Incluye una tabla comparativa en formato Markdown (| Parámetro | Opción A | Opción B |) que resuma datos, dosis, repeticiones o alimentos de forma visual.
+4. Usa listas numeradas y con viñetas para desglosar pasos prácticos.
+5. Termina con una sección titulada "## Puntos clave para llevarte" con un resumen numerado accionable.
+Extensión total: 600-900 palabras.`;
 
     const result = await model.generateContent(prompt);
 

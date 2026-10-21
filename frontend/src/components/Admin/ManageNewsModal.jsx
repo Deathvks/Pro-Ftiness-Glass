@@ -17,6 +17,7 @@ import {
 import GlassCard from '../GlassCard';
 import ModalPortal from '../ModalPortal';
 import Spinner from '../Spinner';
+import MarkdownContent from '../News/MarkdownContent';
 import * as newsService from '../../services/newsService';
 import { useToast } from '../../hooks/useToast';
 
@@ -50,6 +51,7 @@ export default function ManageNewsModal({ isOpen, onClose }) {
   const [aiCategory, setAiCategory] = useState('Entrenamiento');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [editorPreviewMode, setEditorPreviewMode] = useState(false);
 
   const loadArticles = async () => {
     setIsLoading(true);
@@ -462,15 +464,32 @@ export default function ManageNewsModal({ isOpen, onClose }) {
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-text-secondary mb-1">Contenido (Markdown):</label>
-                    <textarea
-                      rows={12}
-                      value={formData.content}
-                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                      placeholder="## Subtítulo&#10;&#10;Contenido del artículo...&#10;&#10;* Puntos clave"
-                      className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus:ring-accent custom-scrollbar"
-                      required
-                    />
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-text-secondary">Contenido (Markdown enriquecido):</label>
+                      <button
+                        type="button"
+                        onClick={() => setEditorPreviewMode(!editorPreviewMode)}
+                        className="cursor-pointer text-xs font-bold text-accent hover:underline flex items-center gap-1.5"
+                      >
+                        <Eye size={13} />
+                        <span>{editorPreviewMode ? 'Volver al editor' : 'Ver vista previa en vivo'}</span>
+                      </button>
+                    </div>
+
+                    {editorPreviewMode ? (
+                      <div className="p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 max-h-96 overflow-y-auto custom-scrollbar">
+                        <MarkdownContent content={formData.content} />
+                      </div>
+                    ) : (
+                      <textarea
+                        rows={12}
+                        value={formData.content}
+                        onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                        placeholder="## Subtítulo&#10;&#10;Contenido del artículo...&#10;&#10;* Puntos clave"
+                        className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus:ring-accent custom-scrollbar"
+                        required
+                      />
+                    )}
                   </div>
 
                   <div>
