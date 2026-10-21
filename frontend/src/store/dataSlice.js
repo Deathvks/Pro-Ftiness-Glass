@@ -249,7 +249,10 @@ export const createDataSlice = (set, get) => ({
         }
       } catch (error) {
         console.error("Error al cargar datos iniciales (posiblemente de red):", error);
-        if (error?.message?.includes('fetch') || error?.message?.includes('network') || error?.name === 'TypeError' || error?.isMaintenance) {
+        if (error?.status === 404) {
+          console.warn('[fetchInitialData] Usuario no encontrado en el backend. Cerrando sesión limpia...');
+          get().handleLogout();
+        } else if (error?.message?.includes('fetch') || error?.message?.includes('network') || error?.name === 'TypeError' || error?.isMaintenance) {
           console.log('[fetchInitialData] Error de red detectado, reintentando en 2s...');
           setTimeout(() => { get().fetchInitialData(); }, 2000);
         } else {

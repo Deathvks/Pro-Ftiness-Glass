@@ -91,26 +91,44 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
     };
 
     const loadInitialDataAndSetView = async () => {
-      const initialState = useAppStore.getState();
-      const cachedProfile = initialState.userProfile;
-      const hasFullCachedProfile = Boolean(cachedProfile && 'role' in cachedProfile);
+      let completed = false;
+      // Timeout de seguridad: si tras 5 segundos la red o el backend tardan en responder,
+      // desbloqueamos el skeleton para no congelar la pantalla del usuario.
+      const safetyTimeout = setTimeout(() => {
+        if (!completed) {
+          console.warn("[useAppInitialization] Timeout de seguridad (5s) alcanzado. Desbloqueando skeleton.");
+          setIsInitialLoad(false);
+        }
+      }, 5000);
 
-      if (hasFullCachedProfile) {
-        const immediateTarget = resolveTargetView(cachedProfile, initialState.activeWorkout);
-        setView(immediateTarget);
+      try {
+        const initialState = useAppStore.getState();
+        const cachedProfile = initialState.userProfile;
+        const hasFullCachedProfile = Boolean(cachedProfile && "role" in cachedProfile);
+
+        if (hasFullCachedProfile) {
+          const immediateTarget = resolveTargetView(cachedProfile, initialState.activeWorkout);
+          setView(immediateTarget);
+          setIsInitialLoad(false);
+          completed = true;
+          clearTimeout(safetyTimeout);
+          fetchInitialData().catch(() => {});
+          return;
+        }
+
+        await fetchInitialData();
+      } catch (err) {
+        console.warn("[useAppInitialization] Error al cargar datos iniciales:", err);
+      } finally {
+        completed = true;
+        clearTimeout(safetyTimeout);
+        const loadedUserProfile = useAppStore.getState().userProfile;
+        const loadedActiveWorkout = useAppStore.getState().activeWorkout;
+        const targetView = resolveTargetView(loadedUserProfile, loadedActiveWorkout);
+        
+        setView(targetView);
         setIsInitialLoad(false);
-        fetchInitialData();
-        return;
       }
-
-      await fetchInitialData(); 
-      
-      const loadedUserProfile = useAppStore.getState().userProfile;
-      const loadedActiveWorkout = useAppStore.getState().activeWorkout;
-      const targetView = resolveTargetView(loadedUserProfile, loadedActiveWorkout);
-      
-      setView(targetView);
-      setIsInitialLoad(false);
     };
 
     if (isAuthenticated) {

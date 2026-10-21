@@ -1,7 +1,7 @@
 /* frontend/src/App.jsx */
 import React, { useState, lazy, useMemo, useCallback, useEffect, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { HomeIcon as HomeOutline, UsersIcon as UsersOutline, ChartBarIcon as ChartOutline, FireIcon as FireOutline, UserIcon as UserOutline, BoltIcon as BoltOutline, Squares2X2Icon as SquaresOutline } from '@heroicons/react/24/outline';
 import { HomeIcon as HomeSolid, UsersIcon as UsersSolid, ChartBarIcon as ChartSolid, FireIcon as FireSolid, UserIcon as UserSolid, BoltIcon as BoltSolid, Squares2X2Icon as SquaresSolid } from '@heroicons/react/24/solid';
 import { useTranslation } from 'react-i18next';
@@ -31,13 +31,47 @@ import SEOHead from './components/SEOHead';
 import PermissionModal from './components/PermissionModal'; 
 import NotFoundPage from './pages/NotFoundPage';
 
-const TwoFactorPromoModal = lazy(() => import('./components/TwoFactorPromoModal'));
-const StoryViewer = lazy(() => import('./components/StoryViewer'));
-const SecurityDashboard = lazy(() => import('./pages/SecurityDashboard'));
-const PageTutorialPlayback = lazy(() => import('./components/PageTutorialPlayback'));
-const OnboardingScreen = lazy(() => import('./pages/OnboardingScreen'));
-const LandingPage = lazy(() => import('./pages/LandingPage')); 
-const AsesoriaScreen = lazy(() => import('./pages/AsesoriaScreen'));
+export const lazyWithRetry = (componentImport, name = "chunk") =>
+  lazy(async () => {
+    const retryKey = "pfg_chunk_retry_" + name;
+    const hasRetried = sessionStorage.getItem(retryKey);
+    try {
+      const component = await componentImport();
+      sessionStorage.removeItem(retryKey);
+      return component;
+    } catch (error) {
+      console.warn(`[lazyWithRetry] Error al cargar chunk "${name}":`, error);
+      const msg = error?.message || "";
+      const isChunkError =
+        msg.includes("Failed to fetch dynamically imported module") ||
+        msg.includes("Loading chunk") ||
+        msg.includes("Importing a module script failed") ||
+        msg.includes("MIME type") ||
+        error?.name === "TypeError";
+
+      if (isChunkError && !hasRetried) {
+        console.warn(`[lazyWithRetry] Recargando aplicación para cargar nueva versión de "${name}"...`);
+        sessionStorage.setItem(retryKey, "true");
+        if ("caches" in window) {
+          try {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          } catch {}
+        }
+        window.location.reload();
+        return new Promise(() => {});
+      }
+      throw error;
+    }
+  });
+
+const TwoFactorPromoModal = lazyWithRetry(() => import('./components/TwoFactorPromoModal'), 'twoFactorPromo');
+const StoryViewer = lazyWithRetry(() => import('./components/StoryViewer'), 'storyViewer');
+const SecurityDashboard = lazyWithRetry(() => import('./pages/SecurityDashboard'), 'securityDashboard');
+const PageTutorialPlayback = lazyWithRetry(() => import('./components/PageTutorialPlayback'), 'pageTutorial');
+const OnboardingScreen = lazyWithRetry(() => import('./pages/OnboardingScreen'), 'onboardingScreen');
+const LandingPage = lazyWithRetry(() => import('./pages/LandingPage'), 'landingPage'); 
+const AsesoriaScreen = lazyWithRetry(() => import('./pages/AsesoriaScreen'), 'asesoriaScreen');
 
 const VIEW_CHUNK_LOADERS = {
   dashboard: () => import('./pages/Dashboard'),
@@ -83,38 +117,38 @@ export const preloadViewChunk = (viewId) => {
   }
 };
 
-const Dashboard = lazy(VIEW_CHUNK_LOADERS.dashboard);
-const Progress = lazy(VIEW_CHUNK_LOADERS.progress);
-const Routines = lazy(VIEW_CHUNK_LOADERS.routines);
-const Workout = lazy(VIEW_CHUNK_LOADERS.workout);
-const Nutrition = lazy(VIEW_CHUNK_LOADERS.nutrition);
-const SettingsScreen = lazy(VIEW_CHUNK_LOADERS.settings);
-const PhysicalProfileEditor = lazy(VIEW_CHUNK_LOADERS.physicalProfileEditor);
-const AdminPanel = lazy(VIEW_CHUNK_LOADERS.adminPanel);
-const AdminNotifications = lazy(VIEW_CHUNK_LOADERS.adminNotifications);
-const PrivacyPolicy = lazy(VIEW_CHUNK_LOADERS.privacyPolicy);
-const TermsPage = lazy(VIEW_CHUNK_LOADERS.terms);
-const Profile = lazy(VIEW_CHUNK_LOADERS.profile);
-const TwoFactorSetup = lazy(VIEW_CHUNK_LOADERS.twoFactorSetup);
-const NotificationsScreen = lazy(VIEW_CHUNK_LOADERS.notifications);
-const Social = lazy(VIEW_CHUNK_LOADERS.social);
-const PublicProfile = lazy(VIEW_CHUNK_LOADERS.publicProfile);
-const QuickCardio = lazy(VIEW_CHUNK_LOADERS.quickCardio);
-const ActiveCardioSession = lazy(VIEW_CHUNK_LOADERS['active-cardio']);
-const TrainerPanel = lazy(VIEW_CHUNK_LOADERS.trainerPanel);
-const Hub = lazy(VIEW_CHUNK_LOADERS.hub);
-const ResetPasswordScreen = lazy(VIEW_CHUNK_LOADERS.resetPassword);
-const SharedRoutinePreview = lazy(VIEW_CHUNK_LOADERS.sharedRoutine);
-const AppearanceScreen = lazy(VIEW_CHUNK_LOADERS.appearance);
-const SupportScreen = lazy(VIEW_CHUNK_LOADERS.support);
-const SocialLinksScreen = lazy(VIEW_CHUNK_LOADERS.socialLinks);
-const ChallengesScreen = lazy(VIEW_CHUNK_LOADERS.challenges);
-const NewsListPage = lazy(VIEW_CHUNK_LOADERS.noticias);
-const NewsDetailPage = lazy(VIEW_CHUNK_LOADERS.noticiaDetalle);
+const Dashboard = lazyWithRetry(VIEW_CHUNK_LOADERS.dashboard, 'dashboard');
+const Progress = lazyWithRetry(VIEW_CHUNK_LOADERS.progress, 'progress');
+const Routines = lazyWithRetry(VIEW_CHUNK_LOADERS.routines, 'routines');
+const Workout = lazyWithRetry(VIEW_CHUNK_LOADERS.workout, 'workout');
+const Nutrition = lazyWithRetry(VIEW_CHUNK_LOADERS.nutrition, 'nutrition');
+const SettingsScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.settings, 'settings');
+const PhysicalProfileEditor = lazyWithRetry(VIEW_CHUNK_LOADERS.physicalProfileEditor, 'physicalProfileEditor');
+const AdminPanel = lazyWithRetry(VIEW_CHUNK_LOADERS.adminPanel, 'adminPanel');
+const AdminNotifications = lazyWithRetry(VIEW_CHUNK_LOADERS.adminNotifications, 'adminNotifications');
+const PrivacyPolicy = lazyWithRetry(VIEW_CHUNK_LOADERS.privacyPolicy, 'privacyPolicy');
+const TermsPage = lazyWithRetry(VIEW_CHUNK_LOADERS.terms, 'terms');
+const Profile = lazyWithRetry(VIEW_CHUNK_LOADERS.profile, 'profile');
+const TwoFactorSetup = lazyWithRetry(VIEW_CHUNK_LOADERS.twoFactorSetup, 'twoFactorSetup');
+const NotificationsScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.notifications, 'notifications');
+const Social = lazyWithRetry(VIEW_CHUNK_LOADERS.social, 'social');
+const PublicProfile = lazyWithRetry(VIEW_CHUNK_LOADERS.publicProfile, 'publicProfile');
+const QuickCardio = lazyWithRetry(VIEW_CHUNK_LOADERS.quickCardio, 'quickCardio');
+const ActiveCardioSession = lazyWithRetry(VIEW_CHUNK_LOADERS['active-cardio'], 'active-cardio');
+const TrainerPanel = lazyWithRetry(VIEW_CHUNK_LOADERS.trainerPanel, 'trainerPanel');
+const Hub = lazyWithRetry(VIEW_CHUNK_LOADERS.hub, 'hub');
+const ResetPasswordScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.resetPassword, 'resetPassword');
+const SharedRoutinePreview = lazyWithRetry(VIEW_CHUNK_LOADERS.sharedRoutine, 'sharedRoutine');
+const AppearanceScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.appearance, 'appearance');
+const SupportScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.support, 'support');
+const SocialLinksScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.socialLinks, 'socialLinks');
+const ChallengesScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.challenges, 'challenges');
+const NewsListPage = lazyWithRetry(VIEW_CHUNK_LOADERS.noticias, 'noticias');
+const NewsDetailPage = lazyWithRetry(VIEW_CHUNK_LOADERS.noticiaDetalle, 'noticiaDetalle');
 
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
 export default function App() {
@@ -548,6 +582,39 @@ export default function App() {
     // Si el perfil no tiene la propiedad 'role', significa que es el objeto parcial del login
     // y todava no se ha ejecutado fetchInitialData. Mostramos el skeleton para evitar parpadeos.
     if (!userProfile || !('role' in userProfile) || (isLoading && !userProfile.goal)) {
+      if (!isLoading && !isInitialLoad) {
+        return (
+          <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-bg-primary">
+            <div className="w-16 h-16 rounded-2xl bg-accent/15 text-accent flex items-center justify-center mb-4 shadow-lg shadow-accent/20">
+              <RefreshCw className="animate-spin-slow" size={32} />
+            </div>
+            <h2 className="text-xl font-bold text-text-primary mb-2">Conectando con tu cuenta...</h2>
+            <p className="text-sm text-text-secondary max-w-sm mb-6">
+              No hemos podido cargar los datos de tu perfil. Comprueba tu conexión a internet o reintenta.
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  useAppStore.getState().fetchInitialData();
+                }}
+                className="px-5 py-2.5 rounded-xl bg-accent text-accent-contrast font-bold text-sm shadow-md shadow-accent/20 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+              >
+                Reintentar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  useAppStore.getState().handleLogout();
+                }}
+                className="px-5 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-secondary hover:text-text-primary font-bold text-sm cursor-pointer hover:scale-105 active:scale-95 transition-all"
+              >
+                Cerrar sesión
+              </button>
+            </div>
+          </div>
+        );
+      }
       return <InitialLoadingSkeleton />;
     }
 
@@ -657,37 +724,36 @@ export default function App() {
     };
   }, [isLandingPage, fullPageTitle, currentDescription]);
 
-  if (isInitialLoad) {
-    return <InitialLoadingSkeleton />;
-  }
-
   return (
     <>
-      {shouldRenderGlobalSEO && (
-        <SEOHead 
-            title={seoConfig.title} 
-            description={seoConfig.description} 
-            route={view} 
-            noIndex={seoConfig.noIndex} 
-        />
-      )}
-
-      <Helmet>
-        <html lang="es" />
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
-        <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
-        <meta property="og:site_name" content="Pro Fitness Glass" />
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
-        
-      </Helmet>
-
       <VersionUpdater />
       <APKUpdater />
       <AndroidDownloadPrompt />
+
+      {isInitialLoad ? (
+        <InitialLoadingSkeleton />
+      ) : (
+        <>
+          {shouldRenderGlobalSEO && (
+            <SEOHead 
+                title={seoConfig.title} 
+                description={seoConfig.description} 
+                route={view} 
+                noIndex={seoConfig.noIndex} 
+            />
+          )}
+
+          <Helmet>
+            <html lang="es" />
+            <meta charSet="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
+            <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
+            <meta property="og:type" content="website" />
+            <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+            <meta property="og:site_name" content="Pro Fitness Glass" />
+            <meta property="twitter:card" content="summary_large_image" />
+            <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
+          </Helmet>
 
       {sessionExpired && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.3s_ease-out]">
@@ -806,6 +872,8 @@ export default function App() {
             )
         } />
       </Routes>
+        </>
+      )}
     </>
   );
 }
