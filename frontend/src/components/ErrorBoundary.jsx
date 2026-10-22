@@ -72,21 +72,13 @@ class ErrorBoundary extends React.Component {
     this.setState({ isActionRunning: true });
 
     try {
-      // Guardar de forma segura las credenciales y consentimiento
-      const token = localStorage.getItem('pro_fitness_token');
-      const consent = localStorage.getItem('cookie_consent');
-      const theme = localStorage.getItem('theme');
-      const accent = localStorage.getItem('accent');
-
-      // Limpiar todo el almacenamiento local corruptible
-      localStorage.clear();
+      // Purgar selectivamente SOLO las cachés corruptibles sin destruir tutoriales, racha ni configuraciones del usuario
+      localStorage.removeItem('pfg_cached_initial_state_v1');
+      localStorage.removeItem('pfg_cache_version');
+      localStorage.removeItem('profitness_insights_expanded');
+      localStorage.removeItem('pfg_auto_reloaded_version');
+      localStorage.removeItem('pfg_crash_loop_count');
       sessionStorage.clear();
-
-      // Restaurar credenciales para no forzar al usuario a loguearse de nuevo
-      if (token) localStorage.setItem('pro_fitness_token', token);
-      if (consent) localStorage.setItem('cookie_consent', consent);
-      if (theme) localStorage.setItem('theme', theme);
-      if (accent) localStorage.setItem('accent', accent);
 
       await this.purgeTransientCaches();
     } catch (e) {

@@ -24,15 +24,7 @@ let lastDateFetchInfo = { date: null, timestamp: 0 };
 const readInitialCache = () => {
   try {
     if (typeof window === 'undefined' || !localStorage.getItem('pro_fitness_token')) return null;
-    const cachedVer = localStorage.getItem(CACHE_VERSION_KEY);
-    if (cachedVer !== APP_VERSION) {
-      // Invalida la caché previa tras una actualización de versión para evitar inconsistencias de esquema
-      localStorage.removeItem(INITIAL_CACHE_KEY);
-      localStorage.removeItem('profitness_insights_expanded');
-      localStorage.removeItem('pfg_auto_reloaded_version');
-      localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
-      return null;
-    }
+    localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
     const raw = localStorage.getItem(INITIAL_CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
@@ -168,6 +160,9 @@ export const createDataSlice = (set, get) => ({
         initialFetchRetryCount = 0;
         set({ userProfile: profileData, isAuthenticated: true, isLoading: false });
         writeInitialCache({ userProfile: profileData });
+        if (get().syncToursForUser) {
+          get().syncToursForUser(profileData);
+        }
 
         if (profileData && get().setGamificationData) {
           get().setGamificationData({
@@ -195,7 +190,7 @@ export const createDataSlice = (set, get) => ({
           const today = get().selectedDate || getTodayDateString();
           lastDateFetchInfo = { date: today, timestamp: Date.now() };
 
-          // Fase 1 (Rápida, máximo 5 peticiones simultáneas para no saturar el límite de 6 conexiones del navegador)
+          // Fase 1 (Rápida, máximo 5 peticiones simultáneas)
           Promise.all([
             routineService.getRoutines().catch(() => null),
             nutritionService.getNutritionLogsByDate(today).catch(() => null),
@@ -217,43 +212,44 @@ export const createDataSlice = (set, get) => ({
               set(fastUpdate);
               writeInitialCache({ ...fastUpdate, cachedDate: today });
             }
-          }).catch((err) => console.error('Error en carga rápida inicial:', err));
-
-          // Fase 2 (Históricos pesados en segundo plano)
-          setTimeout(() => {
-            if (get().fetchUnreadChats) {
-              get().fetchUnreadChats();
-            }
-            if (get().fetchTodaysCompletedRoutines) {
-              get().fetchTodaysCompletedRoutines().catch(() => {});
-            }
-            Promise.all([
-              workoutService.getWorkouts().catch(() => null),
-              bodyWeightService.getHistory().catch(() => null),
-              bodyMeasurementService.getHistory().catch(() => null),
-              creatinaService.getCreatinaStats().catch(() => null),
-              personalRecordService.getPersonalRecords(1, 'all').catch(() => null),
-            ]).then(([workouts, bodyweight, measurements, creatineStats, prsResponse]) => {
-              const heavyUpdate = {};
-              if (workouts) {
-                heavyUpdate.workoutLog = workouts;
-                if (get().fetchTodaysCompletedRoutines) {
-                  get().fetchTodaysCompletedRoutines().catch(() => {});
+          }).catch((err) => console.error('Error en carga rápida inicial:', err))
+          .finally(() => {
+            // Fase 2 (Históricos pesados): se ejecuta tras terminar Fase 1 para no saturar el pool de base de datos
+            setTimeout(() => {
+              if (get().fetchUnreadChats) {
+                get().fetchUnreadChats();
+              }
+              if (get().fetchTodaysCompletedRoutines) {
+                get().fetchTodaysCompletedRoutines().catch(() => {});
+              }
+              Promise.all([
+                workoutService.getWorkouts().catch(() => null),
+                bodyWeightService.getHistory().catch(() => null),
+                bodyMeasurementService.getHistory().catch(() => null),
+                creatinaService.getCreatinaStats().catch(() => null),
+                personalRecordService.getPersonalRecords(1, 'all').catch(() => null),
+              ]).then(([workouts, bodyweight, measurements, creatineStats, prsResponse]) => {
+                const heavyUpdate = {};
+                if (workouts) {
+                  heavyUpdate.workoutLog = workouts;
+                  if (get().fetchTodaysCompletedRoutines) {
+                    get().fetchTodaysCompletedRoutines().catch(() => {});
+                  }
                 }
-              }
-              if (bodyweight) heavyUpdate.bodyWeightLog = bodyweight;
-              if (measurements) heavyUpdate.bodyMeasurementsLog = measurements;
-              if (creatineStats) heavyUpdate.creatineStats = creatineStats.data || null;
-              if (prsResponse) {
-                heavyUpdate.personalRecords = prsResponse?.records || (Array.isArray(prsResponse) ? prsResponse : []);
-              }
+                if (bodyweight) heavyUpdate.bodyWeightLog = bodyweight;
+                if (measurements) heavyUpdate.bodyMeasurementsLog = measurements;
+                if (creatineStats) heavyUpdate.creatineStats = creatineStats.data || null;
+                if (prsResponse) {
+                  heavyUpdate.personalRecords = prsResponse?.records || (Array.isArray(prsResponse) ? prsResponse : []);
+                }
 
-              if (Object.keys(heavyUpdate).length > 0) {
-                set(heavyUpdate);
-                writeInitialCache(heavyUpdate);
-              }
-            }).catch((err) => console.error('Error en carga de historial inicial:', err));
-          }, 150);
+                if (Object.keys(heavyUpdate).length > 0) {
+                  set(heavyUpdate);
+                  writeInitialCache(heavyUpdate);
+                }
+              }).catch((err) => console.error('Error en carga de historial inicial:', err));
+            }, 600);
+          });
         } else if (get().fetchUnreadChats) {
           get().fetchUnreadChats();
         }

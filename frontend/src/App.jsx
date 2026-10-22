@@ -357,15 +357,8 @@ export default function App() {
       if (!hasSeenPromo && !isAlreadyEnabled && cookieConsent !== null) {
         setShow2FAPromo(true);
       }
-
-      // Precargar en segundo plano las pantallas principales de la barra de navegación
-      // para que abrir Nutrición, Rutinas, Social, Entreno o Hub sea instantáneo (0ms)
-      const timerId = setTimeout(() => {
-        ['routines', 'workout', 'nutrition', 'social', 'hub'].forEach((v) => preloadViewChunk(v));
-      }, 600);
-      return () => clearTimeout(timerId);
     }
-  }, [isAuthenticated, userProfile, isLoading, cookieConsent, showWelcomeModal]);
+  }, [isAuthenticated, userProfile, isLoading, cookieConsent]);
 
   const handleLogoutClick = useCallback(() => setShowLogoutConfirm(true), []);
 
@@ -475,8 +468,8 @@ export default function App() {
       });
     };
 
-    schedulePreload(primaryNavViews, 150, 120);
-    schedulePreload(secondaryNavViews, 900, 180);
+    schedulePreload(primaryNavViews, 1200, 200);
+    schedulePreload(secondaryNavViews, 2500, 250);
 
     return () => {
       timeouts.forEach(clearTimeout);

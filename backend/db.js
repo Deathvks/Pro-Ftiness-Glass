@@ -21,9 +21,9 @@ const sequelize = new Sequelize(
       timezone: '+00:00',
     },
     logging: false,
-    // OPTIMIZACIÓN: Pool de conexiones para ahorrar RAM
+    // OPTIMIZACIÓN: Pool de conexiones para soportar carga concurrente en arranques y navegación
     pool: {
-      max: 5,      // Límite bajo para no saturar memoria
+      max: 10,     // Aumentado a 10 para evitar cuellos de botella en peticiones simultáneas
       min: 0,      // Permite cerrar todas las conexiones si está inactivo (Crucial para Zeabur)
       acquire: 30000,
       idle: 10000  // Cierra conexión tras 10s sin uso

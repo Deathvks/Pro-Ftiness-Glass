@@ -76,9 +76,14 @@ export const useAppNavigation = (navigateRouter) => {
 
   const [previousView, setPreviousView] = useState(null);
   const mainContentRef = useRef(null);
+  const isNavigatingRef = useRef(false);
 
   // --- SEGURIDAD ANTI-REDIRECCIÓN ---
   useEffect(() => {
+    if (isNavigatingRef.current) {
+      isNavigatingRef.current = false;
+      return;
+    }
     const path = window.location.pathname;
     const profileMatch = path.match(/^\/profile\/(\d+)$/);
 
@@ -125,6 +130,7 @@ export const useAppNavigation = (navigateRouter) => {
 
   // Función de navegación principal
   const navigate = useCallback((viewName, options = {}) => {
+    isNavigatingRef.current = true;
     if (options.forceTab) {
       localStorage.setItem('routinesForceTab', options.forceTab);
     }
