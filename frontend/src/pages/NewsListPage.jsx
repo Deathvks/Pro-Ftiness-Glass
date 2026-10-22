@@ -156,8 +156,9 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
     }
   };
 
-  const handleArticleClick = (slug) => {
-    navigate(`/noticias/${slug}`);
+  const handleArticleClick = (art) => {
+    newsService.prefetchNewsBySlug(art.slug);
+    navigate(`/noticias/${art.slug}`, { state: { previewArticle: art } });
   };
 
   const handleGoHome = () => {
@@ -376,7 +377,9 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
             {gridArticles.map((art) => (
               <GlassCard
                 key={art.id}
-                onClick={() => handleArticleClick(art.slug)}
+                onClick={() => handleArticleClick(art)}
+                onMouseEnter={() => newsService.prefetchNewsBySlug(art.slug)}
+                onTouchStart={() => newsService.prefetchNewsBySlug(art.slug)}
                 className="glass p-0 rounded-[28px] overflow-hidden border-none ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/40 transition-all cursor-pointer group flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 duration-300"
               >
                 <div className="relative h-48 overflow-hidden bg-black/10">

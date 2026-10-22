@@ -29,6 +29,18 @@ const slugify = (text) => {
 /**
  * Obtener listado público de noticias con paginación, filtros y búsqueda
  */
+// Caché en memoria en el servidor para respuestas instantáneas (<1ms)
+const articleSlugCache = new Map();
+const ARTICLE_CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutos
+
+const publicListCache = new Map();
+const PUBLIC_LIST_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutos
+
+export const invalidateNewsCache = () => {
+  articleSlugCache.clear();
+  publicListCache.clear();
+};
+
 export const getPublicNews = async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -106,6 +118,15 @@ export const getNewsBySlug = async (req, res) => {
     const { slug } = req.params;
     const isAdmin = req.user?.role === 'admin';
 
+    // 1. Respuesta instantánea desde caché si está vigente (0ms de latencia)
+    if (!isAdmin && articleSlugCache.has(slug)) {
+      const cached = articleSlugCache.get(slug);
+      if (Date.now() - cached.timestamp < ARTICLE_CACHE_TTL_MS) {
+        res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+        return res.json(cached.payload);
+      }
+    }
+
     const where = { slug };
     if (!isAdmin) {
       where.is_published = true;
@@ -117,37 +138,43 @@ export const getNewsBySlug = async (req, res) => {
       return res.status(404).json({ error: 'Noticia no encontrada.' });
     }
 
-    // Artículos relacionados en la misma categoría o más recientes
-    const relatedNews = await News.findAll({
-      where: {
-        is_published: true,
-        id: { [Op.ne]: article.id },
-        category: article.category
-      },
-      order: [['published_at', 'DESC']],
-      limit: 3,
-      attributes: ['id', 'slug', 'title', 'summary', 'image_url', 'category', 'reading_time', 'views_count', 'likes_count', 'published_at']
-    });
+    // 2. Ejecutar consultas de artículos relacionados y siguiente/anterior en PARALELO
+    const [relatedNews, nextArticle, prevArticle] = await Promise.all([
+      News.findAll({
+        where: {
+          is_published: true,
+          id: { [Op.ne]: article.id },
+          category: article.category
+        },
+        order: [['published_at', 'DESC']],
+        limit: 3,
+        attributes: ['id', 'slug', 'title', 'summary', 'image_url', 'category', 'reading_time', 'views_count', 'likes_count', 'published_at']
+      }),
+      News.findOne({
+        where: { is_published: true, id: { [Op.gt]: article.id } },
+        order: [['id', 'ASC']],
+        attributes: ['id', 'slug', 'title', 'category', 'image_url']
+      }),
+      News.findOne({
+        where: { is_published: true, id: { [Op.lt]: article.id } },
+        order: [['id', 'DESC']],
+        attributes: ['id', 'slug', 'title', 'category', 'image_url']
+      })
+    ]);
 
-    // Noticia siguiente y anterior para navegación continua entre lecturas
-    const nextArticle = await News.findOne({
-      where: { is_published: true, id: { [Op.gt]: article.id } },
-      order: [['id', 'ASC']],
-      attributes: ['id', 'slug', 'title', 'category', 'image_url']
-    });
-
-    const prevArticle = await News.findOne({
-      where: { is_published: true, id: { [Op.lt]: article.id } },
-      order: [['id', 'DESC']],
-      attributes: ['id', 'slug', 'title', 'category', 'image_url']
-    });
-
-    return res.json({
+    const payload = {
       article,
       relatedNews,
       nextArticle,
       prevArticle
-    });
+    };
+
+    if (!isAdmin) {
+      articleSlugCache.set(slug, { payload, timestamp: Date.now() });
+      res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+    }
+
+    return res.json(payload);
   } catch (error) {
     console.error('Error al obtener noticia por slug:', error);
     return res.status(500).json({ error: 'Error al cargar la noticia.' });
@@ -171,6 +198,10 @@ export const trackNewsView = async (req, res) => {
 
     await article.increment('views_count', { by: 1 });
     await article.reload();
+    const cached = articleSlugCache.get(slug);
+    if (cached && cached.payload?.article) {
+      cached.payload.article.views_count = article.views_count;
+    }
 
     return res.json({
       success: true,
@@ -207,6 +238,7 @@ export const toggleLikeNews = async (req, res) => {
     }
 
     await article.reload();
+    articleSlugCache.delete(slug);
 
     return res.json({
       success: true,
@@ -331,6 +363,7 @@ export const createNews = async (req, res) => {
 
     const calculatedReadingTime = reading_time || Math.max(2, Math.ceil(content.split(/\s+/).length / 200));
 
+    invalidateNewsCache();
     const newArticle = await News.create({
       title,
       slug: finalSlug,
@@ -391,6 +424,7 @@ export const updateNews = async (req, res) => {
       }
     }
 
+    invalidateNewsCache();
     await article.update({
       title: title ?? article.title,
       slug: finalSlug,
@@ -425,6 +459,7 @@ export const deleteNews = async (req, res) => {
       return res.status(404).json({ error: 'Noticia no encontrada.' });
     }
 
+    invalidateNewsCache();
     await article.destroy();
     return res.json({ message: 'Noticia eliminada correctamente.' });
   } catch (error) {

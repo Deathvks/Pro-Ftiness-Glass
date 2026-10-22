@@ -1,6 +1,6 @@
 /* frontend/src/pages/NewsDetailPage.jsx */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   ChevronLeft,
   Calendar,
@@ -31,14 +31,21 @@ import { useToast } from '../hooks/useToast';
 export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const containerRef = useRef(null);
   const { addToast } = useToast();
 
-  const [article, setArticle] = useState(null);
-  const [relatedNews, setRelatedNews] = useState([]);
-  const [nextArticle, setNextArticle] = useState(null);
-  const [prevArticle, setPrevArticle] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Hidratación instantánea (0ms) desde caché o state previo de navegación
+  const cachedData = newsService.getCachedArticle(slug);
+  const previewFromState = location.state?.previewArticle;
+  const initialArticle = cachedData?.article || previewFromState || null;
+
+  const [article, setArticle] = useState(initialArticle);
+  const [relatedNews, setRelatedNews] = useState(cachedData?.relatedNews || []);
+  const [nextArticle, setNextArticle] = useState(cachedData?.nextArticle || null);
+  const [prevArticle, setPrevArticle] = useState(cachedData?.prevArticle || null);
+  // Si ya disponemos de al menos el artículo o tarjeta previa, NO bloqueamos la pantalla
+  const [isLoading, setIsLoading] = useState(!initialArticle);
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -66,12 +73,26 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
 
   useEffect(() => {
     let isMounted = true;
-    const loadArticle = async () => {
+
+    // Sincronización síncrona si cambia el slug (ej. al navegar a noticia siguiente o previa)
+    const freshCache = newsService.getCachedArticle(slug);
+    const navStateArticle = location.state?.previewArticle;
+    const bestInitial = freshCache?.article || navStateArticle || null;
+    if (bestInitial) {
+      setArticle(bestInitial);
+      if (freshCache?.relatedNews?.length) setRelatedNews(freshCache.relatedNews);
+      if (freshCache?.nextArticle) setNextArticle(freshCache.nextArticle);
+      if (freshCache?.prevArticle) setPrevArticle(freshCache.prevArticle);
+      setIsLoading(false);
+    } else {
       setIsLoading(true);
+    }
+
+    const loadArticle = async () => {
       setError(null);
       try {
         const data = await newsService.fetchNewsBySlug(slug);
-        if (isMounted) {
+        if (isMounted && data?.article) {
           setArticle(data.article);
           setRelatedNews(data.relatedNews || []);
           setNextArticle(data.nextArticle || null);
@@ -93,7 +114,10 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
         }
       } catch (err) {
         if (isMounted) {
-          setError(err);
+          // Solo mostrar pantalla completa de error si no tenemos nada que mostrar
+          if (!bestInitial) {
+            setError(err);
+          }
         }
       } finally {
         if (isMounted) setIsLoading(false);
@@ -446,7 +470,19 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
 
         {/* CUERPO DEL ARTÍCULO (FLUJO CONTINUO EDITORIAL) */}
         <section className="article-body py-2">
-          <MarkdownContent content={article.content} fontSize={fontSize} />
+          {article?.content ? (
+            <MarkdownContent content={article.content} fontSize={fontSize} />
+          ) : (
+            <div className="space-y-4 py-4 animate-pulse">
+              <div className="h-4 bg-black/10 dark:bg-white/10 rounded-full w-5/6"></div>
+              <div className="h-4 bg-black/10 dark:bg-white/10 rounded-full w-full"></div>
+              <div className="h-4 bg-black/10 dark:bg-white/10 rounded-full w-4/5"></div>
+              <div className="h-4 bg-black/10 dark:bg-white/10 rounded-full w-2/3"></div>
+              <div className="h-32 bg-black/5 dark:bg-white/5 rounded-2xl w-full my-6"></div>
+              <div className="h-4 bg-black/10 dark:bg-white/10 rounded-full w-full"></div>
+              <div className="h-4 bg-black/10 dark:bg-white/10 rounded-full w-3/4"></div>
+            </div>
+          )}
         </section>
 
         {/* VALORACIÓN INTERACTIVA REAL "¿TE HA SERVIDO?" */}
@@ -514,7 +550,9 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           <nav aria-label="Navegación entre artículos" className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-8 pt-6 border-t border-black/10 dark:border-white/10">
             {prevArticle ? (
               <div
-                onClick={() => navigate(`/noticias/${prevArticle.slug}`)}
+                onClick={() => navigate(`/noticias/${prevArticle.slug}`, { state: { previewArticle: prevArticle } })}
+                onMouseEnter={() => newsService.prefetchNewsBySlug(prevArticle.slug)}
+                onTouchStart={() => newsService.prefetchNewsBySlug(prevArticle.slug)}
                 className="p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-all cursor-pointer group flex flex-col justify-between"
               >
                 <span className="text-[11px] font-black uppercase tracking-wider text-text-tertiary flex items-center gap-1 mb-1">
@@ -528,7 +566,9 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
 
             {nextArticle ? (
               <div
-                onClick={() => navigate(`/noticias/${nextArticle.slug}`)}
+                onClick={() => navigate(`/noticias/${nextArticle.slug}`, { state: { previewArticle: nextArticle } })}
+                onMouseEnter={() => newsService.prefetchNewsBySlug(nextArticle.slug)}
+                onTouchStart={() => newsService.prefetchNewsBySlug(nextArticle.slug)}
                 className="p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-all cursor-pointer group flex flex-col justify-between text-right"
               >
                 <span className="text-[11px] font-black uppercase tracking-wider text-accent flex items-center justify-end gap-1 mb-1">
@@ -552,7 +592,9 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
               {relatedNews.map((rel) => (
                 <div
                   key={rel.id}
-                  onClick={() => navigate(`/noticias/${rel.slug}`)}
+                  onClick={() => navigate(`/noticias/${rel.slug}`, { state: { previewArticle: rel } })}
+                  onMouseEnter={() => newsService.prefetchNewsBySlug(rel.slug)}
+                  onTouchStart={() => newsService.prefetchNewsBySlug(rel.slug)}
                   className="rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 hover:border-accent/40 transition-all cursor-pointer group flex flex-col justify-between bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
                 >
                   <div className="h-32 bg-black/10 overflow-hidden relative">

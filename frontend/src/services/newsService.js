@@ -1,5 +1,64 @@
 /* frontend/src/services/newsService.js */
 import useAppStore from '../store/useAppStore';
+import cachedNewsList from '../data/cachedNews.json';
+
+// Caché en memoria para transiciones instantáneas a 0ms
+const articleMemoryCache = new Map();
+const inflightPromises = new Map();
+
+/**
+ * Obtiene síncronamente (0ms) datos cacheados de un artículo
+ * Revisa memoria RAM, sessionStorage o la lista base local de artículos
+ */
+export const getCachedArticle = (slug) => {
+  if (!slug) return null;
+
+  // 1. Memoria activa (artículo completo)
+  if (articleMemoryCache.has(slug)) {
+    return articleMemoryCache.get(slug);
+  }
+
+  // 2. SessionStorage
+  try {
+    const raw = sessionStorage.getItem(`pfg_art_${slug}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.article) {
+        articleMemoryCache.set(slug, parsed);
+        return parsed;
+      }
+    }
+  } catch {
+    // sessionStorage inaccesible o lleno
+  }
+
+  // 3. Fallback a cachedNews.json para mostrar inmediatamente cabecera y metadatos
+  const localMatch = Array.isArray(cachedNewsList)
+    ? cachedNewsList.find((item) => item.slug === slug)
+    : null;
+
+  if (localMatch) {
+    return {
+      article: localMatch,
+      relatedNews: [],
+      nextArticle: null,
+      prevArticle: null,
+      isPartial: true
+    };
+  }
+
+  return null;
+};
+
+/**
+ * Precarga en segundo plano al hacer hover o tocar una tarjeta de noticia
+ */
+export const prefetchNewsBySlug = (slug) => {
+  if (!slug) return;
+  if (articleMemoryCache.has(slug)) return;
+  fetchNewsBySlug(slug).catch(() => {});
+};
+
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
@@ -92,11 +151,45 @@ export const fetchPublicNews = async ({ page = 1, limit = 6, category = '', sear
 };
 
 export const fetchNewsBySlug = async (slug) => {
-  return requestWithRetry(
-    `${API_URL}/news/article/${encodeURIComponent(slug)}`,
-    { headers: getAuthHeaders() },
-    1
-  );
+  if (!slug) throw new Error('Slug no válido');
+
+  // Si ya tenemos el artículo completo en memoria, devolverlo directamente
+  if (articleMemoryCache.has(slug)) {
+    const cached = articleMemoryCache.get(slug);
+    if (!cached.isPartial) {
+      return cached;
+    }
+  }
+
+  // Si ya hay una petición en vuelo para este mismo slug, reutilizarla (evita peticiones duplicadas)
+  if (inflightPromises.has(slug)) {
+    return inflightPromises.get(slug);
+  }
+
+  const promise = (async () => {
+    try {
+      const data = await requestWithRetry(
+        `${API_URL}/news/article/${encodeURIComponent(slug)}`,
+        { headers: getAuthHeaders() },
+        1
+      );
+
+      if (data && data.article) {
+        articleMemoryCache.set(slug, data);
+        try {
+          sessionStorage.setItem(`pfg_art_${slug}`, JSON.stringify(data));
+        } catch {
+          // sessionStorage bloqueado o lleno
+        }
+      }
+      return data;
+    } finally {
+      inflightPromises.delete(slug);
+    }
+  })();
+
+  inflightPromises.set(slug, promise);
+  return promise;
 };
 
 export const recordArticleView = async (slug) => {
