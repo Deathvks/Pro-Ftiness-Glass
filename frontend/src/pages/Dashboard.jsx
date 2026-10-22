@@ -43,7 +43,7 @@ import PRShareCard from '../components/PRShareCard';
 import DashboardInsights from '../components/Dashboard/DashboardInsights';
 import { useAppTheme } from '../hooks/useAppTheme'; 
 
-const isIOS = () => {
+const _isIOS = () => {
   if (typeof navigator === 'undefined') return false;
   return [
     'iPad Simulator', 'iPhone Simulator', 'iPod Simulator', 'iPad', 'iPhone', 'iPod'
@@ -186,14 +186,14 @@ const Dashboard = ({ setView }) => {
   const { addToast } = useToast();
   const { t } = useTranslation(['translation', 'exercise_names']);
   
-  const { startThemeTest, isTestingTheme, testTimeLeft } = useAppTheme(); 
+  const { startThemeTest, isTestingTheme: _isTestingTheme, testTimeLeft: _testTimeLeft } = useAppTheme(); 
 
   const {
     routines, workoutLog, bodyWeightLog, userProfile, logBodyWeight,
     updateTodayBodyWeight, startWorkout, startSimpleWorkout, nutritionLog,
     waterLog, todaysCreatineLog, fetchDataForDate,
-    completedRoutineIdsToday, activeWorkout, gamification,
-    checkStreak, addXp, addGamificationEvents, personalRecords
+    completedRoutineIdsToday, activeWorkout, gamification, fetchTodaysCompletedRoutines,
+    checkStreak: _checkStreak, addXp: _addXp, addGamificationEvents, personalRecords
   } = useAppStore(useShallow(state => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
@@ -208,6 +208,7 @@ const Dashboard = ({ setView }) => {
     todaysCreatineLog: state.todaysCreatineLog,
     fetchDataForDate: state.fetchDataForDate,
     completedRoutineIdsToday: state.completedRoutineIdsToday,
+    fetchTodaysCompletedRoutines: state.fetchTodaysCompletedRoutines,
     activeWorkout: state.activeWorkout,
     gamification: state.gamification,
     checkStreak: state.checkStreak,
@@ -217,6 +218,12 @@ const Dashboard = ({ setView }) => {
   })));
 
   const { cancelLoginReminder } = useLocalNotifications();
+
+  useEffect(() => {
+    if (fetchTodaysCompletedRoutines) {
+      fetchTodaysCompletedRoutines();
+    }
+  }, [fetchTodaysCompletedRoutines]);
 
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showXPModal, setShowXPModal] = useState(false);
@@ -256,7 +263,7 @@ const Dashboard = ({ setView }) => {
           try {
             const parsedLocal = JSON.parse(saved);
             userService.updateUserProfile({ gym_data: parsedLocal }).catch(() => {});
-          } catch {}
+          } catch { /* ignore */ }
         }
         setCurrentGym(saved ? enrichGymWithMedia(JSON.parse(saved)) : null);
       } catch {
@@ -537,7 +544,7 @@ const Dashboard = ({ setView }) => {
       }
       addToast(t('Registro actualizado.', { defaultValue: 'Registro actualizado.' }), 'success');
       await fetchDataForDate(new Date().toISOString().split('T')[0]);
-    } catch (error) {
+    } catch {
       addToast(t('Error al guardar.', { defaultValue: 'Error al guardar.' }), 'error');
     } finally {
       setModal({ type: null });
@@ -632,9 +639,9 @@ const Dashboard = ({ setView }) => {
   const isAdmin = userProfile?.role === 'admin';
   const referralCount = userProfile?.referralCount || 0;
   const maxReferrals = 3;
-  const displayReferralCount = isAdmin ? maxReferrals : referralCount;
-  const referralProgress = isAdmin ? 100 : Math.min((referralCount / maxReferrals) * 100, 100);
-  const isCampaignComplete = referralCount >= maxReferrals || isAdmin;
+  const _displayReferralCount = isAdmin ? maxReferrals : referralCount;
+  const _referralProgress = isAdmin ? 100 : Math.min((referralCount / maxReferrals) * 100, 100);
+  const _isCampaignComplete = referralCount >= maxReferrals || isAdmin;
   const isCapacitor = !!window.Capacitor?.isNativePlatform?.() || window.location.origin.includes('localhost') && !window.location.port;
   const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://pro-fitness-glass.zeabur.app') : window.location.origin;
   const referralLink = `${baseUrl}/register?ref=${userProfile?.referral_code || ''}`;
@@ -644,7 +651,7 @@ const Dashboard = ({ setView }) => {
     addToast(t('¡Enlace copiado al portapapeles!', { defaultValue: '¡Enlace copiado al portapapeles!' }), 'success');
   };
 
-  const handleShareReferral = async () => {
+  const _handleShareReferral = async () => {
     const shareData = {
       title: t('Únete a Pro Fitness Glass', { defaultValue: 'Únete a Pro Fitness Glass' }),
       text: t('¡Regístrate con mi enlace y transformemos nuestro cuerpo juntos!', { defaultValue: '¡Regístrate con mi enlace y transformemos nuestro cuerpo juntos!' }),
@@ -657,11 +664,11 @@ const Dashboard = ({ setView }) => {
           ...shareData,
           dialogTitle: t('Compartir Invitación', { defaultValue: 'Compartir Invitación' })
         });
-      } catch (e) {}
+      } catch { /* ignore */ }
     } else if (navigator.share) {
       try {
         await navigator.share(shareData);
-      } catch (e) {}
+      } catch { /* ignore */ }
     } else {
       handleCopyReferral();
     }
@@ -861,7 +868,13 @@ const Dashboard = ({ setView }) => {
             {weekDays.map((date, i) => {
               const dayLetters = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
               const isToday = isSameDay(date, new Date());
-              const hasWorkout = workoutLog.some(log => isSameDay(new Date(log.workout_date), date));
+              const hasWorkout = workoutLog.some(log => {
+                if (!log?.workout_date) return false;
+                const start = new Date(log.workout_date);
+                if (isSameDay(start, date)) return true;
+                const end = new Date(start.getTime() + (log.duration_seconds || 0) * 1000);
+                return isSameDay(end, date);
+              });
               return (
                 <div key={i} className="flex flex-col items-center gap-1.5 flex-1 min-w-[20px]">
                   <span className={`text-[9px] font-bold ${isToday ? 'text-accent' : 'text-text-muted'}`}>{dayLetters[i]}</span>
@@ -986,7 +999,7 @@ const Dashboard = ({ setView }) => {
 
             <div className="flex flex-col gap-4">
               {routines.length > 0 ? routines.slice(0, 3).map(routine => {
-                const isCompleted = completedRoutineIdsToday.map(String).includes(String(routine.id));
+                const isCompleted = (completedRoutineIdsToday || []).some(id => String(id) === String(routine.id));
                 const isActive = activeWorkout && String(activeWorkout.routineId) === String(routine.id);
 
                 return (

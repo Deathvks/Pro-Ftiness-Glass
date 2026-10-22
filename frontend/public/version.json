@@ -1,4 +1,4 @@
 {
-  "version": "7.8.39",
-  "releaseNotes": "Resolución de error en modal de recomendación de entrenador para estrategias ya aplicadas."
+  "version": "7.8.40",
+  "releaseNotes": "Soporte de entrenamientos nocturnos que cruzan la medianoche y persistencia de rutinas completadas."
 }

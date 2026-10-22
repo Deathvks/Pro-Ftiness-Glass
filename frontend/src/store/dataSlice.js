@@ -224,6 +224,9 @@ export const createDataSlice = (set, get) => ({
             if (get().fetchUnreadChats) {
               get().fetchUnreadChats();
             }
+            if (get().fetchTodaysCompletedRoutines) {
+              get().fetchTodaysCompletedRoutines().catch(() => {});
+            }
             Promise.all([
               workoutService.getWorkouts().catch(() => null),
               bodyWeightService.getHistory().catch(() => null),
@@ -232,7 +235,12 @@ export const createDataSlice = (set, get) => ({
               personalRecordService.getPersonalRecords(1, 'all').catch(() => null),
             ]).then(([workouts, bodyweight, measurements, creatineStats, prsResponse]) => {
               const heavyUpdate = {};
-              if (workouts) heavyUpdate.workoutLog = workouts;
+              if (workouts) {
+                heavyUpdate.workoutLog = workouts;
+                if (get().fetchTodaysCompletedRoutines) {
+                  get().fetchTodaysCompletedRoutines().catch(() => {});
+                }
+              }
               if (bodyweight) heavyUpdate.bodyWeightLog = bodyweight;
               if (measurements) heavyUpdate.bodyMeasurementsLog = measurements;
               if (creatineStats) heavyUpdate.creatineStats = creatineStats.data || null;

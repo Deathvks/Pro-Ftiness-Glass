@@ -26,7 +26,7 @@ export const getAllAppliedCoachHistory = () => {
 /**
  * Construye clave compuesta por ejercicio y rutina cuando existe contexto de rutina.
  */
-const buildRoutineStorageKey = (exerciseName, routineId, routineName) => {
+const _buildRoutineStorageKey = (exerciseName, routineId, routineName) => {
   const baseKey = normalizeKey(exerciseName);
   const rIdKey = routineId ? normalizeKey(routineId) : '';
   const rNameKey = routineName ? normalizeKey(routineName) : '';
@@ -146,7 +146,7 @@ export const formatTargetText = (strategy) => {
  */
 export const formatTimeAgo = (diffHours, calendarDaysDiff) => {
   if (diffHours === null || diffHours === undefined) return '';
-  if (calendarDaysDiff === 0) {
+  if (calendarDaysDiff === 0 || diffHours < 12) {
     if (diffHours < 2) return 'hace menos de 2 horas (hoy)';
     return `hace ${Math.round(diffHours)} horas (hoy)`;
   }
@@ -170,13 +170,11 @@ export const formatTimeAgo = (diffHours, calendarDaysDiff) => {
  * 4. Día 1 / Sin historial en la rutina actual: Avisa de que está pendiente de recoger datos en esta rutina y que toque para ver recomendaciones.
  */
 export const evaluateExerciseFollowUpAndRecovery = ({
-  exerciseName,
   sessions = [],
   allSessions = null,
   routineContext = null,
   currentTrend = null,
-  lastApplied = null,
-  userProfile = null
+  lastApplied = null
 }) => {
   const lastSession = sessions && sessions.length > 0 ? sessions[0] : null;
   const hasRoutineSessions = Boolean(sessions && sessions.length > 0);
@@ -201,6 +199,10 @@ export const evaluateExerciseFollowUpAndRecovery = ({
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       calendarDaysDiff = Math.max(0, Math.round((todayStart - sessionDayStart) / (1000 * 60 * 60 * 24)));
 
+      if (calendarDaysDiff === 1 && diffHours < 12) {
+        calendarDaysDiff = 0;
+      }
+
       timeAgoText = formatTimeAgo(diffHours, calendarDaysDiff);
 
       // Si se intentó el mismo día o al día siguiente (< 36 horas / <= 1 día calendario)
@@ -214,11 +216,23 @@ export const evaluateExerciseFollowUpAndRecovery = ({
   const trendStatus = currentTrend?.status || (hasRoutineSessions ? 'calibrating' : 'first_time');
 
   const appliedAtTime = lastApplied?.appliedAt ? new Date(lastApplied.appliedAt).getTime() : 0;
-  const lastSessionTime = lastSession?.date ? new Date(lastSession.date).getTime() : 0;
-  // Solo es la sesión actual en curso si se aplicó hace menos de 4 horas Y no hay una sesión guardada posterior a la aplicación
+  const lastSessionStartTime = lastSession?.date ? new Date(lastSession.date).getTime() : 0;
+  const lastSessionTime = lastSessionStartTime;
+  const lastSessionDurationMs = (lastSession?.duration_seconds || 0) * 1000;
+  const lastSessionEndTime = lastSessionStartTime > 0 ? (lastSessionStartTime + lastSessionDurationMs) : 0;
+
+  // Un entrenamiento que cubrió el momento en que se aplicó la recomendación
+  // significa que la estrategia YA fue completada en esa sesión.
+  const wasAppliedDuringLastSession = appliedAtTime > 0 &&
+    lastSessionStartTime > 0 &&
+    appliedAtTime >= (lastSessionStartTime - 60000) &&
+    (lastSessionEndTime > appliedAtTime || (Date.now() - appliedAtTime) > (2 * 60 * 60 * 1000));
+
+  // Solo es la sesión actual en curso si se aplicó hace menos de 4 horas Y no fue cubierta por la última sesión guardada
   const isCurrentSessionApplied = appliedAtTime > 0 &&
     (Date.now() - appliedAtTime) < (4 * 60 * 60 * 1000) &&
-    (!lastSessionTime || lastSessionTime <= appliedAtTime);
+    !wasAppliedDuringLastSession &&
+    (!lastSessionStartTime || (lastSessionEndTime > 0 ? lastSessionEndTime <= appliedAtTime : lastSessionStartTime <= appliedAtTime));
 
   // Si se aplicó la recomendación para la sesión actual, reflejar inmediatamente el estado verde
   if (isCurrentSessionApplied && lastApplied) {

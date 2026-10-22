@@ -39,6 +39,19 @@ const CalendarView = ({ setDetailedLog, workouts, className = '' }) => {
             const localDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             if (!acc[localDateStr]) { acc[localDateStr] = []; }
             acc[localDateStr].push(log);
+
+            // Si el entrenamiento terminó después de medianoche, también incluirlo en el día de finalización
+            if (log.duration_seconds && log.duration_seconds > 0) {
+                const endDate = new Date(date.getTime() + log.duration_seconds * 1000);
+                const endLocalDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+                if (endLocalDateStr !== localDateStr) {
+                    if (!acc[endLocalDateStr]) { acc[endLocalDateStr] = []; }
+                    if (!acc[endLocalDateStr].some(l => l.id === log.id)) {
+                        acc[endLocalDateStr].push(log);
+                    }
+                }
+            }
+
             return acc;
         }, {});
     }, [workoutLog]);

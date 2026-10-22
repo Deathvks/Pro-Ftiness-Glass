@@ -185,7 +185,7 @@ const GlobalPrivacyModal = ({ onClose }) => {
 const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
   const { addToast } = useToast();
   const [visibility, setVisibility] = useState(routine.visibility || 'private');
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [_isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (routine.visibility) {
@@ -569,12 +569,20 @@ const Routines = ({ setView, mainContentRef }) => {
 
   const handleShareClick = (routine) => {
     if (!workoutLog) return;
-    const today = new Date().toDateString();
+    const now = Date.now();
+    const todayStr = new Date().toDateString();
 
     const todaysLog = workoutLog
       .filter(log => log.routine_id === routine.id)
       .sort((a, b) => new Date(b.workout_date) - new Date(a.workout_date))
-      .find(log => new Date(log.workout_date).toDateString() === today);
+      .find(log => {
+        if (!log?.workout_date) return false;
+        const start = new Date(log.workout_date);
+        const end = new Date(start.getTime() + (log.duration_seconds || 0) * 1000);
+        return start.toDateString() === todayStr ||
+               end.toDateString() === todayStr ||
+               (now - end.getTime() < 18 * 60 * 60 * 1000 && now >= start.getTime());
+      });
 
     if (todaysLog) {
       const rawDetails = todaysLog.details || todaysLog.WorkoutLogDetails || [];
@@ -583,7 +591,7 @@ const Routines = ({ setView, mainContentRef }) => {
 
         if (typeof rawSets === 'string') {
           try { rawSets = JSON.parse(rawSets); }
-          catch (e) { rawSets = []; }
+          catch { rawSets = []; }
         }
 
         if (!Array.isArray(rawSets)) rawSets = [];
@@ -979,7 +987,7 @@ const Routines = ({ setView, mainContentRef }) => {
               filteredSorted.map((routine) => {
                 if (!routine) return null;
 
-                const isCompleted = completedRoutineIdsToday.includes(routine.id);
+                const isCompleted = (completedRoutineIdsToday || []).some(id => String(id) === String(routine.id));
                 const isActive = activeWorkout && activeWorkout.routineId === routine.id;
                 const isBlockedByOtherWorkout = isAnyWorkoutActive && !isActive;
 

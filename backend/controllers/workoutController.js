@@ -32,9 +32,20 @@ export const getWorkoutHistory = async (req, res, next) => {
       const endOfDay = new Date(year, month - 1, day);
       endOfDay.setHours(23, 59, 59, 999);
 
-      whereCondition.workout_date = {
-        [Op.between]: [startOfDay, endOfDay]
-      };
+      const lookbackStart = new Date(startOfDay.getTime() - (8 * 60 * 60 * 1000));
+      whereCondition[Op.or] = [
+        {
+          workout_date: {
+            [Op.between]: [startOfDay, endOfDay]
+          }
+        },
+        {
+          workout_date: {
+            [Op.between]: [lookbackStart, startOfDay]
+          },
+          [Op.and]: sequelize.literal("DATE_ADD(workout_date, INTERVAL duration_seconds SECOND) >= " + sequelize.escape(startOfDay))
+        }
+      ];
     } else if (startDate && endDate) {
       whereCondition.workout_date = {
         [Op.between]: [new Date(startDate), new Date(endDate)]

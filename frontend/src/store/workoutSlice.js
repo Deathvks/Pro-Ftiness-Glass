@@ -7,7 +7,7 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 // Registramos el plugin nativo aquí
 const NativeTimer = Capacitor.isNativePlatform() ? registerPlugin('NativeTimer') : null;
 
-const getAccentColor = () => {
+const _getAccentColor = () => {
   try {
     const accent = localStorage.getItem('accent') || 'green';
     const colors = {
@@ -18,7 +18,7 @@ const getAccentColor = () => {
       sky: '#0ea5e9', slate: '#64748b', zinc: '#71717a', stone: '#78716c', neutral: '#737373'
     };
     return colors[accent] || '#22c55e';
-  } catch (e) {
+  } catch {
     return '#22c55e';
   }
 };
@@ -134,6 +134,21 @@ const clearRestTimerInStorage = () => {
   localStorage.removeItem('restTimerRemaining');
 };
 
+const getCompletedRoutinesFromStorage = () => {
+  try {
+    const raw = localStorage.getItem('pro_fitness_completed_routines_today');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    const todayStr = formatDateForQuery(new Date());
+    if (parsed && parsed.date === todayStr && Array.isArray(parsed.ids)) {
+      return parsed.ids;
+    }
+    return [];
+  } catch {
+    return [];
+  }
+};
+
 // --- SLICE DE ZUSTAND ---
 const initialState = {
   activeWorkout: null,
@@ -147,7 +162,7 @@ const initialState = {
   restTimerMode: 'modal',
   isRestTimerPaused: false,
   restTimerRemaining: null,
-  completedRoutineIdsToday: [],
+  completedRoutineIdsToday: getCompletedRoutinesFromStorage(),
 };
 
 export const createWorkoutSlice = (set, get) => ({
@@ -163,12 +178,38 @@ export const createWorkoutSlice = (set, get) => ({
         date: todayQuery
       });
 
-      if (Array.isArray(workouts)) {
-        const completedIds = workouts
-          .map(w => w.routine_id || w.routineId)
-          .filter(id => id != null);
+      const apiCompletedIds = Array.isArray(workouts)
+        ? workouts.map(w => w.routine_id || w.routineId).filter(id => id != null)
+        : [];
 
-        set({ completedRoutineIdsToday: [...new Set(completedIds)] });
+      // También verificar en workoutLog en memoria por entrenamientos que hayan terminado hoy o en las últimas 18h
+      const stateLogs = get().workoutLog || [];
+      const now = Date.now();
+      const todayStr = new Date().toDateString();
+      const localCompletedIds = stateLogs
+        .filter(log => {
+          if (!log?.routine_id || !log?.workout_date) return false;
+          const start = new Date(log.workout_date);
+          const end = new Date(start.getTime() + (log.duration_seconds || 0) * 1000);
+          return start.toDateString() === todayStr ||
+                 end.toDateString() === todayStr ||
+                 (now - end.getTime() < 18 * 60 * 60 * 1000 && now >= start.getTime());
+        })
+        .map(log => log.routine_id);
+
+      const current = get().completedRoutineIdsToday || [];
+      const stored = getCompletedRoutinesFromStorage();
+
+      const merged = [...new Set([...current, ...stored, ...apiCompletedIds, ...localCompletedIds])];
+      set({ completedRoutineIdsToday: merged });
+
+      try {
+        localStorage.setItem('pro_fitness_completed_routines_today', JSON.stringify({
+          date: todayQuery,
+          ids: merged
+        }));
+      } catch (e) {
+        console.warn('Error saving completed routines to storage', e);
       }
     } catch (error) {
       console.error("Error obteniendo rutinas completadas hoy:", error);
@@ -817,9 +858,20 @@ export const createWorkoutSlice = (set, get) => ({
       const responseData = await workoutService.logWorkout(finalWorkoutData);
 
       if (workoutData.routineId) {
-        const current = get().completedRoutineIdsToday;
-        if (!current.includes(workoutData.routineId)) {
-          set({ completedRoutineIdsToday: [...current, workoutData.routineId] });
+        const current = get().completedRoutineIdsToday || [];
+        const normId = workoutData.routineId;
+        if (!current.some(id => String(id) === String(normId))) {
+          const updated = [...current, normId];
+          set({ completedRoutineIdsToday: updated });
+          try {
+            const todayStr = formatDateForQuery(new Date());
+            localStorage.setItem('pro_fitness_completed_routines_today', JSON.stringify({
+              date: todayStr,
+              ids: updated
+            }));
+          } catch (e) {
+            console.warn('Error saving completed routines to storage', e);
+          }
         }
       }
 
@@ -927,6 +979,11 @@ export const createWorkoutSlice = (set, get) => ({
     clearWorkoutInStorage();
     clearRestTimerInStorage();
     stopNativeTimer();
-    set({ ...initialState, plannedRestTime: null });
+    const currentCompleted = get().completedRoutineIdsToday || [];
+    set({
+      ...initialState,
+      completedRoutineIdsToday: currentCompleted,
+      plannedRestTime: null
+    });
   },
 });
