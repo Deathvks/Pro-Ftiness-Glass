@@ -289,7 +289,18 @@ export default function MainAppLayout({
     handleScroll();
     node.addEventListener('scroll', handleScroll, { passive: true });
 
-
+    // iOS PWA hack: force WebKit to recalculate env(safe-area-inset-top)
+    // Often it evaluates to 0 on initial PWA launch until a resize or scroll occurs.
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) {
+      setTimeout(() => {
+        document.body.style.paddingTop = '1px';
+        window.dispatchEvent(new Event('resize'));
+        setTimeout(() => {
+          document.body.style.paddingTop = '0px';
+        }, 50);
+      }, 100);
+    }
 
     return () => node.removeEventListener('scroll', handleScroll);
   }, [mainContentRef, view]);
@@ -588,7 +599,7 @@ export default function MainAppLayout({
   }, [navItems.length]);
 
   useEffect(() => {
-    if (!hasDraggedRef.current && navRef.current) {
+    if (!isDraggingDrop && navRef.current) {
       const activeIndex = navItems.findIndex(item => item.id === view);
       if (activeIndex !== -1) {
         const buttons = Array.from(navRef.current.querySelectorAll('button'));
@@ -602,19 +613,18 @@ export default function MainAppLayout({
           if (!isInitialRender && Math.abs(dragX - exactCenter) > 20) {
             setIsJumping(true);
             if (jumpTimeoutRef.current) clearTimeout(jumpTimeoutRef.current);
-            jumpTimeoutRef.current = setTimeout(() => setIsJumping(false), 380);
+            jumpTimeoutRef.current = setTimeout(() => setIsJumping(false), 200);
           }
           
           setDragX(exactCenter);
-          dragXRef.current = exactCenter;
-
+          
           if (isInitialRender) {
             setTimeout(() => setIsInitialRender(false), 50);
           }
         }
       }
     }
-  }, [view, navItems, isInitialRender, navWidth]);
+  }, [view, isDraggingDrop, navItems, isInitialRender, navWidth]);
 
   const handleDropDragStart = (e) => {
     // 0 re-renders en el primer toque, el color no se pierde y no hay lag
@@ -694,7 +704,8 @@ export default function MainAppLayout({
     
     // Direct DOM manipulation avoids freezing React
     if (dropRef.current) {
-      dropRef.current.style.transform = `translate3d(calc(${x}px - 50%), 0, 0)`;
+      // Liquid droplet stretch effect while moving
+      dropRef.current.style.transform = `translate3d(calc(${x}px - 50%), -50%, 0) scaleX(1.3) scaleY(0.75)`;
     }
   };
 
@@ -716,24 +727,18 @@ export default function MainAppLayout({
           }
         });
 
-        // Limpiar estilos temporales de hover en botones
-        buttons.forEach(btn => {
-          btn.style.color = '';
-          const iconDiv = btn.querySelector('div');
-          if (iconDiv) {
-            iconDiv.classList.remove('scale-125');
-          }
-        });
-
+        // Forzar centrado exacto vía DOM directo al instante para que nunca quede a medias
         if (buttons[nearestIndex]) {
             const btnRect = buttons[nearestIndex].getBoundingClientRect();
             const exactCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
             if (dropRef.current) {
+                // Elastic jelly bounce when settling into place
                 dropRef.current.style.transition = 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease';
-                dropRef.current.style.transform = `translate3d(calc(${exactCenter}px - 50%), 0, 0)`;
+                dropRef.current.style.transform = `translate3d(calc(${exactCenter}px - 50%), -50%, 0) scaleX(1) scaleY(1)`;
             }
-            setDragX(exactCenter);
-            dragXRef.current = exactCenter;
+            startTransition(() => {
+              setDragX(exactCenter); // sync estado react
+            });
         }
 
         const selectedItem = navItems[nearestIndex];
@@ -741,12 +746,17 @@ export default function MainAppLayout({
           handleNavClick(selectedItem.id);
         }
       }
-      setTimeout(() => {
-        hasDraggedRef.current = false;
-        if (dropRef.current) {
-          dropRef.current.style.transition = '';
+      setTimeout(() => { hasDraggedRef.current = false; }, 100);
+    } else {
+      // Fallback a prueba de balas para clics rápidos
+      const btn = e.target.closest('button');
+      if (btn && navRef.current) {
+        const buttons = Array.from(navRef.current.querySelectorAll('button'));
+        const index = buttons.indexOf(btn);
+        if (index !== -1 && navItems[index] && navItems[index].id !== view) {
+          handleNavClick(navItems[index].id);
         }
-      }, 450);
+      }
     }
   };
 
@@ -1211,26 +1221,19 @@ export default function MainAppLayout({
             
             <div
               ref={dropRef}
-              className="absolute top-1/2 -mt-6 w-[60px] h-12 pointer-events-none z-[1] flex items-center justify-center"
+              className="absolute top-1/2 w-[60px] h-12 rounded-[24px] pointer-events-none z-[1] flex items-start justify-center"
               style={{
                 left: 0,
-                transform: `translate3d(calc(${dragX}px - 50%), 0, 0)`,
+                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) ${isJumping ? 'scaleX(1.3) scaleY(0.75)' : 'scaleX(1) scaleY(1)'}`,
                 opacity: isDropVisible ? 1 : 0,
-                transition: isInitialRender ? 'none' : 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
+                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)',
+                backdropFilter: 'blur(8px) brightness(1.1)',
+                WebkitBackdropFilter: 'blur(8px) brightness(1.1)',
+                boxShadow: 'inset 0px 1px 1px rgba(255,255,255,0.25), inset 0px -1px 2px rgba(0,0,0,0.15), 0px 4px 10px rgba(0,0,0,0.15)',
                 willChange: 'transform'
               }}
             >
-              <div
-                className="w-full h-full rounded-[24px]"
-                style={{
-                  transform: isJumping ? 'scaleX(1.18) scaleY(0.86)' : 'scale(1)',
-                  transition: 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
-                  background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)',
-                  backdropFilter: 'blur(8px) brightness(1.1)',
-                  WebkitBackdropFilter: 'blur(8px) brightness(1.1)',
-                  boxShadow: 'inset 0px 1px 1px rgba(255,255,255,0.25), inset 0px -1px 2px rgba(0,0,0,0.15), 0px 4px 10px rgba(0,0,0,0.15)',
-                }}
-              />
             </div>
 
             {navItems.map((item, index) => {
