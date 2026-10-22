@@ -24,12 +24,7 @@ let lastDateFetchInfo = { date: null, timestamp: 0 };
 const readInitialCache = () => {
   try {
     if (typeof window === 'undefined' || !localStorage.getItem('pro_fitness_token')) return null;
-    const cachedVer = localStorage.getItem(CACHE_VERSION_KEY);
-    if (cachedVer !== APP_VERSION) {
-      localStorage.removeItem(INITIAL_CACHE_KEY);
-      localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
-      return null;
-    }
+    localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
     const raw = localStorage.getItem(INITIAL_CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);

@@ -445,7 +445,7 @@ export default function App() {
 
   // Precargar los módulos de la barra de navegación y del menú lateral en segundo plano tras pintar la vista inicial
   useEffect(() => {
-    if (!isAuthenticated || isInitialLoad) return;
+    if (!isAuthenticated) return;
 
     const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub'];
     const secondaryNavViews = ['workout', 'progress', 'profile', 'settings', 'notifications', 'challenges', 'appearance'];
@@ -468,13 +468,13 @@ export default function App() {
       });
     };
 
-    schedulePreload(primaryNavViews, 1200, 200);
-    schedulePreload(secondaryNavViews, 2500, 250);
+    schedulePreload(primaryNavViews, 100, 80);
+    schedulePreload(secondaryNavViews, 1200, 150);
 
     return () => {
       timeouts.forEach(clearTimeout);
     };
-  }, [isAuthenticated, isInitialLoad, view]);
+  }, [isAuthenticated, view]);
 
   const currentViewComponent = useMemo(() => {
     switch (view) {

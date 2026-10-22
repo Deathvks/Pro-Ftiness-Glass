@@ -12,24 +12,18 @@ import App from './App.jsx';
 import ToastProvider from './contexts/ToastProvider.jsx';
 import ErrorBoundary from './components/ErrorBoundary';
 
-// --- RESCATE AUTOMÁTICO EN ACTUALIZACIONES (Android & Web) ---
-// Si la versión instalada difiere de la almacenada localmente, sanear cachés transitorias incompatibles
+// --- SANEAMIENTO HIGIÉNICO EN ACTUALIZACIONES ---
+// Resetea contadores de fallo y flags transitorias sin purgar la caché de datos de usuario ni los assets de Workbox
 const APP_VERSION_STORAGE_KEY = 'pfg_app_version';
 try {
   const previousVersion = localStorage.getItem(APP_VERSION_STORAGE_KEY);
   if (previousVersion !== APP_VERSION) {
     console.log(`[AppUpdate] Migrando de ${previousVersion || 'instalación previa'} a v${APP_VERSION}`);
-    localStorage.removeItem('pfg_cached_initial_state_v1');
-    localStorage.removeItem('pfg_cache_version');
-    localStorage.removeItem('profitness_insights_expanded');
     localStorage.removeItem('pfg_auto_reloaded_version');
     localStorage.removeItem('pfg_crash_loop_count');
-    localStorage.removeItem('lastView');
-    sessionStorage.clear();
+    localStorage.removeItem('profitness_insights_expanded');
 
-    if (typeof window !== 'undefined' && 'caches' in window) {
-      caches.keys().then((names) => Promise.all(names.map((n) => caches.delete(n)))).catch(() => {});
-    }
+    // Desregistrar SW huérfanos solo en Android nativo (Capacitor)
     if (Capacitor.isNativePlatform() && 'serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then((regs) => {
         for (const reg of regs) reg.unregister();

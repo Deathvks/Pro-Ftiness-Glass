@@ -120,6 +120,7 @@ export const getAllRoutines = async (req, res, next) => {
       ...assignedRoutines.map(r => formatRoutine(r, true))
     ];
 
+    res.set('Cache-Control', 'private, max-age=15, stale-while-revalidate=45');
     res.json(routinesData);
   } catch (error) {
     next(error);

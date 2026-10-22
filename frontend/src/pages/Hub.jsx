@@ -22,13 +22,16 @@ import useAppStore from '../store/useAppStore';
 import HubTourGuide from '../components/HubTourGuide';
 import apiClient from '../services/apiClient';
 import TutorialsCenter from '../components/TutorialsCenter';
+import { preloadViewChunk } from '../App';
 import { TUTORIAL_COMPLETION_ACTIONS } from '../data/tutorials';
 const CoachingPromoModal = lazy(() => import('../components/CoachingPromoModal'));
 
-const HubButton = ({ id, icon: Icon, title, description, onClick, isComingSoon, badge, highlight = false }) => (
+const HubButton = ({ id, icon: Icon, title, description, onClick, onPreload, isComingSoon, badge, highlight = false }) => (
   <button 
     id={id}
     onClick={onClick}
+    onMouseEnter={onPreload}
+    onTouchStart={onPreload}
     disabled={isComingSoon}
     className={`w-full flex items-center justify-between p-4 glass rounded-2xl transition-all duration-300 ${highlight ? 'border-accent ring-2 ring-accent/60 shadow-lg shadow-accent/20' : ''} ${isComingSoon ? 'opacity-60 cursor-not-allowed' : 'active:scale-95 hover:bg-glass-border/30'}`}
   >
@@ -169,6 +172,7 @@ export default function Hub({ setView }) {
           
           <HubButton 
             id="hub-progress"
+            onPreload={() => preloadViewChunk('progress')}
             icon={ChartBarIcon}
             title="Tu Progreso"
             description="Estadísticas, RM y volumen"
@@ -178,6 +182,7 @@ export default function Hub({ setView }) {
           {!['trainer', 'admin'].includes(userProfile?.role) && (
               <HubButton 
                 id="hub-asesoria"
+                onPreload={() => preloadViewChunk('asesoria')}
                 icon={ChatBubbleLeftRightIcon}
                 title="Asesoría"
                 description="Habla con tu entrenador"
@@ -194,6 +199,7 @@ export default function Hub({ setView }) {
 
           <HubButton 
             id="hub-challenges"
+            onPreload={() => preloadViewChunk('challenges')}
             icon={TrophyIcon}
             title="Retos y Misiones"
             description="Gana XP y sube de nivel"
@@ -210,6 +216,7 @@ export default function Hub({ setView }) {
 
           <HubButton 
             id="hub-appearance"
+            onPreload={() => preloadViewChunk('appearance')}
             icon={PaintBrushIcon}
             title="Apariencia"
             description="Temas, acentos y colores"
@@ -218,6 +225,7 @@ export default function Hub({ setView }) {
 
           <HubButton 
             icon={ShareIcon}
+            onPreload={() => preloadViewChunk('socialLinks')}
             title="Nuestras Redes"
             description="Instagram, TikTok y YouTube"
             onClick={() => setView('socialLinks')}
@@ -225,6 +233,7 @@ export default function Hub({ setView }) {
 
           <HubButton 
             id="hub-news"
+            onPreload={() => preloadViewChunk('noticias')}
             icon={NewspaperIcon}
             title="Noticias y Artículos"
             description="Ciencia, nutrición y novedades"
@@ -232,6 +241,7 @@ export default function Hub({ setView }) {
           />
           <HubButton 
             icon={InformationCircleIcon}
+            onPreload={() => preloadViewChunk('support')}
             title="Soporte"
             description="Ayuda, descargas y app info"
             onClick={() => setView('support')}
@@ -239,6 +249,7 @@ export default function Hub({ setView }) {
 
           <HubButton 
             id="hub-settings"
+            onPreload={() => preloadViewChunk('settings')}
             icon={Cog8ToothIcon}
             title="Ajustes"
             description="Cuenta, privacidad y notificaciones"
@@ -248,6 +259,7 @@ export default function Hub({ setView }) {
           {(userProfile?.role === 'admin' || userProfile?.role === 'trainer') && (
             <HubButton 
               id="hub-trainer-panel"
+              onPreload={() => preloadViewChunk('trainerPanel')}
               icon={UserGroupIcon}
               title="Panel de Entrenador"
               description="Gestión de clientes y cuestionarios"

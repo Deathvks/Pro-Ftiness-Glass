@@ -49,9 +49,31 @@ const formatDuration = (seconds) => {
     return `${m} min`;
 };
 
+let memoryFeedCache = null;
+
 export default function Feed({ setView, visibleStories = [], myStories = [] }) {
-    const [feed, setFeed] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [feed, setFeed] = useState(() => {
+        if (memoryFeedCache && memoryFeedCache.length > 0) return memoryFeedCache;
+        try {
+            const raw = sessionStorage.getItem("pfg_social_feed_cache");
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    memoryFeedCache = parsed;
+                    return parsed;
+                }
+            }
+        } catch {}
+        return [];
+    });
+    const [isLoading, setIsLoading] = useState(() => {
+        if (memoryFeedCache && memoryFeedCache.length > 0) return false;
+        try {
+            return !sessionStorage.getItem("pfg_social_feed_cache");
+        } catch {
+            return true;
+        }
+    });
     const [hasOlder, setHasOlder] = useState(false);
     const [isLoadingOlder, setIsLoadingOlder] = useState(false);
     const [isShowingOlder, setIsShowingOlder] = useState(false);
@@ -70,7 +92,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
         try {
             if (includeOlder) {
                 setIsLoadingOlder(true);
-            } else {
+            } else if (!memoryFeedCache || memoryFeedCache.length === 0) {
                 setIsLoading(true);
             }
 
@@ -82,6 +104,12 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
             setHasOlder(olderAvailable);
             setIsShowingOlder(includeOlder);
             isShowingOlderRef.current = includeOlder;
+            if (!includeOlder && posts.length > 0) {
+                memoryFeedCache = posts;
+                try {
+                    sessionStorage.setItem("pfg_social_feed_cache", JSON.stringify(posts.slice(0, 20)));
+                } catch {}
+            }
         } catch (error) {
             console.error(error);
             showToast('Error al cargar el muro', 'error');

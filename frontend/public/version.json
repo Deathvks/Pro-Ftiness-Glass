@@ -1,4 +1,4 @@
 {
-  "version": "7.8.48",
-  "releaseNotes": "Carga instantánea 0ms en noticias con prefetch SWR y optimización nativa de compartir."
+  "version": "7.8.49",
+  "releaseNotes": "Navegación instantánea a 0ms tras actualización: precarga inmediata, SWR en comunidad y división de código en rutinas."
 }

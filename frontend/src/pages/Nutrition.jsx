@@ -719,7 +719,7 @@ const Nutrition = ({ setView, navParams }) => {
 
             <DateNavigator selectedDate={selectedDate} onDateChange={fetchDataForDate} />
 
-            {isLoading && !isSubmitting ? (
+            {isLoading && !isSubmitting && (!nutritionLog || nutritionLog.length === 0) ? (
                 <div className="flex justify-center items-center py-20"><Spinner size={40} /></div>
             ) : (
                 <>

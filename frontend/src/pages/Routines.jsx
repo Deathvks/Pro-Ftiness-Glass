@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useMemo, useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   Plus,
@@ -30,7 +30,7 @@ import {
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import ModalPortal from '../components/ModalPortal';
-import RoutineEditor from './RoutineEditor';
+const RoutineEditor = lazy(() => import('./RoutineEditor'));
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
@@ -38,7 +38,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import TemplateRoutines from './TemplateRoutines';
 import PromoBanner from '../components/PromoBanner';
-import ManualExercisesManager from '../components/ManualExercisesManager';
+const ManualExercisesManager = lazy(() => import('../components/ManualExercisesManager'));
 import WeeklyMuscleVolumeCard, {
   RoutineVolumeFilterModal,
   useWeeklyVolumeExclusions,
@@ -46,8 +46,8 @@ import WeeklyMuscleVolumeCard, {
   getExerciseVolumeKey,
   isExerciseIncludedInVolume
 } from '../components/Routines/WeeklyMuscleVolumeCard';
-import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
-import RoutineAIGeneratorModal from '../components/RoutineAIGeneratorModal';
+const WorkoutSummaryModal = lazy(() => import('../components/WorkoutSummaryModal'));
+const RoutineAIGeneratorModal = lazy(() => import('../components/RoutineAIGeneratorModal'));
 import RoutineTourGuide from '../components/RoutineTourGuide';
 import { calculateRoutineEstimatedTime } from '../utils/helpers';
 import api from '../services/apiClient';
@@ -770,13 +770,15 @@ const Routines = ({ setView, mainContentRef }) => {
 
   if (editingRoutine) {
     return (
-      <RoutineEditor
-        key={editingRoutine.id || 'new'}
-        routine={editingRoutine}
-        onSave={handleSave}
-        onCancel={() => setEditingRoutine(null)}
-        initialFolder={selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : null}
-      />
+      <Suspense fallback={<div className="flex justify-center p-8"><Spinner /></div>}>
+        <RoutineEditor
+          key={editingRoutine.id || 'new'}
+          routine={editingRoutine}
+          onSave={handleSave}
+          onCancel={() => setEditingRoutine(null)}
+          initialFolder={selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : null}
+        />
+      </Suspense>
     );
   }
 
@@ -1290,7 +1292,11 @@ const Routines = ({ setView, mainContentRef }) => {
 
       {activeTab === 'explore' && <TemplateRoutines setView={setView} />}
 
-      {activeTab === 'manualExercises' && <ManualExercisesManager />}
+      {activeTab === 'manualExercises' && (
+        <Suspense fallback={<div className="flex justify-center p-8"><Spinner /></div>}>
+          <ManualExercisesManager />
+        </Suspense>
+      )}
       {volumeFilterRoutine && (
         <RoutineVolumeFilterModal
           routine={volumeFilterRoutine}
@@ -1335,18 +1341,24 @@ const Routines = ({ setView, mainContentRef }) => {
       )}
 
       {shareData && (
-        <WorkoutSummaryModal
-          workoutData={shareData}
-          onClose={() => setShareData(null)}
-          isShareMode={true}
-        />
+        <Suspense fallback={null}>
+          <WorkoutSummaryModal
+            workoutData={shareData}
+            onClose={() => setShareData(null)}
+            isShareMode={true}
+          />
+        </Suspense>
       )}
 
-      <RoutineAIGeneratorModal
-        isOpen={showAIGenerator}
-        onClose={() => setShowAIGenerator(false)}
-        onGenerate={(generatedRoutine) => setEditingRoutine(generatedRoutine)}
-      />
+      {showAIGenerator && (
+        <Suspense fallback={null}>
+          <RoutineAIGeneratorModal
+            isOpen={showAIGenerator}
+            onClose={() => setShowAIGenerator(false)}
+            onGenerate={(generatedRoutine) => setEditingRoutine(generatedRoutine)}
+          />
+        </Suspense>
+      )}
 
       {isLoading && (
         <div className="fixed inset-0 z-40 grid place-items-center bg-black/60 backdrop-blur-sm">
