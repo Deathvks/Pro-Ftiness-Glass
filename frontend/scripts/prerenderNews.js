@@ -19,6 +19,10 @@ function escapeHtml(str = '') {
     .replace(/'/g, '&#039;');
 }
 
+function escapeUrlAttr(str = '') {
+  return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 async function fetchArticles() {
   try {
     const controller = new AbortController();
@@ -59,8 +63,8 @@ async function fetchArticles() {
 function injectMeta(html, { title, description, image, url, type = 'article', category = 'Fitness' }) {
   const safeTitle = escapeHtml(title);
   const safeDesc = escapeHtml(description);
-  const safeImg = escapeHtml(image);
-  const safeUrl = escapeHtml(url);
+  const safeImg = escapeUrlAttr(image);
+  const safeUrl = escapeUrlAttr(url);
 
   let output = html;
 

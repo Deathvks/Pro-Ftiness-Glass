@@ -132,11 +132,25 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
   const handleShareNative = async () => {
     if (navigator.share && article) {
       try {
-        await navigator.share({
-          title: article.title,
-          text: article.summary,
-          url: currentUrl
-        });
+        const isIOS = typeof navigator !== 'undefined' && (
+          /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+        );
+
+        // En iOS, incluir "text" junto con "url" fuerza a WebKit a operar en modo texto plano,
+        // lo que descarta la tarjeta rica con thumbnail/imagen y muestra la brújula genérica de Safari.
+        // Al compartir únicamente la URL en iOS, LinkPresentation raspa la página y carga la tarjeta con la imagen.
+        const shareData = isIOS
+          ? {
+              url: currentUrl
+            }
+          : {
+              title: article.title,
+              text: article.summary,
+              url: currentUrl
+            };
+
+        await navigator.share(shareData);
       } catch (err) {
         if (err.name !== 'AbortError') {
           handleCopyLink();
