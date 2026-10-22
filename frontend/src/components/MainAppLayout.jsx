@@ -289,18 +289,7 @@ export default function MainAppLayout({
     handleScroll();
     node.addEventListener('scroll', handleScroll, { passive: true });
 
-    // iOS PWA hack: force WebKit to recalculate env(safe-area-inset-top)
-    // Often it evaluates to 0 on initial PWA launch until a resize or scroll occurs.
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    if (isStandalone) {
-      setTimeout(() => {
-        document.body.style.paddingTop = '1px';
-        window.dispatchEvent(new Event('resize'));
-        setTimeout(() => {
-          document.body.style.paddingTop = '0px';
-        }, 50);
-      }, 100);
-    }
+
 
     return () => node.removeEventListener('scroll', handleScroll);
   }, [mainContentRef, view]);
@@ -348,6 +337,35 @@ export default function MainAppLayout({
     }
 
     wasSwipeNavRef.current = Boolean(options.fromSwipe);
+
+    // Mover la gota de forma fluida e inmediata en el mismo frame de la pulsación
+    if (navRef.current) {
+      const targetIndex = navItems.findIndex(i => i.id === itemId);
+      if (targetIndex !== -1) {
+        const buttons = Array.from(navRef.current.querySelectorAll('button'));
+        const targetBtn = buttons[targetIndex];
+        if (targetBtn) {
+          const navRect = navRef.current.getBoundingClientRect();
+          const btnRect = targetBtn.getBoundingClientRect();
+          const exactCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
+
+          if (dropRef.current) {
+            dropRef.current.style.transition = '';
+            dropRef.current.style.transform = '';
+          }
+
+          const currentX = dragXRef.current || dragX;
+          if (!isInitialRender && Math.abs(currentX - exactCenter) > 20) {
+            setIsJumping(true);
+            if (jumpTimeoutRef.current) clearTimeout(jumpTimeoutRef.current);
+            jumpTimeoutRef.current = setTimeout(() => setIsJumping(false), 420);
+          }
+
+          setDragX(exactCenter);
+          dragXRef.current = exactCenter;
+        }
+      }
+    }
 
     if (view === itemId) {
       if (mainContentRef && mainContentRef.current) {
@@ -610,14 +628,20 @@ export default function MainAppLayout({
           
           const exactCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
           
-          if (!isInitialRender && Math.abs(dragX - exactCenter) > 20) {
+          const currentX = dragXRef.current || dragX;
+          if (dropRef.current) {
+            dropRef.current.style.transition = '';
+            dropRef.current.style.transform = '';
+          }
+          if (!isInitialRender && Math.abs(currentX - exactCenter) > 20) {
             setIsJumping(true);
             if (jumpTimeoutRef.current) clearTimeout(jumpTimeoutRef.current);
-            jumpTimeoutRef.current = setTimeout(() => setIsJumping(false), 200);
+            jumpTimeoutRef.current = setTimeout(() => setIsJumping(false), 420);
           }
           
           setDragX(exactCenter);
-          
+          dragXRef.current = exactCenter;
+
           if (isInitialRender) {
             setTimeout(() => setIsInitialRender(false), 50);
           }
@@ -1224,9 +1248,9 @@ export default function MainAppLayout({
               className="absolute top-1/2 w-[60px] h-12 rounded-[24px] pointer-events-none z-[1] flex items-start justify-center"
               style={{
                 left: 0,
-                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) ${isJumping ? 'scaleX(1.3) scaleY(0.75)' : 'scaleX(1) scaleY(1)'}`,
+                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) ${isJumping ? 'scaleX(1.15) scaleY(0.88)' : 'scaleX(1) scaleY(1)'}`,
                 opacity: isDropVisible ? 1 : 0,
-                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
+                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)',
                 backdropFilter: 'blur(8px) brightness(1.1)',
                 WebkitBackdropFilter: 'blur(8px) brightness(1.1)',
