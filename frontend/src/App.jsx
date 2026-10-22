@@ -837,7 +837,7 @@ export default function App() {
                   </Suspense>
                 )
             ) : (
-                <Navigate to="/dashboard" replace />
+                AuthenticatedAppContent
             )
         } />
 

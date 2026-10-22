@@ -35,10 +35,12 @@ export const useAppNavigation = (navigateRouter) => {
 
     // Rutas Deep Linking
     if (path.match(/^\/profile\/\d+$/)) return 'publicProfile';
+    if (path === '/dashboard') return 'dashboard';
     if (path === '/social') return 'social';
     if (path === '/nutrition') return 'nutrition';
     if (path === '/routines') return 'routines';
     if (path === '/progress') return 'progress';
+    if (path === '/hub') return 'hub';
     if (path === '/settings') return 'settings';
     if (path === '/notifications') return 'notifications';
     if (path === '/active-cardio') return 'active-cardio';
@@ -110,6 +112,15 @@ export const useAppNavigation = (navigateRouter) => {
     else if (path === '/social' && view !== 'social') {
       setView('social');
     }
+    else if (path === '/nutrition' && view !== 'nutrition') {
+      setView('nutrition');
+    }
+    else if (path === '/routines' && view !== 'routines') {
+      setView('routines');
+    }
+    else if (path === '/hub' && view !== 'hub') {
+      setView('hub');
+    }
     else if (path === '/settings' && view !== 'settings') {
       setView('settings');
       const searchHighlight = new URLSearchParams(window.location.search).get('highlight');
@@ -125,6 +136,9 @@ export const useAppNavigation = (navigateRouter) => {
     }
     else if (path === '/noticias' && view !== 'noticias') {
       setView('noticias');
+    }
+    else if ((path === '/dashboard' || path === '/') && view !== 'dashboard') {
+      setView('dashboard');
     }
   }, [view, navParams.userId]);
 
@@ -143,7 +157,7 @@ export const useAppNavigation = (navigateRouter) => {
 
       let newPath = '/';
       switch (viewName) {
-        case 'dashboard': newPath = '/'; break;
+        case 'dashboard': newPath = '/dashboard'; break;
         case 'publicProfile': {
           const targetId = options.userId || navParams.userId;
           if (targetId) newPath = `/profile/${targetId}`;
