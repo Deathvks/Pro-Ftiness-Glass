@@ -908,7 +908,8 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
   useModalLock(Boolean(selectedMuscleKey));
 
   const volumeRows = useMemo(() => {
-    const directTotals = Object.fromEntries(TRACKED_MUSCLES.map(muscle => [muscle.key, 0]));
+    try {
+      const directTotals = Object.fromEntries(TRACKED_MUSCLES.map(muscle => [muscle.key, 0]));
     const indirectTotals = Object.fromEntries(TRACKED_MUSCLES.map(muscle => [muscle.key, 0]));
     const contributionsByMuscle = Object.fromEntries(TRACKED_MUSCLES.map(muscle => [muscle.key, []]));
     const detectedSubMuscles = Object.fromEntries(TRACKED_MUSCLES.map(muscle => [muscle.key, new Set()]));
@@ -1129,6 +1130,15 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
       totalRoutinesWithExercises,
       excludedExercisesCount
     };
+    } catch (err) {
+      console.warn('[WeeklyMuscleVolumeCard] Error calculando volumen semanal:', err);
+      return {
+        rows: [],
+        routinesCounted: 0,
+        totalRoutinesWithExercises: 0,
+        excludedExercisesCount: 0
+      };
+    }
   }, [routines, goalRange, exclusions]);
 
   const greenCount = volumeRows.rows.filter(row => row.status === 'green').length;
