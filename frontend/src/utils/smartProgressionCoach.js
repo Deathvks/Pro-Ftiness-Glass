@@ -1,6 +1,6 @@
 /* frontend/src/utils/smartProgressionCoach.js */
 import { calculate1RM } from './helpers';
-import { getAppliedCoachStrategy, evaluateCoachFollowUp, evaluateExerciseFollowUpAndRecovery } from './coachAppliedHistory';
+import { getAppliedCoachStrategy, evaluateExerciseFollowUpAndRecovery, formatTargetText } from './coachAppliedHistory';
 
 /**
  * Normaliza y clasifica el objetivo del usuario del perfil / onboarding.
@@ -942,7 +942,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   // Feedback interactivo directo del usuario:
   const isCannotReach = difficultyFeedback === 'cannot_reach';
   const isStruggling = difficultyFeedback === 'struggling';
-  const isNormal = difficultyFeedback === 'normal';
+  const _isNormal = difficultyFeedback === 'normal';
 
   // Detección de carga base / histórica o estimación inteligente
   let calculatedInitialWeight = 0;
