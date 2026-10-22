@@ -1,4 +1,4 @@
 {
-  "version": "7.8.51",
-  "releaseNotes": "Arquitectura desacoplada de la gota líquida en el navbar flotante: traslación horizontal independiente y centrado vertical absoluto."
+  "version": "7.8.52",
+  "releaseNotes": "Restaurados los bordes redondeados (estilo squircle) en los favicons (.ico, 16x16, 32x32) con padding y antialiasing óptimos."
 }
