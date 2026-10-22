@@ -338,35 +338,6 @@ export default function MainAppLayout({
 
     wasSwipeNavRef.current = Boolean(options.fromSwipe);
 
-    // Mover la gota de forma fluida e inmediata en el mismo frame de la pulsación
-    if (navRef.current) {
-      const targetIndex = navItems.findIndex(i => i.id === itemId);
-      if (targetIndex !== -1) {
-        const buttons = Array.from(navRef.current.querySelectorAll('button'));
-        const targetBtn = buttons[targetIndex];
-        if (targetBtn) {
-          const navRect = navRef.current.getBoundingClientRect();
-          const btnRect = targetBtn.getBoundingClientRect();
-          const exactCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
-
-          if (dropRef.current) {
-            dropRef.current.style.transition = '';
-            dropRef.current.style.transform = '';
-          }
-
-          const currentX = dragXRef.current || dragX;
-          if (!isInitialRender && Math.abs(currentX - exactCenter) > 20) {
-            setIsJumping(true);
-            if (jumpTimeoutRef.current) clearTimeout(jumpTimeoutRef.current);
-            jumpTimeoutRef.current = setTimeout(() => setIsJumping(false), 420);
-          }
-
-          setDragX(exactCenter);
-          dragXRef.current = exactCenter;
-        }
-      }
-    }
-
     if (view === itemId) {
       if (mainContentRef && mainContentRef.current) {
         mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -617,7 +588,7 @@ export default function MainAppLayout({
   }, [navItems.length]);
 
   useEffect(() => {
-    if (!isDraggingDrop && navRef.current) {
+    if (!hasDraggedRef.current && navRef.current) {
       const activeIndex = navItems.findIndex(item => item.id === view);
       if (activeIndex !== -1) {
         const buttons = Array.from(navRef.current.querySelectorAll('button'));
@@ -628,15 +599,10 @@ export default function MainAppLayout({
           
           const exactCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
           
-          const currentX = dragXRef.current || dragX;
-          if (dropRef.current) {
-            dropRef.current.style.transition = '';
-            dropRef.current.style.transform = '';
-          }
-          if (!isInitialRender && Math.abs(currentX - exactCenter) > 20) {
+          if (!isInitialRender && Math.abs(dragX - exactCenter) > 20) {
             setIsJumping(true);
             if (jumpTimeoutRef.current) clearTimeout(jumpTimeoutRef.current);
-            jumpTimeoutRef.current = setTimeout(() => setIsJumping(false), 420);
+            jumpTimeoutRef.current = setTimeout(() => setIsJumping(false), 380);
           }
           
           setDragX(exactCenter);
@@ -648,7 +614,7 @@ export default function MainAppLayout({
         }
       }
     }
-  }, [view, isDraggingDrop, navItems, isInitialRender, navWidth]);
+  }, [view, navItems, isInitialRender, navWidth]);
 
   const handleDropDragStart = (e) => {
     // 0 re-renders en el primer toque, el color no se pierde y no hay lag
@@ -728,8 +694,7 @@ export default function MainAppLayout({
     
     // Direct DOM manipulation avoids freezing React
     if (dropRef.current) {
-      // Liquid droplet stretch effect while moving
-      dropRef.current.style.transform = `translate3d(calc(${x}px - 50%), -50%, 0) scaleX(1.3) scaleY(0.75)`;
+      dropRef.current.style.transform = `translate3d(calc(${x}px - 50%), 0, 0)`;
     }
   };
 
@@ -751,18 +716,24 @@ export default function MainAppLayout({
           }
         });
 
-        // Forzar centrado exacto vía DOM directo al instante para que nunca quede a medias
+        // Limpiar estilos temporales de hover en botones
+        buttons.forEach(btn => {
+          btn.style.color = '';
+          const iconDiv = btn.querySelector('div');
+          if (iconDiv) {
+            iconDiv.classList.remove('scale-125');
+          }
+        });
+
         if (buttons[nearestIndex]) {
             const btnRect = buttons[nearestIndex].getBoundingClientRect();
             const exactCenter = (btnRect.left - navRect.left) + (btnRect.width / 2);
             if (dropRef.current) {
-                // Elastic jelly bounce when settling into place
                 dropRef.current.style.transition = 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease';
-                dropRef.current.style.transform = `translate3d(calc(${exactCenter}px - 50%), -50%, 0) scaleX(1) scaleY(1)`;
+                dropRef.current.style.transform = `translate3d(calc(${exactCenter}px - 50%), 0, 0)`;
             }
-            startTransition(() => {
-              setDragX(exactCenter); // sync estado react
-            });
+            setDragX(exactCenter);
+            dragXRef.current = exactCenter;
         }
 
         const selectedItem = navItems[nearestIndex];
@@ -770,17 +741,12 @@ export default function MainAppLayout({
           handleNavClick(selectedItem.id);
         }
       }
-      setTimeout(() => { hasDraggedRef.current = false; }, 100);
-    } else {
-      // Fallback a prueba de balas para clics rápidos
-      const btn = e.target.closest('button');
-      if (btn && navRef.current) {
-        const buttons = Array.from(navRef.current.querySelectorAll('button'));
-        const index = buttons.indexOf(btn);
-        if (index !== -1 && navItems[index] && navItems[index].id !== view) {
-          handleNavClick(navItems[index].id);
+      setTimeout(() => {
+        hasDraggedRef.current = false;
+        if (dropRef.current) {
+          dropRef.current.style.transition = '';
         }
-      }
+      }, 450);
     }
   };
 
@@ -1245,19 +1211,26 @@ export default function MainAppLayout({
             
             <div
               ref={dropRef}
-              className="absolute top-1/2 w-[60px] h-12 rounded-[24px] pointer-events-none z-[1] flex items-start justify-center"
+              className="absolute top-1/2 -mt-6 w-[60px] h-12 pointer-events-none z-[1] flex items-center justify-center"
               style={{
                 left: 0,
-                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) ${isJumping ? 'scaleX(1.15) scaleY(0.88)' : 'scaleX(1) scaleY(1)'}`,
+                transform: `translate3d(calc(${dragX}px - 50%), 0, 0)`,
                 opacity: isDropVisible ? 1 : 0,
-                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)',
-                backdropFilter: 'blur(8px) brightness(1.1)',
-                WebkitBackdropFilter: 'blur(8px) brightness(1.1)',
-                boxShadow: 'inset 0px 1px 1px rgba(255,255,255,0.25), inset 0px -1px 2px rgba(0,0,0,0.15), 0px 4px 10px rgba(0,0,0,0.15)',
+                transition: isInitialRender ? 'none' : 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
                 willChange: 'transform'
               }}
             >
+              <div
+                className="w-full h-full rounded-[24px]"
+                style={{
+                  transform: isJumping ? 'scaleX(1.18) scaleY(0.86)' : 'scale(1)',
+                  transition: 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)',
+                  backdropFilter: 'blur(8px) brightness(1.1)',
+                  WebkitBackdropFilter: 'blur(8px) brightness(1.1)',
+                  boxShadow: 'inset 0px 1px 1px rgba(255,255,255,0.25), inset 0px -1px 2px rgba(0,0,0,0.15), 0px 4px 10px rgba(0,0,0,0.15)',
+                }}
+              />
             </div>
 
             {navItems.map((item, index) => {

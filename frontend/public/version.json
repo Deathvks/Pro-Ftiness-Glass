@@ -1,4 +1,4 @@
 {
-  "version": "7.8.50",
-  "releaseNotes": "Animación fluida e ininterrumpida de la gota líquida en el navbar flotante en transiciones de largo recorrido (Hub a Dashboard)."
+  "version": "7.8.51",
+  "releaseNotes": "Arquitectura desacoplada de la gota líquida en el navbar flotante: traslación horizontal independiente y centrado vertical absoluto."
 }
