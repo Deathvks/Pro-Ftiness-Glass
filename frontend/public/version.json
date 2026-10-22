@@ -1,4 +1,4 @@
 {
-  "version": "7.8.40",
-  "releaseNotes": "Soporte de entrenamientos nocturnos que cruzan la medianoche y persistencia de rutinas completadas."
+  "version": "7.8.41",
+  "releaseNotes": "Soporte inteligente de dropsets y superseries en el entrenador de progresión."
 }

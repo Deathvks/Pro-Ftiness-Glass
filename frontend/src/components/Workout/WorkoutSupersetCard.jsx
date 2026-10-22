@@ -41,7 +41,7 @@ const WorkoutSupersetCard = ({
         workoutLog: state.workoutLog,
         activeWorkout: state.activeWorkout
     }));
-    const [appliedTick, setAppliedTick] = useState(0);
+    const [_appliedTick, setAppliedTick] = useState(0);
 
     // Escuchar actualización instantánea de la estrategia aplicada por el coach
     React.useEffect(() => {
@@ -262,7 +262,10 @@ const WorkoutSupersetCard = ({
                                         type="button"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onShowSmartCoach(ex);
+                                            onShowSmartCoach({
+                                                ...ex,
+                                                superset_group_id: ex.superset_group_id || group[0]?.superset_group_id || 'superset_active'
+                                            });
                                         }}
                                         className={`p-1.5 rounded-md transition-colors flex items-center justify-center ${
                                             exFollowUp?.type === 'ok_green'

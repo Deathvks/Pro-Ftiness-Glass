@@ -27,7 +27,8 @@ import {
   ChevronDown,
   ChevronUp,
   Layers,
-  RefreshCw
+  RefreshCw,
+  CornerDownRight
 } from 'lucide-react';
 import ModalPortal from '../ModalPortal';
 import useAppStore from '../../store/useAppStore';
@@ -52,10 +53,11 @@ const SmartExerciseCoachModal = ({
   const [showHistory, setShowHistory] = useState(false);
   const [difficultyFeedback, setDifficultyFeedback] = useState('normal'); // 'normal' | 'struggling' | 'cannot_reach'
 
-  const { allExercises, getOrFetchAllExercises } = useAppStore(
+  const { allExercises, getOrFetchAllExercises, activeWorkout } = useAppStore(
     useShallow((state) => ({
       allExercises: state.allExercises || [],
-      getOrFetchAllExercises: state.getOrFetchAllExercises
+      getOrFetchAllExercises: state.getOrFetchAllExercises,
+      activeWorkout: state.activeWorkout
     }))
   );
 
@@ -71,9 +73,10 @@ const SmartExerciseCoachModal = ({
       currentRoutineId,
       currentRoutineName,
       difficultyFeedback,
-      allExercises
+      allExercises,
+      allRoutineExercises: activeWorkout?.exercises || []
     });
-  }, [exercise, userProfile, workoutLog, currentRoutineId, currentRoutineName, difficultyFeedback, allExercises]);
+  }, [exercise, userProfile, workoutLog, currentRoutineId, currentRoutineName, difficultyFeedback, allExercises, activeWorkout?.exercises]);
 
   // Selección de estrategia interactiva
   const [selectedStrategyId, setSelectedStrategyId] = useState(null);
@@ -110,12 +113,12 @@ const SmartExerciseCoachModal = ({
     sessions, 
     strategyOptions,
     motivationalMessage,
-    celebrationData,
+    celebrationData: _celebrationData,
     asesoriaRecommendation,
     followUp,
     currentTopWeight,
     actualPreviousReps,
-    missedTargetInPrevious,
+    missedTargetInPrevious: _missedTargetInPrevious,
     isBodyweight,
     isAlreadyAppliedInSession,
     lastAppliedStrategy
@@ -238,6 +241,20 @@ const SmartExerciseCoachModal = ({
                 ) : (
                   <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${trend.colorClass}`}>
                     <span>{trend.badgeText}</span>
+                  </span>
+                )}
+
+                {plan.isSuperset && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/15 text-cyan-500 dark:text-cyan-400 border border-cyan-500/20">
+                    <Repeat size={12} className="shrink-0" />
+                    <span>Superserie{plan.partnerExerciseName ? ` con ${plan.partnerExerciseName}` : ''}</span>
+                  </span>
+                )}
+
+                {plan.hasDropsetFatigue && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                    <CornerDownRight size={12} className="shrink-0" />
+                    <span>Fatiga / Dropset previo</span>
                   </span>
                 )}
 
@@ -381,6 +398,40 @@ const SmartExerciseCoachModal = ({
                     <span>{followUp.actionHint}</span>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* AVISO DE FATIGA POR DROPSET EN SESIÓN ANTERIOR */}
+            {plan.hasDropsetFatigue && (
+              <div className="p-3.5 sm:p-4 rounded-[22px] bg-amber-500/10 border border-amber-500/25 flex items-start gap-3 shadow-sm">
+                <div className="p-2 rounded-[12px] bg-amber-500/20 text-amber-500 shrink-0 mt-0.5">
+                  <CornerDownRight size={16} strokeWidth={2.5} />
+                </div>
+                <div className="flex-1 min-w-0 space-y-1">
+                  <h4 className="text-xs sm:text-sm font-black text-amber-500 uppercase tracking-wide flex items-center gap-1.5">
+                    <span>Dropset en Sesión Anterior · Fatiga Detectada</span>
+                  </h4>
+                  <p className="text-[11px] sm:text-xs text-text-secondary leading-relaxed">
+                    Utilizaste dropset en tu última sesión. Esto indica que la carga te exigió al límite o se acumuló fatiga antes de completar las series. Te sugerimos consolidar las series efectivas completas con este peso antes de subir kilos.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* AVISO DE SUPERSERIE */}
+            {plan.isSuperset && (
+              <div className="p-3.5 sm:p-4 rounded-[22px] bg-cyan-500/10 border border-cyan-500/25 flex items-start gap-3 shadow-sm">
+                <div className="p-2 rounded-[12px] bg-cyan-500/20 text-cyan-400 shrink-0 mt-0.5">
+                  <Repeat size={16} strokeWidth={2.5} />
+                </div>
+                <div className="flex-1 min-w-0 space-y-1">
+                  <h4 className="text-xs sm:text-sm font-black text-cyan-400 uppercase tracking-wide flex items-center gap-1.5">
+                    <span>Ejercicio en Superserie{plan.partnerExerciseName ? ` con ${plan.partnerExerciseName}` : ''}</span>
+                  </h4>
+                  <p className="text-[11px] sm:text-xs text-text-secondary leading-relaxed">
+                    Al estar emparejado en superserie, realiza la transición directa (0-20 seg) y reserva el descanso completo (90-120 seg) para el final de la ronda de ambos ejercicios.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -713,7 +764,13 @@ const SmartExerciseCoachModal = ({
               <div className="mt-2 flex items-center justify-between px-1 text-[11px] font-semibold text-text-muted">
                 <div className="flex items-center gap-1.5">
                   <Clock size={12} className="text-text-secondary" />
-                  <span>Descanso: <strong className="text-text-primary font-bold">{targets.suggestedRest}</strong> entre series</span>
+                  <span>
+                    {plan.isSuperset ? (
+                      <>Descanso Superserie: <strong className="text-text-primary font-bold">{targets.suggestedRest}</strong></>
+                    ) : (
+                      <>Descanso: <strong className="text-text-primary font-bold">{targets.suggestedRest}</strong> entre series</>
+                    )}
+                  </span>
                 </div>
               </div>
             </div>

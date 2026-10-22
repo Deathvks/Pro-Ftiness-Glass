@@ -603,11 +603,15 @@ export const getExerciseHistorySessions = (exerciseName, workoutLog, currentRout
     if (!detail) return;
 
     const rawSets = detail.WorkoutLogSets || [];
-    const workingSets = rawSets.filter(s => {
-      const isWarmup = s.is_warmup === true || s.is_warmup === 'true' || s.is_warmup === 1;
-      const reps = parseInt(s.reps, 10) || 0;
-      return !isWarmup && reps > 0;
-    });
+    const isWarmupFn = s => s.is_warmup === true || s.is_warmup === 'true' || s.is_warmup === 1;
+    const isDropsetFn = s => s.is_dropset === true || s.is_dropset === 'true' || s.is_dropset === 1;
+
+    // Series principales efectivas (sin calentar y sin dropset)
+    const mainSets = rawSets.filter(s => !isWarmupFn(s) && !isDropsetFn(s) && (parseInt(s.reps, 10) || 0) > 0);
+    // Series marcadas como dropset
+    const dropSets = rawSets.filter(s => isDropsetFn(s) && (parseInt(s.reps, 10) || 0) > 0);
+    // Todas las series de trabajo (efectivas + dropsets)
+    const workingSets = rawSets.filter(s => !isWarmupFn(s) && (parseInt(s.reps, 10) || 0) > 0);
 
     if (workingSets.length === 0 && rawSets.length > 0) {
       workingSets.push(...rawSets.filter(s => (parseInt(s.reps, 10) || 0) > 0));
@@ -615,19 +619,28 @@ export const getExerciseHistorySessions = (exerciseName, workoutLog, currentRout
 
     if (workingSets.length === 0) return;
 
+    // Usar mainSets como base para la sobrecarga progresiva; si no hay, usar workingSets
+    const effectiveSets = mainSets.length > 0 ? mainSets : workingSets;
+
     let topWeight = 0;
     let topReps = 0;
     let best1RM = parseFloat(detail.estimated_1rm) || 0;
     let totalVolume = 0;
 
+    // El volumen total incluye tanto series principales como dropsets
     workingSets.forEach(s => {
+      const weight = parseFloat(s.weight_kg) || 0;
+      const reps = parseInt(s.reps, 10) || 0;
+      totalVolume += weight * reps;
+    });
+
+    // topWeight y mejor 1RM se extraen de las series principales efectivas
+    effectiveSets.forEach(s => {
       const weight = parseFloat(s.weight_kg) || 0;
       const reps = parseInt(s.reps, 10) || 0;
       const rir = parseFloat(s.rir) || 0;
       const effectiveReps = reps + rir;
       const set1RM = calculate1RM(weight, effectiveReps);
-
-      totalVolume += weight * reps;
 
       if (weight > topWeight) {
         topWeight = weight;
@@ -641,7 +654,7 @@ export const getExerciseHistorySessions = (exerciseName, workoutLog, currentRout
       }
     });
 
-    const topWeightSets = workingSets.filter(s => Math.abs((parseFloat(s.weight_kg) || 0) - topWeight) < 0.5);
+    const topWeightSets = effectiveSets.filter(s => Math.abs((parseFloat(s.weight_kg) || 0) - topWeight) < 0.5);
     const topWeightRepsList = topWeightSets.map(s => parseInt(s.reps, 10) || 0).filter(r => r > 0);
     const minRepsAtTopWeight = topWeightRepsList.length > 0 ? Math.min(...topWeightRepsList) : topReps;
     const avgRepsAtTopWeight = topWeightRepsList.length > 0
@@ -675,6 +688,14 @@ export const getExerciseHistorySessions = (exerciseName, workoutLog, currentRout
       best1RM: Math.round(best1RM * 10) / 10,
       totalVolume: Math.round(totalVolume),
       setsCount: workingSets.length,
+      mainSetsCount: mainSets.length,
+      dropSetsCount: dropSets.length,
+      hasDropsets: dropSets.length > 0,
+      dropSets: dropSets.map(s => ({
+        weight: parseFloat(s.weight_kg) || 0,
+        reps: parseInt(s.reps, 10) || 0,
+        rir: parseFloat(s.rir) || 0
+      })),
       sets: workingSets
     });
   });
@@ -829,7 +850,9 @@ export const diagnoseExerciseTrend = (sessions, currentRoutineId = null) => {
       deltaReps,
       weeksStagnant: 0,
       stagnantSessionsCount: 0,
-      pctChange
+      pctChange,
+      hasDropsetFatigue: Boolean(s0.hasDropsets),
+      recentDropsetCount: s0.dropSetsCount || 0
     };
   }
 
@@ -944,6 +967,27 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   const isStruggling = difficultyFeedback === 'struggling';
   const _isNormal = difficultyFeedback === 'normal';
 
+  // Detección de Dropset en la sesión anterior (indica fatiga acumulada o que la carga estuvo al límite):
+  const usedDropsetInLastSession = Boolean(
+    lastSession &&
+    (lastSession.hasDropsets || (lastSession.dropSets && lastSession.dropSets.length > 0))
+  );
+  const dropsetFatigueDetected = usedDropsetInLastSession;
+
+  // Detección de Superserie (ejercicio emparejado con otro):
+  const supersetGroupId = exercise.superset_group_id || null;
+  const isSuperset = Boolean(supersetGroupId);
+  let partnerExerciseName = null;
+  const allRoutineExList = options.allRoutineExercises || exercise.routineExercises || [];
+  if (isSuperset && Array.isArray(allRoutineExList)) {
+    const partner = allRoutineExList.find(
+      e => e.superset_group_id && String(e.superset_group_id) === String(supersetGroupId) && (e.id !== exercise.id || e.name !== exercise.name)
+    );
+    if (partner) {
+      partnerExerciseName = partner.name;
+    }
+  }
+
   // Detección de carga base / histórica o estimación inteligente
   let calculatedInitialWeight = 0;
   let initialWeightSource = 'session_history'; // 'session_history' | 'routine_history' | 'exercise_preset' | 'estimated'
@@ -992,7 +1036,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
   // 5) ¿Necesita ganar colchón de repeticiones antes de arriesgar un salto de discos?
   const needsStrengthBufferBeforeJump = Boolean(
     !isBodyweight &&
-    (isSteepRelativeJump || justIncreasedWeight || hasOnlyOneSession) &&
+    (isSteepRelativeJump || justIncreasedWeight || hasOnlyOneSession || dropsetFatigueDetected) &&
     !hasRepSurplus
   );
   const isStagnant = trend.status === 'stagnant';
@@ -1209,6 +1253,21 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
           description: `Mantén ${currentTopWeight} kg pero detén cada serie en ${safeReducedReps} repeticiones limpias, parando 1 o 2 antes del agotamiento.`
         }
       ];
+
+      if (dropsetFatigueDetected && currentTopWeight >= 15) {
+        const dropWeight = Math.round((currentTopWeight * 0.75) * 10) / 10;
+        strategyOptions.push({
+          id: 'strat_dropset_planned',
+          title: `⚡ Top Set + Dropset Final Planificado (${currentTopWeight} kg + drop a ${dropWeight} kg)`,
+          tag: 'Estímulo Metabólico',
+          badge: `Última serie drop a ${dropWeight}kg`,
+          suggestedWeight: currentTopWeight,
+          suggestedReps: targetReps,
+          suggestedSets: plannedSets,
+          motive: 'Si deseas mantener el estímulo de hipertrofia metabólica, haz tus primeras series pesadas normales y solo aplica la bajada de peso (-25%) en la última serie.',
+          description: `Haz las primeras series a ${currentTopWeight} kg y finaliza con una serie drop a ${dropWeight} kg al fallo técnico.`
+        });
+      }
 
       if (canUseTopSetBackoff) {
         const topCannotReps = Math.max(4, targetReps - 3);
@@ -1930,7 +1989,10 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
       weightChangeNote = `+1 rep (${currentTopWeight} kg)`;
       actionTitle = `Prepara el salto: Busca ${targetReps + 1} reps con ${currentTopWeight} kg`;
 
-      if (isSteepRelativeJump) {
+      if (dropsetFatigueDetected) {
+        actionTitle = `Consolidación tras Dropset: Afianza ${targetReps} reps con ${currentTopWeight} kg`;
+        coachingAdvice = `En tu sesión anterior utilizaste dropset(s) tras tus series con ${currentTopWeight > 0 ? `${currentTopWeight} kg` : 'peso corporal'}. Esto indica que alcanzaste fatiga muscular elevada o que la carga estuvo al límite de tu capacidad actual. Para hoy te recomendamos afianzar este peso completando todas las series principales con buena técnica y RIR 1-2 antes de intentar subir kilos.`;
+      } else if (isSteepRelativeJump) {
         coachingAdvice = `¡Buen trabajo completando las ${targetReps} reps con ${currentTopWeight} kg! Sin embargo, subir ${jumpLabelText} desde ${currentTopWeight} kg supone un salto fuerte del +${Math.round(relativeJumpPct)}% de peso de golpe. Para no fallar ni perder técnica al meter discos, haz primero ${targetReps + 1} repeticiones con ${currentTopWeight} kg hoy; cuando tengas ese colchón de fuerza, te recomendaremos subir a ${nextWeight} kg.`;
       } else if (justIncreasedWeight) {
         coachingAdvice = `En tu último entrenamiento de ${activeRoutineName} ya subiste de peso hasta ${currentTopWeight} kg y cumpliste las ${targetReps} reps. Antes de encadenar otro salto de ${jumpLabelText} seguido, asienta este peso buscando ${targetReps + 1} repeticiones hoy para que tus tendones y músculos consoliden la carga.`;
@@ -2125,6 +2187,13 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     };
   }
 
+  if (isSuperset) {
+    suggestedRest = '0 - 20 seg transición (90 - 120 seg tras ronda)';
+    if (!coachingAdvice.includes('En Superserie')) {
+      coachingAdvice += `\n\n⚡ En Superserie${partnerExerciseName ? ` (emparejado con ${partnerExerciseName})` : ''}: pasa directo al ejercicio compañero con mínima pausa (0-20 seg) y reserva los 90-120 seg para el final de la ronda de ambos.`;
+    }
+  }
+
   return {
     userGoal: goalInfo,
     trend,
@@ -2157,6 +2226,10 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     currentTopWeight,
     isBodyweight,
     isAlreadyAppliedInSession,
-    lastAppliedStrategy
+    lastAppliedStrategy,
+    hasDropsetFatigue: dropsetFatigueDetected,
+    isSuperset,
+    partnerExerciseName,
+    supersetGroupId
   };
 };
