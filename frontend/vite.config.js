@@ -54,7 +54,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate', // <-- CAMBIO AQUI: Actualización automática
-      includeAssets: ['favicon-32x32.png', 'apple-touch-icon.webp'],
+      includeAssets: ['favicon.ico', 'favicon-16x16.png', 'favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png', 'apple-touch-icon.png', 'apple-touch-icon.png', 'logo.webp'],
       manifest: {
         name: 'Pro Fitness Glass',
         short_name: 'Pro Fitness Glass',
@@ -90,7 +90,7 @@ export default defineConfig({
         globPatterns: [
           'index.html',
           'manifest.webmanifest',
-          'favicon-32x32.png',
+          'favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png', 'apple-touch-icon.png',
           'pwa-*.webp',
           'logo.webp',
           'assets/index-*.js',

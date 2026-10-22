@@ -426,10 +426,16 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           <figure className="my-6">
             <div className="rounded-2xl overflow-hidden bg-black/10 max-h-[460px] shadow-md ring-1 ring-black/10 dark:ring-white/10">
               <img
-                src={article.image_url}
+                src={article.image_url?.includes('photo-1510519138197-06b8628cbf4f')
+                  ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
+                  : (article.image_url || '/entrenamiento.png')}
                 alt={article.title}
                 className="w-full h-full object-cover"
                 loading="eager"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = '/entrenamiento.png';
+                }}
               />
             </div>
             <figcaption className="text-center text-xs text-text-tertiary mt-2 italic">
@@ -551,10 +557,16 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 >
                   <div className="h-32 bg-black/10 overflow-hidden relative">
                     <img
-                      src={rel.image_url}
+                      src={rel.image_url?.includes('photo-1510519138197-06b8628cbf4f')
+                        ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
+                        : (rel.image_url || '/entrenamiento.png')}
                       alt={rel.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/entrenamiento.png';
+                      }}
                     />
                     <span className="absolute top-2 left-2 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-black/70 backdrop-blur-sm text-white">
                       {rel.category}

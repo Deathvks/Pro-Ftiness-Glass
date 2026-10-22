@@ -10,7 +10,7 @@
 
     # Desactivar caché estricto para archivos que controlan la versión y el service worker
     @noCache {
-        path /sw.js /index.html /version.json /manifest.webmanifest /robots.txt /sitemap.xml
+        path /sw.js /index.html /version.json /manifest.json /manifest.webmanifest /robots.txt /sitemap.xml /noticias/* *.html
     }
     header @noCache {
         Cache-Control "no-cache, no-store, must-revalidate"
@@ -39,5 +39,5 @@
     file_server
 
     # Redirige todas las rutas de navegación a index.html para que funcione el enrutador de React.
-    try_files {path} /index.html
+    try_files {path} {path}/index.html {path}index.html /index.html
 }

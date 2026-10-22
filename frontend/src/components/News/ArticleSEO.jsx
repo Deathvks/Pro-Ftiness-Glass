@@ -10,7 +10,13 @@ export default function ArticleSEO({ article }) {
   const canonicalUrl = `${BASE_URL}/noticias/${article.slug}`;
   const title = `${article.seo_title || article.title} | Pro Fitness Glass`;
   const description = article.seo_description || article.summary;
-  const image = article.image_url || `${BASE_URL}/logo.webp`;
+  let image = article.image_url || `${BASE_URL}/entrenamiento.png`;
+  if (image && image.includes('photo-1510519138197-06b8628cbf4f')) {
+    image = 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80';
+  }
+  if (image && !image.startsWith('http')) {
+    image = `${BASE_URL}${image.startsWith('/') ? '' : '/'}${image}`;
+  }
   const publishedDate = article.published_at ? new Date(article.published_at).toISOString() : new Date().toISOString();
   const modifiedDate = article.updatedAt ? new Date(article.updatedAt).toISOString() : publishedDate;
 

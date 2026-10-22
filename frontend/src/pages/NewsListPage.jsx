@@ -381,10 +381,16 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
               >
                 <div className="relative h-48 overflow-hidden bg-black/10">
                   <img
-                    src={art.image_url}
+                    src={art.image_url?.includes('photo-1510519138197-06b8628cbf4f')
+                      ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
+                      : (art.image_url || '/entrenamiento.png')}
                     alt={art.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/entrenamiento.png';
+                    }}
                   />
                   <div className="absolute top-3 left-3 flex gap-1.5">
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-black/60 backdrop-blur-md text-white border border-white/15">

@@ -133,7 +133,13 @@ async function main() {
     const articleDir = path.join(distDir, 'noticias', slug);
     if (!fs.existsSync(articleDir)) fs.mkdirSync(articleDir, { recursive: true });
 
-    const articleImage = article.image_url || `${BASE_URL}/entrenamiento.png`;
+    let articleImage = article.image_url || `${BASE_URL}/entrenamiento.png`;
+    if (articleImage.includes('photo-1510519138197-06b8628cbf4f')) {
+      articleImage = 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80';
+    }
+    if (!articleImage.startsWith('http')) {
+      articleImage = `${BASE_URL}${articleImage.startsWith('/') ? '' : '/'}${articleImage}`;
+    }
     const articleHtml = injectMeta(baseHtml, {
       title: article.title,
       description: article.summary || article.seo_description || 'Guía científica de entrenamiento y nutrición deportiva en Pro Fitness Glass.',
