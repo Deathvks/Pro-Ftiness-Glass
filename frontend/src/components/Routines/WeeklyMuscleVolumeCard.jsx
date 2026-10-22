@@ -118,11 +118,14 @@ const getGoalRange = (goal) => {
 const getRoutineExercises = (routine) => {
   const exercises = routine?.RoutineExercises || routine?.exercises || [];
   if (!Array.isArray(exercises)) return [];
-  return exercises.map(exercise => ({
-    ...exercise,
-    name: exercise.name || exercise.exercise?.name || exercise.exercise_details?.name || '',
-    muscle_group: exercise.muscle_group || exercise.exercise?.muscle_group || exercise.exercise_details?.muscle_group || exercise.target || ''
-  }));
+  return [...exercises]
+    .filter(Boolean)
+    .sort((a, b) => (a.exercise_order ?? 0) - (b.exercise_order ?? 0))
+    .map(exercise => ({
+      ...exercise,
+      name: exercise.name || exercise.exercise?.name || exercise.exercise_details?.name || '',
+      muscle_group: exercise.muscle_group || exercise.exercise?.muscle_group || exercise.exercise_details?.muscle_group || exercise.target || ''
+    }));
 };
 
 const getPlannedSets = (exercise) => {
@@ -346,13 +349,95 @@ const INDIRECT_SET_FACTOR = 0.35;
 const EXCLUSIONS_STORAGE_KEY = 'weekly_volume_exclusions_v1';
 const EXCLUSIONS_EVENT_NAME = 'weekly_volume_exclusions_changed';
 
+const getStorageKeyForUser = () => {
+  if (typeof window === 'undefined') return EXCLUSIONS_STORAGE_KEY;
+  try {
+    const rawUser = window.localStorage.getItem('user_profile') || window.localStorage.getItem('cachedUserProfile');
+    let userId = null;
+    if (rawUser) {
+      const u = JSON.parse(rawUser);
+      userId = u?.id || u?.userId;
+    }
+    if (!userId) {
+      const initialCache = window.localStorage.getItem('pfg_cached_initial_state_v1');
+      if (initialCache) {
+        const parsed = JSON.parse(initialCache);
+        userId = parsed?.userProfile?.id;
+      }
+    }
+    return userId ? `weekly_volume_exclusions_u${userId}_v1` : EXCLUSIONS_STORAGE_KEY;
+  } catch {
+    return EXCLUSIONS_STORAGE_KEY;
+  }
+};
+
+export const getRoutineCandidateKeys = (routineOrKey, fallbackIdx = 0) => {
+  if (routineOrKey == null) return [`routine-${fallbackIdx}`];
+  if (typeof routineOrKey === 'string' || typeof routineOrKey === 'number') {
+    const str = String(routineOrKey).trim();
+    const keys = [str];
+    const norm = normalizeKey(str);
+    if (norm) {
+      keys.push(norm);
+      keys.push(`name:${norm}`);
+    }
+    return [...new Set(keys.filter(Boolean))];
+  }
+  const keys = [];
+  if (routineOrKey.id != null) keys.push(String(routineOrKey.id).trim());
+  if (routineOrKey.routine_id != null) keys.push(String(routineOrKey.routine_id).trim());
+  if (routineOrKey.name) {
+    const norm = normalizeKey(routineOrKey.name);
+    if (norm) {
+      keys.push(`name:${norm}`);
+      keys.push(norm);
+    }
+  }
+  keys.push(`routine-${fallbackIdx}`);
+  return [...new Set(keys.filter(Boolean))];
+};
+
+export const getExerciseCandidateKeys = (exerciseOrKey, fallbackIndex = 0) => {
+  if (exerciseOrKey == null) return [`ex-${fallbackIndex}`];
+  if (typeof exerciseOrKey === 'string' || typeof exerciseOrKey === 'number') {
+    const str = String(exerciseOrKey).trim();
+    const keys = [str];
+    const norm = normalizeKey(str);
+    if (norm) {
+      keys.push(norm);
+      keys.push(`name:${norm}`);
+    }
+    return [...new Set(keys.filter(Boolean))];
+  }
+  const keys = [];
+  if (exerciseOrKey.id != null) keys.push(String(exerciseOrKey.id).trim());
+  if (exerciseOrKey.routine_exercise_id != null) keys.push(String(exerciseOrKey.routine_exercise_id).trim());
+  if (exerciseOrKey.exercise_list_id != null) keys.push(`list:${exerciseOrKey.exercise_list_id}`);
+  if (exerciseOrKey.tempId != null) keys.push(String(exerciseOrKey.tempId).trim());
+  if (exerciseOrKey.name) {
+    const norm = normalizeKey(exerciseOrKey.name);
+    if (norm) {
+      keys.push(`name:${norm}`);
+      keys.push(norm);
+      const order = exerciseOrKey.exercise_order ?? fallbackIndex;
+      keys.push(`${norm}#${order}`);
+      keys.push(`${norm}_${order}`);
+      keys.push(`${exerciseOrKey.name || 'ex'}-${order}`);
+    }
+  } else {
+    keys.push(`ex-${fallbackIndex}`);
+  }
+  return [...new Set(keys.filter(Boolean))];
+};
+
 export const getRoutineVolumeKey = (routine, fallbackIdx = 0) =>
-  String(routine?.id ?? routine?.routine_id ?? routine?.name ?? `routine-${fallbackIdx}`);
+  String(routine?.id ?? routine?.routine_id ?? (routine?.name ? `name:${normalizeKey(routine.name)}` : `routine-${fallbackIdx}`));
 
 export const getExerciseVolumeKey = (exercise, index = 0) =>
   String(
     exercise?.id ??
     exercise?.routine_exercise_id ??
+    (exercise?.name ? `name:${normalizeKey(exercise.name)}#${exercise?.exercise_order ?? index}` : null) ??
     exercise?.tempId ??
     `${exercise?.name || 'ex'}-${exercise?.exercise_order ?? index}`
   );
@@ -362,13 +447,38 @@ const readStoredExclusions = () => {
     return { excludedRoutines: {}, excludedExercises: {} };
   }
   try {
-    const raw = window.localStorage.getItem(EXCLUSIONS_STORAGE_KEY);
-    if (!raw) return { excludedRoutines: {}, excludedExercises: {} };
-    const parsed = JSON.parse(raw);
-    return {
-      excludedRoutines: parsed?.excludedRoutines && typeof parsed.excludedRoutines === 'object' ? parsed.excludedRoutines : {},
-      excludedExercises: parsed?.excludedExercises && typeof parsed.excludedExercises === 'object' ? parsed.excludedExercises : {}
+    const userKey = getStorageKeyForUser();
+    let raw = window.localStorage.getItem(userKey);
+    let legacyRaw = null;
+    if (userKey !== EXCLUSIONS_STORAGE_KEY) {
+      legacyRaw = window.localStorage.getItem(EXCLUSIONS_STORAGE_KEY);
+    }
+    if (!raw && !legacyRaw) return { excludedRoutines: {}, excludedExercises: {} };
+
+    const parsedUser = raw ? JSON.parse(raw) : null;
+    const parsedLegacy = legacyRaw ? JSON.parse(legacyRaw) : null;
+
+    const merged = {
+      excludedRoutines: {
+        ...(parsedLegacy?.excludedRoutines || {}),
+        ...(parsedUser?.excludedRoutines || {})
+      },
+      excludedExercises: {}
     };
+
+    const allRoutineKeys = new Set([
+      ...Object.keys(parsedLegacy?.excludedExercises || {}),
+      ...Object.keys(parsedUser?.excludedExercises || {})
+    ]);
+
+    allRoutineKeys.forEach((rk) => {
+      merged.excludedExercises[rk] = {
+        ...(parsedLegacy?.excludedExercises?.[rk] || {}),
+        ...(parsedUser?.excludedExercises?.[rk] || {})
+      };
+    });
+
+    return merged;
   } catch {
     return { excludedRoutines: {}, excludedExercises: {} };
   }
@@ -377,17 +487,43 @@ const readStoredExclusions = () => {
 const writeStoredExclusions = (nextState) => {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(EXCLUSIONS_STORAGE_KEY, JSON.stringify(nextState));
+    const userKey = getStorageKeyForUser();
+    const serialized = JSON.stringify(nextState);
+    window.localStorage.setItem(userKey, serialized);
+    if (userKey !== EXCLUSIONS_STORAGE_KEY) {
+      window.localStorage.setItem(EXCLUSIONS_STORAGE_KEY, serialized);
+    }
     window.dispatchEvent(new CustomEvent(EXCLUSIONS_EVENT_NAME, { detail: nextState }));
   } catch {
     // ignore storage errors
   }
 };
 
-export const isExerciseIncludedInVolume = (exclusions, routineKey, exerciseKey) => {
+export const isExerciseIncludedInVolume = (exclusions, routineOrKey, exerciseOrKey, fallbackIndex = 0) => {
   if (!exclusions) return true;
-  if (exclusions.excludedRoutines?.[routineKey]) return false;
-  if (exclusions.excludedExercises?.[routineKey]?.[exerciseKey]) return false;
+
+  const routineCandidates = getRoutineCandidateKeys(routineOrKey, fallbackIndex);
+
+  // Comprobar si toda la rutina está marcada como excluida bajo cualquiera de sus claves
+  for (const rKey of routineCandidates) {
+    if (exclusions.excludedRoutines?.[rKey]) return false;
+  }
+
+  // Si no se especifica ejercicio, solo importaba el estado de la rutina
+  if (exerciseOrKey == null) return true;
+
+  const exerciseCandidates = getExerciseCandidateKeys(exerciseOrKey, fallbackIndex);
+
+  // Comprobar si bajo alguna de las claves de la rutina está excluida alguna clave del ejercicio
+  for (const rKey of routineCandidates) {
+    const routineMap = exclusions.excludedExercises?.[rKey];
+    if (routineMap && typeof routineMap === 'object') {
+      for (const exKey of exerciseCandidates) {
+        if (routineMap[exKey]) return false;
+      }
+    }
+  }
+
   return true;
 };
 
@@ -396,13 +532,12 @@ export const getRoutineInclusionStats = (exclusions, routine, fallbackIdx = 0) =
   const exercises = getRoutineExercises(routine);
   const total = exercises.length;
   if (total === 0) {
-    const isRoutineExcluded = Boolean(exclusions?.excludedRoutines?.[routineKey]);
+    const isRoutineExcluded = !isExerciseIncludedInVolume(exclusions, routine, null, fallbackIdx);
     return { routineKey, total: 0, included: 0, status: isRoutineExcluded ? 'none' : 'all' };
   }
   let included = 0;
   exercises.forEach((ex, idx) => {
-    const exKey = getExerciseVolumeKey(ex, idx);
-    if (isExerciseIncludedInVolume(exclusions, routineKey, exKey)) {
+    if (isExerciseIncludedInVolume(exclusions, routine, ex, idx)) {
       included += 1;
     }
   });
@@ -418,7 +553,7 @@ export const useWeeklyVolumeExclusions = () => {
       setExclusions(event?.detail || readStoredExclusions());
     };
     const handleStorage = (event) => {
-      if (event.key === EXCLUSIONS_STORAGE_KEY) {
+      if (event.key === EXCLUSIONS_STORAGE_KEY || event.key === getStorageKeyForUser()) {
         setExclusions(readStoredExclusions());
       }
     };
@@ -438,69 +573,102 @@ export const useWeeklyVolumeExclusions = () => {
   }, []);
 
   const setRoutineAllIncluded = React.useCallback((routine, includeAll, fallbackIdx = 0) => {
-    const routineKey = getRoutineVolumeKey(routine, fallbackIdx);
+    const routineCandidates = getRoutineCandidateKeys(routine, fallbackIdx);
     const exercises = getRoutineExercises(routine);
+
     updateExclusions((prev) => {
       const nextRoutines = { ...(prev.excludedRoutines || {}) };
       const nextExercises = { ...(prev.excludedExercises || {}) };
+
       if (includeAll) {
-        delete nextRoutines[routineKey];
-        delete nextExercises[routineKey];
-      } else {
-        nextRoutines[routineKey] = true;
-        const mapForRoutine = {};
-        exercises.forEach((ex, idx) => {
-          mapForRoutine[getExerciseVolumeKey(ex, idx)] = true;
+        routineCandidates.forEach(rk => {
+          delete nextRoutines[rk];
+          delete nextExercises[rk];
         });
-        nextExercises[routineKey] = mapForRoutine;
+      } else {
+        routineCandidates.forEach(rk => {
+          nextRoutines[rk] = true;
+          const map = {};
+          exercises.forEach((ex, idx) => {
+            getExerciseCandidateKeys(ex, idx).forEach(k => {
+              map[k] = true;
+            });
+          });
+          nextExercises[rk] = map;
+        });
       }
       return { excludedRoutines: nextRoutines, excludedExercises: nextExercises };
     });
   }, [updateExclusions]);
 
   const toggleExerciseIncluded = React.useCallback((routine, exercise, exIdx = 0, fallbackRoutineIdx = 0) => {
-    const routineKey = getRoutineVolumeKey(routine, fallbackRoutineIdx);
+    const routineCandidates = getRoutineCandidateKeys(routine, fallbackRoutineIdx);
+    const exerciseCandidates = getExerciseCandidateKeys(exercise, exIdx);
     const exercises = getRoutineExercises(routine);
-    const targetExKey = getExerciseVolumeKey(exercise, exIdx);
 
     updateExclusions((prev) => {
       const nextRoutines = { ...(prev.excludedRoutines || {}) };
       const nextExercises = { ...(prev.excludedExercises || {}) };
-      const wasRoutineExcluded = Boolean(nextRoutines[routineKey]);
-      const currentRoutineExMap = { ...(nextExercises[routineKey] || {}) };
+
+      const wasRoutineExcluded = routineCandidates.some(rk => Boolean(nextRoutines[rk]));
+      const isCurrentlyExcluded = !isExerciseIncludedInVolume(prev, routine, exercise, exIdx);
 
       if (wasRoutineExcluded) {
-        // Si toda la rutina estaba excluida y el usuario activa este ejercicio,
-        // marcamos los demás como excluidos y dejamos este incluido.
-        delete nextRoutines[routineKey];
-        exercises.forEach((ex, idx) => {
-          const k = getExerciseVolumeKey(ex, idx);
-          if (k !== targetExKey) {
-            currentRoutineExMap[k] = true;
-          } else {
-            delete currentRoutineExMap[k];
-          }
+        // La rutina estaba excluida al 100%. El usuario activa este ejercicio.
+        // Desmarcamos la rutina como 100% excluida.
+        routineCandidates.forEach(rk => {
+          delete nextRoutines[rk];
+        });
+
+        // Marcamos todos los demás ejercicios como excluidos
+        routineCandidates.forEach(rk => {
+          const map = {};
+          exercises.forEach((otherEx, idx) => {
+            const otherCandidates = getExerciseCandidateKeys(otherEx, idx);
+            const isTarget = otherCandidates.some(k => exerciseCandidates.includes(k));
+            if (!isTarget) {
+              otherCandidates.forEach(k => { map[k] = true; });
+            }
+          });
+          nextExercises[rk] = map;
+        });
+      } else if (isCurrentlyExcluded) {
+        // Estaba excluido -> El usuario quiere INCLUIRLO (borrar exclusión)
+        routineCandidates.forEach(rk => {
+          const map = { ...(nextExercises[rk] || {}) };
+          exerciseCandidates.forEach(k => {
+            delete map[k];
+          });
+          nextExercises[rk] = map;
         });
       } else {
-        const isCurrentlyExcluded = Boolean(currentRoutineExMap[targetExKey]);
-        if (isCurrentlyExcluded) {
-          delete currentRoutineExMap[targetExKey];
-        } else {
-          currentRoutineExMap[targetExKey] = true;
-        }
+        // Estaba incluido -> El usuario quiere EXCLUIRLO
+        routineCandidates.forEach(rk => {
+          const map = { ...(nextExercises[rk] || {}) };
+          exerciseCandidates.forEach(k => {
+            map[k] = true;
+          });
+          nextExercises[rk] = map;
+        });
       }
 
-      // Comprobar si ahora todos están excluidos o todos incluidos
-      const excludedCount = exercises.filter((ex, idx) => currentRoutineExMap[getExerciseVolumeKey(ex, idx)]).length;
+      // Evaluar estado final con la nueva instantánea
+      const currentSnapshot = { excludedRoutines: nextRoutines, excludedExercises: nextExercises };
+      const excludedCount = exercises.filter((ex, idx) => !isExerciseIncludedInVolume(currentSnapshot, routine, ex, idx)).length;
+
       if (exercises.length > 0 && excludedCount === exercises.length) {
-        nextRoutines[routineKey] = true;
-        nextExercises[routineKey] = currentRoutineExMap;
+        routineCandidates.forEach(rk => {
+          nextRoutines[rk] = true;
+        });
       } else if (excludedCount === 0) {
-        delete nextRoutines[routineKey];
-        delete nextExercises[routineKey];
+        routineCandidates.forEach(rk => {
+          delete nextRoutines[rk];
+          delete nextExercises[rk];
+        });
       } else {
-        delete nextRoutines[routineKey];
-        nextExercises[routineKey] = currentRoutineExMap;
+        routineCandidates.forEach(rk => {
+          delete nextRoutines[rk];
+        });
       }
 
       return { excludedRoutines: nextRoutines, excludedExercises: nextExercises };
@@ -658,7 +826,7 @@ export const RoutineVolumeFilterModal = ({ routine, routines = [], onClose }) =>
                       <div className="divide-y divide-glass-border">
                         {exercises.map((ex, exIdx) => {
                           const exKey = getExerciseVolumeKey(ex, exIdx);
-                          const included = isExerciseIncludedInVolume(exclusions, stats.routineKey, exKey);
+                          const included = isExerciseIncludedInVolume(exclusions, itemRoutine, ex, exIdx);
                           const sets = getPlannedSets(ex);
                           const { primary, secondary } = classifyExerciseMuscles(ex);
                           const primaryLabels = primary.map(k => MUSCLE_BY_KEY.get(k)?.label || formatMuscleTag(k));
@@ -761,7 +929,7 @@ const WeeklyMuscleVolumeCard = ({ routines = [], goal }) => {
 
       exercises.forEach((exercise, exIdx) => {
         const exKey = getExerciseVolumeKey(exercise, exIdx);
-        if (!isExerciseIncludedInVolume(exclusions, routineKey, exKey)) {
+        if (!isExerciseIncludedInVolume(exclusions, routine, exercise, exIdx)) {
           excludedExercisesCount += 1;
           return;
         }

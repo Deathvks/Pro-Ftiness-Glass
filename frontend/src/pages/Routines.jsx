@@ -1199,8 +1199,9 @@ const Routines = ({ setView, mainContentRef }) => {
                                   <ul className={`flex flex-col gap-2.5 ${group.length > 1 ? 'pl-3 border-l-2 border-accent/30' : ''}`}>
                                     {group.map((ex, exIdx) => {
                                       const originalIdx = exercisesToGroup.indexOf(ex);
-                                      const exKey = getExerciseVolumeKey(ex, originalIdx >= 0 ? originalIdx : exIdx);
-                                      const isIncluded = isExerciseIncludedInVolume(exclusions, vStats.routineKey, exKey);
+                                      const fallbackIndex = originalIdx >= 0 ? originalIdx : exIdx;
+                                      const exKey = getExerciseVolumeKey(ex, fallbackIndex);
+                                      const isIncluded = isExerciseIncludedInVolume(exclusions, routine, ex, fallbackIndex);
                                       return (
                                         <li
                                           key={ex.id || ex.tempId || exKey}
