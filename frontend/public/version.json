@@ -1,4 +1,4 @@
 {
-  "version": "7.8.56",
-  "releaseNotes": "Automatización diaria de noticias con Gemini: redacción autónoma de actualidad fitness/salud con SEO de alta retención, cuenta regresiva en vivo, terminal en tiempo real y soporte para categorías dinámicas."
+  "version": "7.9.0",
+  "releaseNotes": "Gran actualización v7.9.0: Automatización autónoma de noticias con IA Gemini, sitemap y feed RSS dinámicos en tiempo real, protocolo IndexNow para indexación instantánea en buscadores y mejoras de rendimiento."
 }
