@@ -1,4 +1,4 @@
-* backend/controllers/newsController.js */
+/* backend/controllers/newsController.js */
 import { Op } from 'sequelize';
 import models from '../models/index.js';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';

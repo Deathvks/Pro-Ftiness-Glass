@@ -1,4 +1,4 @@
-* frontend/src/components/News/NewsLoadingSkeleton.jsx */
+/* frontend/src/components/News/NewsLoadingSkeleton.jsx */
 import React from 'react';
 
 export default function NewsLoadingSkeleton({ isDetail = false }) {

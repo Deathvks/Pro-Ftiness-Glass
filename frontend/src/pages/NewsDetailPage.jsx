@@ -1,4 +1,4 @@
-* frontend/src/pages/NewsDetailPage.jsx */
+/* frontend/src/pages/NewsDetailPage.jsx */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {

@@ -1,4 +1,4 @@
-* frontend/src/services/newsService.js */
+/* frontend/src/services/newsService.js */
 import useAppStore from '../store/useAppStore';
 import cachedNewsList from '../data/cachedNews.json';
 
