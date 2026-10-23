@@ -450,6 +450,9 @@ Extensión recomendada: 700 a 1000 palabras de altísimo valor pedagógico.`;
         }
       } catch {}
 
+      // PASO 8: Notificar a motores de búsqueda vía IndexNow (Bing, Yandex, etc.)
+      this.notifySearchEngines(createdArticle.slug);
+
       return {
         success: true,
         article: createdArticle,
@@ -477,6 +480,39 @@ Extensión recomendada: 700 a 1000 palabras de altísimo valor pedagógico.`;
     } finally {
       this.isGenerating = false;
       this.broadcastStatus();
+    }
+  }
+
+  /**
+   * Notifica a los motores de búsqueda (Bing, Yandex, etc.) mediante el protocolo IndexNow
+   */
+  async notifySearchEngines(slug) {
+    const baseUrl = 'https://pro-fitness-glass.zeabur.app';
+    const articleUrl = `${baseUrl}/noticias/${slug}`;
+    const host = 'pro-fitness-glass.zeabur.app';
+    const key = 'f478a2e99b0c41d6832fb91e0a8d5c3f';
+    const keyLocation = `${baseUrl}/${key}.txt`;
+
+    try {
+      this.addLog(`📡 Notificando a motores de búsqueda (IndexNow / Bing) sobre "${slug}"...`, 'info');
+      const response = await fetch('https://api.indexnow.org/indexnow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({
+          host,
+          key,
+          keyLocation,
+          urlList: [articleUrl, `${baseUrl}/sitemap.xml`, `${baseUrl}/rss.xml`]
+        })
+      });
+
+      if (response.ok || response.status === 200 || response.status === 202) {
+        this.addLog(`✅ Motores de búsqueda notificados vía IndexNow (HTTP ${response.status}).`, 'success');
+      } else {
+        this.addLog(`⚠️ IndexNow respondió con estado HTTP ${response.status}.`, 'warn');
+      }
+    } catch (err) {
+      this.addLog(`⚠️ No se pudo enviar notificación IndexNow: ${err.message}`, 'warn');
     }
   }
 

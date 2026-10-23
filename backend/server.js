@@ -45,7 +45,7 @@ import trainerRoutes from './routes/trainerRoutes.js';
 import chatRoutes from './routes/chat.js';
 import securityRoutes from './routes/securityRoutes.js';
 import newsRoutes from './routes/news.js';
-import { seedInitialNewsIfEmpty, getSitemapNews } from './controllers/newsController.js';
+import { seedInitialNewsIfEmpty, getSitemapNews, getRSSNews } from './controllers/newsController.js';
 import { checkBlacklist, sniffingDetector } from './middleware/securityMonitor.js';
 import { startCronJobs } from './services/cronService.js';
 
@@ -204,7 +204,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/admin/security', securityRoutes);
 app.use('/api/news', newsRoutes);
 
-// Sitemap XML dinámico con todas las noticias indexables
+// Sitemap XML dinámico con todas las noticias indexables en tiempo real
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const newsItems = await getSitemapNews();
@@ -219,11 +219,64 @@ app.get('/sitemap.xml', async (req, res) => {
       ...newsItems.map(item => '  <url><loc>' + baseUrl + '/noticias/' + item.slug + '</loc><lastmod>' + new Date(item.updatedAt || item.published_at).toISOString().split('T')[0] + '</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>'),
       '</urlset>'
     ].join('\n');
-    res.header('Content-Type', 'application/xml');
+    res.header('Content-Type', 'application/xml; charset=utf-8');
     res.send(xml);
   } catch (e) {
     res.status(500).send('Error generating sitemap');
   }
+});
+
+// Feed RSS 2.0 dinámico para Google Noticias, Discover y agregadores
+app.get(['/rss.xml', '/feed.xml'], async (req, res) => {
+  try {
+    const newsItems = await getRSSNews();
+    const baseUrl = 'https://pro-fitness-glass.zeabur.app';
+    const lastBuildDate = newsItems.length > 0
+      ? new Date(newsItems[0].published_at || newsItems[0].updatedAt).toUTCString()
+      : new Date().toUTCString();
+
+    const itemsXml = newsItems.map(item => {
+      const url = `${baseUrl}/noticias/${item.slug}`;
+      const pubDate = new Date(item.published_at || item.updatedAt).toUTCString();
+      const escapedTitle = (item.title || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const escapedSummary = (item.summary || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const category = (item.category || 'Fitness').replace(/&/g, '&amp;');
+
+      return `    <item>
+      <title>${escapedTitle}</title>
+      <link>${url}</link>
+      <guid isPermaLink="true">${url}</guid>
+      <description>${escapedSummary}</description>
+      <category>${category}</category>
+      <pubDate>${pubDate}</pubDate>
+      ${item.image_url ? `<enclosure url="${item.image_url}" type="image/jpeg" length="0" />` : ''}
+    </item>`;
+    }).join('\n');
+
+    const rss = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Pro Fitness Glass - Noticias y Artículos de Ciencia Fitness</title>
+    <link>${baseUrl}/noticias</link>
+    <description>Actualidad, hipertrofia, nutrición deportiva, salud y biomecánica basada en evidencia científica.</description>
+    <language>es-ES</language>
+    <lastBuildDate>${lastBuildDate}</lastBuildDate>
+    <atom:link href="${baseUrl}/rss.xml" rel="self" type="application/rss+xml" />
+${itemsXml}
+  </channel>
+</rss>`;
+
+    res.header('Content-Type', 'application/xml; charset=utf-8');
+    res.send(rss);
+  } catch (e) {
+    console.error('Error generating RSS:', e);
+    res.status(500).send('Error generating RSS feed');
+  }
+});
+
+// Verificación IndexNow para motores de búsqueda (Bing, Yandex, etc.)
+app.get('/f478a2e99b0c41d6832fb91e0a8d5c3f.txt', (req, res) => {
+  res.type('text/plain').send('f478a2e99b0c41d6832fb91e0a8d5c3f');
 });
 
 app.use(errorHandler);

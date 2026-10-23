@@ -27,3 +27,4 @@ Disallow: /*?*from=
 Disallow: /*?*utm_
 
 Sitemap: https://pro-fitness-glass.zeabur.app/sitemap.xml
+Sitemap: https://pro-fitness-glass.zeabur.app/rss.xml

@@ -10,12 +10,31 @@
 
     # Desactivar caché estricto para archivos que controlan la versión y el service worker
     @noCache {
-        path /sw.js /index.html /version.json /manifest.json /manifest.webmanifest /robots.txt /sitemap.xml /noticias/* *.html
+        path /sw.js /index.html /version.json /manifest.json /manifest.webmanifest /robots.txt /sitemap.xml /rss.xml /feed.xml /noticias/* *.html
     }
     header @noCache {
         Cache-Control "no-cache, no-store, must-revalidate"
         Pragma "no-cache"
         Expires "0"
+    }
+
+    # Proxy inverso dinámico hacia el backend para sitemap.xml y feed RSS (actualización en tiempo real desde la BD)
+    handle /sitemap.xml {
+        reverse_proxy https://pro-fitness-glass-api.zeabur.app {
+            header_up Host pro-fitness-glass-api.zeabur.app
+        }
+    }
+
+    handle /rss.xml {
+        reverse_proxy https://pro-fitness-glass-api.zeabur.app {
+            header_up Host pro-fitness-glass-api.zeabur.app
+        }
+    }
+
+    handle /feed.xml {
+        reverse_proxy https://pro-fitness-glass-api.zeabur.app {
+            header_up Host pro-fitness-glass-api.zeabur.app
+        }
     }
 
     # Si se solicita un asset en /assets/* que NO existe físicamente en disco, devolver 404 inmediato.
@@ -35,9 +54,9 @@
         Cache-Control "public, max-age=31536000, immutable"
     }
 
-    # Activa el servidor de archivos estáticos.
-    file_server
-
-    # Redirige todas las rutas de navegación a index.html para que funcione el enrutador de React.
-    try_files {path} {path}/index.html {path}index.html /index.html
+    # Servidor de archivos estáticos y fallback SPA
+    handle {
+        file_server
+        try_files {path} {path}/index.html {path}index.html /index.html
+    }
 }

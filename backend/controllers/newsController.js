@@ -394,6 +394,15 @@ export const createNews = async (req, res) => {
       seo_description: seo_description || summary
     });
 
+    // Notificar a motores de búsqueda (IndexNow / Bing / Yandex)
+    if (newArticle.is_published) {
+      import('../services/newsAutomationService.js')
+        .then(({ newsAutomationService }) => {
+          newsAutomationService.notifySearchEngines(newArticle.slug);
+        })
+        .catch(() => {});
+    }
+
     return res.status(201).json({ message: 'Noticia creada con éxito.', article: newArticle });
   } catch (error) {
     console.error('Error al crear noticia:', error);
@@ -500,6 +509,23 @@ export const getSitemapNews = async () => {
 /**
  * Semillero inicial de artículos científicos de alta calidad si la tabla está vacía
  */
+/**
+ * Obtener artículos para el Feed RSS 2.0 dinámico
+ */
+export const getRSSNews = async () => {
+  try {
+    return await News.findAll({
+      where: { is_published: true },
+      attributes: ['title', 'slug', 'summary', 'category', 'image_url', 'published_at', 'updatedAt'],
+      order: [['published_at', 'DESC']],
+      limit: 50
+    });
+  } catch (error) {
+    console.error('Error en RSS news:', error);
+    return [];
+  }
+};
+
 export const seedInitialNewsIfEmpty = async () => {
   try {
     const count = await News.count();
