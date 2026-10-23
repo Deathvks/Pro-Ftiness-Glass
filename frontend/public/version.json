@@ -1,4 +1,4 @@
 {
-  "version": "7.9.0",
-  "releaseNotes": "Gran actualización v7.9.0: Automatización autónoma de noticias con IA Gemini, sitemap y feed RSS dinámicos en tiempo real, protocolo IndexNow para indexación instantánea en buscadores y mejoras de rendimiento."
+  "version": "7.9.2",
+  "releaseNotes": "Actualización v7.9.2: Optimización masiva del rendimiento de carga, eliminación de congestión de red tras bienvenida y recargas instantáneas sin esperas."
 }

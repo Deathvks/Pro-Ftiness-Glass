@@ -55,6 +55,7 @@ try {
     // En todas las plataformas (web y nativo), purgar caché obsoleta de lectura de API en actualización
     if ('caches' in window) {
       caches.delete('api-read-cache').catch(() => {});
+      caches.delete('vite-hashed-assets').catch(() => {});
     }
     try {
       sessionStorage.clear();

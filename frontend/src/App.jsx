@@ -66,7 +66,9 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
         setTimeout(() => {
           window.location.replace(window.location.href);
         }, 1200);
-        return new Promise(() => {});
+        return new Promise((_, reject) => {
+          setTimeout(() => reject(error), 4000);
+        });
       }
       throw error;
     }
@@ -125,11 +127,16 @@ export const preloadViewChunk = (viewId) => {
 };
 
 export const preloadAllPrimaryViews = () => {
+  if (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData) return;
   const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub'];
   primaryNavViews.forEach((v, idx) => {
     setTimeout(() => {
-      preloadViewChunk(v);
-    }, idx * 30);
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        window.requestIdleCallback(() => preloadViewChunk(v), { timeout: 4000 });
+      } else {
+        preloadViewChunk(v);
+      }
+    }, 4000 + idx * 1200);
   });
 };
 
