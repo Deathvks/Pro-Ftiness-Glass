@@ -60,7 +60,16 @@ async function fetchArticles() {
   return [];
 }
 
-function injectMeta(html, { title, description, image, url, type = 'article', category = 'Fitness' }) {
+function injectMeta(html, {
+  title,
+  description,
+  image,
+  url,
+  type = 'article',
+  category = 'Fitness',
+  datePublished,
+  dateModified
+}) {
   const safeTitle = escapeHtml(title);
   const safeDesc = escapeHtml(description);
   const safeImg = escapeUrlAttr(image);
@@ -93,9 +102,11 @@ function injectMeta(html, { title, description, image, url, type = 'article', ca
   output = output.replace(/<meta\s+name=["']twitter:description["'][\s\S]*?>/i, `<meta name="twitter:description" content="${safeDesc}" />`);
   output = output.replace(/<meta\s+name=["']twitter:image["'][\s\S]*?>/i, `<meta name="twitter:image" content="${safeImg}" />`);
 
-  // Inyectar Schema.org específico para Article
+  // Inyectar Schema.org específico para Article cumpliendo estándares de Google Rich Results
   if (type === 'article') {
-    const articleJsonLd = `\n  <script type="application/ld+json">\n  {\n    "@context": "https://schema.org",\n    "@type": "Article",\n    "headline": ${JSON.stringify(title)},\n    "description": ${JSON.stringify(description)},\n    "image": [${JSON.stringify(image)}],\n    "mainEntityOfPage": {\n      "@type": "WebPage",\n      "@id": ${JSON.stringify(url)}\n    },\n    "publisher": {\n      "@type": "Organization",\n      "name": "Pro Fitness Glass",\n      "logo": {\n        "@type": "ImageObject",\n        "url": "${BASE_URL}/logo.webp"\n      }\n    }\n  }\n  </script>`;
+    const pubIso = datePublished ? new Date(datePublished).toISOString() : new Date().toISOString();
+    const modIso = dateModified ? new Date(dateModified).toISOString() : pubIso;
+    const articleJsonLd = `\n  <script type="application/ld+json">\n  {\n    "@context": "https://schema.org",\n    "@type": "Article",\n    "headline": ${JSON.stringify(title)},\n    "description": ${JSON.stringify(description)},\n    "image": [${JSON.stringify(image)}],\n    "datePublished": ${JSON.stringify(pubIso)},\n    "dateModified": ${JSON.stringify(modIso)},\n    "articleSection": ${JSON.stringify(category)},\n    "inLanguage": "es-ES",\n    "author": [{\n      "@type": "Organization",\n      "name": "Equipo Editorial Pro Fitness Glass",\n      "url": "${BASE_URL}"\n    }],\n    "mainEntityOfPage": {\n      "@type": "WebPage",\n      "@id": ${JSON.stringify(url)}\n    },\n    "publisher": {\n      "@type": "Organization",\n      "name": "Pro Fitness Glass",\n      "logo": {\n        "@type": "ImageObject",\n        "url": "${BASE_URL}/logo.webp"\n      }\n    }\n  }\n  </script>`;
     output = output.replace('</head>', `${articleJsonLd}\n</head>`);
   }
 
@@ -150,7 +161,9 @@ async function main() {
       image: articleImage,
       url: `${BASE_URL}/noticias/${slug}`,
       type: 'article',
-      category: article.category
+      category: article.category,
+      datePublished: article.published_at || article.createdAt,
+      dateModified: article.updatedAt || article.published_at || article.createdAt
     });
 
     fs.writeFileSync(path.join(articleDir, 'index.html'), articleHtml, 'utf8');

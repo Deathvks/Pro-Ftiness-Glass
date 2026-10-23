@@ -137,6 +137,17 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
     return () => { isMounted = false; };
   }, [slug, reloadKey]);
 
+  // Sincronizar título de documento en cliente
+  useEffect(() => {
+    if (article?.title) {
+      const prevTitle = document.title;
+      document.title = `${article.title} | Pro Fitness Glass`;
+      return () => {
+        document.title = prevTitle;
+      };
+    }
+  }, [article?.title]);
+
   const handleGoBack = () => {
     if (onBack) onBack();
     else if (customNavigate) customNavigate('noticias');

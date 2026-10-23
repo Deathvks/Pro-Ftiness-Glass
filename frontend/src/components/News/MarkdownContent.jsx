@@ -41,24 +41,44 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
 
   const activeFont = fontSizes[fontSize] || fontSizes.normal;
 
-  const renderInline = (text) => {
-    if (!text) return '';
+  const escapeHtml = (str) =>
+    String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  const sanitizeUrl = (rawUrl = '') => {
+    const trimmed = String(rawUrl).trim();
+    if (/^(https?:\/\/|\/|#|mailto:)/i.test(trimmed)) {
+      return trimmed.replace(/"/g, '%22');
+    }
+    return '#';
+  };
+
+  const renderInline = (rawText) => {
+    if (!rawText) return '';
+
+    // Sanitizar HTML plano previo para prevenir XSS y ataques de inyección
+    const safeText = escapeHtml(rawText);
 
     const boldRegex = /\*\*([^*]+)\*\*/g;
     const italicRegex = /(?<!\*)\*([^*]+)\*(?!\*)/g;
     const codeRegex = /`([^`]+)`/g;
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
 
+    const html = safeText
+      .replace(boldRegex, '<strong class="font-extrabold text-text-primary">$1</strong>')
+      .replace(italicRegex, '<em class="italic text-text-primary/90 font-serif">$1</em>')
+      .replace(codeRegex, '<code class="px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 text-accent font-mono text-sm font-semibold">$1</code>')
+      .replace(linkRegex, (match, label, href) => {
+        const safeHref = sanitizeUrl(href);
+        return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" class="text-accent underline underline-offset-4 decoration-accent/50 hover:decoration-accent transition-colors font-semibold">${label}</a>`;
+      });
+
     return (
-      <span
-        dangerouslySetInnerHTML={{
-          __html: text
-            .replace(boldRegex, '<strong class="font-extrabold text-text-primary">$1</strong>')
-            .replace(italicRegex, '<em class="italic text-text-primary/90 font-serif">$1</em>')
-            .replace(codeRegex, '<code class="px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 text-accent font-mono text-sm font-semibold">$1</code>')
-            .replace(linkRegex, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-accent underline underline-offset-4 decoration-accent/50 hover:decoration-accent transition-colors font-semibold">$1</a>')
-        }}
-      />
+      <span dangerouslySetInnerHTML={{ __html: html }} />
     );
   };
 

@@ -1,4 +1,4 @@
 {
-  "version": "7.9.3",
-  "releaseNotes": "Actualización v7.9.3: Corrección de entidades XML en feed RSS para indexación perfecta en Google y agregadores."
+  "version": "7.9.4",
+  "releaseNotes": "Actualización v7.9.4: Enriquecimiento de Schema.org Article (fechas y autoría) para Google News/Discover y sanitización estricta XSS."
 }
