@@ -199,23 +199,37 @@ export default function AdminNewsManager() {
   };
 
   return (
-    <div className="space-y-6 text-left">
-      {/* HEADER DE GESTIÓN */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-black/5 dark:border-white/10">
-        <div>
-          <h2 className="text-2xl font-extrabold text-text-primary flex items-center gap-2">
-            <Newspaper className="text-accent" /> Gestión de Noticias y Blog
-          </h2>
-          <p className="text-text-secondary text-sm font-medium mt-1">
-            Artículos públicos indexables por Google y preparados para monetizar con AdSense.
-          </p>
+    <div className="space-y-4 sm:space-y-6 text-left w-full overflow-hidden">
+      {/* HEADER DE GESTIÓN RESPONSIVE */}
+      <div className="flex flex-col gap-3 pb-4 border-b border-black/5 dark:border-white/10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="min-w-0">
+            <h2 className="text-xl sm:text-2xl font-black text-text-primary flex items-center gap-2">
+              <Newspaper className="text-accent shrink-0" size={24} />
+              <span className="truncate">Gestión de Noticias y Blog</span>
+            </h2>
+            <p className="text-text-secondary text-xs sm:text-sm font-medium mt-0.5 leading-relaxed">
+              Artículos públicos indexables por Google y optimizados para SEO y AdSense.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => window.open('/noticias', '_blank')}
+            className="self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-accent/10 hover:bg-accent/20 text-xs font-bold text-accent transition-colors flex items-center gap-1.5 shrink-0"
+            title="Abrir sección pública de noticias"
+          >
+            <span>Ver web pública</span>
+            <ExternalLink size={13} />
+          </button>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Barra de pestañas táctil y scrollable en móvil */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 -mx-1 px-1">
           <button
             type="button"
             onClick={() => { setViewMode('list'); loadArticles(); }}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-3.5 sm:px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0 active:scale-95 ${
               viewMode === 'list'
                 ? 'bg-accent text-accent-contrast shadow-sm shadow-accent/20'
                 : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 text-text-secondary'
@@ -228,7 +242,7 @@ export default function AdminNewsManager() {
           <button
             type="button"
             onClick={() => setViewMode('automation')}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 border ${
+            className={`px-3.5 sm:px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0 border active:scale-95 ${
               viewMode === 'automation'
                 ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-transparent shadow-sm shadow-orange-500/25'
                 : 'border-orange-500/30 text-orange-600 dark:text-orange-400 bg-orange-500/10 hover:bg-orange-500/20'
@@ -241,7 +255,7 @@ export default function AdminNewsManager() {
           <button
             type="button"
             onClick={() => setViewMode('ai')}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-3.5 sm:px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0 active:scale-95 ${
               viewMode === 'ai'
                 ? 'bg-accent text-accent-contrast shadow-sm'
                 : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 text-text-secondary'
@@ -254,7 +268,7 @@ export default function AdminNewsManager() {
           <button
             type="button"
             onClick={handleOpenCreate}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-3.5 sm:px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0 active:scale-95 ${
               viewMode === 'editor' && !editingArticle
                 ? 'bg-accent text-accent-contrast shadow-sm'
                 : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 text-text-secondary'
@@ -262,16 +276,6 @@ export default function AdminNewsManager() {
           >
             <Plus size={14} />
             <span>Redactar</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => window.open('/noticias', '_blank')}
-            className="px-3.5 py-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 text-xs font-bold text-accent transition-colors flex items-center gap-1.5 ml-auto"
-            title="Abrir sección pública de noticias"
-          >
-            <span>Ver web pública</span>
-            <ExternalLink size={13} />
           </button>
         </div>
       </div>
@@ -302,62 +306,64 @@ export default function AdminNewsManager() {
               {articles.map((art) => (
                 <div
                   key={art.id}
-                  className="p-4 sm:p-5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-accent/30 transition-all"
+                  className="p-3.5 sm:p-5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 hover:border-accent/30 transition-all overflow-hidden"
                 >
-                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                     {art.image_url ? (
                       <img
                         src={art.image_url}
                         alt=""
-                        className="w-16 h-16 rounded-2xl object-cover shrink-0 bg-black/10"
+                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl object-cover shrink-0 bg-black/10"
+                        onError={(e) => { e.currentTarget.src = '/entrenamiento.png'; }}
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-2xl bg-accent/15 flex items-center justify-center text-accent shrink-0">
-                        <Newspaper size={24} />
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-accent/15 flex items-center justify-center text-accent shrink-0">
+                        <Newspaper size={22} />
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent">
+                      <div className="flex items-center gap-1.5 sm:gap-2 mb-1 flex-wrap">
+                        <span className="px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-accent/15 text-accent shrink-0">
                           {art.category}
                         </span>
-                        <span className="text-[11px] text-text-tertiary font-semibold flex items-center gap-1">
+                        <span className="text-[10px] sm:text-[11px] text-text-tertiary font-semibold flex items-center gap-1 shrink-0">
                           <Clock size={11} /> {art.reading_time} min
                         </span>
-                        <span className="text-[11px] text-text-tertiary font-semibold flex items-center gap-1">
-                          <Eye size={11} /> {art.views_count || 0} lecturas
+                        <span className="text-[10px] sm:text-[11px] text-text-tertiary font-semibold flex items-center gap-1 shrink-0">
+                          <Eye size={11} /> {art.views_count || 0}
                         </span>
                       </div>
-                      <h4 className="font-bold text-sm sm:text-base text-text-primary truncate">
+                      <h4 className="font-bold text-xs sm:text-base text-text-primary line-clamp-2 break-words">
                         {art.title}
                       </h4>
-                      <p className="text-xs text-text-tertiary truncate mt-0.5">
+                      <p className="text-[11px] text-text-tertiary truncate mt-0.5 font-mono">
                         /noticias/{art.slug}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-black/5 dark:border-white/5">
                     <button
                       onClick={() => window.open(`/noticias/${art.slug}`, '_blank')}
-                      className="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 text-text-secondary transition-colors"
+                      className="p-2 sm:p-2.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 text-text-secondary transition-colors"
                       title="Ver en la web"
                     >
-                      <ExternalLink size={16} />
+                      <ExternalLink size={15} />
                     </button>
                     <button
                       onClick={() => handleOpenEdit(art)}
-                      className="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 text-text-primary transition-colors"
+                      className="p-2 sm:p-2.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 text-text-primary transition-colors flex items-center gap-1 text-xs font-bold"
                       title="Editar artículo"
                     >
-                      <Edit size={16} />
+                      <Edit size={15} />
+                      <span className="sm:hidden text-xs">Editar</span>
                     </button>
                     <button
                       onClick={() => handleDelete(art.id, art.title)}
-                      className="p-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
+                      className="p-2 sm:p-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
                       title="Eliminar artículo"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={15} />
                     </button>
                   </div>
                 </div>
@@ -369,15 +375,15 @@ export default function AdminNewsManager() {
 
       {/* VISTA: GENERADOR IA */}
       {viewMode === 'ai' && (
-        <form onSubmit={handleGenerateAI} className="space-y-4 max-w-xl mx-auto py-8">
+        <form onSubmit={handleGenerateAI} className="space-y-4 max-w-xl mx-auto py-4 sm:py-8 px-1">
           <div className="text-center space-y-1 mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-accent/20 text-accent flex items-center justify-center mx-auto mb-3 shadow-md shadow-accent/20">
-              <Sparkles size={28} />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-accent/20 text-accent flex items-center justify-center mx-auto mb-3 shadow-md shadow-accent/20">
+              <Sparkles size={24} />
             </div>
-            <h3 className="text-xl font-black text-text-primary">
+            <h3 className="text-lg sm:text-xl font-black text-text-primary">
               Generador Inteligente con Google Gemini 2.5 Flash
             </h3>
-            <p className="text-xs text-text-secondary">
+            <p className="text-xs text-text-secondary max-w-md mx-auto">
               Escribe un tema de fitness o nutrición. La IA generará título SEO, slug, resumen para meta description y artículo completo en Markdown.
             </p>
           </div>
@@ -391,7 +397,7 @@ export default function AdminNewsManager() {
               value={aiTopic}
               onChange={(e) => setAiTopic(e.target.value)}
               placeholder="Ej. Cuánta proteína asimila el cuerpo por comida: La ciencia real"
-              className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+              className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 sm:p-3.5 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
               disabled={isGeneratingAI}
             />
           </div>
@@ -415,7 +421,7 @@ export default function AdminNewsManager() {
                 value={aiCategory}
                 onChange={(e) => setAiCategory(e.target.value)}
                 placeholder="Nombre de nueva categoría (ej. Cardio, Biomecánica)"
-                className="w-full bg-black/5 dark:bg-white/5 border border-accent/40 rounded-2xl p-3.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full bg-black/5 dark:bg-white/5 border border-accent/40 rounded-2xl p-3 sm:p-3.5 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                 disabled={isGeneratingAI}
               />
             ) : (
@@ -429,7 +435,7 @@ export default function AdminNewsManager() {
                     setAiCategory(e.target.value);
                   }
                 }}
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 sm:p-3.5 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                 disabled={isGeneratingAI}
               >
                 {availableCategories.map(cat => (
@@ -447,7 +453,7 @@ export default function AdminNewsManager() {
           <button
             type="submit"
             disabled={isGeneratingAI}
-            className="w-full py-4 rounded-2xl bg-accent text-accent-contrast font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/25 disabled:opacity-50 cursor-pointer"
+            className="w-full py-3.5 sm:py-4 rounded-2xl bg-accent text-accent-contrast font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/25 disabled:opacity-50 cursor-pointer"
           >
             {isGeneratingAI ? (
               <>
@@ -467,7 +473,7 @@ export default function AdminNewsManager() {
       {/* VISTA: EDITOR */}
       {viewMode === 'editor' && (
         <form onSubmit={handleSaveArticle} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-text-secondary mb-1">Título del Artículo:</label>
               <input
@@ -475,7 +481,7 @@ export default function AdminNewsManager() {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Título potente para SEO"
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                 required
               />
             </div>
@@ -487,7 +493,7 @@ export default function AdminNewsManager() {
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                 placeholder="ej-creatina-dosis-diaria"
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent font-mono"
               />
             </div>
 
@@ -508,7 +514,7 @@ export default function AdminNewsManager() {
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   placeholder="Nombre de la nueva categoría (ej. Cardio, Biomecánica)"
-                  className="w-full bg-black/5 dark:bg-white/5 border border-accent/40 rounded-2xl p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full bg-black/5 dark:bg-white/5 border border-accent/40 rounded-2xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                   required
                 />
               ) : (
@@ -522,7 +528,7 @@ export default function AdminNewsManager() {
                       setFormData({ ...formData, category: e.target.value });
                     }
                   }}
-                  className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                 >
                   {availableCategories.map(cat => (
                     <option key={cat} value={cat} className="bg-bg-primary text-text-primary">
@@ -543,7 +549,7 @@ export default function AdminNewsManager() {
                 value={formData.image_url}
                 onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                 placeholder="https://images.unsplash.com/..."
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
 
@@ -554,7 +560,7 @@ export default function AdminNewsManager() {
                 value={formData.summary}
                 onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
                 placeholder="Breve resumen de 2 frases para Google y redes sociales..."
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                 required
               />
             </div>
@@ -562,11 +568,11 @@ export default function AdminNewsManager() {
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-text-secondary mb-1">Contenido (Markdown):</label>
               <textarea
-                rows={14}
+                rows={12}
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 placeholder="## Subtítulo&#10;&#10;Contenido del artículo...&#10;&#10;* Puntos clave"
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus:ring-accent custom-scrollbar"
+                className="w-full max-w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs sm:text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus:ring-accent custom-scrollbar overflow-x-hidden"
                 required
               />
             </div>
@@ -578,35 +584,35 @@ export default function AdminNewsManager() {
                 value={formData.tags}
                 onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                 placeholder="fuerza, creatina, dieta"
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
 
-            <div className="flex items-center gap-3 pt-6">
-              <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-text-primary">
+            <div className="flex items-center gap-3 pt-2 sm:pt-6">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-text-primary select-none">
                 <input
                   type="checkbox"
                   checked={formData.is_published}
                   onChange={(e) => setFormData({ ...formData, is_published: e.target.checked })}
                   className="w-4 h-4 rounded text-accent"
                 />
-                <span>Publicado (Visible al público e indexable por Google)</span>
+                <span>Publicado (Visible e indexable)</span>
               </label>
             </div>
           </div>
 
-          <div className="pt-4 flex justify-end gap-3 border-t border-black/5 dark:border-white/10">
+          <div className="pt-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 border-t border-black/5 dark:border-white/10">
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className="px-5 py-2.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 text-xs font-bold text-text-secondary transition-colors"
+              className="px-5 py-2.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 text-xs font-bold text-text-secondary transition-colors text-center"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="px-6 py-2.5 rounded-full bg-accent text-accent-contrast font-black text-xs flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-md shadow-accent/25 cursor-pointer"
+              className="px-6 py-2.5 rounded-full bg-accent text-accent-contrast font-black text-xs flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-md shadow-accent/25 cursor-pointer"
             >
               {isSaving ? <Spinner size="small" color="white" /> : <Check size={16} />}
               <span>{editingArticle ? 'Actualizar Artículo' : 'Publicar Artículo'}</span>

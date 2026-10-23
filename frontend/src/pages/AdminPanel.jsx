@@ -579,7 +579,7 @@ const AdminPanel = ({ onCancel }) => {
         </button>
       </div>
 
-      <GlassCard className="glass p-6 sm:p-8 shadow-xl border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px]">
+      <GlassCard className="glass p-3.5 sm:p-6 md:p-8 shadow-xl border-none ring-1 ring-black/5 dark:ring-white/10 rounded-2xl sm:rounded-[32px] overflow-hidden">
         {activeTab === 'users' ? (
           /* --- CONTENIDO PESTAÑA USUARIOS --- */
           <>
