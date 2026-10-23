@@ -1,4 +1,4 @@
-/* backend/controllers/newsController.js */
+* backend/controllers/newsController.js */
 import { Op } from 'sequelize';
 import models from '../models/index.js';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
@@ -48,6 +48,15 @@ export const getPublicNews = async (req, res) => {
     const offset = (page - 1) * limit;
     const { category, search } = req.query;
 
+    const cacheKey = `${page}_${limit}_${category || 'all'}_${search || 'all'}`;
+    if (publicListCache.has(cacheKey)) {
+      const cached = publicListCache.get(cacheKey);
+      if (Date.now() - cached.timestamp < PUBLIC_LIST_CACHE_TTL_MS) {
+        res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+        return res.json(cached.payload);
+      }
+    }
+
     const where = { is_published: true };
 
     if (category && category !== 'Todas') {
@@ -63,23 +72,24 @@ export const getPublicNews = async (req, res) => {
       ];
     }
 
-    const { count, rows } = await News.findAndCountAll({
-      where,
-      order: [['published_at', 'DESC']],
-      limit,
-      offset,
-      attributes: [
-        'id', 'slug', 'title', 'summary', 'image_url', 'category',
-        'tags', 'author_name', 'author_avatar', 'reading_time',
-        'views_count', 'likes_count', 'published_at', 'updatedAt'
-      ]
-    });
-
-    // Obtener recuento por categoría para las pestañas dinámicas
-    const allPublished = await News.findAll({
-      where: { is_published: true },
-      attributes: ['category']
-    });
+    // Ejecución optimizada en paralelo
+    const [{ count, rows }, allPublished] = await Promise.all([
+      News.findAndCountAll({
+        where,
+        order: [['published_at', 'DESC']],
+        limit,
+        offset,
+        attributes: [
+          'id', 'slug', 'title', 'summary', 'image_url', 'category',
+          'tags', 'author_name', 'author_avatar', 'reading_time',
+          'views_count', 'likes_count', 'published_at', 'updatedAt'
+        ]
+      }),
+      News.findAll({
+        where: { is_published: true },
+        attributes: ['category']
+      })
+    ]);
 
     const categoryCounts = allPublished.reduce((acc, curr) => {
       const cat = (curr.category || '').trim();
@@ -89,13 +99,12 @@ export const getPublicNews = async (req, res) => {
       return acc;
     }, {});
 
-    // Categorías base recomendadas
     const DEFAULT_CATEGORIES = ['Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
     const dbCategories = Object.keys(categoryCounts);
     const extraCategories = dbCategories.filter(c => !DEFAULT_CATEGORIES.includes(c)).sort();
     const categories = ['Todas', ...DEFAULT_CATEGORIES, ...extraCategories];
 
-    return res.json({
+    const payload = {
       news: rows,
       total: count,
       totalAll: allPublished.length,
@@ -103,7 +112,11 @@ export const getPublicNews = async (req, res) => {
       currentPage: page,
       categories,
       categoryCounts
-    });
+    };
+
+    publicListCache.set(cacheKey, { payload, timestamp: Date.now() });
+    res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+    return res.json(payload);
   } catch (error) {
     console.error('Error al obtener noticias:', error);
     return res.status(500).json({ error: 'Error al cargar las noticias.' });

@@ -22,6 +22,7 @@ import { useLocalNotifications } from './hooks/useLocalNotifications';
 import AuthScreens from './components/AuthScreens';
 import MainAppLayout from './components/MainAppLayout';
 import InitialLoadingSkeleton from './components/InitialLoadingSkeleton';
+import NewsLoadingSkeleton from './components/News/NewsLoadingSkeleton';
 import RestTimerModal from './components/RestTimerModal';
 import DynamicIslandTimer from './components/DynamicIslandTimer';
 import VersionUpdater from './components/VersionUpdater';
@@ -448,7 +449,7 @@ export default function App() {
     if (!isAuthenticated) return;
 
     const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub'];
-    const secondaryNavViews = ['workout', 'progress', 'profile', 'settings', 'notifications', 'challenges', 'appearance'];
+    const secondaryNavViews = ['workout', 'progress', 'profile', 'settings', 'notifications', 'challenges', 'appearance', 'noticias'];
 
     // Asegurar que la vista activa empiece primero
     preloadViewChunk(view);
@@ -796,7 +797,7 @@ export default function App() {
             </Suspense>
         } />
         <Route path="/noticias" element={
-            <Suspense fallback={<InitialLoadingSkeleton />}>
+            <Suspense fallback={<NewsLoadingSkeleton />}>
                 <NewsListPage
                   onBack={() => {
                     if (isAuthenticated) {
@@ -810,7 +811,7 @@ export default function App() {
             </Suspense>
         } />
         <Route path="/noticias/:slug" element={
-            <Suspense fallback={<InitialLoadingSkeleton />}>
+            <Suspense fallback={<NewsLoadingSkeleton isDetail={true} />}>
                 <NewsDetailPage
                   onBack={() => navigate('/noticias')}
                   navigate={navigateInternal}
@@ -832,7 +833,7 @@ export default function App() {
         <Route path="/" element={
             !isAuthenticated ? (
                 isInstalledApp ? <Navigate to="/login" replace /> : (
-                  <Suspense fallback={<InitialLoadingSkeleton />}>
+                  <Suspense fallback={<NewsLoadingSkeleton />}>
                     <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
                   </Suspense>
                 )

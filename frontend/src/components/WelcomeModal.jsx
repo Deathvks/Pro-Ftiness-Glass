@@ -1,4 +1,4 @@
-import ModalPortal from './ModalPortal';
+﻿import ModalPortal from './ModalPortal';
 /* frontend/src/components/WelcomeModal.jsx */
 import React, { useEffect, useRef } from 'react';
 import {
@@ -7,11 +7,22 @@ import {
 import { FaMeteor } from 'react-icons/fa6';
 import { APP_VERSION } from '../config/version';
 import useModalLock from '../hooks/useModalLock';
+import { preloadViewChunk } from '../App';
+import * as newsService from '../services/newsService';
 
 const WelcomeModal = ({ onClose }) => {
 
   // --- Bloquear scroll del fondo y swipe entre páginas ---
   useModalLock();
+
+  // Precargar chunks y contenido de noticias mientras el usuario lee las novedades del modal
+  useEffect(() => {
+    try {
+      preloadViewChunk('noticias');
+      preloadViewChunk('noticiaDetalle');
+      newsService.fetchPublicNews({ page: 1, limit: 6 }).catch(() => {});
+    } catch {}
+  }, []);
 
   const appVersion = `v${APP_VERSION}`;
   const majorVersion = APP_VERSION.split('.')[0];

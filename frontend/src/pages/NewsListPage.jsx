@@ -1,4 +1,4 @@
-/* frontend/src/pages/NewsListPage.jsx */
+* frontend/src/pages/NewsListPage.jsx */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -43,22 +43,33 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   const currentSearch = searchParams.get('search') || '';
 
   const [searchInput, setSearchInput] = useState(currentSearch);
-  const [news, setNews] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [totalAll, setTotalAll] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [categoryCounts, setCategoryCounts] = useState({});
-  const [apiCategories, setApiCategories] = useState(DEFAULT_CATEGORIES);
-  const [isLoading, setIsLoading] = useState(true);
+
+  // Exactamente 6 art�culos por p�gina (2 filas completas de 3 columnas para una cuadr�cula perfecta)
+  const ITEMS_PER_PAGE = 6;
+
+  // Carga instant�nea SWR (0ms) desde cach� en memoria, sessionStorage o bundle empaquetado
+  const cachedInitial = useMemo(() => {
+    return newsService.getCachedPublicNews({
+      page: currentPage,
+      limit: ITEMS_PER_PAGE,
+      category: currentCategory,
+      search: currentSearch
+    });
+  }, [currentPage, currentCategory, currentSearch]);
+
+  const [news, setNews] = useState(() => cachedInitial?.news || []);
+  const [total, setTotal] = useState(() => cachedInitial?.total || 0);
+  const [totalAll, setTotalAll] = useState(() => cachedInitial?.totalAll || 0);
+  const [totalPages, setTotalPages] = useState(() => cachedInitial?.totalPages || 1);
+  const [categoryCounts, setCategoryCounts] = useState(() => cachedInitial?.categoryCounts || {});
+  const [apiCategories, setApiCategories] = useState(() => cachedInitial?.categories || DEFAULT_CATEGORIES);
+  const [isLoading, setIsLoading] = useState(() => !cachedInitial);
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   const handleRetry = () => {
     setReloadKey((prev) => prev + 1);
   };
-
-  // Exactamente 6 artículos por página (2 filas completas de 3 columnas para una cuadrícula perfecta)
-  const ITEMS_PER_PAGE = 6;
 
   // Categorías calculadas dinámicamente: base + cualquier nueva categoría devuelta por la API o categoryCounts
   const categories = useMemo(() => {
@@ -88,7 +99,9 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   useEffect(() => {
     let isMounted = true;
     const loadNews = async () => {
-      setIsLoading(true);
+      if (!cachedInitial && (!news || news.length === 0)) {
+        setIsLoading(true);
+      }
       setError(null);
       try {
         const data = await newsService.fetchPublicNews({
@@ -97,7 +110,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           category: currentCategory,
           search: currentSearch
         });
-        if (isMounted) {
+        if (isMounted && data) {
           setNews(data.news || []);
           setTotal(data.total || 0);
           setTotalPages(data.totalPages || 1);
@@ -114,7 +127,9 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
         }
       } catch (err) {
         if (isMounted) {
-          setError(err.message || 'Error al cargar las noticias');
+          if (!cachedInitial && (!news || news.length === 0)) {
+            setError(err.message || 'Error al cargar las noticias');
+          }
         }
       } finally {
         if (isMounted) setIsLoading(false);
@@ -124,6 +139,15 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
     loadNews();
     return () => { isMounted = false; };
   }, [currentCategory, currentPage, currentSearch, reloadKey]);
+
+  // Precarga agresiva de contenido de los primeros 3 artículos en segundo plano para abrir a 0ms
+  useEffect(() => {
+    if (news && news.length > 0) {
+      news.slice(0, 3).forEach((art) => {
+        if (art?.slug) newsService.prefetchNewsBySlug(art.slug);
+      });
+    }
+  }, [news]);
 
   const handleSelectCategory = (cat) => {
     const next = new URLSearchParams(searchParams);
@@ -320,11 +344,28 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
         })}
       </nav>
 
-      {/* CONTENIDO PRINCIPAL */}
+            {/* CONTENIDO PRINCIPAL */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Spinner size={36} />
-          <p className="text-xs font-medium text-text-tertiary animate-pulse">Cargando artículos...</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="glass p-0 rounded-[28px] overflow-hidden border border-black/5 dark:border-white/10 flex flex-col justify-between"
+            >
+              <div className="h-48 bg-black/10 dark:bg-white/10 animate-pulse" />
+              <div className="p-5 flex flex-col gap-3 flex-1 justify-between">
+                <div className="flex flex-col gap-2">
+                  <div className="h-3.5 w-20 rounded bg-accent/20 animate-pulse" />
+                  <div className="h-5 w-full rounded bg-black/10 dark:bg-white/10 animate-pulse" />
+                  <div className="h-4 w-5/6 rounded bg-black/5 dark:bg-white/5 animate-pulse" />
+                </div>
+                <div className="flex items-center justify-between pt-4 border-t border-black/5 dark:border-white/5">
+                  <div className="h-3 w-20 rounded bg-black/10 dark:bg-white/10 animate-pulse" />
+                  <div className="h-3 w-16 rounded bg-black/10 dark:bg-white/10 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : error ? (
         <div className="py-12 px-4 flex flex-col items-center justify-center">

@@ -1,4 +1,4 @@
-/* frontend/src/pages/NewsDetailPage.jsx */
+* frontend/src/pages/NewsDetailPage.jsx */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import Spinner from '../components/Spinner';
+import NewsLoadingSkeleton from '../components/News/NewsLoadingSkeleton';
 import ArticleSEO from '../components/News/ArticleSEO';
 import AdSenseSlot from '../components/News/AdSenseSlot';
 import MarkdownContent from '../components/News/MarkdownContent';
@@ -221,18 +222,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
   const telegramUrl = `https://t.me/share/url?url=${shareUrl}&text=${shareText}`;
 
   if (isLoading) {
-    return (
-      <div
-        className="fixed inset-0 z-50 bg-bg-primary flex flex-col items-center justify-center gap-3 px-4"
-        style={{
-          paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
-          paddingBottom: 'var(--safe-bottom, env(safe-area-inset-bottom, 0px))'
-        }}
-      >
-        <Spinner size={40} />
-        <p className="text-sm font-medium text-text-tertiary animate-pulse">Cargando artículo...</p>
-      </div>
-    );
+    return <NewsLoadingSkeleton isDetail={true} />;
   }
 
   if (error || !article) {

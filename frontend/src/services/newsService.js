@@ -1,4 +1,4 @@
-/* frontend/src/services/newsService.js */
+* frontend/src/services/newsService.js */
 import useAppStore from '../store/useAppStore';
 import cachedNewsList from '../data/cachedNews.json';
 
@@ -73,7 +73,7 @@ const getAuthHeaders = () => {
 /**
  * Petición HTTP resiliente con reintento automático y traducción humana de errores de red
  */
-const requestWithRetry = async (url, options = {}, retries = 1, timeoutMs = 15000) => {
+const requestWithRetry = async (url, options = {}, retries = 1, timeoutMs = 8000) => {
   let attempts = 0;
   while (attempts <= retries) {
     const controller = new AbortController();
@@ -138,16 +138,88 @@ const requestWithRetry = async (url, options = {}, retries = 1, timeoutMs = 1500
   }
 };
 
+// Cach� en memoria para listados de noticias
+const publicListMemoryCache = new Map();
+
+/**
+ * Obtiene s�ncronamente (0ms) datos del listado de noticias desde RAM, SessionStorage o datos locales empaquetados
+ */
+export const getCachedPublicNews = ({ page = 1, limit = 6, category = '', search = '' } = {}) => {
+  const cacheKey = `${page}_${limit}_${category || 'all'}_${search || 'all'}`;
+  if (publicListMemoryCache.has(cacheKey)) {
+    return publicListMemoryCache.get(cacheKey);
+  }
+  try {
+    const raw = sessionStorage.getItem(`pfg_news_list_${cacheKey}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.news) && parsed.news.length > 0) {
+        publicListMemoryCache.set(cacheKey, parsed);
+        return parsed;
+      }
+    }
+  } catch {}
+
+  // Fallback con los 20 art�culos precargados en el bundle inicial
+  if (page === 1 && !search && Array.isArray(cachedNewsList) && cachedNewsList.length > 0) {
+    let list = cachedNewsList;
+    if (category && category !== 'Todas') {
+      list = cachedNewsList.filter((art) => (art.category || '').toLowerCase() === category.toLowerCase());
+    }
+    if (list.length > 0) {
+      return {
+        news: list.slice(0, limit),
+        total: list.length,
+        totalAll: cachedNewsList.length,
+        totalPages: Math.max(1, Math.ceil(list.length / limit)),
+        currentPage: 1,
+        categories: ['Todas', 'Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'],
+        categoryCounts: cachedNewsList.reduce((acc, curr) => {
+          const cat = (curr.category || '').trim();
+          if (cat) acc[cat] = (acc[cat] || 0) + 1;
+          return acc;
+        }, {}),
+        isBundledFallback: true
+      };
+    }
+  }
+
+  return null;
+};
+
 export const fetchPublicNews = async ({ page = 1, limit = 6, category = '', search = '' } = {}) => {
+  const cacheKey = `${page}_${limit}_${category || 'all'}_${search || 'all'}`;
   const params = new URLSearchParams();
   if (page) params.append('page', page);
   if (limit) params.append('limit', limit);
   if (category && category !== 'Todas') params.append('category', category);
   if (search) params.append('search', search);
 
-  return requestWithRetry(`${API_URL}/news?${params.toString()}`, {
+  const data = await requestWithRetry(`${API_URL}/news?${params.toString()}`, {
     headers: getAuthHeaders()
   }, 1);
+
+  if (data && Array.isArray(data.news)) {
+    publicListMemoryCache.set(cacheKey, data);
+    try {
+      sessionStorage.setItem(`pfg_news_list_${cacheKey}`, JSON.stringify(data));
+    } catch {}
+
+    // Registrar art�culos en articleMemoryCache como parciales para apertura instant�nea al pulsar
+    data.news.forEach((art) => {
+      if (art && art.slug && !articleMemoryCache.has(art.slug)) {
+        articleMemoryCache.set(art.slug, {
+          article: art,
+          relatedNews: [],
+          nextArticle: null,
+          prevArticle: null,
+          isPartial: true
+        });
+      }
+    });
+  }
+
+  return data;
 };
 
 export const fetchNewsBySlug = async (slug) => {
