@@ -135,31 +135,48 @@ const LoadingFallback = () => {
       </div>
 
       {showRescue && (
-        <div className="fixed bottom-[calc(var(--safe-bottom)+84px)] md:bottom-8 left-1/2 -translate-x-1/2 z-[70] w-[92%] max-w-md p-4 rounded-2xl glass border border-amber-500/30 bg-bg-secondary/95 backdrop-blur-xl shadow-2xl shadow-black/30 animate-[fade-in-up_0.3s_ease-out] flex flex-col gap-3 text-center pointer-events-auto">
-          <p className="text-sm font-semibold text-text-primary">
-            ¿La sección está tardando en cargar?
-          </p>
-          <p className="text-xs text-text-secondary">
-            Puede haber un conflicto de caché tras la actualización. Puedes forzar una recarga limpia.
-          </p>
-          <div className="flex items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={handleRepair}
-              disabled={isRepairing}
-              className="px-4 py-2 rounded-xl bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRepairing ? 'animate-spin' : ''}`} />
-              <span>{isRepairing ? 'Recargando...' : 'Recargar vista'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleResetSession}
-              disabled={isRepairing}
-              className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 font-bold text-xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
-            >
-              Cerrar sesión
-            </button>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/35 backdrop-blur-sm animate-[fade-in_0.2s_ease-out] pointer-events-auto">
+          <div className="w-full max-w-sm p-5 rounded-3xl glass border border-amber-500/30 bg-bg-secondary/95 backdrop-blur-2xl shadow-2xl shadow-black/40 flex flex-col gap-3.5 text-center animate-[scale-in_0.2s_ease-out]">
+            <div className="w-11 h-11 mx-auto rounded-2xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-500">
+              <RefreshCw className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-text-primary">
+                ¿La sección está tardando en cargar?
+              </p>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                Puede haber un conflicto de caché tras la actualización. Puedes forzar una recarga limpia.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleRepair}
+                disabled={isRepairing}
+                className="w-full py-2.5 px-4 rounded-xl bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRepairing ? 'animate-spin' : ''}`} />
+                <span>{isRepairing ? 'Recargando...' : 'Recargar vista'}</span>
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRescue(false)}
+                  disabled={isRepairing}
+                  className="flex-1 py-2 px-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-secondary hover:text-text-primary font-semibold text-xs active:scale-95 transition-all cursor-pointer"
+                >
+                  Esperar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetSession}
+                  disabled={isRepairing}
+                  className="flex-1 py-2 px-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 font-semibold text-xs active:scale-95 transition-all cursor-pointer"
+                >
+                  Cerrar sesión
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
