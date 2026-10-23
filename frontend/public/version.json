@@ -1,4 +1,4 @@
 {
-  "version": "7.9.2",
-  "releaseNotes": "Actualización v7.9.2: Optimización masiva del rendimiento de carga, eliminación de congestión de red tras bienvenida y recargas instantáneas sin esperas."
+  "version": "7.9.3",
+  "releaseNotes": "Actualización v7.9.3: Corrección de entidades XML en feed RSS para indexación perfecta en Google y agregadores."
 }

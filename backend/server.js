@@ -204,6 +204,17 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/admin/security', securityRoutes);
 app.use('/api/news', newsRoutes);
 
+// Helper para escapar caracteres especiales reservados en XML/RSS
+const escapeXml = (unsafe = '') => {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+};
+
 // Sitemap XML dinámico con todas las noticias indexables en tiempo real
 app.get('/sitemap.xml', async (req, res) => {
   try {
@@ -216,7 +227,7 @@ app.get('/sitemap.xml', async (req, res) => {
       '  <url><loc>' + baseUrl + '/noticias</loc><changefreq>daily</changefreq><priority>0.9</priority></url>',
       '  <url><loc>' + baseUrl + '/privacy</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>',
       '  <url><loc>' + baseUrl + '/terms</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>',
-      ...newsItems.map(item => '  <url><loc>' + baseUrl + '/noticias/' + item.slug + '</loc><lastmod>' + new Date(item.updatedAt || item.published_at).toISOString().split('T')[0] + '</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>'),
+      ...newsItems.map(item => '  <url><loc>' + baseUrl + '/noticias/' + encodeURIComponent(item.slug || '') + '</loc><lastmod>' + new Date(item.updatedAt || item.published_at).toISOString().split('T')[0] + '</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>'),
       '</urlset>'
     ].join('\n');
     res.header('Content-Type', 'application/xml; charset=utf-8');
@@ -236,11 +247,12 @@ app.get(['/rss.xml', '/feed.xml'], async (req, res) => {
       : new Date().toUTCString();
 
     const itemsXml = newsItems.map(item => {
-      const url = `${baseUrl}/noticias/${item.slug}`;
+      const url = `${baseUrl}/noticias/${encodeURIComponent(item.slug || '')}`;
       const pubDate = new Date(item.published_at || item.updatedAt).toUTCString();
-      const escapedTitle = (item.title || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-      const escapedSummary = (item.summary || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-      const category = (item.category || 'Fitness').replace(/&/g, '&amp;');
+      const escapedTitle = escapeXml(item.title);
+      const escapedSummary = escapeXml(item.summary);
+      const category = escapeXml(item.category || 'Fitness');
+      const escapedImageUrl = item.image_url ? escapeXml(item.image_url) : '';
 
       return `    <item>
       <title>${escapedTitle}</title>
@@ -249,7 +261,7 @@ app.get(['/rss.xml', '/feed.xml'], async (req, res) => {
       <description>${escapedSummary}</description>
       <category>${category}</category>
       <pubDate>${pubDate}</pubDate>
-      ${item.image_url ? `<enclosure url="${item.image_url}" type="image/jpeg" length="0" />` : ''}
+      ${escapedImageUrl ? `<enclosure url="${escapedImageUrl}" type="image/jpeg" length="0" />` : ''}
     </item>`;
     }).join('\n');
 
