@@ -22,6 +22,7 @@ import { es } from 'date-fns/locale';
 import Spinner from '../Spinner';
 import * as newsService from '../../services/newsService';
 import { useToast } from '../../hooks/useToast';
+import AdminNewsAutomation from './AdminNewsAutomation';
 
 const DEFAULT_CATEGORIES = ['Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
 
@@ -32,7 +33,7 @@ export default function AdminNewsManager() {
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Modos de vista: 'list' | 'editor' | 'ai'
+  // Modos de vista: 'list' | 'editor' | 'ai' | 'automation'
   const [viewMode, setViewMode] = useState('list');
   const [editingArticle, setEditingArticle] = useState(null);
   const [isCustomCategory, setIsCustomCategory] = useState(false);
@@ -211,37 +212,78 @@ export default function AdminNewsManager() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {viewMode !== 'list' && (
-            <button
-              onClick={() => setViewMode('list')}
-              className="px-4 py-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 text-xs font-bold text-text-secondary transition-colors"
-            >
-              Volver a la lista
-            </button>
-          )}
           <button
+            type="button"
+            onClick={() => { setViewMode('list'); loadArticles(); }}
+            className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+              viewMode === 'list'
+                ? 'bg-accent text-accent-contrast shadow-sm shadow-accent/20'
+                : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 text-text-secondary'
+            }`}
+          >
+            <Newspaper size={14} />
+            <span>Artículos ({total})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setViewMode('automation')}
+            className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 border ${
+              viewMode === 'automation'
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-transparent shadow-sm shadow-orange-500/25'
+                : 'border-orange-500/30 text-orange-600 dark:text-orange-400 bg-orange-500/10 hover:bg-orange-500/20'
+            }`}
+          >
+            <Clock size={14} />
+            <span>Automatización Gemini</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setViewMode('ai')}
+            className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+              viewMode === 'ai'
+                ? 'bg-accent text-accent-contrast shadow-sm'
+                : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 text-text-secondary'
+            }`}
+          >
+            <Sparkles size={14} />
+            <span>Generar Asistido</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenCreate}
+            className={`px-4 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+              viewMode === 'editor' && !editingArticle
+                ? 'bg-accent text-accent-contrast shadow-sm'
+                : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 text-text-secondary'
+            }`}
+          >
+            <Plus size={14} />
+            <span>Redactar</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => window.open('/noticias', '_blank')}
-            className="px-4 py-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 text-xs font-bold text-accent transition-colors flex items-center gap-1.5"
+            className="px-3.5 py-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 text-xs font-bold text-accent transition-colors flex items-center gap-1.5 ml-auto"
+            title="Abrir sección pública de noticias"
           >
             <span>Ver web pública</span>
             <ExternalLink size={13} />
           </button>
-          <button
-            onClick={() => setViewMode('ai')}
-            className="px-4 py-2 rounded-full bg-accent text-accent-contrast hover:scale-105 active:scale-95 text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-accent/20"
-          >
-            <Sparkles size={14} />
-            <span>Generar con IA</span>
-          </button>
-          <button
-            onClick={handleOpenCreate}
-            className="px-4 py-2 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/15 text-xs font-bold text-text-primary transition-all flex items-center gap-1.5"
-          >
-            <Plus size={15} />
-            <span>Redactar</span>
-          </button>
         </div>
       </div>
+
+      {/* VISTA: AUTOMATIZACIÓN DIARIA CON GEMINI */}
+      {viewMode === 'automation' && (
+        <AdminNewsAutomation
+          onNavigateToArticle={(slug) => {
+            window.open(`/noticias/${slug}`, '_blank');
+          }}
+        />
+      )}
 
       {/* VISTA: LISTADO */}
       {viewMode === 'list' && (

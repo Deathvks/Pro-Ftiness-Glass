@@ -7,6 +7,7 @@ import { createNotification } from './notificationService.js';
 import { cleanOrphanedImages, deleteFile } from './imageService.js';
 import { sendBotReminderEmail } from './emailService.js';
 import { countMissedWeekdays } from './gamificationService.js';
+import { newsAutomationService } from './newsAutomationService.js';
 
 /**
  * Obtiene la hora y fecha local para una zona horaria dada.
@@ -596,6 +597,26 @@ export const startCronJobs = () => {
   checkStreakWars();
   resetInactiveStreaks();
   checkChatBotReminders(); // <-- Añadido el nuevo vigilante
+  scheduleDailyNewsAutomation();
+};
+
+/**
+ * Automatización diaria de noticias con Gemini
+ * Verifica cada minuto si ha llegado la hora de generación programada
+ */
+const scheduleDailyNewsAutomation = () => {
+  cron.schedule('* * * * *', async () => {
+    try {
+      const now = Date.now();
+      const status = newsAutomationService.getStatus();
+      if (!status.isGenerating && status.nextRunAt && now >= new Date(status.nextRunAt).getTime()) {
+        console.log('[Cron] Hora programada de creación diaria de noticias alcanzada. Iniciando Gemini...');
+        await newsAutomationService.executeDailyNewsGeneration({ isManual: false });
+      }
+    } catch (e) {
+      console.error('[Cron] Error en el cron de automatización de noticias:', e.message);
+    }
+  });
 };
 
 

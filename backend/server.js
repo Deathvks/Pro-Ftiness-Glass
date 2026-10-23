@@ -146,6 +146,9 @@ io.on('connection', (socket) => {
   if (userId) {
     socket.join(userId.toString());
   }
+  if (socket.user?.role === 'admin') {
+    socket.join('admin');
+  }
 
   socket.on('disconnect', () => {});
 });

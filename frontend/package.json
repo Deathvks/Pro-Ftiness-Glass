@@ -1,7 +1,7 @@
 {
   "name": "pro-fitness-glass",
   "private": true,
-  "version": "7.8.55",
+  "version": "7.8.56",
   "type": "module",
   "engines": {
     "node": ">=20.0.0",
@@ -95,4 +95,3 @@
     "workbox-background-sync": "^7.4.0"
   }
 }
-

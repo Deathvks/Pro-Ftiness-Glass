@@ -635,3 +635,54 @@ El único requisito termodinámico ineludible para oxidar grasa corporal es mant
     console.warn('Advertencia al sembrar noticias iniciales:', error.message);
   }
 };
+
+/**
+ * Endpoints para Automatización de Noticias con Gemini
+ */
+export const getAutomationStatus = async (req, res) => {
+  try {
+    const { newsAutomationService } = await import('../services/newsAutomationService.js');
+    return res.json(newsAutomationService.getStatus());
+  } catch (error) {
+    console.error('Error al obtener estado de automatización:', error);
+    return res.status(500).json({ error: 'Error al consultar la automatización.' });
+  }
+};
+
+export const triggerAutomationNow = async (req, res) => {
+  try {
+    const { newsAutomationService } = await import('../services/newsAutomationService.js');
+    const { topic } = req.body || {};
+
+    // Iniciar en segundo plano para devolver respuesta instantánea y emitir progreso vía WebSockets
+    newsAutomationService.executeDailyNewsGeneration({ isManual: true, forcedTopic: topic }).catch((err) => {
+      console.error('[NewsAutomation] Error en disparo manual:', err);
+    });
+
+    return res.json({
+      message: 'Generación con Gemini iniciada con éxito.',
+      status: 'generating'
+    });
+  } catch (error) {
+    console.error('Error al disparar automatización:', error);
+    return res.status(500).json({ error: 'Error al iniciar la generación.' });
+  }
+};
+
+export const updateAutomationConfig = async (req, res) => {
+  try {
+    const { newsAutomationService } = await import('../services/newsAutomationService.js');
+    const { hour, minute } = req.body;
+    if (hour === undefined) {
+      return res.status(400).json({ error: 'Debes proporcionar la hora (0-23).' });
+    }
+    const updated = newsAutomationService.updateSchedule(hour, minute || 0);
+    return res.json({
+      message: 'Horario de automatización actualizado.',
+      data: updated
+    });
+  } catch (error) {
+    console.error('Error al actualizar horario de automatización:', error);
+    return res.status(500).json({ error: 'Error al configurar el horario.' });
+  }
+};

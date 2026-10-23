@@ -1,4 +1,4 @@
 {
-  "version": "7.8.55",
-  "releaseNotes": "Navegación instantánea a 0ms en noticias, precarga en segundo plano desde el modal de bienvenida y esqueleto coordinado."
+  "version": "7.8.56",
+  "releaseNotes": "Automatización diaria de noticias con Gemini: redacción autónoma de actualidad fitness/salud con SEO de alta retención, cuenta regresiva en vivo, terminal en tiempo real y soporte para categorías dinámicas."
 }

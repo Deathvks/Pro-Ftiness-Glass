@@ -24,6 +24,26 @@ router.post('/article/:slug/view', newsInteractionLimiter, newsController.trackN
 router.post('/article/:slug/like', newsInteractionLimiter, newsController.toggleLikeNews);
 
 // --- RUTAS ADMINISTRADOR (Gestión de noticias y generación con IA) ---
+router.get(
+  '/admin/automation/status',
+  authenticateToken,
+  authorizeAdmin,
+  newsController.getAutomationStatus
+);
+
+router.post(
+  '/admin/automation/trigger',
+  authenticateToken,
+  authorizeAdmin,
+  newsController.triggerAutomationNow
+);
+
+router.post(
+  '/admin/automation/schedule',
+  authenticateToken,
+  authorizeAdmin,
+  newsController.updateAutomationConfig
+);
 router.post(
   '/generate-ai',
   authenticateToken,

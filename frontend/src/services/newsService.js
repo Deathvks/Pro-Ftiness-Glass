@@ -340,3 +340,38 @@ export const deleteNews = async (id) => {
     0
   );
 };
+
+// --- AUTOMATIZACIÓN DE NOTICIAS CON GEMINI ---
+export const getNewsAutomationStatus = async () => {
+  return requestWithRetry(
+    `${API_URL}/news/admin/automation/status`,
+    {
+      headers: getAuthHeaders()
+    },
+    0
+  );
+};
+
+export const triggerNewsAutomation = async (topic = null) => {
+  return requestWithRetry(
+    `${API_URL}/news/admin/automation/trigger`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ topic })
+    },
+    0
+  );
+};
+
+export const updateNewsAutomationSchedule = async ({ hour, minute = 0 }) => {
+  return requestWithRetry(
+    `${API_URL}/news/admin/automation/schedule`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ hour, minute })
+    },
+    0
+  );
+};
