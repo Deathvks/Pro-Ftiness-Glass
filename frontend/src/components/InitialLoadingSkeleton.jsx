@@ -1,10 +1,47 @@
 /* frontend/src/components/InitialLoadingSkeleton.jsx */
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Skeleton from './Skeleton';
 
 const InitialLoadingSkeleton = () => {
+    const [showRescue, setShowRescue] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowRescue(true);
+        }, 5500);
+        return () => clearTimeout(timer);
+    }, []);
+
+    const handleRepair = async () => {
+        try {
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(k => caches.delete(k)));
+            }
+            localStorage.removeItem('pfg_cached_initial_state_v1');
+            sessionStorage.clear();
+        } catch {}
+        window.location.reload();
+    };
+
+    const handleResetAll = () => {
+        try {
+            localStorage.clear();
+            sessionStorage.clear();
+            if ('caches' in window) {
+                caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
+            }
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(regs => {
+                    for (const reg of regs) reg.unregister();
+                }).catch(() => {});
+            }
+        } catch {}
+        window.location.replace('/login');
+    };
+
     return (
-        <div className="min-h-screen w-full bg-transparent flex flex-col">
+        <div className="min-h-screen w-full bg-transparent flex flex-col relative">
             <div 
                 className="w-full flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 animate-[fade-in_0.5s_ease-out]"
                 style={{ 
@@ -85,6 +122,33 @@ const InitialLoadingSkeleton = () => {
                 </div>
             </div>
             </div>
+
+            {showRescue && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md p-4 rounded-2xl glass border border-amber-500/30 bg-bg-secondary/95 backdrop-blur-xl shadow-2xl shadow-black/30 animate-[fade-in-up_0.3s_ease-out] flex flex-col gap-3 text-center">
+                    <p className="text-sm font-semibold text-text-primary">
+                        ¿Está tardando demasiado en cargar?
+                    </p>
+                    <p className="text-xs text-text-secondary">
+                        Parece que el navegador tiene datos o caché local en conflicto. Puedes repararla o restablecer la sesión.
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                        <button
+                            type="button"
+                            onClick={handleRepair}
+                            className="px-4 py-2 rounded-xl bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                        >
+                            🔄 Reparar y Cargar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleResetAll}
+                            className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 font-bold text-xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                        >
+                            Restablecer sesión
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

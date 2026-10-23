@@ -66,16 +66,83 @@ const ACCENT_UNLOCK_REWARDS = {
   ],
 };
 
-const LoadingFallback = () => (
-  <div className="w-full px-4 py-6 max-w-4xl mx-auto space-y-4 animate-pulse pointer-events-none">
-    <div className="h-36 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
-    <div className="grid grid-cols-2 gap-3">
-      <div className="h-24 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
-      <div className="h-24 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
+const LoadingFallback = () => {
+  const [showRescue, setShowRescue] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowRescue(true);
+    }, 5500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleRepair = async () => {
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      sessionStorage.clear();
+    } catch {}
+    window.location.reload();
+  };
+
+  const handleResetSession = () => {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+      if ('caches' in window) {
+        caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
+      }
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          for (const reg of regs) reg.unregister();
+        }).catch(() => {});
+      }
+    } catch {}
+    window.location.replace('/login');
+  };
+
+  return (
+    <div className="w-full px-4 py-6 max-w-4xl mx-auto space-y-4 relative">
+      <div className="space-y-4 animate-pulse pointer-events-none">
+        <div className="h-36 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="h-24 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
+          <div className="h-24 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
+        </div>
+        <div className="h-44 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
+      </div>
+
+      {showRescue && (
+        <div className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md p-4 rounded-2xl glass border border-amber-500/30 bg-bg-secondary/95 backdrop-blur-xl shadow-2xl shadow-black/30 animate-[fade-in-up_0.3s_ease-out] flex flex-col gap-3 text-center pointer-events-auto">
+          <p className="text-sm font-semibold text-text-primary">
+            ¿La sección está tardando en cargar?
+          </p>
+          <p className="text-xs text-text-secondary">
+            Puede haber un conflicto de caché tras la actualización. Puedes forzar una recarga limpia.
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={handleRepair}
+              className="px-4 py-2 rounded-xl bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+            >
+              🔄 Recargar vista
+            </button>
+            <button
+              type="button"
+              onClick={handleResetSession}
+              className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 font-bold text-xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      )}
     </div>
-    <div className="h-44 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
-  </div>
-);
+  );
+};
 
 class ViewErrorBoundary extends React.Component {
   constructor(props) {

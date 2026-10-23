@@ -13,6 +13,20 @@ import { clientsClaim } from 'workbox-core';
 self.skipWaiting(); // <-- Obliga a instalar la nueva versión sin esperar
 clientsClaim();
 
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      try {
+        if ('caches' in self) {
+          await caches.delete('api-read-cache');
+        }
+      } catch (e) {
+        console.warn('[SW] Error eliminando api-read-cache en activación:', e);
+      }
+    })()
+  );
+});
+
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
@@ -154,8 +168,22 @@ registerRoute(
 );
 
 // C. API - Lectura (GET) -> NetworkFirst (Intenta red, si falla usa caché)
+// NOTA CRÍTICA: Excluimos explícitamente endpoints de autenticación, perfil de usuario, admin y notificaciones
+// para garantizar que nunca se sirvan sesiones caducadas, corruptas o datos erróneos de usuario desde caché.
 registerRoute(
-  ({ url, request }) => url.pathname.startsWith('/api/') && request.method === 'GET',
+  ({ url, request }) => {
+    if (request.method !== 'GET') return false;
+    if (!url.pathname.startsWith('/api/')) return false;
+    if (
+      url.pathname.startsWith('/api/auth/') ||
+      url.pathname.startsWith('/api/users/') ||
+      url.pathname.startsWith('/api/admin/') ||
+      url.pathname.startsWith('/api/notifications/')
+    ) {
+      return false;
+    }
+    return true;
+  },
   new NetworkFirst({
     cacheName: 'api-read-cache',
     plugins: [

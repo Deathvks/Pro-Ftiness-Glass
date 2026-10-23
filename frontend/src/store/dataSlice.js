@@ -267,8 +267,13 @@ export const createDataSlice = (set, get) => ({
         }
       } catch (error) {
         console.error("Error al cargar datos iniciales (posiblemente de red):", error);
-        if (error?.status === 404) {
-          console.warn('[fetchInitialData] Usuario no encontrado en el backend. Cerrando sesión limpia...');
+        if (
+          error?.status === 404 ||
+          error?.status === 401 ||
+          error?.status === 403 ||
+          error?.message?.includes('Sesión expirada')
+        ) {
+          console.warn('[fetchInitialData] Sesión inválida o usuario no encontrado en el backend. Cerrando sesión limpia...');
           get().handleLogout();
         } else if (
           (error?.message?.includes('fetch') || error?.message?.includes('network') || error?.name === 'TypeError' || error?.isMaintenance) &&

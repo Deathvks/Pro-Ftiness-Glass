@@ -586,7 +586,7 @@ export default function App() {
     // Si el perfil no tiene la propiedad 'role', significa que es el objeto parcial del login
     // y todava no se ha ejecutado fetchInitialData. Mostramos el skeleton para evitar parpadeos.
     if (!userProfile || !('role' in userProfile) || (isLoading && !userProfile.goal)) {
-      if (!isLoading && !isInitialLoad) {
+      if (!isInitialLoad) {
         return (
           <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-bg-primary">
             <div className="w-16 h-16 rounded-2xl bg-accent/15 text-accent flex items-center justify-center mb-4 shadow-lg shadow-accent/20">
@@ -596,7 +596,7 @@ export default function App() {
             <p className="text-sm text-text-secondary max-w-sm mb-6">
               No hemos podido cargar los datos de tu perfil. Comprueba tu conexión a internet o reintenta.
             </p>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={() => {
@@ -608,10 +608,27 @@ export default function App() {
               </button>
               <button
                 type="button"
+                onClick={async () => {
+                  try {
+                    if ('caches' in window) {
+                      const keys = await caches.keys();
+                      await Promise.all(keys.map(k => caches.delete(k)));
+                    }
+                    localStorage.removeItem('pfg_cached_initial_state_v1');
+                    sessionStorage.clear();
+                  } catch {}
+                  window.location.reload();
+                }}
+                className="px-5 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-primary font-bold text-sm cursor-pointer hover:scale-105 active:scale-95 transition-all"
+              >
+                🔄 Reparar caché
+              </button>
+              <button
+                type="button"
                 onClick={() => {
                   useAppStore.getState().handleLogout();
                 }}
-                className="px-5 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-secondary hover:text-text-primary font-bold text-sm cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                className="px-5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 font-bold text-sm cursor-pointer hover:scale-105 active:scale-95 transition-all"
               >
                 Cerrar sesión
               </button>
