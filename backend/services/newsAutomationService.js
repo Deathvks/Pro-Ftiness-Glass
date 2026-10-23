@@ -155,12 +155,63 @@ class NewsAutomationService {
 
     this.loadPersistedState();
 
+    // Hidratar historial y último resultado directamente desde la BD en el arranque
+    this.ensureHydrated().catch((err) => {
+      console.warn('[NewsAutomation] Error hidratando desde base de datos:', err.message);
+    });
+
     // Auto-sanear portadas duplicadas existentes en base de datos al iniciar el servicio
     setTimeout(() => {
       this.ensureUniqueCovers().catch((err) => {
         console.warn('[NewsAutomation] Error asegurando portadas únicas:', err.message);
       });
     }, 4000);
+  }
+
+  async ensureHydrated() {
+    if (this.history && this.history.length > 0 && this.lastResult) {
+      return;
+    }
+    try {
+      const recentNews = await News.findAll({
+        order: [['published_at', 'DESC'], ['id', 'DESC']],
+        limit: 10,
+        attributes: ['id', 'title', 'slug', 'category', 'image_url', 'published_at', 'createdAt']
+      });
+
+      if (recentNews && recentNews.length > 0) {
+        if (!this.history || this.history.length === 0) {
+          this.history = recentNews.map((n) => ({
+            id: n.id,
+            title: n.title,
+            slug: n.slug,
+            category: n.category,
+            image_url: n.image_url,
+            createdAt: n.published_at || n.createdAt,
+            durationSeconds: null
+          }));
+        }
+
+        if (!this.lastResult) {
+          const latest = recentNews[0];
+          this.lastResult = {
+            success: true,
+            articleId: latest.id,
+            articleTitle: latest.title,
+            articleSlug: latest.slug,
+            category: latest.category,
+            image_url: latest.image_url,
+            completedAt: latest.published_at || latest.createdAt,
+            durationSeconds: null
+          };
+          if (!this.lastRunAt && (latest.published_at || latest.createdAt)) {
+            this.lastRunAt = new Date(latest.published_at || latest.createdAt).toISOString();
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[NewsAutomation] Error hidratando historial desde BD:', e.message);
+    }
   }
 
   loadPersistedState() {

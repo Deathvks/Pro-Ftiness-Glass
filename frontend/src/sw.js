@@ -4,7 +4,7 @@ self.__WB_DISABLE_DEV_LOGS = true;
 
 import { precacheAndRoute, cleanupOutdatedCaches, matchPrecache } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { StaleWhileRevalidate, NetworkFirst, NetworkOnly } from 'workbox-strategies';
+import { StaleWhileRevalidate, NetworkFirst, NetworkOnly, CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { BackgroundSyncPlugin } from 'workbox-background-sync';
 import { clientsClaim } from 'workbox-core';
@@ -105,13 +105,13 @@ registerRoute(
   })
 );
 
-// A2. Chunks secundarios con hash (/assets/*.js y /assets/*.css) -> StaleWhileRevalidate seguro
+// A2. Chunks secundarios con hash (/assets/*.js y /assets/*.css) -> CacheFirst instantáneo
 registerRoute(
   ({ url, request }) =>
     url.origin === self.location.origin &&
     url.pathname.startsWith('/assets/') &&
     (request.destination === 'script' || request.destination === 'style' || /\.(js|css)$/i.test(url.pathname)),
-  new StaleWhileRevalidate({
+  new CacheFirst({
     cacheName: 'vite-hashed-assets',
     plugins: [
       {

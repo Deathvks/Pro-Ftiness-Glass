@@ -663,11 +663,41 @@ El único requisito termodinámico ineludible para oxidar grasa corporal es mant
 };
 
 /**
+ * Endpoints para Administrador: Listado completo y fresco sin límite de 30 ni caché HTTP
+ */
+export const getAdminNewsList = async (req, res) => {
+  try {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    const { rows, count } = await News.findAndCountAll({
+      order: [['published_at', 'DESC'], ['id', 'DESC']],
+      limit: 200,
+      attributes: [
+        'id', 'slug', 'title', 'summary', 'image_url', 'category',
+        'tags', 'author_name', 'author_avatar', 'reading_time',
+        'views_count', 'likes_count', 'is_published', 'published_at', 'createdAt', 'updatedAt'
+      ]
+    });
+
+    return res.json({
+      news: rows,
+      total: count
+    });
+  } catch (error) {
+    console.error('Error al obtener lista de noticias admin:', error);
+    return res.status(500).json({ error: 'Error al consultar noticias' });
+  }
+};
+
+/**
  * Endpoints para Automatización de Noticias con Gemini
  */
 export const getAutomationStatus = async (req, res) => {
   try {
     const { newsAutomationService } = await import('../services/newsAutomationService.js');
+    await newsAutomationService.ensureHydrated();
     return res.json(newsAutomationService.getStatus());
   } catch (error) {
     console.error('Error al obtener estado de automatización:', error);

@@ -88,28 +88,14 @@ export default defineConfig({
       filename: 'sw.js',
       injectManifest: {
         globPatterns: [
-          'index.html',
-          'manifest.webmanifest',
-          'favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png', 'apple-touch-icon.png',
-          'pwa-*.webp',
-          'logo.webp',
-          'assets/index-*.js',
-          'assets/index-*.css',
-          'assets/vendor-react-*.js',
-          'assets/vendor-icons-*.js',
-          'assets/LoginScreen-*.js',
-          'assets/RegisterScreen-*.js',
-          'assets/Dashboard-*.js',
-          'assets/Routines-*.js',
-          'assets/Nutrition-*.js',
-          'assets/Social-*.js',
-          'assets/Workout-*.js',
-          'assets/Hub-*.js',
-          'assets/vendor-recharts-*.js',
-          'assets/smartProgressionCoach-*.js',
-          'assets/MuscleHeatmap-*.js',
-          'assets/RoutineEditor-*.js'
+          '**/*.{js,css,html,ico,png,svg,webp,webmanifest}'
         ],
+        globIgnores: [
+          '**/node_modules/**/*',
+          'stats.html',
+          'noticias/**/*.html'
+        ],
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       },
       devOptions: {
         enabled: false, // <-- APAGADO para evitar dolores de cabeza con la caché en móviles durante el desarrollo

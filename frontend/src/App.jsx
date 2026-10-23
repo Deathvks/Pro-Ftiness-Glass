@@ -623,12 +623,19 @@ export default function App() {
                     }
                     localStorage.removeItem('pfg_cached_initial_state_v1');
                     sessionStorage.clear();
+                    if ('serviceWorker' in navigator) {
+                      const regs = await navigator.serviceWorker.getRegistrations();
+                      for (const reg of regs) await reg.unregister();
+                    }
                   } catch {}
-                  window.location.reload();
+                  const freshUrl = new URL(window.location.href);
+                  freshUrl.searchParams.set('pfg_fresh', String(Date.now()));
+                  window.location.replace(freshUrl.toString());
                 }}
-                className="px-5 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-primary font-bold text-sm cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                className="px-5 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-primary font-bold text-sm cursor-pointer hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5"
               >
-                🔄 Reparar caché
+                <RefreshCw className="w-4 h-4" />
+                <span>Reparar caché</span>
               </button>
               <button
                 type="button"

@@ -32,8 +32,9 @@ import * as newsService from '../../services/newsService';
 import { useToast } from '../../hooks/useToast';
 import { initSocket } from '../../services/socket';
 
-export default function AdminNewsAutomation({ onNavigateToArticle }) {
+export default function AdminNewsAutomation({ onNavigateToArticle, onAutomationComplete }) {
   const { addToast } = useToast();
+  const prevStatusRef = useRef('idle');
 
   const [statusData, setStatusData] = useState({
     status: 'idle',
@@ -76,6 +77,10 @@ export default function AdminNewsAutomation({ onNavigateToArticle }) {
         if (data.scheduledHour !== undefined) {
           setNewScheduleHour(data.scheduledHour);
         }
+        if (data.status === 'completed' && prevStatusRef.current === 'generating' && onAutomationComplete) {
+          onAutomationComplete();
+        }
+        prevStatusRef.current = data.status;
       }
     } catch (err) {
       console.warn('Error al obtener estado de automatización:', err);
@@ -103,6 +108,9 @@ export default function AdminNewsAutomation({ onNavigateToArticle }) {
           ...updated,
           logs: updated.logs || prev.logs
         }));
+        if (updated.status === 'completed' && onAutomationComplete) {
+          onAutomationComplete();
+        }
       }
     };
 

@@ -68,23 +68,43 @@ const ACCENT_UNLOCK_REWARDS = {
 
 const LoadingFallback = () => {
   const [showRescue, setShowRescue] = React.useState(false);
+  const [isRepairing, setIsRepairing] = React.useState(false);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setShowRescue(true);
-    }, 5500);
+    }, 18000); // 18s de cortesía antes de sugerir rescate
     return () => clearTimeout(timer);
   }, []);
 
   const handleRepair = async () => {
+    setIsRepairing(true);
     try {
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (const reg of regs) {
+          await reg.unregister();
+        }
+      }
       if ('caches' in window) {
         const keys = await caches.keys();
         await Promise.all(keys.map((k) => caches.delete(k)));
       }
       sessionStorage.clear();
-    } catch {}
-    window.location.reload();
+      localStorage.removeItem('pfg_cached_initial_state_v1');
+      localStorage.removeItem('pfg_crash_loop_count');
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith('pfg_chunk_retry_') || k.startsWith('pfg_reload_'))) {
+          localStorage.removeItem(k);
+        }
+      }
+    } catch (e) {
+      console.warn('Error en reparación limpia:', e);
+    }
+    const freshUrl = new URL(window.location.href);
+    freshUrl.searchParams.set('pfg_fresh', String(Date.now()));
+    window.location.replace(freshUrl.toString());
   };
 
   const handleResetSession = () => {
@@ -115,7 +135,7 @@ const LoadingFallback = () => {
       </div>
 
       {showRescue && (
-        <div className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md p-4 rounded-2xl glass border border-amber-500/30 bg-bg-secondary/95 backdrop-blur-xl shadow-2xl shadow-black/30 animate-[fade-in-up_0.3s_ease-out] flex flex-col gap-3 text-center pointer-events-auto">
+        <div className="fixed bottom-[calc(var(--safe-bottom)+84px)] md:bottom-8 left-1/2 -translate-x-1/2 z-[70] w-[92%] max-w-md p-4 rounded-2xl glass border border-amber-500/30 bg-bg-secondary/95 backdrop-blur-xl shadow-2xl shadow-black/30 animate-[fade-in-up_0.3s_ease-out] flex flex-col gap-3 text-center pointer-events-auto">
           <p className="text-sm font-semibold text-text-primary">
             ¿La sección está tardando en cargar?
           </p>
@@ -126,13 +146,16 @@ const LoadingFallback = () => {
             <button
               type="button"
               onClick={handleRepair}
-              className="px-4 py-2 rounded-xl bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              disabled={isRepairing}
+              className="px-4 py-2 rounded-xl bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
             >
-              🔄 Recargar vista
+              <RefreshCw className={`w-3.5 h-3.5 ${isRepairing ? 'animate-spin' : ''}`} />
+              <span>{isRepairing ? 'Recargando...' : 'Recargar vista'}</span>
             </button>
             <button
               type="button"
               onClick={handleResetSession}
+              disabled={isRepairing}
               className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 font-bold text-xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
             >
               Cerrar sesión
@@ -889,7 +912,7 @@ export default function MainAppLayout({
           if (event.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
           if (event.newLevel === 15) extraStr = ' (¡Nuevos degradados desbloqueados!)';
           if (event.newLevel === 20) extraStr = ' (¡Nuevos acentos animados desbloqueados!)';
-          addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel} 🚀${extraStr}`, 'success', 6000);
+          addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel}!${extraStr}`, 'success', 6000);
           if ([5, 10, 15, 20].includes(event.newLevel)) {
             setTimeout(() => {
               setAccentUnlockLevel(event.newLevel);
@@ -899,7 +922,7 @@ export default function MainAppLayout({
         } else if (event.type === 'challenge_completed') {
           addToast(`¡Reto completado! ${event.message} (+${event.xpAdded} XP)`, 'success');
           if (event.leveledUp) {
-            addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel} 🏆`, 'success', 6000);
+            addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel}!`, 'success', 6000);
             if ([5, 10, 15, 20].includes(event.newLevel)) {
               setTimeout(() => {
                 setAccentUnlockLevel(event.newLevel);
@@ -989,11 +1012,11 @@ export default function MainAppLayout({
           if (data.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
           if (data.newLevel === 15) extraStr = ' (¡Nuevos degradados desbloqueados!)';
           if (data.newLevel === 20) extraStr = ' (¡Nuevos acentos animados desbloqueados!)';
-          addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel} 🚀${extraStr}`, 'success', 6000);
+          addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel}!${extraStr}`, 'success', 6000);
         } else if (data.type === 'challenge_completed') {
         addToast(`¡Reto completado! ${data.message} (+${data.xpAdded} XP)`, 'success');
         if (data.leveledUp) {
-          addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel} 🏆`, 'success', 6000);
+          addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel}!`, 'success', 6000);
         }
       }
       

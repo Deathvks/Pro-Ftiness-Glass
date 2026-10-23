@@ -14,7 +14,8 @@ import {
   Clock,
   Calendar,
   Layers,
-  ArrowRight
+  ArrowRight,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -72,9 +73,9 @@ export default function AdminNewsManager() {
   const loadArticles = async () => {
     setIsLoading(true);
     try {
-      const data = await newsService.fetchPublicNews({ page: 1, limit: 100 });
+      const data = await newsService.fetchAdminNews();
       setArticles(data.news || []);
-      setTotal(data.total || 0);
+      setTotal(data.total || (data.news ? data.news.length : 0));
     } catch (err) {
       addToast(err.message || 'Error al cargar noticias', 'error');
     } finally {
@@ -240,6 +241,18 @@ export default function AdminNewsManager() {
             <span>Artículos ({total})</span>
           </button>
 
+          {viewMode === 'list' && (
+            <button
+              type="button"
+              onClick={() => loadArticles()}
+              disabled={isLoading}
+              className="p-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 text-text-secondary active:scale-95 transition-all flex items-center justify-center shrink-0"
+              title="Refrescar lista de noticias"
+            >
+              <RefreshCw size={13} className={isLoading ? "animate-spin text-accent" : ""} />
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => setViewMode('automation')}
@@ -286,6 +299,9 @@ export default function AdminNewsManager() {
         <AdminNewsAutomation
           onNavigateToArticle={(slug) => {
             window.open(`/noticias/${slug}`, '_blank');
+          }}
+          onAutomationComplete={() => {
+            loadArticles();
           }}
         />
       )}

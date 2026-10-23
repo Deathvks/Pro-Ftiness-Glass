@@ -1,27 +1,47 @@
 /* frontend/src/components/InitialLoadingSkeleton.jsx */
 import React, { useState, useEffect } from 'react';
 import Skeleton from './Skeleton';
+import { RefreshCw } from 'lucide-react';
 
 const InitialLoadingSkeleton = () => {
     const [showRescue, setShowRescue] = useState(false);
+    const [isRepairing, setIsRepairing] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => {
             setShowRescue(true);
-        }, 5500);
+        }, 18000);
         return () => clearTimeout(timer);
     }, []);
 
     const handleRepair = async () => {
+        setIsRepairing(true);
         try {
+            if ('serviceWorker' in navigator) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                for (const reg of regs) {
+                    await reg.unregister();
+                }
+            }
             if ('caches' in window) {
                 const keys = await caches.keys();
                 await Promise.all(keys.map(k => caches.delete(k)));
             }
-            localStorage.removeItem('pfg_cached_initial_state_v1');
             sessionStorage.clear();
-        } catch {}
-        window.location.reload();
+            localStorage.removeItem('pfg_cached_initial_state_v1');
+            localStorage.removeItem('pfg_crash_loop_count');
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && (k.startsWith('pfg_chunk_retry_') || k.startsWith('pfg_reload_'))) {
+                    localStorage.removeItem(k);
+                }
+            }
+        } catch (e) {
+            console.warn('Error en reparación:', e);
+        }
+        const freshUrl = new URL(window.location.href);
+        freshUrl.searchParams.set('pfg_fresh', String(Date.now()));
+        window.location.replace(freshUrl.toString());
     };
 
     const handleResetAll = () => {
@@ -135,9 +155,9 @@ const InitialLoadingSkeleton = () => {
                         <button
                             type="button"
                             onClick={handleRepair}
-                            className="px-4 py-2 rounded-xl bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                            disabled={isRepairing} className="px-4 py-2 rounded-xl bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
                         >
-                            🔄 Reparar y Cargar
+                            <RefreshCw className={`w-3.5 h-3.5 ${isRepairing ? 'animate-spin' : ''}`} /><span>{isRepairing ? 'Reparando...' : 'Reparar y Cargar'}</span>
                         </button>
                         <button
                             type="button"

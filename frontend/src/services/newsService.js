@@ -187,16 +187,18 @@ export const getCachedPublicNews = ({ page = 1, limit = 6, category = '', search
   return null;
 };
 
-export const fetchPublicNews = async ({ page = 1, limit = 6, category = '', search = '' } = {}) => {
+export const fetchPublicNews = async ({ page = 1, limit = 6, category = '', search = '', bypassCache = false } = {}) => {
   const cacheKey = `${page}_${limit}_${category || 'all'}_${search || 'all'}`;
   const params = new URLSearchParams();
   if (page) params.append('page', page);
   if (limit) params.append('limit', limit);
   if (category && category !== 'Todas') params.append('category', category);
   if (search) params.append('search', search);
+  if (bypassCache) params.append('_t', Date.now());
 
   const data = await requestWithRetry(`${API_URL}/news?${params.toString()}`, {
-    headers: getAuthHeaders()
+    headers: getAuthHeaders(),
+    cache: bypassCache ? 'no-store' : 'default'
   }, 1);
 
   if (data && Array.isArray(data.news)) {
@@ -220,6 +222,25 @@ export const fetchPublicNews = async ({ page = 1, limit = 6, category = '', sear
   }
 
   return data;
+};
+
+/**
+ * Consulta la lista fresca y completa de noticias para el panel de administración
+ * Bypasea cualquier caché HTTP y trae hasta 200 artículos directamente desde la BD.
+ */
+export const fetchAdminNews = async () => {
+  try {
+    const data = await requestWithRetry(`${API_URL}/news/admin/list?_t=${Date.now()}`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store'
+    }, 1);
+    if (data && Array.isArray(data.news)) {
+      return data;
+    }
+  } catch (err) {
+    console.warn('[newsService] Fallback a fetchPublicNews para admin:', err.message);
+  }
+  return fetchPublicNews({ page: 1, limit: 100, bypassCache: true });
 };
 
 export const fetchNewsBySlug = async (slug) => {

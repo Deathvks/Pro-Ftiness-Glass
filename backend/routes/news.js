@@ -25,6 +25,13 @@ router.post('/article/:slug/like', newsInteractionLimiter, newsController.toggle
 
 // --- RUTAS ADMINISTRADOR (Gestión de noticias y generación con IA) ---
 router.get(
+  '/admin/list',
+  authenticateToken,
+  authorizeAdmin,
+  newsController.getAdminNewsList
+);
+
+router.get(
   '/admin/automation/status',
   authenticateToken,
   authorizeAdmin,
