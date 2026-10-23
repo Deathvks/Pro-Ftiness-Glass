@@ -124,6 +124,15 @@ export const preloadViewChunk = (viewId) => {
   }
 };
 
+export const preloadAllPrimaryViews = () => {
+  const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub'];
+  primaryNavViews.forEach((v, idx) => {
+    setTimeout(() => {
+      preloadViewChunk(v);
+    }, idx * 30);
+  });
+};
+
 const Dashboard = lazyWithRetry(VIEW_CHUNK_LOADERS.dashboard, 'dashboard');
 const Progress = lazyWithRetry(VIEW_CHUNK_LOADERS.progress, 'progress');
 const Routines = lazyWithRetry(VIEW_CHUNK_LOADERS.routines, 'routines');
@@ -444,38 +453,33 @@ export default function App() {
   const fullPageTitle = `${currentTitle} - Pro Fitness Glass`;
   const workoutTimer = view === 'workout' ? timer : 0;
 
-  // Precargar los módulos de la barra de navegación y del menú lateral en segundo plano tras pintar la vista inicial
+  // Precargar de forma agresiva y persistente los módulos primarios y secundarios tras autenticarse
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub'];
-    const secondaryNavViews = ['workout', 'progress', 'profile', 'settings', 'notifications', 'challenges', 'appearance', 'noticias'];
-
-    // Asegurar que la vista activa empiece primero
+    // Asegurar que la vista activa empiece de inmediato
     preloadViewChunk(view);
 
-    const timeouts = [];
-    const schedulePreload = (views, startDelayMs, stepMs) => {
-      views.forEach((v, idx) => {
-        if (v === view) return;
-        const tid = setTimeout(() => {
-          if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-            window.requestIdleCallback(() => preloadViewChunk(v), { timeout: 1500 });
-          } else {
-            preloadViewChunk(v);
-          }
-        }, startDelayMs + idx * stepMs);
-        timeouts.push(tid);
-      });
-    };
+    // Precargar inmediatamente las otras 4 vistas primarias (no cancelable al cambiar de vista)
+    const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub'];
+    primaryNavViews.forEach((v, idx) => {
+      setTimeout(() => {
+        preloadViewChunk(v);
+      }, 30 + idx * 40);
+    });
 
-    schedulePreload(primaryNavViews, 100, 80);
-    schedulePreload(secondaryNavViews, 1200, 150);
+    // Precargar vistas secundarias escalonadas
+    const secondaryNavViews = ['workout', 'progress', 'profile', 'settings', 'notifications', 'challenges', 'appearance', 'noticias'];
+    secondaryNavViews.forEach((v, idx) => {
+      setTimeout(() => {
+        preloadViewChunk(v);
+      }, 500 + idx * 80);
+    });
+  }, [isAuthenticated]);
 
-    return () => {
-      timeouts.forEach(clearTimeout);
-    };
-  }, [isAuthenticated, view]);
+  useEffect(() => {
+    if (view) preloadViewChunk(view);
+  }, [view]);
 
   const currentViewComponent = useMemo(() => {
     switch (view) {

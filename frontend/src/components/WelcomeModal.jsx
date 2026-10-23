@@ -1,4 +1,4 @@
-﻿import ModalPortal from './ModalPortal';
+import ModalPortal from './ModalPortal';
 /* frontend/src/components/WelcomeModal.jsx */
 import React, { useEffect, useRef } from 'react';
 import {
@@ -7,7 +7,8 @@ import {
 import { FaMeteor } from 'react-icons/fa6';
 import { APP_VERSION } from '../config/version';
 import useModalLock from '../hooks/useModalLock';
-import { preloadViewChunk } from '../App';
+import { preloadViewChunk, preloadAllPrimaryViews } from '../App';
+import useAppStore from '../store/useAppStore';
 import * as newsService from '../services/newsService';
 
 const WelcomeModal = ({ onClose }) => {
@@ -15,13 +16,29 @@ const WelcomeModal = ({ onClose }) => {
   // --- Bloquear scroll del fondo y swipe entre páginas ---
   useModalLock();
 
-  // Precargar chunks y contenido de noticias mientras el usuario lee las novedades del modal
+  // Precargar agresivamente todos los módulos primarios y datos de la API mientras el usuario lee las novedades
   useEffect(() => {
     try {
+      // 1. Chunks de navegación principal (Dashboard, Rutinas, Nutrición, Social, Hub) y Noticias
+      preloadAllPrimaryViews();
       preloadViewChunk('noticias');
       preloadViewChunk('noticiaDetalle');
+
+      // 2. Calentar datos de la API en segundo plano
+      const store = useAppStore.getState();
+      if (store.fetchFriends) store.fetchFriends().catch(() => {});
+      if (store.fetchFriendRequests) store.fetchFriendRequests().catch(() => {});
+      if (store.fetchStories && store.userProfile?.id) store.fetchStories(store.userProfile.id).catch(() => {});
+      if (store.fetchLeaderboard) store.fetchLeaderboard().catch(() => {});
+      if (store.fetchTodaysCompletedRoutines) store.fetchTodaysCompletedRoutines().catch(() => {});
       newsService.fetchPublicNews({ page: 1, limit: 6 }).catch(() => {});
-    } catch {}
+
+      // 3. Pre-cachear imagen del Hub
+      const hubImg = new Image();
+      hubImg.src = 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=800&q=80';
+    } catch (e) {
+      console.warn('[WelcomeModal] Error en precalentamiento:', e);
+    }
   }, []);
 
   const appVersion = `v${APP_VERSION}`;

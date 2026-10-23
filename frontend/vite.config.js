@@ -104,7 +104,11 @@ export default defineConfig({
           'assets/Nutrition-*.js',
           'assets/Social-*.js',
           'assets/Workout-*.js',
-          'assets/Hub-*.js'
+          'assets/Hub-*.js',
+          'assets/vendor-recharts-*.js',
+          'assets/smartProgressionCoach-*.js',
+          'assets/MuscleHeatmap-*.js',
+          'assets/RoutineEditor-*.js'
         ],
       },
       devOptions: {

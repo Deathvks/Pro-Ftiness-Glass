@@ -67,8 +67,13 @@ const ACCENT_UNLOCK_REWARDS = {
 };
 
 const LoadingFallback = () => (
-  <div className="flex justify-center items-center h-full pt-20">
-    <Spinner size={40} />
+  <div className="w-full px-4 py-6 max-w-4xl mx-auto space-y-4 animate-pulse pointer-events-none">
+    <div className="h-36 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
+    <div className="grid grid-cols-2 gap-3">
+      <div className="h-24 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
+      <div className="h-24 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
+    </div>
+    <div className="h-44 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
   </div>
 );
 

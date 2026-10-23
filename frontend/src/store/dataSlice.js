@@ -222,6 +222,18 @@ export const createDataSlice = (set, get) => ({
               if (get().fetchTodaysCompletedRoutines) {
                 get().fetchTodaysCompletedRoutines().catch(() => {});
               }
+              if (get().fetchFriends) {
+                get().fetchFriends().catch(() => {});
+              }
+              if (get().fetchFriendRequests) {
+                get().fetchFriendRequests().catch(() => {});
+              }
+              if (get().fetchStories && profileData?.id) {
+                get().fetchStories(profileData.id).catch(() => {});
+              }
+              if (get().fetchLeaderboard) {
+                get().fetchLeaderboard().catch(() => {});
+              }
               Promise.all([
                 workoutService.getWorkouts().catch(() => null),
                 bodyWeightService.getHistory().catch(() => null),
