@@ -769,7 +769,7 @@ export default function AdminNewsAutomation({ onNavigateToArticle }) {
                     label: `${String(i).padStart(2, '0')}:00 ${i < 12 ? 'AM' : 'PM'}`
                   }))}
                   className="w-full"
-                  triggerClassName="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-4 py-2.5 sm:py-3 text-sm font-bold text-text-primary"
+                  triggerClassName="w-full h-11 bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm font-bold text-text-primary flex items-center justify-between gap-2"
                 />
               </div>
 

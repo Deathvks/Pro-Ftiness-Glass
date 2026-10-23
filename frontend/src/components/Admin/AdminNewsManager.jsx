@@ -398,7 +398,7 @@ export default function AdminNewsManager() {
               value={aiTopic}
               onChange={(e) => setAiTopic(e.target.value)}
               placeholder="Ej. Cuánta proteína asimila el cuerpo por comida: La ciencia real"
-              className="box-border w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+              className="box-border w-full h-11 bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
               disabled={isGeneratingAI}
             />
           </div>
@@ -422,7 +422,7 @@ export default function AdminNewsManager() {
                 value={aiCategory}
                 onChange={(e) => setAiCategory(e.target.value)}
                 placeholder="Nombre de nueva categoría (ej. Cardio, Biomecánica)"
-                className="box-border w-full bg-black/5 dark:bg-white/5 border border-accent/40 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="box-border w-full h-11 bg-black/5 dark:bg-white/5 border border-accent/40 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                 disabled={isGeneratingAI}
               />
             ) : (
@@ -441,7 +441,8 @@ export default function AdminNewsManager() {
                   { value: '__NEW__', label: '+ Crear nueva categoría...' }
                 ]}
                 className="w-full"
-                triggerClassName="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                triggerClassName="w-full h-11 bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-accent flex items-center justify-between gap-2"
+                textClassName="text-xs sm:text-sm font-semibold truncate flex-1 text-left"
               />
             )}
           </div>
@@ -477,7 +478,7 @@ export default function AdminNewsManager() {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Título potente para SEO"
-                className="box-border w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="box-border w-full h-11 bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                 required
               />
             </div>
@@ -489,7 +490,7 @@ export default function AdminNewsManager() {
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                 placeholder="ej-creatina-dosis-diaria"
-                className="box-border w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent font-mono"
+                className="box-border w-full h-11 bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent font-mono"
               />
             </div>
 
@@ -510,7 +511,7 @@ export default function AdminNewsManager() {
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   placeholder="Nombre de la nueva categoría (ej. Cardio, Biomecánica)"
-                  className="box-border w-full bg-black/5 dark:bg-white/5 border border-accent/40 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="box-border w-full h-11 bg-black/5 dark:bg-white/5 border border-accent/40 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                   required
                 />
               ) : (
@@ -529,7 +530,8 @@ export default function AdminNewsManager() {
                     { value: '__NEW__', label: '+ Crear nueva categoría...' }
                   ]}
                   className="w-full"
-                  triggerClassName="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                  triggerClassName="w-full h-11 bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-accent flex items-center justify-between gap-2"
+                textClassName="text-xs sm:text-sm font-semibold truncate flex-1 text-left"
                 />
               )}
             </div>
@@ -541,7 +543,7 @@ export default function AdminNewsManager() {
                 value={formData.image_url}
                 onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                 placeholder="https://images.unsplash.com/..."
-                className="box-border w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="box-border w-full h-11 bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
 
@@ -576,7 +578,7 @@ export default function AdminNewsManager() {
                 value={formData.tags}
                 onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                 placeholder="fuerza, creatina, dieta"
-                className="box-border w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="box-border w-full h-11 bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
 
