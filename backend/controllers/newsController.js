@@ -73,7 +73,7 @@ export const getPublicNews = async (req, res) => {
     }
 
     // Ejecución optimizada en paralelo
-    const [{ count, rows }, allPublished] = await Promise.all([
+    const [{ count, rows }, allPublished, popularRows] = await Promise.all([
       News.findAndCountAll({
         where,
         order: [['published_at', 'DESC']],
@@ -88,6 +88,20 @@ export const getPublicNews = async (req, res) => {
       News.findAll({
         where: { is_published: true },
         attributes: ['category']
+      }),
+      News.findAll({
+        where: { is_published: true },
+        order: [
+          ['views_count', 'DESC'],
+          ['likes_count', 'DESC'],
+          ['published_at', 'DESC']
+        ],
+        limit: 4,
+        attributes: [
+          'id', 'slug', 'title', 'summary', 'image_url', 'category',
+          'tags', 'author_name', 'reading_time', 'views_count',
+          'likes_count', 'published_at'
+        ]
       })
     ]);
 
@@ -111,7 +125,8 @@ export const getPublicNews = async (req, res) => {
       totalPages: Math.ceil(count / limit),
       currentPage: page,
       categories,
-      categoryCounts
+      categoryCounts,
+      popularNews: popularRows || []
     };
 
     publicListCache.set(cacheKey, { payload, timestamp: Date.now() });

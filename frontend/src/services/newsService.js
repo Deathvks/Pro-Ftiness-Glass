@@ -167,8 +167,10 @@ export const getCachedPublicNews = ({ page = 1, limit = 6, category = '', search
       list = cachedNewsList.filter((art) => (art.category || '').toLowerCase() === category.toLowerCase());
     }
     if (list.length > 0) {
+      const sortedByViews = [...cachedNewsList].sort((a, b) => (b.views_count || 0) - (a.views_count || 0));
       return {
         news: list.slice(0, limit),
+        popularNews: sortedByViews.slice(0, 4),
         total: list.length,
         totalAll: cachedNewsList.length,
         totalPages: Math.max(1, Math.ceil(list.length / limit)),

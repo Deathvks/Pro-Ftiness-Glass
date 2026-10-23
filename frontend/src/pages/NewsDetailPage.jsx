@@ -449,13 +449,13 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
         {/* FOTO PRINCIPAL / CABECERA CON PIE DE FOTO */}
         {article.image_url && (
           <figure className="my-6">
-            <div className="rounded-2xl overflow-hidden bg-black/10 max-h-[460px] shadow-md ring-1 ring-black/10 dark:ring-white/10">
+            <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] md:aspect-[16/9] max-h-[380px] sm:max-h-[420px] rounded-2xl overflow-hidden bg-black/10 shadow-md ring-1 ring-black/10 dark:ring-white/10">
               <img
                 src={article.image_url?.includes('photo-1510519138197-06b8628cbf4f')
                   ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
                   : (article.image_url || '/entrenamiento.png')}
                 alt={article.title}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-center"
                 loading="eager"
                 onError={(e) => {
                   e.currentTarget.onerror = null;

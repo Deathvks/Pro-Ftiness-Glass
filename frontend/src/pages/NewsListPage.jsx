@@ -63,6 +63,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   const [totalPages, setTotalPages] = useState(() => cachedInitial?.totalPages || 1);
   const [categoryCounts, setCategoryCounts] = useState(() => cachedInitial?.categoryCounts || {});
   const [apiCategories, setApiCategories] = useState(() => cachedInitial?.categories || DEFAULT_CATEGORIES);
+  const [popularNews, setPopularNews] = useState(() => cachedInitial?.popularNews || []);
   const [isLoading, setIsLoading] = useState(() => !cachedInitial);
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -124,6 +125,9 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           if (data.categories && Array.isArray(data.categories)) {
             setApiCategories(data.categories);
           }
+          if (data.popularNews && Array.isArray(data.popularNews)) {
+            setPopularNews(data.popularNews);
+          }
         }
       } catch (err) {
         if (isMounted) {
@@ -154,6 +158,17 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
     if (cat === 'Todas') next.delete('category');
     else next.set('category', cat);
     next.delete('page'); // Volver a página 1 al cambiar de tema
+
+    // Sincronización instantánea para que la paginación desaparezca al instante si no hay suficientes artículos
+    if (cat !== 'Todas' && categoryCounts && categoryCounts[cat] !== undefined) {
+      const count = Number(categoryCounts[cat]) || 0;
+      setTotal(count);
+      setTotalPages(Math.max(1, Math.ceil(count / ITEMS_PER_PAGE)));
+    } else if (cat === 'Todas' && totalAll > 0) {
+      setTotal(totalAll);
+      setTotalPages(Math.max(1, Math.ceil(totalAll / ITEMS_PER_PAGE)));
+    }
+
     setSearchParams(next);
   };
 
@@ -167,7 +182,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   };
 
   const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > totalPages || newPage === currentPage) return;
+    if (newPage < 1 || newPage > effectiveTotalPages || newPage === currentPage) return;
     const next = new URLSearchParams(searchParams);
     if (newPage === 1) next.delete('page');
     else next.set('page', newPage.toString());
@@ -216,15 +231,34 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
 
   const gridArticles = useMemo(() => news, [news]);
 
-  const visiblePages = useMemo(() => {
-    if (totalPages <= 5) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
+  // Cálculo estricto del total real según la categoría seleccionada
+  const categoryTotal = useMemo(() => {
+    if (currentCategory === 'Todas') {
+      return totalAll || total;
     }
-    const pages = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1]);
+    if (categoryCounts && categoryCounts[currentCategory] !== undefined) {
+      return Number(categoryCounts[currentCategory]) || 0;
+    }
+    return total;
+  }, [currentCategory, categoryCounts, totalAll, total]);
+
+  // Si una categoría tiene pocos artículos (ej. <= 6), no hay páginas múltiples
+  const effectiveTotalPages = useMemo(() => {
+    if (currentCategory !== 'Todas') {
+      return Math.max(1, Math.ceil(categoryTotal / ITEMS_PER_PAGE));
+    }
+    return totalPages;
+  }, [currentCategory, categoryTotal, totalPages, ITEMS_PER_PAGE]);
+
+  const visiblePages = useMemo(() => {
+    if (effectiveTotalPages <= 5) {
+      return Array.from({ length: effectiveTotalPages }, (_, i) => i + 1);
+    }
+    const pages = new Set([1, effectiveTotalPages, currentPage, currentPage - 1, currentPage + 1]);
     return Array.from(pages)
-      .filter((p) => p >= 1 && p <= totalPages)
+      .filter((p) => p >= 1 && p <= effectiveTotalPages)
       .sort((a, b) => a - b);
-  }, [currentPage, totalPages]);
+  }, [currentPage, effectiveTotalPages]);
 
   return (
     <div
@@ -307,6 +341,82 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           Aprende con artículos basados en evidencia científica, optimiza tus comidas y domina tu rendimiento en el gimnasio.
         </p>
       </section>
+
+      {/* SECCIÓN NOTICIAS MÁS VISTAS */}
+      {popularNews.length > 0 && currentCategory === 'Todas' && !currentSearch && currentPage === 1 && (
+        <section className="space-y-4 pt-1 pb-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center">
+                <Flame size={18} className="animate-pulse" />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
+                  Más Vistas
+                </h2>
+                <p className="text-[11px] sm:text-xs text-text-tertiary font-medium">
+                  Artículos destacados y más consultados por la comunidad
+                </p>
+              </div>
+            </div>
+            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20">
+              Tendencias
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {popularNews.map((popArt, idx) => (
+              <GlassCard
+                key={popArt.id || popArt.slug}
+                onClick={() => handleArticleClick(popArt)}
+                onMouseEnter={() => newsService.prefetchNewsBySlug(popArt.slug)}
+                onTouchStart={() => newsService.prefetchNewsBySlug(popArt.slug)}
+                className="glass p-0 rounded-2xl overflow-hidden border-none ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/40 transition-all cursor-pointer group flex flex-col justify-between shadow-sm hover:shadow-lg hover:-translate-y-1 duration-300"
+              >
+                <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/10">
+                  <img
+                    src={popArt.image_url?.includes('photo-1510519138197-06b8628cbf4f')
+                      ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
+                      : (popArt.image_url || '/entrenamiento.png')}
+                    alt={popArt.title}
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/entrenamiento.png';
+                    }}
+                  />
+                  <div className="absolute top-2 left-2 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-accent text-accent-contrast font-black text-[10px] flex items-center justify-center shadow-md">
+                      #{idx + 1}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-black/70 backdrop-blur-md text-white border border-white/15">
+                      {popArt.category}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 flex flex-col gap-2 grow justify-between">
+                  <h3 className="text-xs sm:text-sm font-bold text-text-primary group-hover:text-accent transition-colors line-clamp-2 leading-snug">
+                    {popArt.title}
+                  </h3>
+
+                  <div className="flex items-center justify-between text-[10px] text-text-tertiary pt-2 border-t border-black/5 dark:border-white/5 font-semibold">
+                    <span className="flex items-center gap-1">
+                      <Eye size={11} className="text-text-secondary" />
+                      {popArt.views_count || 0} lecturas
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock size={10} />
+                      {popArt.reading_time || 3} min
+                    </span>
+                  </div>
+                </div>
+              </GlassCard>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* CATEGORÍAS */}
       <nav
@@ -423,13 +533,13 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                 onTouchStart={() => newsService.prefetchNewsBySlug(art.slug)}
                 className="glass p-0 rounded-[28px] overflow-hidden border-none ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/40 transition-all cursor-pointer group flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 duration-300"
               >
-                <div className="relative h-48 overflow-hidden bg-black/10">
+                <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/10">
                   <img
                     src={art.image_url?.includes('photo-1510519138197-06b8628cbf4f')
                       ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
                       : (art.image_url || '/entrenamiento.png')}
                     alt={art.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
@@ -489,7 +599,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           </div>
 
           {/* PAGINACIÓN ELEGANTE Y RESPONSIVE (Totalmente adaptada a móviles) */}
-          {totalPages > 1 && (
+          {effectiveTotalPages > 1 && (
             <div className="w-full flex flex-col items-center justify-center gap-3 pt-8 pb-10 border-t border-black/5 dark:border-white/5 mt-8 px-1">
               <div className="flex items-center justify-center gap-1.5 sm:gap-2 max-w-full">
                 <button
@@ -532,7 +642,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
 
                 <button
                   type="button"
-                  disabled={currentPage >= totalPages}
+                  disabled={currentPage >= effectiveTotalPages}
                   onClick={() => handlePageChange(currentPage + 1)}
                   className="inline-flex items-center justify-center gap-1 px-3 sm:px-4 py-2 rounded-xl text-xs font-black bg-accent text-accent-contrast hover:brightness-110 disabled:opacity-25 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md shadow-accent/25 shrink-0"
                   aria-label="Página siguiente"
@@ -543,7 +653,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
               </div>
 
               <span className="text-[11px] font-semibold text-text-tertiary text-center">
-                Página {currentPage} de {totalPages} · Mostrando {news.length} de {total} artículos
+                Página {currentPage} de {effectiveTotalPages} · Mostrando {news.length} de {categoryTotal} artículos
               </span>
             </div>
           )}
