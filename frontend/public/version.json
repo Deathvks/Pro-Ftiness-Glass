@@ -1,4 +1,4 @@
 {
-  "version": "7.9.5",
-  "releaseNotes": "Actualización v7.9.5: Sección de noticias más vistas, ajuste uniforme 16:9 de portadas y corrección de paginación por categoría."
+  "version": "7.9.6",
+  "releaseNotes": "Actualización v7.9.6: Carrusel horizontal deslizable en móvil para noticias más vistas con tarjetas snap táctiles."
 }

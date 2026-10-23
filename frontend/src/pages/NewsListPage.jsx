@@ -359,19 +359,24 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                 </p>
               </div>
             </div>
-            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20">
-              Tendencias
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                Tendencias
+              </span>
+              <span className="inline-flex sm:hidden items-center gap-1 text-[11px] font-bold text-text-tertiary">
+                Desliza <ArrowRight size={12} className="text-amber-500" />
+              </span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="-mx-4 px-4 sm:mx-0 sm:px-0 flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto sm:overflow-x-visible pb-3 pt-1 scrollbar-none touch-pan-x overscroll-x-contain snap-x snap-mandatory">
             {popularNews.map((popArt, idx) => (
               <GlassCard
                 key={popArt.id || popArt.slug}
                 onClick={() => handleArticleClick(popArt)}
                 onMouseEnter={() => newsService.prefetchNewsBySlug(popArt.slug)}
                 onTouchStart={() => newsService.prefetchNewsBySlug(popArt.slug)}
-                className="glass p-0 rounded-2xl overflow-hidden border-none ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/40 transition-all cursor-pointer group flex flex-col justify-between shadow-sm hover:shadow-lg hover:-translate-y-1 duration-300"
+                className="glass p-0 rounded-2xl overflow-hidden border-none ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/40 transition-all cursor-pointer group flex flex-col justify-between shadow-sm hover:shadow-lg hover:-translate-y-1 duration-300 w-[78vw] sm:w-auto min-w-[250px] sm:min-w-0 max-w-[300px] sm:max-w-none shrink-0 snap-start"
               >
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/10">
                   <img
