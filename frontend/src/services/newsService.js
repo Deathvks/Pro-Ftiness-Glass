@@ -375,3 +375,14 @@ export const updateNewsAutomationSchedule = async ({ hour, minute = 0 }) => {
     0
   );
 };
+
+export const fixDuplicateCovers = async () => {
+  return requestWithRetry(
+    `${API_URL}/news/admin/fix-duplicate-covers`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders()
+    },
+    0
+  );
+};

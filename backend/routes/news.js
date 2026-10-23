@@ -44,6 +44,13 @@ router.post(
   authorizeAdmin,
   newsController.updateAutomationConfig
 );
+
+router.post(
+  '/admin/fix-duplicate-covers',
+  authenticateToken,
+  authorizeAdmin,
+  newsController.fixDuplicateCovers
+);
 router.post(
   '/generate-ai',
   authenticateToken,

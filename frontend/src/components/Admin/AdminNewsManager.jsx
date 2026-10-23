@@ -20,6 +20,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import Spinner from '../Spinner';
+import CustomSelect from '../CustomSelect';
 import * as newsService from '../../services/newsService';
 import { useToast } from '../../hooks/useToast';
 import AdminNewsAutomation from './AdminNewsAutomation';
@@ -199,7 +200,7 @@ export default function AdminNewsManager() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 text-left w-full overflow-hidden">
+    <div className="space-y-4 sm:space-y-6 text-left w-full min-w-0">
       {/* HEADER DE GESTIÓN RESPONSIVE */}
       <div className="flex flex-col gap-3 pb-4 border-b border-black/5 dark:border-white/10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
@@ -397,7 +398,7 @@ export default function AdminNewsManager() {
               value={aiTopic}
               onChange={(e) => setAiTopic(e.target.value)}
               placeholder="Ej. Cuánta proteína asimila el cuerpo por comida: La ciencia real"
-              className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 sm:p-3.5 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+              className="box-border w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
               disabled={isGeneratingAI}
             />
           </div>
@@ -421,32 +422,27 @@ export default function AdminNewsManager() {
                 value={aiCategory}
                 onChange={(e) => setAiCategory(e.target.value)}
                 placeholder="Nombre de nueva categoría (ej. Cardio, Biomecánica)"
-                className="w-full bg-black/5 dark:bg-white/5 border border-accent/40 rounded-2xl p-3 sm:p-3.5 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="box-border w-full bg-black/5 dark:bg-white/5 border border-accent/40 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                 disabled={isGeneratingAI}
               />
             ) : (
-              <select
+              <CustomSelect
                 value={aiCategory}
-                onChange={(e) => {
-                  if (e.target.value === '__NEW__') {
+                onChange={(val) => {
+                  if (val === '__NEW__') {
                     setIsCustomAiCategory(true);
                     setAiCategory('');
                   } else {
-                    setAiCategory(e.target.value);
+                    setAiCategory(val);
                   }
                 }}
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 sm:p-3.5 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
-                disabled={isGeneratingAI}
-              >
-                {availableCategories.map(cat => (
-                  <option key={cat} value={cat} className="bg-bg-primary text-text-primary">
-                    {cat}
-                  </option>
-                ))}
-                <option value="__NEW__" className="bg-bg-primary text-accent font-bold">
-                  + Crear nueva categoría...
-                </option>
-              </select>
+                options={[
+                  ...availableCategories.map(cat => ({ value: cat, label: cat })),
+                  { value: '__NEW__', label: '+ Crear nueva categoría...' }
+                ]}
+                className="w-full"
+                triggerClassName="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+              />
             )}
           </div>
 
@@ -472,32 +468,32 @@ export default function AdminNewsManager() {
 
       {/* VISTA: EDITOR */}
       {viewMode === 'editor' && (
-        <form onSubmit={handleSaveArticle} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div className="sm:col-span-2">
+        <form onSubmit={handleSaveArticle} className="space-y-4 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 w-full">
+            <div className="min-w-0 sm:col-span-2">
               <label className="block text-xs font-bold text-text-secondary mb-1">Título del Artículo:</label>
               <input
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Título potente para SEO"
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="box-border w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                 required
               />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label className="block text-xs font-bold text-text-secondary mb-1">Slug (URL amigable):</label>
               <input
                 type="text"
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                 placeholder="ej-creatina-dosis-diaria"
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent font-mono"
+                className="box-border w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent font-mono"
               />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-xs font-bold text-text-secondary">Categoría:</label>
                 <button
@@ -514,81 +510,77 @@ export default function AdminNewsManager() {
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   placeholder="Nombre de la nueva categoría (ej. Cardio, Biomecánica)"
-                  className="w-full bg-black/5 dark:bg-white/5 border border-accent/40 rounded-2xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="box-border w-full bg-black/5 dark:bg-white/5 border border-accent/40 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                   required
                 />
               ) : (
-                <select
+                <CustomSelect
                   value={formData.category}
-                  onChange={(e) => {
-                    if (e.target.value === '__NEW__') {
+                  onChange={(val) => {
+                    if (val === '__NEW__') {
                       setIsCustomCategory(true);
                       setFormData({ ...formData, category: '' });
                     } else {
-                      setFormData({ ...formData, category: e.target.value });
+                      setFormData({ ...formData, category: val });
                     }
                   }}
-                  className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
-                >
-                  {availableCategories.map(cat => (
-                    <option key={cat} value={cat} className="bg-bg-primary text-text-primary">
-                      {cat}
-                    </option>
-                  ))}
-                  <option value="__NEW__" className="bg-bg-primary text-accent font-bold">
-                    + Crear nueva categoría...
-                  </option>
-                </select>
+                  options={[
+                    ...availableCategories.map(cat => ({ value: cat, label: cat })),
+                    { value: '__NEW__', label: '+ Crear nueva categoría...' }
+                  ]}
+                  className="w-full"
+                  triggerClassName="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                />
               )}
             </div>
 
-            <div className="sm:col-span-2">
+            <div className="min-w-0 sm:col-span-2">
               <label className="block text-xs font-bold text-text-secondary mb-1">Imagen de portada URL:</label>
               <input
                 type="text"
                 value={formData.image_url}
                 onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                 placeholder="https://images.unsplash.com/..."
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="box-border w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
 
-            <div className="sm:col-span-2">
+            <div className="min-w-0 sm:col-span-2">
               <label className="block text-xs font-bold text-text-secondary mb-1">Resumen (Meta Description):</label>
               <textarea
                 rows={2}
                 value={formData.summary}
                 onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
                 placeholder="Breve resumen de 2 frases para Google y redes sociales..."
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="box-border w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
                 required
               />
             </div>
 
-            <div className="sm:col-span-2">
+            <div className="min-w-0 sm:col-span-2">
               <label className="block text-xs font-bold text-text-secondary mb-1">Contenido (Markdown):</label>
               <textarea
                 rows={12}
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 placeholder="## Subtítulo&#10;&#10;Contenido del artículo...&#10;&#10;* Puntos clave"
-                className="w-full max-w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs sm:text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus:ring-accent custom-scrollbar overflow-x-hidden"
+                className="box-border w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus:ring-accent custom-scrollbar resize-y"
                 required
               />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label className="block text-xs font-bold text-text-secondary mb-1">Etiquetas (separadas por comas):</label>
               <input
                 type="text"
                 value={formData.tags}
                 onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                 placeholder="fuerza, creatina, dieta"
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl p-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                className="box-border w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
 
-            <div className="flex items-center gap-3 pt-2 sm:pt-6">
+            <div className="min-w-0 flex items-center gap-3 pt-2 sm:pt-6">
               <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-text-primary select-none">
                 <input
                   type="checkbox"

@@ -712,3 +712,14 @@ export const updateAutomationConfig = async (req, res) => {
     return res.status(500).json({ error: 'Error al configurar el horario.' });
   }
 };
+
+export const fixDuplicateCovers = async (req, res) => {
+  try {
+    const { newsAutomationService } = await import('../services/newsAutomationService.js');
+    const result = await newsAutomationService.ensureUniqueCovers();
+    return res.json(result);
+  } catch (error) {
+    console.error('Error al desduplicar portadas:', error);
+    return res.status(500).json({ error: 'Error al corregir portadas duplicadas.' });
+  }
+};

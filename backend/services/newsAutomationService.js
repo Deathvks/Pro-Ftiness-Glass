@@ -12,58 +12,85 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const STATE_FILE_PATH = path.resolve(__dirname, '../data/news_automation_state.json');
 
-// Catálogo de imágenes curadas en alta resolución por categoría y temática
+// Catálogo ampliado de imágenes curadas en alta resolución por categoría y temática
 const CATEGORY_IMAGE_POOLS = {
   'Entrenamiento': [
     'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1534367507873-d2d7e24c797f?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&w=1200&q=80'
   ],
   'Nutrición': [
     'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1494390248081-4e521a5940db?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&w=1200&q=80'
   ],
   'Suplementación': [
     'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1579722820308-d74e571900a9?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1550572017-edd951aa8f72?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1550572017-edd951aa8f72?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1577401239170-897942555fb3?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=1200&q=80'
   ],
   'Salud': [
     'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1447452001602-7090c7ab2db3?auto=format&fit=crop&w=1200&q=80'
   ],
   'Novedades': [
     'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
   ],
   'Descanso y Sueño': [
     'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1520206183501-b80df61043c2?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1511295742362-92c96b124e52?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1511295742362-92c96b124e52?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1519052537078-e6302a4968d4?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1455642305367-68834a1da7ab?auto=format&fit=crop&w=1200&q=80'
   ],
   'Biohacking': [
     'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=1200&q=80'
   ],
   'Biomecánica': [
     'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1598971639058-fab3c3109a00?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=1200&q=80'
   ],
   'Longevidad': [
     'https://images.unsplash.com/photo-1447452001602-7090c7ab2db3?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=1200&q=80'
   ],
   'Psicología Deportiva': [
     'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80',
@@ -73,7 +100,9 @@ const CATEGORY_IMAGE_POOLS = {
   'Cardio y Resistencia': [
     'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1200&q=80',
     'https://images.unsplash.com/photo-1486218119243-13883505764c?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1200&q=80'
+    'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?auto=format&fit=crop&w=1200&q=80'
   ]
 };
 
@@ -81,7 +110,8 @@ const DEFAULT_POOL = [
   'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=80',
   'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1200&q=80',
   'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80'
+  'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=1200&q=80'
 ];
 
 const slugify = (text) => {
@@ -124,6 +154,13 @@ class NewsAutomationService {
     this.isGenerating = false;
 
     this.loadPersistedState();
+
+    // Auto-sanear portadas duplicadas existentes en base de datos al iniciar el servicio
+    setTimeout(() => {
+      this.ensureUniqueCovers().catch((err) => {
+        console.warn('[NewsAutomation] Error asegurando portadas únicas:', err.message);
+      });
+    }, 4000);
   }
 
   loadPersistedState() {
@@ -148,7 +185,6 @@ class NewsAutomationService {
       console.warn('[NewsAutomation] Error cargando estado persistido:', e.message);
     }
 
-    // Asegurar que si nextRunAt ya pasó en el arranque, recalcularlo
     if (!this.nextRunAt || new Date(this.nextRunAt).getTime() < Date.now() - 60000) {
       this.nextRunAt = calculateNextRun(this.scheduledHour, this.scheduledMinute);
     }
@@ -191,7 +227,6 @@ class NewsAutomationService {
     this.logs.push(logItem);
     if (this.logs.length > 50) this.logs.shift();
 
-    // Notificar en tiempo real a clientes admin mediante Socket.io
     try {
       if (io) {
         io.emit('news_automation_log', logItem);
@@ -231,24 +266,85 @@ class NewsAutomationService {
     };
   }
 
-  pickThematicImage(category, keyword = '') {
-    // 1. Si la categoría tiene un pool específico
-    const pool = CATEGORY_IMAGE_POOLS[category];
-    if (Array.isArray(pool) && pool.length > 0) {
-      const idx = Math.floor(Math.random() * pool.length);
-      return pool[idx];
-    }
+  /**
+   * Selecciona una portada temática en alta resolución que NUNCA esté repetida en la base de datos
+   */
+  pickThematicImage(category, keyword = '', usedImages = new Set()) {
+    // 1. Obtener candidatos por categoría
+    let candidates = CATEGORY_IMAGE_POOLS[category] || [];
 
-    // 2. Búsqueda por palabra clave si se creó una categoría no contemplada
-    const lowerKey = `${category} ${keyword}`.toLowerCase();
-    for (const [catName, images] of Object.entries(CATEGORY_IMAGE_POOLS)) {
-      if (lowerKey.includes(catName.toLowerCase()) && images.length > 0) {
-        return images[Math.floor(Math.random() * images.length)];
+    // Si la categoría no está mapeada, buscar por coincidencia léxica
+    if (candidates.length === 0) {
+      const lowerKey = `${category} ${keyword}`.toLowerCase();
+      for (const [catName, images] of Object.entries(CATEGORY_IMAGE_POOLS)) {
+        if (lowerKey.includes(catName.toLowerCase()) && images.length > 0) {
+          candidates = images;
+          break;
+        }
       }
     }
 
-    // 3. Fallback a imágenes de fitness de alta calidad
-    return DEFAULT_POOL[Math.floor(Math.random() * DEFAULT_POOL.length)];
+    if (candidates.length === 0) {
+      candidates = DEFAULT_POOL;
+    }
+
+    // Filtrar candidatos estrictamente para evitar imágenes ya utilizadas
+    const availableUnused = candidates.filter(img => !usedImages.has(img));
+
+    if (availableUnused.length > 0) {
+      const idx = Math.floor(Math.random() * availableUnused.length);
+      return availableUnused[idx];
+    }
+
+    // Si todas las de la categoría ya fueron usadas, buscar cualquier imagen no usada en todo el catálogo
+    const allPoolImages = Object.values(CATEGORY_IMAGE_POOLS).flat().concat(DEFAULT_POOL);
+    const globalUnused = allPoolImages.filter(img => !usedImages.has(img));
+
+    if (globalUnused.length > 0) {
+      const idx = Math.floor(Math.random() * globalUnused.length);
+      return globalUnused[idx];
+    }
+
+    // Fallback garantizado: imagen única con hash/timestamp para garantizar unicidad visual
+    const uniqueSeed = Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+    const baseUnsplash = candidates[Math.floor(Math.random() * candidates.length)] || DEFAULT_POOL[0];
+    const separator = baseUnsplash.includes('?') ? '&' : '?';
+    return `${baseUnsplash}${separator}pfg_sig=${uniqueSeed}`;
+  }
+
+  /**
+   * Sanea y asegura que ningún artículo existente comparta la misma imagen de portada
+   */
+  async ensureUniqueCovers() {
+    try {
+      const allNews = await News.findAll({ order: [['id', 'ASC']] });
+      const seenUrls = new Set();
+      const updatedArticles = [];
+
+      for (const article of allNews) {
+        if (!article.image_url || seenUrls.has(article.image_url)) {
+          // Asignar una imagen temática fresca y no usada
+          const allUsed = new Set([...seenUrls, ...allNews.map(n => n.image_url).filter(Boolean)]);
+          const newImage = this.pickThematicImage(article.category, '', allUsed);
+          await article.update({ image_url: newImage });
+          seenUrls.add(newImage);
+          updatedArticles.push({ id: article.id, title: article.title, newImage });
+          console.log(`[NewsAutomation] Portada duplicada corregida en artículo [${article.id}] "${article.title}"`);
+        } else {
+          seenUrls.add(article.image_url);
+        }
+      }
+
+      if (updatedArticles.length > 0) {
+        invalidateNewsCache();
+        this.addLog(`🖼️ Se desduplicaron y asignaron portadas únicas a ${updatedArticles.length} artículo(s).`, 'info');
+      }
+
+      return { success: true, updatedCount: updatedArticles.length, updatedArticles };
+    } catch (e) {
+      console.warn('[NewsAutomation] Error en ensureUniqueCovers:', e.message);
+      return { success: false, error: e.message };
+    }
   }
 
   /**
@@ -273,17 +369,18 @@ class NewsAutomationService {
         throw new Error('GEMINI_API_KEY no está configurada en las variables de entorno.');
       }
 
-      // PASO 1: Consultar los artículos existentes para evitar temas repetidos
-      this.currentStep = 'Examinando noticias recientes en base de datos para evitar temas repetidos...';
-      this.addLog('📚 Consultando los últimos 25 artículos publicados...', 'info');
+      // PASO 1: Consultar artículos existentes para evitar temas e imágenes repetidas
+      this.currentStep = 'Examinando noticias e imágenes en base de datos para garantizar originalidad...';
+      this.addLog('📚 Consultando los últimos artículos publicados...', 'info');
 
       const existingArticles = await News.findAll({
         order: [['published_at', 'DESC']],
-        limit: 25,
-        attributes: ['title', 'category', 'slug']
+        limit: 30,
+        attributes: ['title', 'category', 'slug', 'image_url']
       });
 
       const recentTitlesList = existingArticles.map((a, i) => `${i + 1}. [${a.category}] "${a.title}"`).join('\n');
+      const usedImages = new Set(existingArticles.map(a => a.image_url).filter(Boolean));
       this.addLog(`🔍 Encontrados ${existingArticles.length} artículos previos. Asegurando originalidad...`, 'info');
 
       // PASO 2: Configurar modelo Gemini 2.5 Flash
@@ -361,16 +458,15 @@ Extensión recomendada: 700 a 1000 palabras de altísimo valor pedagógico.`;
 
       this.addLog(`💡 Tema ideado: "${parsed.title}" (Categoría: ${parsed.category})`, 'success');
 
-      // PASO 3: Selección de portada temática coherente
-      this.currentStep = 'Asignando fotografía de portada curada en alta resolución...';
-      const selectedImage = this.pickThematicImage(parsed.category, parsed.theme_keyword);
-      this.addLog(`🖼️ Portada seleccionada correspondiente a [${parsed.category}]`, 'info');
+      // PASO 3: Selección de portada temática que NO esté repetida en la BD
+      this.currentStep = 'Asignando fotografía de portada curada única en alta resolución...';
+      const selectedImage = this.pickThematicImage(parsed.category, parsed.theme_keyword, usedImages);
+      this.addLog(`🖼️ Portada única asignada para [${parsed.category}] (sin duplicidad)`, 'info');
 
       // PASO 4: Generar slug único y validado
       let baseSlug = slugify(parsed.slug || parsed.title);
       if (!baseSlug) baseSlug = `articulo-${Date.now()}`;
 
-      // Verificar si ya existe en BD para evitar colisión de clave única
       let finalSlug = baseSlug;
       let counter = 1;
       while (await News.findOne({ where: { slug: finalSlug } })) {
@@ -437,7 +533,6 @@ Extensión recomendada: 700 a 1000 palabras de altísimo valor pedagógico.`;
       this.savePersistedState();
       this.broadcastStatus();
 
-      // Emitir evento Socket.io de nuevo artículo a todos los usuarios conectados
       try {
         if (io) {
           io.emit('new_public_article', {
@@ -450,8 +545,10 @@ Extensión recomendada: 700 a 1000 palabras de altísimo valor pedagógico.`;
         }
       } catch {}
 
-      // PASO 8: Notificar a motores de búsqueda vía IndexNow (Bing, Yandex, etc.)
-      this.notifySearchEngines(createdArticle.slug);
+      // PASO 8: Notificar indexación inmediata a motores de búsqueda (Bing, Yandex vía IndexNow)
+      this.notifySearchEngines(createdArticle.slug).catch((err) => {
+        console.warn('[NewsAutomation] Error notificando IndexNow:', err.message);
+      });
 
       return {
         success: true,
@@ -460,23 +557,21 @@ Extensión recomendada: 700 a 1000 palabras de altísimo valor pedagógico.`;
       };
     } catch (err) {
       console.error('[NewsAutomation] Error en executeDailyNewsGeneration:', err);
+      const durationSeconds = ((Date.now() - startTime) / 1000).toFixed(1);
       this.status = 'error';
-      this.currentStep = `Error durante la generación: ${err.message}`;
-      this.addLog(`❌ ERROR: ${err.message}`, 'error');
+      this.currentStep = `Error: ${err.message}`;
+      this.addLog(`❌ ERROR al generar artículo: ${err.message}`, 'error');
 
       this.lastResult = {
         success: false,
         error: err.message,
-        failedAt: new Date().toISOString()
+        completedAt: new Date().toISOString(),
+        durationSeconds
       };
 
       this.savePersistedState();
       this.broadcastStatus();
-
-      return {
-        success: false,
-        error: err.message
-      };
+      return { success: false, error: err.message };
     } finally {
       this.isGenerating = false;
       this.broadcastStatus();

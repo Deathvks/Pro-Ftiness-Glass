@@ -17,13 +17,17 @@ import {
   Settings2,
   RefreshCw,
   Zap,
-  Info
+  Info,
+  ChevronDown,
+  Copy,
+  Check
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import GlassCard from '../GlassCard';
 import Spinner from '../Spinner';
+import CustomSelect from '../CustomSelect';
 import * as newsService from '../../services/newsService';
 import { useToast } from '../../hooks/useToast';
 import { initSocket } from '../../services/socket';
@@ -52,10 +56,16 @@ export default function AdminNewsAutomation({ onNavigateToArticle }) {
   const [newScheduleHour, setNewScheduleHour] = useState(9);
   const [customTopicInput, setCustomTopicInput] = useState('');
   const [showTopicPrompt, setShowTopicPrompt] = useState(false);
+  const [copiedLogs, setCopiedLogs] = useState(false);
 
   // Reloj regresivo local en segundos
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0, totalMs: 0 });
-  const terminalEndRef = useRef(null);
+  
+  // Referencias para scroll inteligente de consola
+  const logsContainerRef = useRef(null);
+  const isUserScrolledUpRef = useRef(false);
+  const [isScrolledUp, setIsScrolledUp] = useState(false);
+  const prevLogsLengthRef = useRef(0);
 
   // 1. Cargar estado inicial desde la API
   const fetchStatus = async () => {
@@ -137,12 +147,54 @@ export default function AdminNewsAutomation({ onNavigateToArticle }) {
     return () => clearInterval(timer);
   }, [statusData.nextRunAt]);
 
-  // Auto-scroll del terminal cuando se agregan logs
-  useEffect(() => {
-    if (showConsoleModal && terminalEndRef.current) {
-      terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  // Manejo de scroll en el contenedor de logs: detecta si el usuario está leyendo hacia arriba
+  const handleLogsScroll = () => {
+    const el = logsContainerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const scrolledUp = distanceFromBottom > 50;
+    isUserScrolledUpRef.current = scrolledUp;
+    setIsScrolledUp(scrolledUp);
+  };
+
+  const scrollToBottom = (behavior = 'smooth') => {
+    if (logsContainerRef.current) {
+      logsContainerRef.current.scrollTo({
+        top: logsContainerRef.current.scrollHeight,
+        behavior
+      });
     }
+  };
+
+  // Al abrir el modal de consola, scrollear abajo de inicio
+  useEffect(() => {
+    if (showConsoleModal) {
+      isUserScrolledUpRef.current = false;
+      setIsScrolledUp(false);
+      setTimeout(() => scrollToBottom('auto'), 50);
+    }
+  }, [showConsoleModal]);
+
+  // Auto-scroll SOLO si hay nuevos logs Y el usuario NO está scrolleando hacia arriba
+  useEffect(() => {
+    const currentLength = statusData.logs?.length || 0;
+    if (showConsoleModal && currentLength > prevLogsLengthRef.current) {
+      if (!isUserScrolledUpRef.current) {
+        scrollToBottom('smooth');
+      }
+    }
+    prevLogsLengthRef.current = currentLength;
   }, [statusData.logs, showConsoleModal]);
+
+  const handleCopyLogs = () => {
+    if (!statusData.logs || statusData.logs.length === 0) return;
+    const text = statusData.logs
+      .map((l) => `[${l.time}] [${(l.level || 'info').toUpperCase()}] ${l.message}`)
+      .join('\n');
+    navigator.clipboard?.writeText(text);
+    setCopiedLogs(true);
+    setTimeout(() => setCopiedLogs(false), 2000);
+  };
 
   // Disparador manual inmediato
   const handleTriggerNow = async (topic = null) => {
@@ -537,9 +589,9 @@ export default function AdminNewsAutomation({ onNavigateToArticle }) {
       {/* MODAL DE CONSOLA / TERMINAL EN VIVO ("VER LO QUE HACE GEMINI") */}
       {showConsoleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
-          <div className="bg-[#0b0f19] border border-white/15 rounded-2xl sm:rounded-3xl w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-[scale-in_0.25s_ease-out]">
+          <div className="relative bg-[#090d16] border border-white/15 rounded-2xl sm:rounded-3xl w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-[scale-in_0.25s_ease-out]">
             {/* Header de consola */}
-            <div className="px-4 py-3 sm:px-6 sm:py-4 bg-black/50 border-b border-white/10 flex items-center justify-between gap-2">
+            <div className="px-3.5 py-3 sm:px-6 sm:py-3.5 bg-black/60 border-b border-white/10 flex items-center justify-between gap-2 shrink-0">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <div className="hidden sm:flex items-center gap-1.5 shrink-0">
                   <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
@@ -559,19 +611,44 @@ export default function AdminNewsAutomation({ onNavigateToArticle }) {
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowConsoleModal(false)}
-                className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors shrink-0"
-              >
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleCopyLogs}
+                  className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors text-[10px] sm:text-[11px] font-mono flex items-center gap-1"
+                  title="Copiar registros"
+                >
+                  {copiedLogs ? (
+                    <>
+                      <Check size={12} className="text-emerald-400" />
+                      <span className="text-emerald-400">Copiado</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={12} />
+                      <span className="hidden sm:inline">Copiar</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowConsoleModal(false)}
+                  className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
-            {/* Cuerpo de consola con logs */}
-            <div className="p-3.5 sm:p-6 overflow-y-auto font-mono text-[11px] sm:text-xs text-white/80 space-y-2 flex-1 custom-scrollbar">
+            {/* Cuerpo de consola con logs y scroll desacoplado */}
+            <div
+              ref={logsContainerRef}
+              onScroll={handleLogsScroll}
+              className="p-3 sm:p-5 overflow-y-auto font-mono text-[11px] sm:text-xs text-white/80 space-y-1.5 flex-1 custom-scrollbar"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
               {statusData.logs?.length === 0 ? (
-                <div className="py-12 text-center text-white/40 text-xs">
+                <div className="py-16 text-center text-white/40 text-xs">
                   Esperando el próximo ciclo de ejecución para transmitir registros en tiempo real...
                 </div>
               ) : (
@@ -583,20 +660,37 @@ export default function AdminNewsAutomation({ onNavigateToArticle }) {
                   return (
                     <div
                       key={log.id}
-                      className={`flex items-start gap-2 leading-relaxed p-2 rounded-lg sm:rounded-xl transition-colors text-[11px] sm:text-xs ${
-                        isSuccess
-                          ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
-                          : isError
-                          ? 'bg-red-500/10 text-red-300 border border-red-500/20'
-                          : isWarning
-                          ? 'bg-amber-500/10 text-amber-300'
-                          : 'hover:bg-white/[0.03]'
-                      }`}
+                      className="flex items-start gap-2.5 py-1 px-2 rounded hover:bg-white/[0.04] transition-colors leading-relaxed font-mono"
                     >
-                      <span className="text-white/40 shrink-0 select-none text-[10px]">
+                      <span className="text-white/35 text-[10px] select-none font-medium shrink-0 pt-0.5">
                         [{log.time}]
                       </span>
-                      <span className="break-all sm:break-words flex-1">
+                      {isSuccess ? (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                          OK
+                        </span>
+                      ) : isError ? (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-red-500/20 text-red-400 border border-red-500/30 shrink-0">
+                          ERR
+                        </span>
+                      ) : isWarning ? (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
+                          WARN
+                        </span>
+                      ) : (
+                        <span className="text-accent font-bold text-xs select-none shrink-0">
+                          ›
+                        </span>
+                      )}
+                      <span className={`break-words flex-1 ${
+                        isSuccess
+                          ? 'text-emerald-300 font-semibold'
+                          : isError
+                          ? 'text-red-300 font-semibold'
+                          : isWarning
+                          ? 'text-amber-300'
+                          : 'text-white/90'
+                      }`}>
                         {log.message}
                       </span>
                     </div>
@@ -604,22 +698,37 @@ export default function AdminNewsAutomation({ onNavigateToArticle }) {
                 })
               )}
               {isGenerating && (
-                <div className="flex items-center gap-2 text-accent animate-pulse pt-2 text-xs">
-                  <Spinner size={13} />
+                <div className="flex items-center gap-2 text-accent px-2 py-1 text-xs font-mono animate-pulse">
+                  <Spinner size={12} color="currentColor" />
                   <span className="truncate">{statusData.currentStep}</span>
                 </div>
               )}
-              <div ref={terminalEndRef} />
             </div>
 
+            {/* Botón flotante para volver abajo si el usuario scrolleó hacia arriba */}
+            {isScrolledUp && (
+              <button
+                type="button"
+                onClick={() => {
+                  isUserScrolledUpRef.current = false;
+                  setIsScrolledUp(false);
+                  scrollToBottom('smooth');
+                }}
+                className="absolute bottom-14 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent text-accent-contrast text-[11px] font-bold shadow-xl shadow-black/60 hover:opacity-95 transition-all animate-bounce"
+              >
+                <ChevronDown size={14} />
+                <span>Bajar al último evento</span>
+              </button>
+            )}
+
             {/* Footer de consola */}
-            <div className="px-4 py-2.5 sm:px-6 sm:py-3 bg-black/50 border-t border-white/10 flex items-center justify-between text-[10px] sm:text-[11px] text-white/50">
-              <span>{statusData.logs?.length || 0} eventos</span>
+            <div className="px-4 py-2.5 sm:px-6 sm:py-3 bg-black/60 border-t border-white/10 flex items-center justify-between text-[10px] sm:text-[11px] text-white/50 shrink-0">
+              <span>{statusData.logs?.length || 0} eventos registrados</span>
               <button
                 type="button"
                 onClick={() => handleTriggerNow()}
                 disabled={isGenerating || isTriggering}
-                className="hover:text-accent font-bold transition-colors cursor-pointer text-xs"
+                className="hover:text-accent font-bold transition-colors cursor-pointer text-xs disabled:opacity-50"
               >
                 {isGenerating ? 'Generando...' : 'Reejecutar ahora'}
               </button>
@@ -651,19 +760,17 @@ export default function AdminNewsAutomation({ onNavigateToArticle }) {
             </p>
 
             <form onSubmit={handleSaveSchedule} className="flex flex-col gap-4">
-              <div className="flex items-center gap-2">
-                <select
+              <div className="w-full">
+                <CustomSelect
                   value={newScheduleHour}
-                  onChange={(e) => setNewScheduleHour(Number(e.target.value))}
-                  className="flex-1 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl px-4 py-2.5 text-sm font-bold text-text-primary focus:ring-2 focus:ring-accent outline-none"
-                >
-                  {Array.from({ length: 24 }).map((_, i) => (
-                    <option key={i} value={i} className="bg-bg-primary text-text-primary">
-                      {String(i).padStart(2, '0')}:00 {i < 12 ? 'AM' : 'PM'}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-xs font-bold text-text-secondary">:00</span>
+                  onChange={(val) => setNewScheduleHour(Number(val))}
+                  options={Array.from({ length: 24 }).map((_, i) => ({
+                    value: i,
+                    label: `${String(i).padStart(2, '0')}:00 ${i < 12 ? 'AM' : 'PM'}`
+                  }))}
+                  className="w-full"
+                  triggerClassName="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-4 py-2.5 sm:py-3 text-sm font-bold text-text-primary"
+                />
               </div>
 
               <div className="flex items-center gap-2 pt-1">
