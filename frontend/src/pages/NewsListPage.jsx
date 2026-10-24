@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   Sparkles,
   ArrowRight,
-  Flame,
   Layers,
   BookOpen,
   LogIn,
@@ -20,6 +19,7 @@ import {
   WifiOff,
   RefreshCw
 } from 'lucide-react';
+import { FaFire } from 'react-icons/fa6';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -348,7 +348,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center">
-                <Flame size={18} className="animate-pulse" />
+                <FaFire className="text-amber-500 text-sm" />
               </div>
               <div>
                 <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
@@ -369,14 +369,13 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
             </div>
           </div>
 
-          <div className="-mx-4 px-4 sm:mx-0 sm:px-0 flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto sm:overflow-x-visible pb-3 pt-1 scrollbar-none touch-pan-x overscroll-x-contain snap-x snap-mandatory">
+          <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto sm:overflow-x-visible pb-3 pt-1 px-1 sm:px-0 scrollbar-none snap-x snap-mandatory">
             {popularNews.map((popArt, idx) => (
               <GlassCard
                 key={popArt.id || popArt.slug}
                 onClick={() => handleArticleClick(popArt)}
                 onMouseEnter={() => newsService.prefetchNewsBySlug(popArt.slug)}
-                onTouchStart={() => newsService.prefetchNewsBySlug(popArt.slug)}
-                className="glass p-0 rounded-2xl overflow-hidden border-none ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/40 transition-all cursor-pointer group flex flex-col justify-between shadow-sm hover:shadow-lg hover:-translate-y-1 duration-300 w-[78vw] sm:w-auto min-w-[250px] sm:min-w-0 max-w-[300px] sm:max-w-none shrink-0 snap-start"
+                className="glass p-0 rounded-2xl overflow-hidden border-none ring-1 ring-black/5 dark:ring-white/10 sm:hover:ring-accent/40 cursor-pointer group flex flex-col justify-between shadow-sm sm:hover:shadow-lg sm:hover:-translate-y-1 transition-shadow sm:transition-all duration-200 w-[78vw] sm:w-auto min-w-[250px] sm:min-w-0 max-w-[300px] sm:max-w-none shrink-0 snap-start"
               >
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/10">
                   <img
@@ -384,7 +383,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                       ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
                       : (popArt.image_url || '/entrenamiento.png')}
                     alt={popArt.title}
-                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover object-center sm:group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
@@ -426,7 +425,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
       {/* CATEGORÍAS */}
       <nav
         aria-label="Categorías de artículos"
-        className="flex items-center gap-2.5 overflow-x-auto pb-3 pt-1 px-1 -mx-1 scrollbar-none touch-pan-x overscroll-x-contain"
+        className="flex items-center gap-2.5 overflow-x-auto pb-3 pt-1 px-1 -mx-1 scrollbar-none"
       >
         {categories.map((cat) => {
           const isActive = currentCategory === cat;

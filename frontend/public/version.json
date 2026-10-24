@@ -1,4 +1,4 @@
 {
-  "version": "7.9.6",
-  "releaseNotes": "Actualización v7.9.6: Carrusel horizontal deslizable en móvil para noticias más vistas con tarjetas snap táctiles."
+  "version": "7.9.7",
+  "releaseNotes": "Actualización v7.9.7: Separación estética de carrusel al borde en móvil, scroll vertical fluido y reemplazo por icono oficial Font Awesome FaFire."
 }
