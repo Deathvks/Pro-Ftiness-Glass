@@ -23,6 +23,7 @@ import { es } from 'date-fns/locale';
 
 import Spinner from '../Spinner';
 import CustomSelect from '../CustomSelect';
+import ConfirmationModal from '../ConfirmationModal';
 import * as newsService from '../../services/newsService';
 import { useToast } from '../../hooks/useToast';
 import AdminNewsAutomation from './AdminNewsAutomation';
@@ -72,6 +73,8 @@ export default function AdminNewsManager() {
   const [aiCategory, setAiCategory] = useState('Entrenamiento');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [articleToDelete, setArticleToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadArticles = async () => {
     setIsLoading(true);
@@ -131,15 +134,23 @@ export default function AdminNewsManager() {
     }
   };
 
-  const handleDelete = async (id, title) => {
-    if (!window.confirm(`¿Seguro que deseas eliminar "${title}"?`)) return;
+  const handleRequestDelete = (art) => {
+    setArticleToDelete(art);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!articleToDelete) return;
+    setIsDeleting(true);
     try {
-      await newsService.deleteNews(id);
+      await newsService.deleteNews(articleToDelete.id);
       addToast('Artículo eliminado', 'success');
-      setArticles(prev => prev.filter(a => a.id !== id));
-      setTotal(prev => Math.max(0, prev - 1));
+      setArticles((prev) => prev.filter((a) => a.id !== articleToDelete.id));
+      setTotal((prev) => Math.max(0, prev - 1));
+      setArticleToDelete(null);
     } catch (err) {
       addToast(err.message || 'Error al eliminar', 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -402,7 +413,7 @@ export default function AdminNewsManager() {
                       <span className="sm:hidden text-xs">Editar</span>
                     </button>
                     <button
-                      onClick={() => handleDelete(art.id, art.title)}
+                      onClick={() => handleRequestDelete(art)}
                       className="p-2 sm:p-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
                       title="Eliminar artículo"
                     >
@@ -662,6 +673,18 @@ export default function AdminNewsManager() {
             </button>
           </div>
         </form>
+      )}
+
+      {/* Modal de confirmación para eliminar artículo */}
+      {articleToDelete && (
+        <ConfirmationModal
+          message={`¿Seguro que deseas eliminar el artículo "${articleToDelete.title}"? Esta acción no se puede deshacer.`}
+          confirmText="Eliminar Artículo"
+          cancelText="Cancelar"
+          isLoading={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setArticleToDelete(null)}
+        />
       )}
     </div>
   );

@@ -28,6 +28,8 @@ import { es } from 'date-fns/locale';
 import GlassCard from '../GlassCard';
 import Spinner from '../Spinner';
 import CustomSelect from '../CustomSelect';
+import ModalPortal from '../ModalPortal';
+import useModalLock from '../../hooks/useModalLock';
 import * as newsService from '../../services/newsService';
 import { useToast } from '../../hooks/useToast';
 import { initSocket } from '../../services/socket';
@@ -59,12 +61,16 @@ export default function AdminNewsAutomation({ onNavigateToArticle, onAutomationC
   const [showTopicPrompt, setShowTopicPrompt] = useState(false);
   const [copiedLogs, setCopiedLogs] = useState(false);
 
+  // Bloquear el scroll de fondo cuando cualquiera de los modales esté activo
+  useModalLock(showConsoleModal || showScheduleModal || showTopicPrompt);
+
   // Reloj regresivo local en segundos
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0, totalMs: 0 });
   
   // Referencias para scroll inteligente de consola
   const logsContainerRef = useRef(null);
   const isUserScrolledUpRef = useRef(false);
+  const isTouchingRef = useRef(false);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const prevLogsLengthRef = useRef(0);
 
@@ -160,9 +166,28 @@ export default function AdminNewsAutomation({ onNavigateToArticle, onAutomationC
     const el = logsContainerRef.current;
     if (!el) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    const scrolledUp = distanceFromBottom > 50;
+    // Si está a más de 35px del fondo, consideramos que está inspeccionando logs anteriores
+    const scrolledUp = distanceFromBottom > 35;
     isUserScrolledUpRef.current = scrolledUp;
     setIsScrolledUp(scrolledUp);
+  };
+
+  const handleLogsTouchStart = () => {
+    isTouchingRef.current = true;
+  };
+
+  const handleLogsTouchEnd = () => {
+    // Permitir que termine la inercia del scroll táctil antes de reactivar auto-scroll
+    setTimeout(() => {
+      isTouchingRef.current = false;
+      const el = logsContainerRef.current;
+      if (el) {
+        const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+        const scrolledUp = distanceFromBottom > 35;
+        isUserScrolledUpRef.current = scrolledUp;
+        setIsScrolledUp(scrolledUp);
+      }
+    }, 400);
   };
 
   const scrollToBottom = (behavior = 'smooth') => {
@@ -183,11 +208,11 @@ export default function AdminNewsAutomation({ onNavigateToArticle, onAutomationC
     }
   }, [showConsoleModal]);
 
-  // Auto-scroll SOLO si hay nuevos logs Y el usuario NO está scrolleando hacia arriba
+  // Auto-scroll SOLO si hay nuevos logs Y el usuario NO está scrolleando hacia arriba ni tocando la pantalla
   useEffect(() => {
     const currentLength = statusData.logs?.length || 0;
     if (showConsoleModal && currentLength > prevLogsLengthRef.current) {
-      if (!isUserScrolledUpRef.current) {
+      if (!isUserScrolledUpRef.current && !isTouchingRef.current) {
         scrollToBottom('smooth');
       }
     }
@@ -596,259 +621,294 @@ export default function AdminNewsAutomation({ onNavigateToArticle, onAutomationC
 
       {/* MODAL DE CONSOLA / TERMINAL EN VIVO ("VER LO QUE HACE GEMINI") */}
       {showConsoleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
-          <div className="relative bg-[#090d16] border border-white/15 rounded-2xl sm:rounded-3xl w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-[scale-in_0.25s_ease-out]">
-            {/* Header de consola */}
-            <div className="px-3.5 py-3 sm:px-6 sm:py-3.5 bg-black/60 border-b border-white/10 flex items-center justify-between gap-2 shrink-0">
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-                </div>
-                <div className="hidden sm:block h-3.5 w-px bg-white/10 mx-0.5" />
-                <span className="font-mono text-xs font-bold text-white/90 flex items-center gap-1.5 truncate">
-                  <Terminal size={14} className="text-accent shrink-0" />
-                  <span className="truncate">Consola Gemini Live</span>
-                </span>
-                {isGenerating && (
-                  <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/20 text-accent shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
-                    En vivo
+        <ModalPortal>
+          <div
+            className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-md animate-[fade-in_0.2s_ease-out]"
+            onClick={() => setShowConsoleModal(false)}
+          >
+            <div
+              className="relative bg-[#090d16] border border-white/15 rounded-t-[32px] rounded-b-none sm:rounded-3xl w-full max-w-2xl max-h-[88vh] sm:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-[slide-up_0.25s_ease-out] sm:animate-[scale-in_0.2s_ease-out] pb-[calc(0.75rem+var(--safe-bottom,0px))] sm:pb-0"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Drag handle para móvil */}
+              <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto my-2.5 sm:hidden shrink-0" />
+
+              {/* Header de consola */}
+              <div className="px-3.5 py-3 sm:px-6 sm:py-3.5 bg-black/60 border-b border-white/10 flex items-center justify-between gap-2 shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                  </div>
+                  <div className="hidden sm:block h-3.5 w-px bg-white/10 mx-0.5" />
+                  <span className="font-mono text-xs font-bold text-white/90 flex items-center gap-1.5 truncate">
+                    <Terminal size={14} className="text-accent shrink-0" />
+                    <span className="truncate">Consola Gemini Live</span>
                   </span>
+                  {isGenerating && (
+                    <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/20 text-accent shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping" />
+                      En vivo
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleCopyLogs}
+                    className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors text-[10px] sm:text-[11px] font-mono flex items-center gap-1"
+                    title="Copiar registros"
+                  >
+                    {copiedLogs ? (
+                      <>
+                        <Check size={12} className="text-emerald-400" />
+                        <span className="text-emerald-400">Copiado</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={12} />
+                        <span className="hidden sm:inline">Copiar</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowConsoleModal(false)}
+                    className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Cuerpo de consola con logs y scroll desacoplado */}
+              <div
+                ref={logsContainerRef}
+                onScroll={handleLogsScroll}
+                onTouchStart={handleLogsTouchStart}
+                onTouchEnd={handleLogsTouchEnd}
+                className="p-3 sm:p-5 overflow-y-auto font-mono text-[11px] sm:text-xs text-white/80 space-y-1.5 flex-1 custom-scrollbar overscroll-contain"
+                style={{ WebkitOverflowScrolling: 'touch' }}
+              >
+                {statusData.logs?.length === 0 ? (
+                  <div className="py-16 text-center text-white/40 text-xs">
+                    Esperando el próximo ciclo de ejecución para transmitir registros en tiempo real...
+                  </div>
+                ) : (
+                  statusData.logs.map((log) => {
+                    const isSuccess = log.level === 'success';
+                    const isError = log.level === 'error';
+                    const isWarning = log.level === 'warning';
+
+                    return (
+                      <div
+                        key={log.id}
+                        className="flex items-start gap-2.5 py-1 px-2 rounded hover:bg-white/[0.04] transition-colors leading-relaxed font-mono"
+                      >
+                        <span className="text-white/35 text-[10px] select-none font-medium shrink-0 pt-0.5">
+                          [{log.time}]
+                        </span>
+                        {isSuccess ? (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                            OK
+                          </span>
+                        ) : isError ? (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-red-500/20 text-red-400 border border-red-500/30 shrink-0">
+                            ERR
+                          </span>
+                        ) : isWarning ? (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
+                            WARN
+                          </span>
+                        ) : (
+                          <span className="text-accent font-bold text-xs select-none shrink-0">
+                            ›
+                          </span>
+                        )}
+                        <span className={`break-words flex-1 ${
+                          isSuccess
+                            ? 'text-emerald-300 font-semibold'
+                            : isError
+                            ? 'text-red-300 font-semibold'
+                            : isWarning
+                            ? 'text-amber-300'
+                            : 'text-white/90'
+                        }`}>
+                          {log.message}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+                {isGenerating && (
+                  <div className="flex items-center gap-2 text-accent px-2 py-1 text-xs font-mono animate-pulse">
+                    <Spinner size={12} color="currentColor" />
+                    <span className="truncate">{statusData.currentStep}</span>
+                  </div>
                 )}
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
+              {/* Botón flotante para volver abajo si el usuario scrolleó hacia arriba */}
+              {isScrolledUp && (
                 <button
                   type="button"
-                  onClick={handleCopyLogs}
-                  className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors text-[10px] sm:text-[11px] font-mono flex items-center gap-1"
-                  title="Copiar registros"
+                  onClick={() => {
+                    isUserScrolledUpRef.current = false;
+                    setIsScrolledUp(false);
+                    scrollToBottom('smooth');
+                  }}
+                  className="absolute bottom-14 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent text-accent-contrast text-[11px] font-bold shadow-xl shadow-black/60 hover:opacity-95 transition-all animate-bounce"
                 >
-                  {copiedLogs ? (
-                    <>
-                      <Check size={12} className="text-emerald-400" />
-                      <span className="text-emerald-400">Copiado</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={12} />
-                      <span className="hidden sm:inline">Copiar</span>
-                    </>
-                  )}
+                  <ChevronDown size={14} />
+                  <span>Bajar al último evento</span>
                 </button>
+              )}
+
+              {/* Footer de consola */}
+              <div className="px-4 py-2.5 sm:px-6 sm:py-3 bg-black/60 border-t border-white/10 flex items-center justify-between text-[10px] sm:text-[11px] text-white/50 shrink-0">
+                <span>{statusData.logs?.length || 0} eventos registrados</span>
                 <button
                   type="button"
-                  onClick={() => setShowConsoleModal(false)}
-                  className="p-1.5 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                  onClick={() => handleTriggerNow()}
+                  disabled={isGenerating || isTriggering}
+                  className="hover:text-accent font-bold transition-colors cursor-pointer text-xs disabled:opacity-50"
                 >
-                  <X size={18} />
+                  {isGenerating ? 'Generando...' : 'Reejecutar ahora'}
                 </button>
               </div>
             </div>
-
-            {/* Cuerpo de consola con logs y scroll desacoplado */}
-            <div
-              ref={logsContainerRef}
-              onScroll={handleLogsScroll}
-              className="p-3 sm:p-5 overflow-y-auto font-mono text-[11px] sm:text-xs text-white/80 space-y-1.5 flex-1 custom-scrollbar"
-              style={{ WebkitOverflowScrolling: 'touch' }}
-            >
-              {statusData.logs?.length === 0 ? (
-                <div className="py-16 text-center text-white/40 text-xs">
-                  Esperando el próximo ciclo de ejecución para transmitir registros en tiempo real...
-                </div>
-              ) : (
-                statusData.logs.map((log) => {
-                  const isSuccess = log.level === 'success';
-                  const isError = log.level === 'error';
-                  const isWarning = log.level === 'warning';
-
-                  return (
-                    <div
-                      key={log.id}
-                      className="flex items-start gap-2.5 py-1 px-2 rounded hover:bg-white/[0.04] transition-colors leading-relaxed font-mono"
-                    >
-                      <span className="text-white/35 text-[10px] select-none font-medium shrink-0 pt-0.5">
-                        [{log.time}]
-                      </span>
-                      {isSuccess ? (
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
-                          OK
-                        </span>
-                      ) : isError ? (
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-red-500/20 text-red-400 border border-red-500/30 shrink-0">
-                          ERR
-                        </span>
-                      ) : isWarning ? (
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
-                          WARN
-                        </span>
-                      ) : (
-                        <span className="text-accent font-bold text-xs select-none shrink-0">
-                          ›
-                        </span>
-                      )}
-                      <span className={`break-words flex-1 ${
-                        isSuccess
-                          ? 'text-emerald-300 font-semibold'
-                          : isError
-                          ? 'text-red-300 font-semibold'
-                          : isWarning
-                          ? 'text-amber-300'
-                          : 'text-white/90'
-                      }`}>
-                        {log.message}
-                      </span>
-                    </div>
-                  );
-                })
-              )}
-              {isGenerating && (
-                <div className="flex items-center gap-2 text-accent px-2 py-1 text-xs font-mono animate-pulse">
-                  <Spinner size={12} color="currentColor" />
-                  <span className="truncate">{statusData.currentStep}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Botón flotante para volver abajo si el usuario scrolleó hacia arriba */}
-            {isScrolledUp && (
-              <button
-                type="button"
-                onClick={() => {
-                  isUserScrolledUpRef.current = false;
-                  setIsScrolledUp(false);
-                  scrollToBottom('smooth');
-                }}
-                className="absolute bottom-14 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent text-accent-contrast text-[11px] font-bold shadow-xl shadow-black/60 hover:opacity-95 transition-all animate-bounce"
-              >
-                <ChevronDown size={14} />
-                <span>Bajar al último evento</span>
-              </button>
-            )}
-
-            {/* Footer de consola */}
-            <div className="px-4 py-2.5 sm:px-6 sm:py-3 bg-black/60 border-t border-white/10 flex items-center justify-between text-[10px] sm:text-[11px] text-white/50 shrink-0">
-              <span>{statusData.logs?.length || 0} eventos registrados</span>
-              <button
-                type="button"
-                onClick={() => handleTriggerNow()}
-                disabled={isGenerating || isTriggering}
-                className="hover:text-accent font-bold transition-colors cursor-pointer text-xs disabled:opacity-50"
-              >
-                {isGenerating ? 'Generando...' : 'Reejecutar ahora'}
-              </button>
-            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* MODAL PARA CAMBIAR HORA DIARIA PROGRAMADA */}
       {showScheduleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
-          <GlassCard className="p-5 sm:p-6 max-w-sm w-full rounded-2xl sm:rounded-3xl border border-black/10 dark:border-white/10 shadow-2xl flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
-                <Clock size={18} className="text-accent" />
-                Configurar Hora Diaria
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowScheduleModal(false)}
-                className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-text-secondary"
-              >
-                <X size={18} />
-              </button>
-            </div>
+        <ModalPortal>
+          <div
+            className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md animate-[fade-in_0.2s_ease-out]"
+            onClick={() => setShowScheduleModal(false)}
+          >
+            <div
+              className="relative w-full max-w-md bg-bg-primary rounded-t-[32px] rounded-b-none sm:rounded-3xl border border-glass-border shadow-2xl p-5 sm:p-6 pb-[calc(1.5rem+var(--safe-bottom,16px))] sm:pb-6 animate-[slide-up_0.25s_ease-out] sm:animate-[scale-in_0.2s_ease-out] flex flex-col gap-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Drag handle para móvil */}
+              <div className="w-12 h-1.5 bg-black/15 dark:bg-white/20 rounded-full mx-auto mb-2 sm:hidden shrink-0" />
 
-            <p className="text-xs text-text-secondary leading-relaxed">
-              Elige a qué hora del día (hora peninsular española) deseas que Gemini redacte y publique automáticamente la noticia:
-            </p>
-
-            <form onSubmit={handleSaveSchedule} className="flex flex-col gap-4">
-              <div className="w-full">
-                <CustomSelect
-                  value={newScheduleHour}
-                  onChange={(val) => setNewScheduleHour(Number(val))}
-                  options={Array.from({ length: 24 }).map((_, i) => ({
-                    value: i,
-                    label: `${String(i).padStart(2, '0')}:00 ${i < 12 ? 'AM' : 'PM'}`
-                  }))}
-                  className="w-full"
-                  triggerClassName="w-full h-11 bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm font-bold text-text-primary flex items-center justify-between gap-2"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base sm:text-lg font-bold text-text-primary flex items-center gap-2">
+                  <Clock size={19} className="text-accent" />
+                  Configurar Hora Diaria
+                </h3>
                 <button
                   type="button"
                   onClick={() => setShowScheduleModal(false)}
-                  className="flex-1 py-2.5 rounded-xl sm:rounded-2xl bg-black/5 dark:bg-white/5 text-text-secondary font-bold text-xs hover:bg-black/10 transition-colors"
+                  className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-text-secondary transition-colors"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 rounded-xl sm:rounded-2xl bg-accent text-accent-contrast font-bold text-xs hover:opacity-90 transition-opacity shadow-md shadow-accent/20"
-                >
-                  Guardar Horario
+                  <X size={18} />
                 </button>
               </div>
-            </form>
-          </GlassCard>
-        </div>
+
+              <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
+                Elige a qué hora del día (hora peninsular española) deseas que Gemini redacte y publique automáticamente la noticia:
+              </p>
+
+              <form onSubmit={handleSaveSchedule} className="flex flex-col gap-4">
+                <div className="w-full">
+                  <CustomSelect
+                    value={newScheduleHour}
+                    onChange={(val) => setNewScheduleHour(Number(val))}
+                    options={Array.from({ length: 24 }).map((_, i) => ({
+                      value: i,
+                      label: `${String(i).padStart(2, '0')}:00 ${i < 12 ? 'AM' : 'PM'}`
+                    }))}
+                    className="w-full"
+                    triggerClassName="w-full h-11 bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 text-xs sm:text-sm font-bold text-text-primary flex items-center justify-between gap-2"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowScheduleModal(false)}
+                    className="flex-1 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-black/5 dark:bg-white/5 text-text-secondary font-bold text-xs sm:text-sm hover:bg-black/10 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-accent text-accent-contrast font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity shadow-md shadow-accent/20"
+                  >
+                    Guardar Horario
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </ModalPortal>
       )}
 
       {/* MODAL PARA DISPARO MANUAL (CON OPCIÓN DE TEMA FORZADO) */}
       {showTopicPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
-          <GlassCard className="p-5 sm:p-6 max-w-md w-full rounded-2xl sm:rounded-3xl border border-black/10 dark:border-white/10 shadow-2xl flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
-                <Sparkles size={18} className="text-accent" />
-                Generar Noticia con Gemini
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowTopicPrompt(false)}
-                className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-text-secondary"
-              >
-                <X size={18} />
-              </button>
+        <ModalPortal>
+          <div
+            className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md animate-[fade-in_0.2s_ease-out]"
+            onClick={() => setShowTopicPrompt(false)}
+          >
+            <div
+              className="relative w-full max-w-md bg-bg-primary rounded-t-[32px] rounded-b-none sm:rounded-3xl border border-glass-border shadow-2xl p-5 sm:p-6 pb-[calc(1.5rem+var(--safe-bottom,16px))] sm:pb-6 animate-[slide-up_0.25s_ease-out] sm:animate-[scale-in_0.2s_ease-out] flex flex-col gap-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Drag handle para móvil */}
+              <div className="w-12 h-1.5 bg-black/15 dark:bg-white/20 rounded-full mx-auto mb-2 sm:hidden shrink-0" />
+
+              <div className="flex items-center justify-between">
+                <h3 className="text-base sm:text-lg font-bold text-text-primary flex items-center gap-2">
+                  <Sparkles size={19} className="text-accent" />
+                  Generar Noticia con Gemini
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowTopicPrompt(false)}
+                  className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-text-secondary transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
+                Puedes dejar el campo en blanco para que Gemini investigue y elija automáticamente el tema más viral de actualidad, o escribir un tema específico si deseas guiar el artículo:
+              </p>
+
+              <input
+                type="text"
+                value={customTopicInput}
+                onChange={(e) => setCustomTopicInput(e.target.value)}
+                placeholder="Opcional: ej. 'Creatina en definición' o déjalo vacío"
+                className="w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-3 text-xs sm:text-sm text-text-primary placeholder:text-text-muted focus:ring-2 focus:ring-accent outline-none"
+              />
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowTopicPrompt(false)}
+                  className="flex-1 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-black/5 dark:bg-white/5 text-text-secondary font-bold text-xs sm:text-sm hover:bg-black/10 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTriggerNow(customTopicInput.trim() || null)}
+                  className="flex-1 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-accent text-accent-contrast font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity shadow-md shadow-accent/20"
+                >
+                  {customTopicInput.trim() ? 'Generar con este tema' : 'Generar Automático'}
+                </button>
+              </div>
             </div>
-
-            <p className="text-xs text-text-secondary leading-relaxed">
-              Puedes dejar el campo en blanco para que Gemini investigue y elija automáticamente el tema más viral de actualidad, o escribir un tema específico si deseas guiar el artículo:
-            </p>
-
-            <input
-              type="text"
-              value={customTopicInput}
-              onChange={(e) => setCustomTopicInput(e.target.value)}
-              placeholder="Opcional: ej. 'Creatina en definición' o vacío"
-              className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-2xl px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted focus:ring-2 focus:ring-accent outline-none"
-            />
-
-            <div className="flex items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setShowTopicPrompt(false)}
-                className="flex-1 py-2.5 rounded-xl sm:rounded-2xl bg-black/5 dark:bg-white/5 text-text-secondary font-bold text-xs hover:bg-black/10 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => handleTriggerNow(customTopicInput.trim() || null)}
-                className="flex-1 py-2.5 rounded-xl sm:rounded-2xl bg-accent text-accent-contrast font-bold text-xs hover:opacity-90 transition-opacity shadow-md shadow-accent/20"
-              >
-                {customTopicInput.trim() ? 'Generar con este tema' : 'Generar Automático'}
-              </button>
-            </div>
-          </GlassCard>
-        </div>
+          </div>
+        </ModalPortal>
       )}
     </div>
   );

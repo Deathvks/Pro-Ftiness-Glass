@@ -25,6 +25,7 @@ import {
   Zap,
   Terminal,
   Sparkles,
+  FlaskConical,
   X
 } from 'lucide-react';
 import {
@@ -41,6 +42,8 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import Spinner from '../Spinner';
+import ModalPortal from '../ModalPortal';
+import useModalLock from '../../hooks/useModalLock';
 import * as newsService from '../../services/newsService';
 import { useToast } from '../../hooks/useToast';
 
@@ -114,6 +117,9 @@ export default function AdminNewsTracker() {
   // Modal de inspección técnica profunda
   const [inspectedVisit, setInspectedVisit] = useState(null);
   const [expandedMobileIds, setExpandedMobileIds] = useState(new Set());
+
+  // Bloquear el scroll de fondo en móvil mientras el modal de inspección esté abierto
+  useModalLock(Boolean(inspectedVisit));
 
   const autoRefreshTimerRef = useRef(null);
 
@@ -612,8 +618,9 @@ export default function AdminNewsTracker() {
                           </span>
                         )}
                         {v.is_test && (
-                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-purple-500/20 text-purple-400 uppercase tracking-wider">
-                            🧪 Prueba
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-purple-500/20 text-purple-400 uppercase tracking-wider inline-flex items-center gap-1">
+                            <FlaskConical size={10} />
+                            <span>Prueba</span>
                           </span>
                         )}
                       </div>
@@ -651,8 +658,9 @@ export default function AdminNewsTracker() {
                           <span className="truncate max-w-[150px]">{v.user.name || v.user.username}</span>
                         </span>
                       ) : (
-                        <span className="text-text-secondary font-mono text-[11px] truncate max-w-[160px]">
-                          👤 {v.visitor_id ? v.visitor_id.substring(0, 14) : 'Anónimo'}
+                        <span className="text-text-secondary font-mono text-[11px] truncate max-w-[160px] inline-flex items-center gap-1">
+                          <Users size={11} className="text-text-tertiary shrink-0" />
+                          <span>{v.visitor_id ? v.visitor_id.substring(0, 14) : 'Anónimo'}</span>
                         </span>
                       )}
                     </div>
@@ -868,111 +876,118 @@ export default function AdminNewsTracker() {
 
       {/* MODAL DE INSPECCIÓN TÉCNICA PROFUNDA (SNIFFING DETAILS) */}
       {inspectedVisit && (
-        <div
-          className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]"
-          onClick={() => setInspectedVisit(null)}
-        >
+        <ModalPortal>
           <div
-            className="w-full max-w-xl bg-card rounded-[28px] border border-black/10 dark:border-white/10 p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto animate-[scale-in_0.25s_ease-out]"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[120] bg-black/75 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-[fade-in_0.2s_ease-out]"
+            onClick={() => setInspectedVisit(null)}
           >
-            {/* Header del Modal */}
-            <div className="flex items-center justify-between pb-3 border-b border-black/10 dark:border-white/10">
-              <div className="flex items-center gap-2">
-                <Terminal className="text-accent" size={20} />
-                <h3 className="text-base font-black text-text-primary tracking-tight">
-                  Telemetría & Sniffing de Visita #{inspectedVisit.id}
-                </h3>
-              </div>
-              <button
-                onClick={() => setInspectedVisit(null)}
-                className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary"
-              >
-                <X size={18} />
-              </button>
-            </div>
+            <div
+              className="relative w-full max-w-xl bg-bg-primary rounded-t-[32px] rounded-b-none sm:rounded-3xl border border-glass-border shadow-2xl p-5 sm:p-6 pb-[calc(1.5rem+var(--safe-bottom,16px))] sm:pb-6 space-y-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-[slide-up_0.25s_ease-out] sm:animate-[scale-in_0.2s_ease-out]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Drag handle para móvil */}
+              <div className="w-12 h-1.5 bg-black/15 dark:bg-white/20 rounded-full mx-auto mb-2 sm:hidden shrink-0" />
 
-            {/* Grid de campos técnicos */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
-              <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5">
-                <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Dirección IP</span>
-                <span className="text-text-primary font-bold">{inspectedVisit.ip_address || 'Desconocida'}</span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5">
-                <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Ubicación GeoIP</span>
-                <span className="text-text-primary font-bold">
-                  {getCountryFlagEmoji(inspectedVisit.country)} {inspectedVisit.city ? `${inspectedVisit.city}, ` : ''}{inspectedVisit.country || 'N/A'}
-                </span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5">
-                <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Dispositivo & SO</span>
-                <span className="text-text-primary font-bold capitalize">
-                  {inspectedVisit.device_type} • {inspectedVisit.os || 'N/A'}
-                </span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5">
-                <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Navegador</span>
-                <span className="text-text-primary font-bold">{inspectedVisit.browser || 'N/A'}</span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5">
-                <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Resolución de Pantalla</span>
-                <span className="text-text-primary font-bold">{inspectedVisit.screen_resolution || 'N/A'}</span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5">
-                <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Idioma del Navegador</span>
-                <span className="text-text-primary font-bold">{inspectedVisit.language || 'N/A'}</span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 sm:col-span-2">
-                <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Procedencia / Referrer</span>
-                <span className="text-text-primary font-bold break-all">
-                  {inspectedVisit.referrer || 'Acceso Directo (sin página anterior / marcador)'}
-                </span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 sm:col-span-2">
-                <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Página Solicitada</span>
-                <span className="text-text-primary font-bold break-all">
-                  {inspectedVisit.page_path}
-                </span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 sm:col-span-2">
-                <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">User-Agent Completo</span>
-                <span className="text-[11px] text-text-secondary break-all">
-                  {inspectedVisit.user_agent || 'N/A'}
-                </span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 sm:col-span-2 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-text-tertiary uppercase block font-bold">Fingerprint Visitor ID</span>
-                  <span className="text-text-secondary text-[11px]">{inspectedVisit.visitor_id}</span>
+              {/* Header del Modal */}
+              <div className="flex items-center justify-between pb-3 border-b border-glass-border">
+                <div className="flex items-center gap-2">
+                  <Terminal className="text-accent" size={20} />
+                  <h3 className="text-base sm:text-lg font-bold text-text-primary tracking-tight">
+                    Telemetría & Sniffing de Visita #{inspectedVisit.id}
+                  </h3>
                 </div>
-                {inspectedVisit.is_test && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-purple-500/20 text-purple-400">
-                    VISITA DE PRUEBA
-                  </span>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setInspectedVisit(null)}
+                  className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-text-secondary transition-colors"
+                >
+                  <X size={18} />
+                </button>
               </div>
-            </div>
 
-            <div className="pt-2 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setInspectedVisit(null)}
-                className="px-5 py-2.5 rounded-full text-xs font-bold bg-accent text-accent-contrast active:scale-95 transition-all"
-              >
-                Cerrar Inspector
-              </button>
+              {/* Grid de campos técnicos */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+                <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+                  <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Dirección IP</span>
+                  <span className="text-text-primary font-bold">{inspectedVisit.ip_address || 'Desconocida'}</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+                  <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Ubicación GeoIP</span>
+                  <span className="text-text-primary font-bold">
+                    {getCountryFlagEmoji(inspectedVisit.country)} {inspectedVisit.city ? `${inspectedVisit.city}, ` : ''}{inspectedVisit.country || 'N/A'}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+                  <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Dispositivo & SO</span>
+                  <span className="text-text-primary font-bold capitalize">
+                    {inspectedVisit.device_type} • {inspectedVisit.os || 'N/A'}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+                  <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Navegador</span>
+                  <span className="text-text-primary font-bold">{inspectedVisit.browser || 'N/A'}</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+                  <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Resolución de Pantalla</span>
+                  <span className="text-text-primary font-bold">{inspectedVisit.screen_resolution || 'N/A'}</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+                  <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Idioma del Navegador</span>
+                  <span className="text-text-primary font-bold">{inspectedVisit.language || 'N/A'}</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 sm:col-span-2">
+                  <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Procedencia / Referrer</span>
+                  <span className="text-text-primary font-bold break-all">
+                    {inspectedVisit.referrer || 'Acceso Directo (sin página anterior / marcador)'}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 sm:col-span-2">
+                  <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">Página Solicitada</span>
+                  <span className="text-text-primary font-bold break-all">
+                    {inspectedVisit.page_path}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 sm:col-span-2">
+                  <span className="text-[10px] text-text-tertiary uppercase block font-bold mb-1">User-Agent Completo</span>
+                  <span className="text-[11px] text-text-secondary break-all">
+                    {inspectedVisit.user_agent || 'N/A'}
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 sm:col-span-2 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-text-tertiary uppercase block font-bold">Fingerprint Visitor ID</span>
+                    <span className="text-text-secondary text-[11px]">{inspectedVisit.visitor_id}</span>
+                  </div>
+                  {inspectedVisit.is_test && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-black bg-purple-500/20 text-purple-400 inline-flex items-center gap-1">
+                      <FlaskConical size={10} />
+                      VISITA DE PRUEBA
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setInspectedVisit(null)}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold bg-accent text-accent-contrast active:scale-95 transition-all shadow-md shadow-accent/20"
+                >
+                  Cerrar Inspector
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );
