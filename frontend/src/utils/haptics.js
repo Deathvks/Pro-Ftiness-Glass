@@ -47,7 +47,7 @@ export const triggerHaptic = (type = HapticType.selection) => {
 
             case HapticType.timer:
                 // Patrón largo: 500ms vibrar, 300ms pausa, repetido 3 veces
-                navigator.vibrate([500, 300, 500, 300, 500]);
+                navigator.vibrate([400, 150, 400, 150, 600]);
                 break;
 
             default:

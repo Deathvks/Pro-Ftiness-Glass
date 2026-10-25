@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { createAuthSlice } from './authSlice';
 import { createDataSlice } from './dataSlice';
-import { createWorkoutSlice } from './workoutSlice';
+import { createWorkoutSlice, initNativeTimerSync } from './workoutSlice';
 import { createNotificationSlice } from './notificationSlice';
 import { createGamificationSlice } from './gamificationSlice';
 import { createSocialSlice } from './socialSlice';
@@ -45,6 +45,25 @@ const useAppStore = create((set, get) => ({
             console.warn('Error saving haptics preference', e);
         }
         set({ hapticsEnabled: enabled });
+    },
+
+    // --- Configuración Global: Sonido de Fin de Descanso ---
+    restSoundEnabled: (() => {
+        try {
+            const stored = localStorage.getItem('restSoundEnabled');
+            return stored === null ? true : JSON.parse(stored);
+        } catch (e) {
+            return true;
+        }
+    })(),
+
+    setRestSoundEnabled: (enabled) => {
+        try {
+            localStorage.setItem('restSoundEnabled', JSON.stringify(enabled));
+        } catch (e) {
+            console.warn('Error saving rest sound preference', e);
+        }
+        set({ restSoundEnabled: enabled });
     },
 
     // --- Efectos de galaxia en dispositivos táctiles ---
@@ -288,5 +307,8 @@ const useAppStore = create((set, get) => ({
         }
     }
 }));
+
+// Inicializar sincronización bidireccional de acciones nativas del temporizador (Android)
+initNativeTimerSync(useAppStore);
 
 export default useAppStore;

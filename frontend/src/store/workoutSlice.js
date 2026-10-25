@@ -29,6 +29,38 @@ const stopNativeTimer = () => {
   }
 };
 
+const startNativeTimer = (endTimeMs, title = 'Descanso entre series') => {
+  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android' && NativeTimer) {
+    NativeTimer.startTimer({
+      title,
+      endTimeMs,
+      color: _getAccentColor()
+    }).catch(console.warn);
+  }
+};
+
+export const initNativeTimerSync = (store) => {
+  if (typeof window === 'undefined') return;
+  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android' && NativeTimer) {
+    try {
+      NativeTimer.removeAllListeners?.().catch?.(() => {});
+      NativeTimer.addListener('timerAction', (data) => {
+        if (!data || !data.action) return;
+        const state = store.getState();
+        if (data.action === 'addTime') {
+          state.addRestTime(data.seconds || 30);
+        } else if (data.action === 'skip') {
+          state.stopRestTimer();
+        } else if (data.action === 'complete') {
+          state.stopRestTimer();
+        }
+      });
+    } catch (e) {
+      console.warn('Error inicializando sincronización con NativeTimer:', e);
+    }
+  }
+};
+
 // --- HELPER CORREGIDO: Buscar último rendimiento (AHORA LEE BIEN EL BACKEND) ---
 const findLastPerformance = (workoutLog, exerciseName) => {
   if (!workoutLog || !Array.isArray(workoutLog) || !exerciseName) return null;
@@ -669,6 +701,7 @@ export const createWorkoutSlice = (set, get) => ({
     };
     set(newState);
     setRestTimerInStorage(newState);
+    startNativeTimer(endTimeMs);
   },
 
   setRestTimerMode: (mode) => {
@@ -688,6 +721,7 @@ export const createWorkoutSlice = (set, get) => ({
         restTimerEndTime: newEndTime,
         restTimerRemaining: null,
       };
+      startNativeTimer(newEndTime);
     } else {
       const now = Date.now();
       const remaining = restTimerEndTime ? restTimerEndTime - now : 0;
@@ -734,6 +768,7 @@ export const createWorkoutSlice = (set, get) => ({
         restTimerInitialDuration: Math.max(1, newInitial),
       };
       setRestTimerInStorage({ ...state, ...newState });
+      startNativeTimer(newEndTime);
 
       return newState;
     });

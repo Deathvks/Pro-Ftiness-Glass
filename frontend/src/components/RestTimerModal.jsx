@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, ArrowLeft, Plus, Minus, Minimize2, Play, Pause } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { triggerHaptic, HapticType } from '../utils/haptics';
+import { notifyRestTimerComplete } from '../utils/timerSound';
 import useModalLock from '../hooks/useModalLock';
 
 const RestTimerModal = () => {
@@ -60,7 +61,7 @@ const RestTimerModal = () => {
 
       setTimeLeft((prevTimeLeft) => {
         if (prevTimeLeft > 0 && newTimeLeft === 0) {
-          triggerHaptic(HapticType.timer);
+          notifyRestTimerComplete();
         }
         return newTimeLeft;
       });

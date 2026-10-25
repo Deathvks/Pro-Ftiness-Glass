@@ -1,4 +1,4 @@
 {
-  "version": "7.10.7",
-  "releaseNotes": "Actualización v7.10.7: Eliminación completa de dependencias y código residual de Wger, catálogo unificado 100% sobre los ejercicios de YouTube con soporte offline nativo."
+  "version": "7.10.8",
+  "releaseNotes": "Actualización v7.10.8: Cronómetro de descanso multitarea con notificación nativa interactiva (+30s y Saltar), cuenta atrás en vivo en Android, y sonido háptico (doble pitido suave y vibración de fin de descanso)."
 }
