@@ -440,6 +440,7 @@ const Workout = ({ timer, setView, navParams }) => {
                 onFinishClick={handleFinishClick}
                 onShowCalculator={() => setShowCalculatorModal(true)}
                 onShowHeatmap={() => setShowHeatmapModal(true)}
+                onOpenSettings={() => setView('settings', { highlight: 'workout', returnView: 'workout' })}
             />
 
             {!isSimpleWorkout && Object.keys(workoutMuscleData).length > 0 && (

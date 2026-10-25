@@ -557,6 +557,7 @@ export default function App() {
             setView={navigateInternal}
             onLogoutClick={handleLogoutClick}
             highlight={navParams?.highlight}
+            returnView={navParams?.returnView}
           />
         );
       case 'appearance': return <AppearanceScreen setView={navigateInternal} />;
@@ -745,7 +746,7 @@ export default function App() {
           <PageTutorialPlayback view={view} navParams={navParams} setView={navigateInternal} />
         </Suspense>
         {isResting && (
-          restTimerMode === 'minimized' ? <DynamicIslandTimer /> : <RestTimerModal />
+          restTimerMode === 'minimized' ? <DynamicIslandTimer /> : <RestTimerModal onNavigate={navigateInternal} />
         )}
         {show2FAPromo && (
           <Suspense fallback={null}>

@@ -1,6 +1,6 @@
 /* frontend/src/components/Workout/WorkoutHeader.jsx */
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Play, Pause, Square, Calculator, Activity, Timer } from 'lucide-react';
+import { ChevronLeft, Play, Pause, Square, Calculator, Activity, Timer, Sliders } from 'lucide-react';
 
 const formatTime = (timeInSeconds) => {
   const hours = String(Math.floor(timeInSeconds / 3600)).padStart(2, '0');
@@ -50,6 +50,7 @@ const WorkoutHeader = ({
   onFinishClick,
   onShowCalculator,
   onShowHeatmap,
+  onOpenSettings,
 }) => {
   const [imageError, setImageError] = useState(false);
 
@@ -109,7 +110,7 @@ const WorkoutHeader = ({
       <div className="relative z-10 p-6 sm:p-8 flex flex-col items-center text-center text-text-primary w-full">
         
         {/* Botón Volver */}
-        <div className="w-full flex justify-start mb-6">
+        <div className="w-full flex items-center justify-between mb-6">
           <button
             onClick={onBackClick}
             className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-bg-secondary/60 backdrop-blur-md ring-1 ring-black/5 dark:ring-white/10 text-sm font-bold hover:bg-bg-secondary/80 hover:scale-105 transition-all active:scale-95 shadow-sm text-text-primary"
@@ -117,6 +118,17 @@ const WorkoutHeader = ({
             <ChevronLeft size={18} strokeWidth={2.5} />
             Atrás
           </button>
+
+          {onOpenSettings && (
+            <button
+              onClick={onOpenSettings}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-bg-secondary/60 backdrop-blur-md ring-1 ring-black/5 dark:ring-white/10 text-sm font-bold hover:bg-bg-secondary/80 hover:scale-105 transition-all active:scale-95 shadow-sm text-text-primary"
+              title="Ajustes de descanso y sonido"
+            >
+              <Sliders size={16} />
+              <span>Ajustes</span>
+            </button>
+          )}
         </div>
 
         {/* Título de la Rutina forzado a saltar línea si es necesario */}

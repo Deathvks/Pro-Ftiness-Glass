@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { 
-  Palette, Sun, Moon, MonitorCog, Smartphone, Check, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, LockOpen, Lock, Info, Vibrate, Volume2, Droplet, Sparkles, Battery, Gauge, X
+  Palette, Sun, Moon, MonitorCog, Smartphone, Check, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, LockOpen, Lock, Info, Droplet, Sparkles, Battery, Gauge, X
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6'; 
 import useAppStore from '../store/useAppStore';
@@ -184,7 +184,7 @@ const AccentButton = ({ opt, isLocked, isSelected, onClick }) => (
 );
 
 export default function AppearanceScreen({ setView }) {
-  const { userProfile, hapticsEnabled, setHapticsEnabled, restSoundEnabled, setRestSoundEnabled, galaxyEffectsEnabled, setGalaxyEffectsEnabled } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, hapticsEnabled: state.hapticsEnabled, setHapticsEnabled: state.setHapticsEnabled, restSoundEnabled: state.restSoundEnabled, setRestSoundEnabled: state.setRestSoundEnabled, galaxyEffectsEnabled: state.galaxyEffectsEnabled, setGalaxyEffectsEnabled: state.setGalaxyEffectsEnabled })));
+  const { userProfile, galaxyEffectsEnabled, setGalaxyEffectsEnabled } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, galaxyEffectsEnabled: state.galaxyEffectsEnabled, setGalaxyEffectsEnabled: state.setGalaxyEffectsEnabled })));
   const { addToast } = useToast();
   const { 
     theme, activeTheme, setTheme, accent, setAccent, 
@@ -439,34 +439,7 @@ export default function AppearanceScreen({ setView }) {
             </div>
           </div>
           
-          {/* Vibración UI */}
-          <div id="tutorial-appearance-haptics">
-            <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 ml-1">Experiencia UX</h3>
-            <SwitchItem
-              icon={Vibrate}
-              title="Vibración Háptica"
-              subtitle="Feedback táctil al pulsar botones y completar series"
-              checked={hapticsEnabled}
-              onChange={() => {
-                const newValue = !hapticsEnabled;
-                setHapticsEnabled(newValue);
-                addToast(newValue ? 'Vibración activada' : 'Vibración desactivada', 'success');
-              }}
-            />
-            <div className="mt-3">
-              <SwitchItem
-                icon={Volume2}
-                title="Sonido de Fin de Descanso"
-                subtitle="Doble pitido suave al terminar la cuenta atrás entre series"
-                checked={restSoundEnabled}
-                onChange={() => {
-                  const newValue = !restSoundEnabled;
-                  setRestSoundEnabled(newValue);
-                  addToast(newValue ? 'Sonido de descanso activado' : 'Sonido de descanso desactivado', 'success');
-                }}
-              />
-            </div>
-          </div>
+          
         </GlassCard>
 
         {/* 2) Mis Temas: a la derecha en PC, arriba y desplegable/solapable en móvil */}

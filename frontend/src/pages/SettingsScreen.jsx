@@ -5,7 +5,7 @@ import {
   Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
   ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
-  Bug, Download, Vibrate, Globe, Clock, MapPin, Youtube, Play, LockOpen, Lock
+  Bug, Download, Vibrate, Volume2, Timer, Sliders, Globe, Clock, MapPin, Youtube, Play, LockOpen, Lock
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6'; 
 import useAppStore from '../store/useAppStore';
@@ -124,7 +124,8 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, 
 export default function SettingsScreen({
   setView,
   onLogoutClick,
-  highlight
+  highlight,
+  returnView
 }) {
 
   const {
@@ -134,7 +135,11 @@ export default function SettingsScreen({
   } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     resetCookieConsent: state.resetCookieConsent,
-    setUserProfile: state.setUserProfile
+    setUserProfile: state.setUserProfile,
+    hapticsEnabled: state.hapticsEnabled,
+    setHapticsEnabled: state.setHapticsEnabled,
+    restSoundEnabled: state.restSoundEnabled,
+    setRestSoundEnabled: state.setRestSoundEnabled
   })));
 
   const { addToast } = useToast();
@@ -143,11 +148,12 @@ export default function SettingsScreen({
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   const [isUpdatingTimezone, setIsUpdatingTimezone] = useState(false);
 
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState(() => highlight === 'workout' ? 'workout' : 'profile');
   const [highlightedSection, setHighlightedSection] = useState(null);
   const socialPrivacyRef = useRef(null);
 
   const SETTINGS_TABS = [
+    { id: 'workout', label: 'Entrenamiento', icon: Timer },
     { id: 'profile', label: 'Perfil', icon: User },
     { id: 'notifications', label: 'Notificaciones', icon: BellRing },
     { id: 'security', label: 'Seguridad', icon: Shield },
@@ -172,7 +178,9 @@ export default function SettingsScreen({
 
   useEffect(() => {
     const effectiveHighlight = highlight || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('highlight') : null);
-    if (effectiveHighlight === 'social_privacy') {
+    if (effectiveHighlight === 'workout') {
+      setActiveTab('workout');
+    } else if (effectiveHighlight === 'social_privacy') {
       setActiveTab('privacy'); // Cambiar a la pestaña correcta
       
       setTimeout(() => {
@@ -264,20 +272,18 @@ export default function SettingsScreen({
 
 
 
-      <div className="hidden md:flex mb-6 mt-4">
-        <button 
-          onClick={() => setView && setView('hub')} 
+      <div className="flex items-center justify-between mb-6 mt-2">
+        <button
+          onClick={() => setView && setView(returnView || 'hub')}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95 shadow-sm shrink-0"
         >
           <ChevronLeft size={20} />
-          <span className="font-bold text-sm">Atrás</span>
+          <span className="font-bold text-sm">{returnView === 'workout' ? 'Volver a rutina' : 'Atrás'}</span>
         </button>
-      </div>
-
-      <div className="hidden md:flex items-center gap-4 md:gap-6 mb-8">
-        <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
           Ajustes
         </h1>
+        <div className="w-12" />
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
@@ -305,6 +311,37 @@ export default function SettingsScreen({
 
         {/* --- CONTENIDO --- */}
         <div id="tutorial-settings-content" className="flex-1 w-full flex flex-col gap-6 lg:gap-8">
+
+          {activeTab === 'workout' && (
+          <GlassCard className={glassCardClass}>
+            <SectionTitle icon={Timer} title="Entrenamiento y Descanso" />
+            <div className="flex flex-col gap-3">
+              <SwitchItem
+                icon={Volume2}
+                title="Sonido de Fin de Descanso"
+                subtitle="Doble pitido suave al terminar la cuenta atrás entre series"
+                checked={restSoundEnabled}
+                onChange={() => {
+                  const newValue = !restSoundEnabled;
+                  setRestSoundEnabled(newValue);
+                  addToast(newValue ? 'Sonido de descanso activado' : 'Sonido de descanso desactivado', 'success');
+                }}
+              />
+
+              <SwitchItem
+                icon={Vibrate}
+                title="Vibración Háptica"
+                subtitle="Vibración en el bolsillo al terminar el descanso y feedback al marcar series"
+                checked={hapticsEnabled}
+                onChange={() => {
+                  const newValue = !hapticsEnabled;
+                  setHapticsEnabled(newValue);
+                  addToast(newValue ? 'Vibración activada' : 'Vibración desactivada', 'success');
+                }}
+              />
+            </div>
+          </GlassCard>
+          )}
 
           {activeTab === 'notifications' && (
           <GlassCard className={glassCardClass}>
