@@ -1231,21 +1231,18 @@ const Routines = ({ setView, mainContentRef }) => {
                       <div className="mt-auto pt-2">
                         <button
                           onClick={() => handleStartWorkout(routine)}
-                          disabled={isCompleted || isActive || isLoading || isBlockedByOtherWorkout}
+                          disabled={isActive || isLoading || isBlockedByOtherWorkout}
                           className={`w-full inline-flex items-center justify-center gap-2 py-4 rounded-[20px] font-bold text-sm sm:text-base transition-all
-                          ${isCompleted || isActive || isBlockedByOtherWorkout
+                          ${isActive || isBlockedByOtherWorkout
                               ? 'bg-black/5 dark:bg-white/5 text-text-muted cursor-not-allowed'
-                              : 'bg-accent text-accent-contrast hover:scale-[1.02] active:scale-95 shadow-lg shadow-accent/20'
+                              : isCompleted
+                                ? 'bg-accent/15 hover:bg-accent text-accent hover:text-accent-contrast active:scale-95 shadow-md shadow-accent/10 cursor-pointer'
+                                : 'bg-accent text-accent-contrast hover:scale-[1.02] active:scale-95 shadow-lg shadow-accent/20 cursor-pointer'
                             }
                         `}
                         >
-                          {isLoading && !isCompleted && !isActive && !isBlockedByOtherWorkout ? (
+                          {isLoading && !isActive && !isBlockedByOtherWorkout ? (
                             <Spinner size="small" />
-                          ) : isCompleted ? (
-                            <>
-                              <CheckCircle size={20} />
-                              Entrenamiento Completado
-                            </>
                           ) : isActive ? (
                             <>
                               <Clock size={20} />
@@ -1255,6 +1252,11 @@ const Routines = ({ setView, mainContentRef }) => {
                             <>
                               <Lock size={20} />
                               Entrenamiento en Curso
+                            </>
+                          ) : isCompleted ? (
+                            <>
+                              <CheckCircle size={20} />
+                              Completado hoy (Volver a entrenar)
                             </>
                           ) : (
                             <>

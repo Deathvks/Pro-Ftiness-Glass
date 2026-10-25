@@ -1031,7 +1031,8 @@ const Dashboard = ({ setView }) => {
                     key={routine.id}
                     onClick={async () => {
                       if (isActive) { setView('workout'); return; }
-                      if (!isCompleted) { await startWorkout(routine); setView('workout'); }
+                      await startWorkout(routine);
+                      setView('workout');
                     }}
                     className={`glass relative p-5 rounded-[28px] transition-all duration-300 cursor-pointer group hover:-translate-y-1 hover:shadow-xl ${isActive ? 'ring-2 ring-accent shadow-accent/20' : isCompleted ? 'opacity-70 hover:opacity-100' : ''}`}
                   >
@@ -1043,7 +1044,7 @@ const Dashboard = ({ setView }) => {
                         <div className="min-w-0">
                           <h3 className={`font-bold text-base truncate ${isActive ? 'text-accent' : 'text-text-primary'}`}>{routine.name}</h3>
                           <p className={`text-xs truncate font-medium mt-0.5 ${isActive ? 'text-accent/80' : 'text-text-secondary'}`}>
-                            {isActive ? t('En curso', { defaultValue: 'En curso' }) : (isCompleted ? t('Completada', { defaultValue: 'Completada' }) : t('Iniciar entrenamiento', { defaultValue: 'Iniciar entrenamiento' }))}
+                            {isActive ? t('En curso', { defaultValue: 'En curso' }) : (isCompleted ? t('Completada hoy • Toca para entrenar', { defaultValue: 'Completada hoy • Toca para entrenar' }) : t('Iniciar entrenamiento', { defaultValue: 'Iniciar entrenamiento' }))}
                           </p>
                         </div>
                       </div>
