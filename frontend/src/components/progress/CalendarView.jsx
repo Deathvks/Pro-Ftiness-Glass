@@ -31,25 +31,23 @@ const CalendarView = ({ setDetailedLog, workouts, className = '' }) => {
     const [calendarDate, setCalendarDate] = useState(new Date());
     const [selectedDateStr, setSelectedDateStr] = useState(todayStr);
 
-    // Mapeo de entrenamientos por fecha local 'YYYY-MM-DD'
+    // Mapeo de entrenamientos por fecha local 'YYYY-MM-DD' del inicio de la sesión
     const workoutsByDate = useMemo(() => {
-        return workoutLog.reduce((acc, log) => {
+        return (workoutLog || []).reduce((acc, log) => {
+            if (!log?.workout_date) return acc;
             const date = new Date(log.workout_date);
             if (isNaN(date.getTime())) return acc;
+            // Cada entrenamiento pertenece únicamente a su fecha local de inicio (si empezó antes de las 00:00, cuenta para ese día)
             const localDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             if (!acc[localDateStr]) { acc[localDateStr] = []; }
-            acc[localDateStr].push(log);
 
-            // Si el entrenamiento terminó después de medianoche, también incluirlo en el día de finalización
-            if (log.duration_seconds && log.duration_seconds > 0) {
-                const endDate = new Date(date.getTime() + log.duration_seconds * 1000);
-                const endLocalDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
-                if (endLocalDateStr !== localDateStr) {
-                    if (!acc[endLocalDateStr]) { acc[endLocalDateStr] = []; }
-                    if (!acc[endLocalDateStr].some(l => l.id === log.id)) {
-                        acc[endLocalDateStr].push(log);
-                    }
-                }
+            // Evitar duplicar el mismo entrenamiento en la lista del día
+            const isDuplicate = acc[localDateStr].some(l => 
+                (l.id && log.id && String(l.id) === String(log.id)) ||
+                (l.routine_id && log.routine_id && String(l.routine_id) === String(log.routine_id) && l.workout_date === log.workout_date)
+            );
+            if (!isDuplicate) {
+                acc[localDateStr].push(log);
             }
 
             return acc;
@@ -101,10 +99,19 @@ const CalendarView = ({ setDetailedLog, workouts, className = '' }) => {
     const monthName = calendarDate.toLocaleString('es-ES', { month: 'long' });
 
     const monthStats = useMemo(() => {
-        const logsInMonth = workoutLog.filter(log => {
+        const rawLogsInMonth = (workoutLog || []).filter(log => {
+            if (!log?.workout_date) return false;
             const d = new Date(log.workout_date);
             return d.getFullYear() === year && d.getMonth() === month;
         });
+
+        // Deduplicar logs idénticos para no falsear el recuento
+        const logsInMonth = rawLogsInMonth.filter((log, idx, arr) =>
+            arr.findIndex(l => 
+                (l.id && log.id && String(l.id) === String(log.id)) ||
+                (l.routine_id && log.routine_id && String(l.routine_id) === String(log.routine_id) && l.workout_date === log.workout_date)
+            ) === idx
+        );
 
         let totalSeconds = 0;
         let totalCalories = 0;

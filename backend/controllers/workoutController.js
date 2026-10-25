@@ -41,21 +41,9 @@ export const getWorkoutHistory = async (req, res, next) => {
         endOfDay.setHours(23, 59, 59, 999);
       }
 
-      // Ventana de lookback de hasta 12 horas antes del inicio del día para entrenamientos que terminaron pasada la medianoche
-      const lookbackStart = new Date(startOfDay.getTime() - (12 * 60 * 60 * 1000));
-      whereCondition[Op.or] = [
-        {
-          workout_date: {
-            [Op.between]: [startOfDay, endOfDay]
-          }
-        },
-        {
-          workout_date: {
-            [Op.between]: [lookbackStart, startOfDay]
-          },
-          [Op.and]: sequelize.literal("DATE_ADD(workout_date, INTERVAL duration_seconds SECOND) >= " + sequelize.escape(startOfDay))
-        }
-      ];
+      whereCondition.workout_date = {
+        [Op.between]: [startOfDay, endOfDay]
+      };
     } else if (startDate && endDate) {
       whereCondition.workout_date = {
         [Op.between]: [new Date(startDate), new Date(endDate)]

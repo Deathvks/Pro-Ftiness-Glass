@@ -710,6 +710,14 @@ const Routines = ({ setView, mainContentRef }) => {
       return;
     }
 
+    // Si la rutina ya fue completada hoy, no permitir volver a entrenarla
+    const isAlreadyCompletedToday = (completedRoutineIdsToday || []).some(id => String(id) === String(routine.id)) ||
+      (workoutLog || []).some(log => String(log?.routine_id) === String(routine.id) && isWorkoutDoneToday(log));
+    if (isAlreadyCompletedToday) {
+      addToast('Esta rutina ya ha sido completada hoy.', 'info');
+      return;
+    }
+
     if (isAnyWorkoutActive && activeWorkout.routineId !== routine.id) {
       addToast('Ya tienes un entrenamiento en curso. Finalízalo o descártalo para empezar uno nuevo.', 'warning');
       return;
@@ -1254,12 +1262,12 @@ const Routines = ({ setView, mainContentRef }) => {
                       <div className="mt-auto pt-2">
                         <button
                           onClick={() => handleStartWorkout(routine)}
-                          disabled={isActive || isLoading || isBlockedByOtherWorkout}
+                          disabled={isActive || isLoading || isBlockedByOtherWorkout || isCompleted}
                           className={`w-full inline-flex items-center justify-center gap-2 py-4 rounded-[20px] font-bold text-sm sm:text-base transition-all
                           ${isActive || isBlockedByOtherWorkout
                               ? 'bg-black/5 dark:bg-white/5 text-text-muted cursor-not-allowed'
                               : isCompleted
-                                ? 'bg-accent/15 hover:bg-accent text-accent hover:text-accent-contrast active:scale-95 shadow-md shadow-accent/10 cursor-pointer'
+                                ? 'bg-black/5 dark:bg-white/5 text-accent border border-accent/20 cursor-not-allowed opacity-90 select-none'
                                 : 'bg-accent text-accent-contrast hover:scale-[1.02] active:scale-95 shadow-lg shadow-accent/20 cursor-pointer'
                             }
                         `}
@@ -1278,8 +1286,8 @@ const Routines = ({ setView, mainContentRef }) => {
                             </>
                           ) : isCompleted ? (
                             <>
-                              <CheckCircle size={20} />
-                              Completado hoy (Volver a entrenar)
+                              <CheckCircle size={20} className="text-accent" />
+                              Completado hoy
                             </>
                           ) : (
                             <>

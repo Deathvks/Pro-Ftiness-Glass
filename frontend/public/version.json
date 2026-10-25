@@ -1,4 +1,4 @@
 {
-  "version": "7.10.25",
-  "releaseNotes": "Actualización v7.10.25: Modal del Entrenador IA rediseñado como Bottom Sheet en móvil con deslizamiento interactivo hacia abajo para cerrar, pill handle e indicador animado. | v7.10.24: Compartir en Stories desde Rutinas y detección de entrenamientos tras medianoche."
+  "version": "7.10.26",
+  "releaseNotes": "Actualización v7.10.26: Bloqueo estricto de rutinas completadas hoy (sin botón volver a entrenar) y corrección definitiva del calendario: los entrenamientos iniciados antes de las 00:00 se asignan únicamente a su día de inicio, eliminando duplicados fantasma en días consecutivos. | v7.10.25: Modal del Entrenador IA rediseñado como Bottom Sheet en móvil."
 }

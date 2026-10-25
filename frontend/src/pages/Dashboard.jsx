@@ -943,9 +943,7 @@ const Dashboard = ({ setView }) => {
               const hasWorkout = workoutLog.some(log => {
                 if (!log?.workout_date) return false;
                 const start = new Date(log.workout_date);
-                if (isSameDay(start, date)) return true;
-                const end = new Date(start.getTime() + (log.duration_seconds || 0) * 1000);
-                return isSameDay(end, date);
+                return isSameDay(start, date);
               });
               return (
                 <div key={i} className="flex flex-col items-center gap-1.5 flex-1 min-w-[20px]">
@@ -1080,20 +1078,21 @@ const Dashboard = ({ setView }) => {
                     key={routine.id}
                     onClick={async () => {
                       if (isActive) { setView('workout'); return; }
+                      if (isCompleted) { setView('routines'); return; }
                       await startWorkout(routine);
                       setView('workout');
                     }}
-                    className={`glass relative p-5 rounded-[28px] transition-all duration-300 cursor-pointer group hover:-translate-y-1 hover:shadow-xl ${isActive ? 'ring-2 ring-accent shadow-accent/20' : isCompleted ? 'opacity-70 hover:opacity-100' : ''}`}
+                    className={`glass relative p-5 rounded-[28px] transition-all duration-300 ${isActive ? 'ring-2 ring-accent shadow-accent/20 cursor-pointer' : isCompleted ? 'opacity-80 ring-1 ring-accent/20 cursor-pointer' : 'cursor-pointer group hover:-translate-y-1 hover:shadow-xl'}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4 overflow-hidden">
-                        <div className={`w-12 h-12 rounded-[20px] flex items-center justify-center shrink-0 transition-colors ${isActive ? 'bg-accent/20' : 'bg-black/5 dark:bg-white/5'}`}>
-                          {isActive ? <Clock size={24} className="text-accent" /> : (isCompleted ? <CheckCircle size={24} className="text-green-500" /> : <Play size={24} className={isActive ? 'text-white' : 'text-accent'} fill="currentColor" />)}
+                        <div className={`w-12 h-12 rounded-[20px] flex items-center justify-center shrink-0 transition-colors ${isActive ? 'bg-accent/20' : isCompleted ? 'bg-accent/10 text-accent' : 'bg-black/5 dark:bg-white/5'}`}>
+                          {isActive ? <Clock size={24} className="text-accent" /> : (isCompleted ? <CheckCircle size={24} className="text-accent" /> : <Play size={24} className={isActive ? 'text-white' : 'text-accent'} fill="currentColor" />)}
                         </div>
                         <div className="min-w-0">
                           <h3 className={`font-bold text-base truncate ${isActive ? 'text-accent' : 'text-text-primary'}`}>{routine.name}</h3>
-                          <p className={`text-xs truncate font-medium mt-0.5 ${isActive ? 'text-accent/80' : 'text-text-secondary'}`}>
-                            {isActive ? t('En curso', { defaultValue: 'En curso' }) : (isCompleted ? t('Completada hoy • Toca para entrenar', { defaultValue: 'Completada hoy • Toca para entrenar' }) : t('Iniciar entrenamiento', { defaultValue: 'Iniciar entrenamiento' }))}
+                          <p className={`text-xs truncate font-medium mt-0.5 ${isActive ? 'text-accent/80' : isCompleted ? 'text-accent' : 'text-text-secondary'}`}>
+                            {isActive ? t('En curso', { defaultValue: 'En curso' }) : (isCompleted ? t('Completada hoy', { defaultValue: 'Completada hoy' }) : t('Iniciar entrenamiento', { defaultValue: 'Iniciar entrenamiento' }))}
                           </p>
                         </div>
                       </div>

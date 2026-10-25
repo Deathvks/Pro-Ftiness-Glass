@@ -62,27 +62,13 @@ export const initNativeTimerSync = (store) => {
   }
 };
 
-// --- HELPER: Detectar si un entrenamiento se realizó o terminó hoy (incluso pasada la medianoche 0:00) ---
+// --- HELPER: Detectar si un entrenamiento se inició hoy según la hora local del usuario ---
 export const isWorkoutDoneToday = (log, todayDate = new Date()) => {
   if (!log?.workout_date) return false;
   const start = new Date(log.workout_date);
   if (isNaN(start.getTime())) return false;
 
-  if (isSameDay(start, todayDate)) return true;
-
-  const durationSec = Number(log.duration_seconds) || 0;
-  if (durationSec > 0) {
-    const end = new Date(start.getTime() + durationSec * 1000);
-    if (isSameDay(end, todayDate)) return true;
-  }
-
-  // Comprobar si el entrenamiento terminó dentro de las horas locales de hoy (ej. pasado de las 00:00)
-  const startOfDay = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate(), 0, 0, 0, 0);
-  const endOfDay = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate(), 23, 59, 59, 999);
-  const end = new Date(start.getTime() + durationSec * 1000);
-  if (end >= startOfDay && end <= endOfDay) return true;
-
-  return false;
+  return isSameDay(start, todayDate);
 };
 
 // --- HELPER CORREGIDO: Buscar último rendimiento (AHORA LEE BIEN EL BACKEND) ---
