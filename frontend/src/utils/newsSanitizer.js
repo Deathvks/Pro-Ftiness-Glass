@@ -17,17 +17,20 @@ export function sanitizeNewsContent(rawContent = '') {
 
   // 2. Corregir etiquetas en español o corchetes sueltos convirtiéndolos a alert blocks limpios
   // E.g.: [EVIDENCIA CIENTÍFICA] o EVIDENCIA CIENTÍFICA en su propia línea
-  content = content.replace(/^(?:>\s*)?\[?(?:EVIDENCIA CIENT[IÍ]FICA|ESTUDIO CIENT[IÍ]FICO)\]?\s*$/gim, '> [!IMPORTANT]');
-  content = content.replace(/^(?:>\s*)?\[?(?:CONSEJO PR[AÁ]CTICO|CONSEJO)\]?\s*$/gim, '> [!TIP]');
-  content = content.replace(/^(?:>\s*)?\[?(?:ATENCI[OÓ]N|ADVERTENCIA)\]?\s*$/gim, '> [!WARNING]');
-  content = content.replace(/^(?:>\s*)?\[?(?:NOTA CLAVE|NOTA|APUNTE)\]?\s*$/gim, '> [!NOTE]');
+  content = content.replace(/^(?:>\s*)?\[?(?:EVIDENCIA CIENT[IÍ]FICA|ESTUDIO CIENT[IÍ]FICO)\]?:?\s*$/gim, '> [!IMPORTANT]');
+  content = content.replace(/^(?:>\s*)?\[?(?:CONSEJO PR[AÁ]CTICO|CONSEJO)\]?:?\s*$/gim, '> [!TIP]');
+  content = content.replace(/^(?:>\s*)?\[?(?:ATENCI[OÓ]N|ADVERTENCIA)\]?:?\s*$/gim, '> [!WARNING]');
+  content = content.replace(/^(?:>\s*)?\[?(?:NOTA CLAVE|NOTA|APUNTE)\]?:?\s*$/gim, '> [!NOTE]');
 
   // 3. Si una línea de alerta lleva texto pegado: [!IMPORTANT] Texto... -> > [!IMPORTANT]\n> Texto...
-  content = content.replace(/^(?:>\s*)?\[!(IMPORTANT|TIP|WARNING|NOTE|CAUTION)\]\s*(.+)$/gim, (m, type, rest) => {
+  content = content.replace(/^(?:>\s*)?\[!(IMPORTANT|TIP|WARNING|NOTE|CAUTION)\][^\S\r\n]+([^\r\n]+)$/gim, (m, type, rest) => {
     return `> [!${type.toUpperCase()}]\n> ${rest.trim()}`;
   });
 
   // 4. Si dentro de un bloque > hay un ## Subtítulo pegado al texto o ## dentro de la alerta:
+  // Limpieza de marcadores de cita duplicados o anidados accidentalmente
+  content = content.replace(/^>\s*>+\s*/gm, '> ');
+
   content = content.replace(/^>\s*#{1,4}\s*(.+)$/gm, (m, heading) => {
     const raw = heading.trim();
     const qSplit = raw.match(/^(.{4,65}\?)\s+([A-ZÁÉÍÓÚ].{20,})$/);

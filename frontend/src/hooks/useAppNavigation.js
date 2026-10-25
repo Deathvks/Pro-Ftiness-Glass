@@ -151,24 +151,29 @@ export const useAppNavigation = (navigateRouter) => {
 
     setNavParams(options);
 
-    if (view !== viewName || (viewName === 'publicProfile' && options.userId !== navParams.userId)) {
+    let newPath = '/';
+    switch (viewName) {
+      case 'dashboard': newPath = '/dashboard'; break;
+      case 'publicProfile': {
+        const targetId = options.userId || navParams.userId;
+        if (targetId) newPath = `/profile/${targetId}`;
+        break;
+      }
+      case 'active-cardio': {
+        newPath = '/active-cardio';
+        break;
+      }
+      default: newPath = `/${viewName}`; break;
+    }
+
+    const needsNavigation =
+      view !== viewName ||
+      (viewName === 'publicProfile' && options.userId !== navParams.userId) ||
+      window.location.pathname !== newPath;
+
+    if (needsNavigation) {
       setPreviousView(view);
       setView(viewName);
-
-      let newPath = '/';
-      switch (viewName) {
-        case 'dashboard': newPath = '/dashboard'; break;
-        case 'publicProfile': {
-          const targetId = options.userId || navParams.userId;
-          if (targetId) newPath = `/profile/${targetId}`;
-          break;
-        }
-        case 'active-cardio': {
-          newPath = '/active-cardio';
-          break;
-        }
-        default: newPath = `/${viewName}`; break;
-      }
 
       if (window.location.pathname !== newPath) {
         if (navigateRouter && typeof navigateRouter === 'function') {

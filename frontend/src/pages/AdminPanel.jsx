@@ -615,8 +615,8 @@ const AdminPanel = ({ onCancel }) => {
           <button
             onClick={() => setActiveTab('notifications')}
             onMouseEnter={() => preloadAdminTab('notifications')}
-            onTouchStart={() => preloadAdminTab('notifications')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'notifications'
+            style={{ touchAction: 'manipulation' }}
+          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 touch-manipulation select-none text-sm sm:text-base ${activeTab === 'notifications'
             ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
@@ -627,8 +627,8 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('emails')}
           onMouseEnter={() => preloadAdminTab('emails')}
-          onTouchStart={() => preloadAdminTab('emails')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'emails'
+          style={{ touchAction: 'manipulation' }}
+          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 touch-manipulation select-none text-sm sm:text-base ${activeTab === 'emails'
             ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
@@ -649,8 +649,8 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('news')}
           onMouseEnter={() => preloadAdminTab('news')}
-          onTouchStart={() => preloadAdminTab('news')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'news'
+          style={{ touchAction: 'manipulation' }}
+          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 touch-manipulation select-none text-sm sm:text-base ${activeTab === 'news'
             ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}
@@ -661,8 +661,8 @@ const AdminPanel = ({ onCancel }) => {
         <button
           onClick={() => setActiveTab('security')}
           onMouseEnter={() => preloadAdminTab('security')}
-          onTouchStart={() => preloadAdminTab('security')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'security'
+          style={{ touchAction: 'manipulation' }}
+          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 touch-manipulation select-none text-sm sm:text-base ${activeTab === 'security'
             ? 'bg-red text-white shadow-lg shadow-red/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
             }`}

@@ -13,14 +13,17 @@ export function sanitizeNewsContent(rawContent = '') {
   let text = rawContent;
   text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-  text = text.replace(/^(?:>\s*)?\[?(?:EVIDENCIA CIENT[IÍ]FICA|ESTUDIO CIENT[IÍ]FICO)\]?\s*$/gim, '> [!IMPORTANT]');
-  text = text.replace(/^(?:>\s*)?\[?(?:CONSEJO PR[AÁ]CTICO|CONSEJO)\]?\s*$/gim, '> [!TIP]');
-  text = text.replace(/^(?:>\s*)?\[?(?:ATENCI[OÓ]N|ADVERTENCIA)\]?\s*$/gim, '> [!WARNING]');
-  text = text.replace(/^(?:>\s*)?\[?(?:NOTA CLAVE|NOTA|APUNTE)\]?\s*$/gim, '> [!NOTE]');
+  text = text.replace(/^(?:>\s*)?\[?(?:EVIDENCIA CIENT[IÍ]FICA|ESTUDIO CIENT[IÍ]FICO)\]?:?\s*$/gim, '> [!IMPORTANT]');
+  text = text.replace(/^(?:>\s*)?\[?(?:CONSEJO PR[AÁ]CTICO|CONSEJO)\]?:?\s*$/gim, '> [!TIP]');
+  text = text.replace(/^(?:>\s*)?\[?(?:ATENCI[OÓ]N|ADVERTENCIA)\]?:?\s*$/gim, '> [!WARNING]');
+  text = text.replace(/^(?:>\s*)?\[?(?:NOTA CLAVE|NOTA|APUNTE)\]?:?\s*$/gim, '> [!NOTE]');
 
-  text = text.replace(/^(?:>\s*)?\[!(IMPORTANT|TIP|WARNING|NOTE|CAUTION)\]\s*(.+)$/gim, (m, type, rest) => {
+  text = text.replace(/^(?:>\s*)?\[!(IMPORTANT|TIP|WARNING|NOTE|CAUTION)\][^\S\r\n]+([^\r\n]+)$/gim, (m, type, rest) => {
     return `> [!${type.toUpperCase()}]\n> ${rest.trim()}`;
   });
+
+  // Limpieza de marcadores de cita duplicados o anidados accidentalmente
+  text = text.replace(/^>\s*>+\s*/gm, '> ');
 
   text = text.replace(/^>\s*#{1,4}\s*(.+)$/gm, (m, heading) => {
     const raw = heading.trim();

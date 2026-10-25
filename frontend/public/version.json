@@ -1,4 +1,4 @@
 {
-  "version": "7.10.29",
-  "releaseNotes": "Actualización v7.10.29: Carga instantánea de pestañas en Panel Admin (precarga inteligente en segundo plano, eliminación de cascadas de carga y caché SWR para valoraciones, notificaciones, correos, subidas, noticias y ciberseguridad)."
+  "version": "7.10.30",
+  "releaseNotes": "Actualización v7.10.30: Corrección del renderizado editorial en alertas de noticias (eliminación del símbolo \">\" residual en callouts), eliminación de bloqueos táctiles en móvil y precarga instantánea para acceso inmediato a Noticias y Blog tras actualizaciones."
 }

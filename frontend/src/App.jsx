@@ -143,12 +143,17 @@ export const preloadViewChunk = (viewId) => {
     loader().catch(() => {
       preloadedViews.delete(viewId);
     });
+    if (viewId === 'noticias') {
+      import('./services/newsService').then((ns) => {
+        ns.fetchPublicNews({ page: 1, limit: 6 }).catch(() => {});
+      }).catch(() => {});
+    }
   }
 };
 
 export const preloadAllPrimaryViews = () => {
   if (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData) return;
-  const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub', 'publicProfile', 'profile'];
+  const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub', 'publicProfile', 'profile', 'noticias'];
   const user = useAppStore.getState().userProfile;
   if (user?.role === 'admin') {
     primaryNavViews.push('adminPanel');
@@ -522,7 +527,7 @@ export default function App() {
     });
 
     // Precargar vistas secundarias escalonadas
-    const secondaryNavViews = ['workout', 'progress', 'profile', 'settings', 'notifications', 'challenges', 'appearance', 'noticias'];
+    const secondaryNavViews = ['noticias', 'workout', 'progress', 'profile', 'settings', 'notifications', 'challenges', 'appearance'];
     secondaryNavViews.forEach((v, idx) => {
       setTimeout(() => {
         preloadViewChunk(v);

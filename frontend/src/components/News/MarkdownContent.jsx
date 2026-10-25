@@ -150,7 +150,9 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
         // Limpieza de marcadores redundantes de alerta dentro de la caja
         bqLine = bqLine
           .replace(/^\[!(IMPORTANT|TIP|WARNING|NOTE|CAUTION)\]\s*/i, '')
-          .replace(/^\[(EVIDENCIA CIENT[IÍ]FICA|ESTUDIO CIENT[IÍ]FICO|CONSEJO PR[AÁ]CTICO|NOTA CLAVE|ATENCI[OÓ]N|ADVERTENCIA)\]\s*/i, '');
+          .replace(/^\[?(?:EVIDENCIA CIENT[IÍ]FICA|ESTUDIO CIENT[IÍ]FICO|CONSEJO PR[AÁ]CTICO|CONSEJO|NOTA CLAVE|ATENCI[OÓ]N|ADVERTENCIA)\]?:?\s*/i, '')
+          .replace(/^>+\s*/, '')
+          .trim();
 
         if (!bqLine) continue;
 
@@ -314,7 +316,7 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
 
     // 2. Detección de Callouts (alertas GitHub Flavored [!IMPORTANT], [!TIP], etc., o corchetes sueltos)
     const isCalloutPrefix = trimmed.startsWith('>');
-    const contentAfterGt = trimmed.replace(/^>\s*/, '');
+    const contentAfterGt = trimmed.replace(/^>+\s*/, '');
 
     // Detección de tipo de alerta
     let matchedAlert = null;
@@ -322,10 +324,10 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
     else if (contentAfterGt.startsWith('[!IMPORTANT]')) matchedAlert = 'important';
     else if (contentAfterGt.startsWith('[!WARNING]')) matchedAlert = 'warning';
     else if (contentAfterGt.startsWith('[!NOTE]')) matchedAlert = 'note';
-    else if (/^\[?(EVIDENCIA CIENT[IÍ]FICA|ESTUDIO CIENT[IÍ]FICO)\]?$/i.test(contentAfterGt)) matchedAlert = 'important';
-    else if (/^\[?(CONSEJO PR[AÁ]CTICO|CONSEJO)\]?$/i.test(contentAfterGt)) matchedAlert = 'tip';
-    else if (/^\[?(ATENCI[OÓ]N|ADVERTENCIA)\]?$/i.test(contentAfterGt)) matchedAlert = 'warning';
-    else if (/^\[?(NOTA CLAVE|NOTA|APUNTE)\]?$/i.test(contentAfterGt)) matchedAlert = 'note';
+    else if (/^\[?(?:EVIDENCIA CIENT[IÍ]FICA|ESTUDIO CIENT[IÍ]FICO)\]?:?\s*$/i.test(contentAfterGt)) matchedAlert = 'important';
+    else if (/^\[?(?:CONSEJO PR[AÁ]CTICO|CONSEJO)\]?:?\s*$/i.test(contentAfterGt)) matchedAlert = 'tip';
+    else if (/^\[?(?:ATENCI[OÓ]N|ADVERTENCIA)\]?:?\s*$/i.test(contentAfterGt)) matchedAlert = 'warning';
+    else if (/^\[?(?:NOTA CLAVE|NOTA|APUNTE)\]?:?\s*$/i.test(contentAfterGt)) matchedAlert = 'note';
 
     if (matchedAlert) {
       flushList();
@@ -333,6 +335,14 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
       flushBlockquote();
       inBlockquote = true;
       blockquoteType = matchedAlert;
+      const rest = contentAfterGt
+        .replace(/^\[!(IMPORTANT|TIP|WARNING|NOTE|CAUTION)\]\s*/i, '')
+        .replace(/^\[?(?:EVIDENCIA CIENT[IÍ]FICA|ESTUDIO CIENT[IÍ]FICO|CONSEJO PR[AÁ]CTICO|CONSEJO|ATENCI[OÓ]N|ADVERTENCIA|NOTA CLAVE|NOTA|APUNTE)\]?:?\s*/i, '')
+        .replace(/^>+\s*/, '')
+        .trim();
+      if (rest) {
+        blockquoteLines.push(rest);
+      }
       continue;
     }
 
@@ -340,7 +350,7 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
       flushList();
       flushTable();
       inBlockquote = true;
-      blockquoteLines.push(contentAfterGt);
+      blockquoteLines.push(contentAfterGt.replace(/^>+\s*/, ''));
       continue;
     } else if (inBlockquote && trimmed !== '') {
       // Si estamos en un bloque de cita y encontramos un encabezado principal (# o ##), cerrar el bloque
