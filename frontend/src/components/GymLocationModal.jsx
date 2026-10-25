@@ -2,81 +2,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ModalPortal from './ModalPortal';
 import useModalLock from '../hooks/useModalLock';
-import { MapPin, Search, X, Navigation, Dumbbell, Trash2, Check, Loader2, Sparkles, Building2 } from 'lucide-react';
+import { MapPin, Search, X, Navigation, Dumbbell, Trash2, Check, Loader2, Sparkles, Building2, BadgeCheck } from 'lucide-react';
 import { getCurrentLocation, calculateDistance, formatDistance } from '../utils/gpsUtils';
 import { enrichGymWithMedia } from '../utils/gymMedia';
 import { SpainTerritoryBadge } from './Flags';
 import { useToast } from '../hooks/useToast';
-
-// Base de datos de clubes de cadenas populares en España (Fitness Park, etc.) para búsqueda instantánea
-const POPULAR_SPAIN_GYMS = [
-  // Canarias (Gran Canaria & Tenerife)
-  { name: 'Fitness Park Las Ramblas', brand: 'Fitness Park', address: 'Centro Comercial Las Ramblas, Av. Juan Carlos I, 29, 35019 Las Palmas de Gran Canaria', city: 'Las Palmas de Gran Canaria', province: 'Las Palmas', lat: 28.1137, lng: -15.4492 },
-  { name: 'Fitness Park Gran Canaria - Tamaraceite', brand: 'Fitness Park', address: 'Calle San Daniel, Tamaraceite, 35018 Las Palmas de Gran Canaria', city: 'Las Palmas de Gran Canaria', province: 'Las Palmas', lat: 28.1068, lng: -15.4674 },
-  { name: 'Fitness Park Telde - Las Terrazas', brand: 'Fitness Park', address: 'Centro Comercial Las Terrazas, 35220 Telde', city: 'Telde', province: 'Las Palmas', lat: 28.0315, lng: -15.4055 },
-  { name: 'Fitness Park Gran Canaria - Cruce de Arinaga', brand: 'Fitness Park', address: 'Calle Ciprés, 1, Pol. Ind. Arinaga, 35118 Agüimes', city: 'Agüimes', province: 'Las Palmas', lat: 27.8763, lng: -15.4241 },
-  { name: 'Fitness Park Gran Canaria - Vecindario', brand: 'Fitness Park', address: 'Av. de Canarias, 35110 Vecindario, Santa Lucía de Tirajana', city: 'Vecindario', province: 'Las Palmas', lat: 27.8521, lng: -15.4418 },
-  { name: 'Fitness Park Gran Canaria - Carvajal', brand: 'Fitness Park', address: 'Calle Carvajal, 35004 Las Palmas de Gran Canaria', city: 'Las Palmas de Gran Canaria', province: 'Las Palmas', lat: 28.1189, lng: -15.4265 },
-  { name: 'Fitness Park Tenerife - La Cuesta', brand: 'Fitness Park', address: 'Carretera General Santa Cruz-Laguna, 38320 San Cristóbal de La Laguna', city: 'La Laguna', province: 'Santa Cruz de Tenerife', lat: 28.4652, lng: -16.2913 },
-  { name: 'Fitness Park Tenerife - Las Chafiras', brand: 'Fitness Park', address: 'Av. Ten Bel, Pol. Ind. Las Chafiras, 38639 San Miguel de Abona', city: 'Las Chafiras', province: 'Santa Cruz de Tenerife', lat: 28.0833, lng: -16.6358 },
-
-  // Islas Baleares
-  { name: 'Fitness Park Palma de Mallorca - Aragó', brand: 'Fitness Park', address: 'Carrer d\'Aragó, 231, 07008 Palma de Mallorca', city: 'Palma de Mallorca', province: 'Illes Balears', lat: 39.5828, lng: 2.6715 },
-  { name: 'McFIT Palma de Mallorca', brand: 'McFIT', address: 'Camí dels Reis, 308, 07010 Palma de Mallorca', city: 'Palma de Mallorca', province: 'Illes Balears', lat: 39.5962, lng: 2.6457 },
-
-  // Madrid
-  { name: 'Fitness Park La Vaguada', brand: 'Fitness Park', address: 'Centro Comercial La Vaguada, Av. de Monforte de Lemos, 36, 28029 Madrid', city: 'Madrid', province: 'Madrid', lat: 40.4795, lng: -3.7082 },
-  { name: 'Fitness Park Castellana 85', brand: 'Fitness Park', address: 'Paseo de la Castellana, 85, Complejo AZCA, 28046 Madrid', city: 'Madrid', province: 'Madrid', lat: 40.4497, lng: -3.6918 },
-  { name: 'Fitness Park Príncipe Pío', brand: 'Fitness Park', address: 'Centro Comercial Príncipe Pío, Paseo de la Florida, 2, 28008 Madrid', city: 'Madrid', province: 'Madrid', lat: 40.4208, lng: -3.7197 },
-  { name: 'Fitness Park Plaza Río 2', brand: 'Fitness Park', address: 'Centro Comercial Plaza Río 2, Calle de Antonio López, 109, 28026 Madrid', city: 'Madrid', province: 'Madrid', lat: 40.3905, lng: -3.6991 },
-  { name: 'Fitness Park Méndez Álvaro', brand: 'Fitness Park', address: 'Calle de Méndez Álvaro, 28045 Madrid', city: 'Madrid', province: 'Madrid', lat: 40.3982, lng: -3.6784 },
-  { name: 'Fitness Park Alcorcón - X-Madrid', brand: 'Fitness Park', address: 'Centro Comercial X-Madrid, Calle Oslo, 53, 28922 Alcorcón', city: 'Alcorcón', province: 'Madrid', lat: 40.3392, lng: -3.8327 },
-  { name: 'Fitness Park Torrejón - Oasiz', brand: 'Fitness Park', address: 'Centro Comercial Oasiz, Av. Premios Nobel, 3, 28850 Torrejón de Ardoz', city: 'Torrejón de Ardoz', province: 'Madrid', lat: 40.4632, lng: -3.4561 },
-  { name: 'Fitness Park Calle Toledo', brand: 'Fitness Park', address: 'Calle de Toledo, 28005 Madrid', city: 'Madrid', province: 'Madrid', lat: 40.4078, lng: -3.7126 },
-  { name: 'Fitness Park San Sebastián de los Reyes', brand: 'Fitness Park', address: 'Av. de España, 28703 San Sebastián de los Reyes', city: 'San Sebastián de los Reyes', province: 'Madrid', lat: 40.5471, lng: -3.6264 },
-
-  // Barcelona & Catalunya
-  { name: 'Fitness Park Barcelona - Casanova', brand: 'Fitness Park', address: 'Carrer de Casanova, 161, 08036 Barcelona', city: 'Barcelona', province: 'Barcelona', lat: 41.3892, lng: 2.1524 },
-  { name: 'Fitness Park Barcelona - Berlín', brand: 'Fitness Park', address: 'Carrer de Berlín, 50, Sants, 08029 Barcelona', city: 'Barcelona', province: 'Barcelona', lat: 41.3831, lng: 2.1387 },
-  { name: 'Fitness Park Barcelona - Balmes', brand: 'Fitness Park', address: 'Carrer de Balmes, 184, 08006 Barcelona', city: 'Barcelona', province: 'Barcelona', lat: 41.3976, lng: 2.1539 },
-  { name: 'Fitness Park Barcelona - Diagonal Mar', brand: 'Fitness Park', address: 'Centro Comercial Diagonal Mar, Av. Diagonal, 3, 08019 Barcelona', city: 'Barcelona', province: 'Barcelona', lat: 41.4089, lng: 2.2157 },
-  { name: 'Fitness Park Barcelona - La Maquinista', brand: 'Fitness Park', address: 'Centro Comercial Westfield La Maquinista, Carrer de Potosí, 2, 08030 Barcelona', city: 'Barcelona', province: 'Barcelona', lat: 41.4414, lng: 2.1983 },
-  { name: 'Fitness Park L\'Illa Diagonal', brand: 'Fitness Park', address: 'Centro Comercial L\'illa Diagonal, Av. Diagonal, 557, 08029 Barcelona', city: 'Barcelona', province: 'Barcelona', lat: 41.3895, lng: 2.1348 },
-  { name: 'Fitness Park Vilanova i la Geltrú', brand: 'Fitness Park', address: 'Rambla de la Torre de l\'Onclet, 08800 Vilanova i la Geltrú', city: 'Vilanova i la Geltrú', province: 'Barcelona', lat: 41.2263, lng: 1.7258 },
-
-  // Comunitat Valenciana & Murcia
-  { name: 'Fitness Park Valencia - Aqua', brand: 'Fitness Park', address: 'Centro Comercial Aqua, Carrer de Menorca, 19, 46023 València', city: 'Valencia', province: 'Valencia', lat: 39.4589, lng: -0.3475 },
-  { name: 'Fitness Park Valencia - Nou Mestalla', brand: 'Fitness Park', address: 'Carrer del Doctor Nicasi Benlloch, 46015 València', city: 'Valencia', province: 'Valencia', lat: 39.4891, lng: -0.3957 },
-  { name: 'Fitness Park Valencia - Ruzafa', brand: 'Fitness Park', address: 'Carrer de Cuba, Ruzafa, 46006 València', city: 'Valencia', province: 'Valencia', lat: 39.4608, lng: -0.3754 },
-  { name: 'Fitness Park Valencia - Marítim (Serrería)', brand: 'Fitness Park', address: 'Carrer de la Serradora, 46024 València', city: 'Valencia', province: 'Valencia', lat: 39.4639, lng: -0.3347 },
-  { name: 'Fitness Park Valencia - Camí de Montcada', brand: 'Fitness Park', address: 'Camí de Montcada, 85, 46019 València', city: 'Valencia', province: 'Valencia', lat: 39.4921, lng: -0.3789 },
-  { name: 'Fitness Park Alfafar - MN4', brand: 'Fitness Park', address: 'Centro Comercial MN4, Calle Alcalde José Puertes, 46910 Alfafar', city: 'Alfafar', province: 'Valencia', lat: 39.4183, lng: -0.3871 },
-  { name: 'Fitness Park Alicante - Gran Vía', brand: 'Fitness Park', address: 'Centro Comercial Gran Vía, Calle José García Sellés, 2, 03015 Alicante', city: 'Alicante', province: 'Alicante', lat: 38.3662, lng: -0.4728 },
-  { name: 'Fitness Park Murcia - Thader', brand: 'Fitness Park', address: 'Centro Comercial Thader, Av. Juan de Borbón, 30110 Murcia', city: 'Murcia', province: 'Murcia', lat: 38.0264, lng: -1.1398 },
-  { name: 'Fitness Park Cartagena', brand: 'Fitness Park', address: 'Plaza Juan XXIII, 30201 Cartagena', city: 'Cartagena', province: 'Murcia', lat: 37.6033, lng: -0.9856 },
-
-  // Andalucía
-  { name: 'Fitness Park Málaga - Plaza Mayor', brand: 'Fitness Park', address: 'Centro Comercial Plaza Mayor, Calle Alfonso Ponce de León, 29004 Málaga', city: 'Málaga', province: 'Málaga', lat: 36.6578, lng: -4.4812 },
-  { name: 'Fitness Park Sevilla - Lagoh', brand: 'Fitness Park', address: 'Centro Comercial Lagoh, Av. de Palmas Altas, 41012 Sevilla', city: 'Sevilla', province: 'Sevilla', lat: 37.3371, lng: -5.9868 },
-  { name: 'Fitness Park Granada - Nevada', brand: 'Fitness Park', address: 'Centro Comercial Nevada Shopping, Av. de las Palmeras, 75, 18100 Armilla', city: 'Granada', province: 'Granada', lat: 37.1438, lng: -3.6189 },
-
-  // País Vasco, Aragón & Norte
-  { name: 'Fitness Park Bilbao - Intermodal', brand: 'Fitness Park', address: 'Gurtubay Kalea, 1, Basurtu-Zorrotza, 48013 Bilbao', city: 'Bilbao', province: 'Bizkaia', lat: 43.2612, lng: -2.9482 },
-  { name: 'Fitness Park Barakaldo - Megapark', brand: 'Fitness Park', address: 'Parque Comercial Megapark, 48902 Barakaldo', city: 'Barakaldo', province: 'Bizkaia', lat: 43.2954, lng: -2.9982 },
-  { name: 'Fitness Park Zaragoza - Puerto Venecia', brand: 'Fitness Park', address: 'Centro Comercial Puerto Venecia, Calle Teatro Malibrán, 50021 Zaragoza', city: 'Zaragoza', province: 'Zaragoza', lat: 41.6083, lng: -0.8872 },
-  { name: 'Fitness Park Zaragoza - Plaza Imperial', brand: 'Fitness Park', address: 'Av. Diagonal Plaza, 50197 Zaragoza', city: 'Zaragoza', province: 'Zaragoza', lat: 41.6385, lng: -0.9972 },
-  { name: 'Fitness Park Oviedo', brand: 'Fitness Park', address: 'Calle del General Elorza, 33001 Oviedo', city: 'Oviedo', province: 'Asturias', lat: 43.3668, lng: -5.8455 },
-  { name: 'Fitness Park Santander - Peñacastillo', brand: 'Fitness Park', address: 'Calle Joaquín Rodrigo, 2, 39011 Santander', city: 'Santander', province: 'Cantabria', lat: 43.4478, lng: -3.8562 },
-];
-
-function normalizeText(str) {
-  return (str || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .trim();
-}
+import { searchLocalGyms, cleanSearchTokens, normalizeGymText } from '../utils/spainGymsData';
 
 const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => {
   useModalLock(isOpen);
@@ -115,154 +46,169 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
     const activeCoords = coords || userCoords;
 
     try {
-      // 1. Búsqueda local instantánea en base de datos popular de España
-      let localMatches = [];
-      if (q) {
-        const normQ = normalizeText(q);
-        const terms = normQ.split(/\s+/).filter(Boolean);
-        
-        localMatches = POPULAR_SPAIN_GYMS.filter(gym => {
-          const fullSearchable = normalizeText(`${gym.name} ${gym.brand} ${gym.address} ${gym.city} ${gym.province}`);
-          return terms.every(t => fullSearchable.includes(t));
-        }).map(gym => {
-          let distanceMeters = null;
-          let distanceFormatted = null;
-          if (activeCoords?.lat && activeCoords?.lng && gym.lat && gym.lng) {
-            distanceMeters = calculateDistance(activeCoords.lat, activeCoords.lng, gym.lat, gym.lng);
-            distanceFormatted = formatDistance(distanceMeters);
-          }
-          return {
-            id: `local_${gym.name}_${gym.city}`,
-            name: gym.name,
-            address: gym.address,
-            city: gym.city,
-            suburb: gym.province,
-            lat: gym.lat,
-            lng: gym.lng,
-            distanceMeters,
-            distanceFormatted,
-            isVerified: true
-          };
-        });
+      // 1. Búsqueda instantánea en el catálogo verificado de España
+      // Resuelve al instante búsquedas populares como "un go fit en las canteras", "macrofit", "crossfit canteras", etc.
+      const localMatches = q ? searchLocalGyms(q, activeCoords) : [];
+
+      // Si no hay texto pero hay GPS (ej: pulsó "Detectar mi ubicación"), buscar los gimnasios verificados más cercanos
+      let localNearby = [];
+      if (!q && activeCoords?.lat && activeCoords?.lng) {
+        localNearby = searchLocalGyms('gimnasio', activeCoords).slice(0, 10);
       }
 
-      // 2. Consulta en tiempo real a OpenStreetMap Nominatim priorizando España (countrycodes=es)
-      let nominatimResults = [];
-      let url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=es&limit=12';
+      // 2. Consulta en paralelo a Photon (OpenStreetMap Elasticsearch) y Nominatim (OpenStreetMap España)
+      const { cleanedQueryString } = cleanSearchTokens(q);
+      const searchTarget = cleanedQueryString || q || 'gimnasio';
 
-      if (q) {
-        url += `&q=${encodeURIComponent(q)}`;
-      } else {
-        url += `&q=gimnasio`;
+      const externalPromises = [];
+
+      // A) Photon: motor OpenStreetMap elástico, ultrarrápido y tolerante a fallos/errores ortográficos
+      const photonUrl = new URL('https://photon.komoot.io/api/');
+      photonUrl.searchParams.set('q', searchTarget);
+      photonUrl.searchParams.set('limit', '15');
+      if (activeCoords?.lat && activeCoords?.lng) {
+        photonUrl.searchParams.set('lat', activeCoords.lat);
+        photonUrl.searchParams.set('lon', activeCoords.lng);
       }
 
+      externalPromises.push(
+        fetch(photonUrl.toString())
+          .then(res => (res.ok ? res.json() : null))
+          .then(data => {
+            if (!data?.features) return [];
+            return data.features
+              .filter(f => {
+                const p = f.properties || {};
+                const osmVal = (p.osm_value || '').toLowerCase();
+                const osmKey = (p.osm_key || '').toLowerCase();
+                const name = (p.name || '').toLowerCase();
+                const isGymTag =
+                  ['fitness_centre', 'sports_centre', 'gym', 'sports'].includes(osmVal) ||
+                  ['fitness_centre', 'sports_centre'].includes(osmKey) ||
+                  osmKey === 'leisure';
+                const hasGymWord = /fit|gym|crossfit|deport|club|box|entrena|pilates|padel/i.test(name);
+                return isGymTag || hasGymWord;
+              })
+              .map(item => {
+                const p = item.properties || {};
+                const coordsArr = item.geometry?.coordinates || [];
+                const lng = coordsArr[0];
+                const lat = coordsArr[1];
+                if (!lat || !lng) return null;
+
+                const street = p.street ? p.street + (p.housenumber ? `, ${p.housenumber}` : '') : '';
+                const suburb = p.district || p.suburb || p.neighbourhood || '';
+                const city = p.city || p.town || p.state || '';
+                const address =
+                  [street, suburb, city].filter(Boolean).join(', ') ||
+                  [suburb, city].filter(Boolean).join(', ') ||
+                  'España';
+
+                let distanceMeters = null;
+                let distanceFormatted = null;
+                if (activeCoords?.lat && activeCoords?.lng) {
+                  distanceMeters = calculateDistance(activeCoords.lat, activeCoords.lng, lat, lng);
+                  distanceFormatted = formatDistance(distanceMeters);
+                }
+
+                return {
+                  id: `osm_photon_${p.osm_id || `${lat}_${lng}`}`,
+                  name: (p.name || 'Gimnasio').trim(),
+                  address,
+                  city: p.city || city,
+                  suburb: p.district || suburb,
+                  lat,
+                  lng,
+                  distanceMeters,
+                  distanceFormatted,
+                  isVerified: false
+                };
+              })
+              .filter(Boolean);
+          })
+          .catch(() => [])
+      );
+
+      // B) Nominatim: geocodificador oficial de OpenStreetMap España
+      let nomUrl = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=es&limit=8&q=${encodeURIComponent(searchTarget)}`;
       if (activeCoords?.lat && activeCoords?.lng) {
         const delta = 0.45;
-        url += `&viewbox=${activeCoords.lng - delta},${activeCoords.lat + delta},${activeCoords.lng + delta},${activeCoords.lat - delta}&bounded=0`;
+        nomUrl += `&viewbox=${activeCoords.lng - delta},${activeCoords.lat + delta},${activeCoords.lng + delta},${activeCoords.lat - delta}&bounded=0`;
       }
 
-      const res = await fetch(url, {
-        headers: {
-          'Accept-Language': 'es,ca,gl,eu,en',
-          'User-Agent': 'ProFitnessGlass/7.8.8 (support@profitnessglass.com)'
-        }
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        nominatimResults = (data || []).map(item => {
-          const road = item.address?.road || item.address?.pedestrian || '';
-          const houseNumber = item.address?.house_number || '';
-          const suburb = item.address?.suburb || item.address?.neighbourhood || '';
-          const city = item.address?.city || item.address?.town || item.address?.municipality || item.address?.village || item.address?.county || '';
-
-          const roadPart = road ? (road + (houseNumber ? `, ${houseNumber}` : '')) : '';
-          const address = [roadPart, suburb, city].filter(Boolean).join(', ') || item.display_name;
-
-          let distanceMeters = null;
-          let distanceFormatted = null;
-          if (activeCoords?.lat && activeCoords?.lng && item.lat && item.lon) {
-            distanceMeters = calculateDistance(activeCoords.lat, activeCoords.lng, parseFloat(item.lat), parseFloat(item.lon));
-            distanceFormatted = formatDistance(distanceMeters);
+      externalPromises.push(
+        fetch(nomUrl, {
+          headers: {
+            'Accept-Language': 'es,ca,gl,eu,en',
+            'User-Agent': 'ProFitnessGlass/7.10.10 (support@profitnessglass.com)'
           }
+        })
+          .then(res => (res.ok ? res.json() : null))
+          .then(data => {
+            if (!Array.isArray(data)) return [];
+            return data.map(item => {
+              const road = item.address?.road || item.address?.pedestrian || '';
+              const houseNumber = item.address?.house_number || '';
+              const suburb = item.address?.suburb || item.address?.neighbourhood || '';
+              const city = item.address?.city || item.address?.town || item.address?.municipality || item.address?.village || item.address?.county || '';
+              const roadPart = road ? road + (houseNumber ? `, ${houseNumber}` : '') : '';
+              const address = [roadPart, suburb, city].filter(Boolean).join(', ') || item.display_name;
 
-          const rawName = item.name || item.display_name.split(',')[0];
-          const cleanName = rawName.trim();
-
-          return {
-            id: item.place_id || `${item.lat}_${item.lon}`,
-            name: cleanName,
-            address,
-            city,
-            suburb,
-            lat: parseFloat(item.lat),
-            lng: parseFloat(item.lon),
-            distanceMeters,
-            distanceFormatted,
-          };
-        });
-      }
-
-      // 3. Fallback inteligente si busca marca + centro comercial/zona y no hubo resultados directos en OSM
-      // Ej: "fitness park las ramblas" -> busca "las ramblas" en España para ubicar el centro comercial
-      let fallbackLocationResults = [];
-      if (localMatches.length === 0 && nominatimResults.length === 0 && q) {
-        const brandNames = ['fitness park', 'basic fit', 'basic-fit', 'mcfit', 'altafit', 'vivagym', 'synergym', 'dreamfit'];
-        const normQuery = normalizeText(q);
-        for (const b of brandNames) {
-          if (normQuery.includes(b)) {
-            const locPart = normQuery.replace(b, '').trim();
-            if (locPart.length >= 2) {
-              const locUrl = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=es&limit=6&q=${encodeURIComponent(locPart)}`;
-              const locRes = await fetch(locUrl, {
-                headers: { 'Accept-Language': 'es,en', 'User-Agent': 'ProFitnessGlass/7.8.8 (support@profitnessglass.com)' }
-              });
-              if (locRes.ok) {
-                const locData = await locRes.json();
-                const properBrand = b.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                fallbackLocationResults = (locData || []).map(item => {
-                  const placeName = item.name || item.display_name.split(',')[0];
-                  let distanceMeters = null;
-                  let distanceFormatted = null;
-                  if (activeCoords?.lat && activeCoords?.lng && item.lat && item.lon) {
-                    distanceMeters = calculateDistance(activeCoords.lat, activeCoords.lng, parseFloat(item.lat), parseFloat(item.lon));
-                    distanceFormatted = formatDistance(distanceMeters);
-                  }
-                  return {
-                    id: `smart_${item.place_id}`,
-                    name: `${properBrand} - ${placeName}`,
-                    address: item.display_name,
-                    city: item.address?.city || item.address?.town || '',
-                    suburb: item.address?.suburb || '',
-                    lat: parseFloat(item.lat),
-                    lng: parseFloat(item.lon),
-                    distanceMeters,
-                    distanceFormatted
-                  };
-                });
+              const lat = parseFloat(item.lat);
+              const lng = parseFloat(item.lon);
+              let distanceMeters = null;
+              let distanceFormatted = null;
+              if (activeCoords?.lat && activeCoords?.lng && lat && lng) {
+                distanceMeters = calculateDistance(activeCoords.lat, activeCoords.lng, lat, lng);
+                distanceFormatted = formatDistance(distanceMeters);
               }
-            }
-            break;
-          }
-        }
-      }
 
-      // Fusionar y desduplicar
-      const combined = [...localMatches, ...fallbackLocationResults, ...nominatimResults];
-      const seen = new Set();
+              const rawName = item.name || item.display_name.split(',')[0];
+              return {
+                id: `osm_nom_${item.place_id || `${lat}_${lng}`}`,
+                name: rawName.trim(),
+                address,
+                city,
+                suburb,
+                lat,
+                lng,
+                distanceMeters,
+                distanceFormatted,
+                isVerified: false
+              };
+            });
+          })
+          .catch(() => [])
+      );
+
+      const [photonResults, nominatimResults] = await Promise.all(externalPromises);
+
+      // 3. Fusión inteligente y desduplicación geográfica
+      const combined = [...localMatches, ...localNearby, ...photonResults, ...nominatimResults];
+      const seenKeys = new Set();
       const uniqueResults = [];
 
       for (const item of combined) {
-        const key = `${normalizeText(item.name)}_${item.lat?.toFixed(3)}_${item.lng?.toFixed(3)}`;
-        if (!seen.has(key)) {
-          seen.add(key);
+        if (!item || !item.name) continue;
+        const normName = normalizeGymText(item.name);
+        // Desduplicamos por coincidencia de nombre y proximidad de coordenadas (< 200m)
+        const coordKey =
+          item.lat && item.lng
+            ? `${normName}_${item.lat.toFixed(3)}_${item.lng.toFixed(3)}`
+            : `${normName}_${item.city || ''}`;
+
+        if (!seenKeys.has(coordKey)) {
+          seenKeys.add(coordKey);
           uniqueResults.push(enrichGymWithMedia(item));
         }
       }
 
-      // Si hay coordenadas GPS, ordenar por distancia
+      // Si el usuario buscó por ubicación GPS o tiene coordenadas, ordenar por distancia
+      // priorizando las coincidencias verificadas locales de alta relevancia
       if (activeCoords?.lat && activeCoords?.lng) {
         uniqueResults.sort((a, b) => {
+          if (a.isVerified && !b.isVerified && (a.matchScore || 0) >= 100) return -1;
+          if (b.isVerified && !a.isVerified && (b.matchScore || 0) >= 100) return 1;
           if (a.distanceMeters != null && b.distanceMeters != null) {
             return a.distanceMeters - b.distanceMeters;
           }
@@ -291,7 +237,7 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
 
     const timer = setTimeout(() => {
       searchGyms(query, userCoords);
-    }, 280);
+    }, 250);
 
     return () => clearTimeout(timer);
   }, [query, isOpen]);
@@ -323,6 +269,7 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
       logo: gym.logo || null,
       brand: gym.brand || null,
       brandColor: gym.brandColor || null,
+      isVerified: gym.isVerified || false,
       updatedAt: new Date().toISOString()
     });
     onSave(gymData);
@@ -479,7 +426,7 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Busca por nombre (ej: Fitness Park Las Ramblas, Basic-Fit)..."
+                placeholder="Busca por nombre (ej: GO fit Las Canteras, MacroFit, Fitness Park)..."
                 className="w-full pl-10 pr-10 py-3 rounded-2xl bg-bg-primary border border-glass-border text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/40 transition-all"
               />
               {query && (
@@ -581,10 +528,18 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <h4 className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors truncate">
-                          {gym.name}
-                        </h4>
-                        <p className="text-xs text-text-muted truncate">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors truncate">
+                            {gym.name}
+                          </h4>
+                          {gym.isVerified && (
+                            <span className="text-[9px] font-black uppercase tracking-wider text-accent bg-accent/15 px-1.5 py-0.5 rounded-md border border-accent/25 flex items-center gap-0.5 shrink-0">
+                              <BadgeCheck size={10} strokeWidth={2.5} />
+                              Verificado
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-text-muted truncate mt-0.5">
                           {gym.address}
                         </p>
                       </div>

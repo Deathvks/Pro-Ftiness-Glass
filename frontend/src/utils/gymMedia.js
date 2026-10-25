@@ -84,6 +84,13 @@ export const GYM_BRANDS = [
     color: '#2563EB',
   },
   {
+    name: 'MacroFit',
+    matches: ['macrofit', 'macro fit'],
+    domain: 'macrofit.es',
+    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80',
+    color: '#0EA5E9',
+  },
+  {
     name: 'Metropolitan',
     matches: ['metropolitan', 'club metropolitan'],
     domain: 'clubmetropolitan.net',
