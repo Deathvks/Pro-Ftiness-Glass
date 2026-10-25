@@ -245,11 +245,11 @@ export const fetchAdminNews = async () => {
   return fetchPublicNews({ page: 1, limit: 100, bypassCache: true });
 };
 
-export const fetchNewsBySlug = async (slug) => {
+export const fetchNewsBySlug = async (slug, { bypassCache = false } = {}) => {
   if (!slug) throw new Error('Slug no válido');
 
-  // Si ya tenemos el artículo completo en memoria, devolverlo directamente
-  if (articleMemoryCache.has(slug)) {
+  // Si ya tenemos el artículo completo en memoria y no pedimos refresco forzado, devolverlo directamente
+  if (!bypassCache && articleMemoryCache.has(slug)) {
     const cached = articleMemoryCache.get(slug);
     if (!cached.isPartial) {
       return cached;

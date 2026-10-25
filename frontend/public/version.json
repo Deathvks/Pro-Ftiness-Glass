@@ -1,4 +1,4 @@
 {
-  "version": "7.9.9",
-  "releaseNotes": "Actualización v7.9.9: Botón y banner inteligente Abrir en la App con Intent nativo para forzar la apertura de la APK instalada desde navegadores móviles y WhatsApp."
+  "version": "7.10.0",
+  "releaseNotes": "Actualización v7.10.0: Renderizado tolerante de encabezados Markdown (#, ##, ###, ####), invalidación de caché en tiempo real (SWR) al editar noticias y selección desduplicada de miniaturas temáticas."
 }

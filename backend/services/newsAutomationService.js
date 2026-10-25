@@ -478,7 +478,7 @@ O SI EL TEMA LO REQUIERE, puedes crear y nombrar una NUEVA categoría coherente 
 ESTRUCTURA EDITORIAL OBLIGATORIA DEL CONTENIDO (Markdown enriquecido):
 1. TÍTULO ATRACTIVO: Gancho potente y profesional sin ser clickbait engañoso (máx. 85 caracteres).
 2. RESUMEN EN 2 FRASES: Explicar el beneficio directo para el lector.
-3. SUBTÍTULOS ## Y ###: Mínimo 4 secciones principales bien estructuradas.
+3. SUBTÍTULOS ## Y ###: Mínimo 4 secciones principales bien estructuradas. REGLA ESTRICTA: Usa siempre ## para secciones principales y ### para subapartados. NUNCA uses una sola almohadilla (#) en el contenido del artículo, ya que el título principal de la noticia ya es el H1.
 4. ALERTAS GITHUB FLAVORED OBLIGATORIAS:
    > [!TIP] Para consejos prácticos accionables.
    > [!IMPORTANT] Para evidencia científica o datos de estudios contrastados.

@@ -306,12 +306,13 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
       continue;
     }
 
-    // 4. Encabezados H2 y H3 estilo periodístico
-    if (trimmed.startsWith('## ')) {
+    // 4. Encabezados H1, H2, H3 y H4 estilo periodístico
+    // Si la IA o el usuario escribió "# Encabezado", tratarlo como sección principal H2 para no romper la jerarquía del H1 editorial
+    if (trimmed.startsWith('# ') || trimmed.startsWith('## ')) {
       flushList();
       flushBlockquote();
       flushTable();
-      const headingText = trimmed.replace('## ', '');
+      const headingText = trimmed.replace(/^#+\s*/, '');
       const sectionId = slugify(headingText);
 
       elements.push(
@@ -341,6 +342,25 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
         >
           {renderInline(headingText)}
         </h3>
+      );
+      continue;
+    }
+
+    if (trimmed.startsWith('#### ')) {
+      flushList();
+      flushBlockquote();
+      flushTable();
+      const headingText = trimmed.replace('#### ', '');
+      const sectionId = slugify(headingText);
+
+      elements.push(
+        <h4
+          key={`h4-${i}`}
+          id={sectionId}
+          className="scroll-mt-20 font-bold text-text-secondary mt-6 mb-3 tracking-tight text-base sm:text-lg"
+        >
+          {renderInline(headingText)}
+        </h4>
       );
       continue;
     }

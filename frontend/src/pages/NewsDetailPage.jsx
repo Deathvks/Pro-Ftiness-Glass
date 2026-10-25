@@ -103,7 +103,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
     const loadArticle = async () => {
       setError(null);
       try {
-        const data = await newsService.fetchNewsBySlug(slug);
+        const data = await newsService.fetchNewsBySlug(slug, { bypassCache: true });
         if (isMounted && data?.article) {
           setArticle(data.article);
           setRelatedNews(data.relatedNews || []);

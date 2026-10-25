@@ -2,6 +2,7 @@
 import { Op } from 'sequelize';
 import models from '../models/index.js';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import newsAutomationService from '../services/newsAutomationService.js';
 
 const { News } = models;
 
@@ -321,7 +322,7 @@ export const generateAINews = async (req, res) => {
 Genera un artículo de blog/noticia de alta calidad, dinámico, ameno de leer y perfectamente optimizado para SEO sobre el siguiente tema: "${topic}".
 Categoría sugerida: ${category}.
 REGLAS EDITORIALES OBLIGATORIAS PARA QUE EL ARTÍCULO SEA VISUALMENTE ATRACTIVO Y NO SEA TEXTO MONÓTONO:
-1. Divide el texto con subtítulos claros usando ## (entre 3 y 5 secciones principales) y ### para subapartados.
+1. Divide el texto con subtítulos claros usando ## (entre 3 y 5 secciones principales) y ### para subapartados. IMPORTANTE: NUNCA uses una sola almohadilla (#) en el contenido, ya que el título de la página ya es el H1; usa siempre ## o ###.
 2. Incluye al menos 1 o 2 bloques de alerta Markdown con formato GitHub:
    > [!TIP] para consejos de entrenamiento y trucos prácticos.
    > [!IMPORTANT] para datos de evidencia científica cruciales.
@@ -342,9 +343,15 @@ Extensión total: 600-900 palabras.`;
       return res.status(500).json({ error: 'La IA no devolvió un JSON válido. Inténtalo de nuevo.' });
     }
 
-    // Asignar imagen predeterminada por categoría si no se incluye
+    // Asignar miniatura temática única que no esté repetida en la BD
     if (!parsed.image_url) {
-      parsed.image_url = CATEGORY_DEFAULT_IMAGES[parsed.category] || CATEGORY_DEFAULT_IMAGES['Entrenamiento'];
+      try {
+        const allNews = await News.findAll({ attributes: ['image_url'] });
+        const usedImages = new Set(allNews.map(n => n.image_url).filter(Boolean));
+        parsed.image_url = newsAutomationService.pickThematicImage(parsed.category, parsed.theme_keyword || '', usedImages);
+      } catch {
+        parsed.image_url = CATEGORY_DEFAULT_IMAGES[parsed.category] || CATEGORY_DEFAULT_IMAGES['Entrenamiento'];
+      }
     }
 
     // Asegurar slug válido
