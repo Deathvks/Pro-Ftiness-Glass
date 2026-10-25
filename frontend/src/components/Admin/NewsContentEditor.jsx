@@ -376,11 +376,11 @@ export default function NewsContentEditor({
             <button
               type="button"
               onClick={() => setShowHumanGuide(!showHumanGuide)}
-              className="px-2.5 py-1 rounded-full bg-accent/10 hover:bg-accent/20 text-accent text-xs font-bold flex items-center gap-1 transition-colors"
+              className="px-2.5 py-1.5 rounded-full bg-accent/10 hover:bg-accent/20 text-accent text-xs font-bold flex items-center gap-1.5 transition-colors shrink-0"
               title="¿Cómo funciona este editor en lenguaje humano?"
             >
-              <HelpCircle size={13} />
-              <span className="hidden sm:inline">¿Cómo funciona?</span>
+              <HelpCircle size={14} />
+              <span className="text-[11px] sm:text-xs">¿Cómo funciona?</span>
             </button>
           </div>
         </div>
@@ -388,39 +388,99 @@ export default function NewsContentEditor({
 
       {/* GUÍA EXPLICATIVA EN LENGUAJE HUMANO (Desplegable amigable) */}
       {showHumanGuide && (
-        <div className="p-3.5 sm:p-4 rounded-2xl bg-accent/5 border border-accent/20 space-y-2 text-xs animate-[fade-in_0.2s_ease-out]">
-          <div className="flex items-center justify-between">
-            <h4 className="font-bold text-accent flex items-center gap-1.5">
-              <Lightbulb size={15} />
-              <span>Edición en Lenguaje Humano (Sin aprender códigos)</span>
-            </h4>
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-accent/5 border border-accent/25 space-y-3 text-xs animate-[fade-in_0.2s_ease-out] shadow-sm">
+          <div className="flex items-start justify-between gap-3 pb-2 border-b border-accent/15">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-accent/15 text-accent flex items-center justify-center shrink-0">
+                <Lightbulb size={16} />
+              </div>
+              <div className="min-w-0">
+                <h4 className="font-bold text-accent text-xs sm:text-sm truncate">
+                  Edición en Lenguaje Humano
+                </h4>
+                <p className="text-[11px] text-text-tertiary">
+                  Sin aprender códigos ni símbolos. Escribe con normalidad y dale formato con un toque.
+                </p>
+              </div>
+            </div>
             <button
               type="button"
               onClick={() => setShowHumanGuide(false)}
-              className="p-1 rounded-full hover:bg-black/10 text-text-secondary"
+              className="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary active:scale-95 transition-all shrink-0"
+              title="Cerrar guía"
             >
-              <X size={14} />
+              <X size={15} />
             </button>
           </div>
-          <p className="text-text-secondary leading-relaxed">
-            No necesitas memorizar símbolos extraños como <code className="font-mono bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded text-accent">#</code> o <code className="font-mono bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded text-accent">*</code>. Simplemente escribe con normalidad, selecciona cualquier frase con el cursor y haz clic en los botones de arriba:
+
+          <p className="text-text-secondary leading-relaxed text-[11px] sm:text-xs">
+            Olvídate de memorizar símbolos como <code className="font-mono bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded text-accent font-bold">#</code> o <code className="font-mono bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded text-accent font-bold">*</code>. Selecciona cualquier frase y pulsa el botón correspondiente:
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-text-primary font-medium">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-accent">Título:</span> Divide el artículo en secciones grandes y legibles.
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div className="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 font-bold text-accent">
+                <Heading2 size={14} className="shrink-0" />
+                <span>Título & Subtítulo</span>
+              </div>
+              <span className="text-[11px] text-text-secondary leading-snug">
+                Organiza el artículo en secciones claras para facilitar la lectura en el móvil y posicionar en Google SEO.
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-accent">Negrita:</span> Resalta frases clave para el lector y para Google SEO.
+
+            <div className="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 font-bold text-text-primary">
+                <Bold size={14} className="shrink-0" />
+                <span>Negrita & Cursiva</span>
+              </div>
+              <span className="text-[11px] text-text-secondary leading-snug">
+                Resalta las ideas más importantes para que el lector las capte en un vistazo rápido.
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-emerald-500">Consejo Práctico:</span> Crea una tarjeta verde con bombilla de recomendación.
+
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 font-bold text-emerald-500 dark:text-emerald-400">
+                <Lightbulb size={14} className="shrink-0" />
+                <span>Consejo Práctico</span>
+              </div>
+              <span className="text-[11px] text-text-secondary leading-snug">
+                Crea una tarjeta verde llamativa con una recomendación directa para el entrenamiento o dieta.
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-amber-500">Evidencia:</span> Crea una tarjeta dorada con datos de estudios científicos.
+
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 font-bold text-amber-600 dark:text-amber-400">
+                <Sparkles size={14} className="shrink-0" />
+                <span>Evidencia Científica</span>
+              </div>
+              <span className="text-[11px] text-text-secondary leading-snug">
+                Crea una caja dorada con datos de estudios científicos o metaanálisis para aportar máxima autoridad.
+              </span>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 font-bold text-rose-500">
+                <AlertTriangle size={14} className="shrink-0" />
+                <span>Atención / Error Común</span>
+              </div>
+              <span className="text-[11px] text-text-secondary leading-snug">
+                Crea una alerta roja para advertir sobre errores frecuentes, mitos o precauciones.
+              </span>
+            </div>
+
+            <div className="p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 flex flex-col gap-1">
+              <div className="flex items-center gap-1.5 font-bold text-text-primary">
+                <Table size={14} className="shrink-0" />
+                <span>Tablas y Listas</span>
+              </div>
+              <span className="text-[11px] text-text-secondary leading-snug">
+                Inserta tablas comparativas de alimentos o pasos numerados de ejercicios fáciles de seguir.
+              </span>
             </div>
           </div>
-          <p className="text-[11px] text-text-tertiary pt-1 border-t border-accent/15">
-            Tip: Haz clic en la pestaña <strong className="text-text-primary">"Vista Previa"</strong> en cualquier momento para comprobar el resultado final tal y como lo verán tus usuarios.
+
+          <p className="text-[11px] text-text-tertiary pt-2 border-t border-accent/15 leading-relaxed">
+            💡 <strong className="text-text-primary">Consejo:</strong> Selecciona cualquier texto con el cursor y pulsa un botón. Puedes alternar a <strong className="text-accent">"Vista Previa"</strong> en cualquier momento para comprobar el resultado final.
           </p>
         </div>
       )}
@@ -442,12 +502,19 @@ export default function NewsContentEditor({
 
       {viewMode === 'preview' && (
         <div className="p-4 sm:p-6 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 max-h-[500px] overflow-y-auto custom-scrollbar">
-          <div className="mb-4 pb-3 border-b border-black/10 dark:border-white/10 flex items-center justify-between text-xs text-text-secondary">
-            <span className="font-bold text-accent flex items-center gap-1.5">
-              <Eye size={14} />
-              <span>Vista previa editorial (Como lo verá el lector)</span>
+          <div className="mb-4 pb-3 border-b border-black/10 dark:border-white/10 flex flex-wrap items-center justify-between gap-2 text-xs text-text-secondary">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Eye size={15} className="text-accent shrink-0" />
+              <span className="font-bold text-accent text-xs sm:text-sm">
+                Vista previa editorial
+                <span className="hidden sm:inline font-normal text-text-tertiary ml-1.5 text-xs">
+                  (Como lo verá el lector)
+                </span>
+              </span>
+            </div>
+            <span className="shrink-0 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/10 font-bold text-[11px] sm:text-xs text-text-secondary">
+              {wordCount} palabras
             </span>
-            <span>{wordCount} palabras</span>
           </div>
           {content ? (
             <MarkdownContent content={content} />

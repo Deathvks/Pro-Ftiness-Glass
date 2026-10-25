@@ -1,4 +1,4 @@
 {
-  "version": "7.10.4",
-  "releaseNotes": "Actualización v7.10.4: Skeleton propio de la Landing Page sin dependencias de noticias y ajuste exacto de la mascota GymBot entre cabecera y versión en móvil."
+  "version": "7.10.5",
+  "releaseNotes": "Actualización v7.10.5: Gestor editorial de noticias 100% responsive, guía desplegable de redacción adaptativa, campo de resumen SEO ampliado y cabecera de vista previa sin colisiones."
 }

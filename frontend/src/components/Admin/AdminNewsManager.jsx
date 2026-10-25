@@ -565,13 +565,24 @@ export default function AdminNewsManager() {
             </div>
 
             <div className="min-w-0 sm:col-span-2">
-              <label className="block text-xs font-bold text-text-secondary mb-1">Resumen (Meta Description):</label>
+              <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                <label className="block text-xs sm:text-sm font-bold text-text-primary">
+                  Resumen (Meta Description para Google y Redes):
+                </label>
+                <span className={`text-[11px] font-semibold ${
+                  (formData.summary?.length >= 110 && formData.summary?.length <= 165)
+                    ? 'text-emerald-500 font-bold'
+                    : 'text-text-tertiary'
+                }`}>
+                  {formData.summary?.length || 0}/160 caracteres (Recomendado SEO: 120-160)
+                </span>
+              </div>
               <textarea
-                rows={2}
+                rows={3}
                 value={formData.summary}
                 onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                placeholder="Breve resumen de 2 frases para Google y redes sociales..."
-                className="box-border w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+                placeholder="Escribe un resumen atractivo de 2 frases. Este texto es el que leerán los usuarios en los resultados de Google y al compartir el enlace en WhatsApp o redes sociales..."
+                className="box-border w-full min-h-[92px] sm:min-h-[100px] bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl p-3.5 sm:p-4 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent leading-relaxed resize-y font-sans"
                 required
               />
             </div>
@@ -608,18 +619,18 @@ export default function AdminNewsManager() {
             </div>
           </div>
 
-          <div className="pt-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 border-t border-black/5 dark:border-white/10">
+          <div className="pt-4 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 border-t border-black/5 dark:border-white/10">
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className="px-5 py-2.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 text-xs font-bold text-text-secondary transition-colors text-center"
+              className="w-full sm:w-auto px-5 py-3 sm:py-2.5 rounded-xl sm:rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 text-xs sm:text-sm font-bold text-text-secondary transition-colors text-center active:scale-95"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="px-6 py-2.5 rounded-full bg-accent text-accent-contrast font-black text-xs flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-md shadow-accent/25 cursor-pointer"
+              className="w-full sm:w-auto px-6 py-3.5 sm:py-2.5 rounded-xl sm:rounded-full bg-accent text-accent-contrast font-black text-xs sm:text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-md shadow-accent/25 cursor-pointer"
             >
               {isSaving ? <Spinner size="small" color="white" /> : <Check size={16} />}
               <span>{editingArticle ? 'Actualizar Artículo' : 'Publicar Artículo'}</span>
