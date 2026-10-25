@@ -12,6 +12,7 @@ import {
     FaStar
 } from 'react-icons/fa6';
 import { useTranslation } from 'react-i18next';
+import { APP_LOGO_BASE64 } from '../assets/logoBase64';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_HOST = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
@@ -253,10 +254,9 @@ const WorkoutShareCard = forwardRef(({
                                 style={{ background: `linear-gradient(135deg, ${accent}40, #1e3a8a80)` }}
                             >
                                 <img
-                                    src="/logo.webp"
+                                    src={APP_LOGO_BASE64}
                                     alt="Pro Fitness Glass"
                                     className="w-10 h-10 object-contain drop-shadow"
-                                    crossOrigin="anonymous"
                                 />
                             </div>
                             <div className="flex flex-col">
@@ -464,10 +464,9 @@ const WorkoutShareCard = forwardRef(({
                 <div className="mt-6 flex justify-between items-center pt-6 border-t border-white/15 shrink-0">
                     <div className="flex items-center gap-3">
                         <img
-                            src="/logo.webp"
+                            src={APP_LOGO_BASE64}
                             alt="Pro Fitness Glass"
                             className="w-8 h-8 object-contain rounded-xl drop-shadow shrink-0"
-                            crossOrigin="anonymous"
                         />
                         <span className="text-xl font-extrabold text-white tracking-wide">
                             pro-fitness-glass.zeabur.app

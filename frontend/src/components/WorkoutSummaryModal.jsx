@@ -177,6 +177,19 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
       }
     }
 
+    // Asegurar que todas las imágenes internas del card estén cargadas y decodificadas
+    const innerImgs = shareCardRef.current.querySelectorAll('img');
+    await Promise.all(
+      Array.from(innerImgs).map(async (img) => {
+        if (img.complete) return;
+        try {
+          if ('decode' in img) {
+            await img.decode();
+          }
+        } catch (_) {}
+      })
+    );
+
     const blob = await toBlob(shareCardRef.current, {
       pixelRatio: 1,
       backgroundColor: '#000000',

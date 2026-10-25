@@ -1,4 +1,4 @@
 {
-  "version": "7.10.30",
-  "releaseNotes": "Actualización v7.10.30: Corrección del renderizado editorial en alertas de noticias (eliminación del símbolo \">\" residual en callouts), eliminación de bloqueos táctiles en móvil y precarga instantánea para acceso inmediato a Noticias y Blog tras actualizaciones."
+  "version": "7.10.31",
+  "releaseNotes": "Actualización v7.10.31: Garantizado el renderizado del logo oficial de la app en la exportación de plantillas de historias y rutinas para redes sociales mediante inyección síncrona en base64 y pre-decodificación en canvas."
 }

@@ -1,5 +1,6 @@
 /* frontend/src/components/WeeklyRecapCard.jsx */
 import React, { forwardRef, useMemo } from 'react';
+import { APP_LOGO_BASE64 } from '../assets/logoBase64';
 import { 
     getFunWeightComparison, 
     getFunCalorieComparison, 
@@ -214,7 +215,7 @@ const WeeklyRecapCard = forwardRef(({ weeklyData, userProfile }, ref) => {
                         <span className="text-sm text-gray-500 font-bold uppercase tracking-[0.4em] mb-2 block">Generado por</span>
                         <div className="flex items-center">
                             <img 
-                                src="/logo.webp" 
+                                src={APP_LOGO_BASE64} 
                                 alt="Pro Fitness Glass" 
                                 className="w-14 h-14 object-contain drop-shadow-2xl mr-4 shrink-0" 
                             />
