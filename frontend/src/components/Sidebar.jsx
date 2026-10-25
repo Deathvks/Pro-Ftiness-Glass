@@ -3,6 +3,7 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon, ArrowRightOnRectangleIcon as LogOut, SparklesIcon, BellIcon, UserIcon } from '@heroicons/react/24/outline';
 import useAppStore from '../store/useAppStore';
 import { getUserRoleRingConfig } from '../utils/userRoleUtils';
+import NetworkIndicatorBadge from './NetworkIndicatorBadge';
 
 const StoryViewer = lazy(() => import('./StoryViewer'));
 const AIInfoModal = lazy(() => import('./AIInfoModal'));
@@ -56,6 +57,9 @@ const SidebarItem = ({ label, icon, isActive, onClick, onPreload, onIconClick, b
 const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_BASE_URL = '', handleLogoutClick, unreadCount = 0 }) => {
   const socialRequests = useAppStore(state => state.socialRequests);
   const myStories = useAppStore(state => state.myStories);
+  const isOnline = useAppStore(state => state.isOnline ?? true);
+  const syncQueue = useAppStore(state => state.syncQueue || []);
+  const isUnstableOrOffline = !isOnline || syncQueue.length > 0;
   
   const [viewingStory, setViewingStory] = useState(false);
   const [imgError, setImgError] = useState(false); 
@@ -135,6 +139,12 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
           <div className="absolute inset-[4px] rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
             {InnerContent}
           </div>
+          {isUnstableOrOffline && (
+            <NetworkIndicatorBadge
+              isOffline={!isOnline}
+              pendingCount={syncQueue.length}
+            />
+          )}
         </div>
       );
     }
@@ -149,6 +159,12 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
         <div className="absolute inset-[4px] rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
           {InnerContent}
         </div>
+          {isUnstableOrOffline && (
+            <NetworkIndicatorBadge
+              isOffline={!isOnline}
+              pendingCount={syncQueue.length}
+            />
+          )}
       </div>
     );
   };

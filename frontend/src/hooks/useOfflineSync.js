@@ -5,17 +5,20 @@ import apiClient from '../services/apiClient';
 import { useToast } from './useToast';
 
 export const useOfflineSync = () => {
-    const { syncQueue, removeFromSyncQueue, setSyncing, isSyncing } = useAppStore(state => ({
+    const { syncQueue, removeFromSyncQueue, setSyncing, isSyncing, setIsOnline } = useAppStore(state => ({
         syncQueue: state.syncQueue,
         removeFromSyncQueue: state.removeFromSyncQueue,
         setSyncing: state.setSyncing,
-        isSyncing: state.isSyncing
+        isSyncing: state.isSyncing,
+        setIsOnline: state.setIsOnline
     }));
 
     const { addToast } = useToast();
 
     useEffect(() => {
+        if (setIsOnline) setIsOnline(typeof navigator !== 'undefined' ? navigator.onLine : true);
         const handleOnline = async () => {
+            if (setIsOnline) setIsOnline(true);
             // Obtenemos la versión más reciente de la cola usando el store directamente
             const currentQueue = useAppStore.getState().syncQueue;
             const currentIsSyncing = useAppStore.getState().isSyncing;
@@ -73,6 +76,7 @@ export const useOfflineSync = () => {
         };
 
         const handleOffline = () => {
+            if (setIsOnline) setIsOnline(false);
             addToast('Estás offline. Los entrenamientos y cambios se guardarán en tu dispositivo.', 'warning');
         };
 

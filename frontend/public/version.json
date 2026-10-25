@@ -1,4 +1,4 @@
 {
-  "version": "7.10.9",
-  "releaseNotes": "Actualización v7.10.9: Reubicación de controles de sonido y vibración háptica a Ajustes (pestaña Entrenamiento) con enlaces directos accesibles desde la rutina activa y el modal de descanso."
+  "version": "7.10.10",
+  "releaseNotes": "Actualización v7.10.10: Indicador dinámico de red inestable o modo offline en foto de perfil (header y sidebar) con icono de cobertura y exclamación en colores de acento."
 }
