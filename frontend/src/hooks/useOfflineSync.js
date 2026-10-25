@@ -16,19 +16,19 @@ export const useOfflineSync = () => {
 
     useEffect(() => {
         const handleOnline = async () => {
-            // Obtenemos la versión más reciente de la cola usando el store directamente 
-            // para evitar depender de syncQueue en el array de dependencias y causar bucles.
+            // Obtenemos la versión más reciente de la cola usando el store directamente
             const currentQueue = useAppStore.getState().syncQueue;
             const currentIsSyncing = useAppStore.getState().isSyncing;
 
-            if (currentQueue.length === 0 || currentIsSyncing) return;
+            if (!currentQueue || currentQueue.length === 0 || currentIsSyncing) return;
 
-            addToast('Conexión recuperada. Sincronizando cambios...', 'info');
+            addToast('Conexión detectada. Sincronizando datos con la nube...', 'info');
             setSyncing(true);
 
             // Procesar secuencialmente para mantener el orden de operaciones
             const queueToProcess = [...currentQueue];
             let processedCount = 0;
+            let hadWorkout = false;
 
             for (const item of queueToProcess) {
                 try {
@@ -38,10 +38,12 @@ export const useOfflineSync = () => {
                     // Si tiene éxito, la quitamos de la cola
                     removeFromSyncQueue(item.id);
                     processedCount++;
+                    if (item.endpoint === '/workouts' || item.endpoint?.startsWith('/workouts')) {
+                        hadWorkout = true;
+                    }
                 } catch (error) {
                     console.error('Fallo al resincronizar item:', item.id, error);
-                    
-                    // fetch throws Errors with .status attached (modificado en apiClient)
+
                     // Si el servidor responde con un 4xx (ej: BadRequest/Duplicate) o 5xx persistente,
                     // la única forma de desatascar la cola es eliminar la petición.
                     if (error.status && error.status >= 400) {
@@ -58,30 +60,49 @@ export const useOfflineSync = () => {
             setSyncing(false);
 
             if (processedCount > 0) {
-                addToast(`Sincronización completada (${processedCount} cambios).`, 'success');
+                if (hadWorkout) {
+                    addToast(`¡Conexión recuperada! Entrenamiento sincronizado con éxito (+XP sumada) 🎉`, 'success');
+                    try {
+                        const fetchInit = useAppStore.getState().fetchInitialData;
+                        if (fetchInit) fetchInit();
+                    } catch (_) {}
+                } else {
+                    addToast(`Sincronización completada (${processedCount} cambios).`, 'success');
+                }
             }
         };
 
         const handleOffline = () => {
-            addToast('Estás offline. Los cambios se guardarán localmente.', 'warning');
+            addToast('Estás offline. Los entrenamientos y cambios se guardarán en tu dispositivo.', 'warning');
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && navigator.onLine) {
+                const currentQueue = useAppStore.getState().syncQueue;
+                if (currentQueue && currentQueue.length > 0) {
+                    handleOnline();
+                }
+            }
         };
 
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
+        window.addEventListener('pfg-trigger-sync', handleOnline);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
         // Intentar sincronizar al cargar la página si ya hay internet y pendientes
-        // Usamos un timeout corto para que no bloquee el renderizado inicial
         if (navigator.onLine && syncQueue.length > 0) {
             setTimeout(() => {
                 handleOnline();
-            }, 2000);
+            }, 1500);
         }
 
         return () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
+            window.removeEventListener('pfg-trigger-sync', handleOnline);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-        // Quitamos syncQueue de las dependencias para evitar bucles infinitos cada vez que falla una sincronización
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [removeFromSyncQueue, setSyncing, addToast]);
 };

@@ -1,4 +1,4 @@
 {
-  "version": "7.10.5",
-  "releaseNotes": "Actualización v7.10.5: Gestor editorial de noticias 100% responsive, guía desplegable de redacción adaptativa, campo de resumen SEO ampliado y cabecera de vista previa sin colisiones."
+  "version": "7.10.6",
+  "releaseNotes": "Actualización v7.10.6: Modo Búnker Offline para gimnasios con guardado local garantizado, cola de sincronización resiliente automática y catálogo de ejercicios persistente."
 }

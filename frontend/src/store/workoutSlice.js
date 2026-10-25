@@ -913,6 +913,64 @@ export const createWorkoutSlice = (set, get) => ({
 
       return { success: true, message: 'Entrenamiento guardado exitosamente.' };
     } catch (error) {
+      const errMsg = (error?.message || '').toLowerCase();
+      const isNetworkFailure = 
+        (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        errMsg.includes('conexión inestable') ||
+        errMsg.includes('guardado localmente') ||
+        errMsg.includes('failed to fetch') ||
+        errMsg.includes('networkerror') ||
+        errMsg.includes('load failed') ||
+        errMsg.includes('abort') ||
+        errMsg.includes('timeout') ||
+        errMsg.includes('no se pudo conectar');
+
+      if (isNetworkFailure) {
+        console.warn('Guardado en cola offline resiliente (Modo Búnker):', error.message);
+
+        // Aseguramos que esté en la cola de sincronización
+        if (get().addToSyncQueue) {
+          get().addToSyncQueue({
+            endpoint: '/workouts',
+            options: {
+              method: 'POST',
+              body: finalWorkoutData
+            }
+          });
+        }
+
+        // Marcamos la rutina como completada en local para hoy
+        if (workoutData.routineId) {
+          const current = get().completedRoutineIdsToday || [];
+          const normId = workoutData.routineId;
+          if (!current.some(id => String(id) === String(normId))) {
+            const updated = [...current, normId];
+            set({ completedRoutineIdsToday: updated });
+            try {
+              const todayStr = formatDateForQuery(new Date());
+              localStorage.setItem('pro_fitness_completed_routines_today', JSON.stringify({
+                date: todayStr,
+                ids: updated
+              }));
+            } catch (e) {
+              console.warn('Error saving completed routines to storage', e);
+            }
+          }
+        }
+
+        // Limpiamos el entrenamiento activo en el dispositivo
+        clearWorkoutInStorage();
+        clearRestTimerInStorage();
+        stopNativeTimer();
+
+        return {
+          success: true,
+          isOffline: true,
+          message: 'Entrenamiento guardado en tu móvil. Se sincronizará automáticamente al recuperar conexión.',
+          finalWorkoutData
+        };
+      }
+
       return {
         success: false,
         message: `Error al guardar: ${error.message}`,

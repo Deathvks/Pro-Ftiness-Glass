@@ -1,7 +1,7 @@
 /* frontend/src/pages/Workout.jsx */
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Activity, Maximize2 } from 'lucide-react';
+import { Activity, Maximize2, CloudOff, RefreshCw } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import { useAppTheme } from '../hooks/useAppTheme';
@@ -92,6 +92,12 @@ const Workout = ({ timer, setView, navParams }) => {
     const [showHeatmapModal, setShowHeatmapModal] = useState(false);
     const [smartCoachExercise, setSmartCoachExercise] = useState(null);
     const [dismissedPreviousNote, setDismissedPreviousNote] = useState(false);
+
+    const syncQueue = useAppStore((state) => state.syncQueue || []);
+    const isSyncing = useAppStore((state) => state.isSyncing || false);
+    const pendingWorkoutsCount = useMemo(() => {
+        return syncQueue.filter(item => item.endpoint === '/workouts' || item.endpoint?.startsWith('/workouts')).length;
+    }, [syncQueue]);
 
     const [showQuickCardio, setShowQuickCardio] = useState(false);
 
@@ -334,24 +340,28 @@ const Workout = ({ timer, setView, navParams }) => {
 
         const result = await logWorkout(workoutData);
         if (result.success) {
-            if (result.gamification) {
-                result.gamification.forEach(event => {
-                    if (event.type === 'xp') {
-                        addToast(`+${event.amount} XP: ${event.reason}`, 'success');
-                    } else if (event.type === 'badge') {
-                        addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
-                    } else if (event.type === 'warning') {
-                        addToast(event.message, 'warning');
-                    } else if (event.type === 'info') {
-                        addToast(event.message, 'info');
-                    }
-                });
-            }
-
-            if (result.message && result.message.includes('Límite de XP')) {
-                addToast(result.message, 'warning');
+            if (result.isOffline) {
+                addToast('📶 Entrenamiento guardado en tu móvil. Se sincronizará automáticamente al recuperar cobertura.', 'info');
             } else {
-                addToast(result.message, 'success');
+                if (result.gamification) {
+                    result.gamification.forEach(event => {
+                        if (event.type === 'xp') {
+                            addToast(`+${event.amount} XP: ${event.reason}`, 'success');
+                        } else if (event.type === 'badge') {
+                            addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
+                        } else if (event.type === 'warning') {
+                            addToast(event.message, 'warning');
+                        } else if (event.type === 'info') {
+                            addToast(event.message, 'info');
+                        }
+                    });
+                }
+
+                if (result.message && result.message.includes('Límite de XP')) {
+                    addToast(result.message, 'warning');
+                } else {
+                    addToast(result.message, 'success');
+                }
             }
 
             setShowReviewModal(false);
@@ -392,6 +402,33 @@ const Workout = ({ timer, setView, navParams }) => {
 
     return (
         <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 pb-28 md:pb-10 animate-[fade-in_0.5s_ease-out]">
+            {pendingWorkoutsCount > 0 && (
+                <div className="mb-5 p-3.5 sm:p-4 rounded-2xl glass border border-amber-500/30 bg-amber-500/10 flex items-center justify-between gap-3 text-xs animate-[fade-in_0.3s_ease-out]">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
+                            <CloudOff size={18} />
+                        </div>
+                        <div className="min-w-0">
+                            <span className="font-bold text-amber-600 dark:text-amber-400 block truncate text-xs sm:text-sm">
+                                {pendingWorkoutsCount === 1 ? '1 entrenamiento guardado en tu móvil' : `${pendingWorkoutsCount} entrenamientos guardados en tu móvil`}
+                            </span>
+                            <span className="text-[11px] text-text-secondary block">
+                                Se sincronizará automáticamente con la nube al recuperar conexión
+                            </span>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => window.dispatchEvent(new Event('pfg-trigger-sync'))}
+                        disabled={isSyncing}
+                        className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shrink-0 active:scale-95 transition-all shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                        <RefreshCw size={12} className={isSyncing ? "animate-spin" : ""} />
+                        <span>{isSyncing ? 'Subiendo...' : 'Sincronizar'}</span>
+                    </button>
+                </div>
+            )}
+
             <WorkoutHeader
                 routineName={activeWorkout.routineName}
                 routineImage={activeWorkout.imageUrl || activeWorkout.image_url} 

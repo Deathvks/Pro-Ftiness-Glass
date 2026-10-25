@@ -361,12 +361,18 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
               </button>
             </div> :
 
-            <button
-              onClick={onClose}
-              className="w-full py-3.5 rounded-xl bg-accent text-accent-contrast font-bold text-lg transition hover:scale-[1.01] shadow-lg shadow-accent/20 flex items-center justify-center">
-              
-              Cerrar
-            </button>
+            <div className="flex flex-col gap-2.5 w-full">
+              {typeof navigator !== 'undefined' && !navigator.onLine && (
+                <div className="text-[11px] font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl text-center">
+                  📶 Guardado en tu dispositivo. Se sincronizará con la nube al recuperar conexión.
+                </div>
+              )}
+              <button
+                onClick={onClose}
+                className="w-full py-3.5 rounded-xl bg-accent text-accent-contrast font-bold text-lg transition hover:scale-[1.01] shadow-lg shadow-accent/20 flex items-center justify-center">
+                Cerrar
+              </button>
+            </div>
             }
         </div>
 
