@@ -27,7 +27,8 @@ import {
     MapPin,
     Eye,
     EyeOff,
-    Check
+    Check,
+    Trash2
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -270,6 +271,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     }, [profile]);
 
     const [showGymModal, setShowGymModal] = useState(false);
+    const [showRemoveGymConfirm, setShowRemoveGymConfirm] = useState(false);
     const [localGymUpdate, setLocalGymUpdate] = useState(0);
 
     useEffect(() => {
@@ -285,10 +287,8 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     }, []);
 
     const activeGym = useMemo(() => {
-        if (profile?.gym) {
-            return enrichGymWithMedia(profile.gym);
-        }
         if (relationshipStatus === 'me') {
+            // Para mi propio perfil, la fuente de la verdad es mi estado actual y local
             if (myProfile?.gym_data) {
                 try {
                     const parsed = typeof myProfile.gym_data === 'string' ? JSON.parse(myProfile.gym_data) : myProfile.gym_data;
@@ -300,6 +300,12 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                 const saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
                 if (saved) return enrichGymWithMedia(JSON.parse(saved));
             } catch {}
+            return null;
+        }
+
+        // Para perfiles ajenos, usamos lo que devuelve el backend
+        if (profile?.gym) {
+            return enrichGymWithMedia(profile.gym);
         }
         return null;
     }, [profile?.gym, relationshipStatus, myProfile, localGymUpdate]);
@@ -309,6 +315,16 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         const enriched = enrichGymWithMedia(gymData);
         localStorage.setItem(userKey, JSON.stringify(enriched));
         localStorage.setItem('user_gym', JSON.stringify(enriched));
+        if (typeof useAppStore.getState().setUserProfile === 'function') {
+            const cur = useAppStore.getState().userProfile;
+            if (cur) useAppStore.getState().setUserProfile({ ...cur, gym_data: enriched });
+        }
+        const viewed = useAppStore.getState().socialViewedProfile;
+        if (viewed && (String(viewed.id) === String(myProfile?.id))) {
+            useAppStore.setState({
+                socialViewedProfile: { ...viewed, gym: enriched }
+            });
+        }
         setLocalGymUpdate(prev => prev + 1);
         window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: enriched }));
         userService.updateUserProfile({ gym_data: enriched }).catch(err => {
@@ -318,17 +334,38 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         if (typeof notify === 'function') notify('Gimnasio habitual actualizado correctamente', 'success');
     };
 
-    const handleRemoveGym = () => {
+    const handleRemoveGym = async () => {
         const userKey = myProfile?.id ? `user_gym_${myProfile.id}` : 'user_gym';
         localStorage.removeItem(userKey);
         localStorage.removeItem('user_gym');
+        try {
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const k = localStorage.key(i);
+                if (k && (k.startsWith('user_gym_') || k === 'user_gym')) {
+                    localStorage.removeItem(k);
+                }
+            }
+        } catch {}
+
+        if (typeof useAppStore.getState().setUserProfile === 'function') {
+            const cur = useAppStore.getState().userProfile;
+            if (cur) useAppStore.getState().setUserProfile({ ...cur, gym_data: null });
+        }
+        const viewed = useAppStore.getState().socialViewedProfile;
+        if (viewed && (String(viewed.id) === String(myProfile?.id))) {
+            useAppStore.setState({
+                socialViewedProfile: { ...viewed, gym: null }
+            });
+        }
         setLocalGymUpdate(prev => prev + 1);
         window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: null }));
-        userService.updateUserProfile({ gym_data: null }).catch(err => {
+        try {
+            await userService.updateUserProfile({ gym_data: null });
+        } catch (err) {
             console.warn('Error al eliminar gimnasio en backend:', err);
-        });
+        }
         const notify = showToast || addToast;
-        if (typeof notify === 'function') notify('Gimnasio eliminado', 'info');
+        if (typeof notify === 'function') notify('Gimnasio desvinculado correctamente', 'info');
     };
 
     const handleGoToSocialPrivacy = () => {
@@ -749,10 +786,10 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                             <span>Gimnasio Habitual</span>
                         </div>
                         {relationshipStatus === 'me' && (
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border transition-colors ${
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-colors ${
                                 (profile?.show_gym !== false && myProfile?.show_gym !== false)
-                                    ? 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 border-emerald-500/30'
-                                    : 'bg-amber-500/15 text-amber-500 dark:text-amber-400 border-amber-500/30'
+                                    ? 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 '
+                                    : 'bg-amber-500/15 text-amber-500 dark:text-amber-400 '
                             }`}>
                                 {(profile?.show_gym !== false && myProfile?.show_gym !== false) ? (
                                     <>
@@ -768,7 +805,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                     </div>
 
                     {activeGym ? (
-                        <div className="relative rounded-2xl overflow-hidden border border-black/10 dark:border-white/15 shadow-md group">
+                        <div className="relative rounded-2xl overflow-hidden shadow-lg group">
                             {/* Imagen de fondo panorámica en alta resolución con gradiente cinemático */}
                             <div className="absolute inset-0">
                                 <img
@@ -777,14 +814,50 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                     loading="lazy"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/80 to-black/55 backdrop-blur-[0.5px]" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/85 to-black/60 sm:bg-gradient-to-r sm:from-black/95 sm:via-black/85 sm:to-black/60 backdrop-blur-[0.5px]" />
                             </div>
 
                             {/* Contenido sobre la imagen */}
-                            <div className="relative p-4 sm:p-5 flex items-center justify-between gap-3.5 text-white">
-                                <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                                    {/* Icono de logo de marca o Dumbbell nítido */}
-                                    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-2 flex items-center justify-center shrink-0 shadow-md overflow-hidden">
+                            <div className="relative p-4 sm:p-5 flex flex-col gap-3 text-white">
+                                {/* Fila superior: Badges a la izquierda, botones de acción a la derecha */}
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-accent bg-accent/20 px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+                                            <Check size={11} strokeWidth={3} />
+                                            Gimnasio habitual
+                                        </span>
+                                        {activeGym.distanceFormatted && (
+                                            <span className="text-[10px] font-bold text-white/90 bg-white/15 px-2.5 py-1 rounded-full shadow-sm">
+                                                A {activeGym.distanceFormatted}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {relationshipStatus === 'me' && (
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowGymModal(true)}
+                                                className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 text-white text-xs font-bold backdrop-blur-md shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+                                            >
+                                                <span>Cambiar</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowRemoveGymConfirm(true)}
+                                                className="p-1.5 rounded-xl bg-white/10 hover:bg-red-500/80 active:scale-95 text-white/80 hover:text-white backdrop-blur-md shadow-sm transition-all cursor-pointer"
+                                                title="Desvincular gimnasio habitual"
+                                                aria-label="Desvincular gimnasio habitual"
+                                            >
+                                                <Trash2 size={15} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Fila central: Logo + Nombre completo (sin cortar con '...') */}
+                                <div className="flex items-start gap-3.5 pt-0.5">
+                                    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/10 backdrop-blur-md p-2 flex items-center justify-center shrink-0 shadow-md overflow-hidden mt-0.5">
                                         {activeGym.logo ? (
                                             <img
                                                 src={activeGym.logo}
@@ -807,37 +880,25 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                                     </div>
 
                                     <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                                            <span className="text-[10px] font-black uppercase tracking-wider text-accent bg-accent/25 px-2 py-0.5 rounded-full border border-accent/40 shadow-sm flex items-center gap-1">
-                                                <Check size={11} strokeWidth={3} />
-                                                Gimnasio habitual
-                                            </span>
-                                            {activeGym.distanceFormatted && (
-                                                <span className="text-[10px] font-bold text-white/90 bg-white/15 px-2 py-0.5 rounded-full">
-                                                    A {activeGym.distanceFormatted}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <h3 className="text-base sm:text-lg font-black text-white truncate drop-shadow-md">
+                                        <h3 className="text-base sm:text-lg md:text-xl font-black text-white drop-shadow-md leading-snug break-words">
                                             {activeGym.name}
                                         </h3>
-                                        {(activeGym.address || activeGym.city) && (
-                                            <p className="text-xs sm:text-sm text-white/80 truncate drop-shadow-sm flex items-center gap-1 mt-0.5">
-                                                <MapPin size={12} className="text-accent shrink-0" />
-                                                <span>{[activeGym.address, activeGym.city].filter(Boolean).join(', ')}</span>
-                                            </p>
+                                        {activeGym.brand && activeGym.brand.toLowerCase() !== activeGym.name?.toLowerCase() && (
+                                            <span className="text-[11px] font-bold text-white/70 block mt-0.5">
+                                                {activeGym.brand}
+                                            </span>
                                         )}
                                     </div>
                                 </div>
 
-                                {relationshipStatus === 'me' && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowGymModal(true)}
-                                        className="shrink-0 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 text-white text-xs font-bold border border-white/20 backdrop-blur-md shadow transition-all cursor-pointer"
-                                    >
-                                        Cambiar
-                                    </button>
+                                {/* Fila inferior: Ubicación completa sin cortar con '...' */}
+                                {(activeGym.address || activeGym.city) && (
+                                    <div className="pt-2 border-t border-white/10 flex items-start gap-2 text-white/85 text-xs sm:text-sm">
+                                        <MapPin size={14} className="text-accent shrink-0 mt-0.5" />
+                                        <span className="leading-snug break-words line-clamp-3">
+                                            {[activeGym.address, activeGym.city].filter(Boolean).join(', ')}
+                                        </span>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -1129,6 +1190,20 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                     currentGym={activeGym}
                     onSave={handleSaveGym}
                     onRemove={handleRemoveGym}
+                />
+            )}
+
+            {/* --- MODAL CONFIRMACIÓN DESVINCULAR GIMNASIO --- */}
+            {showRemoveGymConfirm && (
+                <ConfirmationModal
+                    message="¿Seguro que deseas desvincular tu gimnasio habitual de tu perfil?"
+                    confirmText="Desvincular"
+                    cancelText="Cancelar"
+                    onConfirm={() => {
+                        setShowRemoveGymConfirm(false);
+                        handleRemoveGym();
+                    }}
+                    onCancel={() => setShowRemoveGymConfirm(false)}
                 />
             )}
 

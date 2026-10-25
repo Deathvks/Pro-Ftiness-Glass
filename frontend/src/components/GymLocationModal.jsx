@@ -1,6 +1,7 @@
 /* frontend/src/components/GymLocationModal.jsx */
 import React, { useState, useEffect, useRef } from 'react';
 import ModalPortal from './ModalPortal';
+import ConfirmationModal from './ConfirmationModal';
 import useModalLock from '../hooks/useModalLock';
 import { MapPin, Search, X, Navigation, Dumbbell, Trash2, Check, Loader2, Sparkles, Building2, BadgeCheck } from 'lucide-react';
 import { getCurrentLocation, calculateDistance, formatDistance } from '../utils/gpsUtils';
@@ -20,6 +21,7 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
   const [userCoords, setUserCoords] = useState(null);
   const [searchError, setSearchError] = useState(null);
   const [locationError, setLocationError] = useState(null);
+  const [showConfirmRemove, setShowConfirmRemove] = useState(false);
 
   const inputRef = useRef(null);
 
@@ -294,9 +296,10 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
     onClose();
   };
 
-  const handleRemoveCurrent = () => {
+  const handleConfirmRemove = () => {
+    setShowConfirmRemove(false);
     onRemove();
-    addToast('Gimnasio desvinculado', 'info');
+    addToast('Gimnasio desvinculado correctamente', 'info');
     onClose();
   };
 
@@ -349,7 +352,7 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
 
           {/* Gimnasio actual guardado (con foto de club y logo oficial) */}
           {activeGym && (
-            <div className="mb-4 relative rounded-2xl overflow-hidden border border-accent/30 shadow-lg group shrink-0">
+            <div className="mb-4 relative rounded-2xl overflow-hidden shadow-lg group shrink-0">
               {/* Imagen de fondo del club con gradiente */}
               <div className="absolute inset-0">
                 <img
@@ -362,8 +365,8 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
 
               {/* Contenido sobre la imagen */}
               <div className="relative p-3.5 flex items-center justify-between gap-3 text-white">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="relative w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-1 flex items-center justify-center shrink-0 shadow-md overflow-hidden">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="relative w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md p-1 flex items-center justify-center shrink-0 shadow-md overflow-hidden">
                     {activeGym.logo ? (
                       <img
                         src={activeGym.logo}
@@ -385,23 +388,23 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
                     </div>
                   </div>
 
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-accent bg-accent/25 px-2 py-0.5 rounded-full border border-accent/40 shadow-sm flex items-center gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-accent bg-accent/20 px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1">
                         <Check size={11} strokeWidth={3} />
                         Gimnasio habitual
                       </span>
                       {activeGym.distanceFormatted && (
-                        <span className="text-[10px] font-bold text-white/90 bg-white/15 px-1.5 py-0.5 rounded-full">
+                        <span className="text-[10px] font-bold text-white/90 bg-white/15 px-2 py-0.5 rounded-full">
                           {activeGym.distanceFormatted}
                         </span>
                       )}
                     </div>
-                    <h4 className="text-sm font-bold text-white truncate drop-shadow-sm mt-1">
+                    <h4 className="text-sm font-bold text-white drop-shadow-sm mt-1 leading-snug break-words">
                       {activeGym.name}
                     </h4>
                     {activeGym.address && (
-                      <p className="text-xs text-white/75 truncate drop-shadow-sm">
+                      <p className="text-xs text-white/80 drop-shadow-sm mt-0.5 leading-snug break-words line-clamp-2">
                         {activeGym.address}
                       </p>
                     )}
@@ -409,9 +412,11 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
                 </div>
 
                 <button
-                  onClick={handleRemoveCurrent}
-                  className="p-2 rounded-xl bg-white/10 hover:bg-red-500/80 text-white/80 hover:text-white transition-all shrink-0 border border-white/10 hover:border-red-500 shadow-sm"
-                  title="Quitar gimnasio"
+                  type="button"
+                  onClick={() => setShowConfirmRemove(true)}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-red-500/80 active:scale-95 text-white/80 hover:text-white transition-all shrink-0 shadow-sm cursor-pointer"
+                  title="Desvincular gimnasio habitual"
+                  aria-label="Desvincular gimnasio habitual"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -535,9 +540,15 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
                             {gym.name}
                           </h4>
                           {gym.isVerified && (
-                            <span className="text-[9px] font-black uppercase tracking-wider text-accent bg-accent/15 px-1.5 py-0.5 rounded-md border border-accent/25 flex items-center gap-0.5 shrink-0">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-accent bg-accent/15 px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shrink-0">
                               <BadgeCheck size={10} strokeWidth={2.5} />
                               Verificado
+                            </span>
+                          )}
+                          {activeGym && (activeGym.id === gym.id || activeGym.name?.toLowerCase() === gym.name?.toLowerCase()) && (
+                            <span className="text-[9px] font-black uppercase tracking-wider text-accent bg-accent/20 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                              <Check size={10} strokeWidth={3} />
+                              Habitual
                             </span>
                           )}
                         </div>
@@ -614,6 +625,16 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
           </div>
         </div>
       </div>
+
+      {showConfirmRemove && (
+        <ConfirmationModal
+          message="¿Seguro que deseas desvincular tu gimnasio habitual de tu cuenta?"
+          confirmText="Desvincular"
+          cancelText="Cancelar"
+          onConfirm={handleConfirmRemove}
+          onCancel={() => setShowConfirmRemove(false)}
+        />
+      )}
     </ModalPortal>
   );
 };

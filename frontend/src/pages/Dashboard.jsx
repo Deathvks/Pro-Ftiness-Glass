@@ -285,6 +285,14 @@ const Dashboard = ({ setView }) => {
     localStorage.setItem(userKey, JSON.stringify(enriched));
     localStorage.setItem('user_gym', JSON.stringify(enriched));
     setCurrentGym(enriched);
+    if (typeof useAppStore.getState().setUserProfile === 'function') {
+      const cur = useAppStore.getState().userProfile;
+      if (cur) useAppStore.getState().setUserProfile({ ...cur, gym_data: enriched });
+    }
+    const viewed = useAppStore.getState().socialViewedProfile;
+    if (viewed && String(viewed.id) === String(userProfile?.id)) {
+      useAppStore.setState({ socialViewedProfile: { ...viewed, gym: enriched } });
+    }
     window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: enriched }));
     userService.updateUserProfile({ gym_data: enriched }).catch(err => {
       console.warn('Error al guardar gimnasio en backend:', err);
@@ -295,7 +303,23 @@ const Dashboard = ({ setView }) => {
     const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
     localStorage.removeItem(userKey);
     localStorage.removeItem('user_gym');
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith('user_gym_') || k === 'user_gym')) {
+          localStorage.removeItem(k);
+        }
+      }
+    } catch {}
     setCurrentGym(null);
+    if (typeof useAppStore.getState().setUserProfile === 'function') {
+      const cur = useAppStore.getState().userProfile;
+      if (cur) useAppStore.getState().setUserProfile({ ...cur, gym_data: null });
+    }
+    const viewed = useAppStore.getState().socialViewedProfile;
+    if (viewed && String(viewed.id) === String(userProfile?.id)) {
+      useAppStore.setState({ socialViewedProfile: { ...viewed, gym: null } });
+    }
     window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: null }));
     userService.updateUserProfile({ gym_data: null }).catch(err => {
       console.warn('Error al eliminar gimnasio en backend:', err);

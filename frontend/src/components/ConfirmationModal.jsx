@@ -35,9 +35,9 @@ const ConfirmationModal = ({
   };
 
   return createPortal(
-  // z-[100] para asegurar que se vea sobre otros modales (como el de creatina z-100)
+  // z-[300] para asegurar que se vea sobre otros modales (como el de creatina z-100)
   <ModalPortal><div
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]"
+      className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-[fade-in_0.3s_ease-out]"
       onClick={onCancel}>
       
       <div
