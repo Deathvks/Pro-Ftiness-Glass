@@ -16,8 +16,12 @@ import {
 } from 'recharts';
 import apiClient from '../services/apiClient';
 
+let cachedSecurityStats = null;
+let cachedSecurityLogs = null;
+let cachedBlacklist = null;
+
 const SecurityDashboard = ({ onBack }) => {
-  const [stats, setStats] = useState({ 
+  const [stats, setStats] = useState(() => cachedSecurityStats || { 
     totalLogs: 0, 
     blockedIps: 0, 
     failedLogins: 0, 
@@ -25,14 +29,14 @@ const SecurityDashboard = ({ onBack }) => {
     autoBans: 0, 
     chartData: [] 
   });
-  const [logs, setLogs] = useState([]);
-  const [blacklist, setBlacklist] = useState([]);
+  const [logs, setLogs] = useState(() => cachedSecurityLogs || []);
+  const [blacklist, setBlacklist] = useState(() => cachedBlacklist || []);
   const [activeTab, setActiveTab] = useState('alerts'); // 'alerts', 'success', 'blacklist'
   const [timeRange, setTimeRange] = useState(30); // 1, 3, 7, 14, 30
   
   const [newIpToBlock, setNewIpToBlock] = useState('');
   const [blockReason, setBlockReason] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !cachedSecurityStats);
 
   useEffect(() => {
     fetchData();
@@ -51,7 +55,8 @@ const SecurityDashboard = ({ onBack }) => {
         activeTab === 'blacklist' ? apiClient('/admin/security/blacklist') : Promise.resolve([])
       ]);
       
-      setStats(statsRes || { totalEvents: 0, failedLogins: 0, criticalAlerts: 0, blockedIps: 0, chartData: [] });
+      cachedSecurityStats = statsRes || { totalEvents: 0, failedLogins: 0, criticalAlerts: 0, blockedIps: 0, chartData: [] };
+      setStats(cachedSecurityStats);
       if (activeTab !== 'blacklist') setLogs(Array.isArray(logsRes) ? logsRes : (Array.isArray(logsRes?.logs) ? logsRes.logs : []));
       if (activeTab === 'blacklist') setBlacklist(Array.isArray(blacklistRes) ? blacklistRes : []);
     } catch (error) {

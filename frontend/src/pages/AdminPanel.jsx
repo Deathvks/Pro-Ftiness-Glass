@@ -13,13 +13,33 @@ import UserCreateModal from './UserCreateModal';
 import UserAvatar from '../components/UserAvatar';
 import CustomSelect from '../components/CustomSelect';
 
-const AdminExercises = React.lazy(() => import('./AdminExercises'));
-const AdminRatings = React.lazy(() => import('../components/AdminRatings'));
-const AdminNotifications = React.lazy(() => import('./AdminNotifications'));
-const AdminEmails = React.lazy(() => import('./AdminEmails'));
-const SecurityDashboard = React.lazy(() => import('./SecurityDashboard'));
-const AdminUploads = React.lazy(() => import('../components/AdminUploads'));
-const AdminNewsManager = React.lazy(() => import('../components/Admin/AdminNewsManager'));
+import AdminRatings from '../components/AdminRatings';
+import AdminUploads from '../components/AdminUploads';
+import { lazyWithRetry } from '../App';
+
+export const ADMIN_TAB_LOADERS = {
+  exercises: () => import('./AdminExercises'),
+  notifications: () => import('./AdminNotifications'),
+  emails: () => import('./AdminEmails'),
+  security: () => import('./SecurityDashboard'),
+  news: () => import('../components/Admin/AdminNewsManager'),
+};
+
+const preloadedAdminTabs = new Set();
+export const preloadAdminTab = (tabKey) => {
+  if (!tabKey || preloadedAdminTabs.has(tabKey)) return;
+  const loader = ADMIN_TAB_LOADERS[tabKey];
+  if (loader) {
+    preloadedAdminTabs.add(tabKey);
+    loader().catch(() => preloadedAdminTabs.delete(tabKey));
+  }
+};
+
+const AdminExercises = lazyWithRetry(ADMIN_TAB_LOADERS.exercises, 'adminExercises');
+const AdminNotifications = lazyWithRetry(ADMIN_TAB_LOADERS.notifications, 'adminNotifications');
+const AdminEmails = lazyWithRetry(ADMIN_TAB_LOADERS.emails, 'adminEmails');
+const SecurityDashboard = lazyWithRetry(ADMIN_TAB_LOADERS.security, 'securityDashboard');
+const AdminNewsManager = lazyWithRetry(ADMIN_TAB_LOADERS.news, 'adminNewsManager');
 import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getSystemStats } from '../services/adminService';
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
@@ -247,6 +267,25 @@ const AdminPanel = ({ onCancel }) => {
   useEffect(() => {
     localStorage.setItem('admin_active_tab', activeTab);
   }, [activeTab]);
+
+  // Precarga suave en reposo de todos los submódulos pesados del panel
+  useEffect(() => {
+    const idleCallback = typeof window !== 'undefined' && window.requestIdleCallback
+      ? window.requestIdleCallback
+      : (cb) => setTimeout(cb, 400);
+
+    const handle = idleCallback(() => {
+      Object.keys(ADMIN_TAB_LOADERS).forEach((tabKey, idx) => {
+        setTimeout(() => preloadAdminTab(tabKey), idx * 200);
+      });
+    });
+
+    return () => {
+      if (typeof window !== 'undefined' && window.cancelIdleCallback && typeof handle === 'number') {
+        window.cancelIdleCallback(handle);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('admin_users_sort', sortBy);
@@ -553,6 +592,8 @@ const AdminPanel = ({ onCancel }) => {
         </button>
         <button
           onClick={() => setActiveTab('exercises')}
+          onMouseEnter={() => preloadAdminTab('exercises')}
+          onTouchStart={() => preloadAdminTab('exercises')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'exercises'
             ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
@@ -573,6 +614,8 @@ const AdminPanel = ({ onCancel }) => {
           </button>
           <button
             onClick={() => setActiveTab('notifications')}
+            onMouseEnter={() => preloadAdminTab('notifications')}
+            onTouchStart={() => preloadAdminTab('notifications')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'notifications'
             ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
@@ -583,6 +626,8 @@ const AdminPanel = ({ onCancel }) => {
         </button>
         <button
           onClick={() => setActiveTab('emails')}
+          onMouseEnter={() => preloadAdminTab('emails')}
+          onTouchStart={() => preloadAdminTab('emails')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'emails'
             ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
@@ -603,6 +648,8 @@ const AdminPanel = ({ onCancel }) => {
         </button>
         <button
           onClick={() => setActiveTab('news')}
+          onMouseEnter={() => preloadAdminTab('news')}
+          onTouchStart={() => preloadAdminTab('news')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'news'
             ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
@@ -613,6 +660,8 @@ const AdminPanel = ({ onCancel }) => {
         </button>
         <button
           onClick={() => setActiveTab('security')}
+          onMouseEnter={() => preloadAdminTab('security')}
+          onTouchStart={() => preloadAdminTab('security')}
           className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'security'
             ? 'bg-red text-white shadow-lg shadow-red/20'
             : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'

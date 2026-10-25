@@ -9,6 +9,9 @@ import { useToast } from '../hooks/useToast';
 import CustomSelect from '../components/CustomSelect';
 import UserAvatar from '../components/UserAvatar';
 
+let cachedPushLogs = null;
+let cachedPushTotalPages = 1;
+
 const AdminNotifications = () => {
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('adminNotificationsTab') || 'history';
@@ -20,11 +23,11 @@ const AdminNotifications = () => {
 
   const { showToast } = useToast();
   
-  // History State
-  const [logs, setLogs] = useState([]);
-  const [loadingLogs, setLoadingLogs] = useState(false);
+  // History State con caché SWR en memoria
+  const [logs, setLogs] = useState(() => cachedPushLogs || []);
+  const [loadingLogs, setLoadingLogs] = useState(() => !cachedPushLogs);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(() => cachedPushTotalPages);
   const [statusFilter, setStatusFilter] = useState('all');
   const [titleFilter, setTitleFilter] = useState('');
   const [timeRange, setTimeRange] = useState(30);
@@ -43,8 +46,10 @@ const AdminNotifications = () => {
   const [cronJobs, setCronJobs] = useState([]);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (activeTab === 'send' && users.length === 0) {
+      fetchUsers();
+    }
+  }, [activeTab, users.length]);
 
   useEffect(() => {
     let interval;

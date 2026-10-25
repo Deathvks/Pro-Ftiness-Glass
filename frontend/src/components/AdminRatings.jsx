@@ -9,10 +9,11 @@ import UserAvatar from './UserAvatar';
 import { es } from 'date-fns/locale';
 
 
-export default function AdminRatings() {
+let cachedRatings = null;
 
-    const [ratings, setRatings] = useState([]);
-    const [loading, setLoading] = useState(true);
+export default function AdminRatings() {
+    const [ratings, setRatings] = useState(() => cachedRatings || []);
+    const [loading, setLoading] = useState(() => !cachedRatings);
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 10;
 
@@ -20,7 +21,9 @@ export default function AdminRatings() {
         const fetchRatings = async () => {
             try {
                 const data = await getAppRatings();
-                setRatings(Array.isArray(data) ? data : []);
+                const safe = Array.isArray(data) ? data : [];
+                cachedRatings = safe;
+                setRatings(safe);
             } catch (error) {
                 console.error("Error fetching ratings:", error);
                 setRatings([]);

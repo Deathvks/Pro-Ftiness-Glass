@@ -1,4 +1,4 @@
 {
-  "version": "7.10.28",
-  "releaseNotes": "Actualización v7.10.28: Estandarización de modales en Gestión de Noticias y Blog (diseño Bottom Sheet en móvil y modal centrado en PC con ModalPortal y bloqueo de scroll). Optimización de scroll en la Consola Gemini Live y modal de confirmación nativo para eliminación de artículos."
+  "version": "7.10.29",
+  "releaseNotes": "Actualización v7.10.29: Carga instantánea de pestañas en Panel Admin (precarga inteligente en segundo plano, eliminación de cascadas de carga y caché SWR para valoraciones, notificaciones, correos, subidas, noticias y ciberseguridad)."
 }

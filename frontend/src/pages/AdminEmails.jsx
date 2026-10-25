@@ -6,34 +6,44 @@ import { getEmailLogs, getEmailStats } from '../services/adminService';
 import { useToast } from '../hooks/useToast';
 import CustomSelect from '../components/CustomSelect';
 
+let cachedEmailLogs = null;
+let cachedEmailStats = null;
+let cachedEmailTotalPages = 1;
+
 const AdminEmails = () => {
-  const [logs, setLogs] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState(() => cachedEmailLogs || []);
+  const [stats, setStats] = useState(() => cachedEmailStats);
+  const [loading, setLoading] = useState(() => !cachedEmailLogs);
   const { addToast } = useToast();
 
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterRange, setFilterRange] = useState(30);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(() => cachedEmailTotalPages);
 
   useEffect(() => {
     fetchLogs();
   }, [filterStatus, filterRange, page]);
 
   const fetchLogs = async () => {
-    setLoading(true);
+    if (!cachedEmailLogs) setLoading(true);
     try {
-      const logsRes = await getEmailLogs({
-        status: filterStatus,
-        range: filterRange,
-        page,
-        limit: 20
-      });
-      setLogs(Array.isArray(logsRes?.logs) ? logsRes.logs : []);
-      setTotalPages(logsRes?.totalPages || 1);
-
-      const statsRes = await getEmailStats({ range: filterRange });
+      const [logsRes, statsRes] = await Promise.all([
+        getEmailLogs({
+          status: filterStatus,
+          range: filterRange,
+          page,
+          limit: 20
+        }),
+        getEmailStats({ range: filterRange })
+      ]);
+      const safeLogs = Array.isArray(logsRes?.logs) ? logsRes.logs : [];
+      const safePages = logsRes?.totalPages || 1;
+      cachedEmailLogs = safeLogs;
+      cachedEmailStats = statsRes || null;
+      cachedEmailTotalPages = safePages;
+      setLogs(safeLogs);
+      setTotalPages(safePages);
       setStats(statsRes || null);
     } catch (err) {
       setLogs([]);

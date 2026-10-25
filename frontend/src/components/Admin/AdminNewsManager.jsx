@@ -32,12 +32,15 @@ import AdminNewsTracker from './AdminNewsTracker';
 
 const DEFAULT_CATEGORIES = ['Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
 
+let cachedAdminNews = null;
+let cachedAdminNewsTotal = 0;
+
 export default function AdminNewsManager() {
   const { addToast } = useToast();
 
-  const [articles, setArticles] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [articles, setArticles] = useState(() => cachedAdminNews || []);
+  const [total, setTotal] = useState(() => cachedAdminNewsTotal);
+  const [isLoading, setIsLoading] = useState(() => !cachedAdminNews);
 
   // Modos de vista: 'list' | 'editor' | 'ai' | 'automation'
   const [viewMode, setViewMode] = useState('list');
@@ -80,8 +83,12 @@ export default function AdminNewsManager() {
     setIsLoading(true);
     try {
       const data = await newsService.fetchAdminNews();
-      setArticles(Array.isArray(data?.news) ? data.news : []);
-      setTotal(data?.total || (Array.isArray(data?.news) ? data.news.length : 0));
+      const safe = Array.isArray(data?.news) ? data.news : [];
+      const safeTotal = data?.total || (Array.isArray(data?.news) ? data.news.length : 0);
+      cachedAdminNews = safe;
+      cachedAdminNewsTotal = safeTotal;
+      setArticles(safe);
+      setTotal(safeTotal);
     } catch (err) {
       setArticles([]);
       addToast(err.message || 'Error al cargar noticias', 'error');

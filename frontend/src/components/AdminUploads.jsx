@@ -3,9 +3,11 @@ import { Cloud } from 'lucide-react';
 import apiClient from '../services/apiClient';
 import { useToast } from '../hooks/useToast';
 
+let cachedUploadLogs = null;
+
 export default function AdminUploads() {
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState(() => cachedUploadLogs || []);
+  const [loading, setLoading] = useState(() => !cachedUploadLogs);
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -15,7 +17,9 @@ export default function AdminUploads() {
   const fetchLogs = async () => {
     try {
       const res = await apiClient('/admin/upload-logs');
-      setLogs(Array.isArray(res) ? res : []);
+      const safe = Array.isArray(res) ? res : [];
+      cachedUploadLogs = safe;
+      setLogs(safe);
     } catch (e) {
       console.error(e);
       setLogs([]);

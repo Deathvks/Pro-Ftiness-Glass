@@ -11,46 +11,50 @@ export const getSecurityStats = async (req, res) => {
     startDate.setDate(startDate.getDate() - days);
     startDate.setHours(0, 0, 0, 0);
 
-    // Borrado automático de logs de ÉXITO antiguos (> 30 días) para no saturar DB
+    // Borrado automático de logs de ÉXITO antiguos (> 30 días) en segundo plano no bloqueante
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    await SecurityLog.destroy({
+    SecurityLog.destroy({
       where: {
         eventType: 'LOGIN_SUCCESS',
         createdAt: { [Op.lt]: thirtyDaysAgo }
       }
-    });
+    }).catch(err => console.warn('[Security] Error en limpieza en segundo plano:', err.message));
 
-    const totalLogs = await SecurityLog.count({ where: { createdAt: { [Op.gte]: startDate } } });
-    const blockedIps = await IpBlacklist.count();
-    
-    // Contadores
-    const failedLogins = await SecurityLog.count({
-      where: { eventType: 'LOGIN_FAILED', createdAt: { [Op.gte]: startDate } }
-    });
-    
-    const successfulLogins = await SecurityLog.count({
-      where: { eventType: { [Op.in]: ['LOGIN_SUCCESS', 'REGISTER_SUCCESS'] }, createdAt: { [Op.gte]: startDate } }
-    });
-
-    const autoBans = await SecurityLog.count({
-      where: { eventType: 'AUTO_BAN', createdAt: { [Op.gte]: startDate } }
-    });
-
-    // Gráfico de ataques vs accesos exitosos agrupados por fecha
-    const chartDataRaw = await SecurityLog.findAll({
-      attributes: [
-        [sequelize.fn('DATE', sequelize.col('createdAt')), 'date'],
-        'eventType',
-        [sequelize.fn('COUNT', '*'), 'count']
-      ],
-      where: {
-        createdAt: { [Op.gte]: startDate },
-        eventType: { [Op.in]: ['LOGIN_FAILED', 'LOGIN_SUCCESS', 'REGISTER_SUCCESS'] }
-      },
-      group: [sequelize.fn('DATE', sequelize.col('createdAt')), 'eventType'],
-      raw: true
-    });
+    // Ejecutar consultas en paralelo con Promise.all para máxima velocidad
+    const [
+      totalLogs,
+      blockedIps,
+      failedLogins,
+      successfulLogins,
+      autoBans,
+      chartDataRaw
+    ] = await Promise.all([
+      SecurityLog.count({ where: { createdAt: { [Op.gte]: startDate } } }),
+      IpBlacklist.count(),
+      SecurityLog.count({
+        where: { eventType: 'LOGIN_FAILED', createdAt: { [Op.gte]: startDate } }
+      }),
+      SecurityLog.count({
+        where: { eventType: { [Op.in]: ['LOGIN_SUCCESS', 'REGISTER_SUCCESS'] }, createdAt: { [Op.gte]: startDate } }
+      }),
+      SecurityLog.count({
+        where: { eventType: 'AUTO_BAN', createdAt: { [Op.gte]: startDate } }
+      }),
+      SecurityLog.findAll({
+        attributes: [
+          [sequelize.fn('DATE', sequelize.col('createdAt')), 'date'],
+          'eventType',
+          [sequelize.fn('COUNT', '*'), 'count']
+        ],
+        where: {
+          createdAt: { [Op.gte]: startDate },
+          eventType: { [Op.in]: ['LOGIN_FAILED', 'LOGIN_SUCCESS', 'REGISTER_SUCCESS'] }
+        },
+        group: [sequelize.fn('DATE', sequelize.col('createdAt')), 'eventType'],
+        raw: true
+      })
+    ]);
 
     // Procesar datos para Recharts: [{ date: '2023-10-01', success: 15, failure: 2 }]
     const chartMap = {};

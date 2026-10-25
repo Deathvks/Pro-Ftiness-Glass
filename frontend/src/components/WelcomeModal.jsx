@@ -16,24 +16,32 @@ const WelcomeModal = ({ onClose }) => {
   // --- Bloquear scroll del fondo y swipe entre páginas ---
   useModalLock();
 
-  // Precarga suave y no intrusiva de noticias en segundo plano cuando el navegador esté en reposo
+  const userProfile = useAppStore((state) => state.userProfile);
+
+  // Precarga suave y no intrusiva en segundo plano cuando el navegador esté en reposo
   useEffect(() => {
     let timerId = null;
     try {
       timerId = setTimeout(() => {
-        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-          window.requestIdleCallback(() => preloadViewChunk('noticias'), { timeout: 4000 });
-        } else {
+        const runPreload = () => {
           preloadViewChunk('noticias');
+          if (userProfile?.role === 'admin') {
+            preloadViewChunk('adminPanel');
+          }
+        };
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+          window.requestIdleCallback(runPreload, { timeout: 3000 });
+        } else {
+          runPreload();
         }
-      }, 1500);
+      }, 1200);
     } catch (e) {
       console.warn('[WelcomeModal] Error en precarga suave:', e);
     }
     return () => {
       if (timerId) clearTimeout(timerId);
     };
-  }, []);
+  }, [userProfile?.role]);
 
   const appVersion = `v${APP_VERSION}`;
   const majorVersion = APP_VERSION.split('.')[0];
