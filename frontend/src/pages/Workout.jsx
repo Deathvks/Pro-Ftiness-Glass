@@ -365,6 +365,10 @@ const Workout = ({ timer, setView, navParams }) => {
             }
 
             setShowReviewModal(false);
+            setCompletedWorkoutData({
+                ...workoutData,
+                newPRs: result.newPRs || []
+            });
             setShowWorkoutSummaryModal(true);
         } else {
             addToast(result.message, 'error');

@@ -10,7 +10,7 @@ import {
   LayoutGrid, IceCream, TriangleAlert, Info, Share2, X, Loader2, Lock, List, Copy, ListFilter,
   MapPin
 } from 'lucide-react';
-import { FaChartPie, FaTrophy } from 'react-icons/fa';
+import { FaChartPie, FaTrophy, FaInstagram } from 'react-icons/fa';
 import { FaMeteor } from 'react-icons/fa6'; 
 
 import { Capacitor } from '@capacitor/core';
@@ -131,14 +131,19 @@ const getStreakCountdown = (lastActivityDate, now = new Date()) => {
 
   // La racha permite descansar sábado y domingo. El plazo vence al terminar
   // el siguiente día laborable disponible tras el último entrenamiento.
-  const nextTrainingDay = new Date(year, month - 1, day);
-  do {
-    nextTrainingDay.setDate(nextTrainingDay.getDate() + 1);
-  } while (nextTrainingDay.getDay() === 0 || nextTrainingDay.getDay() === 6);
+  // Protege hasta 2 días laborables de descanso biológico (48-72h) más fines de semana.
+  const targetDate = new Date(year, month - 1, day);
+  let addedWeekdays = 0;
+  while (addedWeekdays < 3) {
+    targetDate.setDate(targetDate.getDate() + 1);
+    const dow = targetDate.getDay();
+    if (dow !== 0 && dow !== 6) {
+      addedWeekdays++;
+    }
+  }
 
-  const deadline = new Date(nextTrainingDay);
-  deadline.setDate(deadline.getDate() + 1);
-  deadline.setHours(0, 0, 0, 0);
+  const deadline = new Date(targetDate);
+  deadline.setHours(23, 59, 59, 999);
 
   const remaining = deadline.getTime() - now.getTime();
   if (remaining <= 0) return { expired: true };
@@ -345,26 +350,24 @@ const Dashboard = ({ setView }) => {
   const showStreakTimeRemaining = (event) => {
     event.stopPropagation();
 
-    if (!levelData.streak) {
+    if (!levelData.streak && !weeklyConsistency.streakWeeks) {
       addToast(t('Completa un entrenamiento para iniciar tu racha.', { defaultValue: 'Completa un entrenamiento para iniciar tu racha.' }), 'info');
       return;
     }
 
-    if (!streakCountdown) {
-      addToast(t('Completa un entrenamiento para mantener tu racha.', { defaultValue: 'Completa un entrenamiento para mantener tu racha.' }), 'info');
-      return;
-    }
+    const time = streakCountdown && !streakCountdown.expired
+      ? `${streakCountdown.days ? `${streakCountdown.days} d ` : ''}${streakCountdown.hours} h ${streakCountdown.minutes} min`
+      : null;
 
-    if (streakCountdown.expired) {
-      addToast(t('El plazo para mantenerla terminó. Entrena cuanto antes para recuperarla.', { defaultValue: 'El plazo para mantenerla terminó. Entrena cuanto antes para recuperarla.' }), 'info');
-      return;
-    }
+    const streakHeader = weeklyConsistency.streakWeeks > 1
+      ? `🔥 Racha Semanal: Semana ${weeklyConsistency.streakWeeks} cumpliendo tu objetivo (${weeklyConsistency.daysThisWeek}/4 días esta semana).`
+      : `🔥 Racha actual: ${levelData.streak} ${levelData.streak === 1 ? 'día' : 'días'}.`;
 
-    const time = `${streakCountdown.days ? `${streakCountdown.days} d ` : ''}${streakCountdown.hours} h ${streakCountdown.minutes} min`;
-    addToast(t('Te quedan {{time}} para entrenar y mantener la racha. Los fines de semana están protegidos.', {
-      defaultValue: 'Te quedan {{time}} para entrenar y mantener la racha. Los fines de semana están protegidos.',
-      time
-    }), 'info');
+    const bufferMsg = time
+      ? ` Plazo disponible: ${time}. Los descansos biológicos y fines de semana están protegidos.`
+      : ' ¡Los descansos biológicos y fines de semana no rompen tu racha!';
+
+    addToast(streakHeader + bufferMsg, 'info');
   };
 
   useEffect(() => {
@@ -471,6 +474,50 @@ const Dashboard = ({ setView }) => {
         weeklyTimeDisplay: '0 min',
         weeklyRecapData: { totalVolume: 0, totalWorkouts: 0, totalDuration: 0, totalCalories: 0 }
       };
+    }
+  }, [workoutLog]);
+
+  const weeklyConsistency = useMemo(() => {
+    try {
+      const logs = Array.isArray(workoutLog) ? workoutLog : [];
+      if (logs.length === 0) return { streakWeeks: 0, targetDays: 4, daysThisWeek: 0 };
+
+      const now = new Date();
+      const startOfCurrentWeek = new Date(now);
+      const day = startOfCurrentWeek.getDay();
+      const diff = startOfCurrentWeek.getDate() - day + (day === 0 ? -6 : 1);
+      startOfCurrentWeek.setDate(diff);
+      startOfCurrentWeek.setHours(0, 0, 0, 0);
+
+      const thisWeekWorkouts = logs.filter(l => l?.workout_date && new Date(l.workout_date) >= startOfCurrentWeek);
+      const daysThisWeek = new Set(thisWeekWorkouts.map(l => String(l.workout_date).slice(0, 10))).size;
+
+      let streakWeeks = 0;
+      let checkWeekStart = new Date(startOfCurrentWeek);
+
+      for (let i = 0; i < 52; i++) {
+        const weekEnd = new Date(checkWeekStart);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+
+        const weekLogs = logs.filter(l => {
+          if (!l?.workout_date) return false;
+          const d = new Date(l.workout_date);
+          return d >= checkWeekStart && d < weekEnd;
+        });
+
+        if (weekLogs.length > 0) {
+          streakWeeks++;
+          checkWeekStart.setDate(checkWeekStart.getDate() - 7);
+        } else if (i === 0) {
+          checkWeekStart.setDate(checkWeekStart.getDate() - 7);
+        } else {
+          break;
+        }
+      }
+
+      return { streakWeeks, targetDays: 4, daysThisWeek };
+    } catch {
+      return { streakWeeks: 0, targetDays: 4, daysThisWeek: 0 };
     }
   }, [workoutLog]);
 
@@ -801,7 +848,7 @@ const Dashboard = ({ setView }) => {
             </div>
             <div className="flex items-center gap-1">
               <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary">
-                {levelData.streak} {t('DÍAS', { defaultValue: 'DÍAS' })}
+                {weeklyConsistency.streakWeeks > 1 ? `${weeklyConsistency.streakWeeks} ${t('SEM', { defaultValue: 'SEM' })}` : `${levelData.streak} ${t('DÍAS', { defaultValue: 'DÍAS' })}`}
               </span>
               <button
                 type="button"
@@ -1233,9 +1280,9 @@ const Dashboard = ({ setView }) => {
                   <span className="font-bold text-xs sm:text-sm whitespace-nowrap">{t('Ver Lista', { defaultValue: 'Ver Lista' })}</span>
                 </button>
               )}
-              <button onClick={handleSharePR} disabled={isSharing} className="glass bg-white/10 text-white px-5 md:px-8 py-3 md:py-4 rounded-full flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 border border-white/20">
-                {isSharing ? <Loader2 size={20} className="animate-spin shrink-0" /> : <Share2 size={20} className="shrink-0" />}
-                <span className="font-black text-sm sm:text-lg tracking-tight whitespace-nowrap">{t('Compartir Logro', { defaultValue: 'Compartir Logro' })}</span>
+              <button onClick={handleSharePR} disabled={isSharing} className="py-3 px-6 rounded-full bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] text-white flex items-center gap-2 shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50">
+                {isSharing ? <Loader2 size={20} className="animate-spin shrink-0" /> : <FaInstagram size={20} className="shrink-0" />}
+                <span className="font-black text-sm sm:text-base tracking-tight whitespace-nowrap">{t('Compartir en Stories', { defaultValue: 'Compartir en Stories' })}</span>
               </button>
             </div>
           </div>

@@ -350,7 +350,8 @@ const checkStreakWars = () => {
 
         // Si el último registro de actividad es anterior a hoy, está en peligro
         const lastActiveDate = new Date(user.last_activity_date).toISOString().split('T')[0];
-        return lastActiveDate < localDate;
+        const missed = countMissedWeekdays(lastActiveDate, localDate);
+        return missed >= 2;
       });
 
       if (!targetUsers.length) return;
@@ -441,7 +442,7 @@ const resetInactiveStreaks = () => {
         const missedWeekdays = countMissedWeekdays(lastActiveDate, localDate);
 
         // Si ha transcurrido al menos 1 día laborable requerido sin entrenar, el usuario ha perdido la racha
-        if (missedWeekdays > 0) {
+        if (missedWeekdays > 2) {
           const oldStreak = user.streak;
           user.streak = 0;
           await user.save();

@@ -1,4 +1,4 @@
 {
-  "version": "7.10.21",
-  "releaseNotes": "Actualización v7.10.21: Solución a ReferenceError/React.Children.only en ModalPortal, protección en modales y secciones del panel admin con AdminTabErrorBoundary, mensaje contextual en ErrorBoundary de vistas con reintento y recarga anti-bloqueo, y ajustes responsive en tracker de noticias (Canal Principal sin truncar y contador de visitas visible debajo sin scroll). | Actualización v7.10.20: Nuevo sistema de Tracker y Sniffing de visitas en el panel admin de noticias con telemetría en tiempo real."
+  "version": "7.10.22",
+  "releaseNotes": "Actualización v7.10.22: Nuevo Studio de Tarjetas para Instagram Stories (9:16) al estilo Strava y Spotify Wrapped con músculos entrenados, volumen total en kg, banner radiante de récord personal batido (PR), foto opcional de fondo (selfie/gym) y botón directo 'Compartir en Stories'. Mejora en Gamificación con Rachas Semanales (Consistency Score) y protección de descansos biológicos (48-72h) sin penalizar días de recuperación."
 }

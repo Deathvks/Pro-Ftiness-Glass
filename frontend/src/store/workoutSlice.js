@@ -960,7 +960,7 @@ export const createWorkoutSlice = (set, get) => ({
       clearRestTimerInStorage();
       stopNativeTimer();
 
-      return { success: true, message: 'Entrenamiento guardado exitosamente.' };
+      return { success: true, message: 'Entrenamiento guardado exitosamente.', newPRs: responseData?.newPRs || [] };
     } catch (error) {
       const errMsg = (error?.message || '').toLowerCase();
       const isNetworkFailure = 

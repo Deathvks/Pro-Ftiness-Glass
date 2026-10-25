@@ -1,42 +1,116 @@
 /* frontend/src/components/WorkoutShareCard.jsx */
 import React, { forwardRef, useMemo } from 'react';
-import { Clock, Flame, Trophy, TrendingUp } from 'lucide-react';
-import { FaBolt } from 'react-icons/fa';
+import { Clock, Flame, Trophy, TrendingUp, Zap, Sparkles, CheckCircle2, Award } from 'lucide-react';
+import { FaUserCircle, FaDumbbell } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 
-const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref) => {
-    const { t } = useTranslation(['exercise_names']);
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BACKEND_HOST = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+
+const WorkoutShareCard = forwardRef(({
+    workoutData,
+    userName,
+    userAvatar,
+    accentColor,
+    customBgPhoto,
+    musclesTrained = [],
+    newPRs = []
+}, ref) => {
+    const { t } = useTranslation(['exercise_names', 'translation']);
 
     if (!workoutData) return null;
 
     const accent = accentColor || '#22c55e';
     const { routineName, duration_seconds, calories_burned, details } = workoutData;
-    const safeName = routineName || "Entrenamiento Libre";
+    const safeName = routineName || t('Entrenamiento Libre', { defaultValue: 'Entrenamiento Libre' });
 
-    // Ajuste dinámico de fuente para el título
-    const getTitleClass = (text) => {
-        const len = text.length;
-        if (len > 60) return 'text-4xl';
-        if (len > 30) return 'text-5xl';
-        if (len > 15) return 'text-6xl';
-        return 'text-7xl';
-    };
+    // Avatar url resolution
+    const profileImgSrc = useMemo(() => {
+        if (!userAvatar) return null;
+        let url = userAvatar;
+        if (!url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('blob:')) {
+            const separator = url.startsWith('/') ? '' : '/';
+            url = `${BACKEND_HOST}${separator}${url}`;
+        }
+        const isLocalhost = url.includes('localhost') || url.includes('127.0.0.1');
+        if (!isLocalhost && url.startsWith('http:')) {
+            url = url.replace('http:', 'https:');
+        }
+        return url;
+    }, [userAvatar]);
 
+    // Format date in Spanish / local
     const dateStr = new Date().toLocaleDateString('es-ES', {
         weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
     }).toUpperCase().replace('.', '');
 
+    // Músculos entrenados extraídos automáticamente si no se pasaron explícitamente
+    const computedMuscles = useMemo(() => {
+        if (Array.isArray(musclesTrained) && musclesTrained.length > 0) {
+            return musclesTrained;
+        }
+
+        const detected = new Set();
+        (details || []).forEach(ex => {
+            const mg = ex.muscle_group || ex.muscles || ex.category;
+            if (mg) {
+                String(mg).split(',').forEach(m => {
+                    const clean = m.trim().toLowerCase();
+                    if (clean.includes('pecho') || clean.includes('chest') || clean.includes('pectoral')) detected.add('Pecho');
+                    else if (clean.includes('espalda') || clean.includes('back') || clean.includes('lats') || clean.includes('dorsal')) detected.add('Espalda');
+                    else if (clean.includes('pierna') || clean.includes('leg') || clean.includes('quad') || clean.includes('cuad') || clean.includes('femoral') || clean.includes('isquio')) detected.add('Piernas');
+                    else if (clean.includes('hombro') || clean.includes('shoulder') || clean.includes('deltoid')) detected.add('Hombros');
+                    else if (clean.includes('biceps') || clean.includes('bíceps')) detected.add('Bíceps');
+                    else if (clean.includes('triceps') || clean.includes('tríceps')) detected.add('Tríceps');
+                    else if (clean.includes('brazo') || clean.includes('arm')) detected.add('Brazos');
+                    else if (clean.includes('glute') || clean.includes('glúteo')) detected.add('Glúteos');
+                    else if (clean.includes('abs') || clean.includes('core') || clean.includes('abdomina')) detected.add('Core');
+                    else if (clean.includes('gemelo') || clean.includes('calves')) detected.add('Gemelos');
+                });
+            } else {
+                const name = (ex.exerciseName || '').toLowerCase();
+                if (name.includes('banca') || name.includes('bench') || name.includes('pecho') || name.includes('aperturas') || name.includes('chest')) detected.add('Pecho');
+                else if (name.includes('dominada') || name.includes('pull up') || name.includes('remo') || name.includes('row') || name.includes('jalon') || name.includes('lat') || name.includes('espalda')) detected.add('Espalda');
+                else if (name.includes('sentadilla') || name.includes('squat') || name.includes('prensa') || name.includes('zancada') || name.includes('quadriceps') || name.includes('femoral') || name.includes('isquios')) detected.add('Piernas');
+                else if (name.includes('militar') || name.includes('shoulder') || name.includes('deltoides') || name.includes('elevacion lateral') || name.includes('hombro')) detected.add('Hombros');
+                else if (name.includes('biceps') || name.includes('curl')) detected.add('Bíceps');
+                else if (name.includes('triceps') || name.includes('tríceps') || name.includes('fondos') || name.includes('pushdown') || name.includes('press frances')) detected.add('Tríceps');
+                else if (name.includes('crunch') || name.includes('plancha') || name.includes('core') || name.includes('abdominal')) detected.add('Core');
+                else if (name.includes('peso muerto') || name.includes('deadlift')) { detected.add('Espalda'); detected.add('Piernas'); }
+            }
+        });
+
+        const list = Array.from(detected);
+        return list.length > 0 ? list : ['Fuerza Integral'];
+    }, [details, musclesTrained]);
+
+    // Estadísticas totales
     const stats = useMemo(() => {
         let totalVolume = 0;
-        details?.forEach(ex => {
+        let totalSets = 0;
+        let totalReps = 0;
+
+        (details || []).forEach(ex => {
             ex.setsDone?.forEach(set => {
                 const w = parseFloat(set.weight_kg) || 0;
                 const r = parseFloat(set.reps) || 0;
                 totalVolume += w * r;
+                if (r > 0) {
+                    totalSets++;
+                    totalReps += r;
+                }
             });
         });
-        return { totalVolume };
+
+        return { totalVolume, totalSets, totalReps };
     }, [details]);
+
+    // PRs batidos en la sesión
+    const sessionPRs = useMemo(() => {
+        if (Array.isArray(newPRs) && newPRs.length > 0) return newPRs;
+        if (Array.isArray(workoutData?.newPRs) && workoutData.newPRs.length > 0) return workoutData.newPRs;
+        return [];
+    }, [newPRs, workoutData?.newPRs]);
 
     const formatTime = (seconds) => {
         const h = Math.floor(seconds / 3600);
@@ -47,7 +121,6 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
 
     const getSetsSummary = (sets) => {
         if (!sets || sets.length === 0) return "Sin peso";
-
         const validSets = sets.filter(s => parseFloat(s.reps) > 0);
         const effectiveCount = validSets.filter(s => !s.is_warmup && !s.is_dropset).length;
         const dropCount = validSets.filter(s => s.is_dropset).length;
@@ -80,152 +153,281 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
     };
 
     const getMaxWeight = (sets) => {
-        // Si no hay sets o array vacío -> null (mostrar "-")
         if (!sets || sets.length === 0) return null;
-
-        // Filtramos solo series efectivas (con repeticiones, sin calentar, sin dropset)
         const workingSets = sets.filter(s =>
             parseFloat(s.reps) > 0 &&
             !s.is_warmup &&
             !s.is_dropset
         );
-
-        // Si no hay series efectivas -> null (mostrar "-")
         if (workingSets.length === 0) return null;
-
-        // Obtenemos pesos. Si es NaN (campo vacío) asumimos 0.
         const weights = workingSets.map(s => {
             const val = parseFloat(s.weight_kg);
             return isNaN(val) ? 0 : val;
         });
-
-        // Devolvemos el máximo, permitiendo que sea 0.
         return Math.max(...weights);
+    };
+
+    // Ajuste tipográfico dinámico según longitud del título
+    const getTitleClass = (text) => {
+        const len = (text || '').length;
+        if (len > 45) return 'text-4xl';
+        if (len > 25) return 'text-5xl';
+        if (len > 14) return 'text-6xl';
+        return 'text-7xl';
     };
 
     return (
         <div
             ref={ref}
-            className="relative w-[1080px] min-h-[1920px] h-auto bg-black text-white flex flex-col font-sans"
+            className="relative w-[1080px] h-[1920px] bg-black text-white flex flex-col font-sans overflow-hidden select-none"
         >
-            {/* FONDOS */}
-            <div className="absolute top-[-250px] left-1/2 -translate-x-1/2 w-[1200px] h-[800px] rounded-full blur-[150px]" style={{ background: accent, opacity: 0.6 }} />
-            <div className="absolute bottom-[-200px] right-[-200px] w-[900px] h-[900px] rounded-full blur-[180px]" style={{ background: accent, opacity: 0.4 }} />
-            <div className="absolute inset-0 opacity-[0.07] pointer-events-none" style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+            {/* FONDO: FOTO DEL USUARIO O MESH GRADIENT ESTILO SPOTIFY WRAPPED */}
+            {customBgPhoto ? (
+                <div className="absolute inset-0 z-0">
+                    <img
+                        src={customBgPhoto}
+                        alt="Workout Background"
+                        className="w-full h-full object-cover"
+                        crossOrigin="anonymous"
+                    />
+                    {/* Liquid Glass dark gradient overlays para contraste supremo */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/60 to-black/95" />
+                    <div className="absolute inset-0 backdrop-blur-[1px]" />
+                </div>
+            ) : (
+                <div className="absolute inset-0 z-0 bg-[#06070a]">
+                    {/* Orbes de luz atmosférica de neón */}
+                    <div
+                        className="absolute top-[-150px] left-[-150px] w-[950px] h-[950px] rounded-full blur-[160px] opacity-40"
+                        style={{ background: accent }}
+                    />
+                    <div
+                        className="absolute top-[35%] right-[-200px] w-[850px] h-[850px] rounded-full blur-[180px] opacity-30"
+                        style={{ background: accent }}
+                    />
+                    <div
+                        className="absolute bottom-[-150px] left-[15%] w-[1000px] h-[1000px] rounded-full blur-[200px] opacity-35 bg-blue-600"
+                    />
+                    {/* Trama sutil de textura Wrapped */}
+                    <div
+                        className="absolute inset-0 opacity-[0.06] pointer-events-none"
+                        style={{
+                            backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.7) 1px, transparent 0)',
+                            backgroundSize: '48px 48px'
+                        }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/80" />
+                </div>
+            )}
 
-            {/* CONTENIDO */}
-            <div className="relative z-10 flex-1 flex flex-col p-12 pt-20">
+            {/* CONTENIDO PRINCIPAL: 1080x1920 PADDING COMODO */}
+            <div className="relative z-10 flex-1 flex flex-col justify-between p-14 pt-20 pb-16">
 
-                {/* HEADER */}
-                <div className="flex justify-between items-start mb-10">
-                    <div className="flex flex-col gap-2">
-                        <h1 className="text-5xl font-black tracking-tighter text-white uppercase italic whitespace-nowrap pb-1">
-                            Pro Fitness Glass
-                        </h1>
-                        <div className="h-2 w-32 rounded-full mt-1" style={{ background: accent }} />
-                    </div>
-
-                    {/* FECHA: SOLUCIÓN SVG PARA CENTRADO PERFECTO */}
-                    <div className="bg-white/10 backdrop-blur-md border border-white/10 h-16 rounded-2xl overflow-hidden relative w-[280px]">
-                        <svg
-                            className="w-full h-full"
-                            viewBox="0 0 280 64"
-                            preserveAspectRatio="xMidYMid meet"
-                        >
-                            <text
-                                x="50%"
-                                y="55%"
-                                dominantBaseline="middle"
-                                textAnchor="middle"
-                                fill="#d1d5db"
-                                fontSize="20"
-                                fontWeight="bold"
-                                letterSpacing="0.1em"
-                                style={{ fontFamily: 'sans-serif' }}
+                {/* 1. HEADER: BRANDING + ATLETA + FECHA */}
+                <div className="flex flex-col gap-6">
+                    <div className="flex justify-between items-center w-full">
+                        {/* Marca Pro Fitness Glass */}
+                        <div className="flex items-center gap-4">
+                            <div
+                                className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl border border-white/20"
+                                style={{ background: `linear-gradient(135deg, ${accent}, #1e3a8a)` }}
                             >
-                                {dateStr}
-                            </text>
-                        </svg>
-                    </div>
-                </div>
-
-                {/* TÍTULO RUTINA */}
-                <div className="mb-10 w-full">
-                    <span className="font-bold tracking-[0.2em] uppercase text-2xl mb-3 block" style={{ color: accent }}>
-                        Sesión Completada
-                    </span>
-                    <h2 className={`${getTitleClass(safeName)} font-black text-white leading-tight uppercase w-full break-words`}>
-                        {safeName}
-                    </h2>
-                </div>
-
-                {/* GRID MÉTRICAS */}
-                <div className="grid grid-cols-3 gap-6 mb-8">
-                    {[
-                        { icon: Clock, val: formatTime(duration_seconds || 0), label: 'Tiempo', color: 'text-white' },
-                        { icon: Flame, val: Math.round(calories_burned || 0), label: 'Kcal', color: accent, isStyle: true },
-                        { icon: Trophy, val: stats.totalVolume > 1000 ? (stats.totalVolume / 1000).toFixed(1) + 't' : stats.totalVolume, label: 'Volumen', color: 'text-yellow-500' }
-                    ].map((item, idx) => (
-                        <div key={idx} className="bg-[#111] border border-white/10 rounded-[2.5rem] p-8 flex flex-col items-center justify-center aspect-square shadow-2xl relative overflow-hidden">
-                            <item.icon size={64} strokeWidth={1.5} className={`mb-4 ${!item.isStyle ? item.color : ''} ${item.label === 'Tiempo' ? 'opacity-80' : ''}`} style={item.isStyle ? { color: item.color } : {}} />
-                            <span className="text-6xl font-black text-white tracking-tighter">{item.val}</span>
-                            <span className="text-xl text-gray-500 font-bold uppercase mt-2">{item.label}</span>
+                                <Sparkles size={28} className="text-white drop-shadow" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-3xl font-black tracking-wider text-white uppercase italic drop-shadow-md">
+                                    Pro Fitness Glass
+                                </span>
+                                <span className="text-xs font-bold uppercase tracking-[0.25em] text-white/60">
+                                    Workout Story • Liquid Glass
+                                </span>
+                            </div>
                         </div>
-                    ))}
-                </div>
 
-                {/* LISTA DE EJERCICIOS */}
-                <div className="flex-1 bg-[#0a0a0a] rounded-[3rem] border border-white/10 p-6 relative flex flex-col">
-
-                    <div className="flex items-center gap-4 mb-6 pb-6 border-b border-white/10 shrink-0">
-                        <TrendingUp size={32} strokeWidth={3} style={{ color: accent }} className="translate-y-[5px]" />
-                        <h3 className="text-3xl font-bold text-white leading-none">
-                            Resumen de Ejercicios
-                        </h3>
+                        {/* Fecha en Badge de Cristal */}
+                        <div className="bg-white/10 backdrop-blur-xl border border-white/15 px-6 py-3.5 rounded-2xl shadow-xl flex items-center gap-3">
+                            <span className="text-lg font-bold tracking-widest text-white/90 font-mono">
+                                {dateStr}
+                            </span>
+                        </div>
                     </div>
 
-                    <div className="flex flex-col gap-3">
-                        {details && details.map((ex, i) => {
-                            const maxWeight = getMaxWeight(ex.setsDone);
+                    {/* Fila del Atleta */}
+                    <div className="flex items-center justify-between bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl">
+                        <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/30 bg-black/40 flex items-center justify-center shrink-0 shadow-lg">
+                                {profileImgSrc ? (
+                                    <img
+                                        src={profileImgSrc}
+                                        alt={userName}
+                                        className="w-full h-full object-cover"
+                                        crossOrigin="anonymous"
+                                    />
+                                ) : (
+                                    <FaUserCircle className="w-full h-full text-white/40" />
+                                )}
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                                    {userName || 'Atleta Pro'}
+                                    <CheckCircle2 size={20} className="text-sky-400 fill-sky-400/20" />
+                                </span>
+                                <span className="text-sm font-semibold text-white/60 tracking-wider uppercase">
+                                    Sesión Registrada
+                                </span>
+                            </div>
+                        </div>
 
+                        <div
+                            className="px-5 py-2 rounded-full text-xs font-black tracking-widest uppercase border border-white/20 shadow-md"
+                            style={{ backgroundColor: `${accent}25`, color: accent }}
+                        >
+                            Verificado ✓
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. ZONA CENTRAL: TÍTULO RUTINA + MÚSCULOS ENTRENADOS */}
+                <div className="flex flex-col gap-5 my-6">
+                    <div>
+                        <span
+                            className="font-extrabold tracking-[0.3em] uppercase text-xl mb-3 block drop-shadow"
+                            style={{ color: accent }}
+                        >
+                            Sesión Completada
+                        </span>
+                        <h2 className={`${getTitleClass(safeName)} font-black text-white leading-[1.05] uppercase tracking-tight break-words drop-shadow-xl`}>
+                            {safeName}
+                        </h2>
+                    </div>
+
+                    {/* BADGES: MÚSCULOS ENTRENADOS (REQUISITO CLAVE) */}
+                    {computedMuscles.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-3 pt-2">
+                            <span className="text-xs font-black uppercase tracking-widest text-white/50 mr-1">
+                                Músculos:
+                            </span>
+                            {computedMuscles.map((muscle, idx) => (
+                                <div
+                                    key={idx}
+                                    className="px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg flex items-center gap-2.5"
+                                >
+                                    <div className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: accent, color: accent }} />
+                                    <span className="text-lg font-black tracking-wide text-white uppercase">
+                                        {muscle}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* BANNER DESTACADO: RÉCORD PERSONAL BATIDO (SI LO HUBO) */}
+                    {sessionPRs.length > 0 && (
+                        <div className="mt-2 bg-gradient-to-r from-amber-500/25 via-yellow-500/20 to-amber-500/10 border-2 border-yellow-400/50 rounded-[2.2rem] p-6 backdrop-blur-2xl flex items-center gap-5 shadow-[0_0_40px_rgba(245,158,11,0.35)] animate-pulse">
+                            <div className="w-16 h-16 rounded-2xl bg-yellow-400/20 border border-yellow-400/50 flex items-center justify-center text-yellow-300 shrink-0 shadow-lg">
+                                <Trophy size={38} className="drop-shadow-[0_0_12px_rgba(250,204,21,0.8)]" />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-yellow-300 font-black tracking-[0.2em] text-sm uppercase flex items-center gap-2">
+                                    <Award size={16} /> ¡Nuevo Récord Personal Batido!
+                                </span>
+                                <p className="text-2xl font-black text-white leading-tight truncate">
+                                    {t(sessionPRs[0].exercise, { ns: 'exercise_names', defaultValue: sessionPRs[0].exercise })} • {sessionPRs[0].weight} kg
+                                    {sessionPRs.length > 1 && (
+                                        <span className="text-yellow-300/80 text-lg font-bold ml-2">
+                                            (+{sessionPRs.length - 1} más)
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* 3. BENTO GRID DE MÉTRICAS (ESTILO SPOTIFY WRAPPED / STRAVA) */}
+                <div className="grid grid-cols-3 gap-5 my-4">
+                    {/* VOLUMEN TOTAL (EN KG O TONELADAS) */}
+                    <div className="bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-[2.5rem] p-6 flex flex-col items-center justify-center aspect-square shadow-2xl relative overflow-hidden group">
+                        <div className="p-3.5 rounded-2xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 mb-3 shadow-md">
+                            <FaDumbbell size={36} />
+                        </div>
+                        <span className="text-5xl font-black text-white tracking-tighter drop-shadow-md">
+                            {stats.totalVolume >= 1000
+                                ? (stats.totalVolume >= 10000
+                                    ? (stats.totalVolume / 1000).toFixed(1) + 't'
+                                    : stats.totalVolume.toLocaleString('es-ES') + 'kg')
+                                : `${stats.totalVolume}kg`}
+                        </span>
+                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-2">
+                            Volumen Total
+                        </span>
+                    </div>
+
+                    {/* TIEMPO */}
+                    <div className="bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-[2.5rem] p-6 flex flex-col items-center justify-center aspect-square shadow-2xl relative overflow-hidden">
+                        <div className="p-3.5 rounded-2xl bg-sky-500/20 border border-sky-500/30 text-sky-400 mb-3 shadow-md">
+                            <Clock size={36} />
+                        </div>
+                        <span className="text-5xl font-black text-white tracking-tighter drop-shadow-md">
+                            {formatTime(duration_seconds || 0)}
+                        </span>
+                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-2">
+                            Tiempo
+                        </span>
+                    </div>
+
+                    {/* CALORÍAS */}
+                    <div className="bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-[2.5rem] p-6 flex flex-col items-center justify-center aspect-square shadow-2xl relative overflow-hidden">
+                        <div
+                            className="p-3.5 rounded-2xl border mb-3 shadow-md"
+                            style={{
+                                backgroundColor: `${accent}25`,
+                                borderColor: `${accent}40`,
+                                color: accent
+                            }}
+                        >
+                            <Flame size={36} />
+                        </div>
+                        <span className="text-5xl font-black text-white tracking-tighter drop-shadow-md">
+                            {Math.round(calories_burned || 0)}
+                        </span>
+                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-2">
+                            Calorías (kcal)
+                        </span>
+                    </div>
+                </div>
+
+                {/* 4. LISTA DE EJERCICIOS DESTACADOS */}
+                <div className="bg-white/[0.06] backdrop-blur-2xl rounded-[2.8rem] border border-white/15 p-7 shadow-2xl flex flex-col flex-1 max-h-[460px] overflow-hidden my-2">
+                    <div className="flex items-center justify-between pb-5 border-b border-white/10 mb-4 shrink-0">
+                        <div className="flex items-center gap-3">
+                            <TrendingUp size={28} style={{ color: accent }} />
+                            <h3 className="text-2xl font-black text-white tracking-tight uppercase">
+                                Ejercicios de la Sesión
+                            </h3>
+                        </div>
+                        <span className="text-sm font-bold text-white/60">
+                            {stats.totalSets} Series Efectivas
+                        </span>
+                    </div>
+
+                    <div className="flex flex-col gap-3.5 overflow-hidden flex-1 justify-center">
+                        {details && details.slice(0, 5).map((ex, i) => {
+                            const maxWeight = getMaxWeight(ex.setsDone);
                             return (
-                                <div key={i} className="flex justify-between items-center w-full">
-                                    <div className="flex flex-col min-w-0 pr-4 flex-1 gap-1">
-                                        <span
-                                            className="text-3xl font-bold text-gray-200 leading-normal block pb-2"
-                                            style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-                                        >
+                                <div key={i} className="flex justify-between items-center w-full bg-white/[0.04] border border-white/5 rounded-2xl px-5 py-3 shadow-sm">
+                                    <div className="flex flex-col min-w-0 pr-4 flex-1">
+                                        <span className="text-2xl font-black text-white truncate">
                                             {t(ex.exerciseName, { ns: 'exercise_names', defaultValue: ex.exerciseName })}
                                         </span>
-
-                                        <div className="flex items-center gap-2 text-gray-500 pb-5">
-                                            <FaBolt size={20} className="shrink-0 translate-y-[2px]" />
-                                            <div className="text-xl font-medium leading-none">
-                                                {getSetsSummary(ex.setsDone)}
-                                            </div>
+                                        <div className="flex items-center gap-2 text-white/50 text-base font-semibold mt-0.5">
+                                            <Zap size={15} style={{ color: accent }} className="shrink-0" />
+                                            <span>{getSetsSummary(ex.setsDone)}</span>
                                         </div>
                                     </div>
 
-                                    {/* CHIP PESO: SOLUCIÓN SVG */}
-                                    <div className="shrink-0 min-w-[140px] h-16 bg-white/5 border border-white/10 rounded-xl overflow-hidden relative">
-                                        <svg
-                                            className="w-full h-full"
-                                            viewBox="0 0 140 64"
-                                            preserveAspectRatio="xMidYMid meet"
-                                        >
-                                            <text
-                                                x="50%"
-                                                y="55%"
-                                                dominantBaseline="middle"
-                                                textAnchor="middle"
-                                                fill="white"
-                                                fontSize="24"
-                                                fontWeight="bold"
-                                                style={{ fontFamily: 'sans-serif' }}
-                                            >
-                                                {maxWeight !== null ? `${maxWeight} kg` : '-'}
-                                            </text>
-                                        </svg>
+                                    <div className="shrink-0 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-xl font-black text-white shadow-inner">
+                                        {maxWeight !== null ? `${maxWeight} kg` : '-'}
                                     </div>
                                 </div>
                             );
@@ -233,11 +435,19 @@ const WorkoutShareCard = forwardRef(({ workoutData, userName, accentColor }, ref
                     </div>
                 </div>
 
-                {/* FOOTER */}
-                <div className="mt-8 flex justify-between items-center opacity-60 shrink-0">
-                    <span className="text-2xl font-bold text-white">Entreno de {userName || 'Atleta'}</span>
-                    <span className="text-xl font-medium text-gray-400">pro-fitness-glass.zeabur.app</span>
+                {/* 5. FOOTER ELEGANTE (STRAVA / WRAPPED BRANDING) */}
+                <div className="mt-6 flex justify-between items-center pt-6 border-t border-white/15 shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 rounded-full animate-ping" style={{ backgroundColor: accent }} />
+                        <span className="text-xl font-extrabold text-white tracking-wide">
+                            pro-fitness-glass.zeabur.app
+                        </span>
+                    </div>
+                    <span className="text-lg font-black tracking-widest uppercase text-white/60 font-mono">
+                        #PROFITNESSGLASS
+                    </span>
                 </div>
+
             </div>
         </div>
     );

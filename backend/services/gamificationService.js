@@ -265,7 +265,7 @@ export const checkStreak = async (userId, rawDate, opts = {}) => {
             // Calculamos cuántos días laborables (lunes a viernes) se perdieron entre el último entrenamiento y hoy
             const missedWeekdays = countMissedWeekdays(lastActivityStr, todayDateStr);
 
-            if (missedWeekdays === 0) {
+            if (missedWeekdays <= 2) {
                 // No se perdió ningún día de entrenamiento requerido (fueron días consecutivos o fin de semana de descanso)
                 user.streak = (user.streak || 0) + 1;
                 const badgeId = STREAK_THRESHOLDS[user.streak];
@@ -307,7 +307,7 @@ export const syncUserStreak = async (userIdOrUser, rawDate = null, opts = {}) =>
 
         const missedWeekdays = countMissedWeekdays(lastActiveStr, todayStr);
 
-        if (missedWeekdays > 0) {
+        if (missedWeekdays > 2) {
             user.streak = 0;
             await user.save({ transaction });
         }
