@@ -1,7 +1,16 @@
 /* frontend/src/components/WorkoutShareCard.jsx */
 import React, { forwardRef, useMemo } from 'react';
-import { Clock, Flame, Trophy, TrendingUp, Zap, Sparkles, CheckCircle2, Award } from 'lucide-react';
-import { FaUserCircle, FaDumbbell } from 'react-icons/fa';
+import {
+    FaDumbbell,
+    FaBolt,
+    FaClock,
+    FaTrophy,
+    FaMedal,
+    FaCircleCheck,
+    FaCircleUser,
+    FaArrowTrendUp,
+    FaStar
+} from 'react-icons/fa6';
 import { useTranslation } from 'react-i18next';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -84,25 +93,36 @@ const WorkoutShareCard = forwardRef(({
         return list.length > 0 ? list : ['Fuerza Integral'];
     }, [details, musclesTrained]);
 
-    // Estadísticas totales
+    // Estadísticas totales orientadas al alto valor: Carga Máxima y Series Efectivas (sin volumen total en kg)
     const stats = useMemo(() => {
-        let totalVolume = 0;
         let totalSets = 0;
+        let effectiveSets = 0;
         let totalReps = 0;
+        let maxWeight = 0;
 
         (details || []).forEach(ex => {
-            ex.setsDone?.forEach(set => {
+            (ex.setsDone || []).forEach(set => {
                 const w = parseFloat(set.weight_kg) || 0;
                 const r = parseFloat(set.reps) || 0;
-                totalVolume += w * r;
                 if (r > 0) {
                     totalSets++;
                     totalReps += r;
+                    if (!set.is_warmup) {
+                        effectiveSets++;
+                    }
+                    if (w > maxWeight) {
+                        maxWeight = w;
+                    }
                 }
             });
         });
 
-        return { totalVolume, totalSets, totalReps };
+        return {
+            totalSets,
+            effectiveSets: effectiveSets > 0 ? effectiveSets : totalSets,
+            totalReps,
+            maxWeight
+        };
     }, [details]);
 
     // PRs batidos en la sesión
@@ -220,19 +240,19 @@ const WorkoutShareCard = forwardRef(({
                 </div>
             )}
 
-            {/* CONTENIDO PRINCIPAL: 1080x1920 PADDING COMODO */}
+            {/* CONTENIDO PRINCIPAL: 1080x1920 PADDING CÓMODO */}
             <div className="relative z-10 flex-1 flex flex-col justify-between p-14 pt-20 pb-16">
 
                 {/* 1. HEADER: BRANDING + ATLETA + FECHA */}
                 <div className="flex flex-col gap-6">
                     <div className="flex justify-between items-center w-full">
-                        {/* Marca Pro Fitness Glass */}
+                        {/* Marca Pro Fitness Glass con Icono FontAwesome */}
                         <div className="flex items-center gap-4">
                             <div
                                 className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl border border-white/20"
                                 style={{ background: `linear-gradient(135deg, ${accent}, #1e3a8a)` }}
                             >
-                                <Sparkles size={28} className="text-white drop-shadow" />
+                                <FaStar size={26} className="text-white drop-shadow" />
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-3xl font-black tracking-wider text-white uppercase italic drop-shadow-md">
@@ -264,13 +284,13 @@ const WorkoutShareCard = forwardRef(({
                                         crossOrigin="anonymous"
                                     />
                                 ) : (
-                                    <FaUserCircle className="w-full h-full text-white/40" />
+                                    <FaCircleUser className="w-full h-full text-white/40" />
                                 )}
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
                                     {userName || 'Atleta Pro'}
-                                    <CheckCircle2 size={20} className="text-sky-400 fill-sky-400/20" />
+                                    <FaCircleCheck size={20} className="text-sky-400" />
                                 </span>
                                 <span className="text-sm font-semibold text-white/60 tracking-wider uppercase">
                                     Sesión Registrada
@@ -301,7 +321,7 @@ const WorkoutShareCard = forwardRef(({
                         </h2>
                     </div>
 
-                    {/* BADGES: MÚSCULOS ENTRENADOS (REQUISITO CLAVE) */}
+                    {/* BADGES: MÚSCULOS ENTRENADOS */}
                     {computedMuscles.length > 0 && (
                         <div className="flex flex-wrap items-center gap-3 pt-2">
                             <span className="text-xs font-black uppercase tracking-widest text-white/50 mr-1">
@@ -325,11 +345,11 @@ const WorkoutShareCard = forwardRef(({
                     {sessionPRs.length > 0 && (
                         <div className="mt-2 bg-gradient-to-r from-amber-500/25 via-yellow-500/20 to-amber-500/10 border-2 border-yellow-400/50 rounded-[2.2rem] p-6 backdrop-blur-2xl flex items-center gap-5 shadow-[0_0_40px_rgba(245,158,11,0.35)] animate-pulse">
                             <div className="w-16 h-16 rounded-2xl bg-yellow-400/20 border border-yellow-400/50 flex items-center justify-center text-yellow-300 shrink-0 shadow-lg">
-                                <Trophy size={38} className="drop-shadow-[0_0_12px_rgba(250,204,21,0.8)]" />
+                                <FaTrophy size={36} className="drop-shadow-[0_0_12px_rgba(250,204,21,0.8)]" />
                             </div>
                             <div className="flex flex-col min-w-0">
                                 <span className="text-yellow-300 font-black tracking-[0.2em] text-sm uppercase flex items-center gap-2">
-                                    <Award size={16} /> ¡Nuevo Récord Personal Batido!
+                                    <FaMedal size={16} /> ¡Nuevo Récord Personal Batido!
                                 </span>
                                 <p className="text-2xl font-black text-white leading-tight truncate">
                                     {t(sessionPRs[0].exercise, { ns: 'exercise_names', defaultValue: sessionPRs[0].exercise })} • {sessionPRs[0].weight} kg
@@ -344,39 +364,26 @@ const WorkoutShareCard = forwardRef(({
                     )}
                 </div>
 
-                {/* 3. BENTO GRID DE MÉTRICAS (ESTILO SPOTIFY WRAPPED / STRAVA) */}
+                {/* 3. BENTO GRID DE MÉTRICAS DE ALTO VALOR (MÉTRICAS QUE REALMENTE IMPORTAN AL ATLETA) */}
                 <div className="grid grid-cols-3 gap-5 my-4">
-                    {/* VOLUMEN TOTAL (EN KG O TONELADAS) */}
+                    {/* MÉTRICA 1: CARGA MÁXIMA (TOP LIFT DEL DÍA) */}
                     <div className="bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-[2.5rem] p-6 flex flex-col items-center justify-center aspect-square shadow-2xl relative overflow-hidden group">
-                        <div className="p-3.5 rounded-2xl bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 mb-3 shadow-md">
+                        <div className="p-3.5 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400 mb-3 shadow-md">
                             <FaDumbbell size={36} />
                         </div>
                         <span className="text-5xl font-black text-white tracking-tighter drop-shadow-md">
-                            {stats.totalVolume >= 1000
-                                ? (stats.totalVolume >= 10000
-                                    ? (stats.totalVolume / 1000).toFixed(1) + 't'
-                                    : stats.totalVolume.toLocaleString('es-ES') + 'kg')
-                                : `${stats.totalVolume}kg`}
+                            {stats.maxWeight > 0
+                                ? `${stats.maxWeight}kg`
+                                : (stats.totalReps > 0 ? `${stats.totalReps}` : `${stats.effectiveSets}`)}
                         </span>
-                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-2">
-                            Volumen Total
-                        </span>
-                    </div>
-
-                    {/* TIEMPO */}
-                    <div className="bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-[2.5rem] p-6 flex flex-col items-center justify-center aspect-square shadow-2xl relative overflow-hidden">
-                        <div className="p-3.5 rounded-2xl bg-sky-500/20 border border-sky-500/30 text-sky-400 mb-3 shadow-md">
-                            <Clock size={36} />
-                        </div>
-                        <span className="text-5xl font-black text-white tracking-tighter drop-shadow-md">
-                            {formatTime(duration_seconds || 0)}
-                        </span>
-                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-2">
-                            Tiempo
+                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-2 text-center">
+                            {stats.maxWeight > 0
+                                ? 'Carga Máxima'
+                                : (stats.totalReps > 0 ? 'Repeticiones' : 'Series')}
                         </span>
                     </div>
 
-                    {/* CALORÍAS */}
+                    {/* MÉTRICA 2: SERIES EFECTIVAS (ESTÍMULO REAL) */}
                     <div className="bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-[2.5rem] p-6 flex flex-col items-center justify-center aspect-square shadow-2xl relative overflow-hidden">
                         <div
                             className="p-3.5 rounded-2xl border mb-3 shadow-md"
@@ -386,13 +393,26 @@ const WorkoutShareCard = forwardRef(({
                                 color: accent
                             }}
                         >
-                            <Flame size={36} />
+                            <FaBolt size={34} />
                         </div>
                         <span className="text-5xl font-black text-white tracking-tighter drop-shadow-md">
-                            {Math.round(calories_burned || 0)}
+                            {stats.effectiveSets}
                         </span>
-                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-2">
-                            Calorías (kcal)
+                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-2 text-center">
+                            Series Efectivas
+                        </span>
+                    </div>
+
+                    {/* MÉTRICA 3: TIEMPO ACTIVO & CALORÍAS */}
+                    <div className="bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-[2.5rem] p-6 flex flex-col items-center justify-center aspect-square shadow-2xl relative overflow-hidden">
+                        <div className="p-3.5 rounded-2xl bg-sky-500/20 border border-sky-500/30 text-sky-400 mb-3 shadow-md">
+                            <FaClock size={36} />
+                        </div>
+                        <span className="text-5xl font-black text-white tracking-tighter drop-shadow-md">
+                            {formatTime(duration_seconds || 0)}
+                        </span>
+                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-2 text-center">
+                            {calories_burned > 0 ? `${Math.round(calories_burned)} kcal` : 'Tiempo Activo'}
                         </span>
                     </div>
                 </div>
@@ -401,13 +421,13 @@ const WorkoutShareCard = forwardRef(({
                 <div className="bg-white/[0.06] backdrop-blur-2xl rounded-[2.8rem] border border-white/15 p-7 shadow-2xl flex flex-col flex-1 max-h-[460px] overflow-hidden my-2">
                     <div className="flex items-center justify-between pb-5 border-b border-white/10 mb-4 shrink-0">
                         <div className="flex items-center gap-3">
-                            <TrendingUp size={28} style={{ color: accent }} />
+                            <FaArrowTrendUp size={24} style={{ color: accent }} />
                             <h3 className="text-2xl font-black text-white tracking-tight uppercase">
                                 Ejercicios de la Sesión
                             </h3>
                         </div>
                         <span className="text-sm font-bold text-white/60">
-                            {stats.totalSets} Series Efectivas
+                            {stats.effectiveSets} Series Efectivas
                         </span>
                     </div>
 
@@ -421,7 +441,7 @@ const WorkoutShareCard = forwardRef(({
                                             {t(ex.exerciseName, { ns: 'exercise_names', defaultValue: ex.exerciseName })}
                                         </span>
                                         <div className="flex items-center gap-2 text-white/50 text-base font-semibold mt-0.5">
-                                            <Zap size={15} style={{ color: accent }} className="shrink-0" />
+                                            <FaBolt size={14} style={{ color: accent }} className="shrink-0" />
                                             <span>{getSetsSummary(ex.setsDone)}</span>
                                         </div>
                                     </div>
@@ -435,7 +455,7 @@ const WorkoutShareCard = forwardRef(({
                     </div>
                 </div>
 
-                {/* 5. FOOTER ELEGANTE (STRAVA / WRAPPED BRANDING) */}
+                {/* 5. FOOTER ELEGANTE (PRO FITNESS BRANDING) */}
                 <div className="mt-6 flex justify-between items-center pt-6 border-t border-white/15 shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-3 h-3 rounded-full animate-ping" style={{ backgroundColor: accent }} />

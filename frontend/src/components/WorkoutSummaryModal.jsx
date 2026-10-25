@@ -1,7 +1,18 @@
 /* frontend/src/components/WorkoutSummaryModal.jsx */
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Share2, Clock, Flame, Target, ArrowLeft, Download, Camera, Image, Trash2, Award, Sparkles, Check } from 'lucide-react';
-import { FaInstagram } from 'react-icons/fa';
+import { Clock, Flame, Target, Award, Sparkles, Check } from 'lucide-react';
+import {
+  FaInstagram,
+  FaWhatsapp,
+  FaXTwitter,
+  FaTelegram,
+  FaDownload,
+  FaCamera,
+  FaTrash,
+  FaXmark,
+  FaArrowLeft,
+  FaShareNodes
+} from 'react-icons/fa6';
 import { useTranslation } from 'react-i18next';
 import html2canvas from 'html2canvas';
 import useAppStore from '../store/useAppStore';
@@ -20,6 +31,13 @@ const formatTime = (timeInSeconds) => {
   const seconds = String(timeInSeconds % 60).padStart(2, '0');
   if (hours !== '00') return `${hours}:${minutes}:${seconds}`;
   return `${minutes}:${seconds}`;
+};
+
+const formatDisplayTime = (timeInSeconds) => {
+  const h = Math.floor(timeInSeconds / 3600);
+  const m = Math.floor((timeInSeconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
 };
 
 const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
@@ -126,7 +144,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
     showToast('Foto eliminada. Usando fondo Liquid Glass', 'info');
   };
 
-  // Generador de imagen en alta resolución 1080x1920 (Instagram Stories 9:16)
+  // Generador de imagen en alta resolución 1080x1920 (Instagram Stories / 9:16 HD)
   const generateStoryBlob = async () => {
     if (!shareCardRef.current) throw new Error('Referencia de tarjeta no encontrada');
     return await html2canvas(shareCardRef.current, {
@@ -138,31 +156,35 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
     });
   };
 
+  // Helper de descarga multiplataforma (iOS & Android/Desktop)
+  const downloadBlobFile = async (blob, fileName) => {
+    const url = URL.createObjectURL(blob);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      const newWindow = window.open(url, '_blank');
+      if (!newWindow) {
+        showToast('Mantén pulsada la imagen para guardarla en tu carrete', 'info');
+      }
+    } else {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 6000);
+  };
+
+  // Descargar imagen HD directa
   const handleDownloadStory = async () => {
     if (isGenerating) return;
     setIsGenerating(true);
     try {
       const canvas = await generateStoryBlob();
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-      const url = URL.createObjectURL(blob);
-
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      if (isIOS) {
-        const newWindow = window.open(url, '_blank');
-        if (!newWindow) {
-          showToast('Mantén pulsada la imagen para guardarla en tu carrete', 'info');
-        } else {
-          showToast('Guarda la imagen desde la nueva pestaña', 'success');
-        }
-      } else {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `pro-fitness-story-${new Date().toISOString().slice(0, 10)}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showToast('¡Historia guardada en tu galería!', 'success');
-      }
+      await downloadBlobFile(blob, `pro-fitness-story-${new Date().toISOString().slice(0, 10)}.png`);
+      showToast('¡Historia guardada en tu galería en HD!', 'success');
     } catch (err) {
       console.error('Error descargando historia:', err);
       showToast('Error al procesar la imagen', 'error');
@@ -171,34 +193,71 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
     }
   };
 
-  // Compartir directamente en Instagram Stories mediante el Native Share Sheet del móvil
-  const handleShareToStories = async () => {
+  // Compartir multiplataforma (Instagram, WhatsApp, X, Telegram)
+  const handlePlatformShare = async (platform) => {
     if (isGenerating) return;
     setIsGenerating(true);
     try {
       const canvas = await generateStoryBlob();
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-      const file = new File([blob], `pro-fitness-story-${Date.now()}.png`, { type: 'image/png' });
+      const file = new File([blob], `pro-fitness-${Date.now()}.png`, { type: 'image/png' });
 
-      const shareData = {
-        files: [file],
-        title: 'Mi Entrenamiento en Pro Fitness Glass',
-        text: '¡Entrenamiento completado en Pro Fitness Glass! 💪🔥 #ProFitnessGlass'
-      };
+      const workoutTitle = workoutData?.routineName || 'Entrenamiento';
+      const timeFormatted = formatDisplayTime(workoutData?.duration_seconds || 0);
+      const appUrl = 'https://pro-fitness-glass.zeabur.app';
+      const shareText = `🔥 ¡Entrenamiento completado en Pro Fitness Glass!\n🏋️ ${workoutTitle} • ${timeFormatted}\n💪 Superando límites día a día.\n👉 ${appUrl}`;
 
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share(shareData);
-        showToast('¡Listo para tus Stories!', 'success');
+      // 1. Si el dispositivo soporta Web Share API con archivos (móvil iOS / Android)
+      const canShareFile = typeof navigator !== 'undefined' &&
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] });
+
+      if (canShareFile) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'Mi Entrenamiento en Pro Fitness Glass',
+            text: shareText
+          });
+          const platformNames = {
+            instagram: 'Stories',
+            whatsapp: 'WhatsApp',
+            x: 'X',
+            telegram: 'Telegram'
+          };
+          showToast(`¡Listo para compartir en ${platformNames[platform] || 'redes'}!`, 'success');
+          return;
+        } catch (shareErr) {
+          if (shareErr.name === 'AbortError') {
+            return; // Usuario canceló modal nativo
+          }
+          console.warn('Native share falló, ejecutando acción directa:', shareErr);
+        }
+      }
+
+      // 2. Si no soporta compartir archivo directo: descargar imagen en HD y abrir enlace oficial de la app
+      await downloadBlobFile(blob, `pro-fitness-${Date.now()}.png`);
+
+      if (platform === 'whatsapp') {
+        const waText = encodeURIComponent(`${shareText}\n\n📸 *Adjunta la imagen que acabas de guardar en tu galería*`);
+        window.open(`https://api.whatsapp.com/send?text=${waText}`, '_blank');
+        showToast('Imagen guardada. ¡Adjúntala en tu chat o estado de WhatsApp!', 'success');
+      } else if (platform === 'telegram') {
+        const tgText = encodeURIComponent(shareText);
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(appUrl)}&text=${tgText}`, '_blank');
+        showToast('Imagen guardada. ¡Compártela en Telegram!', 'success');
+      } else if (platform === 'x') {
+        const xText = encodeURIComponent(`¡Sesión completada en Pro Fitness Glass! 💥\n🏋️ ${workoutTitle} • ${timeFormatted}\n#ProFitnessGlass #GymMotivation`);
+        window.open(`https://twitter.com/intent/tweet?text=${xText}&url=${encodeURIComponent(appUrl)}`, '_blank');
+        showToast('Imagen guardada. ¡Adjúntala a tu post en X!', 'success');
       } else {
-        // Fallback a descarga automática con indicación clara
-        await handleDownloadStory();
-        showToast('Imagen lista en tu galería. ¡Súbela a tus Stories de Instagram!', 'info');
+        // Instagram Stories
+        showToast('¡Imagen guardada en tu galería! Súbela a tus Stories de Instagram.', 'info');
       }
-    } catch (e) {
-      if (e.name !== 'AbortError') {
-        console.warn('Share falló, descargando:', e);
-        await handleDownloadStory();
-      }
+    } catch (err) {
+      console.error('Error al compartir:', err);
+      showToast('Error al procesar la imagen', 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -236,62 +295,78 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
         onChange={handlePhotoSelect}
       />
 
-      {/* VISTA 1: EDITOR / PREVIEW DIRECTO DE STORIES (ESTILO STRAVA / SPOTIFY WRAPPED) */}
+      {/* VISTA 1: STUDIO DE HISTORIAS Y REDES SOCIALES */}
       {isStoryView ? (
         <div
-          className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-2xl flex flex-col items-center justify-between p-4 animate-[fade-in_0.2s_ease-out]"
-          style={{ paddingTop: 'max(1rem, var(--safe-top))', paddingBottom: 'max(1rem, var(--safe-bottom))' }}
+          className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-2xl flex flex-col items-center justify-between p-3 sm:p-4 animate-[fade-in_0.2s_ease-out]"
+          style={{
+            paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0.75rem))',
+            paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0.75rem))'
+          }}
           onClick={() => setIsStoryView(false)}
         >
-          {/* Botón Cerrar Preview */}
-          <button
-            onClick={() => {
-              if (isShareMode) onClose();
-              else setIsStoryView(false);
-            }}
-            className="absolute z-[110] p-3 bg-white/10 rounded-full text-white hover:bg-white/20 transition-all backdrop-blur-md shadow-xl"
-            style={{ top: 'max(1rem, var(--safe-top))', right: '1rem' }}
+          {/* CABECERA RESPONSIVE Y UNIFICADA (SIN COLISIÓN ENTRE X Y BOTÓN DE FOTO) */}
+          <div
+            className="w-full max-w-md flex items-center justify-between gap-2 shrink-0 mb-1 px-1"
+            onClick={(e) => e.stopPropagation()}
           >
-            <X size={22} />
-          </button>
-
-          {/* Cabecera Stories */}
-          <div className="w-full max-w-md flex items-center justify-between shrink-0 mb-2 px-2" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] flex items-center justify-center text-white shadow-lg">
-                <FaInstagram size={18} />
+            {/* Lado Izquierdo: Branding Studio */}
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] flex items-center justify-center text-white shadow-lg shrink-0">
+                <FaInstagram size={17} />
               </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-black text-white tracking-wide uppercase">
-                  Instagram Story Studio
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs sm:text-sm font-black text-white tracking-wide uppercase truncate">
+                  Story Studio
                 </span>
-                <span className="text-[10px] text-white/60 font-semibold">
-                  Formato 9:16 (1080x1920) • Strava Style
+                <span className="text-[10px] text-white/60 font-semibold truncate">
+                  Formato 9:16 HD
                 </span>
               </div>
             </div>
 
-            {/* Selector de Foto Opcional */}
-            {customPhoto ? (
+            {/* Lado Derecho: Selector de Foto + Botón X en el mismo flujo flex */}
+            <div className="flex items-center gap-2 shrink-0">
+              {customPhoto ? (
+                <button
+                  type="button"
+                  onClick={removePhoto}
+                  className="px-2.5 py-1.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-xs font-bold flex items-center gap-1 hover:bg-red-500/30 active:scale-95 transition-all shadow-md"
+                  title="Quitar foto personalizada"
+                >
+                  <FaTrash size={11} />
+                  <span>Quitar</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md backdrop-blur-md"
+                  title="Añadir foto de fondo"
+                >
+                  <FaCamera size={12} className="text-amber-400" />
+                  <span>+ Foto</span>
+                </button>
+              )}
+
+              {/* Botón Cerrar X - Perfectamente alineado y sin colisión absoluta */}
               <button
-                onClick={removePhoto}
-                className="px-3 py-1.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-xs font-bold flex items-center gap-1.5 hover:bg-red-500/30 transition-all shadow-md"
+                type="button"
+                onClick={() => {
+                  if (isShareMode) onClose();
+                  else setIsStoryView(false);
+                }}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 border border-white/15 text-white flex items-center justify-center transition-all backdrop-blur-md shadow-md shrink-0"
+                aria-label="Cerrar vista de historias"
               >
-                <Trash2 size={13} /> Quitar Foto
+                <FaXmark size={16} />
               </button>
-            ) : (
-              <button
-                onClick={() => photoInputRef.current?.click()}
-                className="px-3.5 py-1.5 rounded-full bg-white/15 border border-white/25 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-white/25 transition-all shadow-md"
-              >
-                <Camera size={14} className="text-yellow-400" /> + Foto de Fondo
-              </button>
-            )}
+            </div>
           </div>
 
-          {/* Tarjeta Centrada Escalada (ScaleToFit) */}
+          {/* TARJETA CENTRADA ESCALADA (ScaleToFit) */}
           <div
-            className="flex-1 w-full min-h-0 flex items-center justify-center pointer-events-none my-2"
+            className="flex-1 w-full min-h-0 flex items-center justify-center pointer-events-none my-1"
             onClick={(e) => e.stopPropagation()}
           >
             <ScaleToFit width={1080} height={1920}>
@@ -308,50 +383,84 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
             </ScaleToFit>
           </div>
 
-          {/* Botonera de Acción de Stories */}
-          <div className="w-full max-w-md shrink-0 flex flex-col gap-2.5 mt-2" onClick={(e) => e.stopPropagation()}>
-            <div className="flex gap-2 w-full">
-              {/* Botón Descargar HD */}
+          {/* BOTONERA MULTIPLATAFORMA DE COMPARTIR */}
+          <div className="w-full max-w-md shrink-0 flex flex-col gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
+            {/* Grid de 4 Redes: Instagram Stories, WhatsApp, X, Telegram */}
+            <div className="grid grid-cols-4 gap-2 w-full">
+              {/* Instagram Stories */}
               <button
-                onClick={handleDownloadStory}
+                type="button"
+                onClick={() => handlePlatformShare('instagram')}
                 disabled={isGenerating}
-                className="py-3.5 px-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg disabled:opacity-50"
-                title="Descargar imagen en alta resolución"
+                className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white hover:opacity-95 active:scale-95 transition-all shadow-lg disabled:opacity-50 group"
+                title="Compartir en Instagram Stories"
               >
-                {isGenerating ? <Spinner size={18} /> : <Download size={18} />}
-                <span className="hidden sm:inline">Descargar</span>
+                <FaInstagram size={22} className="group-hover:scale-110 transition-transform drop-shadow" />
+                <span className="text-[11px] font-black tracking-tight mt-1">Stories</span>
               </button>
 
-              {/* Botón Primario: Compartir en Stories */}
+              {/* WhatsApp */}
               <button
-                onClick={handleShareToStories}
+                type="button"
+                onClick={() => handlePlatformShare('whatsapp')}
                 disabled={isGenerating}
-                className="flex-1 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] text-white font-black text-base tracking-wide flex items-center justify-center gap-2.5 shadow-2xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-[#25D366] text-white hover:brightness-105 active:scale-95 transition-all shadow-lg disabled:opacity-50 group"
+                title="Compartir por WhatsApp"
               >
-                {isGenerating ? (
-                  <>
-                    <Spinner size={18} />
-                    <span>Preparando Historia...</span>
-                  </>
-                ) : (
-                  <>
-                    <FaInstagram size={20} className="drop-shadow" />
-                    <span>Compartir en Stories</span>
-                  </>
-                )}
+                <FaWhatsapp size={22} className="group-hover:scale-110 transition-transform drop-shadow" />
+                <span className="text-[11px] font-black tracking-tight mt-1">WhatsApp</span>
+              </button>
+
+              {/* X / Twitter */}
+              <button
+                type="button"
+                onClick={() => handlePlatformShare('x')}
+                disabled={isGenerating}
+                className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-black border border-white/20 text-white hover:bg-neutral-900 active:scale-95 transition-all shadow-lg disabled:opacity-50 group"
+                title="Compartir en X"
+              >
+                <FaXTwitter size={20} className="group-hover:scale-110 transition-transform drop-shadow" />
+                <span className="text-[11px] font-black tracking-tight mt-1">X</span>
+              </button>
+
+              {/* Telegram */}
+              <button
+                type="button"
+                onClick={() => handlePlatformShare('telegram')}
+                disabled={isGenerating}
+                className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-[#229ED9] text-white hover:brightness-105 active:scale-95 transition-all shadow-lg disabled:opacity-50 group"
+                title="Compartir en Telegram"
+              >
+                <FaTelegram size={22} className="group-hover:scale-110 transition-transform drop-shadow" />
+                <span className="text-[11px] font-black tracking-tight mt-1">Telegram</span>
               </button>
             </div>
 
+            {/* Fila: Descargar HD Directo */}
             <button
-              onClick={() => setIsStoryView(false)}
-              className="w-full py-2.5 text-xs text-white/60 hover:text-white font-bold transition-colors flex items-center justify-center gap-1.5"
+              type="button"
+              onClick={handleDownloadStory}
+              disabled={isGenerating}
+              className="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50"
+              title="Descargar imagen en alta resolución 1080x1920"
             >
-              <ArrowLeft size={14} /> {isShareMode ? 'Ver desglose de ejercicios' : 'Volver al resumen del entrenamiento'}
+              {isGenerating ? <Spinner size={16} /> : <FaDownload size={14} />}
+              <span>Descargar HD (1080x1920)</span>
+            </button>
+
+            {/* Volver */}
+            <button
+              type="button"
+              onClick={() => setIsStoryView(false)}
+              className="w-full py-1 text-xs text-white/60 hover:text-white font-bold transition-colors flex items-center justify-center gap-1.5"
+            >
+              <FaArrowLeft size={11} />
+              <span>{isShareMode ? 'Ver desglose de ejercicios' : 'Volver al resumen'}</span>
             </button>
           </div>
         </div>
       ) : (
-        /* VISTA 2: RESUMEN DE SESIÓN GUARDADA (CON ACCESO DIRECTO A STORIES) */
+        /* VISTA 2: RESUMEN DE SESIÓN GUARDADA (CON ACCESO DIRECTO A COMPARTIR) */
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-[fade-in_0.25s_ease-out]">
           <div className="relative w-full max-w-lg rounded-t-[32px] rounded-b-none sm:rounded-2xl bg-bg-primary border border-glass-border shadow-2xl flex flex-col max-h-[75vh] md:max-h-[85vh] animate-[slide-up_0.2s_ease-out] sm:animate-[scale-in_0.2s_ease-out] overflow-hidden shrink-0">
 
@@ -367,24 +476,26 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
               </div>
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={() => setIsStoryView(true)}
                   className="p-2 text-text-muted hover:text-accent transition-colors rounded-full hover:bg-bg-secondary"
-                  title="Abrir Studio de Stories"
+                  title="Compartir en Redes Sociales"
                 >
-                  <Share2 size={20} />
+                  <FaShareNodes size={18} />
                 </button>
                 <button
+                  type="button"
                   onClick={onClose}
                   className="p-2 text-text-muted hover:text-red transition-colors rounded-full hover:bg-bg-secondary"
                 >
-                  <X size={20} />
+                  <FaXmark size={18} />
                 </button>
               </div>
             </div>
 
             {/* Contenido con scroll interno */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 custom-scrollbar bg-bg-primary">
-              {/* BANNER PROMOCIONAL DIRECTO: INSTAGRAM STORIES */}
+              {/* BANNER PROMOCIONAL: COMPARTIR EN REDES */}
               <div
                 onClick={() => setIsStoryView(true)}
                 className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-[#f09433]/15 via-[#dc2743]/15 to-[#bc1888]/15 border border-[#dc2743]/30 shadow-lg cursor-pointer hover:scale-[1.01] transition-transform group"
@@ -396,16 +507,16 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
                     </div>
                     <div>
                       <h4 className="text-sm font-black text-text-primary tracking-tight flex items-center gap-2">
-                        Tarjeta para Instagram Stories
+                        Compartir en Redes Sociales
                         <Sparkles size={14} className="text-yellow-400" />
                       </h4>
                       <p className="text-xs text-text-secondary mt-0.5">
-                        Estilo Strava / Wrapped con músculos, volumen y foto opcional.
+                        Stories, WhatsApp, X y Telegram en 9:16 HD.
                       </p>
                     </div>
                   </div>
                   <span className="text-xs font-black text-[#dc2743] uppercase tracking-wider bg-white/10 dark:bg-black/20 px-3 py-1.5 rounded-full shrink-0">
-                    Abrir →
+                    Compartir →
                   </span>
                 </div>
               </div>
@@ -499,16 +610,18 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
 
             {/* Pie Fijo de Botones */}
             <div className="p-4 sm:p-6 border-t border-glass-border bg-bg-primary z-10 shrink-0 flex flex-col gap-2.5">
-              {/* Botón Destacado: Compartir en Stories */}
+              {/* Botón Destacado: Compartir en Redes */}
               <button
+                type="button"
                 onClick={() => setIsStoryView(true)}
                 className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] text-white font-black text-base transition-transform hover:scale-[1.01] active:scale-95 shadow-xl flex items-center justify-center gap-2"
               >
-                <FaInstagram size={19} />
-                <span>Compartir en Stories</span>
+                <FaShareNodes size={18} />
+                <span>Compartir en Redes Sociales</span>
               </button>
 
               <button
+                type="button"
                 onClick={onClose}
                 className="w-full py-3 rounded-xl bg-bg-secondary border border-glass-border text-text-secondary font-bold text-sm transition hover:bg-bg-primary"
               >

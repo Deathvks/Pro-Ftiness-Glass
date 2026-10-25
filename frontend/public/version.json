@@ -1,4 +1,4 @@
 {
-  "version": "7.10.26",
-  "releaseNotes": "Actualización v7.10.26: Bloqueo estricto de rutinas completadas hoy (sin botón volver a entrenar) y corrección definitiva del calendario: los entrenamientos iniciados antes de las 00:00 se asignan únicamente a su día de inicio, eliminando duplicados fantasma en días consecutivos. | v7.10.25: Modal del Entrenador IA rediseñado como Bottom Sheet en móvil."
+  "version": "7.10.27",
+  "releaseNotes": "Actualización v7.10.27: Story Studio rediseñado y 100% responsive en móvil (sin solapamiento de botones ni textos apretados). Suite de compartir multiplataforma (Instagram Stories, WhatsApp, X y Telegram) con iconos FontAwesome oficiales. Métricas de alto valor para atletas: Carga Máxima (Top Lift) y Series Efectivas sustituyendo el volumen acumulado."
 }
