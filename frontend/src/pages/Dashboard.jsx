@@ -255,22 +255,26 @@ const Dashboard = ({ setView }) => {
 
   useEffect(() => {
     const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
-    const loadGym = () => {
+    const loadGym = (e) => {
+      if (e?.detail === null) {
+        setCurrentGym(null);
+        return;
+      }
       try {
-        let saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
-        if (!saved && userProfile?.gym_data) {
-          const remoteGym = typeof userProfile.gym_data === 'string' ? JSON.parse(userProfile.gym_data) : userProfile.gym_data;
-          if (remoteGym) {
-            saved = JSON.stringify(remoteGym);
-            localStorage.setItem(userKey, saved);
-          }
-        } else if (saved && userProfile && !userProfile.gym_data) {
-          try {
-            const parsedLocal = JSON.parse(saved);
-            userService.updateUserProfile({ gym_data: parsedLocal }).catch(() => {});
-          } catch { /* ignore */ }
+        const saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
+        if (saved) {
+          setCurrentGym(enrichGymWithMedia(JSON.parse(saved)));
+          return;
         }
-        setCurrentGym(saved ? enrichGymWithMedia(JSON.parse(saved)) : null);
+        const freshProfile = useAppStore.getState().userProfile;
+        if (freshProfile?.gym_data) {
+          const remoteGym = typeof freshProfile.gym_data === 'string' ? JSON.parse(freshProfile.gym_data) : freshProfile.gym_data;
+          if (remoteGym) {
+            setCurrentGym(enrichGymWithMedia(remoteGym));
+            return;
+          }
+        }
+        setCurrentGym(null);
       } catch {
         setCurrentGym(null);
       }
@@ -282,7 +286,7 @@ const Dashboard = ({ setView }) => {
       window.removeEventListener('storage', loadGym);
       window.removeEventListener('user-gym-updated', loadGym);
     };
-  }, [userProfile?.id, userProfile?.gym_data]);
+  }, [userProfile?.id]);
 
   const handleSaveGym = (gymData) => {
     const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
@@ -317,14 +321,10 @@ const Dashboard = ({ setView }) => {
       }
     } catch {}
     setCurrentGym(null);
-    if (typeof useAppStore.getState().setUserProfile === 'function') {
-      const cur = useAppStore.getState().userProfile;
-      if (cur) useAppStore.getState().setUserProfile({ ...cur, gym_data: null });
-    }
-    const viewed = useAppStore.getState().socialViewedProfile;
-    if (viewed && String(viewed.id) === String(userProfile?.id)) {
-      useAppStore.setState({ socialViewedProfile: { ...viewed, gym: null } });
-    }
+    useAppStore.setState((s) => ({
+      userProfile: s.userProfile ? { ...s.userProfile, gym_data: null } : null,
+      socialViewedProfile: s.socialViewedProfile ? { ...s.socialViewedProfile, gym: null, gym_data: null } : null
+    }));
     window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: null }));
     userService.updateUserProfile({ gym_data: null }).catch(err => {
       console.warn('Error al eliminar gimnasio en backend:', err);

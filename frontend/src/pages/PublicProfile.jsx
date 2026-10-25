@@ -275,7 +275,13 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     const [localGymUpdate, setLocalGymUpdate] = useState(0);
 
     useEffect(() => {
-        const handleGymUpdate = () => {
+        const handleGymUpdate = (e) => {
+            if (e?.detail === null) {
+                useAppStore.setState((s) => ({
+                    userProfile: s.userProfile ? { ...s.userProfile, gym_data: null } : null,
+                    socialViewedProfile: s.socialViewedProfile ? { ...s.socialViewedProfile, gym: null, gym_data: null } : null
+                }));
+            }
             setLocalGymUpdate(prev => prev + 1);
         };
         window.addEventListener('user-gym-updated', handleGymUpdate);
@@ -288,18 +294,20 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
     const activeGym = useMemo(() => {
         if (relationshipStatus === 'me') {
-            // Para mi propio perfil, la fuente de la verdad es mi estado actual y local
-            if (myProfile?.gym_data) {
+            const userKey = myProfile?.id ? `user_gym_${myProfile.id}` : 'user_gym';
+            const saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
+            if (saved) {
                 try {
-                    const parsed = typeof myProfile.gym_data === 'string' ? JSON.parse(myProfile.gym_data) : myProfile.gym_data;
+                    return enrichGymWithMedia(JSON.parse(saved));
+                } catch {}
+            }
+            const freshProfile = useAppStore.getState().userProfile;
+            if (freshProfile?.gym_data) {
+                try {
+                    const parsed = typeof freshProfile.gym_data === 'string' ? JSON.parse(freshProfile.gym_data) : freshProfile.gym_data;
                     if (parsed) return enrichGymWithMedia(parsed);
                 } catch {}
             }
-            try {
-                const userKey = myProfile?.id ? `user_gym_${myProfile.id}` : 'user_gym';
-                const saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
-                if (saved) return enrichGymWithMedia(JSON.parse(saved));
-            } catch {}
             return null;
         }
 
@@ -308,23 +316,17 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             return enrichGymWithMedia(profile.gym);
         }
         return null;
-    }, [profile?.gym, relationshipStatus, myProfile, localGymUpdate]);
+    }, [profile?.gym, relationshipStatus, myProfile?.gym_data, localGymUpdate]);
 
     const handleSaveGym = (gymData) => {
         const userKey = myProfile?.id ? `user_gym_${myProfile.id}` : 'user_gym';
         const enriched = enrichGymWithMedia(gymData);
         localStorage.setItem(userKey, JSON.stringify(enriched));
         localStorage.setItem('user_gym', JSON.stringify(enriched));
-        if (typeof useAppStore.getState().setUserProfile === 'function') {
-            const cur = useAppStore.getState().userProfile;
-            if (cur) useAppStore.getState().setUserProfile({ ...cur, gym_data: enriched });
-        }
-        const viewed = useAppStore.getState().socialViewedProfile;
-        if (viewed && (String(viewed.id) === String(myProfile?.id))) {
-            useAppStore.setState({
-                socialViewedProfile: { ...viewed, gym: enriched }
-            });
-        }
+        useAppStore.setState((s) => ({
+            userProfile: s.userProfile ? { ...s.userProfile, gym_data: enriched } : null,
+            socialViewedProfile: s.socialViewedProfile ? { ...s.socialViewedProfile, gym: enriched, gym_data: enriched } : null
+        }));
         setLocalGymUpdate(prev => prev + 1);
         window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: enriched }));
         userService.updateUserProfile({ gym_data: enriched }).catch(err => {
@@ -347,18 +349,14 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             }
         } catch {}
 
-        if (typeof useAppStore.getState().setUserProfile === 'function') {
-            const cur = useAppStore.getState().userProfile;
-            if (cur) useAppStore.getState().setUserProfile({ ...cur, gym_data: null });
-        }
-        const viewed = useAppStore.getState().socialViewedProfile;
-        if (viewed && (String(viewed.id) === String(myProfile?.id))) {
-            useAppStore.setState({
-                socialViewedProfile: { ...viewed, gym: null }
-            });
-        }
+        // Limpiar estado en memoria inmediatamente
+        useAppStore.setState((s) => ({
+            userProfile: s.userProfile ? { ...s.userProfile, gym_data: null } : null,
+            socialViewedProfile: s.socialViewedProfile ? { ...s.socialViewedProfile, gym: null, gym_data: null } : null
+        }));
         setLocalGymUpdate(prev => prev + 1);
         window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: null }));
+
         try {
             await userService.updateUserProfile({ gym_data: null });
         } catch (err) {
