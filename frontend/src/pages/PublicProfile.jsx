@@ -26,7 +26,8 @@ import {
     Play,
     MapPin,
     Eye,
-    EyeOff
+    EyeOff,
+    Check
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -43,6 +44,8 @@ import ExerciseMedia from '../components/ExerciseMedia';
 import ModalPortal from '../components/ModalPortal';
 import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 import { enrichGymWithMedia } from '../utils/gymMedia';
+import GymLocationModal from '../components/GymLocationModal';
+import * as userService from '../services/userService';
 
 // --- CONFIGURACIÓN DE PUERTO ---
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
@@ -266,6 +269,21 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         return JSON.stringify(schema);
     }, [profile]);
 
+    const [showGymModal, setShowGymModal] = useState(false);
+    const [localGymUpdate, setLocalGymUpdate] = useState(0);
+
+    useEffect(() => {
+        const handleGymUpdate = () => {
+            setLocalGymUpdate(prev => prev + 1);
+        };
+        window.addEventListener('user-gym-updated', handleGymUpdate);
+        window.addEventListener('storage', handleGymUpdate);
+        return () => {
+            window.removeEventListener('user-gym-updated', handleGymUpdate);
+            window.removeEventListener('storage', handleGymUpdate);
+        };
+    }, []);
+
     const activeGym = useMemo(() => {
         if (profile?.gym) {
             return enrichGymWithMedia(profile.gym);
@@ -284,7 +302,34 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
             } catch {}
         }
         return null;
-    }, [profile?.gym, relationshipStatus, myProfile]);
+    }, [profile?.gym, relationshipStatus, myProfile, localGymUpdate]);
+
+    const handleSaveGym = (gymData) => {
+        const userKey = myProfile?.id ? `user_gym_${myProfile.id}` : 'user_gym';
+        const enriched = enrichGymWithMedia(gymData);
+        localStorage.setItem(userKey, JSON.stringify(enriched));
+        localStorage.setItem('user_gym', JSON.stringify(enriched));
+        setLocalGymUpdate(prev => prev + 1);
+        window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: enriched }));
+        userService.updateUserProfile({ gym_data: enriched }).catch(err => {
+            console.warn('Error al guardar gimnasio en backend:', err);
+        });
+        const notify = showToast || addToast;
+        if (typeof notify === 'function') notify('Gimnasio habitual actualizado correctamente', 'success');
+    };
+
+    const handleRemoveGym = () => {
+        const userKey = myProfile?.id ? `user_gym_${myProfile.id}` : 'user_gym';
+        localStorage.removeItem(userKey);
+        localStorage.removeItem('user_gym');
+        setLocalGymUpdate(prev => prev + 1);
+        window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: null }));
+        userService.updateUserProfile({ gym_data: null }).catch(err => {
+            console.warn('Error al eliminar gimnasio en backend:', err);
+        });
+        const notify = showToast || addToast;
+        if (typeof notify === 'function') notify('Gimnasio eliminado', 'info');
+    };
 
     const handleGoToSocialPrivacy = () => {
         if (typeof setView === 'function') {
@@ -723,50 +768,94 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                     </div>
 
                     {activeGym ? (
-                        <div className="flex items-center gap-4 py-1">
-                            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/15 overflow-hidden flex items-center justify-center shrink-0 p-1.5 shadow-sm">
-                                {activeGym.logo || activeGym.image ? (
-                                    <img
-                                        src={activeGym.logo || activeGym.image}
-                                        alt={activeGym.name}
-                                        className="w-full h-full object-contain rounded-xl"
-                                        onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                            if (e.currentTarget.nextElementSibling) {
-                                                e.currentTarget.nextElementSibling.style.display = 'flex';
-                                            }
-                                        }}
-                                    />
-                                ) : null}
-                                <div
-                                    style={{ display: activeGym.logo || activeGym.image ? 'none' : 'flex' }}
-                                    className="w-full h-full items-center justify-center text-accent"
-                                >
-                                    <Dumbbell size={24} />
-                                </div>
+                        <div className="relative rounded-2xl overflow-hidden border border-black/10 dark:border-white/15 shadow-md group">
+                            {/* Imagen de fondo panorámica en alta resolución con gradiente cinemático */}
+                            <div className="absolute inset-0">
+                                <img
+                                    src={activeGym.image}
+                                    alt={activeGym.name}
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                    loading="lazy"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/80 to-black/55 backdrop-blur-[0.5px]" />
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <h3 className="font-extrabold text-lg sm:text-xl text-text-primary truncate">
-                                    {activeGym.name}
-                                </h3>
-                                {(activeGym.address || activeGym.city) && (
-                                    <p className="text-xs sm:text-sm text-text-secondary truncate mt-0.5 flex items-center gap-1.5">
-                                        <MapPin size={13} className="text-text-tertiary shrink-0" />
-                                        <span>{[activeGym.address, activeGym.city].filter(Boolean).join(', ')}</span>
-                                    </p>
-                                )}
-                                {activeGym.distanceFormatted && (
-                                    <span className="inline-block text-[10px] font-bold text-accent bg-accent/15 px-2 py-0.5 rounded-full mt-1.5">
-                                        A {activeGym.distanceFormatted}
-                                    </span>
+
+                            {/* Contenido sobre la imagen */}
+                            <div className="relative p-4 sm:p-5 flex items-center justify-between gap-3.5 text-white">
+                                <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                    {/* Icono de logo de marca o Dumbbell nítido */}
+                                    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-2 flex items-center justify-center shrink-0 shadow-md overflow-hidden">
+                                        {activeGym.logo ? (
+                                            <img
+                                                src={activeGym.logo}
+                                                alt={activeGym.brand || 'Logo'}
+                                                className="w-full h-full object-contain"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    if (e.currentTarget.nextElementSibling) {
+                                                        e.currentTarget.nextElementSibling.style.display = 'flex';
+                                                    }
+                                                }}
+                                            />
+                                        ) : null}
+                                        <div
+                                            style={{ display: activeGym.logo ? 'none' : 'flex' }}
+                                            className="w-full h-full items-center justify-center text-accent"
+                                        >
+                                            <Dumbbell size={24} />
+                                        </div>
+                                    </div>
+
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-accent bg-accent/25 px-2 py-0.5 rounded-full border border-accent/40 shadow-sm flex items-center gap-1">
+                                                <Check size={11} strokeWidth={3} />
+                                                Gimnasio habitual
+                                            </span>
+                                            {activeGym.distanceFormatted && (
+                                                <span className="text-[10px] font-bold text-white/90 bg-white/15 px-2 py-0.5 rounded-full">
+                                                    A {activeGym.distanceFormatted}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <h3 className="text-base sm:text-lg font-black text-white truncate drop-shadow-md">
+                                            {activeGym.name}
+                                        </h3>
+                                        {(activeGym.address || activeGym.city) && (
+                                            <p className="text-xs sm:text-sm text-white/80 truncate drop-shadow-sm flex items-center gap-1 mt-0.5">
+                                                <MapPin size={12} className="text-accent shrink-0" />
+                                                <span>{[activeGym.address, activeGym.city].filter(Boolean).join(', ')}</span>
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {relationshipStatus === 'me' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowGymModal(true)}
+                                        className="shrink-0 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 text-white text-xs font-bold border border-white/20 backdrop-blur-md shadow transition-all cursor-pointer"
+                                    >
+                                        Cambiar
+                                    </button>
                                 )}
                             </div>
                         </div>
                     ) : (
-                        <div className="py-2">
+                        <div className="py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                             <p className="text-sm text-text-secondary font-medium">
-                                No tienes ningún gimnasio habitual seleccionado en tu inicio.
+                                No tienes ningún gimnasio habitual seleccionado en tu perfil.
                             </p>
+                            {relationshipStatus === 'me' && (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowGymModal(true)}
+                                    className="px-4 py-2 rounded-xl bg-accent text-accent-contrast text-xs font-bold hover:brightness-110 active:scale-95 transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                                >
+                                    <MapPin size={14} />
+                                    Seleccionar gimnasio
+                                </button>
+                            )}
                         </div>
                     )}
 
@@ -1029,6 +1118,17 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                     onConfirm={confirmRemoveFriend}
                     onCancel={() => setShowDeleteConfirm(false)}
                     isLoading={isDeletingFriend}
+                />
+            )}
+
+            {/* --- MODAL SELECCIONAR / CAMBIAR GIMNASIO --- */}
+            {showGymModal && (
+                <GymLocationModal
+                    isOpen={showGymModal}
+                    onClose={() => setShowGymModal(false)}
+                    currentGym={activeGym}
+                    onSave={handleSaveGym}
+                    onRemove={handleRemoveGym}
                 />
             )}
 
