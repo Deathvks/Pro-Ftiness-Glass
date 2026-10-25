@@ -1,4 +1,4 @@
 {
-  "version": "7.10.31",
-  "releaseNotes": "Actualización v7.10.31: Garantizado el renderizado del logo oficial de la app en la exportación de plantillas de historias y rutinas para redes sociales mediante inyección síncrona en base64 y pre-decodificación en canvas."
+  "version": "7.10.32",
+  "releaseNotes": "Actualización v7.10.32: Implementado embudo de conversión nativo en el blog de noticias con banners contextuales inteligentes (creatina, nutrición, fuerza, salud) y puerta de entrada al panel de asesoría con preparadores certificados."
 }

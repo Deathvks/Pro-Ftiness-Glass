@@ -29,6 +29,8 @@ import NewsLoadingSkeleton from '../components/News/NewsLoadingSkeleton';
 import ArticleSEO from '../components/News/ArticleSEO';
 import AdSenseSlot from '../components/News/AdSenseSlot';
 import MarkdownContent from '../components/News/MarkdownContent';
+import NewsConversionBanner from '../components/News/NewsConversionBanner';
+import TrainerAdvisoryCard from '../components/News/TrainerAdvisoryCard';
 import * as newsService from '../services/newsService';
 import { buildTrackingPayload } from '../utils/newsTracker';
 import { useToast } from '../hooks/useToast';
@@ -589,9 +591,9 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           </button>
         </div>
 
-        {/* ADSENSE IN-ARTICLE SLOT */}
+        {/* BANNER DINÁMICO DE CONVERSIÓN CONTEXTUAL */}
         <div className="my-6">
-          <AdSenseSlot slotId="noticias-in-article-banner" format="auto" />
+          <NewsConversionBanner article={article} customNavigate={customNavigate} />
         </div>
 
         {/* TEMAS / ETIQUETAS AL PIE (ESTILO XATAKA) */}
@@ -612,6 +614,9 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
             </div>
           </div>
         )}
+
+        {/* PUERTA DE ENTRADA A ASESORÍA CON ENTRENADORES */}
+        <TrainerAdvisoryCard customNavigate={customNavigate} />
 
         {/* FICHA EDITORIAL DEL AUTOR */}
         <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 flex items-center gap-4 my-6">

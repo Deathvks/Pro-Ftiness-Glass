@@ -163,12 +163,29 @@ const LoginScreen = ({ showRegister, showForgotPassword }) => {
         };
     }, []);
 
-    // 🔴 CAPTURAR CÓDIGO REFERIDO DESDE URL
+    // 🔴 CAPTURAR CÓDIGO REFERIDO Y REDIRECCIÓN CONTEXTUAL DESDE URL
     useEffect(() => {
         const searchParams = new URLSearchParams(location.search);
         const ref = searchParams.get('ref');
         if (ref) {
             localStorage.setItem('pending_ref', ref);
+        }
+
+        // Redirección contextual para embudo de conversión (Noticias/Blog -> App)
+        const redirectParam = searchParams.get('redirect');
+        const fromParam = searchParams.get('from');
+        if (redirectParam) {
+            localStorage.setItem('lastView', redirectParam);
+        } else if (fromParam) {
+            const fromMap = {
+                creatina: 'dashboard',
+                rutina: 'routines',
+                nutricion: 'nutrition',
+                salud: 'progress'
+            };
+            if (fromMap[fromParam]) {
+                localStorage.setItem('lastView', fromMap[fromParam]);
+            }
         }
     }, [location.search]);
 

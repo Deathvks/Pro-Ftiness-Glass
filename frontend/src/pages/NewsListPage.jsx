@@ -29,6 +29,7 @@ import { Capacitor } from '@capacitor/core';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import AdSenseSlot from '../components/News/AdSenseSlot';
+import TrainerAdvisoryCard from '../components/News/TrainerAdvisoryCard';
 import * as newsService from '../services/newsService';
 import { trackCatalogVisit } from '../utils/newsTracker';
 import useAppStore from '../store/useAppStore';
@@ -743,6 +744,11 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
               </span>
             </div>
           )}
+
+          {/* PUERTA DE ENTRADA A ASESORÍA Y ENTRENADORES PERSONALES */}
+          <div className="mt-8 mb-4">
+            <TrainerAdvisoryCard customNavigate={customNavigate} />
+          </div>
         </>
       )}
       </div>

@@ -172,6 +172,23 @@ const RegisterScreen = ({ showLogin }) => {
                 setReferralCode(savedRef);
             }
         }
+
+        // Captura de redirección contextual para embudo de conversión (Noticias/Blog -> App)
+        const redirectParam = searchParams.get('redirect');
+        const fromParam = searchParams.get('from');
+        if (redirectParam) {
+            localStorage.setItem('lastView', redirectParam);
+        } else if (fromParam) {
+            const fromMap = {
+                creatina: 'dashboard',
+                rutina: 'routines',
+                nutricion: 'nutrition',
+                salud: 'progress'
+            };
+            if (fromMap[fromParam]) {
+                localStorage.setItem('lastView', fromMap[fromParam]);
+            }
+        }
     }, [location.search]);
 
     useEffect(() => {
