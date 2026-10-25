@@ -10,38 +10,49 @@ const InitialLoadingSkeleton = () => {
     useEffect(() => {
         const timer = setTimeout(() => {
             setShowRescue(true);
-        }, 18000);
+        }, 7000);
         return () => clearTimeout(timer);
     }, []);
 
-    const handleRepair = async () => {
+    const handleRepair = () => {
         setIsRepairing(true);
         try {
-            if ('serviceWorker' in navigator) {
-                const regs = await navigator.serviceWorker.getRegistrations();
-                for (const reg of regs) {
-                    await reg.unregister();
-                }
-            }
-            if ('caches' in window) {
-                const keys = await caches.keys();
-                await Promise.all(keys.map(k => caches.delete(k)));
-            }
             sessionStorage.clear();
             localStorage.removeItem('pfg_cached_initial_state_v1');
             localStorage.removeItem('pfg_crash_loop_count');
-            for (let i = 0; i < localStorage.length; i++) {
+            for (let i = localStorage.length - 1; i >= 0; i--) {
                 const k = localStorage.key(i);
                 if (k && (k.startsWith('pfg_chunk_retry_') || k.startsWith('pfg_reload_'))) {
                     localStorage.removeItem(k);
                 }
             }
-        } catch (e) {
-            console.warn('Error en reparación:', e);
+        } catch (_) {}
+
+        if ('caches' in window) {
+            caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
         }
-        const freshUrl = new URL(window.location.href);
-        freshUrl.searchParams.set('pfg_fresh', String(Date.now()));
-        window.location.replace(freshUrl.toString());
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                regs.forEach(r => r.unregister().catch(() => {}));
+            }).catch(() => {});
+        }
+
+        const freshUrl = window.location.origin + window.location.pathname + '?r=' + Date.now() + (window.location.hash || '');
+        setTimeout(() => {
+            try {
+                window.location.replace(freshUrl);
+            } catch (_) {
+                window.location.href = freshUrl;
+            }
+        }, 120);
+
+        setTimeout(() => {
+            try {
+                window.location.reload();
+            } catch (_) {
+                window.location.href = freshUrl;
+            }
+        }, 350);
     };
 
     const handleResetAll = () => {
@@ -53,10 +64,10 @@ const InitialLoadingSkeleton = () => {
             }
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations().then(regs => {
-                    for (const reg of regs) reg.unregister();
+                    regs.forEach(r => r.unregister().catch(() => {}));
                 }).catch(() => {});
             }
-        } catch {}
+        } catch (_) {}
         window.location.replace('/login');
     };
 

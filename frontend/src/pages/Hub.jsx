@@ -120,6 +120,10 @@ export default function Hub({ setView }) {
           setShowCoachingPromo(true);
         }
       }
+
+      if (userProfile?.role === 'admin') {
+        preloadViewChunk('adminPanel');
+      }
     }
   }, [userProfile?.id, userProfile?.role]);
 
@@ -271,6 +275,7 @@ export default function Hub({ setView }) {
           {userProfile?.role === 'admin' && (
             <HubButton 
               id="hub-admin-panel"
+              onPreload={() => preloadViewChunk('adminPanel')}
               icon={ShieldCheckIcon}
               title="Panel Admin"
               description="Gestión de usuarios y sistema"

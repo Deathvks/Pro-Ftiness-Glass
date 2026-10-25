@@ -1,4 +1,4 @@
 {
-  "version": "7.10.2",
-  "releaseNotes": "Actualización v7.10.2: Header móvil ultra responsive en Landing Page en una sola línea y mensaje completo sin cortes de descarga de App Android."
+  "version": "7.10.3",
+  "releaseNotes": "Actualización v7.10.3: Precarga instantánea del Panel Admin, subcomponentes modularizados con carga bajo demanda y sistema de rescate y recarga sin bloqueos."
 }

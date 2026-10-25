@@ -37,7 +37,13 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
     const retryKey = "pfg_chunk_retry_" + name;
     const hasRetried = sessionStorage.getItem(retryKey);
     try {
-      const component = await componentImport();
+      // Timeout de 9 segundos para prevenir cuelgues indefinidos en Suspense
+      const component = await Promise.race([
+        componentImport(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Timeout de red cargando chunk "${name}"`)), 9000)
+        )
+      ]);
       sessionStorage.removeItem(retryKey);
       return component;
     } catch (error) {
@@ -50,6 +56,7 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
         msg.includes("MIME type") ||
         msg.includes("SyntaxError") ||
         msg.includes("Unexpected token") ||
+        msg.includes("Timeout de red") ||
         msg.includes("is not valid JavaScript") ||
         error?.name === "TypeError" ||
         error?.name === "SyntaxError";
@@ -58,17 +65,29 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
         console.warn(`[lazyWithRetry] Recargando aplicación para cargar nueva versión de "${name}"...`);
         sessionStorage.setItem(retryKey, "true");
         if ("caches" in window) {
-          try {
-            caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
-          } catch { /* ignore */ }
+          caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
         }
-        window.location.reload();
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(r => r.unregister().catch(() => {}));
+          }).catch(() => {});
+        }
+        const freshUrl = window.location.origin + window.location.pathname + '?v=' + Date.now() + (window.location.hash || '');
         setTimeout(() => {
-          window.location.replace(window.location.href);
-        }, 1200);
-        return new Promise((_, reject) => {
-          setTimeout(() => reject(error), 4000);
-        });
+          try {
+            window.location.replace(freshUrl);
+          } catch (_) {
+            window.location.href = freshUrl;
+          }
+        }, 100);
+        setTimeout(() => {
+          try {
+            window.location.reload();
+          } catch (_) {
+            window.location.href = freshUrl;
+          }
+        }, 350);
+        return new Promise(() => {}); // Permanece en fallback durante la recarga sin lanzar error
       }
       throw error;
     }
@@ -129,6 +148,10 @@ export const preloadViewChunk = (viewId) => {
 export const preloadAllPrimaryViews = () => {
   if (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData) return;
   const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub'];
+  const user = useAppStore.getState().userProfile;
+  if (user?.role === 'admin') {
+    primaryNavViews.push('adminPanel');
+  }
   primaryNavViews.forEach((v, idx) => {
     setTimeout(() => {
       if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {

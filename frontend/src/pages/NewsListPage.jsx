@@ -77,6 +77,10 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [showAppBanner, setShowAppBanner] = useState(true);
+  const cachedInitialRef = useRef(cachedInitial);
+  const newsRef = useRef(news);
+  cachedInitialRef.current = cachedInitial;
+  newsRef.current = news;
 
   const handleRetry = () => {
     setReloadKey((prev) => prev + 1);
@@ -110,7 +114,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   useEffect(() => {
     let isMounted = true;
     const loadNews = async () => {
-      if (!cachedInitial && (!news || news.length === 0)) {
+      if (!cachedInitialRef.current && (!newsRef.current || newsRef.current.length === 0)) {
         setIsLoading(true);
       }
       setError(null);
@@ -141,7 +145,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
         }
       } catch (err) {
         if (isMounted) {
-          if (!cachedInitial && (!news || news.length === 0)) {
+          if (!cachedInitialRef.current && (!newsRef.current || newsRef.current.length === 0)) {
             setError(err.message || 'Error al cargar las noticias');
           }
         }

@@ -10,15 +10,16 @@ import Spinner from '../components/Spinner';
 import ConfirmationModal from '../components/ConfirmationModal';
 import UserEditModal from './UserEditModal';
 import UserCreateModal from './UserCreateModal';
-import AdminExercises from './AdminExercises';
-import AdminRatings from '../components/AdminRatings';
 import UserAvatar from '../components/UserAvatar';
-import AdminNotifications from './AdminNotifications';
-import AdminEmails from './AdminEmails';
-import SecurityDashboard from './SecurityDashboard';
-import AdminUploads from '../components/AdminUploads';
-import AdminNewsManager from '../components/Admin/AdminNewsManager';
 import CustomSelect from '../components/CustomSelect';
+
+const AdminExercises = React.lazy(() => import('./AdminExercises'));
+const AdminRatings = React.lazy(() => import('../components/AdminRatings'));
+const AdminNotifications = React.lazy(() => import('./AdminNotifications'));
+const AdminEmails = React.lazy(() => import('./AdminEmails'));
+const SecurityDashboard = React.lazy(() => import('./SecurityDashboard'));
+const AdminUploads = React.lazy(() => import('../components/AdminUploads'));
+const AdminNewsManager = React.lazy(() => import('../components/Admin/AdminNewsManager'));
 import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getSystemStats } from '../services/adminService';
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
@@ -260,7 +261,7 @@ const AdminPanel = ({ onCancel }) => {
   useEffect(() => {
     if (activeTab === 'users') {
       fetchUsers(true);
-    } else {
+    } else if (activeTab === 'reports') {
       fetchReports();
     }
   }, [activeTab, fetchUsers, fetchReports]);
@@ -1098,21 +1099,32 @@ const AdminPanel = ({ onCancel }) => {
               </div>
             )}
           </>
-        ) : activeTab === 'exercises' ? (
-          <AdminExercises />
-        ) : activeTab === 'ratings' ? (
-            <AdminRatings />
-          ) : activeTab === 'notifications' ? (
-          <AdminNotifications />
-        ) : activeTab === 'emails' ? (
-          <AdminEmails />
-        ) : activeTab === 'uploads' ? (
-          <AdminUploads />
-        ) : activeTab === 'news' ? (
-          <AdminNewsManager />
-        ) : activeTab === 'security' ? (
-          <SecurityDashboard onBack={() => setActiveTab('users')} />
-        ) : null}
+        ) : (
+          <React.Suspense
+            fallback={
+              <div className="py-20 flex flex-col items-center justify-center gap-3">
+                <Spinner size={32} />
+                <span className="text-xs font-semibold text-text-secondary tracking-wide uppercase">Cargando sección...</span>
+              </div>
+            }
+          >
+            {activeTab === 'exercises' ? (
+              <AdminExercises />
+            ) : activeTab === 'ratings' ? (
+              <AdminRatings />
+            ) : activeTab === 'notifications' ? (
+              <AdminNotifications />
+            ) : activeTab === 'emails' ? (
+              <AdminEmails />
+            ) : activeTab === 'uploads' ? (
+              <AdminUploads />
+            ) : activeTab === 'news' ? (
+              <AdminNewsManager />
+            ) : activeTab === 'security' ? (
+              <SecurityDashboard onBack={() => setActiveTab('users')} />
+            ) : null}
+          </React.Suspense>
+        )}
       </GlassCard>
 
       {/* Lightbox y Modales */}

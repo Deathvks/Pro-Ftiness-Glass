@@ -73,38 +73,52 @@ const LoadingFallback = () => {
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setShowRescue(true);
-    }, 18000); // 18s de cortesía antes de sugerir rescate
+    }, 7000); // 7s de cortesía antes de sugerir rescate
     return () => clearTimeout(timer);
   }, []);
 
-  const handleRepair = async () => {
+  const handleRepair = () => {
     setIsRepairing(true);
+
+    // 1. Limpieza síncrona inmediata en storage para que no bloquee jamás
     try {
-      if ('serviceWorker' in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        for (const reg of regs) {
-          await reg.unregister();
-        }
-      }
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
-      }
       sessionStorage.clear();
-      localStorage.removeItem('pfg_cached_initial_state_v1');
-      localStorage.removeItem('pfg_crash_loop_count');
-      for (let i = 0; i < localStorage.length; i++) {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
         const k = localStorage.key(i);
-        if (k && (k.startsWith('pfg_chunk_retry_') || k.startsWith('pfg_reload_'))) {
+        if (k && (k.startsWith('pfg_chunk_retry_') || k.startsWith('pfg_reload_') || k === 'pfg_cached_initial_state_v1')) {
           localStorage.removeItem(k);
         }
       }
-    } catch (e) {
-      console.warn('Error en reparación limpia:', e);
+    } catch (_) {}
+
+    // 2. Limpieza de caches y SW en segundo plano (fire-and-forget, SIN AWAIT BLOQUEANTE que congele la UI)
+    if ('caches' in window) {
+      caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
     }
-    const freshUrl = new URL(window.location.href);
-    freshUrl.searchParams.set('pfg_fresh', String(Date.now()));
-    window.location.replace(freshUrl.toString());
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((r) => r.unregister().catch(() => {}));
+      }).catch(() => {});
+    }
+
+    // 3. Garantía absoluta de recarga limpia e instantánea
+    const freshUrl = window.location.origin + window.location.pathname + '?r=' + Date.now() + (window.location.hash || '');
+    setTimeout(() => {
+      try {
+        window.location.replace(freshUrl);
+      } catch (_) {
+        window.location.href = freshUrl;
+      }
+    }, 120);
+
+    // 4. Fallback incondicional si el navegador no navegó tras 350ms
+    setTimeout(() => {
+      try {
+        window.location.reload();
+      } catch (_) {
+        window.location.href = freshUrl;
+      }
+    }, 350);
   };
 
   const handleResetSession = () => {
@@ -116,10 +130,10 @@ const LoadingFallback = () => {
       }
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then((regs) => {
-          for (const reg of regs) reg.unregister();
+          regs.forEach((r) => r.unregister().catch(() => {}));
         }).catch(() => {});
       }
-    } catch {}
+    } catch (_) {}
     window.location.replace('/login');
   };
 
