@@ -287,12 +287,16 @@ export const fetchNewsBySlug = async (slug, { bypassCache = false } = {}) => {
   return promise;
 };
 
-export const recordArticleView = async (slug) => {
+export const recordArticleView = async (slug, trackingData = {}) => {
   try {
     const res = await fetch(`${API_URL}/news/article/${encodeURIComponent(slug)}/view`, {
       method: 'POST',
       credentials: 'include',
-      headers: getAuthHeaders()
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify(trackingData)
     });
     if (!res.ok) return null;
     return await res.json();
@@ -404,6 +408,71 @@ export const fixDuplicateCovers = async () => {
     `${API_URL}/news/admin/fix-duplicate-covers`,
     {
       method: 'POST',
+      headers: getAuthHeaders()
+    },
+    0
+  );
+};
+
+/**
+ * Enviar telemetría / sniffing de visita a noticias
+ */
+export const trackNewsVisit = async (payload = {}) => {
+  try {
+    const res = await fetch(`${API_URL}/news/track`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Obtener estadísticas de analítica y visitas para el panel admin
+ */
+export const fetchNewsAnalytics = async ({ period = 'all', mode = 'all' } = {}) => {
+  const query = new URLSearchParams({ period, mode }).toString();
+  return requestWithRetry(
+    `${API_URL}/news/admin/analytics?${query}`,
+    {
+      method: 'GET',
+      headers: getAuthHeaders()
+    },
+    0
+  );
+};
+
+/**
+ * Enviar ping de diagnóstico / prueba de tracker
+ */
+export const sendTestVisitPing = async (slug = null) => {
+  return requestWithRetry(
+    `${API_URL}/news/admin/analytics/test-ping`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ slug })
+    },
+    0
+  );
+};
+
+/**
+ * Limpiar visitas de prueba de diagnóstico
+ */
+export const clearTestVisits = async () => {
+  return requestWithRetry(
+    `${API_URL}/news/admin/analytics/test-data`,
+    {
+      method: 'DELETE',
       headers: getAuthHeaders()
     },
     0

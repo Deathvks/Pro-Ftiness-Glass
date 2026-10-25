@@ -30,6 +30,7 @@ import ArticleSEO from '../components/News/ArticleSEO';
 import AdSenseSlot from '../components/News/AdSenseSlot';
 import MarkdownContent from '../components/News/MarkdownContent';
 import * as newsService from '../services/newsService';
+import { buildTrackingPayload } from '../utils/newsTracker';
 import { useToast } from '../hooks/useToast';
 
 const isOfficialAuthor = (name = '') => {
@@ -125,11 +126,15 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           const alreadyLiked = localStorage.getItem(`liked_article_${data.article?.id}`) === 'true';
           setHasLiked(alreadyLiked);
 
-          // Registrar lectura real y única por sesión de navegación (evita inflar con F5 o React StrictMode)
+          // Registrar lectura real y sniffing completo por sesión de navegación
           const sessionKey = `viewed_news_session_${data.article?.id}`;
           if (!sessionStorage.getItem(sessionKey)) {
             sessionStorage.setItem(sessionKey, 'true');
-            newsService.recordArticleView(slug).then(res => {
+            const trackingPayload = buildTrackingPayload({
+              slug,
+              article_title: data.article?.title || ''
+            });
+            newsService.recordArticleView(slug, trackingPayload).then(res => {
               if (res?.views_count !== undefined && isMounted) {
                 setArticle(prev => prev ? { ...prev, views_count: res.views_count } : prev);
               }

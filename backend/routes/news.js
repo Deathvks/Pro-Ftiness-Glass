@@ -21,9 +21,31 @@ const newsInteractionLimiter = rateLimit({
 router.get('/', newsController.getPublicNews);
 router.get('/article/:slug', newsController.getNewsBySlug);
 router.post('/article/:slug/view', newsInteractionLimiter, newsController.trackNewsView);
+router.post('/track', newsInteractionLimiter, newsController.trackVisitor);
 router.post('/article/:slug/like', newsInteractionLimiter, newsController.toggleLikeNews);
 
 // --- RUTAS ADMINISTRADOR (Gestión de noticias y generación con IA) ---
+router.get(
+  '/admin/analytics',
+  authenticateToken,
+  authorizeAdmin,
+  newsController.getNewsAnalytics
+);
+
+router.post(
+  '/admin/analytics/test-ping',
+  authenticateToken,
+  authorizeAdmin,
+  newsController.sendTestVisitPing
+);
+
+router.delete(
+  '/admin/analytics/test-data',
+  authenticateToken,
+  authorizeAdmin,
+  newsController.clearTestVisits
+);
+
 router.get(
   '/admin/list',
   authenticateToken,

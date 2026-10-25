@@ -5,7 +5,10 @@ import models from '../models/index.js';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import newsAutomationService from '../services/newsAutomationService.js';
 
-const { News } = models;
+import { UAParser } from 'ua-parser-js';
+import jwt from 'jsonwebtoken';
+
+const { News, NewsVisitLog, User } = models;
 
 // Imágenes de portada curadas en alta resolución para fitness y nutrición
 const CATEGORY_DEFAULT_IMAGES = {
@@ -214,32 +217,245 @@ export const getNewsBySlug = async (req, res) => {
 /**
  * Registrar una lectura única real en un artículo
  */
+// Caché en memoria para geolocalización de IPs (evita saturar ip-api y responde en 0ms)
+const ipGeoCache = new Map();
+
+/**
+ * Motor de Rastreo y Sniffing de Visitas para Noticias
+ * Captura: IP, país, ciudad, referrer (página previa), navegador, SO, resolución, dispositivo y usuario.
+ */
+export const recordNewsTelemetry = async (req, customData = {}) => {
+  try {
+    // 1. IP del visitante (robusta con Cloudflare / proxies)
+    let ip =
+      req.headers['cf-connecting-ip'] ||
+      req.headers['x-real-ip'] ||
+      (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : req.socket?.remoteAddress) ||
+      '';
+
+    if (ip.startsWith('::ffff:')) {
+      ip = ip.replace('::ffff:', '');
+    }
+
+    // 2. Extraer usuario autenticado si existe token (sin bloquear si es anónimo)
+    let userId = null;
+    try {
+      const authHeader = req.headers['authorization'];
+      const token = req.cookies?.token || (authHeader && authHeader.split(' ')[1]);
+      if (token && process.env.JWT_SECRET) {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded?.id) userId = decoded.id;
+      }
+    } catch {}
+
+    // 3. User-Agent y Sniffing de Dispositivo
+    const userAgent = req.headers['user-agent'] || customData.user_agent || '';
+    const parser = new UAParser(userAgent);
+    const parsedUA = parser.getResult();
+
+    const browserName = parsedUA.browser.name || 'Desconocido';
+    const browserVersion = parsedUA.browser.version ? parsedUA.browser.version.split('.')[0] : '';
+    const browser = browserVersion ? `${browserName} ${browserVersion}` : browserName;
+
+    const osName = parsedUA.os.name || 'Desconocido';
+    const osVersion = parsedUA.os.version || '';
+    const os = osVersion ? `${osName} ${osVersion}` : osName;
+
+    let deviceType = customData.device_type || parsedUA.device.type || 'desktop';
+    if (!['mobile', 'tablet', 'desktop'].includes(deviceType)) {
+      deviceType = 'desktop';
+    }
+
+    // 4. Referrer (Página previa / De dónde vienen)
+    const rawReferrer = customData.referrer || req.headers['referer'] || req.headers['referrer'] || '';
+    let referrerHost = 'Directo / Marcadores';
+    let referrerType = 'direct';
+
+    if (rawReferrer) {
+      try {
+        const parsedUrl = new URL(rawReferrer);
+        const hostname = parsedUrl.hostname.toLowerCase();
+        referrerHost = hostname.replace(/^www\./, '');
+
+        if (hostname.includes('google.')) {
+          referrerType = 'search';
+          referrerHost = 'Google';
+        } else if (hostname.includes('bing.')) {
+          referrerType = 'search';
+          referrerHost = 'Bing';
+        } else if (hostname.includes('duckduckgo.')) {
+          referrerType = 'search';
+          referrerHost = 'DuckDuckGo';
+        } else if (hostname.includes('yahoo.')) {
+          referrerType = 'search';
+          referrerHost = 'Yahoo';
+        } else if (hostname.includes('instagram.')) {
+          referrerType = 'social';
+          referrerHost = 'Instagram';
+        } else if (hostname.includes('facebook.') || hostname.includes('fb.com')) {
+          referrerType = 'social';
+          referrerHost = 'Facebook';
+        } else if (hostname.includes('twitter.') || hostname.includes('t.co') || hostname.includes('x.com')) {
+          referrerType = 'social';
+          referrerHost = 'X / Twitter';
+        } else if (hostname.includes('tiktok.')) {
+          referrerType = 'social';
+          referrerHost = 'TikTok';
+        } else if (hostname.includes('reddit.')) {
+          referrerType = 'social';
+          referrerHost = 'Reddit';
+        } else if (hostname.includes('whatsapp.')) {
+          referrerType = 'messaging';
+          referrerHost = 'WhatsApp';
+        } else if (hostname.includes('t.me') || hostname.includes('telegram.')) {
+          referrerType = 'messaging';
+          referrerHost = 'Telegram';
+        } else if (hostname.includes('localhost') || hostname.includes('profitnessglass') || hostname === req.hostname) {
+          referrerType = 'internal';
+          referrerHost = customData.previous_route || 'Navegación Interna';
+        } else {
+          referrerType = 'external';
+        }
+      } catch {
+        referrerHost = rawReferrer.substring(0, 50);
+        referrerType = 'external';
+      }
+    } else if (customData.previous_route && customData.previous_route !== '/') {
+      referrerType = 'internal';
+      referrerHost = customData.previous_route;
+    }
+
+    // 5. Geolocalización (País y Ciudad)
+    let country = req.headers['cf-ipcountry'] || null;
+    let city = null;
+
+    if (!country || country === 'XX') {
+      if (ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.') || ip === '') {
+        country = 'ES';
+        city = 'Local / Pruebas';
+      } else if (ipGeoCache.has(ip)) {
+        const cachedGeo = ipGeoCache.get(ip);
+        country = cachedGeo.country;
+        city = cachedGeo.city;
+      } else {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 1500);
+          const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,countryCode,city`, {
+            signal: controller.signal
+          });
+          clearTimeout(timeout);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.status === 'success') {
+              country = data.countryCode || 'ES';
+              city = data.city || null;
+              ipGeoCache.set(ip, { country, city });
+            }
+          }
+        } catch {}
+      }
+    }
+    if (!country) country = 'ES';
+
+    // 6. Vinculación con Noticia (si aplica)
+    const slug = customData.slug || req.params?.slug || null;
+    let newsId = null;
+    let articleTitle = customData.article_title || null;
+
+    if (slug) {
+      const article = await News.findOne({
+        where: { slug }
+      });
+      if (article) {
+        newsId = article.id;
+        articleTitle = article.title;
+        if (!customData.is_test) {
+          await article.increment('views_count', { by: 1 });
+          await article.reload();
+          const cached = articleSlugCache.get(slug);
+          if (cached && cached.payload?.article) {
+            cached.payload.article.views_count = article.views_count;
+          }
+        }
+      }
+    }
+
+    // 7. Crear el registro en news_visit_logs
+    const visitorId = customData.visitor_id || `vis_${Math.random().toString(36).substring(2, 12)}`;
+    const pagePath = customData.page_path || (slug ? `/noticias/${slug}` : '/noticias');
+
+    let log = null;
+    if (NewsVisitLog) {
+      log = await NewsVisitLog.create({
+        news_id: newsId,
+        article_slug: slug,
+        article_title: articleTitle,
+        page_path: pagePath,
+        visitor_id: visitorId,
+        user_id: userId,
+        session_id: customData.session_id || null,
+        referrer: rawReferrer ? rawReferrer.substring(0, 500) : null,
+        referrer_host: referrerHost.substring(0, 150),
+        referrer_type: referrerType,
+        ip_address: ip ? ip.substring(0, 64) : null,
+        country: country ? country.substring(0, 10) : 'ES',
+        city: city ? city.substring(0, 100) : null,
+        device_type: deviceType,
+        browser: browser ? browser.substring(0, 80) : null,
+        os: os ? os.substring(0, 80) : null,
+        screen_resolution: customData.screen_resolution ? String(customData.screen_resolution).substring(0, 30) : null,
+        language: customData.language ? String(customData.language).substring(0, 20) : (req.headers['accept-language']?.split(',')[0]?.substring(0, 20) || 'es-ES'),
+        utm_source: customData.utm_source ? String(customData.utm_source).substring(0, 100) : null,
+        utm_medium: customData.utm_medium ? String(customData.utm_medium).substring(0, 100) : null,
+        utm_campaign: customData.utm_campaign ? String(customData.utm_campaign).substring(0, 100) : null,
+        duration_seconds: parseInt(customData.duration_seconds, 10) || 0,
+        is_test: !!customData.is_test,
+        user_agent: userAgent
+      });
+    }
+
+    return {
+      success: true,
+      log,
+      views_count: newsId ? (await News.findByPk(newsId))?.views_count : undefined
+    };
+  } catch (err) {
+    console.error('Error en recordNewsTelemetry:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+/**
+ * Endpoint para registrar lectura y sniffing en un artículo
+ */
 export const trackNewsView = async (req, res) => {
   try {
     const { slug } = req.params;
-
-    const article = await News.findOne({
-      where: { slug, is_published: true }
-    });
-
-    if (!article) {
-      return res.status(404).json({ error: 'Noticia no encontrada.' });
-    }
-
-    await article.increment('views_count', { by: 1 });
-    await article.reload();
-    const cached = articleSlugCache.get(slug);
-    if (cached && cached.payload?.article) {
-      cached.payload.article.views_count = article.views_count;
-    }
+    const result = await recordNewsTelemetry(req, { slug, ...(req.body || {}) });
 
     return res.json({
       success: true,
-      views_count: article.views_count
+      views_count: result.views_count
     });
   } catch (error) {
     console.error('Error al registrar lectura de noticia:', error);
     return res.status(500).json({ error: 'Error al registrar lectura.' });
+  }
+};
+
+/**
+ * Endpoint genérico de telemetría / tracking (p. ej. catálogo de noticias o vista general)
+ */
+export const trackVisitor = async (req, res) => {
+  try {
+    const result = await recordNewsTelemetry(req, req.body || {});
+    return res.json({
+      success: result.success,
+      logId: result.log?.id
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Error al registrar telemetría.' });
   }
 };
 
@@ -783,5 +999,211 @@ export const fixDuplicateCovers = async (req, res) => {
   } catch (error) {
     console.error('Error al desduplicar portadas:', error);
     return res.status(500).json({ error: 'Error al corregir portadas duplicadas.' });
+  }
+};
+
+/**
+ * Analítica & Sniffing del Panel Administrador de Noticias
+ */
+export const getNewsAnalytics = async (req, res) => {
+  try {
+    const { period = 'all', mode = 'all' } = req.query;
+
+    let timeWhere = {};
+    const now = new Date();
+    if (period === 'today') {
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      timeWhere.created_at = { [Op.gte]: startOfDay };
+    } else if (period === '7d') {
+      const past7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      timeWhere.created_at = { [Op.gte]: past7 };
+    } else if (period === '30d') {
+      const past30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      timeWhere.created_at = { [Op.gte]: past30 };
+    }
+
+    let modeWhere = {};
+    if (mode === 'real') {
+      modeWhere.is_test = false;
+    } else if (mode === 'test') {
+      modeWhere.is_test = true;
+    } else if (mode === 'articles') {
+      modeWhere.article_slug = { [Op.ne]: null };
+    } else if (mode === 'catalog') {
+      modeWhere.article_slug = null;
+    }
+
+    const where = { ...timeWhere, ...modeWhere };
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const [
+      totalVisits,
+      uniqueVisitorsResult,
+      todayVisits,
+      realVisits,
+      testVisits,
+      recentLogs,
+      deviceCounts,
+      referrerCounts,
+      articleCounts
+    ] = await Promise.all([
+      NewsVisitLog.count({ where }),
+      NewsVisitLog.count({
+        where,
+        distinct: true,
+        col: 'visitor_id'
+      }),
+      NewsVisitLog.count({
+        where: {
+          created_at: { [Op.gte]: startOfToday },
+          ...modeWhere
+        }
+      }),
+      NewsVisitLog.count({ where: { is_test: false, ...timeWhere } }),
+      NewsVisitLog.count({ where: { is_test: true, ...timeWhere } }),
+      NewsVisitLog.findAll({
+        where,
+        order: [['created_at', 'DESC']],
+        limit: 150,
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'name', 'username', 'email', 'profile_image']
+          }
+        ]
+      }),
+      NewsVisitLog.findAll({
+        where,
+        attributes: [
+          'device_type',
+          [models.sequelize.fn('COUNT', models.sequelize.col('id')), 'count']
+        ],
+        group: ['device_type']
+      }),
+      NewsVisitLog.findAll({
+        where,
+        attributes: [
+          'referrer_host',
+          'referrer_type',
+          [models.sequelize.fn('COUNT', models.sequelize.col('id')), 'count']
+        ],
+        group: ['referrer_host', 'referrer_type'],
+        order: [[models.sequelize.literal('count'), 'DESC']],
+        limit: 10
+      }),
+      NewsVisitLog.findAll({
+        where: {
+          ...where,
+          article_slug: { [Op.ne]: null }
+        },
+        attributes: [
+          'article_slug',
+          'article_title',
+          [models.sequelize.fn('COUNT', models.sequelize.col('id')), 'count']
+        ],
+        group: ['article_slug', 'article_title'],
+        order: [[models.sequelize.literal('count'), 'DESC']],
+        limit: 8
+      })
+    ]);
+
+    const devices = { mobile: 0, desktop: 0, tablet: 0 };
+    deviceCounts.forEach(d => {
+      const type = d.getDataValue('device_type') || 'desktop';
+      const c = parseInt(d.getDataValue('count'), 10) || 0;
+      if (devices[type] !== undefined) {
+        devices[type] = c;
+      } else {
+        devices.desktop += c;
+      }
+    });
+
+    return res.json({
+      success: true,
+      stats: {
+        totalVisits,
+        uniqueVisitors: uniqueVisitorsResult,
+        todayVisits,
+        realVisits,
+        testVisits,
+        devices,
+        topReferrers: referrerCounts.map(r => ({
+          host: r.getDataValue('referrer_host'),
+          type: r.getDataValue('referrer_type'),
+          count: parseInt(r.getDataValue('count'), 10) || 0
+        })),
+        topArticles: articleCounts.map(a => ({
+          slug: a.getDataValue('article_slug'),
+          title: a.getDataValue('article_title') || a.getDataValue('article_slug'),
+          count: parseInt(a.getDataValue('count'), 10) || 0
+        }))
+      },
+      visits: recentLogs
+    });
+  } catch (err) {
+    console.error('Error al obtener analítica de noticias:', err);
+    return res.status(500).json({ error: 'Error al consultar métricas del tracker.' });
+  }
+};
+
+/**
+ * Generar ping de diagnóstico en vivo para probar el tracker
+ */
+export const sendTestVisitPing = async (req, res) => {
+  try {
+    const { slug } = req.body || {};
+    let articleSlug = slug;
+    let articleTitle = 'Prueba de Diagnóstico Tracker';
+
+    if (!articleSlug) {
+      const anyArticle = await News.findOne({
+        where: { is_published: true },
+        order: [['published_at', 'DESC']]
+      });
+      if (anyArticle) {
+        articleSlug = anyArticle.slug;
+        articleTitle = anyArticle.title;
+      }
+    }
+
+    const result = await recordNewsTelemetry(req, {
+      slug: articleSlug,
+      article_title: articleTitle,
+      page_path: articleSlug ? `/noticias/${articleSlug}` : '/noticias',
+      referrer: req.headers['referer'] || 'https://www.google.com/search?q=pro+fitness+glass+noticias',
+      is_test: true,
+      visitor_id: `test_vis_${Math.random().toString(36).substring(2, 9)}`,
+      screen_resolution: '1920x1080',
+      device_type: 'desktop'
+    });
+
+    return res.json({
+      success: true,
+      message: 'Ping de prueba registrado correctamente.',
+      log: result.log
+    });
+  } catch (err) {
+    console.error('Error en sendTestVisitPing:', err);
+    return res.status(500).json({ error: 'Error al generar ping de prueba.' });
+  }
+};
+
+/**
+ * Limpiar todas las visitas de prueba de diagnóstico
+ */
+export const clearTestVisits = async (req, res) => {
+  try {
+    const deleted = await NewsVisitLog.destroy({
+      where: { is_test: true }
+    });
+    return res.json({
+      success: true,
+      deletedCount: deleted,
+      message: `Se han eliminado ${deleted} visitas de prueba.`
+    });
+  } catch (err) {
+    console.error('Error en clearTestVisits:', err);
+    return res.status(500).json({ error: 'Error al limpiar visitas de prueba.' });
   }
 };

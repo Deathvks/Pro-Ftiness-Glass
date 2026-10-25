@@ -15,7 +15,8 @@ import {
   Calendar,
   Layers,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Activity
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -26,6 +27,7 @@ import * as newsService from '../../services/newsService';
 import { useToast } from '../../hooks/useToast';
 import AdminNewsAutomation from './AdminNewsAutomation';
 import NewsContentEditor from './NewsContentEditor';
+import AdminNewsTracker from './AdminNewsTracker';
 
 const DEFAULT_CATEGORIES = ['Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
 
@@ -256,6 +258,23 @@ export default function AdminNewsManager() {
 
           <button
             type="button"
+            onClick={() => setViewMode('tracker')}
+            className={`px-3.5 sm:px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0 border active:scale-95 ${
+              viewMode === 'tracker'
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-transparent shadow-sm shadow-emerald-500/25'
+                : 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
+            }`}
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <Activity size={14} />
+            <span>Tracker & Sniffing</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setViewMode('automation')}
             className={`px-3.5 sm:px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0 border active:scale-95 ${
               viewMode === 'automation'
@@ -294,6 +313,11 @@ export default function AdminNewsManager() {
           </button>
         </div>
       </div>
+
+      {/* VISTA: TRACKER & ANALÍTICA EN VIVO (SNIFFER) */}
+      {viewMode === 'tracker' && (
+        <AdminNewsTracker />
+      )}
 
       {/* VISTA: AUTOMATIZACIÓN DIARIA CON GEMINI */}
       {viewMode === 'automation' && (

@@ -30,6 +30,7 @@ import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import AdSenseSlot from '../components/News/AdSenseSlot';
 import * as newsService from '../services/newsService';
+import { trackCatalogVisit } from '../utils/newsTracker';
 import useAppStore from '../store/useAppStore';
 
 const DEFAULT_CATEGORIES = ['Todas', 'Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
@@ -166,6 +167,11 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
       });
     }
   }, [news]);
+
+  // Telemetría & Sniffing de visitas al catálogo
+  useEffect(() => {
+    trackCatalogVisit();
+  }, []);
 
   const handleSelectCategory = (cat) => {
     const next = new URLSearchParams(searchParams);
