@@ -23,6 +23,7 @@ import AuthScreens from './components/AuthScreens';
 import MainAppLayout from './components/MainAppLayout';
 import InitialLoadingSkeleton from './components/InitialLoadingSkeleton';
 import NewsLoadingSkeleton from './components/News/NewsLoadingSkeleton';
+import LandingLoadingSkeleton from './components/LandingLoadingSkeleton';
 import RestTimerModal from './components/RestTimerModal';
 import DynamicIslandTimer from './components/DynamicIslandTimer';
 import VersionUpdater from './components/VersionUpdater';
@@ -913,7 +914,7 @@ export default function App() {
         <Route path="/" element={
             !isAuthenticated ? (
                 isInstalledApp ? <Navigate to="/login" replace /> : (
-                  <Suspense fallback={<NewsLoadingSkeleton />}>
+                  <Suspense fallback={<LandingLoadingSkeleton />}>
                     <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
                   </Suspense>
                 )

@@ -1,4 +1,4 @@
 {
-  "version": "7.10.3",
-  "releaseNotes": "Actualización v7.10.3: Precarga instantánea del Panel Admin, subcomponentes modularizados con carga bajo demanda y sistema de rescate y recarga sin bloqueos."
+  "version": "7.10.4",
+  "releaseNotes": "Actualización v7.10.4: Skeleton propio de la Landing Page sin dependencias de noticias y ajuste exacto de la mascota GymBot entre cabecera y versión en móvil."
 }
