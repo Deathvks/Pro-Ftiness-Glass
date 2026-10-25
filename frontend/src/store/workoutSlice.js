@@ -62,6 +62,29 @@ export const initNativeTimerSync = (store) => {
   }
 };
 
+// --- HELPER: Detectar si un entrenamiento se realizó o terminó hoy (incluso pasada la medianoche 0:00) ---
+export const isWorkoutDoneToday = (log, todayDate = new Date()) => {
+  if (!log?.workout_date) return false;
+  const start = new Date(log.workout_date);
+  if (isNaN(start.getTime())) return false;
+
+  if (isSameDay(start, todayDate)) return true;
+
+  const durationSec = Number(log.duration_seconds) || 0;
+  if (durationSec > 0) {
+    const end = new Date(start.getTime() + durationSec * 1000);
+    if (isSameDay(end, todayDate)) return true;
+  }
+
+  // Comprobar si el entrenamiento terminó dentro de las horas locales de hoy (ej. pasado de las 00:00)
+  const startOfDay = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate(), 0, 0, 0, 0);
+  const endOfDay = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate(), 23, 59, 59, 999);
+  const end = new Date(start.getTime() + durationSec * 1000);
+  if (end >= startOfDay && end <= endOfDay) return true;
+
+  return false;
+};
+
 // --- HELPER CORREGIDO: Buscar último rendimiento (AHORA LEE BIEN EL BACKEND) ---
 const findLastPerformance = (workoutLog, exerciseName) => {
   if (!workoutLog || !Array.isArray(workoutLog) || !exerciseName) return null;
@@ -220,23 +243,23 @@ export const createWorkoutSlice = (set, get) => ({
         ? workouts.map(w => w.routine_id || w.routineId).filter(id => id != null)
         : [];
 
-      // Validar estrictamente con workoutLog asegurando que sea el mismo día de hoy
+      // Validar estrictamente con workoutLog asegurando que se haya iniciado o concluido hoy (soporta terminar pasada la medianoche)
       const stateLogs = get().workoutLog || [];
       const localCompletedIds = stateLogs
         .filter(log => {
           if (!log?.routine_id || !log?.workout_date) return false;
-          return isSameDay(log.workout_date, today);
+          return isWorkoutDoneToday(log, today);
         })
         .map(log => log.routine_id);
 
       // Leemos de almacenamiento únicamente si coincide con la fecha de hoy
       const stored = getCompletedRoutinesFromStorage();
 
-      // Verificar que los IDs almacenados no pertenezcan exclusivamente a días previos
+      // Verificar que los IDs almacenados pertenezcan a entrenamientos que se hicieron o terminaron hoy
       const verifiedStored = stored.filter(storedId => {
         const matchingLogs = stateLogs.filter(l => String(l?.routine_id) === String(storedId));
         if (matchingLogs.length > 0) {
-          return matchingLogs.some(l => isSameDay(l.workout_date, today));
+          return matchingLogs.some(l => isWorkoutDoneToday(l, today));
         }
         return true;
       });

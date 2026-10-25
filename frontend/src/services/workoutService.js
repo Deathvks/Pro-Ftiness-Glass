@@ -2,7 +2,11 @@
 import apiClient from './apiClient';
 
 export const getWorkouts = (params) => {
-    const query = params ? `?${new URLSearchParams(params)}` : '';
+    const finalParams = params ? { ...params } : {};
+    if (finalParams.date && finalParams.tzOffset === undefined) {
+      finalParams.tzOffset = new Date().getTimezoneOffset();
+    }
+    const query = Object.keys(finalParams).length > 0 ? `?${new URLSearchParams(finalParams)}` : '';
     return apiClient(`/workouts${query}`);
 };
 

@@ -1,4 +1,4 @@
 {
-  "version": "7.10.23",
-  "releaseNotes": "Actualización v7.10.23: Solución definitiva a la desvinculación de gimnasio habitual en la primera confirmación (eliminación atómica en memoria, prevención de resurrección por caché o closure desactualizado en Dashboard y PublicProfile). | v7.10.22: Nuevo Studio de Tarjetas para Instagram Stories al estilo Strava/Spotify Wrapped y Rachas Semanales con protección de descanso biológico."
+  "version": "7.10.24",
+  "releaseNotes": "Actualización v7.10.24: Compartir en Stories desde la vista de Rutinas (botón directo Stories en tarjetas completadas e historial) y corrección del bloqueo/completado de entrenamientos que finalizan pasada la medianoche (después de las 0:00) con sincronización de zona horaria cliente-servidor. | v7.10.23: Solución definitiva a desvinculación de gimnasio."
 }

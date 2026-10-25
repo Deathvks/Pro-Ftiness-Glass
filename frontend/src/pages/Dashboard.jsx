@@ -23,6 +23,7 @@ import SugarTargetModal from '../components/SugarTargetModal';
 import GymLocationModal from '../components/GymLocationModal';
 import { enrichGymWithMedia } from '../utils/gymMedia';
 import { isSameDay } from '../utils/helpers';
+import { isWorkoutDoneToday } from '../store/workoutSlice';
 import useAppStore from '../store/useAppStore';
 import { getLevelProgress } from '../store/gamificationSlice';
 import CircularProgress from '../components/CircularProgress';
@@ -1070,7 +1071,8 @@ const Dashboard = ({ setView }) => {
 
             <div className="flex flex-col gap-4">
               {routines.length > 0 ? routines.slice(0, 3).map(routine => {
-                const isCompleted = (completedRoutineIdsToday || []).some(id => String(id) === String(routine.id));
+                const isCompleted = (completedRoutineIdsToday || []).some(id => String(id) === String(routine.id)) ||
+                  (workoutLog || []).some(log => String(log?.routine_id) === String(routine.id) && isWorkoutDoneToday(log));
                 const isActive = activeWorkout && String(activeWorkout.routineId) === String(routine.id);
 
                 return (

@@ -342,14 +342,12 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
               </button>
             </div>
 
-            {!isShareMode && (
-              <button
-                onClick={() => setIsStoryView(false)}
-                className="w-full py-2.5 text-xs text-white/60 hover:text-white font-bold transition-colors flex items-center justify-center gap-1.5"
-              >
-                <ArrowLeft size={14} /> Volver al resumen del entrenamiento
-              </button>
-            )}
+            <button
+              onClick={() => setIsStoryView(false)}
+              className="w-full py-2.5 text-xs text-white/60 hover:text-white font-bold transition-colors flex items-center justify-center gap-1.5"
+            >
+              <ArrowLeft size={14} /> {isShareMode ? 'Ver desglose de ejercicios' : 'Volver al resumen del entrenamiento'}
+            </button>
           </div>
         </div>
       ) : (
@@ -364,7 +362,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
                   <Check size={20} strokeWidth={3} />
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
-                  ¡Entrenamiento Guardado!
+                  {isShareMode ? 'Detalle de Sesión' : '¡Entrenamiento Guardado!'}
                 </h2>
               </div>
               <div className="flex items-center gap-2">

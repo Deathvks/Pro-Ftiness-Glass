@@ -244,9 +244,6 @@ export const createDataSlice = (set, get) => ({
                 const heavyUpdate = {};
                 if (workouts) {
                   heavyUpdate.workoutLog = workouts;
-                  if (get().fetchTodaysCompletedRoutines) {
-                    get().fetchTodaysCompletedRoutines().catch(() => {});
-                  }
                 }
                 if (bodyweight) heavyUpdate.bodyWeightLog = bodyweight;
                 if (measurements) heavyUpdate.bodyMeasurementsLog = measurements;
@@ -258,6 +255,10 @@ export const createDataSlice = (set, get) => ({
                 if (Object.keys(heavyUpdate).length > 0) {
                   set(heavyUpdate);
                   writeInitialCache(heavyUpdate);
+                }
+
+                if (workouts && get().fetchTodaysCompletedRoutines) {
+                  get().fetchTodaysCompletedRoutines().catch(() => {});
                 }
               }).catch((err) => console.error('Error en carga de historial inicial:', err));
             }, 600);

@@ -50,6 +50,7 @@ const WorkoutSummaryModal = lazy(() => import('../components/WorkoutSummaryModal
 const RoutineAIGeneratorModal = lazy(() => import('../components/RoutineAIGeneratorModal'));
 import RoutineTourGuide from '../components/RoutineTourGuide';
 import { calculateRoutineEstimatedTime } from '../utils/helpers';
+import { isWorkoutDoneToday } from '../store/workoutSlice';
 import api from '../services/apiClient';
 
 const GlobalPrivacyModal = ({ onClose }) => {
@@ -570,22 +571,27 @@ const Routines = ({ setView, mainContentRef }) => {
   const handleShareClick = (routine) => {
     if (!workoutLog) return;
     const now = Date.now();
-    const todayStr = new Date().toDateString();
 
-    const todaysLog = workoutLog
-      .filter(log => log.routine_id === routine.id)
-      .sort((a, b) => new Date(b.workout_date) - new Date(a.workout_date))
-      .find(log => {
-        if (!log?.workout_date) return false;
-        const start = new Date(log.workout_date);
-        const end = new Date(start.getTime() + (log.duration_seconds || 0) * 1000);
-        return start.toDateString() === todayStr ||
-               end.toDateString() === todayStr ||
-               (now - end.getTime() < 18 * 60 * 60 * 1000 && now >= start.getTime());
-      });
+    const routineLogs = (workoutLog || [])
+      .filter(log => String(log?.routine_id) === String(routine.id))
+      .sort((a, b) => new Date(b.workout_date) - new Date(a.workout_date));
 
-    if (todaysLog) {
-      const rawDetails = todaysLog.details || todaysLog.WorkoutLogDetails || [];
+    // 1. Buscar primero entrenamiento realizado hoy (o concluido hoy tras medianoche 0:00 / últimas 24h)
+    let selectedLog = routineLogs.find(log => {
+      if (!log?.workout_date) return false;
+      if (isWorkoutDoneToday(log)) return true;
+      const start = new Date(log.workout_date);
+      const end = new Date(start.getTime() + (log.duration_seconds || 0) * 1000);
+      return (now - end.getTime() < 24 * 60 * 60 * 1000 && now >= start.getTime());
+    });
+
+    // 2. Si no se entrenó hoy, tomar la sesión más reciente registrada de esta rutina
+    if (!selectedLog && routineLogs.length > 0) {
+      selectedLog = routineLogs[0];
+    }
+
+    if (selectedLog) {
+      const rawDetails = selectedLog.details || selectedLog.WorkoutLogDetails || [];
       const normalizedDetails = rawDetails.map((ex) => {
         let rawSets = ex.setsDone || ex.sets_done || ex.sets || ex.Sets || ex.WorkoutLogSets || [];
 
@@ -609,15 +615,16 @@ const Routines = ({ setView, mainContentRef }) => {
       });
 
       setShareData({
-        routineName: routine.name || todaysLog.routine_name,
-        duration_seconds: todaysLog.duration_seconds || 0,
-        calories_burned: todaysLog.calories_burned || 0,
+        routineName: routine.name || selectedLog.routine_name || 'Mi Rutina',
+        duration_seconds: selectedLog.duration_seconds || 0,
+        calories_burned: selectedLog.calories_burned || 0,
         details: normalizedDetails,
-        notes: todaysLog.notes,
-        workout_date: todaysLog.workout_date
+        notes: selectedLog.notes,
+        workout_date: selectedLog.workout_date,
+        newPRs: selectedLog.newPRs || selectedLog.PersonalRecords || []
       });
     } else {
-      addToast("No se encontraron datos del entrenamiento de hoy para compartir.", "info");
+      addToast("Esta rutina aún no tiene entrenamientos registrados para compartir.", "info");
     }
   };
 
@@ -989,7 +996,8 @@ const Routines = ({ setView, mainContentRef }) => {
               filteredSorted.map((routine) => {
                 if (!routine) return null;
 
-                const isCompleted = (completedRoutineIdsToday || []).some(id => String(id) === String(routine.id));
+                const isCompleted = (completedRoutineIdsToday || []).some(id => String(id) === String(routine.id)) ||
+                  (workoutLog || []).some(log => String(log?.routine_id) === String(routine.id) && isWorkoutDoneToday(log));
                 const isActive = activeWorkout && activeWorkout.routineId === routine.id;
                 const isBlockedByOtherWorkout = isAnyWorkoutActive && !isActive;
 
@@ -1074,9 +1082,20 @@ const Routines = ({ setView, mainContentRef }) => {
 
                       <div className="flex flex-wrap items-center gap-3 mb-5 text-xs font-bold text-text-secondary">
                         {isCompleted && (
-                          <span className="inline-flex items-center gap-1 text-accent bg-accent/10 px-2 py-1 rounded-[8px]">
-                            <CheckCircle size={14} /> Completada
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 text-accent bg-accent/10 px-2.5 py-1 rounded-[8px]">
+                              <CheckCircle size={14} /> Completada
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleShareClick(routine)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] bg-gradient-to-r from-accent/20 to-purple-500/20 hover:from-accent/30 hover:to-purple-500/30 text-accent font-extrabold text-xs transition-all active:scale-95 shadow-sm"
+                              title="Compartir entrenamiento en Stories de Instagram"
+                            >
+                              <Share2 size={13} />
+                              <span>Stories</span>
+                            </button>
+                          </div>
                         )}
                         <span className="inline-flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-2 py-1 rounded-[8px]">
                           <Clock size={14} /> ~{estimatedTime} min
@@ -1099,11 +1118,15 @@ const Routines = ({ setView, mainContentRef }) => {
                             <Globe size={18} />
                           </button>
                           )}
-                        {isCompleted && !routine.is_from_trainer && (
+                        {(isCompleted || lastUsed) && !routine.is_from_trainer && (
                             <button
                               onClick={() => handleShareClick(routine)}
-                              className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent transition-colors"
-                              title="Compartir"
+                              className={`p-2.5 rounded-[14px] transition-all ${
+                                isCompleted
+                                  ? 'bg-accent/15 text-accent hover:bg-accent hover:text-accent-contrast shadow-sm shadow-accent/20'
+                                  : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent'
+                              }`}
+                              title={isCompleted ? "Compartir entrenamiento de hoy en Stories" : "Compartir última sesión en Stories"}
                             >
                               <Share2 size={18} />
                             </button>

@@ -22,17 +22,27 @@ const { WorkoutLog, WorkoutLogDetail, WorkoutLogSet, PersonalRecord, User, Frien
 
 export const getWorkoutHistory = async (req, res, next) => {
   try {
-    const { date, startDate, endDate } = req.query;
+    const { date, startDate, endDate, tzOffset } = req.query;
     const whereCondition = { user_id: req.user.userId };
 
     if (date) {
       const [year, month, day] = date.split('-').map(Number);
-      const startOfDay = new Date(year, month - 1, day);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(year, month - 1, day);
-      endOfDay.setHours(23, 59, 59, 999);
+      let startOfDay, endOfDay;
 
-      const lookbackStart = new Date(startOfDay.getTime() - (8 * 60 * 60 * 1000));
+      if (tzOffset !== undefined && !isNaN(parseInt(tzOffset, 10))) {
+        // Offset en minutos enviado por el cliente (ej: -120 para España UTC+2)
+        const offsetMin = parseInt(tzOffset, 10);
+        startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0) + offsetMin * 60 * 1000);
+        endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999) + offsetMin * 60 * 1000);
+      } else {
+        startOfDay = new Date(year, month - 1, day);
+        startOfDay.setHours(0, 0, 0, 0);
+        endOfDay = new Date(year, month - 1, day);
+        endOfDay.setHours(23, 59, 59, 999);
+      }
+
+      // Ventana de lookback de hasta 12 horas antes del inicio del día para entrenamientos que terminaron pasada la medianoche
+      const lookbackStart = new Date(startOfDay.getTime() - (12 * 60 * 60 * 1000));
       whereCondition[Op.or] = [
         {
           workout_date: {
