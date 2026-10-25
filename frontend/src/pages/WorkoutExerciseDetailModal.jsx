@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { X, Dumbbell, Repeat, Clock, FileText, Image as ImageIcon, Target, Sparkles, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
+import { X, Dumbbell, Repeat, Clock, FileText, Image as ImageIcon, Target, Sparkles, Loader2, AlertCircle, ChevronDown, Play, WifiOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ExerciseMedia from '../components/ExerciseMedia';
 import Spinner from '../components/Spinner';
@@ -7,15 +7,53 @@ import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { askTrainerAI } from '../services/aiService';
 import ModalPortal from '../components/ModalPortal';
+import { useToast } from '../hooks/useToast';
 
 const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
   const { t } = useTranslation('exercise_ui');
+  const { showToast } = useToast();
 
   const { getOrFetchAllExercises } = useAppStore(useShallow(state => ({
     getOrFetchAllExercises: state.getOrFetchAllExercises,
   })));
 
-  const [localDetails, setLocalDetails] = useState(exercise.exercise_details || {});
+  const [localDetails, setLocalDetails] = useState({ ...exercise, ...(exercise.exercise_details || {}) });
+  const [isOffline, setIsOffline] = useState(() => typeof navigator !== 'undefined' ? !navigator.onLine : false);
+
+  const hasVideo = Boolean(
+    localDetails?.video_url ||
+    localDetails?.exercise?.video_url ||
+    localDetails?.exercise_details?.video_url ||
+    exercise?.video_url
+  );
+
+  const hasImages = Boolean(
+    localDetails?.image_url_start ||
+    localDetails?.image_url ||
+    (Array.isArray(localDetails?.images) && localDetails.images.length > 0) ||
+    exercise?.image_url_start ||
+    exercise?.image_url ||
+    (Array.isArray(exercise?.images) && exercise.images.length > 0)
+  );
+
+  const [mediaMode, setMediaMode] = useState(() => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return 'images';
+    return hasVideo ? 'video' : 'images';
+  });
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => {
+      setIsOffline(true);
+      setMediaMode('images');
+    };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Estados para la IA
   const [aiExplanation, setAiExplanation] = useState(null);
@@ -193,9 +231,53 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           {/* Contenedor Responsivo: Columna en Móvil, 2 Columnas en PC */}
           <div className="flex flex-col md:flex-row md:items-start md:gap-8">
             
-            {/* Columna Izquierda: Vídeo en Formato Vertical Móvil (Shorts 9:16) */}
+            {/* Columna Izquierda: Vídeo en Formato Vertical Móvil (Shorts 9:16) o Animación de Fotos */}
             <div className="flex flex-col items-center shrink-0 mb-6 md:mb-0 md:sticky md:top-0">
+              {/* Selector Vídeo / Animación si ambos recursos existen */}
+              {hasVideo && hasImages && (
+                <div className="flex items-center p-1 bg-black/5 dark:bg-white/5 rounded-full ring-1 ring-black/5 dark:ring-white/10 mb-3 shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isOffline) {
+                        showToast('El vídeo de YouTube requiere conexión a internet activa', 'warning');
+                        return;
+                      }
+                      setMediaMode('video');
+                    }}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      mediaMode === 'video'
+                        ? 'bg-accent text-white shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <Play size={11} fill="currentColor" />
+                    <span>Vídeo</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMediaMode('images')}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      mediaMode === 'images'
+                        ? 'bg-accent text-white shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <Repeat size={11} />
+                    <span>Animación</span>
+                  </button>
+                </div>
+              )}
+
               <div className="relative mx-auto w-[220px] xs:w-[240px] sm:w-[260px] md:w-[270px] max-w-full aspect-[9/16] max-h-[44vh] md:max-h-[58vh] rounded-[28px] overflow-hidden bg-black ring-1 ring-black/10 dark:ring-white/15 shadow-2xl flex items-center justify-center">
+                {/* Badge sin conexión si estamos offline */}
+                {isOffline && (
+                  <div className="absolute top-3 left-3 z-20 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md text-amber-400 text-[10px] font-bold flex items-center gap-1.5 border border-amber-500/30 shadow-md">
+                    <WifiOff size={11} />
+                    <span>Sin conexión • Animación local</span>
+                  </div>
+                )}
+
                 {localIsLoading ? (
                   <div className="w-full h-full flex items-center justify-center text-text-muted">
                     <Spinner size={32} />
@@ -204,7 +286,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
                   <ExerciseMedia
                     details={localDetails}
                     fitMode="cover"
-                    playYouTube={true}
+                    playYouTube={mediaMode === 'video' && !isOffline}
                     className="w-full h-full aspect-[9/16] object-cover"
                   />
                 )}

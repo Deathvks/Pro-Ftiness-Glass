@@ -1,6 +1,6 @@
 /* frontend/src/components/ExerciseMedia.jsx */
 import React, { useState, useEffect, memo } from 'react';
-import { Image as ImageIcon } from 'lucide-react';
+import { Image as ImageIcon, WifiOff } from 'lucide-react';
 
 
 // Base URL para construir las rutas de imÃƒÂ¡genes/vÃƒÂ­deos
@@ -14,6 +14,18 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -
 const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, className = '', fitMode = 'cover', forceAuto = false, forceImage = false, disableAnimation = false, transparentBackground = false, fillContain = false, roundedMedia = false }) => {
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [isOffline, setIsOffline] = useState(() => typeof navigator !== 'undefined' ? !navigator.onLine : false);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
   
 
   // --- LÃƒâ€œGICA INTELIGENTE DE EXTRACCIÃƒâ€œN ---
@@ -127,21 +139,38 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     );
   }
 
-  // Reproductor interactivo de YouTube
+  // Reproductor interactivo de YouTube (solo si está online o no hay imágenes de fallback)
   if (youtubeId && playYouTube) {
-    const hasAspectInClass = className && className.includes('aspect-');
-    const aspectClass = hasAspectInClass ? '' : 'aspect-video';
-    return (
-      <div className={`${aspectClass} w-full h-full rounded-xl overflow-hidden bg-black ${className}`}>
-        <iframe
-          key={youtubeId}
-          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&loop=1&playlist=${youtubeId}`}
-          className="w-full h-full border-none pointer-events-none"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
-    );
+    if (isOffline) {
+      // Si estamos offline y el ejercicio cuenta con fotos/animación local, dejamos que continúe hacia el renderizado de imágenes
+      if (finalImagesUrls.length > 0 || finalImageUrl) {
+        // Fallback transparente a fotos modo GIF
+      } else {
+        const hasAspectInClass = className && className.includes('aspect-');
+        const aspectClass = hasAspectInClass ? '' : 'aspect-video';
+        return (
+          <div className={`${aspectClass} w-full h-full rounded-[24px] overflow-hidden bg-black/80 flex flex-col items-center justify-center p-4 text-center text-text-muted ${className}`}>
+            <WifiOff size={28} className="text-amber-400 mb-2 opacity-80" />
+            <span className="text-xs font-bold text-text-primary">Vídeo no disponible sin conexión</span>
+            <span className="text-[10px] text-text-secondary mt-1">Conéctate a internet para ver el vídeo de YouTube</span>
+          </div>
+        );
+      }
+    } else {
+      const hasAspectInClass = className && className.includes('aspect-');
+      const aspectClass = hasAspectInClass ? '' : 'aspect-video';
+      return (
+        <div className={`${aspectClass} w-full h-full rounded-xl overflow-hidden bg-black ${className}`}>
+          <iframe
+            key={youtubeId}
+            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&loop=1&playlist=${youtubeId}`}
+            className="w-full h-full border-none pointer-events-none"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      );
+    }
   }
 
   // Renderizado de vÃƒÂ­deo (no YouTube directo a <video>)
