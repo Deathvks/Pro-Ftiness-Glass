@@ -1,4 +1,4 @@
 {
-  "version": "7.10.27",
-  "releaseNotes": "Actualización v7.10.27: Story Studio rediseñado y 100% responsive en móvil (sin solapamiento de botones ni textos apretados). Suite de compartir multiplataforma (Instagram Stories, WhatsApp, X y Telegram) con iconos FontAwesome oficiales. Métricas de alto valor para atletas: Carga Máxima (Top Lift) y Series Efectivas sustituyendo el volumen acumulado."
+  "version": "7.10.28",
+  "releaseNotes": "Actualización v7.10.28: Estandarización de modales en Gestión de Noticias y Blog (diseño Bottom Sheet en móvil y modal centrado en PC con ModalPortal y bloqueo de scroll). Optimización de scroll en la Consola Gemini Live y modal de confirmación nativo para eliminación de artículos."
 }
