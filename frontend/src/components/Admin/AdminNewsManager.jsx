@@ -25,6 +25,7 @@ import CustomSelect from '../CustomSelect';
 import * as newsService from '../../services/newsService';
 import { useToast } from '../../hooks/useToast';
 import AdminNewsAutomation from './AdminNewsAutomation';
+import NewsContentEditor from './NewsContentEditor';
 
 const DEFAULT_CATEGORIES = ['Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
 
@@ -401,7 +402,7 @@ export default function AdminNewsManager() {
               Generador Inteligente con Google Gemini 2.5 Flash
             </h3>
             <p className="text-xs text-text-secondary max-w-md mx-auto">
-              Escribe un tema de fitness o nutrición. La IA generará título SEO, slug, resumen para meta description y artículo completo en Markdown.
+              Escribe un tema de fitness o nutrición. La IA generará título SEO, slug, resumen y el artículo completo con formato editorial profesional.
             </p>
           </div>
 
@@ -576,14 +577,10 @@ export default function AdminNewsManager() {
             </div>
 
             <div className="min-w-0 sm:col-span-2">
-              <label className="block text-xs font-bold text-text-secondary mb-1">Contenido (Markdown):</label>
-              <textarea
-                rows={12}
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                placeholder="## Subtítulo&#10;&#10;Contenido del artículo...&#10;&#10;* Puntos clave"
-                className="box-border w-full bg-black/5 dark:bg-white/5 border border-black/15 dark:border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2.5 sm:py-3 text-xs sm:text-sm font-mono text-text-primary focus:outline-none focus:ring-2 focus:ring-accent custom-scrollbar resize-y"
-                required
+              <NewsContentEditor
+                content={formData.content}
+                onChange={(newContent) => setFormData(prev => ({ ...prev, content: newContent }))}
+                onReadingTimeChange={(rt) => setFormData(prev => ({ ...prev, reading_time: rt }))}
               />
             </div>
 

@@ -1,4 +1,4 @@
 {
-  "version": "7.10.0",
-  "releaseNotes": "Actualización v7.10.0: Renderizado tolerante de encabezados Markdown (#, ##, ###, ####), invalidación de caché en tiempo real (SWR) al editar noticias y selección desduplicada de miniaturas temáticas."
+  "version": "7.10.1",
+  "releaseNotes": "Actualización v7.10.1: Editor de noticias en lenguaje humano (barra de herramientas visual con botones en español para títulos, negritas, consejos prácticos, evidencia científica y vista previa en vivo sin códigos)."
 }
