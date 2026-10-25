@@ -27,11 +27,6 @@ const ExerciseList = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: true,
     },
-    wger_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      unique: true
-    },
     category: {
       type: DataTypes.STRING(100),
       allowNull: true,

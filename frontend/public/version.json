@@ -1,4 +1,4 @@
 {
-  "version": "7.10.6",
-  "releaseNotes": "Actualización v7.10.6: Modo Búnker Offline para gimnasios con guardado local garantizado, cola de sincronización resiliente automática y catálogo de ejercicios persistente."
+  "version": "7.10.7",
+  "releaseNotes": "Actualización v7.10.7: Eliminación completa de dependencias y código residual de Wger, catálogo unificado 100% sobre los ejercicios de YouTube con soporte offline nativo."
 }

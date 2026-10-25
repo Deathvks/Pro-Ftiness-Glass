@@ -214,13 +214,6 @@ const processAndSaveExercises = async (
       } else if (exerciseListId && !isNaN(parseInt(exerciseListId))) {
         try {
           let exerciseFromList = await ExerciseList.findByPk(parseInt(exerciseListId), { transaction });
-          
-          if (!exerciseFromList) {
-            exerciseFromList = await ExerciseList.findOne({
-              where: { wger_id: parseInt(exerciseListId) },
-              transaction
-            });
-          }
 
           if (!exerciseFromList && exerciseName) {
             exerciseFromList = await ExerciseList.findOne({

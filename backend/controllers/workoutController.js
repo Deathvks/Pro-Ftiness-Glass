@@ -292,8 +292,8 @@ export const logWorkoutSession = async (req, res, next) => {
           streak: workoutGamification.streak
         });
       }
-    } catch (wGError) {
-      console.error('Error procesando workout gamification:', wGError);
+    } catch (gamificationErr) {
+      console.error('Error procesando workout gamification:', gamificationErr);
     }
 
     try {

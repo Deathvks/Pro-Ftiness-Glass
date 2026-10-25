@@ -74,20 +74,10 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   // ConstrucciÃƒÂ³n segura de la URL final
   const getBestImageUrl = (url) => {
     if (!url || url === 'null' || url === 'undefined' || (typeof url === 'string' && url.trim() === '')) return null;
-    if (typeof url !== 'string') url = String(url); // En caso de que sea un String object
+    if (typeof url !== 'string') url = String(url);
     if (url.startsWith('http')) return url;
     
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
-    const filename = cleanUrl.split('/').pop();
-    
-    // ExpresiÃƒÂ³n regular relajada: Busca el patrÃƒÂ³n UUID en CUALQUIER parte del nombre
-    const isWgerUuid = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(filename);
-    
-    if (isWgerUuid || cleanUrl.includes('exercise-images')) {
-      return `https://wger.de/media/exercise-images/${filename}`;
-    }
-
-    // Si es una imagen normal local, va al backend
     return `${BACKEND_BASE_URL}/${cleanUrl}`;
   };
 
@@ -182,22 +172,16 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     const finalBgClass = fitMode === 'cover' || transparentBackground ? 'bg-transparent' : 'bg-black/5 dark:bg-white/5';
     const containerClasses = `${aspectRatioClass} relative rounded-[24px] overflow-hidden ${finalBgClass} flex items-center justify-center ${className}`;
 
-    // LÃƒÂ³gica mÃƒÂ¡gica para eliminar el fondo blanco de los dibujos de Wger
+    // Lógica de ajuste de imagen
     const getImageBlendClass = (url) => {
       if (!url) return '';
       if (url === youtubeThumbnail) {
         return fitMode === 'contain' ? 'object-contain' : 'object-cover';
       }
-      
-      let blendClass = isAuto ? 'object-contain' : `object-${fitMode}`;
-      if (url.includes('wger.de')) {
-        blendClass = 'object-contain'; // Los dibujos de WGER siempre deben hacer 'contain' para no cortarse
-        blendClass += ' mix-blend-multiply dark:invert dark:hue-rotate-180 dark:mix-blend-screen';
-      }
-      return blendClass;
+      return isAuto ? 'object-contain' : `object-${fitMode}`;
     };
 
-    const isContain = fitMode === 'contain' || (imageToRender && imageToRender.includes('wger.de'));
+    const isContain = fitMode === 'contain';
     const imageRadiusClass = roundedMedia ? 'rounded-[20px]' : '';
     const imgBaseClass = isAuto 
       ? 'w-full h-auto' 
@@ -222,7 +206,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
             `}</style>
           )}
           {finalImagesUrls.map((url, idx) => {
-            const isUrlContain = fitMode === 'contain' || url.includes('wger.de');
+            const isUrlContain = fitMode === 'contain';
             const posClass = isAuto && idx === 0 ? 'relative' : 'absolute inset-0';
             const sizeClass = isAuto
               ? 'w-full h-auto'

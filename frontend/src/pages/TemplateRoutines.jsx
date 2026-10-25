@@ -15,11 +15,6 @@ const processMediaUrl = (url) => {
   if (!url) return null;
   if (url.startsWith('http')) return url;
   const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
-  const filename = cleanUrl.split('/').pop();
-  const isWgerUuid = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(filename);
-  if (isWgerUuid || cleanUrl.includes('exercise-images')) {
-    return `https://wger.de/media/exercise-images/${filename}`;
-  }
   return `${BACKEND_BASE_URL}/${cleanUrl}`;
 };
 
