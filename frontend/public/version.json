@@ -1,4 +1,4 @@
 {
-  "version": "7.10.24",
-  "releaseNotes": "Actualización v7.10.24: Compartir en Stories desde la vista de Rutinas (botón directo Stories en tarjetas completadas e historial) y corrección del bloqueo/completado de entrenamientos que finalizan pasada la medianoche (después de las 0:00) con sincronización de zona horaria cliente-servidor. | v7.10.23: Solución definitiva a desvinculación de gimnasio."
+  "version": "7.10.25",
+  "releaseNotes": "Actualización v7.10.25: Modal del Entrenador IA rediseñado como Bottom Sheet en móvil con deslizamiento interactivo hacia abajo para cerrar, pill handle e indicador animado. | v7.10.24: Compartir en Stories desde Rutinas y detección de entrenamientos tras medianoche."
 }
