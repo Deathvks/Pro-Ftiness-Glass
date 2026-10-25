@@ -121,20 +121,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     const navigate = useNavigate();
     const { showToast, addToast } = useToast();
 
-    const effectiveUserId = propUserId || paramUserId || myProfile?.id;
-    const userId = effectiveUserId;
-
-    const [loadTimedOut, setLoadTimedOut] = useState(false);
-    useEffect(() => {
-        let t;
-        if (isSocialLoading) {
-            t = setTimeout(() => setLoadTimedOut(true), 6000);
-        } else {
-            setLoadTimedOut(false);
-        }
-        return () => clearTimeout(t);
-    }, [isSocialLoading]);
-
     const { 
         fetchPublicProfile,
         socialViewedProfile: fetchedProfile,
@@ -152,6 +138,20 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         token,
         refreshRoutines
      } = useAppStore(useShallow(state => ({ fetchPublicProfile: state.fetchPublicProfile, socialViewedProfile: state.socialViewedProfile, isSocialLoading: state.isSocialLoading, socialError: state.socialError, clearViewedProfile: state.clearViewedProfile, socialFriends: state.socialFriends, socialRequests: state.socialRequests, sendFriendRequest: state.sendFriendRequest, removeFriend: state.removeFriend, userProfile: state.userProfile, gamification: state.gamification, stories: state.stories, fetchStories: state.fetchStories, token: state.token, refreshRoutines: state.refreshRoutines })));
+
+    const effectiveUserId = propUserId || paramUserId || myProfile?.id;
+    const userId = effectiveUserId;
+
+    const [loadTimedOut, setLoadTimedOut] = useState(false);
+    useEffect(() => {
+        let t;
+        if (isSocialLoading) {
+            t = setTimeout(() => setLoadTimedOut(true), 6000);
+        } else {
+            setLoadTimedOut(false);
+        }
+        return () => clearTimeout(t);
+    }, [isSocialLoading]);
 
     const [badgePage, setBadgePage] = useState(0);
     const BADGES_PER_PAGE = 4;
