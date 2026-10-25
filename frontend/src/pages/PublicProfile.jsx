@@ -118,7 +118,19 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     const navigate = useNavigate();
     const { showToast, addToast } = useToast();
 
-    const userId = propUserId || paramUserId;
+    const effectiveUserId = propUserId || paramUserId || myProfile?.id;
+    const userId = effectiveUserId;
+
+    const [loadTimedOut, setLoadTimedOut] = useState(false);
+    useEffect(() => {
+        let t;
+        if (isSocialLoading) {
+            t = setTimeout(() => setLoadTimedOut(true), 6000);
+        } else {
+            setLoadTimedOut(false);
+        }
+        return () => clearTimeout(t);
+    }, [isSocialLoading]);
 
     const { 
         fetchPublicProfile,

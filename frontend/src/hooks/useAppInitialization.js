@@ -123,7 +123,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
           window.location.pathname === '/privacy' ||
           window.location.pathname === '/terms' ||
           window.location.pathname.startsWith('/share/') ||
-          window.location.pathname === '/reset-password'
+          window.location.pathname === '/reset-password' ||
+          window.location.pathname.startsWith('/profile')
         );
 
         if (hasFullCachedProfile) {
@@ -155,7 +156,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
           window.location.pathname === '/privacy' ||
           window.location.pathname === '/terms' ||
           window.location.pathname.startsWith('/share/') ||
-          window.location.pathname === '/reset-password'
+          window.location.pathname === '/reset-password' ||
+          window.location.pathname.startsWith('/profile')
         );
         if (!isPublicPath) {
           setView(targetView);

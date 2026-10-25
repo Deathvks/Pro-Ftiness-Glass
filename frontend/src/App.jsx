@@ -148,7 +148,7 @@ export const preloadViewChunk = (viewId) => {
 
 export const preloadAllPrimaryViews = () => {
   if (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData) return;
-  const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub'];
+  const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub', 'publicProfile', 'profile'];
   const user = useAppStore.getState().userProfile;
   if (user?.role === 'admin') {
     primaryNavViews.push('adminPanel');
@@ -952,7 +952,7 @@ export default function App() {
         {/* Rutas autenticadas conocidas: si no hay sesión activa, redirigen a /login */}
         {[
           '/dashboard', '/workout', '/routines', '/nutrition', '/progress',
-          '/social', '/hub', '/settings', '/profile', '/appearance',
+          '/social', '/hub', '/settings', '/profile', '/profile/:userId', '/appearance',
           '/support', '/socialLinks', '/challenges', '/physicalProfileEditor',
           '/adminPanel', '/securityDashboard', '/trainerPanel', '/twoFactorSetup',
           '/notifications', '/asesoria', '/quickCardio', '/active-cardio'

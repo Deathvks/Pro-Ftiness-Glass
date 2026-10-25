@@ -104,17 +104,23 @@ export const createSocialSlice = (set, get) => ({
     },
 
     fetchPublicProfile: async (userId) => {
+        const targetId = userId || get().userProfile?.id;
+        if (!targetId) {
+            set({ isSocialLoading: false, socialError: 'ID de usuario no proporcionado', socialViewedProfile: null });
+            return;
+        }
+
         set({ isSocialLoading: true, socialError: null, socialViewedProfile: null });
         try {
-            const profile = await socialService.getPublicProfile(userId);
-            set({ socialViewedProfile: profile, isSocialLoading: false });
+            const profile = await socialService.getPublicProfile(targetId);
+            set({ socialViewedProfile: profile, isSocialLoading: false, socialError: null });
         } catch (error) {
-            set({ socialError: error.message, isSocialLoading: false });
+            set({ socialError: error.message || 'Error al cargar perfil', isSocialLoading: false });
         }
     },
 
     clearViewedProfile: () => {
-        set({ socialViewedProfile: null });
+        set({ socialViewedProfile: null, isSocialLoading: false, socialError: null });
     },
 
     // --- ACCIONES DE HISTORIAS ---
