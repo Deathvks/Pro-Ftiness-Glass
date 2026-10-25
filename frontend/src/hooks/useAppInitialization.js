@@ -118,13 +118,25 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
         const cachedProfile = initialState.userProfile;
         const hasFullCachedProfile = Boolean(cachedProfile && "role" in cachedProfile);
 
+        const isPublicPath = typeof window !== 'undefined' && (
+          window.location.pathname.startsWith('/noticias') ||
+          window.location.pathname === '/privacy' ||
+          window.location.pathname === '/terms' ||
+          window.location.pathname.startsWith('/share/') ||
+          window.location.pathname === '/reset-password'
+        );
+
         if (hasFullCachedProfile) {
-          const immediateTarget = resolveTargetView(cachedProfile, initialState.activeWorkout);
-          setView(immediateTarget);
+          if (!isPublicPath) {
+            const immediateTarget = resolveTargetView(cachedProfile, initialState.activeWorkout);
+            setView(immediateTarget);
+          }
           setIsInitialLoad(false);
           completed = true;
           clearTimeout(safetyTimeout);
-          fetchInitialData().catch(() => {});
+          if (!isPublicPath) {
+            fetchInitialData().catch(() => {});
+          }
           return;
         }
 
@@ -152,7 +164,15 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
       }
     };
 
-    if (isAuthenticated) {
+    const isCurrentPublic = typeof window !== 'undefined' && (
+      window.location.pathname.startsWith('/noticias') ||
+      window.location.pathname === '/privacy' ||
+      window.location.pathname === '/terms' ||
+      window.location.pathname.startsWith('/share/') ||
+      window.location.pathname === '/reset-password'
+    );
+
+    if (isAuthenticated && !isCurrentPublic) {
       loadInitialDataAndSetView();
     } else {
       setIsInitialLoad(false); 

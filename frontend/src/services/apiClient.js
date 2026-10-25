@@ -92,8 +92,16 @@ const apiClient = async (endpoint, options = {}) => {
                 useAppStore.getState().token === token &&
                 !endpoint.startsWith('/auth/')
             ) {
-                useAppStore.getState().handleSessionExpiry();
-                // --- CAMBIO: Interrumpir flujo inmediatamente ---
+                const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+                const isPublic = currentPath.startsWith('/noticias') ||
+                                 currentPath === '/privacy' ||
+                                 currentPath === '/terms' ||
+                                 currentPath.startsWith('/share/');
+                if (isPublic) {
+                    useAppStore.getState().handleLogout();
+                } else {
+                    useAppStore.getState().handleSessionExpiry();
+                }
                 throw new Error('Sesión expirada');
             }
 

@@ -45,7 +45,7 @@ export const useAppNavigation = (navigateRouter) => {
     if (path === '/notifications') return 'notifications';
     if (path === '/active-cardio') return 'active-cardio';
     if (path === '/asesoria') return 'asesoria';
-    if (path === '/noticias') return 'noticias';
+    if (path.startsWith('/noticias')) return 'noticias';
 
     const savedView = localStorage.getItem('lastView');
     return savedView || 'dashboard';
@@ -134,7 +134,7 @@ export const useAppNavigation = (navigateRouter) => {
     else if (path === '/asesoria' && view !== 'asesoria') {
       setView('asesoria');
     }
-    else if (path === '/noticias' && view !== 'noticias') {
+    else if (path.startsWith('/noticias') && view !== 'noticias') {
       setView('noticias');
     }
     else if ((path === '/dashboard' || path === '/') && view !== 'dashboard') {
@@ -246,7 +246,7 @@ export const useAppNavigation = (navigateRouter) => {
         setView('workout');
       } else if (path === '/asesoria') {
         setView('asesoria');
-      } else if (path === '/noticias') {
+      } else if (path.startsWith('/noticias')) {
         setView('noticias');
       } else if (path === '/hub') {
         setView('hub');

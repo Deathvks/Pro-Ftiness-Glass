@@ -1,4 +1,4 @@
 {
-  "version": "7.9.7",
-  "releaseNotes": "Actualización v7.9.7: Separación estética de carrusel al borde en móvil, scroll vertical fluido y reemplazo por icono oficial Font Awesome FaFire."
+  "version": "7.9.8",
+  "releaseNotes": "Actualización v7.9.8: Corrección de deep links de noticias en arranque en frío (cold start) y aislamiento de rutas públicas sin redirección a login."
 }

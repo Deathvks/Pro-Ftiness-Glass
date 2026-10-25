@@ -301,8 +301,30 @@ export default function App() {
     };
   }, [isAuthenticated, sessionExpired]);
 
+  const [isCheckingLaunchUrl, setIsCheckingLaunchUrl] = useState(() => {
+    return Capacitor.isNativePlatform() && window.location.pathname === '/';
+  });
+
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
+      // 1. Cold start deep link (cuando la app arranca desde cerrada)
+      CapApp.getLaunchUrl().then(launchUrl => {
+        if (launchUrl?.url) {
+          try {
+            const url = new URL(launchUrl.url);
+            if (url.pathname && url.pathname !== '/') {
+              navigate(url.pathname + url.search, { replace: true });
+              return;
+            }
+          } catch (e) {
+            console.error('Error parseando deep link en cold start:', e);
+          }
+        }
+      }).catch(() => {}).finally(() => {
+        setIsCheckingLaunchUrl(false);
+      });
+
+      // 2. Warm start deep link (cuando la app ya estaba abierta en segundo plano)
       const listener = CapApp.addListener('appUrlOpen', data => {
         try {
           const url = new URL(data.url);
@@ -772,7 +794,7 @@ export default function App() {
       <APKUpdater />
       <AndroidDownloadPrompt />
 
-      {isInitialLoad && !isPublicRoute ? (
+      {((isInitialLoad && !isPublicRoute) || isCheckingLaunchUrl) ? (
         <InitialLoadingSkeleton />
       ) : (
         <>
@@ -797,7 +819,7 @@ export default function App() {
             <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
           </Helmet>
 
-      {sessionExpired && (
+      {sessionExpired && !isPublicRoute && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.3s_ease-out]">
           <div className="bg-bg-primary border border-glass-border p-8 max-w-sm w-full rounded-2xl shadow-2xl text-center flex flex-col items-center animate-[scale-in_0.3s_ease-out]">
             <AlertTriangle size={48} className="text-red mb-4 drop-shadow-md" />
