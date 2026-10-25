@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   Sparkles,
   ArrowRight,
+  Smartphone,
   Layers,
   BookOpen,
   LogIn,
@@ -22,6 +23,7 @@ import {
 import { FaFire } from 'react-icons/fa6';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Capacitor } from '@capacitor/core';
 
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
@@ -43,6 +45,12 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   const currentSearch = searchParams.get('search') || '';
 
   const [searchInput, setSearchInput] = useState(currentSearch);
+  const isNative = Capacitor.isNativePlatform();
+  const isMobile = typeof window !== 'undefined' && (/android|iphone|ipad|ipod/i.test(navigator.userAgent) || window.innerWidth < 768);
+  const isAndroid = typeof window !== 'undefined' && /android/i.test(navigator.userAgent);
+  const appIntentUrl = isAndroid
+    ? 'intent://pro-fitness-glass.zeabur.app/noticias#Intent;scheme=https;package=com.profitnessglass.app;end'
+    : 'profitness://noticias';
 
   // Exactamente 6 art�culos por p�gina (2 filas completas de 3 columnas para una cuadr�cula perfecta)
   const ITEMS_PER_PAGE = 6;
@@ -315,6 +323,17 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
               />
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
             </form>
+
+            {!isNative && isMobile && (
+              <a
+                href={appIntentUrl}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-accent/15 text-accent border border-accent/25 hover:bg-accent hover:text-accent-contrast transition-all text-xs font-bold shadow-xs shrink-0 active:scale-95"
+                title="Abrir en la aplicación"
+              >
+                <Smartphone size={13} />
+                <span>Abrir en App</span>
+              </a>
+            )}
 
             {!isAuthenticated && (
               <button

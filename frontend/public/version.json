@@ -1,4 +1,4 @@
 {
-  "version": "7.9.8",
-  "releaseNotes": "Actualización v7.9.8: Corrección de deep links de noticias en arranque en frío (cold start) y aislamiento de rutas públicas sin redirección a login."
+  "version": "7.9.9",
+  "releaseNotes": "Actualización v7.9.9: Botón y banner inteligente Abrir en la App con Intent nativo para forzar la apertura de la APK instalada desde navegadores móviles y WhatsApp."
 }

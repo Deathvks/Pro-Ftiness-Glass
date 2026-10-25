@@ -14,12 +14,15 @@ import {
   BookOpen,
   ThumbsUp,
   Type,
+  Smartphone,
+  X,
   WifiOff,
   RefreshCw
 } from 'lucide-react';
 import { FaWhatsapp, FaXTwitter, FaTelegram } from 'react-icons/fa6';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Capacitor } from '@capacitor/core';
 
 import Spinner from '../components/Spinner';
 import NewsLoadingSkeleton from '../components/News/NewsLoadingSkeleton';
@@ -55,6 +58,14 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
   };
   const [copied, setCopied] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [showAppBanner, setShowAppBanner] = useState(true);
+  const isNative = Capacitor.isNativePlatform();
+  const isMobile = typeof window !== 'undefined' && (/android|iphone|ipad|ipod/i.test(navigator.userAgent) || window.innerWidth < 768);
+  const isAndroid = typeof window !== 'undefined' && /android/i.test(navigator.userAgent);
+  const targetSlug = article?.slug || slug;
+  const appIntentUrl = isAndroid
+    ? `intent://pro-fitness-glass.zeabur.app/noticias/${targetSlug}#Intent;scheme=https;package=com.profitnessglass.app;end`
+    : `profitness://noticias/${targetSlug}`;
   const [fontSize, setFontSize] = useState('normal'); // 'normal' | 'large' | 'xlarge'
   const [hasLiked, setHasLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
@@ -313,6 +324,37 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
         {/* COMPONENTE SEO COMPLETO (Meta, Open Graph, Twitter, JSON-LD NewsArticle) */}
         <ArticleSEO article={article} />
 
+        {/* BANNER INTELIGENTE: ABRIR EN LA APP (Móvil Web) */}
+        {!isNative && isMobile && showAppBanner && (
+          <div className="bg-glass-surface/90 backdrop-blur-md border border-glass-border rounded-2xl p-2.5 px-3 mb-3 flex items-center justify-between gap-3 shadow-sm animate-[fade-in_0.3s_ease-out]">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <img src="/icons/icon-96.png" alt="Pro Fitness Glass" className="w-8 h-8 rounded-xl shrink-0 shadow-xs" />
+              <div className="min-w-0">
+                <p className="text-xs font-black text-text-primary truncate">Pro Fitness Glass</p>
+                <p className="text-[10px] text-text-tertiary truncate">Abre en la app para máxima fluidez</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <a
+                href={appIntentUrl}
+                className="px-3 py-1.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-1.5"
+                title="Abrir este artículo en la aplicación instalada"
+              >
+                <Smartphone size={13} />
+                <span>Abrir App</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => setShowAppBanner(false)}
+                className="w-6 h-6 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                title="Cerrar aviso"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* NAVEGACIÓN SUPERIOR / BREADCRUMB */}
         <nav aria-label="Ruta de navegación" className="flex items-center justify-between gap-3 pb-4 pt-1">
           <div className="flex items-center gap-2 text-xs font-bold text-text-tertiary">
@@ -334,16 +376,29 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
             </button>
           </div>
 
-          {/* Control de tamaño de fuente A/A+/A++ */}
-          <button
-            type="button"
-            onClick={toggleFontSize}
-            title={`Tamaño de letra (actual: ${fontSize})`}
-            className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/10 dark:ring-white/10 text-xs font-black text-text-secondary hover:text-text-primary transition-all active:scale-95"
-          >
-            <Type size={13} className="text-accent" />
-            <span>{fontSizeLabels[fontSize]}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {!isNative && isMobile && (
+              <a
+                href={appIntentUrl}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/15 text-accent border border-accent/30 hover:bg-accent hover:text-accent-contrast transition-all text-[11px] font-bold shadow-xs active:scale-95"
+                title="Abrir en la aplicación nativa"
+              >
+                <Smartphone size={12} />
+                <span>Abrir en App</span>
+              </a>
+            )}
+
+            {/* Control de tamaño de fuente A/A+/A++ */}
+            <button
+              type="button"
+              onClick={toggleFontSize}
+              title={`Tamaño de letra (actual: ${fontSize})`}
+              className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/10 dark:ring-white/10 text-xs font-black text-text-secondary hover:text-text-primary transition-all active:scale-95"
+            >
+              <Type size={13} className="text-accent" />
+              <span>{fontSizeLabels[fontSize]}</span>
+            </button>
+          </div>
         </nav>
 
         {/* CABECERA EDITORIAL (TITULAR + ENTRADILLA) */}
