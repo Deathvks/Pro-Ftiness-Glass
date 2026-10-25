@@ -304,17 +304,30 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
         </Helmet>
 
         {/* HEADER / NAV BAR */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleGoHome}
-              className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full ring-1 ring-black/10 dark:ring-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-xs font-bold text-text-secondary"
-            >
-              <ChevronLeft size={16} /> {isAuthenticated ? 'Volver a la App' : 'Inicio'}
-            </button>
-            <span className="text-xs text-text-tertiary">/</span>
-            <span className="text-xs font-bold uppercase tracking-wider text-accent">Blog & Noticias</span>
+        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
+          <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                type="button"
+                onClick={handleGoHome}
+                className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full ring-1 ring-black/10 dark:ring-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-xs font-bold text-text-secondary shrink-0"
+              >
+                <ChevronLeft size={16} /> {isAuthenticated ? 'Volver a la App' : 'Inicio'}
+              </button>
+              <span className="text-xs text-text-tertiary hidden xs:inline">/</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-accent truncate hidden xs:inline">Blog & Noticias</span>
+            </div>
+
+            {!isNative && isMobile && (
+              <a
+                href={appIntentUrl}
+                className="whitespace-nowrap shrink-0 sm:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 hover:scale-105 active:scale-95 transition-all"
+                title="Abrir en la aplicación"
+              >
+                <Smartphone size={13} />
+                <span className="whitespace-nowrap">Abrir App</span>
+              </a>
+            )}
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -333,11 +346,11 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
             {!isNative && isMobile && (
               <a
                 href={appIntentUrl}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-accent/15 text-accent border border-accent/25 hover:bg-accent hover:text-accent-contrast transition-all text-xs font-bold shadow-xs shrink-0 active:scale-95"
+                className="whitespace-nowrap shrink-0 hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-accent/15 text-accent border border-accent/25 hover:bg-accent hover:text-accent-contrast transition-all text-xs font-bold shadow-xs active:scale-95"
                 title="Abrir en la aplicación"
               >
                 <Smartphone size={13} />
-                <span>Abrir en App</span>
+                <span className="whitespace-nowrap">Abrir App</span>
               </a>
             )}
 
@@ -345,7 +358,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
               <button
                 type="button"
                 onClick={() => navigate('/login')}
-                className="cursor-pointer shrink-0 hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 hover:scale-105 active:scale-95 transition-all"
+                className="cursor-pointer shrink-0 hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 hover:scale-105 active:scale-95 transition-all whitespace-nowrap"
               >
                 <LogIn size={14} /> Iniciar Sesión
               </button>

@@ -370,35 +370,35 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
         )}
 
         {/* NAVEGACIÓN SUPERIOR / BREADCRUMB */}
-        <nav aria-label="Ruta de navegación" className="flex items-center justify-between gap-3 pb-4 pt-1">
-          <div className="flex items-center gap-2 text-xs font-bold text-text-tertiary">
+        <nav aria-label="Ruta de navegación" className="flex items-center justify-between gap-2 pb-4 pt-1">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-text-tertiary min-w-0">
             <button
               type="button"
               onClick={handleGoBack}
-              className="cursor-pointer inline-flex items-center gap-1 text-text-secondary hover:text-accent transition-colors"
+              className="cursor-pointer inline-flex items-center gap-1 text-text-secondary hover:text-accent transition-colors shrink-0 font-bold"
             >
               <ChevronLeft size={16} /> Noticias
             </button>
-            <span>/</span>
+            <span className="shrink-0 hidden xs:inline">/</span>
             <button
               type="button"
               onClick={() => navigate(`/noticias?category=${encodeURIComponent(article.category)}`)}
-              className="cursor-pointer uppercase tracking-wider text-accent hover:underline transition-colors font-bold"
+              className="cursor-pointer uppercase tracking-wider text-accent hover:underline transition-colors font-bold truncate hidden xs:inline"
               title={`Ver artículos de ${article.category}`}
             >
               {article.category}
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 shrink-0">
             {!isNative && isMobile && (
               <a
                 href={appIntentUrl}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/15 text-accent border border-accent/30 hover:bg-accent hover:text-accent-contrast transition-all text-[11px] font-bold shadow-xs active:scale-95"
+                className="whitespace-nowrap shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/15 text-accent border border-accent/30 hover:bg-accent hover:text-accent-contrast transition-all text-[11px] font-bold shadow-xs active:scale-95"
                 title="Abrir en la aplicación nativa"
               >
                 <Smartphone size={12} />
-                <span>Abrir en App</span>
+                <span className="whitespace-nowrap">Abrir App</span>
               </a>
             )}
 
@@ -407,7 +407,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
               type="button"
               onClick={toggleFontSize}
               title={`Tamaño de letra (actual: ${fontSize})`}
-              className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/10 dark:ring-white/10 text-xs font-black text-text-secondary hover:text-text-primary transition-all active:scale-95"
+              className="cursor-pointer shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/10 dark:ring-white/10 text-xs font-black text-text-secondary hover:text-text-primary transition-all active:scale-95 whitespace-nowrap"
             >
               <Type size={13} className="text-accent" />
               <span>{fontSizeLabels[fontSize]}</span>
