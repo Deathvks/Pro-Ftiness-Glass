@@ -66,6 +66,8 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
       const photonUrl = new URL('https://photon.komoot.io/api/');
       photonUrl.searchParams.set('q', searchTarget);
       photonUrl.searchParams.set('limit', '15');
+      // Acotar estrictamente a España (+ Islas Canarias + Baleares + Ceuta y Melilla)
+      photonUrl.searchParams.set('bbox', '-18.5,27.5,4.5,43.9');
       if (activeCoords?.lat && activeCoords?.lng) {
         photonUrl.searchParams.set('lat', activeCoords.lat);
         photonUrl.searchParams.set('lon', activeCoords.lng);
@@ -332,7 +334,7 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
                   <SpainTerritoryBadge />
                 </div>
                 <p className="text-xs text-text-secondary mt-0.5">
-                  Búsqueda en tiempo real en toda España (Península, Canarias y Baleares)
+                  Búsqueda en toda España (+3.100 gimnasios en todas las provincias, Canarias y Baleares)
                 </p>
               </div>
             </div>
@@ -605,7 +607,7 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
                   Escribe el nombre de tu gimnasio
                 </p>
                 <p className="text-xs text-text-muted max-w-xs">
-                  Búsqueda en tiempo real en toda España, Canarias y Baleares con fotos reales, marcas y distancia por GPS.
+                  Catálogo nacional con más de 3.100 gimnasios en todas las provincias de España, fotos reales, marcas oficiales y distancia por GPS.
                 </p>
               </div>
             )}
