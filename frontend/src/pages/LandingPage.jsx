@@ -457,48 +457,50 @@ const LandingPage = ({ onLogin, onRegister }) => {
                         aria-label="Navegación principal"
                         style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
                     >
-                        <div className="flex justify-between items-center p-4 sm:px-8 max-w-7xl mx-auto w-full relative z-10">
+                        <div className="flex justify-between items-center p-3 sm:p-4 md:px-8 max-w-7xl mx-auto w-full relative z-10 flex-nowrap">
                             <div
-                                className="flex items-center gap-4 cursor-pointer group"
+                                className="flex items-center gap-2.5 sm:gap-4 cursor-pointer group shrink-0"
                                 onClick={() => containerRef.current.scrollTo({ top: 0, behavior: 'smooth' })}
                             >
-                                <img src="/logo.webp" alt="Pro Fitness Glass Logo" className="w-10 h-10 group-hover:scale-110 transition-transform duration-300" />
-                                <span className="font-black text-xl tracking-tighter hidden sm:block bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary group-hover:to-accent transition-all duration-500">
+                                <img src="/logo.webp" alt="Pro Fitness Glass Logo" className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg group-hover:scale-110 transition-transform duration-300 shrink-0" />
+                                <span className="font-black text-lg sm:text-xl tracking-tighter hidden md:block bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary group-hover:to-accent transition-all duration-500">
                                     PRO FITNESS GLASS
                                 </span>
                             </div>
 
-                            <div className="flex items-center gap-3 sm:gap-5">
+                            <div className="flex items-center gap-1.5 sm:gap-3 flex-nowrap shrink-0">
                                 <a
                                     href="/noticias"
-                                    className="flex items-center gap-2 text-xs font-bold text-text-secondary hover:text-accent transition-colors mr-1 outline-none border-none focus:outline-none"
+                                    className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
                                     title="Noticias y Artículos de Fitness"
                                 >
-                                    <Newspaper size={16} className="md:hidden" />
-                                    <span className="hidden md:inline uppercase tracking-wider">Noticias</span>
+                                    <Newspaper size={15} className="text-accent shrink-0" />
+                                    <span className="hidden sm:inline uppercase tracking-wider text-[11px] sm:text-xs">Noticias</span>
                                 </a>
+
                                 <a
                                     href="/privacy"
-                                    className="flex items-center gap-2.5 text-xs font-bold text-text-secondary hover:text-accent transition-colors mr-1 outline-none border-none focus:outline-none"
+                                    className="hidden md:flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-text-secondary hover:text-accent transition-colors shrink-0"
                                     title="Política de Privacidad"
                                 >
-                                    <Shield size={16} className="md:hidden" />
-                                    <span className="hidden md:inline uppercase tracking-wider">Privacidad</span>
+                                    <Shield size={15} />
+                                    <span className="uppercase tracking-wider text-xs">Privacidad</span>
                                 </a>
 
                                 <button
                                     onClick={onLogin}
-                                    className="text-sm font-bold text-text-primary hover:text-accent transition-colors px-5 py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] active:scale-95"
+                                    className="text-xs sm:text-sm font-bold text-text-primary hover:text-accent transition-colors px-3 sm:px-4 py-1.5 sm:py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-xl sm:rounded-2xl active:scale-95 shrink-0 whitespace-nowrap"
                                 >
-                                    Iniciar Sesión
+                                    <span className="inline sm:hidden">Entrar</span>
+                                    <span className="hidden sm:inline">Iniciar Sesión</span>
                                 </button>
 
                                 <button
                                     onClick={onRegister}
-                                    className="text-sm font-bold bg-accent hover:bg-accent/90 text-accent-contrast px-6 py-2.5 rounded-[16px] transition-all shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-2"
+                                    className="text-xs sm:text-sm font-bold bg-accent hover:bg-accent/90 text-accent-contrast px-3.5 sm:px-6 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl transition-all shadow-md sm:shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-1 sm:gap-2 shrink-0 whitespace-nowrap"
                                 >
-                                    Empezar
-                                    <ChevronRight size={18} strokeWidth={3} />
+                                    <span>Empezar</span>
+                                    <ChevronRight size={15} strokeWidth={3} className="shrink-0" />
                                 </button>
                             </div>
                         </div>
