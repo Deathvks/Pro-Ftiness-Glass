@@ -246,13 +246,18 @@ const WorkoutShareCard = forwardRef(({
                 {/* 1. HEADER: BRANDING + ATLETA + FECHA */}
                 <div className="flex flex-col gap-6">
                     <div className="flex justify-between items-center w-full">
-                        {/* Marca Pro Fitness Glass con Icono FontAwesome */}
+                        {/* Marca Pro Fitness Glass con Logo Oficial */}
                         <div className="flex items-center gap-4">
                             <div
-                                className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl border border-white/20"
-                                style={{ background: `linear-gradient(135deg, ${accent}, #1e3a8a)` }}
+                                className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl border border-white/20 bg-black/40 overflow-hidden shrink-0"
+                                style={{ background: `linear-gradient(135deg, ${accent}40, #1e3a8a80)` }}
                             >
-                                <FaStar size={26} className="text-white drop-shadow" />
+                                <img
+                                    src="/logo.webp"
+                                    alt="Pro Fitness Glass"
+                                    className="w-10 h-10 object-contain drop-shadow"
+                                    crossOrigin="anonymous"
+                                />
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-3xl font-black tracking-wider text-white uppercase italic drop-shadow-md">
@@ -458,7 +463,12 @@ const WorkoutShareCard = forwardRef(({
                 {/* 5. FOOTER ELEGANTE (PRO FITNESS BRANDING) */}
                 <div className="mt-6 flex justify-between items-center pt-6 border-t border-white/15 shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 rounded-full animate-ping" style={{ backgroundColor: accent }} />
+                        <img
+                            src="/logo.webp"
+                            alt="Pro Fitness Glass"
+                            className="w-8 h-8 object-contain rounded-xl drop-shadow shrink-0"
+                            crossOrigin="anonymous"
+                        />
                         <span className="text-xl font-extrabold text-white tracking-wide">
                             pro-fitness-glass.zeabur.app
                         </span>

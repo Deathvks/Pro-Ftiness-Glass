@@ -14,7 +14,10 @@ import {
   FaShareNodes
 } from 'react-icons/fa6';
 import { useTranslation } from 'react-i18next';
-import html2canvas from 'html2canvas';
+import { toBlob } from 'html-to-image';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import WorkoutShareCard from './WorkoutShareCard';
@@ -51,13 +54,16 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
   const { showToast } = useToast();
 
   const [isStoryView, setIsStoryView] = useState(isShareMode);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [sharingPlatform, setSharingPlatform] = useState(null);
+  const isGenerating = !!sharingPlatform;
   const [accentColor, setAccentColor] = useState('#22c55e');
   const [enrichedDetails, setEnrichedDetails] = useState([]);
   const [customPhoto, setCustomPhoto] = useState(null);
 
   const shareCardRef = useRef(null);
   const photoInputRef = useRef(null);
+  const isMountedRef = useRef(true);
+  const cachedBlobRef = useRef(null);
 
   // Enriquecer ejercicios con datos de base de datos (músculos e imágenes)
   useEffect(() => {
@@ -120,6 +126,18 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
     setTimeout(resolveAccentColor, 200);
   }, []);
 
+  // Control de ciclo de vida e invalidación de caché
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    cachedBlobRef.current = null;
+  }, [customPhoto, accentColor, enrichedDetails, workoutData]);
+
   // Manejo de foto personalizada de fondo (selfie / gym)
   const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0];
@@ -131,7 +149,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
       const reader = new FileReader();
       reader.onload = (event) => {
         setCustomPhoto(event.target.result);
-        showToast('Foto añadida a tu Historia 📸', 'success');
+        showToast('Foto añadida a tu Historia', 'success');
       };
       reader.readAsDataURL(file);
     }
@@ -146,68 +164,138 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
 
   // Generador de imagen en alta resolución 1080x1920 (Instagram Stories / 9:16 HD)
   const generateStoryBlob = async () => {
+    if (cachedBlobRef.current) {
+      return cachedBlobRef.current;
+    }
     if (!shareCardRef.current) throw new Error('Referencia de tarjeta no encontrada');
-    return await html2canvas(shareCardRef.current, {
-      scale: 1,
-      useCORS: true,
+
+    if (document.fonts?.ready) {
+      try {
+        await document.fonts.ready;
+      } catch (e) {
+        console.warn('Verificación de fuentes:', e);
+      }
+    }
+
+    const blob = await toBlob(shareCardRef.current, {
+      pixelRatio: 1,
       backgroundColor: '#000000',
-      logging: false,
-      allowTaint: true
+      width: 1080,
+      height: 1920,
+      cacheBust: true,
+      imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
     });
+
+    if (!blob) throw new Error('No se pudo generar la imagen');
+    cachedBlobRef.current = blob;
+    return blob;
   };
 
-  // Helper de descarga multiplataforma (iOS & Android/Desktop)
-  const downloadBlobFile = async (blob, fileName) => {
-    const url = URL.createObjectURL(blob);
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (isIOS) {
-      const newWindow = window.open(url, '_blank');
-      if (!newWindow) {
-        showToast('Mantén pulsada la imagen para guardarla en tu carrete', 'info');
+  // Pre-generar blob en segundo plano cuando se abre el studio para que el compartir sea inmediato (0ms)
+  useEffect(() => {
+    if (!isStoryView || !shareCardRef.current) return;
+    const timer = setTimeout(() => {
+      if (isMountedRef.current && shareCardRef.current && !cachedBlobRef.current) {
+        generateStoryBlob().catch((err) => {
+          console.warn('Pre-render en segundo plano diferido a clic:', err);
+        });
       }
-    } else {
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [isStoryView, customPhoto, accentColor, enrichedDetails]);
+
+  // Helper de descarga multiplataforma directa sin bloqueos de popups
+  const downloadBlobFile = (blob, fileName) => {
+    try {
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = fileName;
+      link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (e) {
+      console.error('Error descargando archivo:', e);
     }
-    setTimeout(() => URL.revokeObjectURL(url), 6000);
   };
 
   // Descargar imagen HD directa
   const handleDownloadStory = async () => {
-    if (isGenerating) return;
-    setIsGenerating(true);
+    if (sharingPlatform) return;
+    setSharingPlatform('download');
     try {
-      const canvas = await generateStoryBlob();
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-      await downloadBlobFile(blob, `pro-fitness-story-${new Date().toISOString().slice(0, 10)}.png`);
+      const blob = await generateStoryBlob();
+      if (!isMountedRef.current) return;
+      downloadBlobFile(blob, `pro-fitness-story-${new Date().toISOString().slice(0, 10)}.png`);
       showToast('¡Historia guardada en tu galería en HD!', 'success');
     } catch (err) {
       console.error('Error descargando historia:', err);
-      showToast('Error al procesar la imagen', 'error');
+      if (isMountedRef.current) {
+        showToast('Error al procesar la imagen', 'error');
+      }
     } finally {
-      setIsGenerating(false);
+      if (isMountedRef.current) {
+        setSharingPlatform(null);
+      }
     }
   };
 
   // Compartir multiplataforma (Instagram, WhatsApp, X, Telegram)
   const handlePlatformShare = async (platform) => {
-    if (isGenerating) return;
-    setIsGenerating(true);
+    if (sharingPlatform) return;
+    setSharingPlatform(platform);
     try {
-      const canvas = await generateStoryBlob();
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-      const file = new File([blob], `pro-fitness-${Date.now()}.png`, { type: 'image/png' });
+      const blob = await generateStoryBlob();
+      if (!isMountedRef.current) return;
 
       const workoutTitle = workoutData?.routineName || 'Entrenamiento';
       const timeFormatted = formatDisplayTime(workoutData?.duration_seconds || 0);
       const appUrl = 'https://pro-fitness-glass.zeabur.app';
       const shareText = `🔥 ¡Entrenamiento completado en Pro Fitness Glass!\n🏋️ ${workoutTitle} • ${timeFormatted}\n💪 Superando límites día a día.\n👉 ${appUrl}`;
 
-      // 1. Si el dispositivo soporta Web Share API con archivos (móvil iOS / Android)
+      // 1. Si estamos en Capacitor Nativo (iOS / Android App)
+      if (Capacitor.isNativePlatform()) {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = async () => {
+          if (!isMountedRef.current) return;
+          try {
+            const base64data = reader.result.split(',')[1];
+            const fileName = `pro-fitness-${Date.now()}.png`;
+
+            const savedFile = await Filesystem.writeFile({
+              path: fileName,
+              data: base64data,
+              directory: Directory.Cache
+            });
+
+            await Share.share({
+              title: 'Mi Entrenamiento en Pro Fitness Glass',
+              text: shareText,
+              url: savedFile.uri,
+              dialogTitle: 'Compartir'
+            });
+            if (isMountedRef.current) {
+              showToast('¡Listo para compartir!', 'success');
+            }
+          } catch (nativeErr) {
+            console.error('Error compartiendo en nativo:', nativeErr);
+            if (isMountedRef.current) {
+              showToast('Error al compartir', 'error');
+            }
+          } finally {
+            if (isMountedRef.current) {
+              setSharingPlatform(null);
+            }
+          }
+        };
+        return;
+      }
+
+      // 2. Si el dispositivo soporta Web Share API con archivos (móvil iOS / Android en Safari / Chrome / PWA)
+      const file = new File([blob], `pro-fitness-${Date.now()}.png`, { type: 'image/png' });
       const canShareFile = typeof navigator !== 'undefined' &&
         navigator.share &&
         navigator.canShare &&
@@ -220,6 +308,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
             title: 'Mi Entrenamiento en Pro Fitness Glass',
             text: shareText
           });
+          if (!isMountedRef.current) return;
           const platformNames = {
             instagram: 'Stories',
             whatsapp: 'WhatsApp',
@@ -229,15 +318,18 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
           showToast(`¡Listo para compartir en ${platformNames[platform] || 'redes'}!`, 'success');
           return;
         } catch (shareErr) {
+          if (!isMountedRef.current) return;
           if (shareErr.name === 'AbortError') {
             return; // Usuario canceló modal nativo
           }
-          console.warn('Native share falló, ejecutando acción directa:', shareErr);
+          console.warn('Native share falló, ejecutando fallback directo:', shareErr);
         }
       }
 
-      // 2. Si no soporta compartir archivo directo: descargar imagen en HD y abrir enlace oficial de la app
-      await downloadBlobFile(blob, `pro-fitness-${Date.now()}.png`);
+      if (!isMountedRef.current) return;
+
+      // 3. Fallback directo: Descargar archivo y abrir enlace de la plataforma
+      downloadBlobFile(blob, `pro-fitness-${Date.now()}.png`);
 
       if (platform === 'whatsapp') {
         const waText = encodeURIComponent(`${shareText}\n\n📸 *Adjunta la imagen que acabas de guardar en tu galería*`);
@@ -257,9 +349,13 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
       }
     } catch (err) {
       console.error('Error al compartir:', err);
-      showToast('Error al procesar la imagen', 'error');
+      if (isMountedRef.current) {
+        showToast('Error al procesar la imagen', 'error');
+      }
     } finally {
-      setIsGenerating(false);
+      if (isMountedRef.current && !Capacitor.isNativePlatform()) {
+        setSharingPlatform(null);
+      }
     }
   };
 
@@ -275,7 +371,20 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
   return (
     <ModalPortal>
       {/* TARJETA OCULTA OFFSCREEN PARA EXPORTACIÓN 1080x1920 SUPREMA */}
-      <div style={{ position: 'fixed', left: '-20000px', top: '-20000px', width: '1080px', height: '1920px', zIndex: -100 }}>
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '1080px',
+          height: '1920px',
+          zIndex: -9999,
+          pointerEvents: 'none',
+          opacity: 1,
+          overflow: 'hidden'
+        }}
+        aria-hidden="true"
+      >
         <WorkoutShareCard
           ref={shareCardRef}
           workoutData={{ ...workoutData, details: safeDetails }}
@@ -300,8 +409,8 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
         <div
           className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-2xl flex flex-col items-center justify-between p-3 sm:p-4 animate-[fade-in_0.2s_ease-out]"
           style={{
-            paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0.75rem))',
-            paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0.75rem))'
+            paddingTop: 'calc(var(--safe-top, 44px) + 0.75rem)',
+            paddingBottom: 'calc(var(--safe-bottom, 20px) + 0.75rem)'
           }}
           onClick={() => setIsStoryView(false)}
         >
@@ -392,10 +501,14 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
                 type="button"
                 onClick={() => handlePlatformShare('instagram')}
                 disabled={isGenerating}
-                className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white hover:opacity-95 active:scale-95 transition-all shadow-lg disabled:opacity-50 group"
+                className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white hover:opacity-95 active:scale-95 transition-all shadow-lg disabled:opacity-50 group min-h-[64px]"
                 title="Compartir en Instagram Stories"
               >
-                <FaInstagram size={22} className="group-hover:scale-110 transition-transform drop-shadow" />
+                {sharingPlatform === 'instagram' ? (
+                  <Spinner size={20} />
+                ) : (
+                  <FaInstagram size={22} className="group-hover:scale-110 transition-transform drop-shadow" />
+                )}
                 <span className="text-[11px] font-black tracking-tight mt-1">Stories</span>
               </button>
 
@@ -404,10 +517,14 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
                 type="button"
                 onClick={() => handlePlatformShare('whatsapp')}
                 disabled={isGenerating}
-                className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-[#25D366] text-white hover:brightness-105 active:scale-95 transition-all shadow-lg disabled:opacity-50 group"
+                className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-[#25D366] text-white hover:brightness-105 active:scale-95 transition-all shadow-lg disabled:opacity-50 group min-h-[64px]"
                 title="Compartir por WhatsApp"
               >
-                <FaWhatsapp size={22} className="group-hover:scale-110 transition-transform drop-shadow" />
+                {sharingPlatform === 'whatsapp' ? (
+                  <Spinner size={20} />
+                ) : (
+                  <FaWhatsapp size={22} className="group-hover:scale-110 transition-transform drop-shadow" />
+                )}
                 <span className="text-[11px] font-black tracking-tight mt-1">WhatsApp</span>
               </button>
 
@@ -416,10 +533,14 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
                 type="button"
                 onClick={() => handlePlatformShare('x')}
                 disabled={isGenerating}
-                className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-black border border-white/20 text-white hover:bg-neutral-900 active:scale-95 transition-all shadow-lg disabled:opacity-50 group"
+                className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-black border border-white/20 text-white hover:bg-neutral-900 active:scale-95 transition-all shadow-lg disabled:opacity-50 group min-h-[64px]"
                 title="Compartir en X"
               >
-                <FaXTwitter size={20} className="group-hover:scale-110 transition-transform drop-shadow" />
+                {sharingPlatform === 'x' ? (
+                  <Spinner size={20} />
+                ) : (
+                  <FaXTwitter size={20} className="group-hover:scale-110 transition-transform drop-shadow" />
+                )}
                 <span className="text-[11px] font-black tracking-tight mt-1">X</span>
               </button>
 
@@ -428,10 +549,14 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
                 type="button"
                 onClick={() => handlePlatformShare('telegram')}
                 disabled={isGenerating}
-                className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-[#229ED9] text-white hover:brightness-105 active:scale-95 transition-all shadow-lg disabled:opacity-50 group"
+                className="flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl bg-[#229ED9] text-white hover:brightness-105 active:scale-95 transition-all shadow-lg disabled:opacity-50 group min-h-[64px]"
                 title="Compartir en Telegram"
               >
-                <FaTelegram size={22} className="group-hover:scale-110 transition-transform drop-shadow" />
+                {sharingPlatform === 'telegram' ? (
+                  <Spinner size={20} />
+                ) : (
+                  <FaTelegram size={22} className="group-hover:scale-110 transition-transform drop-shadow" />
+                )}
                 <span className="text-[11px] font-black tracking-tight mt-1">Telegram</span>
               </button>
             </div>
@@ -441,10 +566,10 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
               type="button"
               onClick={handleDownloadStory}
               disabled={isGenerating}
-              className="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50"
+              className="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-50 min-h-[40px]"
               title="Descargar imagen en alta resolución 1080x1920"
             >
-              {isGenerating ? <Spinner size={16} /> : <FaDownload size={14} />}
+              {sharingPlatform === 'download' ? <Spinner size={16} /> : <FaDownload size={14} />}
               <span>Descargar HD (1080x1920)</span>
             </button>
 
@@ -461,7 +586,13 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
         </div>
       ) : (
         /* VISTA 2: RESUMEN DE SESIÓN GUARDADA (CON ACCESO DIRECTO A COMPARTIR) */
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-[fade-in_0.25s_ease-out]">
+        <div
+          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-[fade-in_0.25s_ease-out]"
+          style={{
+            paddingTop: 'var(--safe-top, 0px)',
+            paddingBottom: 'var(--safe-bottom, 0px)'
+          }}
+        >
           <div className="relative w-full max-w-lg rounded-t-[32px] rounded-b-none sm:rounded-2xl bg-bg-primary border border-glass-border shadow-2xl flex flex-col max-h-[75vh] md:max-h-[85vh] animate-[slide-up_0.2s_ease-out] sm:animate-[scale-in_0.2s_ease-out] overflow-hidden shrink-0">
 
             {/* Cabecera */}
