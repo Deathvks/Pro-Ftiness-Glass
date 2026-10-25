@@ -1,3 +1,4 @@
+import { sanitizeNewsContent } from '../utils/newsSanitizer.js';
 /* backend/services/newsAutomationService.js */
 import fs from 'fs';
 import path from 'path';
@@ -478,11 +479,19 @@ O SI EL TEMA LO REQUIERE, puedes crear y nombrar una NUEVA categoría coherente 
 ESTRUCTURA EDITORIAL OBLIGATORIA DEL CONTENIDO (Markdown enriquecido):
 1. TÍTULO ATRACTIVO: Gancho potente y profesional sin ser clickbait engañoso (máx. 85 caracteres).
 2. RESUMEN EN 2 FRASES: Explicar el beneficio directo para el lector.
-3. SUBTÍTULOS ## Y ###: Mínimo 4 secciones principales bien estructuradas. REGLA ESTRICTA: Usa siempre ## para secciones principales y ### para subapartados. NUNCA uses una sola almohadilla (#) en el contenido del artículo, ya que el título principal de la noticia ya es el H1.
+3. SUBTÍTULOS ## Y ###: Mínimo 4 secciones principales bien estructuradas. REGLA ESTRICTA: Usa siempre ## para secciones principales y ### para subapartados. NUNCA uses una sola almohadilla (#) en el contenido del artículo. CADA SUBTÍTULO DEBE IR OBLIGATORIAMENTE EN SU PROPIA LÍNEA SEGUIDO DE DOS SALTOS DE LÍNEA ANTES DEL PÁRRAFO. NUNCA coloques el párrafo pegado en la misma línea que el ##.
 4. ALERTAS GITHUB FLAVORED OBLIGATORIAS:
-   > [!TIP] Para consejos prácticos accionables.
-   > [!IMPORTANT] Para evidencia científica o datos de estudios contrastados.
-   > [!NOTE] Para desmentir mitos comunes.
+   > [!TIP]
+   > **Consejo Práctico:** Explica aquí el consejo o truco.
+   O
+   > [!IMPORTANT]
+   > **Evidencia Científica:** Cita aquí los datos de estudios y descubrimientos.
+   O
+   > [!NOTE]
+   > **Aclaración:** Desmiente aquí un mito común.
+   REGLAS ESTRICTAS DE ALERTAS:
+   - NUNCA uses corchetes sueltos como [EVIDENCIA CIENTÍFICA] o [ESTUDIO].
+   - NUNCA uses almohadillas (## o ###) dentro de una alerta (>). Las alertas no llevan subtítulos ##, solo negritas (**Título:**).
 5. TABLA COMPARATIVA MARKDOWN (| Parámetro | Protocolo A | Protocolo B |) con datos visuales claros.
 6. LISTAS Y ACCIONES NUMERADAS.
 7. SECCIÓN FINAL OBLIGATORIA: "## Puntos clave para llevarte" con resumen numerado de 3 a 5 conclusiones prácticas.
@@ -503,6 +512,10 @@ Extensión recomendada: 700 a 1000 palabras de altísimo valor pedagógico.`;
       let parsed;
       try {
         parsed = JSON.parse(rawText);
+      if (parsed.content) {
+        
+        parsed.content = sanitizeNewsContent(parsed.content);
+      }
       } catch (err) {
         throw new Error('Gemini no devolvió un JSON con la estructura requerida.');
       }

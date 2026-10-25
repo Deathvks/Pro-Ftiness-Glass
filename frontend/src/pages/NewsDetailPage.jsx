@@ -32,6 +32,18 @@ import MarkdownContent from '../components/News/MarkdownContent';
 import * as newsService from '../services/newsService';
 import { useToast } from '../hooks/useToast';
 
+const isOfficialAuthor = (name = '') => {
+  if (!name) return true;
+  const n = name.toLowerCase();
+  return (
+    n.includes('pro fitness') ||
+    n.includes('equipo cient') ||
+    n.includes('nutricionista') ||
+    n.includes('redacci') ||
+    n.includes('editorial')
+  );
+};
+
 export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -428,9 +440,15 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           {/* FIRMA DE AUTOR, FECHA Y BOTONES DE COMPARTIR (Línea de metadatos Xataka) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 border-y border-black/10 dark:border-white/10 gap-3 sm:gap-4 text-xs">
             <div className="flex items-start sm:items-center gap-3 min-w-0 w-full sm:w-auto">
-              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center font-black text-xs text-accent uppercase shrink-0 mt-0.5 sm:mt-0">
-                {article.author_name.slice(0, 2)}
-              </div>
+              {isOfficialAuthor(article.author_name) ? (
+                <div className="w-10 h-10 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center p-1.5 shrink-0 mt-0.5 sm:mt-0 shadow-sm overflow-hidden" title="Equipo Oficial Pro Fitness Glass">
+                  <img src="/logo.webp" alt="Pro Fitness Glass" className="w-6 h-6 object-contain drop-shadow" />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center font-black text-xs text-accent uppercase shrink-0 mt-0.5 sm:mt-0">
+                  {article.author_name.slice(0, 2)}
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="font-bold text-text-primary truncate">
                   Por <span className="text-accent">{article.author_name}</span>
@@ -592,9 +610,15 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
 
         {/* FICHA EDITORIAL DEL AUTOR */}
         <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 flex items-center gap-4 my-6">
-          <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center font-black text-sm text-accent uppercase shrink-0">
-            {article.author_name.slice(0, 2)}
-          </div>
+          {isOfficialAuthor(article.author_name) ? (
+            <div className="w-12 h-12 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center p-2 shrink-0 shadow-sm overflow-hidden" title="Equipo Oficial Pro Fitness Glass">
+              <img src="/logo.webp" alt="Pro Fitness Glass" className="w-7 h-7 object-contain drop-shadow" />
+            </div>
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center font-black text-sm text-accent uppercase shrink-0">
+              {article.author_name.slice(0, 2)}
+            </div>
+          )}
           <div className="space-y-0.5">
             <h4 className="text-sm font-bold text-text-primary">{article.author_name}</h4>
             <p className="text-xs text-text-secondary leading-relaxed">

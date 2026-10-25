@@ -1,4 +1,5 @@
 /* backend/controllers/newsController.js */
+import { sanitizeNewsContent } from '../utils/newsSanitizer.js';
 import { Op } from 'sequelize';
 import models from '../models/index.js';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
@@ -322,11 +323,19 @@ export const generateAINews = async (req, res) => {
 Genera un artículo de blog/noticia de alta calidad, dinámico, ameno de leer y perfectamente optimizado para SEO sobre el siguiente tema: "${topic}".
 Categoría sugerida: ${category}.
 REGLAS EDITORIALES OBLIGATORIAS PARA QUE EL ARTÍCULO SEA VISUALMENTE ATRACTIVO Y NO SEA TEXTO MONÓTONO:
-1. Divide el texto con subtítulos claros usando ## (entre 3 y 5 secciones principales) y ### para subapartados. IMPORTANTE: NUNCA uses una sola almohadilla (#) en el contenido, ya que el título de la página ya es el H1; usa siempre ## o ###.
+1. Divide el texto con subtítulos claros usando ## (entre 3 y 5 secciones principales) y ### para subapartados. REGLA ESTRICTA: Cada subtítulo (## o ###) debe ir OBLIGATORIAMENTE en su propia línea seguido de dos saltos de línea antes de su texto explicativo. NUNCA pongas el párrafo pegado en la misma línea que el ##.
 2. Incluye al menos 1 o 2 bloques de alerta Markdown con formato GitHub:
-   > [!TIP] para consejos de entrenamiento y trucos prácticos.
-   > [!IMPORTANT] para datos de evidencia científica cruciales.
-   > [!NOTE] para aclaraciones o mitos.
+   > [!TIP]
+   > **Consejo Práctico:** Explica aquí el truco o recomendación accionable.
+   O
+   > [!IMPORTANT]
+   > **Evidencia Científica:** Cita aquí los datos de estudios y descubrimientos cruciales.
+   O
+   > [!NOTE]
+   > **Aclaración:** Desmiente aquí un mito o puntualización.
+   REGLAS ESTRICTAS DE ALERTAS:
+   - NUNCA uses corchetes sueltos como [EVIDENCIA CIENTÍFICA] o [ESTUDIO].
+   - NUNCA uses almohadillas (## o ###) dentro de una alerta (>).
 3. Incluye una tabla comparativa en formato Markdown (| Parámetro | Opción A | Opción B |) que resuma datos, dosis, repeticiones o alimentos de forma visual.
 4. Usa listas numeradas y con viñetas para desglosar pasos prácticos.
 5. Termina con una sección titulada "## Puntos clave para llevarte" con un resumen numerado accionable.
@@ -338,6 +347,7 @@ Extensión total: 600-900 palabras.`;
     let parsed;
     try {
       parsed = JSON.parse(responseText);
+    if (parsed.content) parsed.content = sanitizeNewsContent(parsed.content);
     } catch (parseError) {
       console.error('Error parsing AI response JSON:', responseText);
       return res.status(500).json({ error: 'La IA no devolvió un JSON válido. Inténtalo de nuevo.' });

@@ -636,9 +636,14 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                   </div>
 
                   <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-xs">
-                    <span className="text-[11px] text-text-tertiary truncate max-w-[130px]">
-                      {art.author_name}
-                    </span>
+                    <div className="flex items-center gap-1.5 min-w-0 max-w-[150px]">
+                      {(!art.author_name || /pro fitness|equipo cient|nutricionista|redacci|editorial/i.test(art.author_name)) && (
+                        <img src="/logo.webp" alt="PFG" className="w-3.5 h-3.5 object-contain shrink-0 drop-shadow-sm" />
+                      )}
+                      <span className="text-[11px] text-text-tertiary truncate">
+                        {art.author_name}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-2 text-[11px] text-text-tertiary font-semibold">
                       {(art.views_count || 0) > 0 && (
                         <span className="flex items-center gap-0.5">

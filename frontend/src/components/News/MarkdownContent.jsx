@@ -8,11 +8,13 @@ import {
   Sparkles,
   Quote
 } from 'lucide-react';
+import { sanitizeNewsContent } from '../../utils/newsSanitizer';
 
 /**
  * Renderizador editorial continuo al estilo Xataka / Webpedia.
  * Flujo de lectura limpio, tipografía espaciosa, subtítulos con carácter,
  * tablas integradas y sin cajas fragmentadas que interrumpan la lectura.
+ * Normaliza y elimina automáticamente corchetes no renderizados y almohadillas desalineadas.
  */
 export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
   if (!content) return null;
@@ -60,8 +62,14 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
   const renderInline = (rawText) => {
     if (!rawText) return '';
 
+    // Eliminar corchetes de alertas y almohadillas que pudieran haber quedado sueltos
+    const cleanedText = String(rawText)
+      .replace(/^#+\s*/, '')
+      .replace(/\[!(IMPORTANT|TIP|WARNING|NOTE|CAUTION)\]/gi, '')
+      .replace(/\[(EVIDENCIA CIENT[IÍ]FICA|ESTUDIO CIENT[IÍ]FICO|CONSEJO PR[AÁ]CTICO|NOTA CLAVE|ATENCI[OÓ]N|ADVERTENCIA)\]/gi, '');
+
     // Sanitizar HTML plano previo para prevenir XSS y ataques de inyección
-    const safeText = escapeHtml(rawText);
+    const safeText = escapeHtml(cleanedText);
 
     const boldRegex = /\*\*([^*]+)\*\*/g;
     const italicRegex = /(?<!\*)\*([^*]+)\*(?!\*)/g;
@@ -89,7 +97,9 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
       .trim()
       .replace(/\s+/g, '-');
 
-  const lines = content.split('\n');
+  // Normalizamos el contenido antes de descomponerlo en líneas
+  const normalizedContent = sanitizeNewsContent(content);
+  const lines = normalizedContent.split('\n');
   const elements = [];
   let currentList = [];
   let listType = null;
@@ -130,32 +140,42 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
 
   const flushBlockquote = () => {
     if (blockquoteLines.length > 0) {
-      const bqText = blockquoteLines.join(' ');
-      let alertIcon = null;
-      let alertBorderClass = 'border-accent';
-      let titleColorClass = 'text-accent';
-      let alertTitle = 'NOTA CLAVE';
+      let calloutSubheading = null;
+      const contentParagraphs = [];
 
-      if (blockquoteType === 'tip') {
-        alertIcon = <Lightbulb size={18} className="text-emerald-400 shrink-0" />;
-        alertBorderClass = 'border-emerald-500 bg-emerald-500/[0.04]';
-        titleColorClass = 'text-emerald-400';
-        alertTitle = 'CONSEJO PRÁCTICO';
-      } else if (blockquoteType === 'important') {
-        alertIcon = <Sparkles size={18} className="text-amber-400 shrink-0" />;
-        alertBorderClass = 'border-amber-500 bg-amber-500/[0.04]';
-        titleColorClass = 'text-amber-400';
-        alertTitle = 'EVIDENCIA CIENTÍFICA';
-      } else if (blockquoteType === 'warning') {
-        alertIcon = <AlertTriangle size={18} className="text-rose-400 shrink-0" />;
-        alertBorderClass = 'border-rose-500 bg-rose-500/[0.04]';
-        titleColorClass = 'text-rose-400';
-        alertTitle = 'ATENCIÓN';
-      } else if (blockquoteType === 'note') {
-        alertIcon = <Info size={18} className="text-blue-400 shrink-0" />;
-        alertBorderClass = 'border-blue-500 bg-blue-500/[0.04]';
-        titleColorClass = 'text-blue-400';
-        alertTitle = 'APUNTE CLAVE';
+      for (let j = 0; j < blockquoteLines.length; j++) {
+        let bqLine = blockquoteLines[j].trim();
+        if (!bqLine) continue;
+
+        // Limpieza de marcadores redundantes de alerta dentro de la caja
+        bqLine = bqLine
+          .replace(/^\[!(IMPORTANT|TIP|WARNING|NOTE|CAUTION)\]\s*/i, '')
+          .replace(/^\[(EVIDENCIA CIENT[IÍ]FICA|ESTUDIO CIENT[IÍ]FICO|CONSEJO PR[AÁ]CTICO|NOTA CLAVE|ATENCI[OÓ]N|ADVERTENCIA)\]\s*/i, '');
+
+        if (!bqLine) continue;
+
+        // Si la línea tiene formato de subtítulo dentro de la alerta (## Subtítulo)
+        if (/^#{1,4}\s+/.test(bqLine)) {
+          const headingClean = bqLine.replace(/^#+\s*/, '').trim();
+          if (!calloutSubheading) {
+            calloutSubheading = headingClean;
+          } else {
+            contentParagraphs.push(headingClean);
+          }
+          continue;
+        }
+
+        // Si la línea empieza con negrita editorial como subtítulo: **Subtítulo:**
+        if (/^\*\*[^*]+:\*\*/.test(bqLine) && !calloutSubheading && contentParagraphs.length === 0) {
+          const titleMatch = bqLine.match(/^\*\*([^*]+)\*\*\s*(.*)$/);
+          if (titleMatch) {
+            calloutSubheading = titleMatch[1];
+            if (titleMatch[2]) contentParagraphs.push(titleMatch[2]);
+            continue;
+          }
+        }
+
+        contentParagraphs.push(bqLine);
       }
 
       if (blockquoteType === 'quote') {
@@ -164,23 +184,58 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
             key={`quote-${elements.length}`}
             className="my-8 pl-6 border-l-4 border-accent italic text-lg sm:text-xl text-text-primary/90 font-serif leading-relaxed py-2"
           >
-            {renderInline(bqText)}
+            {contentParagraphs.map((para, pIdx) => (
+              <p key={pIdx} className="mb-2 last:mb-0">
+                {renderInline(para)}
+              </p>
+            ))}
           </blockquote>
         );
       } else {
+        let alertIcon = <Info size={18} className="text-blue-400 shrink-0" />;
+        let alertBorderClass = 'border-blue-500 bg-blue-500/[0.04]';
+        let titleColorClass = 'text-blue-400';
+        let alertTitle = 'APUNTE CLAVE';
+
+        if (blockquoteType === 'tip') {
+          alertIcon = <Lightbulb size={18} className="text-emerald-400 shrink-0" />;
+          alertBorderClass = 'border-emerald-500 bg-emerald-500/[0.04]';
+          titleColorClass = 'text-emerald-400';
+          alertTitle = 'CONSEJO PRÁCTICO';
+        } else if (blockquoteType === 'important') {
+          alertIcon = <Sparkles size={18} className="text-amber-400 shrink-0" />;
+          alertBorderClass = 'border-amber-500 bg-amber-500/[0.04]';
+          titleColorClass = 'text-amber-400';
+          alertTitle = 'EVIDENCIA CIENTÍFICA';
+        } else if (blockquoteType === 'warning') {
+          alertIcon = <AlertTriangle size={18} className="text-rose-400 shrink-0" />;
+          alertBorderClass = 'border-rose-500 bg-rose-500/[0.04]';
+          titleColorClass = 'text-rose-400';
+          alertTitle = 'ATENCIÓN';
+        }
+
         elements.push(
           <div
             key={`bq-${elements.length}`}
-            className={`my-7 p-4 sm:p-5 rounded-r-2xl border-l-4 ${alertBorderClass}`}
+            className={`my-7 p-4 sm:p-5 rounded-r-2xl border-l-4 ${alertBorderClass} shadow-sm`}
           >
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex items-center gap-2 mb-2">
               {alertIcon}
               <span className={`text-xs font-black uppercase tracking-wider ${titleColorClass}`}>
                 {alertTitle}
               </span>
             </div>
-            <div className={`text-text-primary/90 ${activeFont.li}`}>
-              {renderInline(bqText)}
+            {calloutSubheading && (
+              <h4 className="font-extrabold text-base sm:text-lg text-text-primary mb-2 mt-1 tracking-tight">
+                {renderInline(calloutSubheading)}
+              </h4>
+            )}
+            <div className={`text-text-primary/90 space-y-2 ${activeFont.li}`}>
+              {contentParagraphs.map((para, pIdx) => (
+                <p key={pIdx} className="leading-relaxed last:mb-0">
+                  {renderInline(para)}
+                </p>
+              ))}
             </div>
           </div>
         );
@@ -257,40 +312,44 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
       flushTable();
     }
 
-    // 2. Callouts
-    if (trimmed.startsWith('>')) {
+    // 2. Detección de Callouts (alertas GitHub Flavored [!IMPORTANT], [!TIP], etc., o corchetes sueltos)
+    const isCalloutPrefix = trimmed.startsWith('>');
+    const contentAfterGt = trimmed.replace(/^>\s*/, '');
+
+    // Detección de tipo de alerta
+    let matchedAlert = null;
+    if (contentAfterGt.startsWith('[!TIP]')) matchedAlert = 'tip';
+    else if (contentAfterGt.startsWith('[!IMPORTANT]')) matchedAlert = 'important';
+    else if (contentAfterGt.startsWith('[!WARNING]')) matchedAlert = 'warning';
+    else if (contentAfterGt.startsWith('[!NOTE]')) matchedAlert = 'note';
+    else if (/^\[?(EVIDENCIA CIENT[IÍ]FICA|ESTUDIO CIENT[IÍ]FICO)\]?$/i.test(contentAfterGt)) matchedAlert = 'important';
+    else if (/^\[?(CONSEJO PR[AÁ]CTICO|CONSEJO)\]?$/i.test(contentAfterGt)) matchedAlert = 'tip';
+    else if (/^\[?(ATENCI[OÓ]N|ADVERTENCIA)\]?$/i.test(contentAfterGt)) matchedAlert = 'warning';
+    else if (/^\[?(NOTA CLAVE|NOTA|APUNTE)\]?$/i.test(contentAfterGt)) matchedAlert = 'note';
+
+    if (matchedAlert) {
       flushList();
       flushTable();
-      const contentAfter = trimmed.replace(/^>\s*/, '');
-
-      if (contentAfter.startsWith('[!TIP]')) {
-        flushBlockquote();
-        inBlockquote = true;
-        blockquoteType = 'tip';
-        continue;
-      } else if (contentAfter.startsWith('[!IMPORTANT]')) {
-        flushBlockquote();
-        inBlockquote = true;
-        blockquoteType = 'important';
-        continue;
-      } else if (contentAfter.startsWith('[!WARNING]')) {
-        flushBlockquote();
-        inBlockquote = true;
-        blockquoteType = 'warning';
-        continue;
-      } else if (contentAfter.startsWith('[!NOTE]')) {
-        flushBlockquote();
-        inBlockquote = true;
-        blockquoteType = 'note';
-        continue;
-      }
-
+      flushBlockquote();
       inBlockquote = true;
-      blockquoteLines.push(contentAfter);
+      blockquoteType = matchedAlert;
+      continue;
+    }
+
+    if (isCalloutPrefix) {
+      flushList();
+      flushTable();
+      inBlockquote = true;
+      blockquoteLines.push(contentAfterGt);
       continue;
     } else if (inBlockquote && trimmed !== '') {
-      blockquoteLines.push(trimmed);
-      continue;
+      // Si estamos en un bloque de cita y encontramos un encabezado principal (# o ##), cerrar el bloque
+      if (trimmed.startsWith('# ') || trimmed.startsWith('## ') || trimmed === '---') {
+        flushBlockquote();
+      } else {
+        blockquoteLines.push(trimmed);
+        continue;
+      }
     } else if (inBlockquote && trimmed === '') {
       flushBlockquote();
     }
@@ -307,7 +366,6 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
     }
 
     // 4. Encabezados H1, H2, H3 y H4 estilo periodístico
-    // Si la IA o el usuario escribió "# Encabezado", tratarlo como sección principal H2 para no romper la jerarquía del H1 editorial
     if (trimmed.startsWith('# ') || trimmed.startsWith('## ')) {
       flushList();
       flushBlockquote();
