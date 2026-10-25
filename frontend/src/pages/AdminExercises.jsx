@@ -375,8 +375,9 @@ const AdminExercises = ({ isTrainerMode = false }) => {
     setIsLoading(true);
     try {
       const data = await getExerciseList();
-      setExercises(data);
+      setExercises(Array.isArray(data) ? data : []);
     } catch (error) {
+      setExercises([]);
       addToast('Error al cargar ejercicios', 'error');
     } finally {
       setIsLoading(false);

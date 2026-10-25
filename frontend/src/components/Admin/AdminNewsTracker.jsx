@@ -371,21 +371,21 @@ export default function AdminNewsTracker() {
         <div className="p-4 rounded-[20px] bg-black/[0.03] dark:bg-white/[0.03] border border-black/10 dark:border-white/10 flex flex-col justify-between">
           <div className="flex items-center justify-between text-text-secondary text-xs font-semibold mb-2">
             <span>Canal Principal</span>
-            <Compass size={15} className="text-amber-500" />
+            <Compass size={15} className="text-amber-500 shrink-0" />
           </div>
           <div className="flex items-center gap-1.5 min-w-0">
             {topReferrerItem ? (
               <>
                 {getReferrerIcon(topReferrerItem.type, topReferrerItem.host)}
-                <span className="text-base sm:text-lg font-black text-text-primary truncate">
+                <span className="text-sm sm:text-base font-black text-text-primary break-words leading-tight line-clamp-2">
                   {topReferrerItem.host}
                 </span>
               </>
             ) : (
-              <span className="text-sm font-bold text-text-tertiary">Sin datos aún</span>
+              <span className="text-xs sm:text-sm font-bold text-text-tertiary">Sin datos aún</span>
             )}
           </div>
-          <p className="text-[11px] text-text-tertiary mt-1 truncate">
+          <p className="text-[11px] text-text-tertiary mt-1">
             {topReferrerItem ? `${topReferrerItem.count} accesos registrados` : 'Esperando primeras visitas'}
           </p>
         </div>
@@ -512,7 +512,7 @@ export default function AdminNewsTracker() {
         </div>
 
         {/* Filtros de modo (Tipo de tráfico) */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-1 px-1">
           {[
             { id: 'all', label: 'Todas las visitas' },
             { id: 'real', label: 'Solo Tráfico Real' },
@@ -533,9 +533,20 @@ export default function AdminNewsTracker() {
               {m.label}
             </button>
           ))}
-          <span className="text-[11px] text-text-tertiary ml-auto whitespace-nowrap pl-2">
-            {filteredVisits.length} resultados
-          </span>
+        </div>
+
+        {/* Contador de resultados debajo para no tener que deslizar horizontalmente en móvil */}
+        <div className="flex items-center justify-between text-[11px] text-text-tertiary px-1">
+          <span>Mostrando <strong>{filteredVisits.length}</strong> {filteredVisits.length === 1 ? 'visita' : 'visitas'}</span>
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="text-accent hover:underline font-semibold"
+            >
+              Limpiar búsqueda
+            </button>
+          )}
         </div>
       </div>
 

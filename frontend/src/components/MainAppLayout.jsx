@@ -218,39 +218,89 @@ class ViewErrorBoundary extends React.Component {
     }
   }
 
-  handleReload = () => {
-    if ('caches' in window) {
-      caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
-    }
-    sessionStorage.clear();
-    window.location.reload();
+  handleRetry = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
+  handleReload = async () => {
+    try {
+      sessionStorage.clear();
+      localStorage.removeItem('lastView');
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
+        }
+      }
+    } catch {}
+    window.location.replace(window.location.origin + '/?v=' + Date.now());
   };
 
   handleGoHome = () => {
     this.setState({ hasError: false, error: null });
+    try {
+      localStorage.setItem('lastView', 'dashboard');
+    } catch {}
     if (this.props.navigate) {
       this.props.navigate('dashboard');
+    } else {
+      window.location.replace(window.location.origin + '/');
     }
   };
 
   render() {
     if (this.state.hasError) {
+      const err = this.state.error;
+      const errMsg = (err?.message || '').toLowerCase();
+      const isChunkError =
+        err?.name === 'ChunkLoadError' ||
+        errMsg.includes('failed to fetch dynamically imported module') ||
+        errMsg.includes('loading chunk') ||
+        errMsg.includes('loading css chunk') ||
+        errMsg.includes('importing a module script failed') ||
+        errMsg.includes('dynamically imported module');
+
       return (
         <div className="min-h-[55vh] flex flex-col items-center justify-center p-6 text-center animate-[fade-in_0.3s_ease-out]">
           <div className="w-16 h-16 rounded-2xl bg-accent/15 text-accent flex items-center justify-center mb-4 shadow-lg shadow-accent/20">
-            <RefreshCw className="animate-spin-slow" size={32} />
+            {isChunkError ? (
+              <RefreshCw className="animate-spin-slow" size={32} />
+            ) : (
+              <AlertTriangle className="text-accent" size={32} />
+            )}
           </div>
-          <h2 className="text-xl font-bold text-text-primary mb-2">Actualización disponible</h2>
+          <h2 className="text-xl font-bold text-text-primary mb-2">
+            {isChunkError ? 'Actualización de la App' : 'Problema al cargar la sección'}
+          </h2>
           <p className="text-sm text-text-secondary max-w-sm mb-6 leading-relaxed">
-            Hemos actualizado la aplicación con una nueva versión. Recarga para ver esta sección o vuelve al inicio.
+            {isChunkError
+              ? 'Hay una nueva versión de esta sección disponible. Pulsa en actualizar para cargar los archivos más recientes.'
+              : 'Se ha producido un error inesperado al renderizar este apartado. Puedes reintentar, volver al inicio o recargar la app.'}
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {!isChunkError && (
+              <button
+                type="button"
+                onClick={this.handleRetry}
+                className="px-5 py-2.5 rounded-xl bg-accent text-accent-contrast font-bold text-sm shadow-md shadow-accent/25 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+              >
+                Reintentar
+              </button>
+            )}
             <button
               type="button"
               onClick={this.handleReload}
-              className="px-5 py-2.5 rounded-xl bg-accent text-accent-contrast font-bold text-sm shadow-md shadow-accent/25 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+              className={`px-5 py-2.5 rounded-xl font-bold text-sm shadow-md cursor-pointer hover:scale-105 active:scale-95 transition-all ${
+                isChunkError
+                  ? 'bg-accent text-accent-contrast shadow-accent/25'
+                  : 'bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-primary hover:bg-black/10'
+              }`}
             >
-              Recargar ahora
+              {isChunkError ? 'Actualizar ahora' : 'Recargar aplicación'}
             </button>
             <button
               type="button"

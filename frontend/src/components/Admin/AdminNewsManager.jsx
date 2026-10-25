@@ -77,9 +77,10 @@ export default function AdminNewsManager() {
     setIsLoading(true);
     try {
       const data = await newsService.fetchAdminNews();
-      setArticles(data.news || []);
-      setTotal(data.total || (data.news ? data.news.length : 0));
+      setArticles(Array.isArray(data?.news) ? data.news : []);
+      setTotal(data?.total || (Array.isArray(data?.news) ? data.news.length : 0));
     } catch (err) {
+      setArticles([]);
       addToast(err.message || 'Error al cargar noticias', 'error');
     } finally {
       setIsLoading(false);

@@ -62,9 +62,10 @@ const AdminNotifications = () => {
   const fetchUsers = async () => {
     try {
       const data = await getAllUsers();
-      setUsers(data);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
+      setUsers([]);
       showToast('Error cargando usuarios', 'error');
     }
   };
@@ -73,10 +74,11 @@ const AdminNotifications = () => {
     try {
       if (showSpinner) setLoadingLogs(true);
       const data = await getPushLogs(page, statusFilter, titleFilter, timeRange);
-      setLogs(data.logs || []);
-      setTotalPages(data.totalPages || 1);
+      setLogs(Array.isArray(data?.logs) ? data.logs : []);
+      setTotalPages(data?.totalPages || 1);
     } catch (err) {
       console.error(err);
+      setLogs([]);
       if (showSpinner) showToast('Error cargando historial de notificaciones', 'error');
     } finally {
       if (showSpinner) setLoadingLogs(false);
@@ -86,9 +88,10 @@ const AdminNotifications = () => {
   const fetchCronList = async () => {
     try {
       const data = await getCronJobs();
-      setCronJobs(data);
+      setCronJobs(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
+      setCronJobs([]);
       showToast('Error cargando tareas automáticas', 'error');
     }
   };

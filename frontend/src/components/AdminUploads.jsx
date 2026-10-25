@@ -15,9 +15,10 @@ export default function AdminUploads() {
   const fetchLogs = async () => {
     try {
       const res = await apiClient('/admin/upload-logs');
-      setLogs(res);
+      setLogs(Array.isArray(res) ? res : []);
     } catch (e) {
       console.error(e);
+      setLogs([]);
       addToast('Error al cargar historial', 'error');
     } finally {
       setLoading(false);

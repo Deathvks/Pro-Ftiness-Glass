@@ -1,4 +1,4 @@
 {
-  "version": "7.10.20",
-  "releaseNotes": "Actualización v7.10.20: Nuevo sistema de Tracker y Sniffing de visitas en el panel admin de noticias con telemetría en tiempo real, detección de procedencia (Google, Redes Sociales, Directo), dispositivo, SO, IP, geolocalización, radar de actualización cada 5s y herramienta de diagnóstico con ping de prueba. | Actualización v7.10.19: Corrección de estado persistente de entrenamiento completado de días pasados y desbloqueo de repetición de rutinas. | Actualización v7.10.18: Desvinculación efectiva de gimnasio habitual con modal de confirmación, diseño sin bordes en badges e información completa sin truncar."
+  "version": "7.10.21",
+  "releaseNotes": "Actualización v7.10.21: Solución a ReferenceError/React.Children.only en ModalPortal, protección en modales y secciones del panel admin con AdminTabErrorBoundary, mensaje contextual en ErrorBoundary de vistas con reintento y recarga anti-bloqueo, y ajustes responsive en tracker de noticias (Canal Principal sin truncar y contador de visitas visible debajo sin scroll). | Actualización v7.10.20: Nuevo sistema de Tracker y Sniffing de visitas en el panel admin de noticias con telemetría en tiempo real."
 }

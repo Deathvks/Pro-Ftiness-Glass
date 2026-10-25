@@ -36,9 +36,16 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
     return () => el.removeEventListener('touchmove', onNativeTouchMove);
   }, [mounted]);
 
-  if (!mounted) return null;
+  if (!mounted || !children) return null;
 
-  const child = React.isValidElement(children) ? children : React.Children.only(children);
+  // Filtrar elementos válidos (eliminar false, null, undefined)
+  const validChildren = React.Children.toArray(children).filter(Boolean);
+  if (validChildren.length === 0) return null;
+
+  // Si hay exactamente un elemento React válido, lo usamos; si hay más o es fragmento, lo envolvemos en un contenedor seguro
+  const child = validChildren.length === 1 && React.isValidElement(validChildren[0])
+    ? validChildren[0]
+    : <div className="modal-portal-wrapper contents">{validChildren}</div>;
 
   const handleTouchStart = (e) => {
     let canSwipe = !disableSwipeToClose && window.innerWidth < 640;
@@ -82,7 +89,7 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
       // invalida la capa de composición en Chrome Android y destruye el gesto de scroll nativo.
     }
     
-    if (child.props.onTouchStart) {
+    if (child?.props?.onTouchStart) {
       child.props.onTouchStart(e);
     }
   };
@@ -107,7 +114,7 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
       }
     }
     
-    if (child.props.onTouchMove) {
+    if (child?.props?.onTouchMove) {
       child.props.onTouchMove(e);
     }
   };
@@ -184,7 +191,7 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
     touchStartTime.current = null;
     isValidSwipe.current = false;
     
-    if (child.props.onTouchEnd) {
+    if (child?.props?.onTouchEnd) {
       child.props.onTouchEnd(e);
     }
   };

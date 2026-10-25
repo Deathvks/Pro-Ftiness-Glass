@@ -20,9 +20,10 @@ export default function AdminRatings() {
         const fetchRatings = async () => {
             try {
                 const data = await getAppRatings();
-                setRatings(data);
+                setRatings(Array.isArray(data) ? data : []);
             } catch (error) {
                 console.error("Error fetching ratings:", error);
+                setRatings([]);
             } finally {
                 setLoading(false);
             }
@@ -34,9 +35,10 @@ export default function AdminRatings() {
         return <div className="flex justify-center items-center py-12"><Spinner size={32} /></div>;
     }
 
-    const averageRating = ratings.length ? (ratings.reduce((acc, r) => acc + r.rating, 0) / ratings.length).toFixed(1) : 0;
-    const totalPages = Math.ceil(ratings.length / ITEMS_PER_PAGE);
-    const currentRatings = ratings.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const safeRatings = Array.isArray(ratings) ? ratings : [];
+    const averageRating = safeRatings.length ? (safeRatings.reduce((acc, r) => acc + (r.rating || 0), 0) / safeRatings.length).toFixed(1) : 0;
+    const totalPages = Math.ceil(safeRatings.length / ITEMS_PER_PAGE) || 1;
+    const currentRatings = safeRatings.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     return (
         <div className="w-full text-left">

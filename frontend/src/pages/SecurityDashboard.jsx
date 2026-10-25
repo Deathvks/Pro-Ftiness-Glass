@@ -51,11 +51,13 @@ const SecurityDashboard = ({ onBack }) => {
         activeTab === 'blacklist' ? apiClient('/admin/security/blacklist') : Promise.resolve([])
       ]);
       
-      setStats(statsRes);
-      if (activeTab !== 'blacklist') setLogs(logsRes);
-      if (activeTab === 'blacklist') setBlacklist(blacklistRes);
+      setStats(statsRes || { totalEvents: 0, failedLogins: 0, criticalAlerts: 0, blockedIps: 0, chartData: [] });
+      if (activeTab !== 'blacklist') setLogs(Array.isArray(logsRes) ? logsRes : (Array.isArray(logsRes?.logs) ? logsRes.logs : []));
+      if (activeTab === 'blacklist') setBlacklist(Array.isArray(blacklistRes) ? blacklistRes : []);
     } catch (error) {
       console.error('Error fetching security data', error);
+      if (activeTab !== 'blacklist') setLogs([]);
+      if (activeTab === 'blacklist') setBlacklist([]);
     } finally {
       setLoading(false);
     }

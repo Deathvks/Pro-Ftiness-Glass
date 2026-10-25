@@ -41,6 +41,49 @@ const REPORT_CATEGORY_LABELS = {
   other: 'Otro'
 };
 
+class AdminTabErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.warn('[AdminTabErrorBoundary] Error en pestaña admin:', error, errorInfo);
+  }
+  componentDidUpdate(prevProps) {
+    if (prevProps.activeTab !== this.props.activeTab && this.state.hasError) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="py-16 px-4 flex flex-col items-center justify-center text-center space-y-3 animate-[fade-in_0.3s_ease-out]">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+            <RefreshCw size={24} />
+          </div>
+          <h3 className="text-base font-bold text-text-primary">
+            No se pudo cargar este apartado
+          </h3>
+          <p className="text-xs text-text-secondary max-w-sm">
+            Ocurrió un problema al inicializar esta sección. Puedes pulsar en reintentar o navegar a otra pestaña.
+          </p>
+          <button
+            type="button"
+            onClick={() => this.setState({ hasError: false, error: null })}
+            className="px-4 py-2 rounded-full text-xs font-bold bg-accent text-accent-contrast shadow-md active:scale-95 transition-all cursor-pointer"
+          >
+            Reintentar sección
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Función auxiliar segura para formatear fechas
 const formatDateSafe = (dateString) => {
   if (!dateString) return 'N/A';
@@ -1100,30 +1143,32 @@ const AdminPanel = ({ onCancel }) => {
             )}
           </>
         ) : (
-          <React.Suspense
-            fallback={
-              <div className="py-20 flex flex-col items-center justify-center gap-3">
-                <Spinner size={32} />
-                <span className="text-xs font-semibold text-text-secondary tracking-wide uppercase">Cargando sección...</span>
-              </div>
-            }
-          >
-            {activeTab === 'exercises' ? (
-              <AdminExercises />
-            ) : activeTab === 'ratings' ? (
-              <AdminRatings />
-            ) : activeTab === 'notifications' ? (
-              <AdminNotifications />
-            ) : activeTab === 'emails' ? (
-              <AdminEmails />
-            ) : activeTab === 'uploads' ? (
-              <AdminUploads />
-            ) : activeTab === 'news' ? (
-              <AdminNewsManager />
-            ) : activeTab === 'security' ? (
-              <SecurityDashboard onBack={() => setActiveTab('users')} />
-            ) : null}
-          </React.Suspense>
+          <AdminTabErrorBoundary activeTab={activeTab}>
+            <React.Suspense
+              fallback={
+                <div className="py-20 flex flex-col items-center justify-center gap-3">
+                  <Spinner size={32} />
+                  <span className="text-xs font-semibold text-text-secondary tracking-wide uppercase">Cargando sección...</span>
+                </div>
+              }
+            >
+              {activeTab === 'exercises' ? (
+                <AdminExercises />
+              ) : activeTab === 'ratings' ? (
+                <AdminRatings />
+              ) : activeTab === 'notifications' ? (
+                <AdminNotifications />
+              ) : activeTab === 'emails' ? (
+                <AdminEmails />
+              ) : activeTab === 'uploads' ? (
+                <AdminUploads />
+              ) : activeTab === 'news' ? (
+                <AdminNewsManager />
+              ) : activeTab === 'security' ? (
+                <SecurityDashboard onBack={() => setActiveTab('users')} />
+              ) : null}
+            </React.Suspense>
+          </AdminTabErrorBoundary>
         )}
       </GlassCard>
 

@@ -30,12 +30,13 @@ const AdminEmails = () => {
         page,
         limit: 20
       });
-      setLogs(logsRes.logs);
-      setTotalPages(logsRes.totalPages);
+      setLogs(Array.isArray(logsRes?.logs) ? logsRes.logs : []);
+      setTotalPages(logsRes?.totalPages || 1);
 
       const statsRes = await getEmailStats({ range: filterRange });
-      setStats(statsRes);
+      setStats(statsRes || null);
     } catch (err) {
+      setLogs([]);
       addToast('Error al cargar historial de correos', 'error');
     } finally {
       setLoading(false);
