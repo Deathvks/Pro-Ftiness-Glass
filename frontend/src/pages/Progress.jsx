@@ -7,7 +7,7 @@ import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
 
-import DailyDetailView from '../components/progress/DailyDetailView';
+const DailyDetailView = React.lazy(() => import('../components/progress/DailyDetailView'));
 import CalendarView from '../components/progress/CalendarView';
 import { BodyWeightChart } from '../components/progress/ProgressCharts';
 import ExerciseView from '../components/progress/ExerciseView';
@@ -548,7 +548,11 @@ const Progress = ({ darkMode, setView }) => {
             {viewType === 'calendar' && <CalendarView setDetailedLog={setDetailedLog} />}
             </div>
 
-            {detailedLog && <DailyDetailView logs={detailedLog} onClose={() => setDetailedLog(null)} />}
+            {detailedLog && (
+              <React.Suspense fallback={null}>
+                <DailyDetailView logs={detailedLog} onClose={() => setDetailedLog(null)} />
+              </React.Suspense>
+            )}
             {showHistoryModal && <ExerciseHistoryModal exerciseName={exerciseForHistory} workoutLog={workoutLog} onClose={() => setShowHistoryModal(false)} />}
         </div>
     );

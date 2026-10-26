@@ -110,7 +110,6 @@ export default defineConfig({
           'assets/*GymLocationModal*',
           'assets/*BarcodeScanner*',
           'assets/*vendor-recharts*',
-          'assets/*vendor-leaflet*',
           'assets/*AdminPanel*',
           'assets/*TrainerPanel*',
           'assets/*RoutineEditor*',
@@ -132,8 +131,8 @@ export default defineConfig({
       name: 'css-before-js',
       enforce: 'post',
       transformIndexHtml(html) {
-        // Eliminar modulepreload pesados innecesarios en el arranque inicial (como recharts o leaflet)
-        let cleaned = html.replace(/<link\s+[^>]*rel=["']modulepreload["'][^>]*href=["'][^"']*vendor-(recharts|leaflet)[^"']*["'][^>]*>\s*/gi, '');
+        // Eliminar modulepreload pesados innecesarios en el arranque inicial (como recharts)
+        let cleaned = html.replace(/<link\s+[^>]*rel=["']modulepreload["'][^>]*href=["'][^"']*vendor-recharts[^"']*["'][^>]*>\s*/gi, '');
         const cssLinks = cleaned.match(/<link\s+[^>]*rel=["']stylesheet["'][^>]*>/gi);
         if (!cssLinks || cssLinks.length === 0) return cleaned;
         for (const link of cssLinks) {
@@ -164,9 +163,6 @@ export default defineConfig({
             }
             if (id.includes('/recharts/') || id.includes('/d3-')) {
               return 'vendor-recharts';
-            }
-            if (id.includes('/leaflet/') || id.includes('/react-leaflet/')) {
-              return 'vendor-leaflet';
             }
             if (id.includes('/lucide-react/')) {
               return 'vendor-icons';

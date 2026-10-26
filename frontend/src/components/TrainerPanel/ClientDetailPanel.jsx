@@ -5,7 +5,7 @@ import { Dumbbell } from 'lucide-react';
 import apiClient from '../../services/apiClient';
 import { useToast } from '../../hooks/useToast';
 import CalendarView from '../progress/CalendarView';
-import DailyDetailView from '../progress/DailyDetailView';
+const DailyDetailView = React.lazy(() => import('../progress/DailyDetailView'));
 import UserAvatar from '../UserAvatar';
 
 const WEEKDAYS = [
@@ -269,10 +269,12 @@ export default function ClientDetailPanel({ client, onBack }) {
             <h2 className="text-xl font-bold">Detalle del {new Date(detailedLog[0].workout_date).toLocaleDateString()}</h2>
           </div>
           <div className="p-4 max-w-3xl mx-auto pb-safe">
-            <DailyDetailView
-              logs={detailedLog}
-              onClose={() => setDetailedLog(null)}
-              isTrainerMode={true} />
+            <React.Suspense fallback={null}>
+              <DailyDetailView
+                logs={detailedLog}
+                onClose={() => setDetailedLog(null)}
+                isTrainerMode={true} />
+            </React.Suspense>
           </div>
         </div></ModalPortal>
       }
