@@ -513,8 +513,11 @@ export const generateAINews = async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+    const targetModel = 'gemini-3.5-flash';
+    const fallbackModel = 'gemini-3.5-flash-lite';
+
+    const getAiModel = (m) => genAI.getGenerativeModel({
+      model: m,
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: {
@@ -564,7 +567,15 @@ REGLAS DE RETENCIÓN, EXTENSIÓN Y ESTILO EDITORIAL (OBLIGATORIAS):
 7. CIERRE OBLIGATORIO:
    - Termina con la sección "## Puntos clave para llevarte" con 3 o 4 conclusiones numeradas muy directas ("Haz esto", "Evita esto", "Tu meta hoy").`;
 
-    const result = await model.generateContent(prompt);
+    let result;
+    try {
+      const model = getAiModel(targetModel);
+      result = await model.generateContent(prompt);
+    } catch (modelErr) {
+      console.warn(`[News Controller] ${targetModel} ocupado o no disponible (${modelErr.message}). Fallback a ${fallbackModel}...`);
+      const fallback = getAiModel(fallbackModel);
+      result = await fallback.generateContent(prompt);
+    }
 
     const responseText = result.response.text();
     let parsed;
