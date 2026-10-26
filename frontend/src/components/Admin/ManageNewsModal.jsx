@@ -343,7 +343,7 @@ export default function ManageNewsModal({ isOpen, onClose }) {
                     Generador de Artículos Científicos con IA
                   </h4>
                   <p className="text-xs text-text-secondary">
-                    Google Gemini 2.5 Flash redactará un artículo completo de 500-800 palabras con rigor, subtítulos, formato editorial profesional y optimización SEO.
+                    Google Gemini 2.5 Flash redactará un artículo ágil de alta retención (450-650 palabras), directo al grano, con formato visual profesional y optimización SEO.
                   </p>
                 </div>
 

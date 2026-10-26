@@ -535,27 +535,32 @@ export const generateAINews = async (req, res) => {
       }
     });
 
-    const prompt = `Eres un redactor científico de fitness y nutrición de élite con profundo conocimiento en hipertrofia, biomecánica y dietética deportiva.
-Genera un artículo de blog/noticia de alta calidad, dinámico, ameno de leer y perfectamente optimizado para SEO sobre el siguiente tema: "${topic}".
+    const prompt = `Eres un redactor y divulgador de élite de fitness, hipertrofia y nutrición deportiva de Pro Fitness Glass (estilo divulgador moderno de alto impacto: directo, entretenido, riguroso pero sin tecnicismos aburridos).
+Tu máxima prioridad es la RETENCIÓN DEL LECTOR: que empiece a leer y no pueda soltar el artículo porque cada frase aporta valor práctico inmediato.
+
+Genera un artículo de blog/noticia ágil, fascinante y optimizado para SEO sobre el siguiente tema: "${topic}".
 Categoría sugerida: ${category}.
-REGLAS EDITORIALES OBLIGATORIAS PARA QUE EL ARTÍCULO SEA VISUALMENTE ATRACTIVO Y NO SEA TEXTO MONÓTONO:
-1. Divide el texto con subtítulos claros usando ## (entre 3 y 5 secciones principales) y ### para subapartados. REGLA ESTRICTA: Cada subtítulo (## o ###) debe ir OBLIGATORIAMENTE en su propia línea seguido de dos saltos de línea antes de su texto explicativo. NUNCA pongas el párrafo pegado en la misma línea que el ##.
-2. Incluye al menos 1 o 2 bloques de alerta Markdown con formato GitHub:
+
+REGLAS DE RETENCIÓN, EXTENSIÓN Y ESTILO EDITORIAL (OBLIGATORIAS):
+1. EXTENSIÓN ESTRICTA PARA MÁXIMA RETENCIÓN: Entre 450 y 650 palabras en total. ¡NO lo hagas largo ni denso! Debe poder leerse completo con interés en menos de 3 minutos.
+2. RITMO, TONO Y PÁRRAFOS CORTOS:
+   - Párrafos muy cortos (máximo 2 a 3 líneas por párrafo). NUNCA generes bloques o paredes de texto densas.
+   - Gancho inicial ("Hook"): Las primeras 2-3 líneas deben plantear una curiosidad, un error común o un beneficio directo para el lector. Prohibido empezar con introducciones genéricas o aburridas ("Desde hace siglos...", "El deporte es fundamental..."). Ve directo a la acción.
+   - Lenguaje claro, magnético y aplicable: Traduce la ciencia a un lenguaje directo para el gimnasio o la cocina. Cero tecnicismos farragosos o jerga académica que aburra al lector.
+3. ESTRUCTURA CON SUBTÍTULOS ## (3 o 4 secciones concisas):
+   - Usa subtítulos intrigantes y enfocados al beneficio del lector.
+   - REGLA TÉCNICA ESTRICTA: Cada subtítulo (## o ###) debe ir OBLIGATORIAMENTE en su propia línea, seguido de dos saltos de línea antes del texto explicativo. NUNCA coloques texto en la misma línea que el ##. NUNCA uses # solo.
+4. BLOQUES DE ALERTA MARKDOWN (1 o 2 máximo):
    > [!TIP]
-   > **Consejo Práctico:** Explica aquí el truco o recomendación accionable.
+   > **Consejo Práctico:** El truco accionable directo para aplicar hoy.
    O
    > [!IMPORTANT]
-   > **Evidencia Científica:** Cita aquí los datos de estudios y descubrimientos cruciales.
-   O
-   > [!NOTE]
-   > **Aclaración:** Desmiente aquí un mito o puntualización.
-   REGLAS ESTRICTAS DE ALERTAS:
-   - NUNCA uses corchetes sueltos como [EVIDENCIA CIENTÍFICA] o [ESTUDIO].
-   - NUNCA uses almohadillas (## o ###) dentro de una alerta (>).
-3. Incluye una tabla comparativa en formato Markdown (| Parámetro | Opción A | Opción B |) que resuma datos, dosis, repeticiones o alimentos de forma visual.
-4. Usa listas numeradas y con viñetas para desglosar pasos prácticos.
-5. Termina con una sección titulada "## Puntos clave para llevarte" con un resumen numerado accionable.
-Extensión total: 600-900 palabras.`;
+   > **Dato Científico:** El hallazgo clave explicado de forma sencilla y directa.
+   (REGLA: NUNCA uses almohadillas ## dentro de las alertas ni corchetes sueltos como [ESTUDIO]).
+5. TABLA COMPARATIVA VISUAL Y CONCISA:
+   - Tabla Markdown sencilla (| Parámetro | Enfoque A | Enfoque B |) de máximo 3 a 4 filas, para que se entienda de un vistazo sin cansar.
+6. CIERRE OBLIGATORIO:
+   - Termina con la sección "## Puntos clave para llevarte" con 3 o 4 conclusiones numeradas muy directas ("Haz esto", "Evita esto", "Tu meta hoy").`;
 
     const result = await model.generateContent(prompt);
 

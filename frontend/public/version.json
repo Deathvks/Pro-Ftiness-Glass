@@ -1,4 +1,4 @@
 {
-  "version": "7.10.42",
-  "releaseNotes": "Actualización v7.10.42: Optimización de entrada a noticias y al sistema tras actualización con caché local persistente (localStorage), reducción de timeout de navegación SW a 3.5s, precarga de noticiaDetalle en ralentí y apertura instantánea a 0ms."
+  "version": "7.10.43",
+  "releaseNotes": "Actualización v7.10.43: Optimización del motor de redacción de IA para máxima retención de lectores: artículos ágiles y amenos (450-650 palabras, ~3 min de lectura), párrafos cortos sin tecnicismos farragosos y formato visual de alto impacto."
 }

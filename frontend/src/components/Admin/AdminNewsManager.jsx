@@ -492,7 +492,7 @@ export default function AdminNewsManager() {
               Generador Inteligente con Google Gemini 2.5 Flash
             </h3>
             <p className="text-xs text-text-secondary max-w-md mx-auto">
-              Escribe un tema de fitness o nutrición. La IA generará título SEO, slug, resumen y el artículo completo con formato editorial profesional.
+              Escribe un tema de fitness o nutrición. La IA generará un artículo ágil de alta retención (450-650 palabras), directo al grano, con formato visual profesional y sin tecnicismos pesados.
             </p>
           </div>
 

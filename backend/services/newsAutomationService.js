@@ -476,33 +476,36 @@ CATEGORÍAS PERMITIDAS:
 Puedes elegir una de las estándar: "Entrenamiento", "Nutrición", "Suplementación", "Salud", "Novedades".
 O SI EL TEMA LO REQUIERE, puedes crear y nombrar una NUEVA categoría coherente en mayúsculas/minúsculas correctas (por ejemplo: "Longevidad", "Descanso y Sueño", "Biohacking", "Biomecánica", "Psicología Deportiva", "Cardio y Resistencia").
 
-ESTRUCTURA EDITORIAL OBLIGATORIA DEL CONTENIDO (Markdown enriquecido):
+ESTRUCTURA EDITORIAL Y DE RETENCIÓN OBLIGATORIA (Markdown enriquecido):
 1. TÍTULO ATRACTIVO: Gancho potente y profesional sin ser clickbait engañoso (máx. 85 caracteres).
-2. RESUMEN EN 2 FRASES: Explicar el beneficio directo para el lector.
-3. SUBTÍTULOS ## Y ###: Mínimo 4 secciones principales bien estructuradas. REGLA ESTRICTA: Usa siempre ## para secciones principales y ### para subapartados. NUNCA uses una sola almohadilla (#) en el contenido del artículo. CADA SUBTÍTULO DEBE IR OBLIGATORIAMENTE EN SU PROPIA LÍNEA SEGUIDO DE DOS SALTOS DE LÍNEA ANTES DEL PÁRRAFO. NUNCA coloques el párrafo pegado en la misma línea que el ##.
-4. ALERTAS GITHUB FLAVORED OBLIGATORIAS:
+2. RESUMEN EN 2 FRASES: Explicar el beneficio directo y tangible para el lector.
+3. EXTENSIÓN ESTRICTA PARA MÁXIMA RETENCIÓN: Entre 450 y 650 palabras en total. PROHIBIDO crear artículos largos, densos, aburridos o con exceso de tecnicismos. Debe poder leerse completo en 3 minutos.
+4. RITMO Y PÁRRAFOS CORTOS:
+   - Máximo 2 a 3 líneas por párrafo. Prohibidas las paredes de texto.
+   - Gancho potente al inicio ("Hook"): Ve directo al grano sin introducciones tópicas ni rodeos ("Desde la antigüedad...", "El deporte es vital...").
+   - Explica la ciencia de forma visual, amena y conversacional, como un entrenador de élite hablando con su atleta. Cero jerga pesada o aburrida.
+5. SUBTÍTULOS ## Y ### (3 a 4 secciones bien estructuradas):
+   - REGLA TÉCNICA ESTRICTA: Usa siempre ## para secciones principales y ### para subapartados. CADA SUBTÍTULO DEBE IR OBLIGATORIAMENTE EN SU PROPIA LÍNEA SEGUIDO DE DOS SALTOS DE LÍNEA ANTES DEL PÁRRAFO. NUNCA coloques el párrafo pegado en la misma línea que el ##. NUNCA uses # solo.
+6. ALERTAS GITHUB FLAVORED (1 o 2 máximo):
    > [!TIP]
-   > **Consejo Práctico:** Explica aquí el consejo o truco.
+   > **Consejo Práctico:** Explica aquí el consejo o truco directo.
    O
    > [!IMPORTANT]
-   > **Evidencia Científica:** Cita aquí los datos de estudios y descubrimientos.
+   > **Dato Científico:** El estudio o dato relevante explicado en lenguaje simple.
    O
    > [!NOTE]
-   > **Aclaración:** Desmiente aquí un mito común.
-   REGLAS ESTRICTAS DE ALERTAS:
-   - NUNCA uses corchetes sueltos como [EVIDENCIA CIENTÍFICA] o [ESTUDIO].
-   - NUNCA uses almohadillas (## o ###) dentro de una alerta (>). Las alertas no llevan subtítulos ##, solo negritas (**Título:**).
-5. TABLA COMPARATIVA MARKDOWN (| Parámetro | Protocolo A | Protocolo B |) con datos visuales claros.
-6. LISTAS Y ACCIONES NUMERADAS.
-7. SECCIÓN FINAL OBLIGATORIA: "## Puntos clave para llevarte" con resumen numerado de 3 a 5 conclusiones prácticas.
-8. SEO:
+   > **Desmintiendo el Mito:** Aclaración clara y directa.
+   REGLAS: NUNCA uses almohadillas (## o ###) dentro de una alerta (>), ni corchetes sueltos como [ESTUDIO].
+7. TABLA COMPARATIVA MARKDOWN COMPACTA (| Parámetro | Opción A | Opción B |) de 3-4 filas máx, muy visual.
+8. SECCIÓN FINAL OBLIGATORIA: "## Puntos clave para llevarte" con 3 a 4 puntos accionables muy directos para el gimnasio o la nutrición.
+9. SEO Y METADATOS:
    - seo_title: Título optimizado para Google (50-60 caracteres).
    - seo_description: Meta descripción persuasiva con llamada a la acción (140-160 caracteres).
    - tags: 5 a 8 palabras clave separadas por comas.
-   - reading_time: Tiempo de lectura estimado en minutos (entre 4 y 7).
+   - reading_time: Tiempo de lectura estimado en minutos (debe ser 2 o 3 minutos).
    - theme_keyword: 1 o 2 palabras clave en inglés o español para elegir la mejor imagen de portada.
 
-Extensión recomendada: 700 a 1000 palabras de altísimo valor pedagógico.`;
+Extensión recomendada: 450 a 650 palabras de máxima retención y alto valor práctico.`;
 
       this.addLog('⚡ Enviando directrices editoriales y SEO a Gemini...', 'info');
       const aiResponse = await model.generateContent(prompt);
