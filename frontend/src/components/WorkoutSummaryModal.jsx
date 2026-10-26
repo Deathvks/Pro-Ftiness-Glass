@@ -59,11 +59,11 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
   const [accentColor, setAccentColor] = useState('#22c55e');
   const [enrichedDetails, setEnrichedDetails] = useState([]);
   const [customPhoto, setCustomPhoto] = useState(null);
+  const [previewDownloadImage, setPreviewDownloadImage] = useState(null);
 
   const shareCardRef = useRef(null);
   const photoInputRef = useRef(null);
   const isMountedRef = useRef(true);
-  const cachedBlobRef = useRef(null);
 
   // Enriquecer ejercicios con datos de base de datos (músculos e imágenes)
   useEffect(() => {
@@ -134,10 +134,6 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
     };
   }, []);
 
-  useEffect(() => {
-    cachedBlobRef.current = null;
-  }, [customPhoto, accentColor, enrichedDetails, workoutData]);
-
   // Manejo de foto personalizada de fondo (selfie / gym)
   const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0];
@@ -164,9 +160,6 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
 
   // Generador de imagen en alta resolución 1080x1920 (Instagram Stories / 9:16 HD)
   const generateStoryBlob = async () => {
-    if (cachedBlobRef.current) {
-      return cachedBlobRef.current;
-    }
     if (!shareCardRef.current) throw new Error('Referencia de tarjeta no encontrada');
 
     if (document.fonts?.ready) {
@@ -181,8 +174,14 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
     const innerImgs = shareCardRef.current.querySelectorAll('img');
     await Promise.all(
       Array.from(innerImgs).map(async (img) => {
-        if (img.complete) return;
         try {
+          if (!img.complete) {
+            await new Promise((resolve) => {
+              img.onload = resolve;
+              img.onerror = resolve;
+              setTimeout(resolve, 300);
+            });
+          }
           if ('decode' in img) {
             await img.decode();
           }
@@ -190,34 +189,31 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
       })
     );
 
+    // En navegadores WebKit/Safari, ejecutar un paso previo de calentamiento garantiza que los recursos se rendericen
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (isSafari) {
+      try {
+        await toBlob(shareCardRef.current, {
+          pixelRatio: 1,
+          width: 1080,
+          height: 1920
+        });
+      } catch (_) {}
+    }
+
     const blob = await toBlob(shareCardRef.current, {
       pixelRatio: 1,
       backgroundColor: '#000000',
       width: 1080,
       height: 1920,
-      cacheBust: true,
-      imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+      cacheBust: false
     });
 
     if (!blob) throw new Error('No se pudo generar la imagen');
-    cachedBlobRef.current = blob;
     return blob;
   };
 
-  // Pre-generar blob en segundo plano cuando se abre el studio para que el compartir sea inmediato (0ms)
-  useEffect(() => {
-    if (!isStoryView || !shareCardRef.current) return;
-    const timer = setTimeout(() => {
-      if (isMountedRef.current && shareCardRef.current && !cachedBlobRef.current) {
-        generateStoryBlob().catch((err) => {
-          console.warn('Pre-render en segundo plano diferido a clic:', err);
-        });
-      }
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [isStoryView, customPhoto, accentColor, enrichedDetails]);
-
-  // Helper de descarga multiplataforma directa sin bloqueos de popups
+  // Helper de descarga directa para navegadores de escritorio
   const downloadBlobFile = (blob, fileName) => {
     try {
       const url = URL.createObjectURL(blob);
@@ -234,22 +230,93 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
     }
   };
 
-  // Descargar imagen HD directa
+  // Descargar imagen HD directa adaptada a PWA / Móvil (evita navegación que rompe la PWA) y Desktop
   const handleDownloadStory = async () => {
     if (sharingPlatform) return;
     setSharingPlatform('download');
     try {
       const blob = await generateStoryBlob();
       if (!isMountedRef.current) return;
-      downloadBlobFile(blob, `pro-fitness-story-${new Date().toISOString().slice(0, 10)}.png`);
-      showToast('¡Historia guardada en tu galería en HD!', 'success');
+
+      const fileName = `pro-fitness-story-${new Date().toISOString().slice(0, 10)}.png`;
+      const file = new File([blob], fileName, { type: 'image/png' });
+
+      // 1. Si estamos en Capacitor nativo (App móvil Android / iOS)
+      if (Capacitor.isNativePlatform()) {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = async () => {
+          if (!isMountedRef.current) return;
+          try {
+            const base64data = reader.result.split(',')[1];
+            const savedFile = await Filesystem.writeFile({
+              path: fileName,
+              data: base64data,
+              directory: Directory.Cache
+            });
+            await Share.share({
+              title: 'Guardar Historia',
+              url: savedFile.uri,
+              dialogTitle: 'Guardar en Fotos'
+            });
+            showToast('¡Selecciona "Guardar imagen" para guardarla en tu carrete!', 'success');
+          } catch (e) {
+            console.error('Error guardando en nativo:', e);
+            showToast('Error al guardar imagen', 'error');
+          } finally {
+            if (isMountedRef.current) setSharingPlatform(null);
+          }
+        };
+        return;
+      }
+
+      // 2. Detección de móvil / PWA
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        window.navigator.standalone ||
+        window.matchMedia('(display-mode: standalone)').matches;
+
+      // En móviles con soporte de Web Share de archivos (iOS Safari / PWA y Android Chrome / PWA):
+      // Abrir la hoja nativa para que el usuario pueda pulsar directamente "Guardar imagen" (Save Image)
+      // sin navegación que rompa la PWA
+      const canShareFile = typeof navigator !== 'undefined' &&
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] });
+
+      if (isMobile && canShareFile) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'Guardar Historia',
+            text: 'Pro Fitness Glass'
+          });
+          if (isMountedRef.current) {
+            showToast('¡Selecciona "Guardar imagen" en el menú para guardarla en Fotos!', 'info');
+          }
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return; // Usuario canceló la hoja nativa
+          console.warn('Web Share falló en móvil, mostrando visor directo:', err);
+        }
+      }
+
+      // 3. En Desktop: descarga directa tradicional mediante etiqueta <a> (funciona 100% en navegadores de escritorio)
+      if (!isMobile) {
+        downloadBlobFile(blob, fileName);
+        showToast('¡Historia guardada en tus descargas!', 'success');
+        return;
+      }
+
+      // 4. En móvil / PWA si no soporta Web Share o falla: abrir modal visual para mantener pulsado y guardar
+      const imgUrl = URL.createObjectURL(blob);
+      setPreviewDownloadImage(imgUrl);
     } catch (err) {
       console.error('Error descargando historia:', err);
       if (isMountedRef.current) {
         showToast('Error al procesar la imagen', 'error');
       }
     } finally {
-      if (isMountedRef.current) {
+      if (isMountedRef.current && !Capacitor.isNativePlatform()) {
         setSharingPlatform(null);
       }
     }
@@ -341,8 +408,14 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
 
       if (!isMountedRef.current) return;
 
-      // 3. Fallback directo: Descargar archivo y abrir enlace de la plataforma
-      downloadBlobFile(blob, `pro-fitness-${Date.now()}.png`);
+      // 3. Fallback directo: Descargar archivo en desktop o abrir enlace
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        window.navigator.standalone ||
+        window.matchMedia('(display-mode: standalone)').matches;
+
+      if (!isMobile) {
+        downloadBlobFile(blob, `pro-fitness-${Date.now()}.png`);
+      }
 
       if (platform === 'whatsapp') {
         const waText = encodeURIComponent(`${shareText}\n\n📸 *Adjunta la imagen que acabas de guardar en tu galería*`);
@@ -358,6 +431,10 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
         showToast('Imagen guardada. ¡Adjúntala a tu post en X!', 'success');
       } else {
         // Instagram Stories
+        if (isMobile) {
+          const imgUrl = URL.createObjectURL(blob);
+          setPreviewDownloadImage(imgUrl);
+        }
         showToast('¡Imagen guardada en tu galería! Súbela a tus Stories de Instagram.', 'info');
       }
     } catch (err) {
@@ -383,15 +460,15 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
 
   return (
     <ModalPortal>
-      {/* TARJETA OCULTA OFFSCREEN PARA EXPORTACIÓN 1080x1920 SUPREMA */}
+      {/* TARJETA PARA EXPORTACIÓN 1080x1920 SUPREMA FUERA DE PANTALLA */}
       <div
         style={{
           position: 'fixed',
-          top: 0,
-          left: 0,
+          left: '-9999px',
+          top: '0px',
           width: '1080px',
           height: '1920px',
-          zIndex: -9999,
+          zIndex: 1,
           pointerEvents: 'none',
           opacity: 1,
           overflow: 'hidden'
@@ -772,6 +849,49 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
                 Cerrar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE DESCARGA DIRECTA PARA MÓVIL / PWA (EVITA NAVEGACIÓN BLOB Y PERMITE GUARDAR EN FOTOS) */}
+      {previewDownloadImage && (
+        <div
+          className="fixed inset-0 z-[120] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]"
+          onClick={() => {
+            URL.revokeObjectURL(previewDownloadImage);
+            setPreviewDownloadImage(null);
+          }}
+        >
+          <div
+            className="bg-bg-primary border border-glass-border rounded-3xl p-5 max-w-sm w-full flex flex-col items-center gap-4 shadow-2xl text-center animate-[scale-in_0.2s_ease-out]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-2xl bg-accent/20 text-accent flex items-center justify-center">
+              <FaDownload size={20} />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-text-primary">Guardar en Fotos</h3>
+              <p className="text-xs text-text-secondary mt-1">
+                Mantén pulsada la imagen abajo y selecciona <strong>"Guardar en Fotos"</strong>.
+              </p>
+            </div>
+            <div className="max-h-[50vh] rounded-2xl overflow-hidden border border-white/20 shadow-lg">
+              <img
+                src={previewDownloadImage}
+                alt="Historia Pro Fitness Glass"
+                className="w-auto h-full max-h-[50vh] object-contain"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                URL.revokeObjectURL(previewDownloadImage);
+                setPreviewDownloadImage(null);
+              }}
+              className="w-full py-2.5 rounded-xl bg-accent text-accent-contrast font-bold text-sm"
+            >
+              Listo
+            </button>
           </div>
         </div>
       )}

@@ -257,6 +257,8 @@ const WorkoutShareCard = forwardRef(({
                                     src={APP_LOGO_BASE64}
                                     alt="Pro Fitness Glass"
                                     className="w-10 h-10 object-contain drop-shadow"
+                                    loading="eager"
+                                    decoding="sync"
                                 />
                             </div>
                             <div className="flex flex-col">
@@ -467,6 +469,8 @@ const WorkoutShareCard = forwardRef(({
                             src={APP_LOGO_BASE64}
                             alt="Pro Fitness Glass"
                             className="w-8 h-8 object-contain rounded-xl drop-shadow shrink-0"
+                            loading="eager"
+                            decoding="sync"
                         />
                         <span className="text-xl font-extrabold text-white tracking-wide">
                             pro-fitness-glass.zeabur.app

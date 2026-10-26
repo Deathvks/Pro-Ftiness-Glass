@@ -1,4 +1,4 @@
 {
-  "version": "7.10.32",
-  "releaseNotes": "Actualización v7.10.32: Implementado embudo de conversión nativo en el blog de noticias con banners contextuales inteligentes (creatina, nutrición, fuerza, salud) y puerta de entrada al panel de asesoría con preparadores certificados."
+  "version": "7.10.33",
+  "releaseNotes": "Actualización v7.10.33: Garantizado el renderizado fiel del icono oficial de la app en exportación de historias y rutinas para redes mediante formato PNG transparente universal, y corrección de descarga en PWA/móvil usando Web Share directo al carrete de Fotos sin navegaciones que rompan la app."
 }
