@@ -387,7 +387,13 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
             >
               <img
                 src="/icons/icon-96.png"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = '/logo.webp';
+                }}
                 alt="Pro Fitness Glass"
+                loading="eager"
+                decoding="async"
                 className="w-8 h-8 rounded-xl object-contain shadow-xs ring-1 ring-black/10 dark:ring-white/10 group-hover:scale-105 transition-transform shrink-0"
               />
               <div className="flex flex-col text-left">

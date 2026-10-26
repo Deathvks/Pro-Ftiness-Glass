@@ -54,7 +54,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate', // <-- CAMBIO AQUI: Actualización automática
-      includeAssets: ['favicon.ico', 'favicon-16x16.png', 'favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png', 'apple-touch-icon.png', 'apple-touch-icon.png', 'logo.webp'],
+      includeAssets: ['favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png', 'apple-touch-icon.png', 'logo.webp', 'icons/icon-96.png', 'icons/icon-192.png'],
       manifest: {
         name: 'Pro Fitness Glass',
         short_name: 'Pro Fitness Glass',
@@ -164,7 +164,7 @@ export default defineConfig({
             if (id.includes('/recharts/') || id.includes('/d3-')) {
               return 'vendor-recharts';
             }
-            if (id.includes('/lucide-react/')) {
+            if (id.includes('/lucide-react/') || id.includes('/react-icons/') || id.includes('/@heroicons/')) {
               return 'vendor-icons';
             }
           }

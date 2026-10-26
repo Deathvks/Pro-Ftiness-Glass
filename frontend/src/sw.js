@@ -139,29 +139,43 @@ registerRoute(
 );
 
 // B. Imágenes estáticas LOCALES (logo, iconos, etc.)
-// IMPORTANTE: Excluimos '/uploads/', VÍDEOS y ORÍGENES EXTERNOS para evitar errores de CORS/Opaque.
+// IMPORTANTE: Excluimos VÍDEOS y ORÍGENES EXTERNOS para evitar errores de CORS/Opaque.
 registerRoute(
   ({ request, url }) => {
     // 1. EXCLUSIÓN CRÍTICA: Si la imagen NO es de nuestro propio dominio, IGNORAR.
-    // Esto soluciona el error "opaque response" con imágenes de Google/lh3.googleusercontent.com
     if (url.origin !== self.location.origin) return false;
 
-    // 2. Si viene de /uploads/ (imágenes subidas por usuarios), ignorar (suelen ser dinámicas o requieren auth fresca)
-    if (url.pathname.startsWith('/uploads/')) return false;
-
-    // 3. CRÍTICO: Si es un video (.mp4, .mov, etc.), IGNORAR.
-    // Safari requiere 'Range Requests' (206 Partial Content).
+    // 2. Si es un video (.mp4, .mov, etc.), IGNORAR. Safari requiere Range Requests (206 Partial Content).
     if (url.pathname.match(/\.(mp4|mov|webm|mkv)$/i)) return false;
 
-    // 4. Interceptamos solo imágenes reales del propio sitio
-    return request.destination === 'image' || url.pathname.startsWith('/images/');
+    // 3. Interceptamos imágenes locales (logo, iconos, etc.)
+    return (
+      request.destination === 'image' ||
+      url.pathname.startsWith('/images/') ||
+      url.pathname.startsWith('/icons/') ||
+      /\.(png|jpe?g|webp|svg|ico)$/i.test(url.pathname)
+    );
   },
   new StaleWhileRevalidate({
     cacheName: 'local-images-cache',
     plugins: [
       new ExpirationPlugin({
-        maxEntries: 50,
+        maxEntries: 100,
         maxAgeSeconds: 30 * 24 * 60 * 60, // 30 días
+      }),
+    ],
+  })
+);
+
+// B2. Avatares e imágenes de usuarios (/uploads/) -> StaleWhileRevalidate para que carguen siempre instantáneamente
+registerRoute(
+  ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/uploads/'),
+  new StaleWhileRevalidate({
+    cacheName: 'user-uploads-cache',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 100,
+        maxAgeSeconds: 14 * 24 * 60 * 60, // 14 días
       }),
     ],
   })

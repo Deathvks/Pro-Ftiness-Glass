@@ -1,5 +1,5 @@
 /* frontend/src/components/UserAvatar.jsx */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from 'lucide-react';
 import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 import useAppStore from '../store/useAppStore';
@@ -35,6 +35,11 @@ const UserAvatar = ({
     const viewerProfile = useAppStore(state => state.userProfile);
     const isOnline = useAppStore(state => state.isOnline ?? true);
     const syncQueue = useAppStore(state => state.syncQueue || []);
+
+    const rawImgProp = user?.profile_image_url || user?.avatar || user?.profile_image;
+    useEffect(() => {
+        setError(false);
+    }, [rawImgProp]);
 
     const isCurrentUser = user && viewerProfile && (
         (user.id && user.id === viewerProfile.id) ||
@@ -92,7 +97,8 @@ const UserAvatar = ({
                             alt={user?.username || 'User'}
                             className="w-full h-full object-cover"
                             onError={() => setError(true)}
-                            loading="lazy"
+                            loading="eager"
+                            decoding="async"
                             referrerPolicy="no-referrer"
                         />
                     ) : (
@@ -130,7 +136,8 @@ const UserAvatar = ({
                             alt={user?.username || 'User'}
                             className="w-full h-full object-cover rounded-full"
                             onError={() => setError(true)}
-                            loading="lazy"
+                            loading="eager"
+                            decoding="async"
                             referrerPolicy="no-referrer"
                         />
                     ) : (

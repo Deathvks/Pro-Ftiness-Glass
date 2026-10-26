@@ -334,26 +334,27 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
             {/* Logo de la app + Nombre + Badge 100% Gratis */}
             <Link
               to="/"
-              className="inline-flex items-center gap-2.5 sm:gap-3 group cursor-pointer min-w-0 shrink-0"
-              title="Pro Fitness Glass - App de Gimnasio y Nutrición 100% Gratis"
+              className="inline-flex items-center gap-2.5 group cursor-pointer min-w-0 shrink-0"
+              title="Pro Fitness Glass - App de Gimnasio 100% Gratis"
             >
               <img
                 src="/icons/icon-96.png"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = '/logo.webp';
+                }}
                 alt="Logo Pro Fitness Glass"
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl object-contain shadow-sm ring-1 ring-black/10 dark:ring-white/10 group-hover:scale-105 transition-transform shrink-0"
+                loading="eager"
+                decoding="async"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl object-contain shadow-xs ring-1 ring-black/10 dark:ring-white/10 group-hover:scale-105 transition-transform shrink-0"
               />
-              <div className="flex flex-col text-left min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-black text-base sm:text-lg tracking-tight text-text-primary leading-none group-hover:text-accent transition-colors">
-                    Pro Fitness Glass
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    100% Gratis
-                  </span>
-                </div>
-                <span className="text-[11px] text-text-secondary font-medium leading-none mt-1 truncate hidden xs:inline">
-                  Diario de entrenamiento, pesas, calorías y macros
+              <div className="flex items-center gap-2">
+                <span className="font-black text-base sm:text-lg tracking-tight text-text-primary leading-none group-hover:text-accent transition-colors">
+                  Pro Fitness Glass
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  100% Gratis
                 </span>
               </div>
             </Link>
@@ -488,16 +489,12 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
       )}
 
       {/* TITULAR PRINCIPAL */}
-      <section className="text-center sm:text-left py-2">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 mb-3 border border-emerald-500/25">
-          <FaBookOpen className="text-xs shrink-0" />
-          <span>Pro Fitness Glass • Guías Científicas y Noticias 100% Gratis</span>
-        </div>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-text-primary tracking-tight leading-tight">
-          Noticias y Guías de Élite
+      <section className="pt-1 pb-1">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-text-primary tracking-tight">
+          Guías Científicas y Noticias
         </h1>
-        <p className="text-text-secondary text-sm sm:text-base max-w-2xl mt-2 font-medium">
-          Aprende con artículos basados en evidencia científica, optimiza tus comidas y domina tu rendimiento en el gimnasio con <strong className="text-text-primary font-bold">Pro Fitness Glass</strong>.
+        <p className="text-xs sm:text-sm text-text-secondary font-medium mt-1 max-w-2xl">
+          Artículos y guías de fitness basados en evidencia para maximizar tu entrenamiento, fuerza y nutrición.
         </p>
       </section>
 
