@@ -1,4 +1,4 @@
 {
-  "version": "7.10.62",
-  "releaseNotes": "Actualización v7.10.62: Eliminación de desbordamiento horizontal y barras de desplazamiento innecesarias en calculadoras y ejercicios; rediseño estricto del navbar superior en móvil sin saltos de línea ni banners duplicados."
+  "version": "7.10.63",
+  "releaseNotes": "Actualización v7.10.63: Corrección de importación de autenticación en la vista de detalle de noticias."
 }

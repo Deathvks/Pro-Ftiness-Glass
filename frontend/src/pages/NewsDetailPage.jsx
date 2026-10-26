@@ -36,6 +36,7 @@ import TrainerAdvisoryCard from '../components/News/TrainerAdvisoryCard';
 import * as newsService from '../services/newsService';
 import { buildTrackingPayload } from '../utils/newsTracker';
 import { useToast } from '../hooks/useToast';
+import useAppStore from '../store/useAppStore';
 
 const isOfficialAuthor = (name = '') => {
   if (!name) return true;
@@ -55,6 +56,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
   const location = useLocation();
   const containerRef = useRef(null);
   const { addToast } = useToast();
+  const isAuthenticated = useAppStore((state) => state.isAuthenticated);
 
   // Hidratación instantánea (0ms) desde caché o state previo de navegación
   const cachedData = newsService.getCachedArticle(slug);
@@ -394,7 +396,17 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0 ml-auto">
-            {!isNative && isMobile && (
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={() => (onBack ? onBack() : customNavigate ? customNavigate('hub') : navigate('/dashboard'))}
+                className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1 rounded-full ring-1 ring-black/10 dark:ring-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-xs font-bold text-text-secondary hover:text-text-primary shrink-0 active:scale-95 whitespace-nowrap"
+              >
+                <FaChevronLeft className="text-accent text-[11px] shrink-0" />
+                <span className="sm:hidden">App</span>
+                <span className="hidden sm:inline">Volver a la App</span>
+              </button>
+            ) : !isNative && isMobile ? (
               <a
                 href={appIntentUrl}
                 className="whitespace-nowrap shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent text-accent-contrast transition-all text-xs font-bold shadow-xs active:scale-95"
@@ -403,9 +415,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 <FaMobileScreen className="text-xs shrink-0" />
                 <span className="whitespace-nowrap">Abrir App</span>
               </a>
-            )}
-
-            {!isAuthenticated && (
+            ) : (
               <button
                 type="button"
                 onClick={() => navigate('/register')}
