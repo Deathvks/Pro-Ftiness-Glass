@@ -199,11 +199,11 @@ export default function MacroCalculatorPage({ onBack }) {
       >
         {/* Clean Integrated Header (No full-bleed borders or browser gap) */}
         <nav aria-label="Navegación de herramientas" className="flex flex-col gap-3.5 mb-7 sm:mb-10">
-          <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center justify-between gap-2.5 w-full">
             {/* Logo + Marca + Badge Gratis */}
             <Link
               to="/"
-              className="flex items-center gap-2.5 group cursor-pointer shrink-0"
+              className="inline-flex items-center gap-2 group cursor-pointer min-w-0"
               title="Pro Fitness Glass - App de Gimnasio 100% Gratis"
             >
               <img
@@ -215,42 +215,39 @@ export default function MacroCalculatorPage({ onBack }) {
                 alt="Pro Fitness Glass"
                 loading="eager"
                 decoding="async"
-                className="w-9 h-9 rounded-xl object-contain shadow-xs ring-1 ring-black/10 dark:ring-white/10 group-hover:scale-105 transition-transform shrink-0"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-xs ring-1 ring-black/10 dark:ring-white/10 group-hover:scale-105 transition-transform shrink-0"
               />
-              <div className="flex flex-col text-left">
-                <div className="flex items-center gap-2">
-                  <span className="font-black text-sm sm:text-base tracking-tight text-text-primary leading-none group-hover:text-accent transition-colors">
-                    Pro Fitness Glass
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] sm:text-[10px] font-black rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 uppercase tracking-wide">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    100% Gratis
-                  </span>
-                </div>
-                <span className="text-[11px] text-text-muted hidden sm:inline mt-0.5">
-                  Diario de entrenamiento, pesas y nutrición
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="font-black text-sm sm:text-base tracking-tight text-text-primary leading-none group-hover:text-accent transition-colors truncate">
+                  Pro Fitness Glass
+                </span>
+                <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="hidden xs:inline">100%</span> Gratis
                 </span>
               </div>
             </Link>
 
             {/* Acciones: Volver a la App / Empezar Gratis */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => (onBack ? onBack() : navigate(isAuthenticated ? '/dashboard' : '/'))}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/10 dark:ring-white/10 text-xs font-bold text-text-secondary hover:text-text-primary active:scale-95 transition-all cursor-pointer whitespace-nowrap"
               >
                 <FaChevronLeft className="text-accent text-[11px] shrink-0" />
-                <span>{isAuthenticated ? 'Volver a la App' : 'Inicio'}</span>
+                <span className="sm:hidden">{isAuthenticated ? 'App' : 'Inicio'}</span>
+                <span className="hidden sm:inline">{isAuthenticated ? 'Volver a la App' : 'Inicio'}</span>
               </button>
 
               {!isAuthenticated && (
                 <button
                   type="button"
                   onClick={() => navigate('/register')}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-accent text-accent-contrast text-xs font-black shadow-md shadow-accent/25 hover:opacity-90 active:scale-95 transition-all shrink-0 cursor-pointer whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-accent text-accent-contrast text-xs font-black shadow-md shadow-accent/25 hover:opacity-90 active:scale-95 transition-all shrink-0 cursor-pointer whitespace-nowrap"
                 >
-                  <span>Registrar Dieta Gratis</span>
+                  <span className="sm:hidden">Macros</span>
+                  <span className="hidden sm:inline">Registrar Dieta Gratis</span>
                   <FaArrowRight className="text-[11px] shrink-0" />
                 </button>
               )}
@@ -258,46 +255,47 @@ export default function MacroCalculatorPage({ onBack }) {
           </div>
 
           {/* Segmented Glass Switcher Pill */}
-          <div className="grid grid-cols-4 gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl">
+          <div className="grid grid-cols-4 gap-1 sm:gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl w-full overflow-hidden">
             <Link
               to="/calculadora-1rm"
-              className="flex items-center justify-center gap-1.5 py-2 px-2 sm:px-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
+              className="flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 px-1 sm:px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors min-w-0"
             >
               <FaCalculator className="text-accent text-[11px] sm:text-xs shrink-0" />
-              <span className="sm:hidden">1RM</span>
-              <span className="hidden sm:inline">Calculadora 1RM</span>
+              <span className="truncate sm:hidden">1RM</span>
+              <span className="truncate hidden sm:inline">Calculadora 1RM</span>
             </Link>
             <Link
               to="/calculadora-calorias-macros"
-              className="flex items-center justify-center gap-1.5 py-2 px-2 sm:px-3 rounded-xl bg-emerald-500/15 text-emerald-400 text-[11px] sm:text-xs font-black border border-emerald-500/30 shadow-xs whitespace-nowrap"
+              className="flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 px-1 sm:px-2 rounded-xl bg-emerald-500/15 text-emerald-400 text-[11px] sm:text-xs font-black border border-emerald-500/30 shadow-xs min-w-0"
             >
               <FaUtensils className="text-[11px] sm:text-xs shrink-0" />
-              <span className="sm:hidden">Macros</span>
-              <span className="hidden sm:inline">Calorías y Macros</span>
+              <span className="truncate sm:hidden">Macros</span>
+              <span className="truncate hidden sm:inline">Calorías y Macros</span>
             </Link>
             <Link
               to="/ejercicios"
-              className="flex items-center justify-center gap-1.5 py-2 px-2 sm:px-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
+              className="flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 px-1 sm:px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors min-w-0"
             >
               <FaDumbbell className="text-blue-400 text-[11px] sm:text-xs shrink-0" />
-              <span>Ejercicios</span>
+              <span className="truncate">Ejercicios</span>
             </Link>
             <Link
               to="/noticias"
-              className="flex items-center justify-center gap-1.5 py-2 px-2 sm:px-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
+              className="flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 px-1 sm:px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors min-w-0"
             >
               <FaNewspaper className="text-purple-400 text-[11px] sm:text-xs shrink-0" />
-              <span className="sm:hidden">Guías</span>
-              <span className="hidden sm:inline">Guías y Noticias</span>
+              <span className="truncate sm:hidden">Guías</span>
+              <span className="truncate hidden sm:inline">Guías y Noticias</span>
             </Link>
           </div>
         </nav>
 
         {/* Hero SEO Header */}
         <header className="text-center max-w-3xl mx-auto mb-6 sm:mb-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/30 text-emerald-400 text-[11px] sm:text-xs font-black uppercase tracking-widest mb-3 sm:mb-4 whitespace-nowrap">
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/30 text-emerald-400 text-[10px] sm:text-xs font-black uppercase tracking-wider mb-3 sm:mb-4 max-w-full text-center">
             <FaUtensils className="text-xs shrink-0" />
-            <span>Pro Fitness Glass • Calculadora de Nutrición 100% Gratis</span>
+            <span className="sm:hidden">Calculadora Nutricional • 100% Gratis</span>
+            <span className="hidden sm:inline">Pro Fitness Glass • Calculadora de Nutrición 100% Gratis</span>
           </div>
           <h1 className="text-2xl sm:text-5xl font-black tracking-tight text-text-primary leading-tight mb-3 sm:mb-4">
             Calculadora de <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-accent to-teal-400">Calorías, Macros y Déficit</span>

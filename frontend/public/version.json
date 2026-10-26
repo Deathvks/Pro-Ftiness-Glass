@@ -1,4 +1,4 @@
 {
-  "version": "7.10.61",
-  "releaseNotes": "Actualización v7.10.51: Nuevo diseño de cabecera integrada sin bordes cortados ni huecos superiores en las calculadoras y enciclopedia de ejercicios, y ajuste de botones en una sola línea en pantallas móviles."
+  "version": "7.10.62",
+  "releaseNotes": "Actualización v7.10.62: Eliminación de desbordamiento horizontal y barras de desplazamiento innecesarias en calculadoras y ejercicios; rediseño estricto del navbar superior en móvil sin saltos de línea ni banners duplicados."
 }

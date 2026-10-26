@@ -75,7 +75,6 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
   };
   const [copied, setCopied] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [showAppBanner, setShowAppBanner] = useState(true);
   const isNative = Capacitor.isNativePlatform();
   const isMobile = typeof window !== 'undefined' && (/android|iphone|ipad|ipod/i.test(navigator.userAgent) || window.innerWidth < 768);
   const isAndroid = typeof window !== 'undefined' && /android/i.test(navigator.userAgent);
@@ -345,41 +344,8 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
         {/* COMPONENTE SEO COMPLETO (Meta, Open Graph, Twitter, JSON-LD NewsArticle) */}
         <ArticleSEO article={article} />
 
-        {/* BANNER INTELIGENTE: ABRIR EN LA APP (Móvil Web) */}
-        {!isNative && isMobile && showAppBanner && (
-          <div className="bg-glass-surface/90 backdrop-blur-md border border-glass-border rounded-2xl p-2.5 px-3 mb-3 flex items-center justify-between gap-2.5 sm:gap-3 shadow-sm animate-[fade-in_0.3s_ease-out]">
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <img src="/icons/icon-96.png" alt="Pro Fitness Glass" className="w-9 h-9 rounded-xl shrink-0 shadow-xs" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-black text-text-primary leading-tight">Pro Fitness Glass</p>
-                <p className="text-[11px] text-text-secondary leading-snug mt-0.5 font-medium">
-                  {isAndroid ? 'Descarga o abre la App nativa para Android' : 'Abre o instala la App para máxima fluidez'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <a
-                href={appIntentUrl}
-                className="px-3 py-1.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-1.5 whitespace-nowrap"
-                title="Abrir o descargar la aplicación en tu dispositivo"
-              >
-                <FaMobileScreen className="text-xs shrink-0" />
-                <span>Abrir App</span>
-              </a>
-              <button
-                type="button"
-                onClick={() => setShowAppBanner(false)}
-                className="w-6 h-6 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer shrink-0"
-                title="Cerrar aviso"
-              >
-                <FaXmark className="text-xs" />
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* NAVEGACIÓN SUPERIOR / BREADCRUMB CON LOGO Y MARCA */}
-        <nav aria-label="Ruta de navegación" className="flex items-center justify-between gap-2 pb-4 pt-1 flex-wrap sm:flex-nowrap">
+        <nav aria-label="Ruta de navegación" className="flex items-center justify-between gap-2 pb-4 pt-1 w-full">
           <div className="flex items-center gap-2 min-w-0">
             <Link
               to="/"

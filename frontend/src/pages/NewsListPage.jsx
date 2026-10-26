@@ -97,7 +97,6 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   const [isLoading, setIsLoading] = useState(() => !cachedInitial);
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const [showAppBanner, setShowAppBanner] = useState(true);
   const cachedInitialRef = useRef(cachedInitial);
   const newsRef = useRef(news);
   cachedInitialRef.current = cachedInitial;
@@ -330,13 +329,13 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
         </Helmet>
 
         {/* HEADER CON FOTO, NOMBRE DE LA APP, BADGE 100% GRATIS Y NAVEGACIÓN */}
-        <header className="flex flex-col gap-3.5 pt-2">
-          {/* Barra superior de marca y acciones */}
-          <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+        <header className="flex flex-col gap-3.5 pt-1">
+          {/* Barra superior de marca y acciones (Fila única sin saltos) */}
+          <div className="flex items-center justify-between gap-2.5 w-full">
             {/* Logo de la app + Nombre + Badge 100% Gratis */}
             <Link
               to="/"
-              className="inline-flex items-center gap-2.5 group cursor-pointer min-w-0 shrink-0"
+              className="inline-flex items-center gap-2 group cursor-pointer min-w-0"
               title="Pro Fitness Glass - App de Gimnasio 100% Gratis"
             >
               <img
@@ -348,47 +347,46 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                 alt="Logo Pro Fitness Glass"
                 loading="eager"
                 decoding="async"
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl object-contain shadow-xs ring-1 ring-black/10 dark:ring-white/10 group-hover:scale-105 transition-transform shrink-0"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-xs ring-1 ring-black/10 dark:ring-white/10 group-hover:scale-105 transition-transform shrink-0"
               />
-              <div className="flex items-center gap-2">
-                <span className="font-black text-base sm:text-lg tracking-tight text-text-primary leading-none group-hover:text-accent transition-colors">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="font-black text-sm sm:text-base tracking-tight text-text-primary leading-none group-hover:text-accent transition-colors truncate">
                   Pro Fitness Glass
                 </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
+                <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  100% Gratis
+                  <span className="hidden xs:inline">100%</span> Gratis
                 </span>
               </div>
             </Link>
 
-            {/* Acciones principales (Abrir App / Registrarse / Iniciar Sesión) */}
-            <div className="flex items-center gap-2 shrink-0 ml-auto">
-              {!isNative && isMobile && (
+            {/* Acciones principales (Abrir App / Registrarse / Iniciar Sesión / Volver a la App) */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={handleGoHome}
+                  className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ring-1 ring-black/10 dark:ring-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-xs font-bold text-text-secondary hover:text-text-primary shrink-0 active:scale-95"
+                >
+                  <FaChevronLeft className="text-accent text-[11px] shrink-0" />
+                  <span className="sm:hidden">App</span>
+                  <span className="hidden sm:inline">Volver a la App</span>
+                </button>
+              ) : !isNative && isMobile ? (
                 <a
                   href={appIntentUrl}
-                  className="whitespace-nowrap inline-flex sm:hidden items-center gap-1 px-3 py-1.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 hover:scale-105 active:scale-95 transition-all"
+                  className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent text-accent-contrast font-black text-xs shadow-md shadow-accent/25 hover:scale-105 active:scale-95 transition-all shrink-0"
                   title="Abrir en la aplicación nativa"
                 >
                   <FaMobileScreen className="text-xs shrink-0" />
                   <span>Abrir App</span>
                 </a>
-              )}
-
-              {isAuthenticated ? (
-                <button
-                  type="button"
-                  onClick={handleGoHome}
-                  className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full ring-1 ring-black/10 dark:ring-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-xs sm:text-sm font-bold text-text-secondary hover:text-text-primary shrink-0 whitespace-nowrap active:scale-95"
-                >
-                  <span>Volver a la App</span>
-                  <FaArrowRight className="text-accent text-xs shrink-0" />
-                </button>
               ) : (
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={() => navigate('/login')}
-                    className="cursor-pointer hidden sm:inline-flex items-center gap-1 px-3 py-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-xs font-bold transition-colors whitespace-nowrap"
+                    className="cursor-pointer hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-xs font-bold transition-colors whitespace-nowrap"
                   >
                     <FaRightToBracket className="text-xs shrink-0" />
                     <span>Iniciar Sesión</span>
@@ -396,7 +394,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                   <button
                     type="button"
                     onClick={() => navigate('/register')}
-                    className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full bg-accent text-accent-contrast text-xs sm:text-sm font-black shadow-md shadow-accent/25 hover:opacity-90 active:scale-95 transition-all whitespace-nowrap"
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-accent text-accent-contrast text-xs font-black shadow-md shadow-accent/25 hover:opacity-90 active:scale-95 transition-all shrink-0 whitespace-nowrap"
                   >
                     <span>Empezar Gratis</span>
                     <FaArrowRight className="text-xs shrink-0" />
@@ -409,37 +407,37 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           {/* Segmented Tool Switcher Pill + Buscador de artículos */}
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
             {/* Segmented Glass Switcher Pill (coherente con las calculadoras y ejercicios) */}
-            <nav aria-label="Herramientas públicas" className="grid grid-cols-4 gap-1 sm:gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl flex-1 max-w-xl">
+            <nav aria-label="Herramientas públicas" className="grid grid-cols-4 gap-1 sm:gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl flex-1 max-w-xl w-full overflow-hidden">
               <Link
                 to="/calculadora-1rm"
-                className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
+                className="flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors min-w-0"
               >
-                <FaCalculator className="text-accent text-xs shrink-0" />
-                <span className="sm:hidden">1RM</span>
-                <span className="hidden sm:inline">Calculadora 1RM</span>
+                <FaCalculator className="text-accent text-[11px] sm:text-xs shrink-0" />
+                <span className="truncate sm:hidden">1RM</span>
+                <span className="truncate hidden sm:inline">Calculadora 1RM</span>
               </Link>
               <Link
                 to="/calculadora-calorias-macros"
-                className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
+                className="flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors min-w-0"
               >
-                <FaUtensils className="text-emerald-400 text-xs shrink-0" />
-                <span className="sm:hidden">Macros</span>
-                <span className="hidden sm:inline">Calorías y Macros</span>
+                <FaUtensils className="text-emerald-400 text-[11px] sm:text-xs shrink-0" />
+                <span className="truncate sm:hidden">Macros</span>
+                <span className="truncate hidden sm:inline">Calorías y Macros</span>
               </Link>
               <Link
                 to="/ejercicios"
-                className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
+                className="flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors min-w-0"
               >
-                <FaDumbbell className="text-blue-400 text-xs shrink-0" />
-                <span>Ejercicios</span>
+                <FaDumbbell className="text-blue-400 text-[11px] sm:text-xs shrink-0" />
+                <span className="truncate">Ejercicios</span>
               </Link>
               <Link
                 to="/noticias"
-                className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-purple-500/15 text-purple-400 text-[11px] sm:text-xs font-black border border-purple-500/30 shadow-xs whitespace-nowrap"
+                className="flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-xl bg-purple-500/15 text-purple-400 text-[11px] sm:text-xs font-black border border-purple-500/30 shadow-xs min-w-0"
               >
-                <FaNewspaper className="text-purple-400 text-xs shrink-0" />
-                <span className="sm:hidden">Guías</span>
-                <span className="hidden sm:inline">Guías y Noticias</span>
+                <FaNewspaper className="text-purple-400 text-[11px] sm:text-xs shrink-0" />
+                <span className="truncate sm:hidden">Guías</span>
+                <span className="truncate hidden sm:inline">Guías y Noticias</span>
               </Link>
             </nav>
 
@@ -456,39 +454,6 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
             </form>
           </div>
         </header>
-
-      {/* BANNER INTELIGENTE: ABRIR / DESCARGAR EN LA APP (Móvil Web) */}
-      {!isNative && isMobile && showAppBanner && (
-        <div className="bg-glass-surface/90 backdrop-blur-md border border-glass-border rounded-2xl p-2.5 px-3 mb-4 flex items-center justify-between gap-2.5 sm:gap-3 shadow-sm animate-[fade-in_0.3s_ease-out]">
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <img src="/icons/icon-96.png" alt="Pro Fitness Glass" className="w-9 h-9 rounded-xl shrink-0 shadow-xs" />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-black text-text-primary leading-tight">Pro Fitness Glass</p>
-              <p className="text-[11px] text-text-secondary leading-snug mt-0.5 font-medium">
-                {isAndroid ? 'Descarga o abre la App nativa para Android' : 'Abre o instala la App para máxima fluidez'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <a
-              href={appIntentUrl}
-              className="px-3 py-1.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-1.5 whitespace-nowrap"
-              title="Abrir o descargar la aplicación en tu dispositivo"
-            >
-              <FaMobileScreen className="text-xs shrink-0" />
-              <span>Abrir App</span>
-            </a>
-            <button
-              type="button"
-              onClick={() => setShowAppBanner(false)}
-              className="w-6 h-6 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer shrink-0"
-              title="Cerrar aviso"
-            >
-              <FaXmark className="text-xs" />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* TITULAR PRINCIPAL */}
       <section className="pt-1 pb-1">
