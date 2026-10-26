@@ -1,4 +1,4 @@
 {
-  "version": "7.10.36",
-  "releaseNotes": "Actualización v7.10.36: Prerenderizado exhaustivo combinando artículos de la API y caché local para garantizar la generación estática de todas las noticias (incluyendo citrulina y suplementación) con sus metadatos y etiquetas canónicas propias."
+  "version": "7.10.37",
+  "releaseNotes": "Actualización v7.10.37: Sustitución de iconos genéricos por Font Awesome 6 con coherencia semántica en navegación, rutinas, nutrición, métricas de peso, créditos IA y paneles de la app."
 }

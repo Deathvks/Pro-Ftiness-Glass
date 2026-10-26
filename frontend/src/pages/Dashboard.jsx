@@ -11,7 +11,20 @@ import {
   MapPin
 } from 'lucide-react';
 import { FaChartPie, FaTrophy, FaInstagram } from 'react-icons/fa';
-import { FaMeteor } from 'react-icons/fa6'; 
+import { 
+  FaMeteor, 
+  FaWeightScale, 
+  FaHeartPulse, 
+  FaUtensils, 
+  FaDumbbell, 
+  FaFireFlameCurved, 
+  FaBullseye, 
+  FaFire, 
+  FaClock, 
+  FaCircleCheck, 
+  FaPlay, 
+  FaListCheck 
+} from 'react-icons/fa6'; 
 
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
@@ -845,7 +858,7 @@ const Dashboard = ({ setView }) => {
 
           <div className="flex flex-col items-center justify-center pl-6 border-l border-glass-border flex-shrink-0">
             <div className={`transition-all duration-500 mb-1 ${levelData.streak > 0 ? 'text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.6)]' : 'text-text-muted opacity-30'}`}>
-              <Flame size={26} fill={levelData.streak > 0 ? "currentColor" : "none"} />
+              <FaFireFlameCurved size={24} />
             </div>
             <div className="flex items-center gap-1">
               <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary">
@@ -931,7 +944,7 @@ const Dashboard = ({ setView }) => {
         <GlassCard className="glass p-5 flex flex-col justify-between h-full min-h-[160px] rounded-[28px] relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
           <div className="flex justify-between items-start mb-4">
             <div className="p-3 rounded-[20px] transition-transform duration-300 group-hover:scale-110 text-accent bg-black/5 dark:bg-white/5">
-              <Dumbbell size={24} />
+              <FaDumbbell size={22} />
             </div>
             <span className="text-3xl font-black text-text-primary tracking-tight">{weeklySessions}</span>
           </div>
@@ -961,21 +974,21 @@ const Dashboard = ({ setView }) => {
           title={t('Meta Calórica', { defaultValue: 'Meta Calórica' })}
           value={targets.calories.toLocaleString()}
           unit="kcal"
-          icon={Target}
+          icon={FaBullseye}
           subtext={t('Objetivo diario', { defaultValue: 'Objetivo diario' })}
           onInfoClick={() => addToast(t('Tu meta ya incluye tus entrenamientos semanales. ¡No comas de más los días que entrenas!', { defaultValue: 'Tu meta ya incluye tus entrenamientos semanales. ¡No comas de más los días que entrenas!' }), 'info')}
         />
         <BentoStatCard
           title={t('Tiempo Activo', { defaultValue: 'Tiempo Activo' })}
           value={weeklyTimeDisplay}
-          icon={Clock}
+          icon={FaClock}
           subtext={t('Total semanal', { defaultValue: 'Total semanal' })}
         />
         <BentoStatCard
           title={t('Quemadas', { defaultValue: 'Quemadas' })}
           value={weeklyCalories.toLocaleString()}
           unit="kcal"
-          icon={Flame}
+          icon={FaFire}
           subtext={t('Total estimado', { defaultValue: 'Total estimado' })}
           onInfoClick={() => addToast(t('Calorías quemadas en entrenamientos. Es un logro visual, no debes sumarlas a tus comidas.', { defaultValue: 'Calorías quemadas en entrenamientos. Es un logro visual, no debes sumarlas a tus comidas.' }), 'info')}
         />
@@ -988,7 +1001,7 @@ const Dashboard = ({ setView }) => {
               <div className="flex items-center justify-between gap-2 mb-8 sm:mb-10 relative z-10">
                 <div className="flex items-center gap-2 sm:gap-4 min-w-0">
                   <div className="p-2 sm:p-3.5 rounded-[20px] text-accent transition-transform bg-black/5 dark:bg-white/5 shrink-0">
-                    <Activity className="w-5 h-5 sm:w-[26px] sm:h-[26px]" />
+                    <FaUtensils className="w-5 h-5 sm:w-[24px] sm:h-[24px]" />
                   </div>
                   <div className="min-w-0">
                     <h2 className="text-lg sm:text-2xl font-bold text-text-primary truncate">{t('Nutrición', { defaultValue: 'Nutrición' })}</h2>
@@ -1029,7 +1042,7 @@ const Dashboard = ({ setView }) => {
 
           <section id="tour-quick-cardio">
             <div className="flex items-center gap-3 mb-6 px-1">
-              <Zap size={24} className="text-accent" />
+              <FaHeartPulse size={22} className="text-accent" />
               <h2 className="text-xl font-bold">{t('Cardio Rápido', { defaultValue: 'Cardio Rápido' })}</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
@@ -1059,7 +1072,7 @@ const Dashboard = ({ setView }) => {
           <section id="tour-routines">
             <div className="flex items-center justify-between mb-6 px-1">
               <div className="flex items-center gap-3">
-                <Dumbbell size={24} className="text-accent" />
+                <FaDumbbell size={22} className="text-accent" />
                 <h2 className="text-xl font-bold">{t('Mis Rutinas', { defaultValue: 'Mis Rutinas' })}</h2>
               </div>
               <button onClick={() => setView('routines', { forceTab: 'myRoutines' })} className="p-2 rounded-[20px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors">
@@ -1087,7 +1100,7 @@ const Dashboard = ({ setView }) => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4 overflow-hidden">
                         <div className={`w-12 h-12 rounded-[20px] flex items-center justify-center shrink-0 transition-colors ${isActive ? 'bg-accent/20' : isCompleted ? 'bg-accent/10 text-accent' : 'bg-black/5 dark:bg-white/5'}`}>
-                          {isActive ? <Clock size={24} className="text-accent" /> : (isCompleted ? <CheckCircle size={24} className="text-accent" /> : <Play size={24} className={isActive ? 'text-white' : 'text-accent'} fill="currentColor" />)}
+                          {isActive ? <FaClock size={22} className="text-accent" /> : (isCompleted ? <FaCircleCheck size={22} className="text-accent" /> : <FaPlay size={20} className={isActive ? 'text-white' : 'text-accent'} />)}
                         </div>
                         <div className="min-w-0">
                           <h3 className={`font-bold text-base truncate ${isActive ? 'text-accent' : 'text-text-primary'}`}>{routine.name}</h3>
@@ -1115,7 +1128,7 @@ const Dashboard = ({ setView }) => {
             >
               <div className="flex items-center gap-4 overflow-hidden">
                 <div className="w-12 h-12 rounded-[20px] bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0 transition-colors">
-                  <ListFilter size={24} className="text-accent" />
+                  <FaListCheck size={22} className="text-accent" />
                 </div>
                 <div className="text-left min-w-0">
                   <h3 className="font-bold text-base text-text-primary truncate">Biblioteca de Ejercicios</h3>
@@ -1129,7 +1142,7 @@ const Dashboard = ({ setView }) => {
           <section id="tour-weight">
             <div className="flex items-center justify-between mb-6 px-1">
               <div className="flex items-center gap-3">
-                <TrophyLucide size={24} className="text-accent" />
+                <FaWeightScale size={22} className="text-accent" />
                 <h2 className="text-xl font-bold">{t('Peso', { defaultValue: 'Peso' })}</h2>
               </div>
               <button onClick={() => setShowWeightModal(true)} className="p-2 rounded-[20px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors">

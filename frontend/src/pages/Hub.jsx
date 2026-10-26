@@ -2,21 +2,21 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
-  ChartBarIcon, 
-  Cog8ToothIcon, 
-  TrophyIcon, 
-  ChevronRightIcon,
-  PaintBrushIcon,
-  InformationCircleIcon,
-  ShareIcon,
-  UserGroupIcon,
-  ChatBubbleLeftRightIcon,
-  ShieldCheckIcon,
-  NewspaperIcon
-} from '@heroicons/react/24/outline';
-import { BookOpenIcon } from '@heroicons/react/24/outline';
+  FaChartLine,
+  FaGear,
+  FaTrophy,
+  FaChevronRight,
+  FaPalette,
+  FaHeadset,
+  FaShareNodes,
+  FaChalkboardUser,
+  FaComments,
+  FaShieldHalved,
+  FaNewspaper,
+  FaBookOpen,
+  FaHeart
+} from 'react-icons/fa6';
 import AppRatingModal from '../components/AppRatingModal';
-import { HeartIcon } from '@heroicons/react/24/solid';
 import GlassCard from '../components/GlassCard';
 import useAppStore from '../store/useAppStore';
 import HubTourGuide from '../components/HubTourGuide';
@@ -37,7 +37,7 @@ const HubButton = ({ id, icon: Icon, title, description, onClick, onPreload, isC
   >
     <div className="flex items-center gap-4">
       <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${highlight ? 'bg-accent text-accent-contrast shadow-md shadow-accent/30' : 'bg-accent/10 text-accent'}`}>
-        <Icon className="w-6 h-6" />
+        <Icon className="w-5 h-5" />
       </div>
       <div className="text-left">
         <h3 className="text-[17px] font-bold text-text-primary flex items-center gap-2">
@@ -62,7 +62,7 @@ const HubButton = ({ id, icon: Icon, title, description, onClick, onPreload, isC
         )}
       </div>
     </div>
-    <ChevronRightIcon className="w-5 h-5 text-text-muted" />
+    <FaChevronRight className="w-4 h-4 text-text-muted shrink-0" />
   </button>
 );
 
@@ -167,7 +167,7 @@ export default function Hub({ setView }) {
 
           <HubButton
             id="hub-tutorials"
-            icon={BookOpenIcon}
+            icon={FaBookOpen}
             title="Tutoriales"
             description="Guías visuales de cada sección"
             onClick={handleOpenTutorials}
@@ -177,7 +177,7 @@ export default function Hub({ setView }) {
           <HubButton 
             id="hub-progress"
             onPreload={() => preloadViewChunk('progress')}
-            icon={ChartBarIcon}
+            icon={FaChartLine}
             title="Tu Progreso"
             description="Estadísticas, RM y volumen"
             onClick={() => setView('progress')}
@@ -187,7 +187,7 @@ export default function Hub({ setView }) {
               <HubButton 
                 id="hub-asesoria"
                 onPreload={() => preloadViewChunk('asesoria')}
-                icon={ChatBubbleLeftRightIcon}
+                icon={FaComments}
                 title="Asesoría"
                 description="Habla con tu entrenador"
                 onClick={() => {
@@ -204,7 +204,7 @@ export default function Hub({ setView }) {
           <HubButton 
             id="hub-challenges"
             onPreload={() => preloadViewChunk('challenges')}
-            icon={TrophyIcon}
+            icon={FaTrophy}
             title="Retos y Misiones"
             description="Gana XP y sube de nivel"
             onClick={() => {
@@ -221,14 +221,14 @@ export default function Hub({ setView }) {
           <HubButton 
             id="hub-appearance"
             onPreload={() => preloadViewChunk('appearance')}
-            icon={PaintBrushIcon}
+            icon={FaPalette}
             title="Apariencia"
             description="Temas, acentos y colores"
             onClick={() => setView('appearance')}
           />
 
           <HubButton 
-            icon={ShareIcon}
+            icon={FaShareNodes}
             onPreload={() => preloadViewChunk('socialLinks')}
             title="Nuestras Redes"
             description="Instagram, TikTok y YouTube"
@@ -238,13 +238,13 @@ export default function Hub({ setView }) {
           <HubButton 
             id="hub-news"
             onPreload={() => preloadViewChunk('noticias')}
-            icon={NewspaperIcon}
+            icon={FaNewspaper}
             title="Noticias y Artículos"
             description="Ciencia, nutrición y novedades"
             onClick={() => setView('noticias')}
           />
           <HubButton 
-            icon={InformationCircleIcon}
+            icon={FaHeadset}
             onPreload={() => preloadViewChunk('support')}
             title="Soporte"
             description="Ayuda, descargas y app info"
@@ -254,7 +254,7 @@ export default function Hub({ setView }) {
           <HubButton 
             id="hub-settings"
             onPreload={() => preloadViewChunk('settings')}
-            icon={Cog8ToothIcon}
+            icon={FaGear}
             title="Ajustes"
             description="Cuenta, privacidad y notificaciones"
             onClick={() => setView('settings')}
@@ -264,7 +264,7 @@ export default function Hub({ setView }) {
             <HubButton 
               id="hub-trainer-panel"
               onPreload={() => preloadViewChunk('trainerPanel')}
-              icon={UserGroupIcon}
+              icon={FaChalkboardUser}
               title="Panel de Entrenador"
               description="Gestión de clientes y cuestionarios"
               onClick={() => setView('trainerPanel')}
@@ -276,7 +276,7 @@ export default function Hub({ setView }) {
             <HubButton 
               id="hub-admin-panel"
               onPreload={() => preloadViewChunk('adminPanel')}
-              icon={ShieldCheckIcon}
+              icon={FaShieldHalved}
               title="Panel Admin"
               description="Gestión de usuarios y sistema"
               onClick={() => setView('adminPanel')}
@@ -295,7 +295,7 @@ export default function Hub({ setView }) {
             <span className="text-sm font-medium opacity-90 mt-1">Danos feedback. Prometemos leerlo mientras descansamos entre series 🏋️‍♂️</span>
           </div>
           <div className="bg-black/10 p-3 rounded-full group-hover:scale-110 transition-transform relative z-10 shrink-0">
-            <HeartIcon className="w-6 h-6 sm:w-8 sm:h-8" />
+            <FaHeart className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
         </button>
 

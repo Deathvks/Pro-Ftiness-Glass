@@ -1,6 +1,7 @@
 /* frontend/src/components/Sidebar.jsx */
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon, ArrowRightOnRectangleIcon as LogOut, SparklesIcon, BellIcon, UserIcon } from '@heroicons/react/24/outline';
+import { UserIcon } from '@heroicons/react/24/outline';
+import { FaBrain, FaBell, FaChevronLeft, FaChevronRight, FaRightFromBracket } from 'react-icons/fa6';
 import useAppStore from '../store/useAppStore';
 import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 import NetworkIndicatorBadge from './NetworkIndicatorBadge';
@@ -227,7 +228,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
                 }`}
             >
                 <div className="relative flex items-center justify-center shrink-0">
-                    <SparklesIcon className={`w-5 h-5 ${isAILimitReached ? 'text-text-muted' : 'text-accent-contrast drop-shadow-md animate-pulse'}`} />
+                    <FaBrain className={`w-5 h-5 ${isAILimitReached ? 'text-text-muted' : 'text-accent-contrast drop-shadow-md animate-pulse'}`} />
                 </div>
                 {!isCollapsed && (
                     <div className="flex flex-col items-start min-w-0">
@@ -245,7 +246,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
 
             <SidebarItem
                 label="Notificaciones"
-                icon={<BellIcon className="w-5 h-5" />}
+                icon={<FaBell className="w-5 h-5" />}
                 isActive={view === 'notifications'}
                 onPreload={() => preloadView && preloadView('notifications')}
                 onClick={() => navigate('notifications')}
@@ -255,7 +256,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
 
             <SidebarItem
                 label={isCollapsed ? "Expandir" : "Contraer"}
-                icon={isCollapsed ? <ChevronRightIcon className="w-5 h-5" /> : <ChevronLeftIcon className="w-5 h-5" />}
+                icon={isCollapsed ? <FaChevronRight className="w-4 h-4" /> : <FaChevronLeft className="w-4 h-4" />}
                 onClick={toggleSidebar}
                 isCollapsed={isCollapsed}
                 className="text-text-muted hover:text-text-primary mt-1"
@@ -278,7 +279,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
 
             <SidebarItem
                 label="Cerrar Sesión"
-                icon={<LogOut className="w-5 h-5" />}
+                icon={<FaRightFromBracket className="w-5 h-5" />}
                 onClick={handleLogoutClick}
                 isRed
                 isCollapsed={isCollapsed}

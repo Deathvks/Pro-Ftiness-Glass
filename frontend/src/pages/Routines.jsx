@@ -27,6 +27,7 @@ import {
   ArrowRight,
   Activity
 } from 'lucide-react';
+import { FaBrain, FaDumbbell, FaCompass, FaListCheck, FaHeartPulse } from 'react-icons/fa6';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import ModalPortal from '../components/ModalPortal';
@@ -834,7 +835,7 @@ const Routines = ({ setView, mainContentRef }) => {
           className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full font-bold transition hover:scale-105 bg-gradient-to-r from-accent via-purple-500 to-pink-500 text-white animate-gradient-x shadow-lg shadow-accent/20 border-none"
           title="Generar rutina con IA"
         >
-        <Sparkles size={18} />
+        <FaBrain size={16} />
         <span className="hidden sm:inline">IA</span>
       </button>
       <button
@@ -888,7 +889,7 @@ const Routines = ({ setView, mainContentRef }) => {
           onClick={() => setActiveTab('myRoutines')}
           className={getTabClass('myRoutines')}
         >
-          <BookCopy size={18} /> Mis Rutinas
+          <FaDumbbell size={16} /> Mis Rutinas
         </button>
         
         {userProfile?.role === 'admin' && (
@@ -896,7 +897,7 @@ const Routines = ({ setView, mainContentRef }) => {
             onClick={() => setActiveTab('explore')}
             className={getTabClass('explore')}
           >
-            <Compass size={18} /> Explorar
+            <FaCompass size={16} /> Explorar
           </button>
         )}
 
@@ -905,7 +906,7 @@ const Routines = ({ setView, mainContentRef }) => {
             onClick={() => setActiveTab('manualExercises')}
             className={getTabClass('manualExercises')}
           >
-            <Dumbbell size={18} /> Ejercicios Manuales
+            <FaListCheck size={16} /> Ejercicios Manuales
           </button>
         <button
           onClick={() => {
@@ -914,7 +915,7 @@ const Routines = ({ setView, mainContentRef }) => {
           }}
           className={`mx-1.5 my-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap outline-none flex items-center gap-2 bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary`}
         >
-          <Flame size={18} /> Cardio Rápido
+          <FaHeartPulse size={16} /> Cardio Rápido
         </button>
       </div>
 

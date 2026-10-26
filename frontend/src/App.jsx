@@ -2,8 +2,7 @@
 import React, { useState, lazy, useMemo, useCallback, useEffect, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
-import { HomeIcon as HomeOutline, UsersIcon as UsersOutline, ChartBarIcon as ChartOutline, FireIcon as FireOutline, UserIcon as UserOutline, BoltIcon as BoltOutline, Squares2X2Icon as SquaresOutline } from '@heroicons/react/24/outline';
-import { HomeIcon as HomeSolid, UsersIcon as UsersSolid, ChartBarIcon as ChartSolid, FireIcon as FireSolid, UserIcon as UserSolid, BoltIcon as BoltSolid, Squares2X2Icon as SquaresSolid } from '@heroicons/react/24/solid';
+import { FaHouse, FaUsers, FaUtensils, FaDumbbell, FaCompass } from 'react-icons/fa6';
 import { useTranslation } from 'react-i18next';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -634,11 +633,11 @@ export default function App() {
   const hasUnseen = useMemo(() => hasStories && myStories.some(s => !s.viewed), [hasStories, myStories]);
 
   const navItems = useMemo(() => [
-    { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: (active) => active ? <HomeSolid className="w-6 h-6" /> : <HomeOutline className="w-6 h-6" /> },
-    { id: 'social', label: t('Comunidad', { defaultValue: 'Comunidad' }), icon: (active) => active ? <UsersSolid className="w-6 h-6" /> : <UsersOutline className="w-6 h-6" /> },
-    { id: 'nutrition', label: t('Nutrición', { defaultValue: 'Nutrición' }), icon: (active) => active ? <FireSolid className="w-6 h-6" /> : <FireOutline className="w-6 h-6" /> },
-    { id: 'routines', label: t('Rutinas', { defaultValue: 'Rutinas' }), icon: (active) => active ? <BoltSolid className="w-6 h-6" /> : <BoltOutline className="w-6 h-6" /> },
-    { id: 'hub', label: t('Menú', { defaultValue: 'Menú' }), badge: !visitedHub || (unreadChats > 0), icon: (active) => active ? <SquaresSolid className="w-6 h-6" /> : <SquaresOutline className="w-6 h-6" /> },
+    { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: (active) => <FaHouse className={`w-5 h-5 transition-transform ${active ? 'scale-110 drop-shadow' : 'opacity-70'}`} /> },
+    { id: 'social', label: t('Comunidad', { defaultValue: 'Comunidad' }), icon: (active) => <FaUsers className={`w-5 h-5 transition-transform ${active ? 'scale-110 drop-shadow' : 'opacity-70'}`} /> },
+    { id: 'nutrition', label: t('Nutrición', { defaultValue: 'Nutrición' }), icon: (active) => <FaUtensils className={`w-5 h-5 transition-transform ${active ? 'scale-110 drop-shadow' : 'opacity-70'}`} /> },
+    { id: 'routines', label: t('Rutinas', { defaultValue: 'Rutinas' }), icon: (active) => <FaDumbbell className={`w-5 h-5 transition-transform ${active ? 'scale-110 drop-shadow' : 'opacity-70'}`} /> },
+    { id: 'hub', label: t('Menú', { defaultValue: 'Menú' }), badge: !visitedHub || (unreadChats > 0), icon: (active) => <FaCompass className={`w-5 h-5 transition-transform ${active ? 'scale-110 drop-shadow' : 'opacity-70'}`} /> },
   ], [t, visitedHub, unreadChats]);
 
   const AuthenticatedAppContent = useMemo(() => {

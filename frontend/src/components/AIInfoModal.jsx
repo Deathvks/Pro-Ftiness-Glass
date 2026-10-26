@@ -1,6 +1,6 @@
 /* frontend/src/components/AIInfoModal.jsx */
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Sparkles, Clock, Zap, Info, ShieldCheck, ChevronDown } from 'lucide-react';
+import { FaXmark, FaBrain, FaClock, FaBolt, FaCircleInfo, FaShieldHalved, FaChevronDown } from 'react-icons/fa6';
 import ModalPortal from './ModalPortal';
 import { useAppTheme } from '../hooks/useAppTheme';
 import useModalLock from '../hooks/useModalLock';
@@ -112,7 +112,7 @@ const AIInfoModal = ({ onClose }) => {
           >
             <div className="w-12 h-1.5 bg-black/20 dark:bg-white/20 rounded-full transition-colors group-hover:bg-accent/40" />
             <div className="flex items-center gap-1 text-[10px] font-bold text-text-muted/70 uppercase tracking-widest mt-1.5">
-              <ChevronDown size={12} className="animate-bounce" />
+              <FaChevronDown size={12} className="animate-bounce" />
               <span>Desliza hacia abajo para cerrar</span>
             </div>
           </div>
@@ -124,7 +124,7 @@ const AIInfoModal = ({ onClose }) => {
           <div className="px-5 pt-3 sm:pt-5 pb-4 flex justify-between items-start relative z-10 border-b border-black/5 dark:border-white/10">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-2xl bg-accent text-accent-contrast shadow-lg shadow-accent/30">
-                <Sparkles className="w-6 h-6" />
+                <FaBrain className="w-6 h-6" />
               </div>
               <div>
                 <h2 className={`text-xl font-bold leading-tight ${isOled || isDark ? 'text-white' : 'text-text-primary'}`}>
@@ -142,7 +142,7 @@ const AIInfoModal = ({ onClose }) => {
               }`}
               title="Cerrar"
             >
-              <X className="w-5 h-5" />
+              <FaXmark className="w-5 h-5" />
             </button>
           </div>
 
@@ -155,7 +155,7 @@ const AIInfoModal = ({ onClose }) => {
                   isAILimitReached ? 'bg-red-500/10' : 'bg-accent/5'
                 }`}
               >
-                <Zap className={`w-5 h-5 mb-1 ${isAILimitReached ? 'text-red-500' : 'text-accent'}`} />
+                <FaBolt className={`w-5 h-5 mb-1 ${isAILimitReached ? 'text-red-500' : 'text-accent'}`} />
                 <span className={`text-[10px] uppercase tracking-wider font-bold ${isOled || isDark ? 'text-gray-400' : 'text-text-secondary'}`}>
                   Usos Restantes
                 </span>
@@ -165,7 +165,7 @@ const AIInfoModal = ({ onClose }) => {
               </div>
 
               <div className={`p-4 rounded-2xl border border-transparent dark:border dark:border-white/10 flex flex-col gap-1 items-center text-center ${isOled || isDark ? 'bg-white/5' : 'bg-bg-tertiary'}`}>
-                <Clock className={`w-5 h-5 mb-1 ${isOled || isDark ? 'text-gray-400' : 'text-text-secondary'}`} />
+                <FaClock className={`w-5 h-5 mb-1 ${isOled || isDark ? 'text-gray-400' : 'text-text-secondary'}`} />
                 <span className={`text-[10px] uppercase tracking-wider font-bold ${isOled || isDark ? 'text-gray-400' : 'text-text-secondary'}`}>
                   Se recarga en
                 </span>
@@ -178,7 +178,7 @@ const AIInfoModal = ({ onClose }) => {
             {/* Explicación */}
             <div className="space-y-3">
               <h3 className={`text-sm font-bold flex items-center gap-2 ${isOled || isDark ? 'text-white/90' : 'text-text-primary'}`}>
-                <Info className="w-4 h-4 text-accent" />
+                <FaCircleInfo className="w-4 h-4 text-accent" />
                 ¿Cómo funciona?
               </h3>
               <ul className={`text-sm space-y-2 leading-relaxed ${isOled || isDark ? 'text-gray-300' : 'text-text-secondary'}`}>
@@ -196,7 +196,7 @@ const AIInfoModal = ({ onClose }) => {
 
             {/* Badge Informativo (Borde apagado) */}
             <div className="p-3.5 rounded-2xl flex items-start gap-3 border border-transparent dark:border dark:border-white/10 bg-accent/5">
-              <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5 text-accent" />
+              <FaShieldHalved className="w-5 h-5 shrink-0 mt-0.5 text-accent" />
               <p className={`text-xs leading-relaxed ${isOled || isDark ? 'text-gray-300' : 'text-text-secondary'}`}>
                 El servicio es 100% gratuito. Los límites nos ayudan a mantener los servidores funcionando para toda la comunidad.
               </p>
