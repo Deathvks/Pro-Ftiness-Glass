@@ -455,9 +455,9 @@ class NewsAutomationService {
       const usedImages = new Set(existingArticles.map(a => a.image_url).filter(Boolean));
       this.addLog(`🔍 Encontrados ${existingArticles.length} artículos previos. Asegurando originalidad...`, 'info');
 
-      // PASO 2: Configurar modelo Gemini 3.5 Flash con fallback a Gemini 3.5 Flash Lite
-      this.currentStep = 'Conectando con Gemini 3.5 Flash para idear y redactar el artículo de élite...';
-      this.addLog('🧠 Gemini 3.5 Flash analizando tendencias científicas, nutrición y biohacking...', 'info');
+      // PASO 2: Configurar modelo Gemini 3.6 Flash con fallback a Gemini 3.5 Flash Lite
+      this.currentStep = 'Conectando con Gemini 3.6 Flash para idear y redactar el artículo de élite...';
+      this.addLog('🧠 Gemini 3.6 Flash analizando tendencias científicas, nutrición y biohacking...', 'info');
 
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
       const createGenerativeModel = (modelName) => genAI.getGenerativeModel({
@@ -531,13 +531,13 @@ ESTRUCTURA EDITORIAL Y DE RETENCIÓN OBLIGATORIA (Markdown enriquecido):
 
 Extensión recomendada: 450 a 650 palabras de máxima retención y alto valor práctico.`;
 
-      this.addLog('⚡ Enviando directrices editoriales y SEO a Gemini 3.5 Flash...', 'info');
+      this.addLog('⚡ Enviando directrices editoriales y SEO a Gemini 3.6 Flash...', 'info');
       let aiResponse;
       try {
-        const model = createGenerativeModel('gemini-3.5-flash');
+        const model = createGenerativeModel('gemini-3.6-flash');
         aiResponse = await model.generateContent(prompt);
       } catch (genErr) {
-        this.addLog(`⚠️ Gemini 3.5 Flash ocupado (${genErr.message.substring(0, 70)}...). Conectando con Gemini 3.5 Flash Lite...`, 'warn');
+        this.addLog(`⚠️ Gemini 3.6 Flash ocupado (${genErr.message.substring(0, 70)}...). Conectando con Gemini 3.5 Flash Lite...`, 'warn');
         const fallbackModel = createGenerativeModel('gemini-3.5-flash-lite');
         aiResponse = await fallbackModel.generateContent(prompt);
       }
@@ -764,7 +764,7 @@ Extensión recomendada: 450 a 650 palabras de máxima retención y alto valor pr
         }
       }
 
-      this.addLog(`📚 Se van a adaptar y optimizar ${targets.length} artículo(s) existente(s) con Gemini 3.5 Flash...`, 'info');
+      this.addLog(`📚 Se van a adaptar y optimizar ${targets.length} artículo(s) existente(s) con Gemini 3.6 Flash...`, 'info');
 
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
       const createOptimizationModel = (modelName) => genAI.getGenerativeModel({
@@ -787,7 +787,7 @@ Extensión recomendada: 450 a 650 palabras de máxima retención y alto valor pr
         }
       });
 
-      let currentModelName = 'gemini-3.5-flash';
+      let currentModelName = 'gemini-3.6-flash';
       let model = createOptimizationModel(currentModelName);
 
       let updatedCount = 0;
@@ -835,7 +835,7 @@ REGLAS OBLIGATORIAS DE ADAPTACIÓN:
             aiRes = await model.generateContent(prompt);
           } catch (itemModelErr) {
             if (currentModelName !== 'gemini-3.5-flash-lite') {
-              this.addLog(`⚠️ Gemini 3.5 Flash ocupado (${itemModelErr.message.substring(0, 60)}...). Conmutando a Gemini 3.5 Flash Lite para las adaptaciones...`, 'warn');
+              this.addLog(`⚠️ Gemini 3.6 Flash ocupado (${itemModelErr.message.substring(0, 60)}...). Conmutando a Gemini 3.5 Flash Lite para las adaptaciones...`, 'warn');
               currentModelName = 'gemini-3.5-flash-lite';
               model = createOptimizationModel(currentModelName);
               aiRes = await model.generateContent(prompt);

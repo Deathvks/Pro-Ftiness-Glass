@@ -2,9 +2,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Modelos Gemini configurados por rol:
-// - Administradores y redacción/adaptación: Gemini 3.5 Flash (máxima calidad)
+// - Administradores y redacción/adaptación: Gemini 3.6 Flash (máxima calidad)
 // - Usuarios regulares y fallback de resiliencia: Gemini 3.5 Flash Lite (500 RPD, 15 RPM)
-export const MODEL_ADMIN = 'gemini-3.5-flash';
+export const MODEL_ADMIN = 'gemini-3.6-flash';
 export const MODEL_USER = 'gemini-3.5-flash-lite';
 
 // Función para obtener la instancia del cliente con la clave del entorno activa

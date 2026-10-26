@@ -513,7 +513,7 @@ export const generateAINews = async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const targetModel = 'gemini-3.5-flash';
+    const targetModel = 'gemini-3.6-flash';
     const fallbackModel = 'gemini-3.5-flash-lite';
 
     const getAiModel = (m) => genAI.getGenerativeModel({
