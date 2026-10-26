@@ -1,4 +1,4 @@
 {
-  "version": "7.10.34",
-  "releaseNotes": "Actualización v7.10.34: Adaptación inteligente del contenedor de ejercicios en tarjetas para compartir historias, optimizando el alto vertical y añadiendo distribución en 2 columnas para rutinas con más de 3 ejercicios, garantizando que todos se muestren completos sin cortes."
+  "version": "7.10.35",
+  "releaseNotes": "Actualización v7.10.35: Enlazado interno semántico estricto con etiquetas anchor HTML (href) en catálogo de noticias, carrusel popular, artículos relacionados y navegación contigua para acelerar el rastreo e indexación automática de Googlebot."
 }

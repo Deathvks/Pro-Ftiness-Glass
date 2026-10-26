@@ -449,11 +449,17 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
 
           <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto sm:overflow-x-visible pb-3 pt-1 px-1 sm:px-0 scrollbar-none snap-x snap-mandatory">
             {popularNews.map((popArt, idx) => (
-              <GlassCard
+              <a
                 key={popArt.id || popArt.slug}
-                onClick={() => handleArticleClick(popArt)}
+                href={`/noticias/${popArt.slug}`}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    handleArticleClick(popArt);
+                  }
+                }}
                 onMouseEnter={() => newsService.prefetchNewsBySlug(popArt.slug)}
-                className="glass p-0 rounded-2xl overflow-hidden border-none ring-1 ring-black/5 dark:ring-white/10 sm:hover:ring-accent/40 cursor-pointer group flex flex-col justify-between shadow-sm sm:hover:shadow-lg sm:hover:-translate-y-1 transition-shadow sm:transition-all duration-200 w-[78vw] sm:w-auto min-w-[250px] sm:min-w-0 max-w-[300px] sm:max-w-none shrink-0 snap-start"
+                className="rounded-2xl shadow-lg border backdrop-blur-glass bg-[--glass-bg] border-[--glass-border] p-0 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 sm:hover:ring-accent/40 cursor-pointer group flex flex-col justify-between sm:hover:shadow-lg sm:hover:-translate-y-1 transition-shadow sm:transition-all duration-200 w-[78vw] sm:w-auto min-w-[250px] sm:min-w-0 max-w-[300px] sm:max-w-none shrink-0 snap-start no-underline text-inherit block"
               >
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/10">
                   <img
@@ -494,7 +500,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                     </span>
                   </div>
                 </div>
-              </GlassCard>
+              </a>
             ))}
           </div>
         </section>
@@ -608,12 +614,18 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           {/* GRID DE ARTÍCULOS (Simétrico de 3 columnas) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {gridArticles.map((art) => (
-              <GlassCard
+              <a
                 key={art.id}
-                onClick={() => handleArticleClick(art)}
+                href={`/noticias/${art.slug}`}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    handleArticleClick(art);
+                  }
+                }}
                 onMouseEnter={() => newsService.prefetchNewsBySlug(art.slug)}
                 onTouchStart={() => newsService.prefetchNewsBySlug(art.slug)}
-                className="glass p-0 rounded-[28px] overflow-hidden border-none ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/40 transition-all cursor-pointer group flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 duration-300"
+                className="rounded-2xl shadow-lg border backdrop-blur-glass bg-[--glass-bg] border-[--glass-border] p-0 rounded-[28px] overflow-hidden ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/40 transition-all cursor-pointer group flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 duration-300 no-underline text-inherit block"
               >
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/10">
                   <img
@@ -681,7 +693,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                     </span>
                   </div>
                 </div>
-              </GlassCard>
+              </a>
             ))}
           </div>
 

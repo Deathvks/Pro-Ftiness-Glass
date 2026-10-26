@@ -641,11 +641,17 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
         {(prevArticle || nextArticle) && (
           <nav aria-label="Navegación entre artículos" className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-8 pt-6 border-t border-black/10 dark:border-white/10">
             {prevArticle ? (
-              <div
-                onClick={() => navigate(`/noticias/${prevArticle.slug}`, { state: { previewArticle: prevArticle } })}
+              <a
+                href={`/noticias/${prevArticle.slug}`}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navigate(`/noticias/${prevArticle.slug}`, { state: { previewArticle: prevArticle } });
+                  }
+                }}
                 onMouseEnter={() => newsService.prefetchNewsBySlug(prevArticle.slug)}
                 onTouchStart={() => newsService.prefetchNewsBySlug(prevArticle.slug)}
-                className="p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-all cursor-pointer group flex flex-col justify-between"
+                className="p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-all cursor-pointer group flex flex-col justify-between no-underline block"
               >
                 <span className="text-[11px] font-black uppercase tracking-wider text-text-tertiary flex items-center gap-1 mb-1">
                   <ArrowLeft size={12} /> Noticia anterior
@@ -653,15 +659,21 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 <span className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors line-clamp-2">
                   {prevArticle.title}
                 </span>
-              </div>
+              </a>
             ) : <div />}
 
             {nextArticle ? (
-              <div
-                onClick={() => navigate(`/noticias/${nextArticle.slug}`, { state: { previewArticle: nextArticle } })}
+              <a
+                href={`/noticias/${nextArticle.slug}`}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    navigate(`/noticias/${nextArticle.slug}`, { state: { previewArticle: nextArticle } });
+                  }
+                }}
                 onMouseEnter={() => newsService.prefetchNewsBySlug(nextArticle.slug)}
                 onTouchStart={() => newsService.prefetchNewsBySlug(nextArticle.slug)}
-                className="p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-all cursor-pointer group flex flex-col justify-between text-right"
+                className="p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-all cursor-pointer group flex flex-col justify-between text-right no-underline block"
               >
                 <span className="text-[11px] font-black uppercase tracking-wider text-accent flex items-center justify-end gap-1 mb-1">
                   Siguiente noticia <ArrowRight size={12} />
@@ -669,7 +681,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 <span className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors line-clamp-2">
                   {nextArticle.title}
                 </span>
-              </div>
+              </a>
             ) : <div />}
           </nav>
         )}
@@ -682,12 +694,18 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {relatedNews.map((rel) => (
-                <div
+                <a
                   key={rel.id}
-                  onClick={() => navigate(`/noticias/${rel.slug}`, { state: { previewArticle: rel } })}
+                  href={`/noticias/${rel.slug}`}
+                  onClick={(e) => {
+                    if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                      e.preventDefault();
+                      navigate(`/noticias/${rel.slug}`, { state: { previewArticle: rel } });
+                    }
+                  }}
                   onMouseEnter={() => newsService.prefetchNewsBySlug(rel.slug)}
                   onTouchStart={() => newsService.prefetchNewsBySlug(rel.slug)}
-                  className="rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 hover:border-accent/40 transition-all cursor-pointer group flex flex-col justify-between bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
+                  className="rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 hover:border-accent/40 transition-all cursor-pointer group flex flex-col justify-between bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] no-underline block"
                 >
                   <div className="h-32 bg-black/10 overflow-hidden relative">
                     <img
@@ -717,7 +735,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                       </span>
                     </div>
                   </div>
-                </div>
+                </a>
               ))}
             </div>
           </section>
