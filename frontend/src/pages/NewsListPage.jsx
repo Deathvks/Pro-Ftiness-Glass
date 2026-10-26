@@ -1,5 +1,7 @@
 /* frontend/src/pages/NewsListPage.jsx */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import {
   FaNewspaper,
   FaMagnifyingGlass,
