@@ -3,20 +3,19 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
-  Dumbbell,
-  ChevronLeft,
-  Search,
-  CheckCircle2,
-  AlertTriangle,
-  Calculator,
-  Utensils,
-  Newspaper,
-  Sparkles,
-  ArrowRight,
-  Flame,
-  Trophy,
-  Layers
-} from 'lucide-react';
+  FaDumbbell,
+  FaChevronLeft,
+  FaMagnifyingGlass,
+  FaCircleCheck,
+  FaTriangleExclamation,
+  FaCalculator,
+  FaUtensils,
+  FaNewspaper,
+  FaArrowRight,
+  FaLayerGroup,
+  FaBolt,
+  FaStopwatch
+} from 'react-icons/fa6';
 import useAppStore from '../store/useAppStore';
 
 const MUSCLE_GROUPS = ['Todos', 'Pecho', 'Espalda', 'Pierna y Glúteo', 'Hombros', 'Brazos', 'Abdomen y Core'];
@@ -29,8 +28,8 @@ const PUBLIC_EXERCISES = [
     secondaryMuscles: 'Tríceps braquial, Deltoides anterior',
     equipment: 'Barra olímpica y banco plano',
     difficulty: 'Intermedio',
-    idealReps: '5 - 8 reps (Fuerza/Hipertrofia) | 8 - 12 reps (Hipertrofia)',
-    restTime: '2.5 a 3.5 minutos',
+    idealReps: '5 - 8 reps (Fuerza) | 8 - 12 reps (Hipertrofia)',
+    restTime: '2.5 a 3.5 min',
     technique: [
       'Túmbate en el banco con los ojos justo debajo de la barra y realiza una retracción escapular (junta los omóplatos hacia atrás y hacia abajo).',
       'Apoya los pies firmemente en el suelo para generar estabilidad (Leg Drive) y mantén los glúteos siempre en contacto con el banco.',
@@ -47,7 +46,7 @@ const PUBLIC_EXERCISES = [
     equipment: 'Mancuernas y banco inclinado a 30°',
     difficulty: 'Principiante / Intermedio',
     idealReps: '8 - 12 repeticiones',
-    restTime: '2 a 3 minutos',
+    restTime: '2 a 3 min',
     technique: [
       'Ajusta el respaldo del banco a 30° (dos puntos por encima de la horizontal) para enfatizar la porción clavicular (pecho superior) sin que el hombro domine.',
       'Baja las mancuernas con control permitiendo un estiramiento profundo del pectoral en la parte baja del recorrido.',
@@ -63,7 +62,7 @@ const PUBLIC_EXERCISES = [
     equipment: 'Barra olímpica y Rack / Jaula de potencia',
     difficulty: 'Intermedio / Avanzado',
     idealReps: '5 - 8 reps (Fuerza) | 8 - 10 reps (Hipertrofia)',
-    restTime: '3 a 4 minutos',
+    restTime: '3 a 4 min',
     technique: [
       'Apoya la barra sobre los trapecios (barra alta) o sobre el deltoides posterior (barra baja) sujetándola con firmeza.',
       'Toma aire profundamente hacia el abdomen (maniobra de Valsalva) para compactar el core a 360° antes de iniciar el descenso.',
@@ -79,8 +78,8 @@ const PUBLIC_EXERCISES = [
     secondaryMuscles: 'Cuádriceps, Glúteo mayor y medio, Isquiosurales',
     equipment: 'Mancuernas y banco o soporte trasero',
     difficulty: 'Intermedio',
-    idealReps: '8 - 12 repeticiones por pierna',
-    restTime: '90 segundos entre cada pierna',
+    idealReps: '8 - 12 reps por pierna',
+    restTime: '90 s entre piernas',
     technique: [
       'Apoya el empeine del pie trasero sobre un banco a la altura de tu rodilla y da un paso adelante.',
       'Para enfatizar cuádriceps: mantén el torso erguido y deja que la rodilla avance. Para enfatizar glúteo: inclina el tronco 20° hacia adelante y baja hacia atrás.',
@@ -96,7 +95,7 @@ const PUBLIC_EXERCISES = [
     equipment: 'Barra olímpica o mancuernas pesadas',
     difficulty: 'Intermedio',
     idealReps: '6 - 10 repeticiones',
-    restTime: '2.5 a 3 minutos',
+    restTime: '2.5 a 3 min',
     technique: [
       'Inicia de pie con las rodillas ligeramente desbloqueadas (15° de flexión fija durante todo el movimiento).',
       'Lleva la cadera hacia atrás como si quisieras cerrar una puerta con los glúteos mientras la barra desliza pegada a tus muslos y espinillas.',
@@ -113,7 +112,7 @@ const PUBLIC_EXERCISES = [
     equipment: 'Barra olímpica, almohadilla y banco estable',
     difficulty: 'Principiante / Intermedio',
     idealReps: '8 - 12 repeticiones',
-    restTime: '2 a 3 minutos',
+    restTime: '2 a 3 min',
     technique: [
       'Apoya la parte inferior de tus escápulas en el borde del banco y coloca la barra acolchada sobre el pliegue de la cadera.',
       'Coloca los pies a la anchura de los hombros de modo que al subir las tibias queden totalmente verticales (ángulo de 90° en la rodilla).',
@@ -129,7 +128,7 @@ const PUBLIC_EXERCISES = [
     equipment: 'Barra de dominadas o Polea alta',
     difficulty: 'Intermedio',
     idealReps: '6 - 10 reps (Dominadas) | 8 - 12 reps (Jalón)',
-    restTime: '2 a 3 minutos',
+    restTime: '2 a 3 min',
     technique: [
       'Sujeta la barra con un agarre ligeramente superior al ancho de tus hombros.',
       'Inicia el movimiento deprimiendo las escápulas (alejando los hombros de las orejas) antes de flexionar los codos.',
@@ -145,7 +144,7 @@ const PUBLIC_EXERCISES = [
     equipment: 'Barra olímpica o Polea baja (Gironda)',
     difficulty: 'Intermedio',
     idealReps: '6 - 10 reps (Barra) | 10 - 12 reps (Polea)',
-    restTime: '2 a 3 minutos',
+    restTime: '2 a 3 min',
     technique: [
       'Inclina el torso entre 45° y 75° manteniendo la columna neutra y el abdomen firme.',
       'Tracciona la barra hacia la boca del estómago o el ombligo dirigiendo los codos hacia atrás.',
@@ -161,7 +160,7 @@ const PUBLIC_EXERCISES = [
     equipment: 'Barra olímpica o Mancuernas',
     difficulty: 'Intermedio',
     idealReps: '6 - 10 repeticiones',
-    restTime: '2 a 3 minutos',
+    restTime: '2 a 3 min',
     technique: [
       'De pie o sentado con respaldo, coloca los codos ligeramente adelantados respecto al torso (plano escapular, unos 30°).',
       'Aprieta glúteos y abdomen para evitar arquear en exceso la espalda baja.',
@@ -176,8 +175,8 @@ const PUBLIC_EXERCISES = [
     secondaryMuscles: 'Deltoides lateral (haz medio)',
     equipment: 'Mancuernas o Polea baja a la altura de la muñeca',
     difficulty: 'Principiante',
-    idealReps: '12 - 16 repeticiones controladas',
-    restTime: '90 segundos a 2 minutos',
+    idealReps: '12 - 16 reps controladas',
+    restTime: '90 s a 2 min',
     technique: [
       'Mantén una ligerísima flexión de codos fija y eleva los brazos en el plano escapular (15°-20° hacia adelante, no totalmente rectos hacia los lados).',
       'Piensa en lanzar las manos lejos hacia las paredes laterales, no hacia el techo, para evitar que el trapecio robe el trabajo.',
@@ -193,7 +192,7 @@ const PUBLIC_EXERCISES = [
     equipment: 'Mancuernas en banco a 45°-60° o Barra Z',
     difficulty: 'Principiante',
     idealReps: '8 - 12 repeticiones',
-    restTime: '90 segundos a 2 minutos',
+    restTime: '90 s a 2 min',
     technique: [
       'Mantén el hombro fijo y el codo pegado al costado (o ligeramente detrás del torso en banco inclinado para máximo estiramiento de la cabeza larga).',
       'Flexiona el codo supinando la muñeca (girando el meñique hacia adentro) y baja estirando el brazo por completo en cada repetición.'
@@ -208,7 +207,7 @@ const PUBLIC_EXERCISES = [
     equipment: 'Polea con cuerda o barra recta',
     difficulty: 'Principiante',
     idealReps: '10 - 15 repeticiones',
-    restTime: '90 segundos a 2 minutos',
+    restTime: '90 s a 2 min',
     technique: [
       'Para trabajar las 3 cabezas del tríceps, combina un ejercicio con los codos pegados al cuerpo (extensión en polea alta) y otro con el hombro flexionado por encima de la cabeza (extensión trasnuca para estirar la cabeza larga).',
       'Mantén los codos fijos como bisagras: solo debe moverse el antebrazo hasta bloquear el codo por completo.'
@@ -222,7 +221,7 @@ const PUBLIC_EXERCISES = [
     secondaryMuscles: 'Recto abdominal, Oblicuos, Transverso',
     equipment: 'Polea alta con cuerda o Ab Wheel',
     difficulty: 'Intermedio',
-    idealReps: '10 - 15 repeticiones con sobrecarga',
+    idealReps: '10 - 15 reps con sobrecarga',
     restTime: '90 segundos',
     technique: [
       'El recto abdominal se hipertrofia igual que cualquier otro músculo: necesita sobrecarga progresiva en flexión espinal.',
@@ -247,7 +246,7 @@ const POPULAR_SPLITS = [
   },
   {
     name: 'Rutina Full Body Científica',
-    days: '3 días / semana (Lunes - Miércoles - Viernes)',
+    days: '3 días / semana (L - X - V)',
     goal: 'Eficiencia, Principiantes e Intermedios',
     desc: 'Estimula todo el cuerpo en cada sesión priorizando multiarticulares (Sentadilla, Press de Banca, Dominadas, Peso Muerto Rumano y Press Militar).'
   }
@@ -302,7 +301,7 @@ export default function PublicExercisesPage({ onBack }) {
       style={{
         WebkitOverflowScrolling: 'touch',
         paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 3rem)'
+        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 2.5rem)'
       }}
     >
       <Helmet>
@@ -326,78 +325,111 @@ export default function PublicExercisesPage({ onBack }) {
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
-      {/* Top Navbar */}
-      <nav className="sticky top-0 z-40 bg-bg-primary/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      {/* Top Navigation Bar - Ultra Responsive */}
+      <nav className="sticky top-0 z-40 bg-bg-primary/85 backdrop-blur-xl border-b border-black/5 dark:border-white/10">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
           <button
             onClick={() => (onBack ? onBack() : navigate(isAuthenticated ? '/dashboard' : '/'))}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs sm:text-sm font-bold text-text-primary transition-all"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs sm:text-sm font-bold text-text-primary active:scale-95 transition-all shrink-0"
           >
-            <ChevronLeft size={18} className="text-accent" />
-            <span>{isAuthenticated ? 'Volver a la App' : 'Inicio'}</span>
+            <FaChevronLeft className="text-accent text-xs" />
+            <span>{isAuthenticated ? 'App' : 'Inicio'}</span>
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
             <Link
               to="/calculadora-1rm"
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs font-bold text-text-secondary hover:text-accent transition-colors border border-black/5 dark:border-white/10"
             >
-              <Calculator size={15} className="text-accent" />
-              <span className="hidden sm:inline">Calculadora 1RM</span>
+              <FaCalculator className="text-accent" />
+              <span>Calculadora 1RM</span>
             </Link>
             <Link
               to="/calculadora-calorias-macros"
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs font-bold text-text-secondary hover:text-accent transition-colors border border-black/5 dark:border-white/10"
             >
-              <Utensils size={15} className="text-emerald-400" />
-              <span className="hidden sm:inline">Calculadora Macros</span>
+              <FaUtensils className="text-emerald-400" />
+              <span>Calculadora Macros</span>
             </Link>
             <Link
               to="/noticias"
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs font-bold text-text-secondary hover:text-accent transition-colors border border-black/5 dark:border-white/10"
             >
-              <Newspaper size={15} className="text-purple-400" />
-              <span className="hidden sm:inline">Noticias</span>
+              <FaNewspaper className="text-purple-400" />
+              <span>Guías</span>
             </Link>
-            {!isAuthenticated && (
-              <button
-                onClick={() => navigate('/register')}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-accent text-accent-contrast text-xs sm:text-sm font-black shadow-lg shadow-accent/25 hover:opacity-90 transition-all"
-              >
-                <span>Crear Mi Rutina Gratis</span>
-                <ArrowRight size={15} />
-              </button>
-            )}
           </div>
+
+          {!isAuthenticated && (
+            <button
+              onClick={() => navigate('/register')}
+              className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-accent text-accent-contrast text-xs sm:text-sm font-black shadow-md shadow-accent/25 hover:opacity-90 active:scale-95 transition-all shrink-0"
+            >
+              <span>Crear Mi Rutina Gratis</span>
+              <FaArrowRight className="text-xs" />
+            </button>
+          )}
+        </div>
+
+        {/* Mobile Segmented Switcher Bar */}
+        <div className="md:hidden grid grid-cols-4 gap-1 px-2.5 pb-2 pt-0.5 border-t border-black/5 dark:border-white/5">
+          <Link
+            to="/calculadora-1rm"
+            className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 text-text-secondary text-[11px] font-bold"
+          >
+            <FaCalculator className="text-accent text-[10px]" />
+            <span>1RM</span>
+          </Link>
+          <Link
+            to="/calculadora-calorias-macros"
+            className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 text-text-secondary text-[11px] font-bold"
+          >
+            <FaUtensils className="text-emerald-400 text-[10px]" />
+            <span>Macros</span>
+          </Link>
+          <Link
+            to="/ejercicios"
+            className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-blue-500/15 text-blue-400 text-[11px] font-black border border-blue-500/30"
+          >
+            <FaDumbbell className="text-[10px]" />
+            <span>Ejercicios</span>
+          </Link>
+          <Link
+            to="/noticias"
+            className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 text-text-secondary text-[11px] font-bold"
+          >
+            <FaNewspaper className="text-purple-400 text-[10px]" />
+            <span>Guías</span>
+          </Link>
         </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto px-4 pt-8 pb-16">
+      <main className="max-w-6xl mx-auto px-3.5 sm:px-6 pt-5 sm:pt-8 pb-12 sm:pb-16">
         {/* Hero */}
-        <header className="text-center max-w-3xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 ring-1 ring-accent/30 text-accent text-xs font-black uppercase tracking-widest mb-4">
-            <Dumbbell size={14} />
+        <header className="text-center max-w-3xl mx-auto mb-6 sm:mb-10">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/10 ring-1 ring-accent/30 text-accent text-[11px] sm:text-xs font-black uppercase tracking-widest mb-3 sm:mb-4">
+            <FaDumbbell className="text-xs" />
             <span>Enciclopedia Biomecánica de Gimnasio</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-text-primary leading-tight mb-4">
+          <h1 className="text-2xl sm:text-5xl font-black tracking-tight text-text-primary leading-tight mb-3 sm:mb-4">
             Mejores Ejercicios de Gimnasio y{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-blue-400 to-purple-400">
               Rutinas de Hipertrofia
             </span>
           </h1>
-          <p className="text-text-secondary text-base sm:text-lg font-medium leading-relaxed">
+          <p className="text-text-secondary text-sm sm:text-lg font-medium leading-relaxed px-1">
             Domina la técnica exacta de los ejercicios multiarticulares y analíticos con mayor activación electromiográfica, evita errores lesivos y estructura tu rutina semanal.
           </p>
         </header>
 
         {/* Buscador y Filtros por Grupo Muscular */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 w-full md:w-auto">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3.5 mb-6 sm:mb-8">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 sm:gap-2 w-full md:w-auto">
             {MUSCLE_GROUPS.map((group) => (
               <button
                 key={group}
                 onClick={() => setSelectedMuscle(group)}
-                className={`px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all ${
                   selectedMuscle === group
                     ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25'
                     : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary border border-black/5 dark:border-white/10'
@@ -409,87 +441,88 @@ export default function PublicExercisesPage({ onBack }) {
           </div>
 
           <div className="relative w-full md:w-72">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary" />
+            <FaMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary text-sm" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar ejercicio o músculo..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-base sm:text-sm font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
         </div>
 
         {/* Grid de Ejercicios */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-12 sm:mb-16">
           {filteredExercises.map((ex) => (
             <article
               key={ex.id}
               id={ex.id}
-              className="p-6 sm:p-7 rounded-[28px] bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl flex flex-col justify-between gap-5 hover:border-accent/40 transition-all"
+              className="p-4 sm:p-7 rounded-[24px] sm:rounded-[28px] bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl flex flex-col justify-between gap-4 hover:border-accent/40 transition-all"
             >
               <div>
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <span className="px-3 py-1 rounded-full bg-accent/15 text-accent text-xs font-black uppercase tracking-wider">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                  <span className="px-2.5 py-1 rounded-full bg-accent/15 text-accent text-[11px] font-black uppercase tracking-wider">
                     {ex.muscleGroup}
                   </span>
-                  <span className="text-xs font-bold text-text-tertiary">{ex.equipment}</span>
+                  <span className="text-[11px] font-bold text-text-tertiary">{ex.equipment}</span>
                 </div>
 
-                <h2 className="text-xl sm:text-2xl font-black text-text-primary mb-2">{ex.name}</h2>
-                <p className="text-xs font-bold text-text-secondary mb-4">
+                <h2 className="text-lg sm:text-2xl font-black text-text-primary mb-1.5">{ex.name}</h2>
+                <p className="text-xs font-bold text-text-secondary mb-3.5">
                   <span className="text-text-tertiary">Sinergistas:</span> {ex.secondaryMuscles}
                 </p>
 
-                <div className="grid grid-cols-2 gap-2.5 p-3 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 mb-5 text-xs">
+                <div className="grid grid-cols-2 gap-2 p-3 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 mb-4 text-xs">
                   <div>
                     <span className="block text-[10px] font-black uppercase tracking-wider text-text-tertiary">
                       Rango Óptimo
                     </span>
-                    <span className="font-extrabold text-text-primary">{ex.idealReps}</span>
+                    <span className="font-extrabold text-text-primary text-[11px] sm:text-xs">{ex.idealReps}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] font-black uppercase tracking-wider text-text-tertiary">
-                      Descanso Recomendado
+                    <span className="block text-[10px] font-black uppercase tracking-wider text-text-tertiary flex items-center gap-1">
+                      <FaStopwatch className="text-accent text-[10px]" /> Descanso
                     </span>
-                    <span className="font-extrabold text-accent">{ex.restTime}</span>
+                    <span className="font-extrabold text-accent text-[11px] sm:text-xs">{ex.restTime}</span>
                   </div>
                 </div>
 
-                <h3 className="text-xs font-black uppercase tracking-wider text-text-primary mb-2.5 flex items-center gap-1.5">
-                  <CheckCircle2 size={15} className="text-emerald-400" />
-                  Técnica Biomecánica Paso a Paso
+                <h3 className="text-xs font-black uppercase tracking-wider text-text-primary mb-2 flex items-center gap-1.5">
+                  <FaCircleCheck className="text-emerald-400" />
+                  <span>Técnica Biomecánica Paso a Paso</span>
                 </h3>
-                <ul className="space-y-2 text-sm text-text-secondary font-medium mb-5">
+                <ul className="space-y-1.5 text-xs sm:text-sm text-text-secondary font-medium mb-4">
                   {ex.technique.map((step, i) => (
                     <li key={i} className="flex items-start gap-2 leading-relaxed">
-                      <span className="text-accent font-black text-xs mt-1">{i + 1}.</span>
+                      <span className="text-accent font-black text-xs mt-0.5">{i + 1}.</span>
                       <span>{step}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="pt-4 border-t border-black/5 dark:border-white/10 flex flex-col gap-3">
-                <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-text-secondary leading-relaxed">
-                  <strong className="text-red-400 inline-flex items-center gap-1 font-black uppercase tracking-wider mr-1">
-                    <AlertTriangle size={13} /> Error a evitar:
+              <div className="pt-3.5 border-t border-black/5 dark:border-white/10 flex flex-col gap-3">
+                <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-text-secondary leading-relaxed">
+                  <strong className="text-red-400 inline-flex items-center gap-1.5 font-black uppercase tracking-wider mr-1.5">
+                    <FaTriangleExclamation /> Error a evitar:
                   </strong>
                   {ex.commonMistake}
                 </div>
 
-                <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center justify-between gap-2 pt-1">
                   <Link
                     to="/calculadora-1rm"
-                    className="text-xs font-black text-accent hover:underline inline-flex items-center gap-1"
+                    className="text-xs font-black text-accent hover:underline inline-flex items-center gap-1.5"
                   >
-                    <Calculator size={13} /> Calcular mi 1RM en este ejercicio
+                    <FaCalculator className="text-[11px]" /> Calcular mi 1RM
                   </Link>
                   <button
                     onClick={() => navigate(isAuthenticated ? '/routines' : '/register')}
-                    className="text-xs font-black text-text-primary hover:text-accent inline-flex items-center gap-1 transition-colors"
+                    className="text-xs font-black text-text-primary hover:text-accent inline-flex items-center gap-1.5 transition-colors"
                   >
-                    Añadir a mi rutina <ArrowRight size={13} />
+                    <span>Añadir a mi rutina</span>
+                    <FaArrowRight className="text-[11px]" />
                   </button>
                 </div>
               </div>
@@ -498,40 +531,40 @@ export default function PublicExercisesPage({ onBack }) {
         </div>
 
         {/* Sección de las 3 Mejores Distribuciones de Rutinas Semanales */}
-        <section className="mb-16">
-          <div className="text-center max-w-3xl mx-auto mb-8">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 ring-1 ring-purple-500/30 text-purple-400 text-xs font-black uppercase tracking-widest mb-3">
-              <Layers size={14} />
+        <section className="mb-12 sm:mb-16">
+          <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-8">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-500/10 ring-1 ring-purple-500/30 text-purple-400 text-[11px] sm:text-xs font-black uppercase tracking-widest mb-3">
+              <FaLayerGroup className="text-xs" />
               <span>Estructuras de Entrenamiento Semanal</span>
             </div>
-            <h2 className="text-2xl sm:text-4xl font-black text-text-primary mb-3">
+            <h2 className="text-xl sm:text-4xl font-black text-text-primary mb-2.5">
               ¿Qué Rutina de Gimnasio Elegir según tus Días Disponibles?
             </h2>
-            <p className="text-sm sm:text-base text-text-secondary font-medium">
+            <p className="text-xs sm:text-base text-text-secondary font-medium">
               La evidencia científica demuestra que alcanzar una <strong>frecuencia 2</strong> (estimular cada músculo 2 veces por semana) entre <strong>10 y 20 series efectivas semanales</strong> maximiza la síntesis proteica.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             {POPULAR_SPLITS.map((split) => (
               <div
                 key={split.name}
-                className="p-6 rounded-[28px] bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 flex flex-col justify-between"
+                className="p-5 sm:p-6 rounded-[24px] sm:rounded-[28px] bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 flex flex-col justify-between"
               >
                 <div>
                   <span className="inline-block px-3 py-1 rounded-full bg-purple-500/15 text-purple-400 text-xs font-black mb-3">
                     {split.days}
                   </span>
-                  <h3 className="text-xl font-black text-text-primary mb-2">{split.name}</h3>
-                  <p className="text-xs font-bold text-accent mb-3">{split.goal}</p>
-                  <p className="text-sm text-text-secondary font-medium leading-relaxed mb-6">{split.desc}</p>
+                  <h3 className="text-lg sm:text-xl font-black text-text-primary mb-1.5">{split.name}</h3>
+                  <p className="text-xs font-bold text-accent mb-2.5">{split.goal}</p>
+                  <p className="text-xs sm:text-sm text-text-secondary font-medium leading-relaxed mb-5">{split.desc}</p>
                 </div>
                 <button
                   onClick={() => navigate(isAuthenticated ? '/routines' : '/register')}
                   className="w-full py-3 px-4 rounded-2xl bg-accent/15 hover:bg-accent text-accent hover:text-accent-contrast font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
                 >
                   <span>Configurar esta Rutina en la App</span>
-                  <ArrowRight size={14} />
+                  <FaArrowRight className="text-xs" />
                 </button>
               </div>
             ))}
@@ -539,21 +572,21 @@ export default function PublicExercisesPage({ onBack }) {
         </section>
 
         {/* CTA Banner */}
-        <div className="p-8 sm:p-10 rounded-[32px] bg-gradient-to-br from-accent/20 via-purple-500/15 to-blue-500/15 border border-accent/30 text-center">
-          <h2 className="text-2xl sm:text-3xl font-black text-text-primary mb-3">
+        <div className="p-6 sm:p-10 rounded-[26px] sm:rounded-[32px] bg-gradient-to-br from-accent/20 via-purple-500/15 to-blue-500/15 border border-accent/30 text-center">
+          <h2 className="text-xl sm:text-3xl font-black text-text-primary mb-2.5">
             Apunta tus Pesos, Series y Récords con Sobrecarga Progresiva Automática
           </h2>
-          <p className="text-text-secondary font-medium max-w-2xl mx-auto mb-6">
-            Accede al catálogo completo con más de 300 ejercicios en vídeo, temporizador inteligente de descanso, calculadora de 1RM integrada y mapa térmico muscular gratis en Pro Fitness Glass.
+          <p className="text-xs sm:text-base text-text-secondary font-medium max-w-2xl mx-auto mb-5">
+            Accede al catálogo completo con más de 300 ejercicios, temporizador inteligente de descanso, calculadora de 1RM integrada y mapa térmico muscular gratis en Pro Fitness Glass.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <button
               onClick={() => navigate(isAuthenticated ? '/routines' : '/register')}
-              className="px-8 py-4 rounded-2xl bg-accent text-accent-contrast font-black text-base shadow-xl shadow-accent/30 hover:scale-[1.02] active:scale-95 transition-all inline-flex items-center gap-2"
+              className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-accent text-accent-contrast font-black text-sm sm:text-base shadow-xl shadow-accent/30 hover:scale-[1.02] active:scale-95 transition-all inline-flex items-center justify-center gap-2"
             >
-              <Sparkles size={18} />
+              <FaBolt />
               <span>{isAuthenticated ? 'Ir a Mis Rutinas' : 'Empezar Gratis en Pro Fitness Glass'}</span>
-              <ArrowRight size={18} />
+              <FaArrowRight />
             </button>
           </div>
         </div>

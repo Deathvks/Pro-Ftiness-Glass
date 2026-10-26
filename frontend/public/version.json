@@ -1,4 +1,4 @@
 {
-  "version": "7.10.46",
-  "releaseNotes": "Actualización v7.10.46: Inclusión de /calculadora-1rm, /calculadora-calorias-macros y /ejercicios en el generador dinámico de /sitemap.xml del servidor backend para Google Search Console."
+  "version": "7.10.47",
+  "releaseNotes": "Actualización v7.10.47: Rediseño responsive mobile-first de las calculadoras públicas (/calculadora-1rm y /calculadora-calorias-macros) y enciclopedia (/ejercicios) con controles táctiles +/- e iconografía real de FontAwesome 6."
 }

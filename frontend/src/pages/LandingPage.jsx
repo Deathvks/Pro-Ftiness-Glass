@@ -6,6 +6,7 @@ import {
     Instagram, Youtube, Github, Globe, Download, Sparkles, Bot, Apple, Check, ShieldCheck, Newspaper, Calculator, HelpCircle
 } from 'lucide-react';
 import { FaGooglePlay } from 'react-icons/fa';
+import { FaCalculator, FaDumbbell, FaUtensils, FaNewspaper, FaCircleQuestion, FaTrophy, FaHeartPulse } from 'react-icons/fa6';
 import { Helmet } from 'react-helmet-async';
 
 import packageJson from '../../package.json';
@@ -474,7 +475,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                     className="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
                                     title="Calculadora de 1RM y Fuerza"
                                 >
-                                    <Calculator size={15} className="text-accent shrink-0" />
+                                    <FaCalculator className="text-accent shrink-0 text-sm" />
                                     <span className="uppercase tracking-wider text-xs">Calculadora 1RM</span>
                                 </a>
 
@@ -483,7 +484,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                     className="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
                                     title="Calculadora de Calorías y Macros"
                                 >
-                                    <Utensils size={15} className="text-emerald-400 shrink-0" />
+                                    <FaUtensils className="text-emerald-400 shrink-0 text-sm" />
                                     <span className="uppercase tracking-wider text-xs">Calculadora Macros</span>
                                 </a>
 
@@ -638,7 +639,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                                 <BentoCard className="md:col-span-2" delay={100} bgIcon={Dumbbell} bgIconColor="text-blue-500">
                                     <div className="w-14 h-14 bg-blue-500/10 text-blue-500 rounded-[20px] ring-1 ring-blue-500/30 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
-                                        <Dumbbell size={28} strokeWidth={2} />
+                                        <FaDumbbell className="text-2xl" />
                                     </div>
                                     <h3 className="text-3xl font-extrabold tracking-tight text-text-primary mb-4 group-hover:text-blue-400 transition-colors relative z-10">Diario de Gimnasio y Rutinas de Pesas</h3>
                                     <p className="text-text-secondary font-medium mb-8 max-w-md text-lg leading-relaxed relative z-10">
@@ -668,7 +669,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                                 <BentoCard delay={300} bgIcon={Apple} bgIconColor="text-green-500">
                                     <div className="w-14 h-14 bg-green-500/10 text-green-500 rounded-[20px] ring-1 ring-green-500/30 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-green-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
-                                        <Utensils size={28} strokeWidth={2} />
+                                        <FaUtensils className="text-2xl" />
                                     </div>
                                     <h3 className="text-2xl font-extrabold tracking-tight text-text-primary mb-4 group-hover:text-green-400 transition-colors relative z-10">Nutrición & Macros</h3>
                                     <p className="text-text-secondary font-medium mb-4 leading-relaxed relative z-10">
@@ -876,7 +877,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             <ScrollRevealCard>
                                 <div className="text-center max-w-3xl mx-auto mb-14">
                                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 ring-1 ring-accent/30 mb-4">
-                                        <Calculator size={14} className="text-accent" />
+                                        <FaCalculator className="text-accent text-xs" />
                                         <span className="text-xs font-black uppercase tracking-widest text-accent">Acceso Libre sin Registro</span>
                                     </div>
                                     <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-text-primary mb-4">
@@ -896,7 +897,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                     >
                                         <div>
                                             <div className="w-14 h-14 rounded-[20px] bg-accent/15 text-accent ring-1 ring-accent/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-accent group-hover:text-accent-contrast transition-all duration-300">
-                                                <Dumbbell size={28} strokeWidth={2} />
+                                                <FaDumbbell className="text-2xl" />
                                             </div>
                                             <span className="inline-block text-[11px] font-black uppercase tracking-widest text-accent mb-2">Fuerza e Hipertrofia</span>
                                             <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-accent transition-colors">
@@ -919,7 +920,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                     >
                                         <div>
                                             <div className="w-14 h-14 rounded-[20px] bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all duration-300">
-                                                <Utensils size={28} strokeWidth={2} />
+                                                <FaUtensils className="text-2xl" />
                                             </div>
                                             <span className="inline-block text-[11px] font-black uppercase tracking-widest text-emerald-400 mb-2">Nutrición Deportiva</span>
                                             <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-emerald-400 transition-colors">
@@ -942,7 +943,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                     >
                                         <div>
                                             <div className="w-14 h-14 rounded-[20px] bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300">
-                                                <Newspaper size={28} strokeWidth={2} />
+                                                <FaNewspaper className="text-2xl" />
                                             </div>
                                             <span className="inline-block text-[11px] font-black uppercase tracking-widest text-purple-400 mb-2">Evidencia Científica</span>
                                             <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-purple-400 transition-colors">
@@ -965,7 +966,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                     >
                                         <div>
                                             <div className="w-14 h-14 rounded-[20px] bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
-                                                <Activity size={28} strokeWidth={2} />
+                                                <FaHeartPulse className="text-2xl" />
                                             </div>
                                             <span className="inline-block text-[11px] font-black uppercase tracking-widest text-blue-400 mb-2">Técnica y Rutinas</span>
                                             <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-blue-400 transition-colors">
@@ -988,7 +989,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             <ScrollRevealCard>
                                 <div className="text-center mb-12">
                                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 ring-1 ring-accent/30 mb-4">
-                                        <Trophy size={14} className="text-accent" />
+                                        <FaTrophy className="text-accent text-xs" />
                                         <span className="text-xs font-black uppercase tracking-widest text-accent">Todo en Uno Sin Límites</span>
                                     </div>
                                     <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-text-primary mb-4">
@@ -1042,7 +1043,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             <ScrollRevealCard>
                                 <div className="text-center mb-12">
                                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 ring-1 ring-purple-500/30 mb-4">
-                                        <HelpCircle size={14} className="text-purple-400" />
+                                        <FaCircleQuestion className="text-purple-400 text-xs" />
                                         <span className="text-xs font-black uppercase tracking-widest text-purple-400">Dudas Resueltas</span>
                                     </div>
                                     <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-text-primary">

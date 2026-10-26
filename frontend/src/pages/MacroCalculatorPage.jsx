@@ -3,55 +3,68 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
-  Utensils,
-  ChevronLeft,
-  Flame,
-  Droplets,
-  Sparkles,
-  ArrowRight,
-  Calculator,
-  Dumbbell,
-  Newspaper,
-  Scale,
-  Zap
-} from 'lucide-react';
+  FaUtensils,
+  FaChevronLeft,
+  FaFireFlameCurved,
+  FaGlassWater,
+  FaArrowRight,
+  FaCalculator,
+  FaDumbbell,
+  FaNewspaper,
+  FaWeightScale,
+  FaBolt,
+  FaDrumstickBite,
+  FaBowlRice,
+  FaSeedling,
+  FaFlask,
+  FaVenus,
+  FaMars,
+  FaPlus,
+  FaMinus,
+  FaCircleQuestion,
+  FaPersonRunning,
+  FaHeartPulse
+} from 'react-icons/fa6';
 import useAppStore from '../store/useAppStore';
 
 const ACTIVITY_LEVELS = [
-  { value: 1.2, label: 'Sedentario (Trabajo de oficina, sin ejercicio)', short: 'Sedentario' },
-  { value: 1.375, label: 'Ligero (Entrenamiento de gimnasio 1 - 2 días/semana)', short: '1-2 días Gym' },
-  { value: 1.55, label: 'Moderado (Gimnasio 3 - 5 días/semana + activo)', short: '3-5 días Gym' },
-  { value: 1.725, label: 'Intenso (Gimnasio 5 - 6 días/semana de alta intensidad)', short: '5-6 días Gym' },
-  { value: 1.9, label: 'Atleta de Élite (Entreno diario + trabajo físico)', short: 'Atleta' }
+  { value: 1.2, label: 'Sedentario (Oficina, sin ejercicio)', short: 'Sedentario' },
+  { value: 1.375, label: 'Ligero (Gimnasio 1 - 2 días/semana)', short: '1-2 días Gym' },
+  { value: 1.55, label: 'Moderado (Gimnasio 3 - 5 días/semana)', short: '3-5 días Gym' },
+  { value: 1.725, label: 'Intenso (Gimnasio 5 - 6 días/semana)', short: '5-6 días Gym' },
+  { value: 1.9, label: 'Atleta Élite (Entreno diario + físico)', short: 'Atleta' }
 ];
 
 const GOALS = [
   {
     id: 'cut',
     title: 'Perder Grasa (Definición)',
+    shortTitle: 'Definición',
     desc: 'Déficit calórico inteligente (-450 kcal) protegiendo tu masa muscular',
     calDelta: -450,
     proteinPerKg: 2.1,
     fatPerKg: 0.85,
-    badge: 'Déficit Calórico'
+    badge: '-450 kcal'
   },
   {
     id: 'recomp',
     title: 'Recomposición / Mantenimiento',
+    shortTitle: 'Mantenimiento',
     desc: 'Normocalórica para perder grasa y ganar músculo simultáneamente',
     calDelta: 0,
     proteinPerKg: 2.0,
     fatPerKg: 0.9,
-    badge: 'Mantenimiento'
+    badge: 'Normocalórica'
   },
   {
     id: 'bulk',
     title: 'Ganar Músculo (Volumen Limpio)',
+    shortTitle: 'Volumen Limpio',
     desc: 'Superávit controlado (+300 kcal) para maximizar la hipertrofia sin ganar grasa excesiva',
     calDelta: 300,
-    proteinPerKg: 1.8,
+    proteinPerKg: 1.9,
     fatPerKg: 0.95,
-    badge: 'Superávit'
+    badge: '+300 kcal'
   }
 ];
 
@@ -59,7 +72,7 @@ export default function MacroCalculatorPage({ onBack }) {
   const navigate = useNavigate();
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
 
-  const [gender, setGender] = useState('male');
+  const [sex, setSex] = useState('male');
   const [age, setAge] = useState(26);
   const [weight, setWeight] = useState(75);
   const [height, setHeight] = useState(176);
@@ -67,75 +80,81 @@ export default function MacroCalculatorPage({ onBack }) {
   const [goalId, setGoalId] = useState('cut');
 
   const calc = useMemo(() => {
-    const w = Math.max(35, Math.min(250, parseFloat(weight) || 75));
-    const h = Math.max(120, Math.min(230, parseFloat(height) || 175));
-    const a = Math.max(14, Math.min(95, parseInt(age, 10) || 25));
-    const act = parseFloat(activity) || 1.55;
-    const selectedGoal = GOALS.find((g) => g.id === goalId) || GOALS[0];
+    const w = Math.max(35, Math.min(250, Number(weight) || 70));
+    const h = Math.max(120, Math.min(230, Number(height) || 170));
+    const a = Math.max(14, Math.min(95, Number(age) || 25));
+    const act = Number(activity) || 1.55;
+    const goal = GOALS.find((g) => g.id === goalId) || GOALS[0];
 
-    // Fórmula Mifflin-St Jeor
-    const bmr = Math.round(10 * w + 6.25 * h - 5 * a + (gender === 'male' ? 5 : -161));
+    const bmr = Math.round(10 * w + 6.25 * h - 5 * a + (sex === 'male' ? 5 : -161));
     const tdee = Math.round(bmr * act);
-    const targetCalories = Math.max(1200, tdee + selectedGoal.calDelta);
+    const targetCalories = Math.max(1200, tdee + goal.calDelta);
 
-    const proteinG = Math.round(w * selectedGoal.proteinPerKg);
-    const proteinKcal = proteinG * 4;
+    const proteinGrams = Math.round(w * goal.proteinPerKg);
+    const fatGrams = Math.round(w * goal.fatPerKg);
+    const proteinCals = proteinGrams * 4;
+    const fatCals = fatGrams * 9;
+    const remainingCals = Math.max(200, targetCalories - proteinCals - fatCals);
+    const carbGrams = Math.round(remainingCals / 4);
 
-    const fatG = Math.round(w * selectedGoal.fatPerKg);
-    const fatKcal = fatG * 9;
+    const totalMacroCals = proteinCals + fatCals + carbGrams * 4;
+    const proteinPct = Math.round((proteinCals / totalMacroCals) * 100);
+    const carbPct = Math.round(((carbGrams * 4) / totalMacroCals) * 100);
+    const fatPct = Math.max(10, 100 - proteinPct - carbPct);
 
-    const remainingKcal = Math.max(200, targetCalories - proteinKcal - fatKcal);
-    const carbsG = Math.round(remainingKcal / 4);
-
-    const waterMl = Math.round(w * 38);
-    const creatineG = Math.round(w * 0.08 * 10) / 10;
+    const waterLiters = Math.round((w * 0.04 + (act >= 1.55 ? 0.5 : 0.2)) * 10) / 10;
+    const creatineGrams = Math.max(3, Math.round(w * 0.07));
 
     return {
       bmr,
       tdee,
       targetCalories,
-      proteinG,
-      fatG,
-      carbsG,
-      waterLiters: (waterMl / 1000).toFixed(1),
-      creatineG: Math.max(3, Math.min(10, creatineG)),
-      selectedGoal
+      proteinGrams,
+      carbGrams,
+      fatGrams,
+      proteinPct,
+      carbPct,
+      fatPct,
+      waterLiters,
+      creatineGrams,
+      goal
     };
-  }, [gender, age, weight, height, activity, goalId]);
+  }, [sex, age, weight, height, activity, goalId]);
 
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'WebApplication',
-        'name': 'Calculadora de Calorías, Macros y Déficit Calórico — Pro Fitness Glass',
-        'url': 'https://pro-fitness-glass.zeabur.app/calculadora-calorias-macros',
-        'applicationCategory': 'HealthApplication',
-        'operatingSystem': 'All',
-        'description': 'Calculadora científica gratuita de calorías diarias, macronutrientes (proteínas, carbohidratos y grasas), tasa metabólica basal (TMB), gasto energético (TDEE), agua y creatina para gimnasio.',
-        'offers': {
+        name: 'Calculadora de Calorías, Macros y Déficit Calórico — Pro Fitness Glass',
+        url: 'https://pro-fitness-glass.zeabur.app/calculadora-calorias-macros',
+        applicationCategory: 'HealthApplication',
+        operatingSystem: 'Web, Android, iOS',
+        description:
+          'Calculadora científica gratuita de calorías diarias (TDEE), metabolismo basal (Mifflin-St Jeor) y macronutrientes (proteínas, carbohidratos y grasas) para perder grasa en déficit calórico o ganar masa muscular en el gimnasio.',
+        offers: {
           '@type': 'Offer',
-          'price': '0',
-          'priceCurrency': 'EUR'
+          price: '0',
+          priceCurrency: 'EUR'
         }
       },
       {
         '@type': 'FAQPage',
-        'mainEntity': [
+        mainEntity: [
           {
             '@type': 'Question',
-            'name': '¿Cómo calcular el déficit calórico para perder grasa sin perder músculo?',
-            'acceptedAnswer': {
+            name: '¿Cuántos gramos de proteína al día necesito para ganar masa muscular o definir?',
+            acceptedAnswer: {
               '@type': 'Answer',
-              'text': 'Para perder grasa preservando la masa muscular, resta entre 350 y 500 kcal a tu gasto energético diario total (TDEE), mantén una ingesta alta de proteína (entre 1.8 y 2.2 gramos por kilo de peso corporal) y realiza entrenamiento de fuerza en el gimnasio.'
+              text: 'La evidencia científica (ISSN) recomienda entre 1.8 g y 2.2 g de proteína por kilogramo de peso corporal al día para personas que entrenan fuerza en el gimnasio, subiendo ligeramente en etapas de déficit calórico para preservar la masa muscular.'
             }
           },
           {
             '@type': 'Question',
-            'name': '¿Cuántos gramos de proteína al día necesito para ganar masa muscular?',
-            'acceptedAnswer': {
+            name: '¿Qué déficit calórico es mejor para perder grasa sin perder músculo?',
+            acceptedAnswer: {
               '@type': 'Answer',
-              'text': 'La evidencia científica actual recomienda consumir entre 1.6 y 2.2 gramos de proteína por cada kilogramo de peso corporal al día para maximizar la síntesis proteica muscular y la hipertrofia.'
+              text: 'Un déficit calórico moderado de entre 350 y 500 kcal por debajo de tu gasto energético diario total (TDEE), combinado con entrenamiento de pesas y alta ingesta proteica, permite oxidar grasa corporal manteniendo la fuerza y el músculo.'
             }
           }
         ]
@@ -149,182 +168,305 @@ export default function MacroCalculatorPage({ onBack }) {
       style={{
         WebkitOverflowScrolling: 'touch',
         paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 2rem)'
+        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 2.5rem)'
       }}
     >
       <Helmet>
-        <title>Calculadora de Calorías y Macros Gimnasio Gratis | Déficit Calórico y Volumen</title>
+        <title>Calculadora de Calorías, Macros y Déficit Calórico para Gimnasio | Pro Fitness Glass</title>
         <meta
           name="description"
-          content="Calcula tus calorías diarias, proteínas, carbohidratos y grasas gratis con la fórmula Mifflin-St Jeor. Ideal para déficit calórico, definición o ganar masa muscular en el gimnasio."
+          content="Calcula gratis tus calorías diarias (TDEE), tasa metabólica basal (Mifflin-St Jeor) y gramos exactos de proteínas, carbohidratos y grasas para definición, recomposición o volumen muscular."
+        />
+        <meta
+          name="keywords"
+          content="calculadora calorias y macros, calculadora deficit calorico, calcular tdee gimnasio, gramos de proteina por kilo, macros para volumen muscular, mifflin st jeor calculadora, dieta hipertrofia"
         />
         <link rel="canonical" href="https://pro-fitness-glass.zeabur.app/calculadora-calorias-macros" />
         <meta property="og:title" content="Calculadora de Calorías, Macros y Déficit Calórico — Pro Fitness Glass" />
         <meta
           property="og:description"
-          content="Obtén tus gramos exactos de proteína, hidratos, grasas, agua y creatina según tu peso y entrenamientos en el gimnasio."
+          content="Obtén tus calorías exactas y tu reparto de proteínas, carbohidratos, grasas, agua y creatina para transformar tu físico."
         />
         <meta property="og:url" content="https://pro-fitness-glass.zeabur.app/calculadora-calorias-macros" />
+        <meta property="og:type" content="website" />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
-      {/* HEADER NAVIGATION */}
-      <header className="sticky top-0 z-40 bg-bg-primary/85 backdrop-blur-xl border-b border-black/5 dark:border-white/10">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => (onBack ? onBack() : navigate('/'))}
-              className="p-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer"
-              title="Volver"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <Link to="/" className="flex items-center gap-2 font-black text-sm sm:text-base tracking-tight">
-              <img src="/logo.webp" alt="Pro Fitness Glass" className="w-7 h-7 rounded-lg" />
-              <span className="hidden xs:inline">PRO FITNESS GLASS</span>
-            </Link>
-          </div>
+      {/* Top Navigation Bar - Ultra Responsive */}
+      <nav className="sticky top-0 z-40 bg-bg-primary/85 backdrop-blur-xl border-b border-black/5 dark:border-white/10">
+        <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
+          <button
+            onClick={() => (onBack ? onBack() : navigate(isAuthenticated ? '/dashboard' : '/'))}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs sm:text-sm font-bold text-text-primary active:scale-95 transition-all shrink-0"
+          >
+            <FaChevronLeft className="text-accent text-xs" />
+            <span>{isAuthenticated ? 'App' : 'Inicio'}</span>
+          </button>
 
-          <div className="flex items-center gap-2">
+          {/* Desktop Quick Links */}
+          <div className="hidden md:flex items-center gap-2">
             <Link
               to="/calculadora-1rm"
-              className="px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 text-xs font-bold text-text-secondary hover:text-accent transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs font-bold text-text-secondary hover:text-accent transition-colors border border-black/5 dark:border-white/10"
             >
-              Calc. 1RM
+              <FaCalculator className="text-accent" />
+              <span>Calculadora 1RM</span>
+            </Link>
+            <Link
+              to="/ejercicios"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs font-bold text-text-secondary hover:text-accent transition-colors border border-black/5 dark:border-white/10"
+            >
+              <FaDumbbell className="text-blue-400" />
+              <span>Ejercicios</span>
             </Link>
             <Link
               to="/noticias"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 text-xs font-bold text-text-secondary hover:text-accent transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs font-bold text-text-secondary hover:text-accent transition-colors border border-black/5 dark:border-white/10"
             >
-              <Newspaper size={14} className="text-accent" />
-              <span>Guías Gym</span>
+              <FaNewspaper className="text-purple-400" />
+              <span>Guías</span>
             </Link>
+          </div>
+
+          {!isAuthenticated && (
             <button
-              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/register')}
-              className="px-3.5 py-1.5 rounded-xl bg-accent text-accent-contrast text-xs font-black shadow-md shadow-accent/20 hover:opacity-90 transition-all cursor-pointer"
+              onClick={() => navigate('/register')}
+              className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-accent text-accent-contrast text-xs sm:text-sm font-black shadow-md shadow-accent/25 hover:opacity-90 active:scale-95 transition-all shrink-0"
             >
-              {isAuthenticated ? 'Ir a la App' : 'App Gratis'}
+              <span>Registrar Dieta con IA</span>
+              <FaArrowRight className="text-xs" />
             </button>
-          </div>
+          )}
         </div>
-      </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-8 sm:py-12 space-y-12">
-        {/* HERO TITLE */}
-        <section className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/15 text-accent text-xs font-black uppercase tracking-wider border border-accent/30">
-            <Utensils size={14} />
-            <span>Nutrición Deportiva Basada en Ciencia</span>
+        {/* Mobile Segmented Switcher Bar */}
+        <div className="md:hidden grid grid-cols-4 gap-1 px-2.5 pb-2 pt-0.5 border-t border-black/5 dark:border-white/5">
+          <Link
+            to="/calculadora-1rm"
+            className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 text-text-secondary text-[11px] font-bold"
+          >
+            <FaCalculator className="text-accent text-[10px]" />
+            <span>1RM</span>
+          </Link>
+          <Link
+            to="/calculadora-calorias-macros"
+            className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 text-[11px] font-black border border-emerald-500/30"
+          >
+            <FaUtensils className="text-[10px]" />
+            <span>Macros</span>
+          </Link>
+          <Link
+            to="/ejercicios"
+            className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 text-text-secondary text-[11px] font-bold"
+          >
+            <FaDumbbell className="text-blue-400 text-[10px]" />
+            <span>Ejercicios</span>
+          </Link>
+          <Link
+            to="/noticias"
+            className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 text-text-secondary text-[11px] font-bold"
+          >
+            <FaNewspaper className="text-purple-400 text-[10px]" />
+            <span>Guías</span>
+          </Link>
+        </div>
+      </nav>
+
+      <main className="max-w-5xl mx-auto px-3.5 sm:px-6 pt-5 sm:pt-8 pb-12 sm:pb-16">
+        {/* Hero SEO Header */}
+        <header className="text-center max-w-3xl mx-auto mb-6 sm:mb-10">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/30 text-emerald-400 text-[11px] sm:text-xs font-black uppercase tracking-widest mb-3 sm:mb-4">
+            <FaUtensils className="text-xs" />
+            <span>Nutrición Deportiva Basada en Evidencia</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            Calculadora de <span className="text-accent">Calorías, Macros</span> y Déficit Calórico
+          <h1 className="text-2xl sm:text-5xl font-black tracking-tight text-text-primary leading-tight mb-3 sm:mb-4">
+            Calculadora de <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-accent to-teal-400">Calorías, Macros y Déficit</span>
           </h1>
-          <p className="text-sm sm:text-lg text-text-secondary leading-relaxed">
-            Calcula tu gasto energético real (TDEE) y obtén tus gramos exactos de <strong>proteína, carbohidratos y grasas</strong> para perder grasa o ganar masa muscular en el gimnasio.
+          <p className="text-text-secondary text-sm sm:text-lg font-medium leading-relaxed px-1">
+            Calcula tu <strong>Gasto Energético Diario Total (TDEE)</strong> con la ecuación científica de <em>Mifflin-St Jeor</em> y obtén tus gramos exactos de proteína, carbohidratos, grasas, agua y creatina.
           </p>
-        </section>
+        </header>
 
-        {/* INTERACTIVE CALCULATOR GRID */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* LEFT: USER DATA INPUTS */}
-          <div className="lg:col-span-5 p-6 sm:p-8 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 space-y-5">
-            {/* GENDER */}
-            <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-text-secondary mb-2">
-                1. Sexo Biológico
-              </label>
-              <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setGender('male')}
-                  className={`py-3 rounded-2xl font-bold text-sm transition-all cursor-pointer border ${
-                    gender === 'male'
-                      ? 'bg-accent text-accent-contrast border-accent shadow-md shadow-accent/20'
-                      : 'bg-bg-primary text-text-secondary border-black/10 dark:border-white/10'
-                  }`}
-                >
-                  Hombre
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGender('female')}
-                  className={`py-3 rounded-2xl font-bold text-sm transition-all cursor-pointer border ${
-                    gender === 'female'
-                      ? 'bg-accent text-accent-contrast border-accent shadow-md shadow-accent/20'
-                      : 'bg-bg-primary text-text-secondary border-black/10 dark:border-white/10'
-                  }`}
-                >
-                  Mujer
-                </button>
+        {/* Interactive Calculator Grid */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start mb-10 sm:mb-14">
+          {/* Left Panel: Inputs */}
+          <div className="lg:col-span-5 p-4 sm:p-7 rounded-[24px] sm:rounded-[28px] bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl shadow-xl space-y-4 sm:space-y-5">
+            <div className="flex items-center gap-3 pb-3.5 border-b border-black/5 dark:border-white/10">
+              <div className="p-2.5 sm:p-3 rounded-2xl bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30 shrink-0">
+                <FaWeightScale className="text-lg sm:text-xl" />
+              </div>
+              <div>
+                <h2 className="text-base sm:text-lg font-extrabold text-text-primary leading-snug">Tus Datos Físicos</h2>
+                <p className="text-[11px] sm:text-xs text-text-secondary font-medium">Fórmula clínica Mifflin-St Jeor</p>
               </div>
             </div>
 
-            {/* AGE, WEIGHT, HEIGHT */}
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="block text-[11px] font-black uppercase text-text-secondary mb-1.5">
-                  Edad (años)
-                </label>
-                <input
-                  type="number"
-                  min="14"
-                  max="95"
-                  value={age}
-                  onChange={(e) => setAge(e.target.value)}
-                  className="w-full px-3 py-3 rounded-2xl bg-bg-primary border border-black/10 dark:border-white/10 font-black text-base text-center text-text-primary focus:outline-none focus:border-accent"
-                />
+            {/* Sex Toggle with FontAwesome Icons */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSex('male')}
+                className={`py-2.5 px-3 rounded-xl font-black text-xs sm:text-sm transition-all border flex items-center justify-center gap-2 ${
+                  sex === 'male'
+                    ? 'bg-accent text-accent-contrast border-accent shadow-md shadow-accent/20'
+                    : 'bg-black/5 dark:bg-white/5 text-text-secondary border-black/10 dark:border-white/10'
+                }`}
+              >
+                <FaMars className="text-sm" />
+                <span>Hombre</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSex('female')}
+                className={`py-2.5 px-3 rounded-xl font-black text-xs sm:text-sm transition-all border flex items-center justify-center gap-2 ${
+                  sex === 'female'
+                    ? 'bg-accent text-accent-contrast border-accent shadow-md shadow-accent/20'
+                    : 'bg-black/5 dark:bg-white/5 text-text-secondary border-black/10 dark:border-white/10'
+                }`}
+              >
+                <FaVenus className="text-sm" />
+                <span>Mujer</span>
+              </button>
+            </div>
+
+            {/* Weight, Height, Age with Touch Steppers */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3">
+              {/* Weight */}
+              <div className="p-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/10">
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-text-secondary">Peso Corporal</label>
+                  <span className="text-xs font-black text-emerald-400">{weight} kg</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setWeight((w) => Math.max(35, Number(w) - 1))}
+                    className="w-9 h-9 rounded-lg bg-black/5 dark:bg-white/10 text-text-primary flex items-center justify-center active:scale-95 shrink-0"
+                  >
+                    <FaMinus className="text-[10px]" />
+                  </button>
+                  <input
+                    type="number"
+                    min="35"
+                    max="220"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    className="w-full py-1.5 rounded-lg bg-bg-primary border border-black/10 dark:border-white/15 text-center font-black text-base text-text-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setWeight((w) => Math.min(220, Number(w) + 1))}
+                    className="w-9 h-9 rounded-lg bg-black/5 dark:bg-white/10 text-text-primary flex items-center justify-center active:scale-95 shrink-0"
+                  >
+                    <FaPlus className="text-[10px]" />
+                  </button>
+                </div>
               </div>
-              <div>
-                <label className="block text-[11px] font-black uppercase text-text-secondary mb-1.5">
-                  Peso (kg)
-                </label>
-                <input
-                  type="number"
-                  min="35"
-                  max="250"
-                  step="0.5"
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
-                  className="w-full px-3 py-3 rounded-2xl bg-bg-primary border border-black/10 dark:border-white/10 font-black text-base text-center text-text-primary focus:outline-none focus:border-accent"
-                />
+
+              {/* Height */}
+              <div className="p-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/10">
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-text-secondary">Altura</label>
+                  <span className="text-xs font-black text-emerald-400">{height} cm</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setHeight((h) => Math.max(120, Number(h) - 1))}
+                    className="w-9 h-9 rounded-lg bg-black/5 dark:bg-white/10 text-text-primary flex items-center justify-center active:scale-95 shrink-0"
+                  >
+                    <FaMinus className="text-[10px]" />
+                  </button>
+                  <input
+                    type="number"
+                    min="120"
+                    max="230"
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                    className="w-full py-1.5 rounded-lg bg-bg-primary border border-black/10 dark:border-white/15 text-center font-black text-base text-text-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setHeight((h) => Math.min(230, Number(h) + 1))}
+                    className="w-9 h-9 rounded-lg bg-black/5 dark:bg-white/10 text-text-primary flex items-center justify-center active:scale-95 shrink-0"
+                  >
+                    <FaPlus className="text-[10px]" />
+                  </button>
+                </div>
               </div>
-              <div>
-                <label className="block text-[11px] font-black uppercase text-text-secondary mb-1.5">
-                  Altura (cm)
-                </label>
-                <input
-                  type="number"
-                  min="120"
-                  max="230"
-                  value={height}
-                  onChange={(e) => setHeight(e.target.value)}
-                  className="w-full px-3 py-3 rounded-2xl bg-bg-primary border border-black/10 dark:border-white/10 font-black text-base text-center text-text-primary focus:outline-none focus:border-accent"
-                />
+
+              {/* Age */}
+              <div className="p-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/5 dark:border-white/10">
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-text-secondary">Edad</label>
+                  <span className="text-xs font-black text-emerald-400">{age} años</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setAge((a) => Math.max(14, Number(a) - 1))}
+                    className="w-9 h-9 rounded-lg bg-black/5 dark:bg-white/10 text-text-primary flex items-center justify-center active:scale-95 shrink-0"
+                  >
+                    <FaMinus className="text-[10px]" />
+                  </button>
+                  <input
+                    type="number"
+                    min="14"
+                    max="95"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    className="w-full py-1.5 rounded-lg bg-bg-primary border border-black/10 dark:border-white/15 text-center font-black text-base text-text-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setAge((a) => Math.min(95, Number(a) + 1))}
+                    className="w-9 h-9 rounded-lg bg-black/5 dark:bg-white/10 text-text-primary flex items-center justify-center active:scale-95 shrink-0"
+                  >
+                    <FaPlus className="text-[10px]" />
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* ACTIVITY */}
+            {/* Activity Level Pills + Select */}
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-text-secondary mb-2">
-                2. Nivel de Entrenamiento Semanal
+              <label className="block text-[11px] font-black uppercase tracking-wider text-text-secondary mb-2 flex items-center gap-1.5">
+                <FaPersonRunning className="text-emerald-400" />
+                <span>Nivel de Actividad Semanal</span>
               </label>
+              <div className="grid grid-cols-3 gap-1.5 mb-2">
+                {ACTIVITY_LEVELS.slice(1, 4).map((lvl) => (
+                  <button
+                    key={lvl.value}
+                    type="button"
+                    onClick={() => setActivity(lvl.value)}
+                    className={`py-1.5 px-2 rounded-xl text-[11px] font-extrabold transition-all truncate ${
+                      Number(activity) === lvl.value
+                        ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                        : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary border border-black/5 dark:border-white/10'
+                    }`}
+                  >
+                    {lvl.short}
+                  </button>
+                ))}
+              </div>
               <select
                 value={activity}
                 onChange={(e) => setActivity(Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-2xl bg-bg-primary border border-black/10 dark:border-white/10 font-bold text-xs sm:text-sm text-text-primary focus:outline-none focus:border-accent"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-bg-primary border border-black/10 dark:border-white/15 text-text-primary font-bold text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-accent"
               >
-                {ACTIVITY_LEVELS.map((act) => (
-                  <option key={act.value} value={act.value}>
-                    {act.label}
+                {ACTIVITY_LEVELS.map((lvl) => (
+                  <option key={lvl.value} value={lvl.value}>
+                    {lvl.label}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* GOAL */}
+            {/* Goal Selector */}
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-text-secondary mb-2">
-                3. Tu Objetivo Físico
+              <label className="block text-[11px] font-black uppercase tracking-wider text-text-secondary mb-2">
+                Tu Objetivo Físico
               </label>
               <div className="space-y-2">
                 {GOALS.map((g) => (
@@ -332,159 +474,222 @@ export default function MacroCalculatorPage({ onBack }) {
                     key={g.id}
                     type="button"
                     onClick={() => setGoalId(g.id)}
-                    className={`w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                    className={`w-full text-left p-3 sm:p-3.5 rounded-2xl border transition-all ${
                       goalId === g.id
-                        ? 'bg-accent/15 border-accent shadow-xs'
-                        : 'bg-bg-primary border-black/10 dark:border-white/10 hover:border-accent/40'
+                        ? 'bg-accent/15 border-accent ring-1 ring-accent/40'
+                        : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-black text-sm text-text-primary">{g.title}</span>
-                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/20 text-accent">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-black text-xs sm:text-sm text-text-primary">{g.title}</span>
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/20 text-accent shrink-0">
                         {g.badge}
                       </span>
                     </div>
-                    <p className="text-xs text-text-secondary mt-1">{g.desc}</p>
+                    <p className="text-[11px] text-text-secondary mt-1 leading-snug">{g.desc}</p>
                   </button>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* RIGHT: RESULTS */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* MAIN CALORIE TARGET */}
-            <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-accent/20 via-accent/5 to-transparent border border-accent/30">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <span className="text-xs font-black uppercase tracking-widest text-accent">
-                    Objetivo Diario Recomendado
+          {/* Right Panel: Calories & Macros Breakdown */}
+          <div className="lg:col-span-7 space-y-4 sm:space-y-6">
+            {/* Calories Hero Card */}
+            <div className="p-5 sm:p-7 rounded-[24px] sm:rounded-[28px] bg-gradient-to-br from-emerald-500/15 via-accent/10 to-transparent border border-emerald-500/30 backdrop-blur-xl shadow-xl">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center text-center sm:text-left">
+                <div className="sm:col-span-2">
+                  <span className="text-[11px] font-black uppercase tracking-widest text-emerald-400 block mb-1">
+                    Objetivo Diario Recomendado ({calc.goal.shortTitle})
                   </span>
-                  <div className="text-5xl sm:text-6xl font-black tracking-tight text-text-primary mt-1">
-                    {calc.targetCalories.toLocaleString()} <span className="text-2xl sm:text-3xl text-accent">kcal</span>
+                  <div className="text-4xl sm:text-5xl font-black tracking-tight text-text-primary">
+                    {calc.targetCalories.toLocaleString()} <span className="text-lg sm:text-xl font-bold text-emerald-400">kcal / día</span>
                   </div>
-                  <p className="text-xs text-text-secondary mt-1">{calc.selectedGoal.title}</p>
+                  <p className="text-xs text-text-secondary font-medium mt-1.5">
+                    Mantenimiento (TDEE): <strong>{calc.tdee} kcal</strong> · Metabolismo Basal (TMB): <strong>{calc.bmr} kcal</strong>
+                  </p>
                 </div>
+                <div className="p-3.5 rounded-2xl bg-black/10 dark:bg-white/5 border border-black/10 dark:border-white/10 text-center">
+                  <FaFireFlameCurved className="text-emerald-400 mx-auto mb-1 text-xl" />
+                  <span className="text-[10px] font-black uppercase text-text-tertiary block">Balance Energético</span>
+                  <span className="text-sm font-black text-text-primary">
+                    {calc.goal.calDelta === 0
+                      ? 'Normocalórica'
+                      : `${calc.goal.calDelta > 0 ? '+' : ''}${calc.goal.calDelta} kcal/día`}
+                  </span>
+                </div>
+              </div>
 
-                <div className="grid grid-cols-2 gap-3 bg-bg-primary/70 backdrop-blur-md p-3.5 rounded-2xl border border-black/5 dark:border-white/10 text-center">
-                  <div>
-                    <span className="block text-[10px] font-bold text-text-tertiary uppercase">Metabolismo Basal</span>
-                    <span className="text-sm sm:text-base font-black text-text-primary">{calc.bmr} kcal</span>
+              {/* Visual Macro Distribution Bar */}
+              <div className="mt-5 pt-4 border-t border-black/10 dark:border-white/10">
+                <div className="flex justify-between text-[11px] font-black mb-1.5">
+                  <span className="text-rose-400">Proteínas {calc.proteinPct}%</span>
+                  <span className="text-amber-400">Carbohidratos {calc.carbPct}%</span>
+                  <span className="text-sky-400">Grasas {calc.fatPct}%</span>
+                </div>
+                <div className="w-full h-3 rounded-full overflow-hidden flex bg-black/20">
+                  <div style={{ width: `${calc.proteinPct}%` }} className="bg-rose-500 h-full transition-all duration-300" />
+                  <div style={{ width: `${calc.carbPct}%` }} className="bg-amber-400 h-full transition-all duration-300" />
+                  <div style={{ width: `${calc.fatPct}%` }} className="bg-sky-400 h-full transition-all duration-300" />
+                </div>
+              </div>
+            </div>
+
+            {/* 3 Macro Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+              <div className="p-4 sm:p-5 rounded-[22px] bg-black/5 dark:bg-white/[0.04] border border-rose-500/30 flex sm:flex-col items-center sm:items-start justify-between gap-3">
+                <div className="flex items-center gap-2.5 sm:block">
+                  <div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center sm:mb-2 shrink-0">
+                    <FaDrumstickBite className="text-lg" />
                   </div>
-                  <div className="border-l border-black/10 dark:border-white/10 pl-3">
-                    <span className="block text-[10px] font-bold text-text-tertiary uppercase">Mantenimiento (TDEE)</span>
-                    <span className="text-sm sm:text-base font-black text-text-primary">{calc.tdee} kcal</span>
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-rose-400 block">
+                      Proteínas ({calc.proteinPct}%)
+                    </span>
+                    <span className="text-[11px] text-text-secondary sm:hidden">
+                      {calc.goal.proteinPerKg} g/kg · Construcción muscular
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right sm:text-left">
+                  <div className="text-2xl sm:text-3xl font-black text-text-primary">
+                    {calc.proteinGrams} <span className="text-sm font-bold text-text-tertiary">g</span>
+                  </div>
+                  <div className="text-[11px] font-bold text-text-secondary">
+                    {calc.proteinGrams * 4} kcal
                   </div>
                 </div>
               </div>
 
-              {/* MACROS CARDS */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-6 pt-6 border-t border-black/10 dark:border-white/10">
-                <div className="p-4 rounded-2xl bg-bg-primary/80 border border-emerald-500/30">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black uppercase text-emerald-500">Proteínas</span>
-                    <span className="text-[11px] font-bold text-text-tertiary">{calc.proteinG * 4} kcal</span>
+              <div className="p-4 sm:p-5 rounded-[22px] bg-black/5 dark:bg-white/[0.04] border border-amber-500/30 flex sm:flex-col items-center sm:items-start justify-between gap-3">
+                <div className="flex items-center gap-2.5 sm:block">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center sm:mb-2 shrink-0">
+                    <FaBowlRice className="text-lg" />
                   </div>
-                  <p className="text-3xl font-black text-text-primary mt-1">{calc.proteinG} g</p>
-                  <p className="text-[11px] text-text-secondary mt-1">Construcción y retención muscular</p>
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-amber-400 block">
+                      Carbohidratos ({calc.carbPct}%)
+                    </span>
+                    <span className="text-[11px] text-text-secondary sm:hidden">
+                      Glucógeno y rendimiento
+                    </span>
+                  </div>
                 </div>
-
-                <div className="p-4 rounded-2xl bg-bg-primary/80 border border-blue-500/30">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black uppercase text-blue-500">Carbohidratos</span>
-                    <span className="text-[11px] font-bold text-text-tertiary">{calc.carbsG * 4} kcal</span>
+                <div className="text-right sm:text-left">
+                  <div className="text-2xl sm:text-3xl font-black text-text-primary">
+                    {calc.carbGrams} <span className="text-sm font-bold text-text-tertiary">g</span>
                   </div>
-                  <p className="text-3xl font-black text-text-primary mt-1">{calc.carbsG} g</p>
-                  <p className="text-[11px] text-text-secondary mt-1">Energía y glucógeno para entrenar</p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-bg-primary/80 border border-amber-500/30">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black uppercase text-amber-500">Grasas Saludables</span>
-                    <span className="text-[11px] font-bold text-text-tertiary">{calc.fatG * 9} kcal</span>
+                  <div className="text-[11px] font-bold text-text-secondary">
+                    {calc.carbGrams * 4} kcal
                   </div>
-                  <p className="text-3xl font-black text-text-primary mt-1">{calc.fatG} g</p>
-                  <p className="text-[11px] text-text-secondary mt-1">Entorno hormonal y testosterona</p>
                 </div>
               </div>
 
-              {/* HYDRATION & CREATINE */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-3.5">
-                <div className="p-3.5 rounded-2xl bg-bg-primary/60 border border-black/5 dark:border-white/10 flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-cyan-500/15 text-cyan-500">
-                    <Droplets size={20} />
+              <div className="p-4 sm:p-5 rounded-[22px] bg-black/5 dark:bg-white/[0.04] border border-sky-500/30 flex sm:flex-col items-center sm:items-start justify-between gap-3">
+                <div className="flex items-center gap-2.5 sm:block">
+                  <div className="w-10 h-10 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center sm:mb-2 shrink-0">
+                    <FaSeedling className="text-lg" />
                   </div>
                   <div>
-                    <span className="text-[11px] font-bold text-text-tertiary uppercase block">Agua Diaria Mínima</span>
-                    <span className="text-lg font-black text-text-primary">{calc.waterLiters} Litros / día</span>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-sky-400 block">
+                      Grasas ({calc.fatPct}%)
+                    </span>
+                    <span className="text-[11px] text-text-secondary sm:hidden">
+                      {calc.goal.fatPerKg} g/kg · Salud hormonal
+                    </span>
                   </div>
                 </div>
-
-                <div className="p-3.5 rounded-2xl bg-bg-primary/60 border border-black/5 dark:border-white/10 flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-purple-500/15 text-purple-500">
-                    <Zap size={20} />
+                <div className="text-right sm:text-left">
+                  <div className="text-2xl sm:text-3xl font-black text-text-primary">
+                    {calc.fatGrams} <span className="text-sm font-bold text-text-tertiary">g</span>
                   </div>
-                  <div>
-                    <span className="text-[11px] font-bold text-text-tertiary uppercase block">Creatina Monohidrato</span>
-                    <span className="text-lg font-black text-text-primary">{calc.creatineG} g / día (0.08g/kg)</span>
+                  <div className="text-[11px] font-bold text-text-secondary">
+                    {calc.fatGrams * 9} kcal
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* CONVERSION CARD */}
-            <div className="p-6 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 space-y-4">
-              <div className="flex items-center gap-2 text-accent font-black text-xs uppercase tracking-wider">
-                <Sparkles size={15} />
-                <span>Registra tus macros en 5 segundos con IA</span>
+            {/* Water & Creatine Recommendations */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+              <div className="p-4 rounded-2xl bg-black/5 dark:bg-white/[0.03] border border-black/10 dark:border-white/10 flex items-center gap-3.5">
+                <div className="p-3 rounded-xl bg-blue-500/15 text-blue-400 shrink-0">
+                  <FaGlassWater className="text-xl" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-black uppercase tracking-wider text-blue-400 block">
+                    Hidratación Diaria Óptima
+                  </span>
+                  <div className="text-xl font-black text-text-primary">{calc.waterLiters} Litros / día</div>
+                  <p className="text-[11px] text-text-secondary">Clave para el rendimiento muscular y celular</p>
+                </div>
               </div>
-              <h3 className="text-lg sm:text-xl font-black text-text-primary">
-                Lleva el control de estas {calc.targetCalories} kcal gratis en Pro Fitness Glass
-              </h3>
-              <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
-                En lugar de pesar cada ingrediente y buscar en tablas interminables, describe tu plato con voz o texto a nuestra <strong>Inteligencia Artificial</strong> o escanea el <strong>código de barras</strong> del producto.
-              </p>
+
+              <div className="p-4 rounded-2xl bg-black/5 dark:bg-white/[0.03] border border-black/10 dark:border-white/10 flex items-center gap-3.5">
+                <div className="p-3 rounded-xl bg-purple-500/15 text-purple-400 shrink-0">
+                  <FaFlask className="text-xl" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-black uppercase tracking-wider text-purple-400 block">
+                    Dosis de Creatina Monohidrato
+                  </span>
+                  <div className="text-xl font-black text-text-primary">{calc.creatineGrams} g / día</div>
+                  <p className="text-[11px] text-text-secondary">Fórmula clínica (~0.07 g por kg de peso)</p>
+                </div>
+              </div>
+            </div>
+
+            {/* CTA to AI Nutrition Tracker */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-accent/15 to-blue-500/15 border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-center sm:text-left">
+                <h3 className="font-black text-text-primary text-sm sm:text-base flex items-center justify-center sm:justify-start gap-2">
+                  <FaHeartPulse className="text-emerald-400 shrink-0" />
+                  <span>¿Cansado de pesar cada alimento a mano?</span>
+                </h3>
+                <p className="text-xs text-text-secondary font-medium mt-1">
+                  En <strong>Pro Fitness Glass</strong> puedes describir tu plato o escanear el código de barras y la IA calcula tus calorías y macros al segundo.
+                </p>
+              </div>
               <button
                 onClick={() => navigate(isAuthenticated ? '/nutrition' : '/register')}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-accent text-accent-contrast font-black text-sm shadow-lg shadow-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                className="w-full sm:w-auto shrink-0 px-5 py-3 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/25 hover:scale-105 active:scale-95 transition-all"
               >
-                <span>Empezar Mi Diario Nutricional Gratis</span>
-                <ArrowRight size={16} />
+                {isAuthenticated ? 'Abrir Mi Nutrición' : 'Controlar Mis Macros Gratis'}
               </button>
             </div>
           </div>
         </section>
 
-        {/* SEO EDUCATIONAL CONTENT */}
-        <article className="space-y-8 max-w-4xl mx-auto pt-6 border-t border-black/10 dark:border-white/10">
-          <div className="space-y-3">
-            <h2 className="text-2xl sm:text-3xl font-black text-text-primary">
-              Cómo calcular tus calorías y macronutrientes para el gimnasio
+        {/* SEO Content Section */}
+        <article className="space-y-6 max-w-4xl mx-auto">
+          <div className="p-5 sm:p-8 rounded-[24px] sm:rounded-[28px] bg-black/5 dark:bg-white/[0.03] border border-black/10 dark:border-white/10 space-y-4">
+            <h2 className="text-xl sm:text-2xl font-black text-text-primary flex items-center gap-2.5">
+              <FaCircleQuestion className="text-emerald-400 shrink-0" />
+              <span>¿Cómo repartir tus Macronutrientes para Hipertrofia o Definición?</span>
             </h2>
             <p className="text-sm sm:text-base text-text-secondary leading-relaxed">
-              Nuestra calculadora utiliza la ecuación científica de <strong>Mifflin-St Jeor</strong>, demostrada en estudios clínicos como la más exacta para estimar la <strong>Tasa Metabólica Basal (TMB)</strong> en personas que entrenan fuerza e hipertrofia. Al multiplicarla por tu factor de actividad semanal obtenemos tu <strong>Gasto Energético Diario Total (TDEE)</strong>.
+              Tanto si tu objetivo en el gimnasio es <strong>perder grasa corporal (definición)</strong> como <strong>ganar masa muscular (volumen limpio)</strong>, el factor determinante es el balance energético (TDEE) unido a una ingesta adecuada de proteínas:
             </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-2">
-              <h3 className="font-bold text-text-primary text-base">1. Proteína: Tu Seguro Muscular</h3>
-              <p className="text-xs text-text-secondary leading-relaxed">
-                En etapa de <strong>definición o déficit calórico</strong>, elevar la proteína a <strong>2.0 - 2.2 g/kg</strong> evita el catabolismo muscular y aumenta la saciedad. En volumen, <strong>1.8 g/kg</strong> es suficiente para maximizar la síntesis proteica.
-              </p>
-            </div>
-            <div className="p-5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-2">
-              <h3 className="font-bold text-text-primary text-base">2. Grasas y Entorno Hormonal</h3>
-              <p className="text-xs text-text-secondary leading-relaxed">
-                Nunca bajes de <strong>0.8 g de grasa por kilo de peso</strong>. Los lípidos saludables (aguacate, AOVE, huevos, frutos secos, omega 3) son indispensables para la producción natural de testosterona y estrógenos.
-              </p>
-            </div>
-            <div className="p-5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-2">
-              <h3 className="font-bold text-text-primary text-base">3. Carbohidratos para Rendir</h3>
-              <p className="text-xs text-text-secondary leading-relaxed">
-                El resto de tus calorías se asigna a los hidratos de carbono, el combustible principal para recargar el <strong>glucógeno muscular</strong> y levantar más peso en tus entrenamientos de gimnasio.
-              </p>
-            </div>
+            <ul className="space-y-2.5 text-xs sm:text-sm text-text-secondary">
+              <li className="flex items-start gap-2.5">
+                <span className="text-rose-400 font-black">1.</span>
+                <span>
+                  <strong className="text-text-primary">Proteínas (1.8 a 2.2 g/kg):</strong> Son los ladrillos estructurales de tus fibras musculares. En etapa de definición, mantener la proteína alta en 2.1 g/kg evita que pierdas músculo mientras bajas de peso.
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-sky-400 font-black">2.</span>
+                <span>
+                  <strong className="text-text-primary">Grasas esenciales (0.8 a 1.0 g/kg):</strong> Imprescindibles para la producción hormonal (testosterona, estrógenos) y la absorción de vitaminas liposolubles (A, D, E, K).
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="text-amber-400 font-black">3.</span>
+                <span>
+                  <strong className="text-text-primary">Carbohidratos (Resto de tus calorías):</strong> Son el combustible principal para tus series pesadas en el gimnasio, recargando el glucógeno muscular y favoreciendo la recuperación.
+                </span>
+              </li>
+            </ul>
           </div>
         </article>
       </main>
