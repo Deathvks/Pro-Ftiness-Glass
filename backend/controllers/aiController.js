@@ -4,6 +4,21 @@ import { getTrainerAdvice } from '../services/aiService.js';
 
 const DAILY_LIMIT = 5;
 
+// Cooldown anti-spam por usuario: impide que un usuario consuma sus 5 preguntas en ráfaga (protege el límite de 15 RPM)
+const userLastRequestTimes = new Map();
+const USER_COOLDOWN_MS = 10000; // 10 segundos de espera entre preguntas sucesivas
+const FOOD_COOLDOWN_MS = 8000;  // 8 segundos entre escaneos de alimentos
+const MAX_PROMPT_LENGTH = 15000; // Máximo para prevenir abusos de tokens
+
+const cleanupOldCooldowns = () => {
+  if (userLastRequestTimes.size > 2000) {
+    const threshold = Date.now() - 60000;
+    for (const [key, timestamp] of userLastRequestTimes.entries()) {
+      if (timestamp < threshold) userLastRequestTimes.delete(key);
+    }
+  }
+};
+
 export const askAI = async (req, res) => {
   try {
     const { prompt, context } = req.body;
@@ -11,13 +26,38 @@ export const askAI = async (req, res) => {
     // Dependiendo de cómo se firme el JWT, puede ser id o userId
     const userId = req.user?.id || req.user?.userId; 
 
-    if (!prompt) return res.status(400).json({ error: 'El prompt es requerido.' });
+    if (!prompt || typeof prompt !== 'string' || !prompt.trim()) {
+      return res.status(400).json({ error: 'El prompt es requerido.' });
+    }
     if (!userId) return res.status(401).json({ error: 'Token inválido o sin ID.' });
 
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
 
     const isAdmin = req.user?.role === 'admin' || user.role === 'admin';
+
+    // 1. Filtro de longitud de prompt (evita que se peguen textos gigantescos que agoten tokens)
+    if (prompt.trim().length < 3) {
+      return res.status(400).json({ error: 'La pregunta es demasiado corta. Sé un poco más específico con tu duda.' });
+    }
+    if (prompt.length > MAX_PROMPT_LENGTH && !isAdmin) {
+      return res.status(400).json({ error: 'La consulta es demasiado larga. Por favor sé más conciso con tu duda.' });
+    }
+
+    // 2. Cooldown anti-ráfaga por usuario (exento para admin)
+    // Garantiza que ningún usuario lance 5 preguntas en 5 segundos y sature las 15 RPM
+    if (!isAdmin) {
+      const now = Date.now();
+      const lastRequestTime = userLastRequestTimes.get(`ask_${userId}`) || 0;
+      const elapsed = now - lastRequestTime;
+      if (elapsed < USER_COOLDOWN_MS) {
+        const waitSeconds = Math.ceil((USER_COOLDOWN_MS - elapsed) / 1000);
+        return res.status(429).json({ 
+          error: `Por favor espera ${waitSeconds} segundo${waitSeconds > 1 ? 's' : ''} antes de realizar otra consulta a la IA para que el entrenador procese tu respuesta.`,
+          retryAfter: waitSeconds
+        });
+      }
+    }
 
     // Extraer la fecha de hoy basándonos de forma estricta en la zona horaria del usuario
     const tz = user.timezone || 'Europe/Madrid';
@@ -47,8 +87,14 @@ export const askAI = async (req, res) => {
       }
     }
 
-    // Llamada con modelo adaptativo: Gemini 3.5 Flash para admin, Gemini 3.5 Flash Lite para usuarios
+    // Llamada con modelo adaptativo: Gemini 3.6 Flash para admin, Gemini 3.5 Flash Lite para usuarios
     const advice = await getTrainerAdvice(prompt, context || '', { isAdmin });
+
+    // Registramos la marca de tiempo de este usuario para activar su cooldown de 10s
+    if (!isAdmin) {
+      userLastRequestTimes.set(`ask_${userId}`, Date.now());
+      cleanupOldCooldowns();
+    }
 
     // Verificamos si la respuesta de la IA es un rechazo por prompt inválido
     let isErrorResponse = false;
@@ -92,7 +138,7 @@ export const askAI = async (req, res) => {
   } catch (error) {
     console.error('Error en askAI:', error);
     if (error.message && error.message.includes('Límite de IA alcanzado')) {
-        return res.status(503).json({ error: 'El servidor de IA está temporalmente saturado. Por favor intenta en unos minutos.' });
+        return res.status(503).json({ error: 'El entrenador IA está atendiendo a varios alumnos en este momento. Por favor espera unos segundos y vuelve a intentarlo.' });
     }
     res.status(500).json({ error: 'Error al consultar la IA.' });
   }
@@ -116,8 +162,27 @@ export const scanFood = async (req, res) => {
       if (user?.role === 'admin') isAdmin = true;
     }
 
+    // Cooldown para escáner de fotos (8 segundos entre fotos)
+    if (!isAdmin) {
+      const now = Date.now();
+      const lastFoodTime = userLastRequestTimes.get(`food_${userId}`) || 0;
+      const elapsed = now - lastFoodTime;
+      if (elapsed < FOOD_COOLDOWN_MS) {
+        const waitSeconds = Math.ceil((FOOD_COOLDOWN_MS - elapsed) / 1000);
+        return res.status(429).json({
+          error: `Espera ${waitSeconds} segundo(s) antes de escanear otro plato.`,
+          retryAfter: waitSeconds
+        });
+      }
+    }
+
     const { analyzeFoodImage } = await import('../services/aiService.js');
     const foodData = await analyzeFoodImage(imageBase64, mimeType, { isAdmin });
+
+    if (!isAdmin) {
+      userLastRequestTimes.set(`food_${userId}`, Date.now());
+      cleanupOldCooldowns();
+    }
 
     return res.json({ success: true, data: foodData, isAdmin });
   } catch (error) {

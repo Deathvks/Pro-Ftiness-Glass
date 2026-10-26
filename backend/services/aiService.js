@@ -15,8 +15,8 @@ const getGenAI = () => {
   return new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 };
 
-// Límites de seguridad para usuarios regulares (por debajo del límite de 500 RPD / 15 RPM de Gemini 3.5 Flash Lite)
-const LIMITS = { RPM: 15, RPD: 450, TPM: 250000 };
+// Límites de seguridad para usuarios regulares (colchón de seguridad de 12 RPM frente a las 15 RPM de Google)
+const LIMITS = { RPM: 12, RPD: 450, TPM: 240000 };
 
 // Estado actual (se reinicia si el servidor se reinicia)
 let usage = { reqMinute: 0, reqDay: 0, tokensMinute: 0 };
