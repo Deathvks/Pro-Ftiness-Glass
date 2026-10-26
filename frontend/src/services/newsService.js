@@ -18,9 +18,9 @@ export const getCachedArticle = (slug) => {
     return articleMemoryCache.get(slug);
   }
 
-  // 2. SessionStorage
+  // 2. LocalStorage y SessionStorage (persistente ante recargas y actualizaciones)
   try {
-    const raw = sessionStorage.getItem(`pfg_art_${slug}`);
+    const raw = localStorage.getItem('pfg_art_' + slug) || sessionStorage.getItem('pfg_art_' + slug);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.article) {
@@ -28,9 +28,7 @@ export const getCachedArticle = (slug) => {
         return parsed;
       }
     }
-  } catch {
-    // sessionStorage inaccesible o lleno
-  }
+  } catch {}
 
   // 3. Fallback a cachedNews.json para mostrar inmediatamente cabecera y metadatos
   const localMatch = Array.isArray(cachedNewsList)
@@ -38,12 +36,13 @@ export const getCachedArticle = (slug) => {
     : null;
 
   if (localMatch) {
+    const hasFullContent = Boolean(localMatch.content && localMatch.content.length > 50);
     return {
       article: localMatch,
       relatedNews: [],
       nextArticle: null,
       prevArticle: null,
-      isPartial: true
+      isPartial: !hasFullContent
     };
   }
 
@@ -150,7 +149,7 @@ export const getCachedPublicNews = ({ page = 1, limit = 6, category = '', search
     return publicListMemoryCache.get(cacheKey);
   }
   try {
-    const raw = sessionStorage.getItem(`pfg_news_list_${cacheKey}`);
+    const raw = localStorage.getItem(`pfg_news_list_${cacheKey}`) || sessionStorage.getItem(`pfg_news_list_${cacheKey}`);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.news) && parsed.news.length > 0) {
@@ -272,6 +271,7 @@ export const fetchNewsBySlug = async (slug, { bypassCache = false } = {}) => {
       if (data && data.article) {
         articleMemoryCache.set(slug, data);
         try {
+          localStorage.setItem(`pfg_art_${slug}`, JSON.stringify(data));
           sessionStorage.setItem(`pfg_art_${slug}`, JSON.stringify(data));
         } catch {
           // sessionStorage bloqueado o lleno

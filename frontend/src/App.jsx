@@ -159,7 +159,7 @@ export const preloadViewChunk = (viewId) => {
 
 export const preloadAllPrimaryViews = () => {
   if (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData) return;
-  const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub', 'publicProfile', 'profile', 'noticias'];
+  const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub', 'publicProfile', 'profile', 'noticias', 'noticiaDetalle'];
   const user = useAppStore.getState().userProfile;
   if (user?.role === 'admin' || user?.role === 'trainer') {
     primaryNavViews.push('adminPanel');

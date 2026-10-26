@@ -32,15 +32,26 @@ import AdminNewsTracker from './AdminNewsTracker';
 
 const DEFAULT_CATEGORIES = ['Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
 
+// Fast Cache for Admin News
 let cachedAdminNews = null;
 let cachedAdminNewsTotal = 0;
+try {
+  const saved = localStorage.getItem('pfg_admin_news');
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    if (Array.isArray(parsed.news)) {
+      cachedAdminNews = parsed.news;
+      cachedAdminNewsTotal = parsed.total || parsed.news.length;
+    }
+  }
+} catch (e) {}
 
 export default function AdminNewsManager() {
   const { addToast } = useToast();
 
   const [articles, setArticles] = useState(() => cachedAdminNews || []);
   const [total, setTotal] = useState(() => cachedAdminNewsTotal);
-  const [isLoading, setIsLoading] = useState(() => !cachedAdminNews);
+  const [isLoading, setIsLoading] = useState(() => !cachedAdminNews || cachedAdminNews.length === 0);
 
   // Modos de vista: 'list' | 'editor' | 'ai' | 'automation'
   const [viewMode, setViewMode] = useState('list');
@@ -79,9 +90,11 @@ export default function AdminNewsManager() {
   const [articleToDelete, setArticleToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const loadArticles = async () => {
-    setIsLoading(true);
+    const loadArticles = async () => {
     try {
+      if (!cachedAdminNews || cachedAdminNews.length === 0) {
+        setIsLoading(true);
+      }
       const data = await newsService.fetchAdminNews();
       const safe = Array.isArray(data?.news) ? data.news : [];
       const safeTotal = data?.total || (Array.isArray(data?.news) ? data.news.length : 0);
@@ -89,9 +102,14 @@ export default function AdminNewsManager() {
       cachedAdminNewsTotal = safeTotal;
       setArticles(safe);
       setTotal(safeTotal);
+      try {
+        localStorage.setItem('pfg_admin_news', JSON.stringify({ news: safe, total: safeTotal }));
+      } catch (e) {}
     } catch (err) {
-      setArticles([]);
-      addToast(err.message || 'Error al cargar noticias', 'error');
+      if (!cachedAdminNews || cachedAdminNews.length === 0) {
+        setArticles([]);
+        addToast(err.message || 'Error al cargar noticias', 'error');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -118,7 +136,27 @@ export default function AdminNewsManager() {
     setViewMode('editor');
   };
 
-  const handleOpenEdit = async (art) => {
+    const handleOpenEdit = async (art) => {
+    // 1. Mostrar de inmediato si ya lo tenemos en caché
+    const cached = newsService.getCachedArticle(art.slug);
+    if (cached?.article?.content) {
+      setEditingArticle(cached.article);
+      const artCat = cached.article.category || 'Entrenamiento';
+      setIsCustomCategory(!DEFAULT_CATEGORIES.includes(artCat) && !availableCategories.includes(artCat));
+      setFormData({
+        title: cached.article.title || '',
+        slug: cached.article.slug || '',
+        summary: cached.article.summary || '',
+        content: cached.article.content || '',
+        category: artCat,
+        tags: cached.article.tags || '',
+        image_url: cached.article.image_url || '',
+        reading_time: cached.article.reading_time || 5,
+        is_published: cached.article.is_published !== false
+      });
+      setViewMode('editor');
+    }
+
     try {
       const full = await newsService.fetchNewsBySlug(art.slug);
       setEditingArticle(full.article);
@@ -137,7 +175,9 @@ export default function AdminNewsManager() {
       });
       setViewMode('editor');
     } catch (err) {
-      addToast('Error al obtener datos del artículo', 'error');
+      if (!cached?.article?.content) {
+        addToast('Error al obtener datos del artículo', 'error');
+      }
     }
   };
 
@@ -168,14 +208,21 @@ export default function AdminNewsManager() {
       return;
     }
 
-    setIsSaving(true);
+        setIsSaving(true);
     try {
       if (editingArticle?.id) {
-        await newsService.updateNews(editingArticle.id, formData);
+        const updated = await newsService.updateNews(editingArticle.id, formData);
         addToast('Artículo actualizado con éxito', 'success');
+        if (updated?.article) {
+          setArticles(prev => prev.map(a => a.id === updated.article.id ? updated.article : a));
+        }
       } else {
-        await newsService.createNews(formData);
+        const created = await newsService.createNews(formData);
         addToast('Artículo publicado con éxito', 'success');
+        if (created?.article) {
+          setArticles(prev => [created.article, ...prev]);
+          setTotal(prev => prev + 1);
+        }
       }
       setViewMode('list');
       loadArticles();
@@ -353,7 +400,7 @@ export default function AdminNewsManager() {
       {/* VISTA: LISTADO */}
       {viewMode === 'list' && (
         <div className="space-y-4">
-          {isLoading ? (
+          {isLoading && (!articles || articles.length === 0) ? (
             <div className="py-16 flex flex-col items-center justify-center gap-3">
               <Spinner size={36} />
               <p className="text-xs text-text-tertiary">Cargando noticias...</p>

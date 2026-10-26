@@ -50,7 +50,7 @@ try {
     localStorage.removeItem('pfg_auto_reloaded_version');
     localStorage.removeItem('pfg_crash_loop_count');
     localStorage.removeItem('profitness_insights_expanded');
-    localStorage.removeItem('pfg_cached_initial_state_v1');
+    // Retenemos pfg_cached_initial_state_v1 para apertura instantánea (0ms) en actualizaciones
 
     // En todas las plataformas (web y nativo), purgar caché obsoleta de lectura de API en actualización
     if ('caches' in window) {
