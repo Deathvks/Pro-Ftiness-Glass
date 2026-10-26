@@ -2,6 +2,7 @@ import models from '../models/index.js';
 const { SecurityLog, IpBlacklist } = models;
 import { Op } from 'sequelize';
 import sequelize from '../db.js';
+import { getClientIp } from '../middleware/securityMonitor.js';
 
 export const getSecurityStats = async (req, res) => {
   try {
@@ -21,17 +22,50 @@ export const getSecurityStats = async (req, res) => {
       }
     }).catch(err => console.warn('[Security] Error en limpieza en segundo plano:', err.message));
 
-    // Ejecutar consultas en paralelo con Promise.all para máxima velocidad
+    // Consultas en paralelo para máximo rendimiento
     const [
       totalLogs,
-      blockedIps,
+      activeBlacklistTotal,
+      blockedIpsInRange,
+      blacklistCreatedInRange,
+      blockedAttempts,
       failedLogins,
       successfulLogins,
       autoBans,
       chartDataRaw
     ] = await Promise.all([
       SecurityLog.count({ where: { createdAt: { [Op.gte]: startDate } } }),
-      IpBlacklist.count(),
+      // Total de IPs activas actualmente en la lista negra
+      IpBlacklist.count({
+        where: {
+          [Op.or]: [
+            { expiresAt: null },
+            { expiresAt: { [Op.gt]: new Date() } }
+          ]
+        }
+      }),
+      // IPs únicas bloqueadas o interceptadas con actividad en el período seleccionado
+      SecurityLog.count({
+        distinct: true,
+        col: 'ipAddress',
+        where: {
+          eventType: { [Op.in]: ['BLOCKED_ACCESS_ATTEMPT', 'AUTO_BAN', 'AUTO_BAN_SNIFFING', 'ADMIN_MANUAL_BLOCK'] },
+          createdAt: { [Op.gte]: startDate }
+        }
+      }),
+      // IPs añadidas a la lista negra en el período
+      IpBlacklist.count({
+        where: {
+          createdAt: { [Op.gte]: startDate }
+        }
+      }),
+      // Cantidad total de intentos de accesos bloqueados en el rango seleccionado
+      SecurityLog.count({
+        where: {
+          eventType: { [Op.in]: ['BLOCKED_ACCESS_ATTEMPT', 'AUTO_BAN_SNIFFING'] },
+          createdAt: { [Op.gte]: startDate }
+        }
+      }),
       SecurityLog.count({
         where: { eventType: 'LOGIN_FAILED', createdAt: { [Op.gte]: startDate } }
       }),
@@ -39,7 +73,10 @@ export const getSecurityStats = async (req, res) => {
         where: { eventType: { [Op.in]: ['LOGIN_SUCCESS', 'REGISTER_SUCCESS'] }, createdAt: { [Op.gte]: startDate } }
       }),
       SecurityLog.count({
-        where: { eventType: 'AUTO_BAN', createdAt: { [Op.gte]: startDate } }
+        where: {
+          eventType: { [Op.in]: ['AUTO_BAN', 'AUTO_BAN_SNIFFING'] },
+          createdAt: { [Op.gte]: startDate }
+        }
       }),
       SecurityLog.findAll({
         attributes: [
@@ -58,7 +95,6 @@ export const getSecurityStats = async (req, res) => {
 
     // Procesar datos para Recharts: [{ date: '2023-10-01', success: 15, failure: 2 }]
     const chartMap = {};
-    // Rellenar días vacíos
     for (let i = 0; i < days; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
@@ -81,9 +117,14 @@ export const getSecurityStats = async (req, res) => {
     // Ordenar cronológicamente
     const chartData = Object.values(chartMap).sort((a, b) => new Date(a.date) - new Date(b.date));
 
+    // Cantidad dinámica de IPs bloqueadas para el rango seleccionado
+    const blockedIps = Math.max(blockedIpsInRange, blacklistCreatedInRange);
+
     res.json({
       totalLogs,
       blockedIps,
+      totalBlockedIps: activeBlacklistTotal,
+      blockedAttempts,
       failedLogins,
       successfulLogins,
       autoBans,
@@ -97,7 +138,7 @@ export const getSecurityStats = async (req, res) => {
 
 export const getLogs = async (req, res) => {
   try {
-    const { limit = 50, offset = 0, range = 30, type = 'ALL' } = req.query;
+    const { limit = 100, offset = 0, range = 30, type = 'ALL' } = req.query;
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - parseInt(range, 10));
     
@@ -112,8 +153,8 @@ export const getLogs = async (req, res) => {
     const logs = await SecurityLog.findAll({
       where: whereClause,
       order: [['createdAt', 'DESC']],
-      limit: parseInt(limit),
-      offset: parseInt(offset)
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10)
     });
     res.json(logs);
   } catch (error) {
@@ -136,20 +177,23 @@ export const getBlacklist = async (req, res) => {
 
 export const blockIp = async (req, res) => {
   try {
-    const { ipAddress, reason } = req.body;
+    let { ipAddress, reason } = req.body;
     if (!ipAddress) return res.status(400).json({ error: 'IP requerida' });
+    ipAddress = ipAddress.split(',')[0].trim();
 
     await IpBlacklist.findOrCreate({
       where: { ipAddress },
       defaults: { reason: reason || 'Bloqueo manual por admin', expiresAt: null }
     });
 
+    const clientIp = getClientIp(req);
+
     // Registrar acción
     await SecurityLog.create({
       eventType: 'ADMIN_MANUAL_BLOCK',
-      ipAddress: req.headers['x-forwarded-for'] || req.socket.remoteAddress,
-      userId: req.user.id, // req.user debe ser seteado por middleware auth
-      userAgent: req.headers['user-agent'],
+      ipAddress: clientIp,
+      userId: req.user?.id || null,
+      userAgent: req.headers['user-agent'] || 'Unknown',
       details: `Admin bloqueó la IP: ${ipAddress}`
     });
 
@@ -162,15 +206,18 @@ export const blockIp = async (req, res) => {
 
 export const unblockIp = async (req, res) => {
   try {
-    const { ip } = req.params;
+    let { ip } = req.params;
+    ip = ip.split(',')[0].trim();
     await IpBlacklist.destroy({ where: { ipAddress: ip } });
     
+    const clientIp = getClientIp(req);
+
     // Registrar acción
     await SecurityLog.create({
       eventType: 'ADMIN_MANUAL_UNBLOCK',
-      ipAddress: req.headers['x-forwarded-for'] || req.socket.remoteAddress,
-      userId: req.user.id,
-      userAgent: req.headers['user-agent'],
+      ipAddress: clientIp,
+      userId: req.user?.id || null,
+      userAgent: req.headers['user-agent'] || 'Unknown',
       details: `Admin desbloqueó la IP: ${ip}`
     });
 

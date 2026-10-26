@@ -1,4 +1,4 @@
 {
-  "version": "7.10.38",
-  "releaseNotes": "Actualización v7.10.38: Corrección integral de carga en Panel Admin y Asesoría: ampliación de timeouts a 25s, eliminación de bloqueo prematuro de 7s, exclusión total de endpoints de chat y admin del service worker, reintentos en memoria y botón de reintento directo."
+  "version": "7.10.39",
+  "releaseNotes": "Actualización v7.10.39: Corrección de Ciberseguridad: el contador de IPs bloqueadas ahora responde dinámicamente al filtrado por período, normalización universal de IP tras proxies inversos, soporte completo de auto-bans por sniffing e inclusión de métrica de accesos bloqueados."
 }

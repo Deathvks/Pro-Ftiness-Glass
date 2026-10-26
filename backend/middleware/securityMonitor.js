@@ -2,10 +2,20 @@ import models from '../models/index.js';
 const { SecurityLog, IpBlacklist } = models;
 import { Op } from 'sequelize';
 
+// Helper universal para extraer la IP limpia del cliente (evita listas proxy y espacios)
+export const getClientIp = (req) => {
+  if (!req) return '127.0.0.1';
+  const forwarded = req.headers && req.headers['x-forwarded-for'];
+  if (forwarded && typeof forwarded === 'string') {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.ip || req.socket?.remoteAddress || '127.0.0.1';
+};
+
 // Middleware global para bloquear IPs en lista negra
 export const checkBlacklist = async (req, res, next) => {
   try {
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const ip = getClientIp(req);
     
     if (!ip) return next();
 
@@ -22,7 +32,7 @@ export const checkBlacklist = async (req, res, next) => {
     if (blocked) {
       // Registramos que intentó entrar estando bloqueado
       console.log(`[SECURITY LOG] Intento de acceso de IP bloqueada: ${ip}`);
-    await SecurityLog.create({
+      await SecurityLog.create({
         eventType: 'BLOCKED_ACCESS_ATTEMPT',
         ipAddress: ip,
         userAgent: req.headers['user-agent'] || 'Unknown',
@@ -44,11 +54,17 @@ export const logSecurityEvent = async ({ eventType, ipAddress, userId, userAgent
     let country = null;
     let city = null;
 
-    // Obtener geolocalización de la IP (ignoramos localhost)
-    if (ipAddress && ipAddress !== '127.0.0.1' && ipAddress !== '::1' && !ipAddress.startsWith('192.168.')) {
+    let cleanIp = ipAddress;
+    if (cleanIp && typeof cleanIp === 'string' && cleanIp.includes(',')) {
+      cleanIp = cleanIp.split(',')[0].trim();
+    }
+    const targetIp = cleanIp || '127.0.0.1';
+
+    // Obtener geolocalización de la IP (ignoramos localhost y rangos privados)
+    if (targetIp && targetIp !== '127.0.0.1' && targetIp !== '::1' && !targetIp.startsWith('192.168.') && !targetIp.startsWith('10.') && !targetIp.startsWith('172.16.')) {
       try {
         // ip-api.com es gratuito para uso no comercial (límite 45 req/min)
-        const response = await fetch(`http://ip-api.com/json/${ipAddress}`);
+        const response = await fetch(`http://ip-api.com/json/${targetIp}`);
         if (response.ok) {
           const data = await response.json();
           if (data.status === 'success') {
@@ -61,10 +77,10 @@ export const logSecurityEvent = async ({ eventType, ipAddress, userId, userAgent
       }
     }
 
-    console.log(`[SECURITY LOG] Registrando evento: ${eventType} para el usuario: ${userId}, IP: ${ipAddress}`);
+    console.log(`[SECURITY LOG] Registrando evento: ${eventType} para el usuario: ${userId}, IP: ${targetIp}`);
     await SecurityLog.create({
       eventType,
-      ipAddress,
+      ipAddress: targetIp,
       userId,
       userAgent,
       details,
@@ -77,7 +93,7 @@ export const logSecurityEvent = async ({ eventType, ipAddress, userId, userAgent
       const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
       const failedCount = await SecurityLog.count({
         where: {
-          ipAddress,
+          ipAddress: targetIp,
           eventType: 'LOGIN_FAILED',
           createdAt: { [Op.gt]: oneMinuteAgo }
         }
@@ -88,17 +104,17 @@ export const logSecurityEvent = async ({ eventType, ipAddress, userId, userAgent
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
         
         await IpBlacklist.findOrCreate({
-          where: { ipAddress },
+          where: { ipAddress: targetIp },
           defaults: {
             reason: 'Autobloqueo: Múltiples intentos de inicio de sesión fallidos (Fuerza Bruta)',
             expiresAt
           }
         });
 
-        console.log(`[SECURITY LOG] Registrando evento: ${eventType} para el usuario: ${userId}, IP: ${ipAddress}`);
-    await SecurityLog.create({
+        console.log(`[SECURITY LOG] Auto-banning IP por fuerza bruta: ${targetIp}`);
+        await SecurityLog.create({
           eventType: 'AUTO_BAN',
-          ipAddress,
+          ipAddress: targetIp,
           userId: null,
           userAgent: 'SYSTEM',
           details: `IP bloqueada automáticamente tras ${failedCount} intentos fallidos en menos de 1 minuto.`,
@@ -127,7 +143,7 @@ export const sniffingDetector = async (req, res, next) => {
   const isSensitive = sensitivePaths.some(path => url.includes(path));
 
   if (isSensitive) {
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const ip = getClientIp(req);
     if (!ip) return res.status(403).end();
     
     // Auto-ban IP permanently

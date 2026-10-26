@@ -1,17 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ShieldCheck, 
-  ShieldAlert, 
-  Hand, 
-  List, 
-  Lock,
-  Unlock,
-  AlertCircle,
-  CheckCircle,
-  Globe,
-  Filter
-} from 'lucide-react';
-import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts';
 import apiClient from '../services/apiClient';
@@ -24,6 +12,8 @@ const SecurityDashboard = ({ onBack }) => {
   const [stats, setStats] = useState(() => cachedSecurityStats || { 
     totalLogs: 0, 
     blockedIps: 0, 
+    totalBlockedIps: 0,
+    blockedAttempts: 0,
     failedLogins: 0, 
     successfulLogins: 0, 
     autoBans: 0, 
@@ -51,18 +41,32 @@ const SecurityDashboard = ({ onBack }) => {
 
       const [statsRes, logsRes, blacklistRes] = await Promise.all([
         apiClient("/admin/security/stats?range=" + timeRange),
-        activeTab !== 'blacklist' ? apiClient("/admin/security/logs?limit=50&range=" + timeRange + "&type=" + logType) : Promise.resolve([]),
-        activeTab === 'blacklist' ? apiClient('/admin/security/blacklist') : Promise.resolve([])
+        activeTab !== 'blacklist' ? apiClient("/admin/security/logs?limit=100&range=" + timeRange + "&type=" + logType) : Promise.resolve([]),
+        apiClient('/admin/security/blacklist')
       ]);
       
-      cachedSecurityStats = statsRes || { totalEvents: 0, failedLogins: 0, criticalAlerts: 0, blockedIps: 0, chartData: [] };
+      cachedSecurityStats = statsRes || { 
+        totalLogs: 0, 
+        failedLogins: 0, 
+        successfulLogins: 0, 
+        autoBans: 0, 
+        blockedIps: 0, 
+        totalBlockedIps: 0, 
+        blockedAttempts: 0, 
+        chartData: [] 
+      };
       setStats(cachedSecurityStats);
-      if (activeTab !== 'blacklist') setLogs(Array.isArray(logsRes) ? logsRes : (Array.isArray(logsRes?.logs) ? logsRes.logs : []));
-      if (activeTab === 'blacklist') setBlacklist(Array.isArray(blacklistRes) ? blacklistRes : []);
+      if (activeTab !== 'blacklist') {
+        const fetchedLogs = Array.isArray(logsRes) ? logsRes : (Array.isArray(logsRes?.logs) ? logsRes.logs : []);
+        cachedSecurityLogs = fetchedLogs;
+        setLogs(fetchedLogs);
+      }
+      const fetchedBlacklist = Array.isArray(blacklistRes) ? blacklistRes : [];
+      cachedBlacklist = fetchedBlacklist;
+      setBlacklist(fetchedBlacklist);
     } catch (error) {
       console.error('Error fetching security data', error);
       if (activeTab !== 'blacklist') setLogs([]);
-      if (activeTab === 'blacklist') setBlacklist([]);
     } finally {
       setLoading(false);
     }
@@ -70,12 +74,12 @@ const SecurityDashboard = ({ onBack }) => {
 
   const handleBlockIp = async (e) => {
     e.preventDefault();
-    if (!newIpToBlock) return;
+    if (!newIpToBlock.trim()) return;
     
     try {
       await apiClient('/admin/security/blacklist', {
         method: 'POST',
-        body: { ipAddress: newIpToBlock, reason: blockReason }
+        body: { ipAddress: newIpToBlock.trim(), reason: blockReason.trim() }
       });
       setNewIpToBlock('');
       setBlockReason('');
@@ -124,14 +128,14 @@ const SecurityDashboard = ({ onBack }) => {
     <div className="w-full animate-[fade-in_0.3s_ease-out]">
       <div className="flex flex-col gap-4 mb-6 w-full min-w-0">
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl md:text-2xl font-bold flex whitespace-nowrap tracking-tight items-center gap-2 text-text-primary">
-            <ShieldCheck size={28} className="text-accent" />
+          <h2 className="text-xl md:text-2xl font-bold flex whitespace-nowrap tracking-tight items-center gap-2.5 text-text-primary">
+            <i className="fa-solid fa-shield-halved text-accent text-2xl"></i>
             Ciberseguridad Avanzada
           </h2>
           <p className="text-sm text-text-secondary">Inteligencia de amenazas, auditoría y bloqueos.</p>
         </div>
         
-        <div className="flex gap-2 w-full min-w-0 overflow-x-auto hide-scrollbar py-2 px-2">
+        <div className="flex gap-2 w-full min-w-0 overflow-x-auto hide-scrollbar py-2 px-1">
           {[1, 3, 7, 14, 30].map(days => (
             <div
               key={days}
@@ -148,24 +152,31 @@ const SecurityDashboard = ({ onBack }) => {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl flex flex-col items-center justify-center ring-1 ring-black/5 dark:ring-white/10">
-          <ShieldAlert size={20} className="text-red mb-1" />
-          <span className="text-2xl font-black text-text-primary">{stats.failedLogins}</span>
+          <i className="fa-solid fa-triangle-exclamation text-red text-xl mb-1.5"></i>
+          <span className="text-2xl font-black text-text-primary">{stats.failedLogins ?? 0}</span>
           <span className="text-[10px] text-text-secondary text-center uppercase tracking-wider font-bold">Ataques</span>
         </div>
         <div className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl flex flex-col items-center justify-center ring-1 ring-black/5 dark:ring-white/10">
-          <CheckCircle size={20} className="text-green-500 mb-1" />
-          <span className="text-2xl font-black text-text-primary">{stats.successfulLogins}</span>
+          <i className="fa-solid fa-circle-check text-green-500 text-xl mb-1.5"></i>
+          <span className="text-2xl font-black text-text-primary">{stats.successfulLogins ?? 0}</span>
           <span className="text-[10px] text-text-secondary text-center uppercase tracking-wider font-bold">Éxitos</span>
         </div>
         <div className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl flex flex-col items-center justify-center ring-1 ring-black/5 dark:ring-white/10">
-          <AlertCircle size={20} className="text-orange-500 mb-1" />
-          <span className="text-2xl font-black text-text-primary">{stats.autoBans}</span>
+          <i className="fa-solid fa-robot text-orange-500 text-xl mb-1.5"></i>
+          <span className="text-2xl font-black text-text-primary">{stats.autoBans ?? 0}</span>
           <span className="text-[10px] text-text-secondary text-center uppercase tracking-wider font-bold">Auto-Bans</span>
         </div>
         <div className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl flex flex-col items-center justify-center ring-1 ring-black/5 dark:ring-white/10">
-          <Hand size={20} className="text-red mb-1" />
-          <span className="text-2xl font-black text-text-primary">{stats.blockedIps}</span>
+          <i className="fa-solid fa-ban text-red text-xl mb-1.5"></i>
+          <span className="text-2xl font-black text-text-primary">{stats.blockedIps ?? 0}</span>
           <span className="text-[10px] text-text-secondary text-center uppercase tracking-wider font-bold">IPs Bloqueadas</span>
+          {(stats.blockedAttempts > 0 || stats.totalBlockedIps > 0) && (
+            <span className="text-[9px] text-text-secondary text-center font-medium mt-1">
+              {stats.blockedAttempts > 0 ? `${stats.blockedAttempts} bloqueos` : ''}
+              {stats.blockedAttempts > 0 && stats.totalBlockedIps > 0 ? ' · ' : ''}
+              {stats.totalBlockedIps > 0 ? `${stats.totalBlockedIps} en lista` : ''}
+            </span>
+          )}
         </div>
       </div>
 
@@ -207,12 +218,12 @@ const SecurityDashboard = ({ onBack }) => {
           onClick={() => setActiveTab('blacklist')}
           className={"flex-1 py-2 rounded-full text-sm font-bold transition-all " + (activeTab === 'blacklist' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20' : 'text-text-secondary hover:text-text-primary')}
         >
-          Lista Negra
+          Lista Negra {stats.totalBlockedIps ? `(${stats.totalBlockedIps})` : (blacklist.length ? `(${blacklist.length})` : '')}
         </button>
       </div>
 
       <div className="text-xs text-text-secondary mb-6 px-2 text-center md:text-left font-medium">
-        {activeTab === 'alerts' && "Monitorea intentos fallidos de inicio de sesión y bloqueos automáticos (fuerza bruta)."}
+        {activeTab === 'alerts' && "Monitorea intentos fallidos de inicio de sesión, honeypot y bloqueos ejecutados."}
         {activeTab === 'success' && "Historial de accesos autorizados. Verifica quién y desde dónde ha entrado correctamente."}
         {activeTab === 'blacklist' && "Direcciones IP bloqueadas manual o automáticamente. No pueden acceder a la app."}
       </div>
@@ -230,10 +241,10 @@ const SecurityDashboard = ({ onBack }) => {
                   <div className="flex justify-between items-start mb-2">
                     <span className={"text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider " + (
                       log.eventType === 'LOGIN_SUCCESS' ? 'bg-green-500/20 text-green-500' :
-                      log.eventType === 'AUTO_BAN' ? 'bg-orange-500/20 text-orange-500' :
+                      log.eventType === 'AUTO_BAN' || log.eventType === 'AUTO_BAN_SNIFFING' ? 'bg-orange-500/20 text-orange-500' :
                       'bg-red/20 text-red'
                     )}>
-                      {log.eventType.replace('_', ' ')}
+                      {log.eventType ? log.eventType.replace(/_/g, ' ') : 'EVENTO'}
                     </span>
                     <span className="text-[10px] text-text-secondary font-bold uppercase">
                       {new Date(log.createdAt).toLocaleString()}
@@ -247,8 +258,8 @@ const SecurityDashboard = ({ onBack }) => {
                     {log.ipAddress}
                   </div>
                   {(log.country || log.city) && (
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-2 py-1 rounded-lg">
-                      <Globe size={10} />
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-text-secondary bg-black/5 dark:bg-white/5 px-2 py-1 rounded-lg">
+                      <i className="fa-solid fa-globe text-[10px]"></i>
                       {log.city ? log.city + ', ' : ''}{log.country || 'Desconocido'}
                     </div>
                   )}
@@ -266,7 +277,7 @@ const SecurityDashboard = ({ onBack }) => {
         <div className="space-y-4">
           <form onSubmit={handleBlockIp} className="bg-red/5 p-5 rounded-2xl ring-1 ring-red/20 mb-6">
             <h3 className="text-sm font-bold text-red mb-4 flex items-center gap-2">
-              <Lock size={16} /> Bloquear Nueva IP Manualmente
+              <i className="fa-solid fa-shield-halved text-sm"></i> Bloquear Nueva IP Manualmente
             </h3>
             <div className="space-y-4">
               <input 
@@ -286,39 +297,59 @@ const SecurityDashboard = ({ onBack }) => {
               />
               <button 
                 type="submit"
-                className="w-full bg-red hover:brightness-110 text-white font-bold py-3 rounded-xl transition-all text-sm active:scale-95"
+                className="w-full bg-red hover:brightness-110 text-white font-bold py-3 rounded-xl transition-all text-sm active:scale-95 flex items-center justify-center gap-2"
               >
-                Añadir a Lista Negra
+                <i className="fa-solid fa-plus text-xs"></i> Añadir a Lista Negra
               </button>
             </div>
           </form>
 
-          <h3 className="font-bold mb-3 flex items-center gap-2 text-text-primary">
-            <AlertCircle size={18} className="text-orange-500" /> IPs Bloqueadas (Manual y Auto)
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold flex items-center gap-2 text-text-primary">
+              <i className="fa-solid fa-ban text-orange-500 text-sm"></i> IPs en Lista Negra Activa
+            </h3>
+            <span className="text-xs bg-red/20 text-red px-2.5 py-0.5 rounded-full font-bold">
+              {blacklist.length} en total
+            </span>
+          </div>
           
           <div className="space-y-2">
             {blacklist.length === 0 ? (
               <p className="text-center text-text-secondary py-4 font-medium text-sm">No hay IPs bloqueadas actualmente.</p>
             ) : (
-              blacklist.map(item => (
-                <div key={item.id} className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl flex justify-between items-center ring-1 ring-black/5 dark:ring-white/10">
-                  <div>
-                    <div className="font-mono text-sm text-text-primary font-bold">{item.ipAddress}</div>
-                    {item.reason && <div className="text-xs text-text-secondary mt-1">{item.reason}</div>}
-                    <div className="text-[10px] text-text-secondary mt-1 font-bold uppercase tracking-wider">
-                      Bloqueado: {new Date(item.createdAt).toLocaleString()}
+              blacklist.map(item => {
+                const isExpired = item.expiresAt && new Date(item.expiresAt) < new Date();
+                return (
+                  <div key={item.id} className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl flex justify-between items-center ring-1 ring-black/5 dark:ring-white/10">
+                    <div>
+                      <div className="font-mono text-sm text-text-primary font-bold flex items-center gap-2">
+                        {item.ipAddress}
+                        {isExpired ? (
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-500/20 text-text-secondary">Expirado</span>
+                        ) : item.expiresAt ? (
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-500">Temporal</span>
+                        ) : (
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-red/20 text-red">Permanente</span>
+                        )}
+                      </div>
+                      {item.reason && <div className="text-xs text-text-secondary mt-1">{item.reason}</div>}
+                      <div className="text-[10px] text-text-secondary mt-1 font-bold uppercase tracking-wider flex items-center gap-3">
+                        <span>Bloqueado: {new Date(item.createdAt).toLocaleString()}</span>
+                        {item.expiresAt && (
+                          <span>Expira: {new Date(item.expiresAt).toLocaleString()}</span>
+                        )}
+                      </div>
                     </div>
+                    <button 
+                      onClick={() => handleUnblockIp(item.ipAddress)}
+                      className="p-2.5 bg-black/5 dark:bg-white/5 hover:bg-red/10 hover:text-red rounded-xl text-text-secondary transition-colors"
+                      title="Desbloquear IP"
+                    >
+                      <i className="fa-solid fa-lock-open text-base"></i>
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => handleUnblockIp(item.ipAddress)}
-                    className="p-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-xl text-text-secondary transition-colors"
-                    title="Desbloquear IP"
-                  >
-                    <Unlock size={18} />
-                  </button>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -328,12 +359,3 @@ const SecurityDashboard = ({ onBack }) => {
 };
 
 export default SecurityDashboard;
-
-
-
-
-
-
-
-
-
