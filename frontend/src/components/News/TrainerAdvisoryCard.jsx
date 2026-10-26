@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   UserCheck,
   ClipboardList,
-  Sparkles,
+  Utensils,
   MessageSquare,
   ArrowRight,
   ShieldCheck,
