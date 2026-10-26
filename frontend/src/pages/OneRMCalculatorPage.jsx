@@ -145,9 +145,7 @@ export default function OneRMCalculatorPage({ onBack }) {
     <div
       className="fixed inset-0 z-50 bg-bg-primary text-text-primary overflow-y-auto overflow-x-hidden custom-scrollbar"
       style={{
-        WebkitOverflowScrolling: 'touch',
-        paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 2.5rem)'
+        WebkitOverflowScrolling: 'touch'
       }}
     >
       <Helmet>
@@ -171,91 +169,81 @@ export default function OneRMCalculatorPage({ onBack }) {
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
-      {/* Top Navigation Bar - Ultra Responsive */}
-      <nav className="sticky top-0 z-40 bg-bg-primary/85 backdrop-blur-xl border-b border-black/5 dark:border-white/10">
-        <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2">
-          <button
-            onClick={() => (onBack ? onBack() : navigate(isAuthenticated ? '/dashboard' : '/'))}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs sm:text-sm font-bold text-text-primary active:scale-95 transition-all shrink-0"
-          >
-            <FaChevronLeft className="text-accent text-xs" />
-            <span>{isAuthenticated ? 'App' : 'Inicio'}</span>
-          </button>
+      <main
+        className="max-w-5xl mx-auto px-3.5 sm:px-6 pb-12 sm:pb-16"
+        style={{
+          paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 1rem)',
+          paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 3rem)'
+        }}
+      >
+        {/* Clean Integrated Header (No full-bleed borders or browser gap) */}
+        <nav aria-label="Navegación de herramientas" className="flex flex-col gap-3.5 mb-7 sm:mb-10">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <button
+                onClick={() => (onBack ? onBack() : navigate(isAuthenticated ? '/dashboard' : '/'))}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/10 dark:ring-white/10 text-xs sm:text-sm font-bold text-text-secondary hover:text-text-primary active:scale-95 transition-all shrink-0 cursor-pointer whitespace-nowrap"
+              >
+                <FaChevronLeft className="text-accent text-xs shrink-0" />
+                <span>{isAuthenticated ? 'Volver a la App' : 'Inicio'}</span>
+              </button>
+              <span className="text-xs text-text-tertiary hidden sm:inline">/</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-accent truncate hidden sm:inline">
+                Calculadora 1RM
+              </span>
+            </div>
 
-          {/* Desktop Quick Links */}
-          <div className="hidden md:flex items-center gap-2">
+            {!isAuthenticated && (
+              <button
+                onClick={() => navigate('/register')}
+                className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full bg-accent text-accent-contrast text-xs sm:text-sm font-black shadow-md shadow-accent/25 hover:opacity-90 active:scale-95 transition-all shrink-0 cursor-pointer whitespace-nowrap"
+              >
+                <span>Registrar Pesos Gratis</span>
+                <FaArrowRight className="text-xs shrink-0" />
+              </button>
+            )}
+          </div>
+
+          {/* Segmented Glass Switcher Pill */}
+          <div className="grid grid-cols-4 gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl">
+            <Link
+              to="/calculadora-1rm"
+              className="flex items-center justify-center gap-1.5 py-2 px-2 sm:px-3 rounded-xl bg-accent/15 text-accent text-[11px] sm:text-xs font-black border border-accent/30 shadow-xs whitespace-nowrap"
+            >
+              <FaCalculator className="text-[11px] sm:text-xs shrink-0" />
+              <span className="sm:hidden">1RM</span>
+              <span className="hidden sm:inline">Calculadora 1RM</span>
+            </Link>
             <Link
               to="/calculadora-calorias-macros"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs font-bold text-text-secondary hover:text-accent transition-colors border border-black/5 dark:border-white/10"
+              className="flex items-center justify-center gap-1.5 py-2 px-2 sm:px-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
             >
-              <FaUtensils className="text-emerald-400" />
-              <span>Calculadora Macros</span>
+              <FaUtensils className="text-emerald-400 text-[11px] sm:text-xs shrink-0" />
+              <span className="sm:hidden">Macros</span>
+              <span className="hidden sm:inline">Calorías y Macros</span>
             </Link>
             <Link
               to="/ejercicios"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs font-bold text-text-secondary hover:text-accent transition-colors border border-black/5 dark:border-white/10"
+              className="flex items-center justify-center gap-1.5 py-2 px-2 sm:px-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
             >
-              <FaDumbbell className="text-blue-400" />
+              <FaDumbbell className="text-blue-400 text-[11px] sm:text-xs shrink-0" />
               <span>Ejercicios</span>
             </Link>
             <Link
               to="/noticias"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs font-bold text-text-secondary hover:text-accent transition-colors border border-black/5 dark:border-white/10"
+              className="flex items-center justify-center gap-1.5 py-2 px-2 sm:px-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
             >
-              <FaNewspaper className="text-purple-400" />
-              <span>Guías</span>
+              <FaNewspaper className="text-purple-400 text-[11px] sm:text-xs shrink-0" />
+              <span className="sm:hidden">Guías</span>
+              <span className="hidden sm:inline">Guías y Noticias</span>
             </Link>
           </div>
+        </nav>
 
-          {!isAuthenticated && (
-            <button
-              onClick={() => navigate('/register')}
-              className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-accent text-accent-contrast text-xs sm:text-sm font-black shadow-md shadow-accent/25 hover:opacity-90 active:scale-95 transition-all shrink-0"
-            >
-              <span>Registrar Pesos Gratis</span>
-              <FaArrowRight className="text-xs" />
-            </button>
-          )}
-        </div>
-
-        {/* Mobile Segmented Switcher Bar */}
-        <div className="md:hidden grid grid-cols-4 gap-1 px-2.5 pb-2 pt-0.5 border-t border-black/5 dark:border-white/5">
-          <Link
-            to="/calculadora-1rm"
-            className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-accent/15 text-accent text-[11px] font-black border border-accent/30"
-          >
-            <FaCalculator className="text-[10px]" />
-            <span>1RM</span>
-          </Link>
-          <Link
-            to="/calculadora-calorias-macros"
-            className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 text-text-secondary text-[11px] font-bold"
-          >
-            <FaUtensils className="text-emerald-400 text-[10px]" />
-            <span>Macros</span>
-          </Link>
-          <Link
-            to="/ejercicios"
-            className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 text-text-secondary text-[11px] font-bold"
-          >
-            <FaDumbbell className="text-blue-400 text-[10px]" />
-            <span>Ejercicios</span>
-          </Link>
-          <Link
-            to="/noticias"
-            className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-black/5 dark:bg-white/5 text-text-secondary text-[11px] font-bold"
-          >
-            <FaNewspaper className="text-purple-400 text-[10px]" />
-            <span>Guías</span>
-          </Link>
-        </div>
-      </nav>
-
-      <main className="max-w-5xl mx-auto px-3.5 sm:px-6 pt-5 sm:pt-8 pb-12 sm:pb-16">
         {/* Hero SEO Header */}
         <header className="text-center max-w-3xl mx-auto mb-6 sm:mb-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/10 ring-1 ring-accent/30 text-accent text-[11px] sm:text-xs font-black uppercase tracking-widest mb-3 sm:mb-4">
-            <FaDumbbell className="text-xs" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/10 ring-1 ring-accent/30 text-accent text-[11px] sm:text-xs font-black uppercase tracking-widest mb-3 sm:mb-4 whitespace-nowrap">
+            <FaDumbbell className="text-xs shrink-0" />
             <span>Herramienta Gratuita de Fuerza e Hipertrofia</span>
           </div>
           <h1 className="text-2xl sm:text-5xl font-black tracking-tight text-text-primary leading-tight mb-3 sm:mb-4">
@@ -570,7 +558,7 @@ export default function OneRMCalculatorPage({ onBack }) {
               </div>
               <button
                 onClick={() => navigate(isAuthenticated ? '/routines' : '/register')}
-                className="w-full sm:w-auto shrink-0 px-5 py-3 rounded-xl bg-accent text-accent-contrast font-black text-xs uppercase tracking-wider shadow-lg shadow-accent/25 hover:scale-105 active:scale-95 transition-all"
+                className="w-full sm:w-auto shrink-0 px-5 py-3 rounded-xl bg-accent text-accent-contrast font-black text-xs uppercase tracking-wider shadow-lg shadow-accent/25 hover:scale-105 active:scale-95 transition-all whitespace-nowrap"
               >
                 {isAuthenticated ? 'Ir a Mis Rutinas' : 'Guardar Mi Progreso Gratis'}
               </button>
