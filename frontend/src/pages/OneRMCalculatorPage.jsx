@@ -178,30 +178,56 @@ export default function OneRMCalculatorPage({ onBack }) {
       >
         {/* Clean Integrated Header (No full-bleed borders or browser gap) */}
         <nav aria-label="Navegación de herramientas" className="flex flex-col gap-3.5 mb-7 sm:mb-10">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+            {/* Logo + Marca + Badge Gratis */}
+            <Link
+              to="/"
+              className="flex items-center gap-2.5 group cursor-pointer shrink-0"
+              title="Pro Fitness Glass - App de Gimnasio 100% Gratis"
+            >
+              <img
+                src="/icons/icon-96.png"
+                alt="Pro Fitness Glass"
+                className="w-9 h-9 rounded-xl object-contain shadow-xs ring-1 ring-black/10 dark:ring-white/10 group-hover:scale-105 transition-transform shrink-0"
+              />
+              <div className="flex flex-col text-left">
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-sm sm:text-base tracking-tight text-text-primary leading-none group-hover:text-accent transition-colors">
+                    Pro Fitness Glass
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] sm:text-[10px] font-black rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 uppercase tracking-wide">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    100% Gratis
+                  </span>
+                </div>
+                <span className="text-[11px] text-text-muted hidden sm:inline mt-0.5">
+                  Diario de entrenamiento, pesas y nutrición
+                </span>
+              </div>
+            </Link>
+
+            {/* Acciones: Volver a la App / Empezar Gratis */}
+            <div className="flex items-center gap-2 shrink-0">
               <button
+                type="button"
                 onClick={() => (onBack ? onBack() : navigate(isAuthenticated ? '/dashboard' : '/'))}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/10 dark:ring-white/10 text-xs sm:text-sm font-bold text-text-secondary hover:text-text-primary active:scale-95 transition-all shrink-0 cursor-pointer whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/10 dark:ring-white/10 text-xs font-bold text-text-secondary hover:text-text-primary active:scale-95 transition-all cursor-pointer whitespace-nowrap"
               >
-                <FaChevronLeft className="text-accent text-xs shrink-0" />
+                <FaChevronLeft className="text-accent text-[11px] shrink-0" />
                 <span>{isAuthenticated ? 'Volver a la App' : 'Inicio'}</span>
               </button>
-              <span className="text-xs text-text-tertiary hidden sm:inline">/</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-accent truncate hidden sm:inline">
-                Calculadora 1RM
-              </span>
-            </div>
 
-            {!isAuthenticated && (
-              <button
-                onClick={() => navigate('/register')}
-                className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full bg-accent text-accent-contrast text-xs sm:text-sm font-black shadow-md shadow-accent/25 hover:opacity-90 active:scale-95 transition-all shrink-0 cursor-pointer whitespace-nowrap"
-              >
-                <span>Registrar Pesos Gratis</span>
-                <FaArrowRight className="text-xs shrink-0" />
-              </button>
-            )}
+              {!isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => navigate('/register')}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-accent text-accent-contrast text-xs font-black shadow-md shadow-accent/25 hover:opacity-90 active:scale-95 transition-all shrink-0 cursor-pointer whitespace-nowrap"
+                >
+                  <span>Registrar Pesos Gratis</span>
+                  <FaArrowRight className="text-[11px] shrink-0" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Segmented Glass Switcher Pill */}
@@ -244,13 +270,13 @@ export default function OneRMCalculatorPage({ onBack }) {
         <header className="text-center max-w-3xl mx-auto mb-6 sm:mb-10">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/10 ring-1 ring-accent/30 text-accent text-[11px] sm:text-xs font-black uppercase tracking-widest mb-3 sm:mb-4 whitespace-nowrap">
             <FaDumbbell className="text-xs shrink-0" />
-            <span>Herramienta Gratuita de Fuerza e Hipertrofia</span>
+            <span>Pro Fitness Glass • Calculadora de Fuerza 100% Gratis</span>
           </div>
           <h1 className="text-2xl sm:text-5xl font-black tracking-tight text-text-primary leading-tight mb-3 sm:mb-4">
             Calculadora de <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-purple-400 to-accent">1RM y Porcentajes</span> de Gimnasio
           </h1>
           <p className="text-text-secondary text-sm sm:text-lg font-medium leading-relaxed px-1">
-            Calcula tu <strong>Repetición Máxima (1RM)</strong> en Press de Banca, Sentadilla, Peso Muerto o Dominadas sin riesgo de lesión y descubre tus pesos exactos para ganar músculo y fuerza.
+            Calcula tu <strong>Repetición Máxima (1RM)</strong> en Press de Banca, Sentadilla, Peso Muerto o Dominadas sin riesgo de lesión y descubre tus pesos exactos para ganar músculo y fuerza con el diario <strong>Pro Fitness Glass</strong> 100% gratis.
           </p>
         </header>
 

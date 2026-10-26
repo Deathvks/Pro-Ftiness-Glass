@@ -141,7 +141,7 @@ export default function NewsConversionBanner({
       badgeColor: 'text-accent bg-accent/10 border-accent/20',
       title: 'Lleva tus entrenamientos y nutrición al siguiente nivel',
       description: 'Crea rutinas personalizadas, sigue tus macros diarios, compite en retos con la comunidad y supera tus marcas con Pro Fitness Glass.',
-      icon: Sparkles,
+      icon: Award,
       iconBg: 'bg-accent/20 text-accent',
       gradient: 'from-accent/15 via-accent/5 to-transparent',
       border: 'ring-accent/30',

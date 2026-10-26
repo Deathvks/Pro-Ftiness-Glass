@@ -455,7 +455,15 @@ async function main() {
       <a href="/calculadora-calorias-macros" style="color: #34d399; text-decoration: none; font-weight: 700;">Calculadora de Calorías y Macros</a> |
       <a href="/noticias" style="color: #a855f7; text-decoration: none; font-weight: 700;">Guías de Gimnasio</a>
     </nav>
-    <header style="margin-bottom: 2.5rem;">
+    <header style="margin-bottom: 2.5rem; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+        <div style="text-align: left;">
+          <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">App de Gimnasio 100% Gratis</span>
+        </div>
+      </div>
+      <br />
       <span style="display: inline-block; font-size: 0.75rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.08em;">Herramienta Gratuita de Gimnasio y Fuerza</span>
       <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">Calculadora de 1RM (Repetición Máxima) y Tabla de Porcentajes para Gimnasio</h1>
       <p style="font-size: 1.15rem; color: #94a3b8;">Calcula tu fuerza máxima estimada en Press de Banca, Sentadilla Libre, Peso Muerto, Press Militar o Dominadas Lastradas mediante las fórmulas científicas de Epley, Brzycki y Lander.</p>
@@ -496,7 +504,15 @@ async function main() {
       <a href="/calculadora-1rm" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Calculadora de 1RM y Fuerza</a> |
       <a href="/noticias" style="color: #a855f7; text-decoration: none; font-weight: 700;">Guías de Nutrición y Gimnasio</a>
     </nav>
-    <header style="margin-bottom: 2.5rem;">
+    <header style="margin-bottom: 2.5rem; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+        <div style="text-align: left;">
+          <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">App de Gimnasio 100% Gratis</span>
+        </div>
+      </div>
+      <br />
       <span style="display: inline-block; font-size: 0.75rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.08em;">Herramienta Gratuita de Nutrición Deportiva</span>
       <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">Calculadora de Calorías, Macros y Déficit Calórico para Gimnasio</h1>
       <p style="font-size: 1.15rem; color: #94a3b8;">Calcula tu Tasa Metabólica Basal (TMB), tu Gasto Energético Diario Total (TDEE) con la fórmula científica de Mifflin-St Jeor y obtén tus gramos exactos de proteínas, carbohidratos, grasas, agua y creatina.</p>
@@ -534,7 +550,15 @@ async function main() {
       <a href="/calculadora-calorias-macros" style="color: #34d399; text-decoration: none; font-weight: 700;">Calculadora de Calorías y Macros</a> |
       <a href="/noticias" style="color: #a855f7; text-decoration: none; font-weight: 700;">Guías de Gimnasio</a>
     </nav>
-    <header style="margin-bottom: 2.5rem;">
+    <header style="margin-bottom: 2.5rem; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+        <div style="text-align: left;">
+          <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">App de Gimnasio 100% Gratis</span>
+        </div>
+      </div>
+      <br />
       <span style="display: inline-block; font-size: 0.75rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.08em;">Enciclopedia Biomecánica de Gimnasio</span>
       <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">Mejores Ejercicios de Gimnasio y Rutinas de Hipertrofia (Guía Técnica)</h1>
       <p style="font-size: 1.15rem; color: #94a3b8;">Aprende la técnica biomecánica paso a paso de Press de Banca, Sentadilla Libre, Sentadilla Búlgara, Peso Muerto Rumano, Hip Thrust, Dominadas, Remo con Barra, Press Militar y Elevaciones Laterales, junto con las mejores rutinas Push Pull Legs, Torso Pierna y Full Body.</p>

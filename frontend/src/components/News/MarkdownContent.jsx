@@ -5,7 +5,7 @@ import {
   AlertTriangle,
   AlertCircle,
   Info,
-  Sparkles,
+  Award,
   Quote
 } from 'lucide-react';
 import { sanitizeNewsContent } from '../../utils/newsSanitizer';
@@ -205,7 +205,7 @@ export default function MarkdownContent({ content = '', fontSize = 'normal' }) {
           titleColorClass = 'text-emerald-400';
           alertTitle = 'CONSEJO PRÁCTICO';
         } else if (blockquoteType === 'important') {
-          alertIcon = <Sparkles size={18} className="text-amber-400 shrink-0" />;
+          alertIcon = <Award size={18} className="text-amber-400 shrink-0" />;
           alertBorderClass = 'border-amber-500 bg-amber-500/[0.04]';
           titleColorClass = 'text-amber-400';
           alertTitle = 'EVIDENCIA CIENTÍFICA';

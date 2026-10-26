@@ -1,25 +1,26 @@
 /* frontend/src/pages/NewsDetailPage.jsx */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
-  ChevronLeft,
-  Calendar,
-  Clock,
-  Eye,
-  Share2,
-  Check,
-  Copy,
-  ArrowRight,
-  ArrowLeft,
-  BookOpen,
-  ThumbsUp,
-  Type,
-  Smartphone,
-  X,
-  WifiOff,
-  RefreshCw
-} from 'lucide-react';
-import { FaWhatsapp, FaXTwitter, FaTelegram } from 'react-icons/fa6';
+  FaChevronLeft,
+  FaCalendarDays,
+  FaClock,
+  FaEye,
+  FaShareNodes,
+  FaCheck,
+  FaCopy,
+  FaArrowRight,
+  FaArrowLeft,
+  FaBookOpen,
+  FaThumbsUp,
+  FaFont,
+  FaMobileScreen,
+  FaXmark,
+  FaWifi,
+  FaArrowsRotate,
+  FaWhatsapp,
+  FaXTwitter,
+  FaTelegram
+} from 'react-icons/fa6';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Capacitor } from '@capacitor/core';
@@ -283,7 +284,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
         }}
       >
         <div className={`w-16 h-16 rounded-3xl flex items-center justify-center ${isNotFound ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
-          {isNotFound ? <BookOpen size={32} /> : <WifiOff size={32} />}
+          {isNotFound ? <FaBookOpen className="text-3xl" /> : <FaWifi className="text-3xl" />}
         </div>
         <h2 className="text-2xl font-black text-text-primary">
           {isNotFound ? 'Artículo no encontrado' : 'Problema de conexión'}
@@ -298,7 +299,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
               onClick={handleRetry}
               className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 cursor-pointer hover:scale-105 active:scale-95 transition-all"
             >
-              <RefreshCw size={14} />
+              <FaArrowsRotate className="text-xs shrink-0" />
               Reintentar
             </button>
           )}
@@ -361,7 +362,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 className="px-3 py-1.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-1.5 whitespace-nowrap"
                 title="Abrir o descargar la aplicación en tu dispositivo"
               >
-                <Smartphone size={13} />
+                <FaMobileScreen className="text-xs shrink-0" />
                 <span>Abrir App</span>
               </a>
               <button
@@ -370,7 +371,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 className="w-6 h-6 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer shrink-0"
                 title="Cerrar aviso"
               >
-                <X size={13} />
+                <FaXmark className="text-xs" />
               </button>
             </div>
           </div>
@@ -406,7 +407,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
               onClick={handleGoBack}
               className="cursor-pointer inline-flex items-center gap-1 text-text-secondary hover:text-accent transition-colors shrink-0 font-bold text-xs"
             >
-              <ChevronLeft size={14} /> Noticias
+              <FaChevronLeft className="text-xs shrink-0" /> Noticias
             </button>
             <span className="shrink-0 hidden sm:inline text-text-tertiary text-xs">/</span>
             <button
@@ -426,7 +427,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 className="whitespace-nowrap shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent text-accent-contrast transition-all text-xs font-bold shadow-xs active:scale-95"
                 title="Abrir en la aplicación nativa"
               >
-                <Smartphone size={12} />
+                <FaMobileScreen className="text-xs shrink-0" />
                 <span className="whitespace-nowrap">Abrir App</span>
               </a>
             )}
@@ -438,7 +439,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 className="cursor-pointer hidden xs:inline-flex items-center gap-1 px-3 py-1 rounded-full bg-accent text-accent-contrast text-xs font-black shadow-xs hover:opacity-90 active:scale-95 transition-all whitespace-nowrap"
               >
                 <span>Probar Gratis</span>
-                <ArrowRight size={12} className="shrink-0" />
+                <FaArrowRight className="text-xs shrink-0" />
               </button>
             )}
 
@@ -449,7 +450,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
               title={`Tamaño de letra (actual: ${fontSize})`}
               className="cursor-pointer shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/10 dark:ring-white/10 text-xs font-black text-text-secondary hover:text-text-primary transition-all active:scale-95 whitespace-nowrap"
             >
-              <Type size={13} className="text-accent" />
+              <FaFont className="text-accent text-xs shrink-0" />
               <span>{fontSizeLabels[fontSize]}</span>
             </button>
           </div>
@@ -495,17 +496,17 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 </p>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-text-tertiary text-xs sm:text-[11px] mt-1">
                   <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                    <Calendar size={12} className="shrink-0 text-text-secondary" />
+                    <FaCalendarDays className="shrink-0 text-text-secondary text-[11px]" />
                     <span>{format(new Date(article.published_at), "d 'de' MMMM, yyyy", { locale: es })}</span>
                   </span>
                   <span className="hidden sm:inline text-text-tertiary/40 select-none">•</span>
                   <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                    <Clock size={12} className="shrink-0 text-text-secondary" />
+                    <FaClock className="shrink-0 text-text-secondary text-[11px]" />
                     <span>{article.reading_time} min de lectura</span>
                   </span>
                   <span className="hidden sm:inline text-text-tertiary/40 select-none">•</span>
                   <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                    <Eye size={12} className="shrink-0 text-text-secondary" />
+                    <FaEye className="shrink-0 text-text-secondary text-[11px]" />
                     <span>{article.views_count === 1 ? '1 lectura' : `${(article.views_count || 0).toLocaleString()} lecturas`}</span>
                   </span>
                 </div>
@@ -520,7 +521,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-xs"
                 title="Compartir"
               >
-                <Share2 size={14} />
+                <FaShareNodes className="text-xs shrink-0" />
               </button>
               <a
                 href={whatsappUrl}
@@ -555,7 +556,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-xs"
                 title="Copiar enlace"
               >
-                {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                {copied ? <FaCheck className="text-emerald-500 text-xs shrink-0" /> : <FaCopy className="text-xs shrink-0" />}
               </button>
             </div>
           </div>
@@ -616,7 +617,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary border border-black/10 dark:border-white/10'
             }`}
           >
-            <ThumbsUp size={15} />
+            <FaThumbsUp className="text-xs shrink-0" />
             <span>{hasLiked ? '¡Marcado como útil!' : 'Me ha servido'}</span>
             <span className="font-mono font-black text-xs px-1.5 py-0.5 rounded-full bg-black/10 dark:bg-white/10">
               {likesCount}
@@ -717,7 +718,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 className="p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-all cursor-pointer group flex flex-col justify-between no-underline block"
               >
                 <span className="text-[11px] font-black uppercase tracking-wider text-text-tertiary flex items-center gap-1 mb-1">
-                  <ArrowLeft size={12} /> Noticia anterior
+                  <FaArrowLeft className="text-xs shrink-0" /> Noticia anterior
                 </span>
                 <span className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors line-clamp-2">
                   {prevArticle.title}
@@ -739,7 +740,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 className="p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-all cursor-pointer group flex flex-col justify-between text-right no-underline block"
               >
                 <span className="text-[11px] font-black uppercase tracking-wider text-accent flex items-center justify-end gap-1 mb-1">
-                  Siguiente noticia <ArrowRight size={12} />
+                  Siguiente noticia <FaArrowRight className="text-xs shrink-0" />
                 </span>
                 <span className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors line-clamp-2">
                   {nextArticle.title}
@@ -794,7 +795,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                     <div className="flex items-center justify-between text-[10px] text-text-tertiary pt-2 border-t border-black/5 dark:border-white/5">
                       <span>{rel.reading_time} min</span>
                       <span className="text-accent font-bold inline-flex items-center gap-0.5">
-                        Leer <ArrowRight size={10} />
+                        Leer <FaArrowRight className="text-[10px] shrink-0" />
                       </span>
                     </div>
                   </div>

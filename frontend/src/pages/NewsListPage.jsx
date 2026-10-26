@@ -1,30 +1,31 @@
 /* frontend/src/pages/NewsListPage.jsx */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import {
-  Newspaper,
-  Search,
-  Clock,
-  Calendar,
-  ChevronRight,
-  ChevronLeft,
-  Sparkles,
-  ArrowRight,
-  Smartphone,
-  Layers,
-  BookOpen,
-  LogIn,
-  Eye,
-  ThumbsUp,
-  WifiOff,
-  RefreshCw,
-  X,
-  Calculator,
-  Utensils,
-  Dumbbell
-} from 'lucide-react';
-import { FaFire } from 'react-icons/fa6';
+  FaNewspaper,
+  FaMagnifyingGlass,
+  FaClock,
+  FaCalendarDays,
+  FaChevronRight,
+  FaChevronLeft,
+  FaArrowRight,
+  FaMobileScreen,
+  FaLayerGroup,
+  FaBookOpen,
+  FaRightToBracket,
+  FaEye,
+  FaThumbsUp,
+  FaWifi,
+  FaArrowsRotate,
+  FaXmark,
+  FaCalculator,
+  FaUtensils,
+  FaDumbbell,
+  FaFire,
+  FaAppleWhole,
+  FaPills,
+  FaHeartPulse,
+  FaTag
+} from 'react-icons/fa6';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Capacitor } from '@capacitor/core';
@@ -38,6 +39,19 @@ import { trackCatalogVisit } from '../utils/newsTracker';
 import useAppStore from '../store/useAppStore';
 
 const DEFAULT_CATEGORIES = ['Todas', 'Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
+
+const getCategoryIcon = (cat) => {
+  switch (cat) {
+    case 'Todas': return <FaLayerGroup className="text-xs shrink-0" />;
+    case 'Entrenamiento': return <FaDumbbell className="text-xs shrink-0" />;
+    case 'Nutrición': return <FaAppleWhole className="text-xs shrink-0" />;
+    case 'Suplementación': return <FaPills className="text-xs shrink-0" />;
+    case 'Salud': return <FaHeartPulse className="text-xs shrink-0" />;
+    case 'Novedades': return <FaFire className="text-xs shrink-0" />;
+    default: return <FaTag className="text-xs shrink-0" />;
+  }
+};
+
 const BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 
 export default function NewsListPage({ onBack, navigate: customNavigate }) {
@@ -352,7 +366,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                   className="whitespace-nowrap inline-flex sm:hidden items-center gap-1 px-3 py-1.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 hover:scale-105 active:scale-95 transition-all"
                   title="Abrir en la aplicación nativa"
                 >
-                  <Smartphone size={13} />
+                  <FaMobileScreen className="text-xs shrink-0" />
                   <span>Abrir App</span>
                 </a>
               )}
@@ -364,7 +378,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                   className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full ring-1 ring-black/10 dark:ring-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-xs sm:text-sm font-bold text-text-secondary hover:text-text-primary shrink-0 whitespace-nowrap active:scale-95"
                 >
                   <span>Volver a la App</span>
-                  <ArrowRight size={14} className="text-accent" />
+                  <FaArrowRight className="text-accent text-xs shrink-0" />
                 </button>
               ) : (
                 <div className="flex items-center gap-1.5 sm:gap-2">
@@ -373,7 +387,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                     onClick={() => navigate('/login')}
                     className="cursor-pointer hidden sm:inline-flex items-center gap-1 px-3 py-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-xs font-bold transition-colors whitespace-nowrap"
                   >
-                    <LogIn size={13} />
+                    <FaRightToBracket className="text-xs shrink-0" />
                     <span>Iniciar Sesión</span>
                   </button>
                   <button
@@ -382,7 +396,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                     className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full bg-accent text-accent-contrast text-xs sm:text-sm font-black shadow-md shadow-accent/25 hover:opacity-90 active:scale-95 transition-all whitespace-nowrap"
                   >
                     <span>Empezar Gratis</span>
-                    <ArrowRight size={14} className="shrink-0" />
+                    <FaArrowRight className="text-xs shrink-0" />
                   </button>
                 </div>
               )}
@@ -397,7 +411,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                 to="/calculadora-1rm"
                 className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
               >
-                <Calculator size={13} className="text-accent shrink-0" />
+                <FaCalculator className="text-accent text-xs shrink-0" />
                 <span className="sm:hidden">1RM</span>
                 <span className="hidden sm:inline">Calculadora 1RM</span>
               </Link>
@@ -405,7 +419,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                 to="/calculadora-calorias-macros"
                 className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
               >
-                <Utensils size={13} className="text-emerald-400 shrink-0" />
+                <FaUtensils className="text-emerald-400 text-xs shrink-0" />
                 <span className="sm:hidden">Macros</span>
                 <span className="hidden sm:inline">Calorías y Macros</span>
               </Link>
@@ -413,14 +427,14 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                 to="/ejercicios"
                 className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
               >
-                <Dumbbell size={13} className="text-blue-400 shrink-0" />
+                <FaDumbbell className="text-blue-400 text-xs shrink-0" />
                 <span>Ejercicios</span>
               </Link>
               <Link
                 to="/noticias"
                 className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-purple-500/15 text-purple-400 text-[11px] sm:text-xs font-black border border-purple-500/30 shadow-xs whitespace-nowrap"
               >
-                <Newspaper size={13} className="text-purple-400 shrink-0" />
+                <FaNewspaper className="text-purple-400 text-xs shrink-0" />
                 <span className="sm:hidden">Guías</span>
                 <span className="hidden sm:inline">Guías y Noticias</span>
               </Link>
@@ -435,7 +449,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                 placeholder="Buscar artículos..."
                 className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full pl-9 pr-4 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent transition-all"
               />
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+              <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none text-xs" />
             </form>
           </div>
         </header>
@@ -458,7 +472,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
               className="px-3 py-1.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-1.5 whitespace-nowrap"
               title="Abrir o descargar la aplicación en tu dispositivo"
             >
-              <Smartphone size={13} />
+              <FaMobileScreen className="text-xs shrink-0" />
               <span>Abrir App</span>
             </a>
             <button
@@ -467,7 +481,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
               className="w-6 h-6 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer shrink-0"
               title="Cerrar aviso"
             >
-              <X size={13} />
+              <FaXmark className="text-xs" />
             </button>
           </div>
         </div>
@@ -476,8 +490,8 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
       {/* TITULAR PRINCIPAL */}
       <section className="text-center sm:text-left py-2">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 mb-3 border border-emerald-500/25">
-          <Sparkles size={13} className="shrink-0" />
-          <span>Diario de Gimnasio y Guías Científicas • 100% Gratis</span>
+          <FaBookOpen className="text-xs shrink-0" />
+          <span>Pro Fitness Glass • Guías Científicas y Noticias 100% Gratis</span>
         </div>
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-text-primary tracking-tight leading-tight">
           Noticias y Guías de Élite
@@ -509,7 +523,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                 Tendencias
               </span>
               <span className="inline-flex sm:hidden items-center gap-1 text-[11px] font-bold text-text-tertiary">
-                Desliza <ArrowRight size={12} className="text-amber-500" />
+                Desliza <FaArrowRight className="text-amber-500 text-xs" />
               </span>
             </div>
           </div>
@@ -558,11 +572,11 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
 
                   <div className="flex items-center justify-between text-[10px] text-text-tertiary pt-2 border-t border-black/5 dark:border-white/5 font-semibold">
                     <span className="flex items-center gap-1">
-                      <Eye size={11} className="text-text-secondary" />
+                      <FaEye className="text-text-secondary text-[11px]" />
                       {popArt.views_count || 0} lecturas
                     </span>
                     <span className="flex items-center gap-1">
-                      <Clock size={10} />
+                      <FaClock className="text-[10px]" />
                       {popArt.reading_time || 3} min
                     </span>
                   </div>
@@ -594,6 +608,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                   : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
               }`}
             >
+              {getCategoryIcon(cat)}
               <span>{cat}</span>
               {count > 0 && (
                 <span
@@ -636,7 +651,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
         <div className="py-12 px-4 flex flex-col items-center justify-center">
           <GlassCard className="p-8 max-w-md w-full text-center flex flex-col items-center justify-center gap-4 border-red-500/20 bg-red-500/5">
             <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
-              <WifiOff size={28} />
+              <FaWifi className="text-2xl" />
             </div>
             <div>
               <h3 className="text-base font-bold text-text-primary mb-1">
@@ -651,14 +666,14 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
               onClick={handleRetry}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 cursor-pointer hover:scale-105 active:scale-95 transition-all"
             >
-              <RefreshCw size={14} />
+              <FaArrowsRotate className="text-xs shrink-0" />
               Reintentar conexión
             </button>
           </GlassCard>
         </div>
       ) : news.length === 0 ? (
         <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
-          <BookOpen size={48} className="text-text-muted opacity-40" />
+          <FaBookOpen className="text-4xl text-text-muted opacity-40" />
           <h3 className="text-lg font-bold text-text-primary">No se encontraron artículos</h3>
           <p className="text-xs text-text-secondary max-w-sm">
             Prueba a seleccionar otra categoría o cambiar el término de búsqueda.
@@ -720,7 +735,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                       <span>{format(new Date(art.published_at), 'd MMM yyyy', { locale: es })}</span>
                       <span>•</span>
                       <span className="flex items-center gap-1">
-                        <Clock size={11} />
+                        <FaClock className="text-[11px]" />
                         {art.reading_time} min
                       </span>
                     </div>
@@ -746,17 +761,17 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                     <div className="flex items-center gap-2 text-[11px] text-text-tertiary font-semibold">
                       {(art.views_count || 0) > 0 && (
                         <span className="flex items-center gap-0.5">
-                          <Eye size={11} /> {art.views_count}
+                          <FaEye className="text-[11px]" /> {art.views_count}
                         </span>
                       )}
                       {(art.likes_count || 0) > 0 && (
                         <span className="flex items-center gap-0.5 text-accent">
-                          <ThumbsUp size={10} /> {art.likes_count}
+                          <FaThumbsUp className="text-[10px]" /> {art.likes_count}
                         </span>
                       )}
                     </div>
                     <span className="font-bold text-accent inline-flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
-                      Leer <ChevronRight size={13} />
+                      Leer <FaChevronRight className="text-xs" />
                     </span>
                   </div>
                 </div>
@@ -775,7 +790,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                   className="inline-flex items-center justify-center gap-1 px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-bold bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed border border-black/10 dark:border-white/10 transition-all cursor-pointer text-text-primary shrink-0"
                   aria-label="Página anterior"
                 >
-                  <ChevronLeft size={15} />
+                  <FaChevronLeft className="text-xs" />
                   <span className="hidden sm:inline">Anterior</span>
                 </button>
 
@@ -814,7 +829,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                   aria-label="Página siguiente"
                 >
                   <span className="hidden sm:inline">Siguiente</span>
-                  <ChevronRight size={15} />
+                  <FaChevronRight className="text-xs" />
                 </button>
               </div>
 

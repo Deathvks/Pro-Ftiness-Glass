@@ -92,7 +92,7 @@ export default function TrainerAdvisoryCard({
 
             <div className="p-3.5 rounded-2xl bg-black/10 dark:bg-white/5 border border-black/5 dark:border-white/10 flex items-start gap-3">
               <div className="w-7 h-7 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0 mt-0.5">
-                <Sparkles size={15} />
+                <Utensils size={15} />
               </div>
               <div className="space-y-0.5">
                 <p className="text-xs font-bold text-text-primary">Estrategia Nutricional</p>
