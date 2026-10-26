@@ -41,7 +41,7 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
       return await Promise.race([
         componentImport(),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Timeout de red cargando chunk "${name}"`)), 25000)
+          setTimeout(() => reject(new Error(`Timeout de red cargando chunk "${name}"`)), 8000)
         )
       ]);
     };

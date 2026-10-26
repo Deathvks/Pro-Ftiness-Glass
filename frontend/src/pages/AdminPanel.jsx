@@ -15,31 +15,13 @@ import CustomSelect from '../components/CustomSelect';
 
 import AdminRatings from '../components/AdminRatings';
 import AdminUploads from '../components/AdminUploads';
-import { lazyWithRetry } from '../App';
+import AdminExercises from './AdminExercises';
+import AdminNotifications from './AdminNotifications';
+import AdminEmails from './AdminEmails';
+import SecurityDashboard from './SecurityDashboard';
+import AdminNewsManager from '../components/Admin/AdminNewsManager';
 
-export const ADMIN_TAB_LOADERS = {
-  exercises: () => import('./AdminExercises'),
-  notifications: () => import('./AdminNotifications'),
-  emails: () => import('./AdminEmails'),
-  security: () => import('./SecurityDashboard'),
-  news: () => import('../components/Admin/AdminNewsManager'),
-};
-
-const preloadedAdminTabs = new Set();
-export const preloadAdminTab = (tabKey) => {
-  if (!tabKey || preloadedAdminTabs.has(tabKey)) return;
-  const loader = ADMIN_TAB_LOADERS[tabKey];
-  if (loader) {
-    preloadedAdminTabs.add(tabKey);
-    loader().catch(() => preloadedAdminTabs.delete(tabKey));
-  }
-};
-
-const AdminExercises = lazyWithRetry(ADMIN_TAB_LOADERS.exercises, 'adminExercises');
-const AdminNotifications = lazyWithRetry(ADMIN_TAB_LOADERS.notifications, 'adminNotifications');
-const AdminEmails = lazyWithRetry(ADMIN_TAB_LOADERS.emails, 'adminEmails');
-const SecurityDashboard = lazyWithRetry(ADMIN_TAB_LOADERS.security, 'securityDashboard');
-const AdminNewsManager = lazyWithRetry(ADMIN_TAB_LOADERS.news, 'adminNewsManager');
+export const preloadAdminTab = () => {};
 import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getSystemStats } from '../services/adminService';
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
@@ -1197,30 +1179,21 @@ const AdminPanel = ({ onCancel }) => {
           </>
         ) : (
           <AdminTabErrorBoundary activeTab={activeTab}>
-            <React.Suspense
-              fallback={
-                <div className="py-20 flex flex-col items-center justify-center gap-3">
-                  <Spinner size={32} />
-                  <span className="text-xs font-semibold text-text-secondary tracking-wide uppercase">Cargando sección...</span>
-                </div>
-              }
-            >
-              {activeTab === 'exercises' ? (
-                <AdminExercises />
-              ) : activeTab === 'ratings' ? (
-                <AdminRatings />
-              ) : activeTab === 'notifications' ? (
-                <AdminNotifications />
-              ) : activeTab === 'emails' ? (
-                <AdminEmails />
-              ) : activeTab === 'uploads' ? (
-                <AdminUploads />
-              ) : activeTab === 'news' ? (
-                <AdminNewsManager />
-              ) : activeTab === 'security' ? (
-                <SecurityDashboard onBack={() => setActiveTab('users')} />
-              ) : null}
-            </React.Suspense>
+            {activeTab === 'exercises' ? (
+              <AdminExercises />
+            ) : activeTab === 'ratings' ? (
+              <AdminRatings />
+            ) : activeTab === 'notifications' ? (
+              <AdminNotifications />
+            ) : activeTab === 'emails' ? (
+              <AdminEmails />
+            ) : activeTab === 'uploads' ? (
+              <AdminUploads />
+            ) : activeTab === 'news' ? (
+              <AdminNewsManager />
+            ) : activeTab === 'security' ? (
+              <SecurityDashboard onBack={() => setActiveTab('users')} />
+            ) : null}
           </AdminTabErrorBoundary>
         )}
       </GlassCard>

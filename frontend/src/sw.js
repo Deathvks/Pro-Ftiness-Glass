@@ -186,7 +186,11 @@ registerRoute(
       url.pathname.startsWith('/api/sessions/') ||
       url.pathname.startsWith('/api/stories/') ||
       url.pathname.startsWith('/api/ai/') ||
-      url.pathname.startsWith('/api/2fa/')
+      url.pathname.startsWith('/api/2fa/') ||
+      url.pathname.startsWith('/api/exercise-list/') ||
+      url.pathname.startsWith('/api/exercises/') ||
+      url.pathname.startsWith('/api/news/') ||
+      url.pathname.startsWith('/api/system-settings/')
     ) {
       return false;
     }

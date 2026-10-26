@@ -233,8 +233,26 @@ const AdminExercises = ({ isTrainerMode = false }) => {
   
 
 
-  const [exercises, setExercises] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [exercises, setExercises] = useState(() => {
+    try {
+      const cached = localStorage.getItem('pro_fitness_exercise_list_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return [];
+  });
+  const [isLoading, setIsLoading] = useState(() => {
+    try {
+      const cached = localStorage.getItem('pro_fitness_exercise_list_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return false;
+      }
+    } catch (_) {}
+    return true;
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroupFilter, setSelectedGroupFilter] = useState('all');
   
@@ -372,12 +390,17 @@ const AdminExercises = ({ isTrainerMode = false }) => {
   ];
 
   const fetchExercises = async () => {
-    setIsLoading(true);
     try {
+      if (!exercises || exercises.length === 0) {
+        setIsLoading(true);
+      }
       const data = await getExerciseList();
       setExercises(Array.isArray(data) ? data : []);
     } catch (error) {
-      setExercises([]);
+      console.error('Error fetching exercises:', error);
+      if (!exercises || exercises.length === 0) {
+        setExercises([]);
+      }
       addToast('Error al cargar ejercicios', 'error');
     } finally {
       setIsLoading(false);

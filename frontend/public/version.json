@@ -1,4 +1,4 @@
 {
-  "version": "7.10.39",
-  "releaseNotes": "Actualización v7.10.39: Corrección de Ciberseguridad: el contador de IPs bloqueadas ahora responde dinámicamente al filtrado por período, normalización universal de IP tras proxies inversos, soporte completo de auto-bans por sniffing e inclusión de métrica de accesos bloqueados."
+  "version": "7.10.40",
+  "releaseNotes": "Actualización v7.10.40: Carga instantánea de apartados del panel admin eliminando code-splitting interno y Suspense, pre-renderizado instantáneo de ejercicios desde caché local, caché inmediata de chat en asesorías con carga paralela y reducción de timeout de chunks a 8s."
 }

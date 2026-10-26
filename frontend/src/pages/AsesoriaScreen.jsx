@@ -20,14 +20,24 @@ const getFullImageUrl = (path) => {
 };
 
 
+let cachedTrainerInfo = null;
+let cachedChatMessages = null;
+
+try {
+  const savedTrainer = localStorage.getItem('pfg_asesoria_trainer');
+  if (savedTrainer) cachedTrainerInfo = JSON.parse(savedTrainer);
+  const savedMsgs = localStorage.getItem('pfg_asesoria_messages');
+  if (savedMsgs) cachedChatMessages = JSON.parse(savedMsgs);
+} catch (_) {}
+
 export default function AsesoriaScreen({ onBack }) {
   const { subscribe, isSubscribed } = usePushNotifications();
-  const [trainer, setTrainer] = useState(null);
-  const [messages, setMessages] = useState([]);
-    const [showTrainerProfile, setShowTrainerProfile] = useState(false);
+  const [trainer, setTrainer] = useState(() => cachedTrainerInfo || null);
+  const [messages, setMessages] = useState(() => cachedChatMessages || []);
+  const [showTrainerProfile, setShowTrainerProfile] = useState(false);
   const [newMessage, setNewMessage] = useState('');
   const [fullscreenVideo, setFullscreenVideo] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !cachedTrainerInfo && (!cachedChatMessages || cachedChatMessages.length === 0));
   const [hasError, setHasError] = useState(false);
   const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef(null);
@@ -161,19 +171,43 @@ export default function AsesoriaScreen({ onBack }) {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
+      if (!cachedTrainerInfo && (!cachedChatMessages || cachedChatMessages.length === 0)) {
+        setLoading(true);
+      }
       setHasError(false);
-      const trainerRes = await apiClient('/chat/trainer-info');
-      setTrainer(trainerRes);
 
-      if (trainerRes && trainerRes.id) {
-        const historyRes = await apiClient(`/chat/history/${trainerRes.id}`);
-        setMessages(historyRes || []);
-        markAsRead(trainerRes.id);
+      const knownTrainerId = cachedTrainerInfo?.id || trainer?.id;
+      const trainerPromise = apiClient('/chat/trainer-info');
+      const historyPromise = knownTrainerId ? apiClient(`/chat/history/${knownTrainerId}`) : null;
+
+      const [trainerRes, historyFastRes] = await Promise.all([
+        trainerPromise,
+        historyPromise || Promise.resolve(null)
+      ]);
+
+      if (trainerRes) {
+        cachedTrainerInfo = trainerRes;
+        setTrainer(trainerRes);
+        try { localStorage.setItem('pfg_asesoria_trainer', JSON.stringify(trainerRes)); } catch (_) {}
+      }
+
+      const activeTrainerId = trainerRes?.id || knownTrainerId;
+      if (activeTrainerId) {
+        let historyData = historyFastRes;
+        if (!historyData) {
+          historyData = await apiClient(`/chat/history/${activeTrainerId}`);
+        }
+        const msgs = Array.isArray(historyData) ? historyData : [];
+        cachedChatMessages = msgs;
+        setMessages(msgs);
+        try { localStorage.setItem('pfg_asesoria_messages', JSON.stringify(msgs)); } catch (_) {}
+        markAsRead(activeTrainerId);
       }
     } catch (error) {
       console.error('Error fetching chat data:', error);
-      setHasError(true);
+      if (!cachedTrainerInfo && (!cachedChatMessages || cachedChatMessages.length === 0)) {
+        setHasError(true);
+      }
       addToast('No se pudo conectar con la asesoría. Pulsa en reintentar.', 'error');
     } finally {
       setLoading(false);
