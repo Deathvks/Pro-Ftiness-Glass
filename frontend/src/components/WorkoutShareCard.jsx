@@ -140,7 +140,7 @@ const WorkoutShareCard = forwardRef(({
         return `${m}m`;
     };
 
-    const getSetsSummary = (sets) => {
+    const getSetsSummary = (sets, compact = false) => {
         if (!sets || sets.length === 0) return "Sin peso";
         const validSets = sets.filter(s => parseFloat(s.reps) > 0);
         const effectiveCount = validSets.filter(s => !s.is_warmup && !s.is_dropset).length;
@@ -163,9 +163,9 @@ const WorkoutShareCard = forwardRef(({
         return (
             <>
                 {parts.join(' + ')}
-                {maxW > 0 && (
+                {maxW > 0 && !compact && (
                     <>
-                        <span className="mx-3 text-white/40">•</span>
+                        <span className="mx-2.5 text-white/40">•</span>
                         Máx {maxW}kg
                     </>
                 )}
@@ -195,6 +195,53 @@ const WorkoutShareCard = forwardRef(({
         if (len > 25) return 'text-5xl';
         if (len > 14) return 'text-6xl';
         return 'text-7xl';
+    };
+
+    // Lista de ejercicios sanitizada y métricas de layout
+    const exerciseList = useMemo(() => {
+        if (!details || !Array.isArray(details)) return [];
+        return details;
+    }, [details]);
+
+    const exerciseCount = exerciseList.length;
+    // Con 7 o más ejercicios usamos distribución de 2 columnas para que quepan todos sin recortes
+    const isMultiColumn = exerciseCount >= 7;
+
+    const displayedExercises = useMemo(() => {
+        if (isMultiColumn) {
+            return exerciseCount > 10 ? exerciseList.slice(0, 9) : exerciseList.slice(0, 10);
+        }
+        return exerciseList.slice(0, 6);
+    }, [exerciseList, isMultiColumn, exerciseCount]);
+
+    // Estilos adaptativos según cantidad de ejercicios en columna única
+    const getItemStyle = (count) => {
+        if (count <= 3) {
+            return {
+                card: 'px-6 py-3.5 rounded-2xl',
+                title: 'text-2xl font-black',
+                subtitle: 'text-base font-semibold',
+                iconSize: 14,
+                badge: 'px-5 py-2.5 rounded-xl text-xl font-black'
+            };
+        }
+        if (count === 4) {
+            return {
+                card: 'px-5 py-2.5 rounded-2xl',
+                title: 'text-xl font-black',
+                subtitle: 'text-sm font-semibold',
+                iconSize: 13,
+                badge: 'px-4 py-2 rounded-xl text-lg font-black'
+            };
+        }
+        // 5 o 6 ejercicios
+        return {
+            card: 'px-4 py-2 rounded-xl',
+            title: 'text-lg font-black',
+            subtitle: 'text-xs font-semibold',
+            iconSize: 12,
+            badge: 'px-3.5 py-1.5 rounded-lg text-base font-black'
+        };
     };
 
     return (
@@ -315,7 +362,7 @@ const WorkoutShareCard = forwardRef(({
                 </div>
 
                 {/* 2. ZONA CENTRAL: TÍTULO RUTINA + MÚSCULOS ENTRENADOS */}
-                <div className="flex flex-col gap-5 my-6">
+                <div className="flex flex-col gap-4 my-3">
                     <div>
                         <span
                             className="font-extrabold tracking-[0.3em] uppercase text-xl mb-3 block drop-shadow"
@@ -330,14 +377,14 @@ const WorkoutShareCard = forwardRef(({
 
                     {/* BADGES: MÚSCULOS ENTRENADOS */}
                     {computedMuscles.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-3 pt-2">
+                        <div className="flex flex-wrap items-center gap-3 pt-1">
                             <span className="text-xs font-black uppercase tracking-widest text-white/50 mr-1">
                                 Músculos:
                             </span>
                             {computedMuscles.map((muscle, idx) => (
                                 <div
                                     key={idx}
-                                    className="px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg flex items-center gap-2.5"
+                                    className="px-5 py-2 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg flex items-center gap-2.5"
                                 >
                                     <div className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: accent, color: accent }} />
                                     <span className="text-lg font-black tracking-wide text-white uppercase">
@@ -350,7 +397,7 @@ const WorkoutShareCard = forwardRef(({
 
                     {/* BANNER DESTACADO: RÉCORD PERSONAL BATIDO (SI LO HUBO) */}
                     {sessionPRs.length > 0 && (
-                        <div className="mt-2 bg-gradient-to-r from-amber-500/25 via-yellow-500/20 to-amber-500/10 border-2 border-yellow-400/50 rounded-[2.2rem] p-6 backdrop-blur-2xl flex items-center gap-5 shadow-[0_0_40px_rgba(245,158,11,0.35)] animate-pulse">
+                        <div className="mt-1 bg-gradient-to-r from-amber-500/25 via-yellow-500/20 to-amber-500/10 border-2 border-yellow-400/50 rounded-[2.2rem] p-5 backdrop-blur-2xl flex items-center gap-5 shadow-[0_0_40px_rgba(245,158,11,0.35)] animate-pulse">
                             <div className="w-16 h-16 rounded-2xl bg-yellow-400/20 border border-yellow-400/50 flex items-center justify-center text-yellow-300 shrink-0 shadow-lg">
                                 <FaTrophy size={36} className="drop-shadow-[0_0_12px_rgba(250,204,21,0.8)]" />
                             </div>
@@ -372,18 +419,18 @@ const WorkoutShareCard = forwardRef(({
                 </div>
 
                 {/* 3. BENTO GRID DE MÉTRICAS DE ALTO VALOR (MÉTRICAS QUE REALMENTE IMPORTAN AL ATLETA) */}
-                <div className="grid grid-cols-3 gap-5 my-4">
+                <div className="grid grid-cols-3 gap-5 my-3">
                     {/* MÉTRICA 1: CARGA MÁXIMA (TOP LIFT DEL DÍA) */}
-                    <div className="bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-[2.5rem] p-6 flex flex-col items-center justify-center aspect-square shadow-2xl relative overflow-hidden group">
-                        <div className="p-3.5 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400 mb-3 shadow-md">
-                            <FaDumbbell size={36} />
+                    <div className="bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-[2.2rem] py-5 px-4 h-[215px] flex flex-col items-center justify-center shadow-2xl relative overflow-hidden group">
+                        <div className="p-3 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400 mb-2.5 shadow-md">
+                            <FaDumbbell size={34} />
                         </div>
                         <span className="text-5xl font-black text-white tracking-tighter drop-shadow-md">
                             {stats.maxWeight > 0
                                 ? `${stats.maxWeight}kg`
                                 : (stats.totalReps > 0 ? `${stats.totalReps}` : `${stats.effectiveSets}`)}
                         </span>
-                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-2 text-center">
+                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-1.5 text-center">
                             {stats.maxWeight > 0
                                 ? 'Carga Máxima'
                                 : (stats.totalReps > 0 ? 'Repeticiones' : 'Series')}
@@ -391,75 +438,119 @@ const WorkoutShareCard = forwardRef(({
                     </div>
 
                     {/* MÉTRICA 2: SERIES EFECTIVAS (ESTÍMULO REAL) */}
-                    <div className="bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-[2.5rem] p-6 flex flex-col items-center justify-center aspect-square shadow-2xl relative overflow-hidden">
+                    <div className="bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-[2.2rem] py-5 px-4 h-[215px] flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
                         <div
-                            className="p-3.5 rounded-2xl border mb-3 shadow-md"
+                            className="p-3 rounded-2xl border mb-2.5 shadow-md"
                             style={{
                                 backgroundColor: `${accent}25`,
                                 borderColor: `${accent}40`,
                                 color: accent
                             }}
                         >
-                            <FaBolt size={34} />
+                            <FaBolt size={32} />
                         </div>
                         <span className="text-5xl font-black text-white tracking-tighter drop-shadow-md">
                             {stats.effectiveSets}
                         </span>
-                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-2 text-center">
+                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-1.5 text-center">
                             Series Efectivas
                         </span>
                     </div>
 
                     {/* MÉTRICA 3: TIEMPO ACTIVO & CALORÍAS */}
-                    <div className="bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-[2.5rem] p-6 flex flex-col items-center justify-center aspect-square shadow-2xl relative overflow-hidden">
-                        <div className="p-3.5 rounded-2xl bg-sky-500/20 border border-sky-500/30 text-sky-400 mb-3 shadow-md">
-                            <FaClock size={36} />
+                    <div className="bg-white/[0.07] backdrop-blur-xl border border-white/15 rounded-[2.2rem] py-5 px-4 h-[215px] flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
+                        <div className="p-3 rounded-2xl bg-sky-500/20 border border-sky-500/30 text-sky-400 mb-2.5 shadow-md">
+                            <FaClock size={34} />
                         </div>
                         <span className="text-5xl font-black text-white tracking-tighter drop-shadow-md">
                             {formatTime(duration_seconds || 0)}
                         </span>
-                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-2 text-center">
+                        <span className="text-xs text-white/60 font-black uppercase tracking-widest mt-1.5 text-center">
                             {calories_burned > 0 ? `${Math.round(calories_burned)} kcal` : 'Tiempo Activo'}
                         </span>
                     </div>
                 </div>
 
-                {/* 4. LISTA DE EJERCICIOS DESTACADOS */}
-                <div className="bg-white/[0.06] backdrop-blur-2xl rounded-[2.8rem] border border-white/15 p-7 shadow-2xl flex flex-col flex-1 max-h-[460px] overflow-hidden my-2">
-                    <div className="flex items-center justify-between pb-5 border-b border-white/10 mb-4 shrink-0">
+                {/* 4. LISTA DE EJERCICIOS DESTACADOS (DISTRIBUCIÓN ADAPTATIVA SEGÚN VOLUMEN) */}
+                <div className="bg-white/[0.06] backdrop-blur-2xl rounded-[2.8rem] border border-white/15 p-6 shadow-2xl flex flex-col flex-1 min-h-0 my-2 overflow-hidden">
+                    <div className="flex items-center justify-between pb-3.5 border-b border-white/10 mb-3 shrink-0">
                         <div className="flex items-center gap-3">
-                            <FaArrowTrendUp size={24} style={{ color: accent }} />
+                            <FaArrowTrendUp size={22} style={{ color: accent }} />
                             <h3 className="text-2xl font-black text-white tracking-tight uppercase">
                                 Ejercicios de la Sesión
                             </h3>
                         </div>
                         <span className="text-sm font-bold text-white/60">
-                            {stats.effectiveSets} Series Efectivas
+                            {exerciseCount > 0 ? `${exerciseCount} ${exerciseCount === 1 ? 'Ejercicio' : 'Ejercicios'} • ` : ''}
+                            {stats.effectiveSets} Series
                         </span>
                     </div>
 
-                    <div className="flex flex-col gap-3.5 overflow-hidden flex-1 justify-center">
-                        {details && details.slice(0, 5).map((ex, i) => {
-                            const maxWeight = getMaxWeight(ex.setsDone);
-                            return (
-                                <div key={i} className="flex justify-between items-center w-full bg-white/[0.04] border border-white/5 rounded-2xl px-5 py-3 shadow-sm">
-                                    <div className="flex flex-col min-w-0 pr-4 flex-1">
-                                        <span className="text-2xl font-black text-white truncate">
-                                            {t(ex.exerciseName, { ns: 'exercise_names', defaultValue: ex.exerciseName })}
-                                        </span>
-                                        <div className="flex items-center gap-2 text-white/50 text-base font-semibold mt-0.5">
-                                            <FaBolt size={14} style={{ color: accent }} className="shrink-0" />
-                                            <span>{getSetsSummary(ex.setsDone)}</span>
+                    {exerciseCount === 0 ? (
+                        <div className="flex-1 flex items-center justify-center text-white/40 font-semibold text-xl">
+                            Sin ejercicios registrados
+                        </div>
+                    ) : isMultiColumn ? (
+                        /* CUANDO HAY 7 O MÁS EJERCICIOS: 2 COLUMNAS PARA QUE NINGUNO SE QUEDE FUERA */
+                        <div className="grid grid-cols-2 gap-2.5 overflow-hidden flex-1 content-start">
+                            {displayedExercises.map((ex, i) => {
+                                const maxWeight = getMaxWeight(ex.setsDone);
+                                return (
+                                    <div
+                                        key={i}
+                                        className="flex justify-between items-center w-full bg-white/[0.04] border border-white/5 rounded-xl px-3.5 py-2 shadow-sm min-w-0"
+                                    >
+                                        <div className="flex flex-col min-w-0 pr-2 flex-1">
+                                            <span className="text-base font-black text-white truncate">
+                                                {t(ex.exerciseName, { ns: 'exercise_names', defaultValue: ex.exerciseName })}
+                                            </span>
+                                            <div className="flex items-center gap-1.5 text-white/50 text-xs font-semibold mt-0.5 truncate">
+                                                <FaBolt size={11} style={{ color: accent }} className="shrink-0" />
+                                                <span className="truncate">{getSetsSummary(ex.setsDone, true)}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="shrink-0 px-2.5 py-1 rounded-lg bg-white/10 border border-white/20 text-sm font-black text-white shadow-inner">
+                                            {maxWeight !== null ? `${maxWeight} kg` : '-'}
                                         </div>
                                     </div>
-
-                                    <div className="shrink-0 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-xl font-black text-white shadow-inner">
-                                        {maxWeight !== null ? `${maxWeight} kg` : '-'}
-                                    </div>
+                                );
+                            })}
+                            {exerciseCount > 10 && (
+                                <div className="flex items-center justify-center w-full bg-white/[0.03] border border-dashed border-white/10 rounded-xl px-3 py-2 text-white/60 text-sm font-black uppercase tracking-wider">
+                                    + {exerciseCount - 9} más
                                 </div>
-                            );
-                        })}
-                    </div>
+                            )}
+                        </div>
+                    ) : (
+                        /* CUANDO HAY DE 1 A 6 EJERCICIOS: 1 COLUMNA CON ESCALADO DE TAMAÑO DINÁMICO */
+                        <div className={`flex flex-col ${exerciseCount <= 3 ? 'gap-3.5 justify-center' : exerciseCount === 4 ? 'gap-2.5 justify-start' : 'gap-2 justify-start'} overflow-hidden flex-1`}>
+                            {displayedExercises.map((ex, i) => {
+                                const maxWeight = getMaxWeight(ex.setsDone);
+                                const style = getItemStyle(exerciseCount);
+                                return (
+                                    <div
+                                        key={i}
+                                        className={`flex justify-between items-center w-full bg-white/[0.04] border border-white/5 ${style.card} shadow-sm`}
+                                    >
+                                        <div className="flex flex-col min-w-0 pr-4 flex-1">
+                                            <span className={`${style.title} text-white truncate`}>
+                                                {t(ex.exerciseName, { ns: 'exercise_names', defaultValue: ex.exerciseName })}
+                                            </span>
+                                            <div className={`flex items-center gap-2 text-white/50 ${style.subtitle} mt-0.5`}>
+                                                <FaBolt size={style.iconSize} style={{ color: accent }} className="shrink-0" />
+                                                <span>{getSetsSummary(ex.setsDone, false)}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className={`shrink-0 ${style.badge} bg-white/10 border border-white/20 text-white shadow-inner`}>
+                                            {maxWeight !== null ? `${maxWeight} kg` : '-'}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 {/* 5. FOOTER ELEGANTE (PRO FITNESS BRANDING) */}
