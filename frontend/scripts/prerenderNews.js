@@ -315,9 +315,16 @@ async function main() {
 
   const newsBodyHtml = `
   <main style="padding: 3rem 1.5rem; max-width: 1200px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-    <header style="margin-bottom: 3rem; text-align: center;">
-      <h1 style="font-size: 2.75rem; font-weight: 900; margin-bottom: 1rem; letter-spacing: -0.02em;">Noticias y Guías de Élite de Fitness y Nutrición</h1>
-      <p style="font-size: 1.15rem; color: #94a3b8; max-width: 750px; margin: 0 auto; line-height: 1.6;">Aprende con artículos basados en evidencia científica, optimiza tus comidas y domina tu rendimiento en el gimnasio con Pro Fitness Glass.</p>
+    <header style="margin-bottom: 2.5rem; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+        <div style="text-align: left;">
+          <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">App de Gimnasio 100% Gratis</span>
+        </div>
+      </div>
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin-bottom: 0.75rem; letter-spacing: -0.02em;">Noticias y Guías de Élite de Fitness y Nutrición</h1>
+      <p style="font-size: 1.05rem; color: #94a3b8; max-width: 750px; margin: 0 auto; line-height: 1.6;">Aprende con artículos basados en evidencia científica, optimiza tus comidas y domina tu rendimiento en el gimnasio con Pro Fitness Glass.</p>
     </header>
     <section style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.75rem;">
       ${articleCardsHtml}

@@ -376,37 +376,70 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           </div>
         )}
 
-        {/* NAVEGACIÓN SUPERIOR / BREADCRUMB */}
-        <nav aria-label="Ruta de navegación" className="flex items-center justify-between gap-2 pb-4 pt-1">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-text-tertiary min-w-0">
+        {/* NAVEGACIÓN SUPERIOR / BREADCRUMB CON LOGO Y MARCA */}
+        <nav aria-label="Ruta de navegación" className="flex items-center justify-between gap-2 pb-4 pt-1 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-2 min-w-0">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 group cursor-pointer shrink-0"
+              title="Pro Fitness Glass - App 100% Gratis"
+            >
+              <img
+                src="/icons/icon-96.png"
+                alt="Pro Fitness Glass"
+                className="w-8 h-8 rounded-xl object-contain shadow-xs ring-1 ring-black/10 dark:ring-white/10 group-hover:scale-105 transition-transform shrink-0"
+              />
+              <div className="flex flex-col text-left">
+                <span className="font-black text-xs sm:text-sm tracking-tight text-text-primary leading-none group-hover:text-accent transition-colors truncate">
+                  Pro Fitness Glass
+                </span>
+                <span className="text-[9px] font-black text-emerald-400 tracking-wider uppercase leading-none mt-0.5">
+                  100% Gratis
+                </span>
+              </div>
+            </Link>
+
+            <span className="text-text-tertiary text-xs shrink-0">/</span>
+
             <button
               type="button"
               onClick={handleGoBack}
-              className="cursor-pointer inline-flex items-center gap-1 text-text-secondary hover:text-accent transition-colors shrink-0 font-bold"
+              className="cursor-pointer inline-flex items-center gap-1 text-text-secondary hover:text-accent transition-colors shrink-0 font-bold text-xs"
             >
-              <ChevronLeft size={16} /> Noticias
+              <ChevronLeft size={14} /> Noticias
             </button>
-            <span className="shrink-0 hidden xs:inline">/</span>
+            <span className="shrink-0 hidden sm:inline text-text-tertiary text-xs">/</span>
             <button
               type="button"
               onClick={() => navigate(`/noticias?category=${encodeURIComponent(article.category)}`)}
-              className="cursor-pointer uppercase tracking-wider text-accent hover:underline transition-colors font-bold truncate hidden xs:inline"
+              className="cursor-pointer uppercase tracking-wider text-accent hover:underline transition-colors font-bold truncate hidden sm:inline text-xs"
               title={`Ver artículos de ${article.category}`}
             >
               {article.category}
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
             {!isNative && isMobile && (
               <a
                 href={appIntentUrl}
-                className="whitespace-nowrap shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/15 text-accent border border-accent/30 hover:bg-accent hover:text-accent-contrast transition-all text-[11px] font-bold shadow-xs active:scale-95"
+                className="whitespace-nowrap shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent text-accent-contrast transition-all text-xs font-bold shadow-xs active:scale-95"
                 title="Abrir en la aplicación nativa"
               >
                 <Smartphone size={12} />
                 <span className="whitespace-nowrap">Abrir App</span>
               </a>
+            )}
+
+            {!isAuthenticated && (
+              <button
+                type="button"
+                onClick={() => navigate('/register')}
+                className="cursor-pointer hidden xs:inline-flex items-center gap-1 px-3 py-1 rounded-full bg-accent text-accent-contrast text-xs font-black shadow-xs hover:opacity-90 active:scale-95 transition-all whitespace-nowrap"
+              >
+                <span>Probar Gratis</span>
+                <ArrowRight size={12} className="shrink-0" />
+              </button>
             )}
 
             {/* Control de tamaño de fuente A/A+/A++ */}

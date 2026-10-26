@@ -1,6 +1,6 @@
 /* frontend/src/pages/NewsListPage.jsx */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
   Newspaper,
@@ -19,7 +19,10 @@ import {
   ThumbsUp,
   WifiOff,
   RefreshCw,
-  X
+  X,
+  Calculator,
+  Utensils,
+  Dumbbell
 } from 'lucide-react';
 import { FaFire } from 'react-icons/fa6';
 import { format } from 'date-fns';
@@ -310,36 +313,121 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           <script type="application/ld+json">{JSON.stringify(collectionSchema)}</script>
         </Helmet>
 
-        {/* HEADER / NAV BAR */}
-        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
-          <div className="flex items-center justify-between w-full sm:w-auto gap-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <button
-                type="button"
-                onClick={handleGoHome}
-                className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full ring-1 ring-black/10 dark:ring-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-xs font-bold text-text-secondary shrink-0"
-              >
-                <ChevronLeft size={16} /> {isAuthenticated ? 'Volver a la App' : 'Inicio'}
-              </button>
-              <span className="text-xs text-text-tertiary hidden xs:inline">/</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-accent truncate hidden xs:inline">Blog & Noticias</span>
-            </div>
+        {/* HEADER CON FOTO, NOMBRE DE LA APP, BADGE 100% GRATIS Y NAVEGACIÓN */}
+        <header className="flex flex-col gap-3.5 pt-2">
+          {/* Barra superior de marca y acciones */}
+          <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+            {/* Logo de la app + Nombre + Badge 100% Gratis */}
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2.5 sm:gap-3 group cursor-pointer min-w-0 shrink-0"
+              title="Pro Fitness Glass - App de Gimnasio y Nutrición 100% Gratis"
+            >
+              <img
+                src="/icons/icon-96.png"
+                alt="Logo Pro Fitness Glass"
+                className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl object-contain shadow-sm ring-1 ring-black/10 dark:ring-white/10 group-hover:scale-105 transition-transform shrink-0"
+              />
+              <div className="flex flex-col text-left min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-black text-base sm:text-lg tracking-tight text-text-primary leading-none group-hover:text-accent transition-colors">
+                    Pro Fitness Glass
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    100% Gratis
+                  </span>
+                </div>
+                <span className="text-[11px] text-text-secondary font-medium leading-none mt-1 truncate hidden xs:inline">
+                  Diario de entrenamiento, pesas, calorías y macros
+                </span>
+              </div>
+            </Link>
 
-            {!isNative && isMobile && (
-              <a
-                href={appIntentUrl}
-                className="whitespace-nowrap shrink-0 sm:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 hover:scale-105 active:scale-95 transition-all"
-                title="Abrir en la aplicación"
-              >
-                <Smartphone size={13} />
-                <span className="whitespace-nowrap">Abrir App</span>
-              </a>
-            )}
+            {/* Acciones principales (Abrir App / Registrarse / Iniciar Sesión) */}
+            <div className="flex items-center gap-2 shrink-0 ml-auto">
+              {!isNative && isMobile && (
+                <a
+                  href={appIntentUrl}
+                  className="whitespace-nowrap inline-flex sm:hidden items-center gap-1 px-3 py-1.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 hover:scale-105 active:scale-95 transition-all"
+                  title="Abrir en la aplicación nativa"
+                >
+                  <Smartphone size={13} />
+                  <span>Abrir App</span>
+                </a>
+              )}
+
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={handleGoHome}
+                  className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full ring-1 ring-black/10 dark:ring-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-xs sm:text-sm font-bold text-text-secondary hover:text-text-primary shrink-0 whitespace-nowrap active:scale-95"
+                >
+                  <span>Volver a la App</span>
+                  <ArrowRight size={14} className="text-accent" />
+                </button>
+              ) : (
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/login')}
+                    className="cursor-pointer hidden sm:inline-flex items-center gap-1 px-3 py-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-xs font-bold transition-colors whitespace-nowrap"
+                  >
+                    <LogIn size={13} />
+                    <span>Iniciar Sesión</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/register')}
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-full bg-accent text-accent-contrast text-xs sm:text-sm font-black shadow-md shadow-accent/25 hover:opacity-90 active:scale-95 transition-all whitespace-nowrap"
+                  >
+                    <span>Empezar Gratis</span>
+                    <ArrowRight size={14} className="shrink-0" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            {/* Buscador */}
-            <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-72">
+          {/* Segmented Tool Switcher Pill + Buscador de artículos */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
+            {/* Segmented Glass Switcher Pill (coherente con las calculadoras y ejercicios) */}
+            <nav aria-label="Herramientas públicas" className="grid grid-cols-4 gap-1 sm:gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl flex-1 max-w-xl">
+              <Link
+                to="/calculadora-1rm"
+                className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
+              >
+                <Calculator size={13} className="text-accent shrink-0" />
+                <span className="sm:hidden">1RM</span>
+                <span className="hidden sm:inline">Calculadora 1RM</span>
+              </Link>
+              <Link
+                to="/calculadora-calorias-macros"
+                className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
+              >
+                <Utensils size={13} className="text-emerald-400 shrink-0" />
+                <span className="sm:hidden">Macros</span>
+                <span className="hidden sm:inline">Calorías y Macros</span>
+              </Link>
+              <Link
+                to="/ejercicios"
+                className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors whitespace-nowrap"
+              >
+                <Dumbbell size={13} className="text-blue-400 shrink-0" />
+                <span>Ejercicios</span>
+              </Link>
+              <Link
+                to="/noticias"
+                className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl bg-purple-500/15 text-purple-400 text-[11px] sm:text-xs font-black border border-purple-500/30 shadow-xs whitespace-nowrap"
+              >
+                <Newspaper size={13} className="text-purple-400 shrink-0" />
+                <span className="sm:hidden">Guías</span>
+                <span className="hidden sm:inline">Guías y Noticias</span>
+              </Link>
+            </nav>
+
+            {/* Buscador de artículos */}
+            <form onSubmit={handleSearchSubmit} className="relative w-full md:w-64 shrink-0">
               <input
                 type="text"
                 value={searchInput}
@@ -347,29 +435,8 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                 placeholder="Buscar artículos..."
                 className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full pl-9 pr-4 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent transition-all"
               />
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
             </form>
-
-            {!isNative && isMobile && (
-              <a
-                href={appIntentUrl}
-                className="whitespace-nowrap shrink-0 hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-accent/15 text-accent border border-accent/25 hover:bg-accent hover:text-accent-contrast transition-all text-xs font-bold shadow-xs active:scale-95"
-                title="Abrir en la aplicación"
-              >
-                <Smartphone size={13} />
-                <span className="whitespace-nowrap">Abrir App</span>
-              </a>
-            )}
-
-            {!isAuthenticated && (
-              <button
-                type="button"
-                onClick={() => navigate('/login')}
-                className="cursor-pointer shrink-0 hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 hover:scale-105 active:scale-95 transition-all whitespace-nowrap"
-              >
-                <LogIn size={14} /> Iniciar Sesión
-              </button>
-            )}
           </div>
         </header>
 
@@ -408,15 +475,15 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
 
       {/* TITULAR PRINCIPAL */}
       <section className="text-center sm:text-left py-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-accent/10 text-accent mb-3 border border-accent/20">
-          <Sparkles size={13} />
-          Ciencia, Entrenamiento y Nutrición
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 mb-3 border border-emerald-500/25">
+          <Sparkles size={13} className="shrink-0" />
+          <span>Diario de Gimnasio y Guías Científicas • 100% Gratis</span>
         </div>
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-text-primary tracking-tight leading-tight">
           Noticias y Guías de Élite
         </h1>
         <p className="text-text-secondary text-sm sm:text-base max-w-2xl mt-2 font-medium">
-          Aprende con artículos basados en evidencia científica, optimiza tus comidas y domina tu rendimiento en el gimnasio.
+          Aprende con artículos basados en evidencia científica, optimiza tus comidas y domina tu rendimiento en el gimnasio con <strong className="text-text-primary font-bold">Pro Fitness Glass</strong>.
         </p>
       </section>
 
