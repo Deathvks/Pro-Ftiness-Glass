@@ -18,10 +18,14 @@ const WEEKDAYS = [
   { id: '0', label: 'Domingo', short: 'D' }
 ];
 
+// Fast Cache for Client Detail
+const clientDetailCache = new Map();
+
 export default function ClientDetailPanel({ client, onBack }) {
-  const [workouts, setWorkouts] = useState([]);
-  const [assignedRoutines, setAssignedRoutines] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cached = clientDetailCache.get(client.id);
+  const [workouts, setWorkouts] = useState(() => cached?.workouts || []);
+  const [assignedRoutines, setAssignedRoutines] = useState(() => cached?.assignedRoutines || []);
+  const [loading, setLoading] = useState(() => !cached);
 
   const [trainingDays, setTrainingDays] = useState(
     client?.anamnesisData?.trainingDays || []
@@ -35,17 +39,23 @@ export default function ClientDetailPanel({ client, onBack }) {
     fetchData();
   }, [client.id]);
 
-  const fetchData = async () => {
+    const fetchData = async () => {
     try {
-      setLoading(true);
-      // Fetch workouts
-      const workoutsData = await apiClient(`/trainer/clients/${client.id}/workouts`);
-      setWorkouts(workoutsData);
+      const cached = clientDetailCache.get(client.id);
+      if (!cached) setLoading(true);
 
-      // Fetch routines to filter assigned ones
-      const routinesData = await apiClient('/trainer/routines');
-      const assigned = routinesData.filter(r => r.AssignedClients?.some(c => c.id === client.id));
+      // Parallelize workouts & routines fetch
+      const [workoutsData, routinesData] = await Promise.all([
+        apiClient(`/trainer/clients/${client.id}/workouts`),
+        apiClient('/trainer/routines')
+      ]);
+
+      const wData = workoutsData || [];
+      const assigned = (routinesData || []).filter(r => r.AssignedClients?.some(c => c.id === client.id));
+
+      setWorkouts(wData);
       setAssignedRoutines(assigned);
+      clientDetailCache.set(client.id, { workouts: wData, assignedRoutines: assigned });
     } catch (err) {
       console.error(err);
       addToast('Error al cargar datos del cliente', 'error');
@@ -168,7 +178,7 @@ export default function ClientDetailPanel({ client, onBack }) {
             Rutinas Asignadas
           </h2>
           <div className="bg-bg-secondary border border-glass-border rounded-3xl p-6 shadow-sm">
-            {loading ? (
+            {loading && (!assignedRoutines || assignedRoutines.length === 0) ? (
               <div className="flex justify-center p-4">
                 <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
               </div>
@@ -232,7 +242,7 @@ export default function ClientDetailPanel({ client, onBack }) {
             <CheckCircleIcon className="w-5 h-5 text-green-500" />
             Historial Realizado
           </h2>
-          {loading ? (
+          {loading && (!workouts || workouts.length === 0) ? (
             <div className="flex justify-center p-8">
               <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
             </div>

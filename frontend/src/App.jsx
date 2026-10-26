@@ -161,8 +161,10 @@ export const preloadAllPrimaryViews = () => {
   if (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData) return;
   const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub', 'publicProfile', 'profile', 'noticias'];
   const user = useAppStore.getState().userProfile;
-  if (user?.role === 'admin') {
+  if (user?.role === 'admin' || user?.role === 'trainer') {
     primaryNavViews.push('adminPanel');
+    primaryNavViews.push('trainerPanel');
+    primaryNavViews.push('asesoria');
   }
   primaryNavViews.forEach((v, idx) => {
     setTimeout(() => {

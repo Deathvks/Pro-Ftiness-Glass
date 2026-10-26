@@ -26,9 +26,15 @@ import UserAvatar from '../UserAvatar';
 import { useToast } from '../../hooks/useToast';
 import useAppStore from '../../store/useAppStore';
 
+let cachedTrainerClients = null;
+try {
+  const saved = localStorage.getItem('pfg_trainer_clients');
+  if (saved) cachedTrainerClients = JSON.parse(saved);
+} catch (_) {}
+
 export default function TrainerPanel({ setView }) {
-  const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [clients, setClients] = useState(() => cachedTrainerClients || []);
+  const [loading, setLoading] = useState(() => !cachedTrainerClients || cachedTrainerClients.length === 0);
 
   const [showAddFlow, setShowAddFlow] = useState(() => sessionStorage.getItem('trainer_showAddFlow') === 'true');
   const [editingClient, setEditingClient] = useState(() => {
@@ -76,8 +82,16 @@ export default function TrainerPanel({ setView }) {
 
   const fetchClients = async () => {
     try {
+      if (!cachedTrainerClients || cachedTrainerClients.length === 0) {
+        setLoading(true);
+      }
       const res = await apiClient('/trainer/clients', { method: 'GET' });
-      setClients(res);
+      const clientList = Array.isArray(res) ? res : [];
+      cachedTrainerClients = clientList;
+      setClients(clientList);
+      try {
+        localStorage.setItem('pfg_trainer_clients', JSON.stringify(clientList));
+      } catch (_) {}
     } catch (error) {
       console.error(error);
     } finally {
@@ -145,7 +159,6 @@ export default function TrainerPanel({ setView }) {
     if (dateFilter !== 'all' && client.createdAt) {
       const clientDate = new Date(client.createdAt);
       const now = new Date();
-      // Reset hours to compare pure dates properly
       clientDate.setHours(0, 0, 0, 0);
       now.setHours(0, 0, 0, 0);
 
@@ -174,8 +187,6 @@ export default function TrainerPanel({ setView }) {
           sessionStorage.removeItem('trainer_showAddFlow');
           fetchClients();
         }} />);
-
-
   }
 
   if (editingClient) {
@@ -192,8 +203,6 @@ export default function TrainerPanel({ setView }) {
           setEditingClient(null);
           sessionStorage.removeItem('trainer_editingClient');
         }} />);
-
-
   }
 
   if (clientToDetail) {
@@ -285,31 +294,28 @@ export default function TrainerPanel({ setView }) {
           <button
             onClick={() => setActiveTab('activos')}
             className={`shrink-0 whitespace-nowrap py-3 px-5 font-bold rounded-xl transition-all ${activeTab === 'activos' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}>
-            
             Activos
           </button>
-            <button
-              onClick={() => setActiveTab('chats')}
-              className={`shrink-0 whitespace-nowrap py-3 px-5 font-bold rounded-xl transition-all flex items-center justify-center gap-2 relative ${activeTab === 'chats' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}>
-                            <ChatBubbleLeftRightIcon className="w-5 h-5 shrink-0" />
-                Asesorías
-                {unreadChats > 0 && (
-                  <span className="absolute top-1 right-1 flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-accent shadow-[0_0_8px_rgba(0,0,0,0.5)]"></span>
-                  </span>
-                )}
-              </button>
+          <button
+            onClick={() => setActiveTab('chats')}
+            className={`shrink-0 whitespace-nowrap py-3 px-5 font-bold rounded-xl transition-all flex items-center justify-center gap-2 relative ${activeTab === 'chats' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}>
+            <ChatBubbleLeftRightIcon className="w-5 h-5 shrink-0" />
+            Asesorías
+            {unreadChats > 0 && (
+              <span className="absolute top-1 right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-accent shadow-[0_0_8px_rgba(0,0,0,0.5)]"></span>
+              </span>
+            )}
+          </button>
           <button
             onClick={() => setActiveTab('antiguos')}
             className={`shrink-0 whitespace-nowrap py-3 px-5 font-bold rounded-xl transition-all ${activeTab === 'antiguos' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}>
-            
             Antiguos Clientes
           </button>
           <button
             onClick={() => setActiveTab('ejercicios')}
             className={`shrink-0 whitespace-nowrap py-3 px-5 font-bold rounded-xl transition-all ${activeTab === 'ejercicios' ? 'bg-accent text-bg-primary shadow-sm' : 'text-text-secondary hover:text-text-primary hover:bg-glass-border/30'}`}>
-            
             Librería Ejercicios
           </button>
           <button

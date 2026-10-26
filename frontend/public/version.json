@@ -1,4 +1,4 @@
 {
-  "version": "7.10.40",
-  "releaseNotes": "Actualización v7.10.40: Carga instantánea de apartados del panel admin eliminando code-splitting interno y Suspense, pre-renderizado instantáneo de ejercicios desde caché local, caché inmediata de chat en asesorías con carga paralela y reducción de timeout de chunks a 8s."
+  "version": "7.10.41",
+  "releaseNotes": "Actualización v7.10.41: Carga instantánea con caché local en panel de entrenador, precarga de rutas para entrenadores/admin, paralelización de peticiones en detalles de cliente y renderizado en frame 1 sin pantallas de carga en blanco."
 }

@@ -17,9 +17,42 @@ const getFullImageUrl = (path) => {
   return `${SERVER_URL}${cleanPath}`;
 };
 
+// Fast Cache for Trainer Chats & Message History
+let cachedTrainerChatsList = null;
+try {
+  const saved = localStorage.getItem('pfg_trainer_chats_list');
+  if (saved) cachedTrainerChatsList = JSON.parse(saved);
+} catch (e) {}
+
+const chatHistoryMemoryCache = new Map();
+
+const getCachedMessages = (clientId) => {
+  if (!clientId) return null;
+  if (chatHistoryMemoryCache.has(clientId)) {
+    return chatHistoryMemoryCache.get(clientId);
+  }
+  try {
+    const raw = localStorage.getItem('pfg_chat_history_' + clientId);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      chatHistoryMemoryCache.set(clientId, parsed);
+      return parsed;
+    }
+  } catch (e) {}
+  return null;
+};
+
+const setCachedMessages = (clientId, msgs) => {
+  if (!clientId || !msgs) return;
+  chatHistoryMemoryCache.set(clientId, msgs);
+  try {
+    localStorage.setItem('pfg_chat_history_' + clientId, JSON.stringify(msgs));
+  } catch (e) {}
+};
+
 export default function TrainerChats({ onClose }) {
-  const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [clients, setClients] = useState(() => cachedTrainerChatsList || []);
+  const [loading, setLoading] = useState(() => !cachedTrainerChatsList || cachedTrainerChatsList.length === 0);
   const [clientToLink, setClientToLink] = useState(null);
   const [showClosedChats, setShowClosedChats] = useState(false);
   const [showBotChats, setShowBotChats] = useState(false);
@@ -58,6 +91,16 @@ export default function TrainerChats({ onClose }) {
       sessionStorage.removeItem('trainer_chats_selected_client');
     }
   }, [selectedClient]);
+
+  useEffect(() => {
+    if (selectedClient?.id) {
+      const cached = getCachedMessages(selectedClient.id);
+      if (cached && cached.length > 0) {
+        setMessages(cached);
+      }
+      openChat(selectedClient);
+    }
+  }, []);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
@@ -91,14 +134,22 @@ export default function TrainerChats({ onClose }) {
     selectedClientRef.current = selectedClient;
   }, [selectedClient]);
 
-  const fetchClients = async () => {
+    const fetchClients = async () => {
     try {
-      setLoading(true);
+      if (!cachedTrainerChatsList || cachedTrainerChatsList.length === 0) {
+        setLoading(true);
+      }
       const res = await apiClient('/chat/trainer-chats');
       setClients(res);
+      cachedTrainerChatsList = res;
+      try {
+        localStorage.setItem('pfg_trainer_chats_list', JSON.stringify(res));
+      } catch (e) {}
     } catch (error) {
       console.error('Error fetching trainer chats:', error);
-      addToast('No se pudieron cargar los chats', 'error');
+      if (!clients || clients.length === 0) {
+        addToast('No se pudieron cargar los chats', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -127,7 +178,13 @@ export default function TrainerChats({ onClose }) {
     const currentUserId = useAppStore.getState().userProfile?.id;
 
     if (isFromCurrentChat || String(msg.sender_id) === String(currentUserId)) {
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => {
+        const next = [...prev, msg];
+        if (selectedClientRef.current?.id) {
+          setCachedMessages(selectedClientRef.current.id, next);
+        }
+        return next;
+      });
       scrollToBottom();
 
       if (String(msg.sender_id) === String(selectedClientRef.current?.id)) {
@@ -352,11 +409,13 @@ export default function TrainerChats({ onClose }) {
         }
       });
 
-      setMessages((prev) => prev.map((msg) =>
-      msg.id === tempId ?
-      { ...res, read_at: msg.read_at || res.read_at } :
-      msg
-      ));
+      setMessages((prev) => {
+        const next = prev.map((msg) =>
+          msg.id === tempId ? { ...res, read_at: msg.read_at || res.read_at } : msg
+        );
+        if (selectedClient?.id) setCachedMessages(selectedClient.id, next);
+        return next;
+      });
       scrollToBottom();
 
       setClients((prevClients) => {
@@ -403,7 +462,11 @@ export default function TrainerChats({ onClose }) {
       if (!response.ok) throw new Error('Error al subir vídeo');
       const sentMessage = await response.json();
 
-      setMessages((prev) => [...prev, sentMessage]);
+      setMessages((prev) => {
+        const next = [...prev, sentMessage];
+        if (selectedClient?.id) setCachedMessages(selectedClient.id, next);
+        return next;
+      });
       scrollToBottom();
       addToast('Vídeo enviado correctamente', 'success');
 
@@ -535,7 +598,7 @@ export default function TrainerChats({ onClose }) {
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-3 flex flex-col gap-2">
-          {loading ?
+          {loading && (!clients || clients.length === 0) ?
           <div className="flex justify-center p-8">
               <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
             </div> :
@@ -777,7 +840,7 @@ export default function TrainerChats({ onClose }) {
               className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"
               style={{ paddingTop: 'calc(max(var(--safe-top, env(safe-area-inset-top, 0px)), 20px) + 85px)' }}
             >
-              {chatLoading ?
+              {chatLoading && (!messages || messages.length === 0) ?
             <div className="flex justify-center p-8">
                   <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
                 </div> :
