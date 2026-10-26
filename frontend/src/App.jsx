@@ -138,6 +138,8 @@ const VIEW_CHUNK_LOADERS = {
   asesoria: () => import('./pages/AsesoriaScreen'),
   noticias: () => import('./pages/NewsListPage'),
   noticiaDetalle: () => import('./pages/NewsDetailPage'),
+  calculadora1rm: () => import('./pages/OneRMCalculatorPage'),
+  calculadoraMacros: () => import('./pages/MacroCalculatorPage'),
 };
 
 const preloadedViews = new Set();
@@ -205,6 +207,8 @@ const SocialLinksScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.socialLinks, 'socialL
 const ChallengesScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.challenges, 'challenges');
 const NewsListPage = lazyWithRetry(VIEW_CHUNK_LOADERS.noticias, 'noticias');
 const NewsDetailPage = lazyWithRetry(VIEW_CHUNK_LOADERS.noticiaDetalle, 'noticiaDetalle');
+const OneRMCalculatorPage = lazyWithRetry(VIEW_CHUNK_LOADERS.calculadora1rm, 'calculadora1rm');
+const MacroCalculatorPage = lazyWithRetry(VIEW_CHUNK_LOADERS.calculadoraMacros, 'calculadoraMacros');
 const AsesoriaScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.asesoria, 'asesoria');
 
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
@@ -808,8 +812,8 @@ export default function App() {
   const seoConfig = useMemo(() => {
     if (isLandingPage) {
         return {
-            title: "Pro Fitness Glass - Tu Entrenador Personal Inteligente",
-            description: "Alcanza tus objetivos fitness con rutinas personalizadas, seguimiento de nutrición y análisis de progreso. Únete a la comunidad Pro Fitness Glass hoy mismo.",
+            title: "Pro Fitness Glass | App de Gimnasio Gratis, Rutinas de Pesas, Diario de Entrenamiento y Nutrición con IA",
+            description: "Registra tus entrenamientos de gimnasio, aplica sobrecarga progresiva en tus rutinas de hipertrofia y fuerza, calcula tu 1RM y controla calorías y macros con IA gratis.",
             noIndex: false
         };
     }
@@ -822,6 +826,8 @@ export default function App() {
 
   const isPublicRoute =
     location.pathname.startsWith('/noticias') ||
+    location.pathname === '/calculadora-1rm' ||
+    location.pathname === '/calculadora-calorias-macros' ||
     location.pathname === '/privacy' ||
     location.pathname === '/terms' ||
     location.pathname.startsWith('/share/') ||
@@ -911,6 +917,32 @@ export default function App() {
                 <NewsDetailPage
                   onBack={() => navigate('/noticias')}
                   navigate={navigateInternal}
+                />
+            </Suspense>
+        } />
+        <Route path="/calculadora-1rm" element={
+            <Suspense fallback={<NewsLoadingSkeleton />}>
+                <OneRMCalculatorPage
+                  onBack={() => {
+                    if (isAuthenticated) {
+                      navigateInternal('hub');
+                    } else {
+                      navigate('/');
+                    }
+                  }}
+                />
+            </Suspense>
+        } />
+        <Route path="/calculadora-calorias-macros" element={
+            <Suspense fallback={<NewsLoadingSkeleton />}>
+                <MacroCalculatorPage
+                  onBack={() => {
+                    if (isAuthenticated) {
+                      navigateInternal('hub');
+                    } else {
+                      navigate('/');
+                    }
+                  }}
                 />
             </Suspense>
         } />

@@ -94,6 +94,8 @@ const apiClient = async (endpoint, options = {}) => {
             ) {
                 const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
                 const isPublic = currentPath.startsWith('/noticias') ||
+                                 currentPath === '/calculadora-1rm' ||
+                                 currentPath === '/calculadora-calorias-macros' ||
                                  currentPath === '/privacy' ||
                                  currentPath === '/terms' ||
                                  currentPath.startsWith('/share/');

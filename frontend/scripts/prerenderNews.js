@@ -408,6 +408,88 @@ async function main() {
   }
 
   console.log(`[Prerender] ¡Listo! ${count} artículos prerenderizados con contenido semántico completo en dist/noticias/:slug/index.html`);
+
+  // 4. Prerender de las Calculadoras Públicas de Gimnasio (/calculadora-1rm y /calculadora-calorias-macros)
+  const calc1rmDir = path.join(distDir, 'calculadora-1rm');
+  if (!fs.existsSync(calc1rmDir)) fs.mkdirSync(calc1rmDir, { recursive: true });
+
+  const calc1rmBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 960px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Volver a Pro Fitness Glass</a> |
+      <a href="/calculadora-calorias-macros" style="color: #34d399; text-decoration: none; font-weight: 700;">Calculadora de Calorías y Macros</a> |
+      <a href="/noticias" style="color: #a855f7; text-decoration: none; font-weight: 700;">Guías de Gimnasio</a>
+    </nav>
+    <header style="margin-bottom: 2.5rem;">
+      <span style="display: inline-block; font-size: 0.75rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.08em;">Herramienta Gratuita de Gimnasio y Fuerza</span>
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">Calculadora de 1RM (Repetición Máxima) y Tabla de Porcentajes para Gimnasio</h1>
+      <p style="font-size: 1.15rem; color: #94a3b8;">Calcula tu fuerza máxima estimada en Press de Banca, Sentadilla Libre, Peso Muerto, Press Militar o Dominadas Lastradas mediante las fórmulas científicas de Epley, Brzycki y Lander.</p>
+    </header>
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Tabla de Porcentajes de 1RM para Hipertrofia y Fuerza</h2>
+      <ul style="padding-left: 1.5rem; color: #e2e8f0;">
+        <li><strong>100% del 1RM (1 repetición):</strong> Fuerza máxima y récord personal (PR).</li>
+        <li><strong>90% - 95% del 1RM (2 a 4 repeticiones):</strong> Fuerza neural y powerlifting.</li>
+        <li><strong>80% - 85% del 1RM (5 a 8 repeticiones):</strong> Zona óptima de hipertrofia miofibrilar y tensión mecánica.</li>
+        <li><strong>70% - 75% del 1RM (8 a 12 repeticiones):</strong> Hipertrofia muscular, volumen de trabajo y bombeo.</li>
+        <li><strong>60% - 65% del 1RM (13 a 18 repeticiones):</strong> Resistencia muscular y técnica de aproximación.</li>
+      </ul>
+    </section>
+    <section style="margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem;">¿Cómo calcular el 1RM con las fórmulas de Epley y Brzycki?</h2>
+      <p style="color: #cbd5e1;">La fórmula de <strong>Epley</strong> estima tu 1RM multiplicando el peso levantado por <code>(1 + repeticiones / 30)</code>, mientras que la ecuación de <strong>Brzycki</strong> utiliza <code>Peso × (36 / (37 - repeticiones))</code>. Para obtener la máxima precisión en el gimnasio, utiliza una serie llevada cerca del fallo muscular entre 3 y 10 repeticiones.</p>
+    </section>
+  </main>`;
+
+  let calc1rmHtml = injectMeta(baseHtml, {
+    title: 'Calculadora de 1RM (Repetición Máxima) para Gimnasio y Pesas',
+    description: 'Calcula gratis tu 1RM (Repetición Máxima) en Press de Banca, Sentadilla, Peso Muerto y Press Militar con las fórmulas de Epley, Brzycki y Lander y descubre tus porcentajes de hipertrofia y fuerza.',
+    image: `${BASE_URL}/entrenamiento.png`,
+    url: `${BASE_URL}/calculadora-1rm`,
+    type: 'website'
+  });
+  calc1rmHtml = calc1rmHtml.replace(/<div id="root">[\s\S]*?<\/div>(\s*<noscript>)/i, `<div id="root">${calc1rmBody}</div>$1`);
+  calc1rmHtml = calc1rmHtml.replace(/<noscript>[\s\S]*?<\/noscript>/i, `<noscript>${calc1rmBody}</noscript>`);
+  fs.writeFileSync(path.join(calc1rmDir, 'index.html'), calc1rmHtml, 'utf8');
+
+  const calcMacrosDir = path.join(distDir, 'calculadora-calorias-macros');
+  if (!fs.existsSync(calcMacrosDir)) fs.mkdirSync(calcMacrosDir, { recursive: true });
+
+  const calcMacrosBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 960px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Volver a Pro Fitness Glass</a> |
+      <a href="/calculadora-1rm" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Calculadora de 1RM y Fuerza</a> |
+      <a href="/noticias" style="color: #a855f7; text-decoration: none; font-weight: 700;">Guías de Nutrición y Gimnasio</a>
+    </nav>
+    <header style="margin-bottom: 2.5rem;">
+      <span style="display: inline-block; font-size: 0.75rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.08em;">Herramienta Gratuita de Nutrición Deportiva</span>
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">Calculadora de Calorías, Macros y Déficit Calórico para Gimnasio</h1>
+      <p style="font-size: 1.15rem; color: #94a3b8;">Calcula tu Tasa Metabólica Basal (TMB), tu Gasto Energético Diario Total (TDEE) con la fórmula científica de Mifflin-St Jeor y obtén tus gramos exactos de proteínas, carbohidratos, grasas, agua y creatina.</p>
+    </header>
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Distribución Científica de Macronutrientes para Hipertrofia y Definición</h2>
+      <ul style="padding-left: 1.5rem; color: #e2e8f0;">
+        <li><strong>Proteínas (1.8 a 2.2 g/kg):</strong> Esenciales para la síntesis proteica muscular y para proteger tu masa magra en definición.</li>
+        <li><strong>Grasas saludables (0.8 a 1.0 g/kg):</strong> Fundamentales para el entorno hormonal, testosterona y absorción de vitaminas.</li>
+        <li><strong>Carbohidratos (Energía de entrenamiento):</strong> Recargan el glucógeno muscular para rendir al máximo en tus rutinas de pesas y aplicar sobrecarga progresiva.</li>
+        <li><strong>Creatina Monohidrato (0.1 g/kg):</strong> Suplemento con mayor respaldo científico para ganar fuerza explosiva y retención intracelular.</li>
+      </ul>
+    </section>
+  </main>`;
+
+  let calcMacrosHtml = injectMeta(baseHtml, {
+    title: 'Calculadora de Calorías, Macros y Déficit Calórico para Gimnasio',
+    description: 'Calcula gratis tus calorías diarias (TDEE), tasa metabólica basal (Mifflin-St Jeor) y reparto exacto de proteínas, carbohidratos y grasas para perder grasa o ganar masa muscular.',
+    image: `${BASE_URL}/nutrici%C3%B3n.png`,
+    url: `${BASE_URL}/calculadora-calorias-macros`,
+    type: 'website'
+  });
+  calcMacrosHtml = calcMacrosHtml.replace(/<div id="root">[\s\S]*?<\/div>(\s*<noscript>)/i, `<div id="root">${calcMacrosBody}</div>$1`);
+  calcMacrosHtml = calcMacrosHtml.replace(/<noscript>[\s\S]*?<\/noscript>/i, `<noscript>${calcMacrosBody}</noscript>`);
+  fs.writeFileSync(path.join(calcMacrosDir, 'index.html'), calcMacrosHtml, 'utf8');
+  console.log('[Prerender] Generadas calculadoras SEO en dist/calculadora-1rm/index.html y dist/calculadora-calorias-macros/index.html.');
+
 }
 
 main().catch(err => {

@@ -9,6 +9,21 @@
     <priority>1.0</priority>
   </url>
 
+  <!-- Herramientas y Calculadoras Públicas de Gimnasio y Nutrición -->
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/calculadora-1rm</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/calculadora-calorias-macros</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- Hub de Noticias & Artículos -->
   <url>
     <loc>https://pro-fitness-glass.zeabur.app/noticias</loc>

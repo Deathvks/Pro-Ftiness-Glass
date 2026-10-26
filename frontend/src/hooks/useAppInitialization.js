@@ -14,6 +14,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
       const path = window.location.pathname;
       if (
         path.startsWith('/noticias') ||
+        path === '/calculadora-1rm' ||
+        path === '/calculadora-calorias-macros' ||
         path === '/privacy' ||
         path === '/terms' ||
         path.startsWith('/share/') ||
@@ -120,6 +122,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
 
         const isPublicPath = typeof window !== 'undefined' && (
           window.location.pathname.startsWith('/noticias') ||
+          window.location.pathname === '/calculadora-1rm' ||
+          window.location.pathname === '/calculadora-calorias-macros' ||
           window.location.pathname === '/privacy' ||
           window.location.pathname === '/terms' ||
           window.location.pathname.startsWith('/share/') ||
@@ -153,6 +157,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
         
         const isPublicPath = typeof window !== 'undefined' && (
           window.location.pathname.startsWith('/noticias') ||
+          window.location.pathname === '/calculadora-1rm' ||
+          window.location.pathname === '/calculadora-calorias-macros' ||
           window.location.pathname === '/privacy' ||
           window.location.pathname === '/terms' ||
           window.location.pathname.startsWith('/share/') ||
@@ -168,6 +174,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
 
     const isCurrentPublic = typeof window !== 'undefined' && (
       window.location.pathname.startsWith('/noticias') ||
+          window.location.pathname === '/calculadora-1rm' ||
+          window.location.pathname === '/calculadora-calorias-macros' ||
       window.location.pathname === '/privacy' ||
       window.location.pathname === '/terms' ||
       window.location.pathname.startsWith('/share/') ||

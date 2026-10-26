@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
     Dumbbell, Activity, Shield, ChevronRight, ChevronLeft, Utensils,
     LineChart, Users, Zap, Smartphone, Trophy, ArrowRight,
-    Instagram, Youtube, Github, Globe, Download, Sparkles, Bot, Apple, Check, ShieldCheck, Newspaper
+    Instagram, Youtube, Github, Globe, Download, Sparkles, Bot, Apple, Check, ShieldCheck, Newspaper, Calculator, HelpCircle
 } from 'lucide-react';
 import { FaGooglePlay } from 'react-icons/fa';
 import { Helmet } from 'react-helmet-async';
@@ -402,10 +402,10 @@ const LandingPage = ({ onLogin, onRegister }) => {
     return (
         <div className="landing-page absolute inset-0 z-[100] bg-bg-primary overflow-hidden">
             <Helmet>
-                <title>Pro Fitness Glass | App de Entrenamiento, Rutinas de Gimnasio y Nutrición con IA</title>
+                <title>Pro Fitness Glass | App de Gimnasio Gratis, Rutinas de Pesas, Diario de Entrenamiento y Nutrición con IA</title>
                 <meta
                     name="description"
-                    content="Registra tus entrenamientos de gimnasio, crea rutinas inteligentes, controla calorías y macros con IA y sigue tu evolución física gratis en Pro Fitness Glass."
+                    content="Registra tus entrenamientos de gimnasio, aplica sobrecarga progresiva en tus rutinas de hipertrofia y fuerza, calcula tu 1RM y controla calorías y macros con IA gratis."
                 />
                 <link rel="canonical" href="https://pro-fitness-glass.zeabur.app/" />
             </Helmet>
@@ -470,6 +470,24 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                             <div className="flex items-center gap-1.5 sm:gap-3 flex-nowrap shrink-0">
                                 <a
+                                    href="/calculadora-1rm"
+                                    className="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
+                                    title="Calculadora de 1RM y Fuerza"
+                                >
+                                    <Calculator size={15} className="text-accent shrink-0" />
+                                    <span className="uppercase tracking-wider text-xs">Calculadora 1RM</span>
+                                </a>
+
+                                <a
+                                    href="/calculadora-calorias-macros"
+                                    className="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
+                                    title="Calculadora de Calorías y Macros"
+                                >
+                                    <Utensils size={15} className="text-emerald-400 shrink-0" />
+                                    <span className="uppercase tracking-wider text-xs">Calculadora Macros</span>
+                                </a>
+
+                                <a
                                     href="/noticias"
                                     className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
                                     title="Noticias y Artículos de Fitness"
@@ -531,7 +549,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                 </span>
                             </h1>
                             <p className="text-lg sm:text-xl md:text-2xl text-text-secondary max-w-2xl mx-auto leading-relaxed font-medium z-20 relative">
-                                La única plataforma que combina <strong>entrenamiento inteligente</strong>, <strong>nutrición precisa</strong> y <strong>análisis de datos</strong> en una experiencia de cristal.
+                                La <strong>app de gimnasio gratuita</strong> que une <strong>diario de entrenamiento de pesas</strong>, <strong>rutinas de hipertrofia y fuerza</strong>, <strong>sobrecarga progresiva</strong> y <strong>contador de calorías y macros con IA</strong> en una experiencia de cristal.
                             </p>
                         </div>
 
@@ -622,12 +640,12 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                     <div className="w-14 h-14 bg-blue-500/10 text-blue-500 rounded-[20px] ring-1 ring-blue-500/30 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
                                         <Dumbbell size={28} strokeWidth={2} />
                                     </div>
-                                    <h3 className="text-3xl font-extrabold tracking-tight text-text-primary mb-4 group-hover:text-blue-400 transition-colors relative z-10">Rutinas Avanzadas</h3>
+                                    <h3 className="text-3xl font-extrabold tracking-tight text-text-primary mb-4 group-hover:text-blue-400 transition-colors relative z-10">Diario de Gimnasio y Rutinas de Pesas</h3>
                                     <p className="text-text-secondary font-medium mb-8 max-w-md text-lg leading-relaxed relative z-10">
-                                        Diseña entrenamientos con superseries, dropsets y descansos personalizados. Registra pesos, RPE y notas en tiempo real.
+                                        Diseña rutinas de hipertrofia y fuerza (Push Pull Legs, Torso Pierna o Full Body) con superseries, dropsets y descansos automáticos. Aplica sobrecarga progresiva registrando pesos, repeticiones, RPE y tu 1RM en tiempo real.
                                     </p>
                                     <div className="flex gap-3 flex-wrap relative z-10">
-                                        {['Superseries', 'Historial', '1RM Estimado'].map(tag => (
+                                        {['Sobrecarga Progresiva', 'Hipertrofia y Fuerza', 'Superseries', '1RM Estimado'].map(tag => (
                                             <span key={tag} className="px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-md text-[10px] font-black uppercase tracking-wider text-text-secondary ring-1 ring-black/5 dark:ring-white/10 group-hover:ring-blue-500/30 group-hover:text-blue-400 transition-colors">
                                                 {tag}
                                             </span>
@@ -853,6 +871,148 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             </div>
                         </div>
 
+                        {/* --- SECCIÓN: HERRAMIENTAS GRATUITAS DE GIMNASIO (SEO HUB) --- */}
+                        <div className="w-full mt-32 relative z-10 text-left">
+                            <ScrollRevealCard>
+                                <div className="text-center max-w-3xl mx-auto mb-14">
+                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 ring-1 ring-accent/30 mb-4">
+                                        <Calculator size={14} className="text-accent" />
+                                        <span className="text-xs font-black uppercase tracking-widest text-accent">Acceso Libre sin Registro</span>
+                                    </div>
+                                    <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-text-primary mb-4">
+                                        Herramientas Gratuitas de <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-blue-400">Gimnasio y Nutrición</span>
+                                    </h2>
+                                    <p className="text-text-secondary font-medium text-base sm:text-lg leading-relaxed">
+                                        Calcula tus cargas de entrenamiento, planifica tu déficit calórico o volumen muscular y aprende fisiología aplicada al gimnasio con nuestras herramientas públicas.
+                                    </p>
+                                </div>
+                            </ScrollRevealCard>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <ScrollRevealCard delay={100} className="h-full">
+                                    <a
+                                        href="/calculadora-1rm"
+                                        className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/60 backdrop-blur-xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-accent/15 group relative overflow-hidden"
+                                    >
+                                        <div>
+                                            <div className="w-14 h-14 rounded-[20px] bg-accent/15 text-accent ring-1 ring-accent/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-accent group-hover:text-accent-contrast transition-all duration-300">
+                                                <Dumbbell size={28} strokeWidth={2} />
+                                            </div>
+                                            <span className="inline-block text-[11px] font-black uppercase tracking-widest text-accent mb-2">Fuerza e Hipertrofia</span>
+                                            <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-accent transition-colors">
+                                                Calculadora de 1RM y Porcentajes
+                                            </h3>
+                                            <p className="text-sm font-medium text-text-secondary leading-relaxed mb-6">
+                                                Calcula tu repetición máxima (1RM) en Press de Banca, Sentadilla, Peso Muerto o Press Militar con las fórmulas de Epley, Brzycki y Lander y descubre tus cargas exactas del 60% al 100%.
+                                            </p>
+                                        </div>
+                                        <span className="inline-flex items-center gap-2 text-sm font-black text-accent group-hover:translate-x-1 transition-transform">
+                                            Abrir Calculadora 1RM <ArrowRight size={16} />
+                                        </span>
+                                    </a>
+                                </ScrollRevealCard>
+
+                                <ScrollRevealCard delay={200} className="h-full">
+                                    <a
+                                        href="/calculadora-calorias-macros"
+                                        className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-emerald-500/60 backdrop-blur-xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-500/15 group relative overflow-hidden"
+                                    >
+                                        <div>
+                                            <div className="w-14 h-14 rounded-[20px] bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all duration-300">
+                                                <Utensils size={28} strokeWidth={2} />
+                                            </div>
+                                            <span className="inline-block text-[11px] font-black uppercase tracking-widest text-emerald-400 mb-2">Nutrición Deportiva</span>
+                                            <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-emerald-400 transition-colors">
+                                                Calculadora de Calorías y Macros
+                                            </h3>
+                                            <p className="text-sm font-medium text-text-secondary leading-relaxed mb-6">
+                                                Conoce tu gasto energético diario (TDEE), metabolismo basal (TMB) y tus gramos exactos de proteína, carbohidratos, grasas, agua y creatina para definición o volumen limpio.
+                                            </p>
+                                        </div>
+                                        <span className="inline-flex items-center gap-2 text-sm font-black text-emerald-400 group-hover:translate-x-1 transition-transform">
+                                            Calcular Calorías y Macros <ArrowRight size={16} />
+                                        </span>
+                                    </a>
+                                </ScrollRevealCard>
+
+                                <ScrollRevealCard delay={300} className="h-full">
+                                    <a
+                                        href="/noticias"
+                                        className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-purple-500/60 backdrop-blur-xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/15 group relative overflow-hidden"
+                                    >
+                                        <div>
+                                            <div className="w-14 h-14 rounded-[20px] bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300">
+                                                <Newspaper size={28} strokeWidth={2} />
+                                            </div>
+                                            <span className="inline-block text-[11px] font-black uppercase tracking-widest text-purple-400 mb-2">Evidencia Científica</span>
+                                            <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-purple-400 transition-colors">
+                                                Guías de Gimnasio, Hipertrofia y Suplementos
+                                            </h3>
+                                            <p className="text-sm font-medium text-text-secondary leading-relaxed mb-6">
+                                                Artículos directos y prácticos sobre sobrecarga progresiva, descanso entre series, creatina monohidrato, déficit calórico inteligente y biomecánica en el gimnasio.
+                                            </p>
+                                        </div>
+                                        <span className="inline-flex items-center gap-2 text-sm font-black text-purple-400 group-hover:translate-x-1 transition-transform">
+                                            Explorar Artículos y Guías <ArrowRight size={16} />
+                                        </span>
+                                    </a>
+                                </ScrollRevealCard>
+                            </div>
+                        </div>
+
+                        {/* --- SECCIÓN: PREGUNTAS FRECUENTES DE GIMNASIO (SEO FAQ) --- */}
+                        <div className="w-full mt-32 max-w-5xl mx-auto px-4 text-left relative z-10">
+                            <ScrollRevealCard>
+                                <div className="text-center mb-12">
+                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 ring-1 ring-purple-500/30 mb-4">
+                                        <HelpCircle size={14} className="text-purple-400" />
+                                        <span className="text-xs font-black uppercase tracking-widest text-purple-400">Dudas Resueltas</span>
+                                    </div>
+                                    <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-text-primary">
+                                        Preguntas Frecuentes sobre <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-purple-400">Gimnasio y Entrenamiento</span>
+                                    </h2>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="landing-liquid-glass p-6 sm:p-7 rounded-[28px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
+                                        <h3 className="text-lg font-black text-text-primary mb-2">
+                                            ¿Cuál es la mejor app gratis para apuntar pesos y rutinas en el gimnasio?
+                                        </h3>
+                                        <p className="text-sm font-medium text-text-secondary leading-relaxed">
+                                            <strong>Pro Fitness Glass</strong> permite crear rutinas personalizadas (Push Pull Legs, Torso Pierna, Full Body), registrar series, repeticiones, pesos y RPE sin límite, calcular tu 1RM automáticamente y visualizar tu mapa térmico de fatiga muscular de forma 100% gratuita en Web, Android e iOS.
+                                        </p>
+                                    </div>
+
+                                    <div className="landing-liquid-glass p-6 sm:p-7 rounded-[28px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
+                                        <h3 className="text-lg font-black text-text-primary mb-2">
+                                            ¿Cómo aplicar la sobrecarga progresiva para ganar masa muscular?
+                                        </h3>
+                                        <p className="text-sm font-medium text-text-secondary leading-relaxed">
+                                            La sobrecarga progresiva consiste en aumentar gradualmente la tensión mecánica en tus ejercicios de gimnasio: subiendo de 1,25 a 2,5 kg en la barra, logrando 1 o 2 repeticiones extra con el mismo peso o mejorando tu control técnico. La app compara cada serie con tu sesión anterior en tiempo real.
+                                        </p>
+                                    </div>
+
+                                    <div className="landing-liquid-glass p-6 sm:p-7 rounded-[28px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
+                                        <h3 className="text-lg font-black text-text-primary mb-2">
+                                            ¿Cómo saber cuántas calorías y proteínas tomar para hipertrofia o definición?
+                                        </h3>
+                                        <p className="text-sm font-medium text-text-secondary leading-relaxed">
+                                            Puedes usar nuestra <a href="/calculadora-calorias-macros" className="text-accent underline font-bold">Calculadora de Calorías y Macros</a> gratuita basada en la ecuación de Mifflin-St Jeor. Para ganar músculo o perder grasa preservando tu fuerza, se recomiendan entre 1,8 y 2,2 g de proteína por kilo de peso corporal al día.
+                                        </p>
+                                    </div>
+
+                                    <div className="landing-liquid-glass p-6 sm:p-7 rounded-[28px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
+                                        <h3 className="text-lg font-black text-text-primary mb-2">
+                                            ¿Cómo calcular mi 1RM (repetición máxima) sin riesgo de lesión?
+                                        </h3>
+                                        <p className="text-sm font-medium text-text-secondary leading-relaxed">
+                                            No necesitas levantar tu peso límite a 1 sola repetición. Con nuestra <a href="/calculadora-1rm" className="text-accent underline font-bold">Calculadora de 1RM</a> puedes introducir un peso que muevas entre 3 y 10 repeticiones y obtener al instante tu fuerza máxima estimada y tu tabla de porcentajes de entrenamiento.
+                                        </p>
+                                    </div>
+                                </div>
+                            </ScrollRevealCard>
+                        </div>
+
                         {/* --- SECCIÓN: TRANSPARENCIA Y USO DE DATOS --- */}
                         <div className="w-full mt-32 max-w-5xl mx-auto px-4 text-left relative z-10">
                             <ScrollRevealCard>
@@ -976,7 +1136,15 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             </a>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row justify-center gap-6 text-sm text-text-secondary font-bold mb-8 tracking-wide">
+                        <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-text-secondary font-bold mb-8 tracking-wide">
+                            <a href="/calculadora-1rm" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
+                                Calculadora 1RM
+                            </a>
+                            <span className="hidden sm:block text-text-secondary/30">•</span>
+                            <a href="/calculadora-calorias-macros" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
+                                Calculadora de Macros
+                            </a>
+                            <span className="hidden sm:block text-text-secondary/30">•</span>
                             <a href="/noticias" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
                                 Noticias y Artículos
                             </a>

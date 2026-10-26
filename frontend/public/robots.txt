@@ -4,6 +4,8 @@ Allow: /privacy
 Allow: /terms
 Allow: /noticias
 Allow: /noticias/
+Allow: /calculadora-1rm
+Allow: /calculadora-calorias-macros
 Disallow: /api/
 Disallow: /dashboard
 Disallow: /workout
