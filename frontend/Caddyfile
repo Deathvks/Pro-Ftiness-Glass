@@ -10,7 +10,7 @@
 
     # Desactivar caché estricto para archivos que controlan la versión y el service worker
     @noCache {
-        path /sw.js /index.html /version.json /manifest.json /manifest.webmanifest /robots.txt /sitemap.xml /rss.xml /feed.xml /noticias/* *.html
+        path /sw.js /index.html /version.json /manifest.json /manifest.webmanifest /robots.txt /sitemap.xml /rss.xml /feed.xml /noticias/* /calculadora-1rm* /calculadora-calorias-macros* /ejercicios* *.html
     }
     header @noCache {
         Cache-Control "no-cache, no-store, must-revalidate"

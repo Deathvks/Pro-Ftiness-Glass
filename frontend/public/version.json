@@ -1,4 +1,4 @@
 {
-  "version": "7.10.45",
-  "releaseNotes": "Actualización v7.10.45: Nueva Enciclopedia Pública de Ejercicios y Rutinas de Gimnasio (/ejercicios), motor de noticias IA orientado a búsquedas de gimnasio de alto volumen en España/Latinoamérica con interlinking automático, tabla comparativa frente a apps de pago y Schema Organization con señales de autoridad Google Play."
+  "version": "7.10.46",
+  "releaseNotes": "Actualización v7.10.46: Inclusión de /calculadora-1rm, /calculadora-calorias-macros y /ejercicios en el generador dinámico de /sitemap.xml del servidor backend para Google Search Console."
 }
