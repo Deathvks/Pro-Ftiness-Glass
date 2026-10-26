@@ -229,6 +229,27 @@ export default function AdminNewsAutomation({ onNavigateToArticle, onAutomationC
     setTimeout(() => setCopiedLogs(false), 2000);
   };
 
+  // Adaptar todas las noticias existentes al nuevo formato de retención y SEO
+  const handleOptimizeExisting = async () => {
+    if (statusData.isGenerating || isTriggering) return;
+    setIsTriggering(true);
+    try {
+      await newsService.optimizeExistingArticlesWithAI({ forceAll: false });
+      addToast('Adaptando noticias existentes con Gemini en vivo...', 'success');
+      setStatusData((prev) => ({
+        ...prev,
+        status: 'generating',
+        isGenerating: true,
+        currentStep: 'Adaptando noticias existentes al formato de alta retención y SEO...'
+      }));
+      setShowConsoleModal(true);
+    } catch (err) {
+      addToast(err.message || 'Error al iniciar la adaptación', 'error');
+    } finally {
+      setIsTriggering(false);
+    }
+  };
+
   // Disparador manual inmediato
   const handleTriggerNow = async (topic = null) => {
     if (statusData.isGenerating || isTriggering) return;

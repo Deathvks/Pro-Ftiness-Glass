@@ -998,6 +998,26 @@ export const updateAutomationConfig = async (req, res) => {
   }
 };
 
+
+export const optimizeExistingArticles = async (req, res) => {
+  try {
+    const { newsAutomationService } = await import('../services/newsAutomationService.js');
+    const { articleId = null, forceAll = false } = req.body || {};
+
+    newsAutomationService.optimizeExistingArticlesWithAI({ articleId, forceAll }).catch((err) => {
+      console.error('[NewsAutomation] Error en optimizeExistingArticlesWithAI:', err);
+    });
+
+    return res.json({
+      message: 'Adaptación de noticias existentes iniciada con éxito en segundo plano.',
+      status: 'generating'
+    });
+  } catch (error) {
+    console.error('Error al iniciar adaptación de noticias existentes:', error);
+    return res.status(500).json({ error: 'Error al iniciar la adaptación de noticias.' });
+  }
+};
+
 export const fixDuplicateCovers = async (req, res) => {
   try {
     const { newsAutomationService } = await import('../services/newsAutomationService.js');

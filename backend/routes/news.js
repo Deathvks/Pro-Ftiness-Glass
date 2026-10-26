@@ -80,6 +80,13 @@ router.post(
   authorizeAdmin,
   newsController.fixDuplicateCovers
 );
+
+router.post(
+  '/admin/automation/optimize-existing',
+  authenticateToken,
+  authorizeAdmin,
+  newsController.optimizeExistingArticles
+);
 router.post(
   '/generate-ai',
   authenticateToken,

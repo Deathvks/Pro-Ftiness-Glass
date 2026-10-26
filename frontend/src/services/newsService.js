@@ -420,6 +420,35 @@ export const updateNewsAutomationSchedule = async ({ hour, minute = 0 }) => {
   );
 };
 
+
+export const optimizeExistingArticlesWithAI = async ({ articleId = null, forceAll = false } = {}) => {
+  // Limpiar cachés locales de artículos para que al terminar se cargue el nuevo texto adaptado
+  articleMemoryCache.clear();
+  listMemoryCache.clear();
+  try {
+    Object.keys(localStorage).forEach((k) => {
+      if (k.startsWith('pfg_art_') || k.startsWith('pfg_news_list_') || k === 'pfg_admin_news') {
+        localStorage.removeItem(k);
+      }
+    });
+    Object.keys(sessionStorage).forEach((k) => {
+      if (k.startsWith('pfg_art_') || k.startsWith('pfg_news_list_')) {
+        sessionStorage.removeItem(k);
+      }
+    });
+  } catch {}
+
+  return requestWithRetry(
+    `${API_URL}/news/admin/automation/optimize-existing`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ articleId, forceAll })
+    },
+    0
+  );
+};
+
 export const fixDuplicateCovers = async () => {
   return requestWithRetry(
     `${API_URL}/news/admin/fix-duplicate-covers`,

@@ -181,6 +181,16 @@ export default function AdminNewsManager() {
     }
   };
 
+  const handleOptimizeSingleArticle = async (art) => {
+    try {
+      addToast(`Adaptando "${art.title}" con IA en segundo plano...`, 'info');
+      await newsService.optimizeExistingArticlesWithAI({ articleId: art.id, forceAll: true });
+      setViewMode('automation');
+    } catch (err) {
+      addToast(err.message || 'Error al adaptar artículo', 'error');
+    }
+  };
+
   const handleRequestDelete = (art) => {
     setArticleToDelete(art);
   };

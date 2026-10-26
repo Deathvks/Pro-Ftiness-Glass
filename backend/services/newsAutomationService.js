@@ -702,6 +702,179 @@ Extensión recomendada: 450 a 650 palabras de máxima retención y alto valor pr
     }
   }
 
+
+  /**
+   * Re-optimiza y adapta las noticias existentes en la BD al nuevo estándar de retención
+   * (450-650 palabras, ~3 min lectura, párrafos cortos y enlaces internos SEO hacia las calculadoras y ejercicios),
+   * conservando intactos su ID, slug, imagen de portada, visitas y likes.
+   */
+  async optimizeExistingArticlesWithAI({ articleId = null, forceAll = false } = {}) {
+    if (this.isGenerating) {
+      return { success: false, error: 'Ya hay un proceso de IA en curso' };
+    }
+
+    this.isGenerating = true;
+    this.status = 'generating';
+    this.currentStep = 'Iniciando adaptación de noticias existentes al nuevo formato de retención y SEO...';
+    this.addLog('🪄 Iniciando adaptación inteligente de noticias existentes (conservando URLs, visitas y portadas)...', 'info');
+    this.broadcastStatus();
+
+    const startTime = Date.now();
+
+    try {
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error('GEMINI_API_KEY no está configurada en las variables de entorno.');
+      }
+
+      const where = articleId ? { id: articleId } : {};
+      const allArticles = await News.findAll({
+        where,
+        order: [['id', 'ASC']]
+      });
+
+      if (!allArticles || allArticles.length === 0) {
+        this.addLog('ℹ️ No se encontraron artículos para adaptar.', 'info');
+        this.status = 'completed';
+        this.currentStep = 'No hay artículos pendientes de adaptar.';
+        return { success: true, updatedCount: 0 };
+      }
+
+      // Si no es un artículo individual ni forceAll, priorizar los que aún no tienen enlaces internos o son demasiado largos
+      let targets = allArticles;
+      if (!articleId && !forceAll) {
+        const unadapted = allArticles.filter((a) => {
+          const text = a.content || '';
+          const hasInternalLinks =
+            text.includes('/calculadora-1rm') ||
+            text.includes('/calculadora-calorias-macros') ||
+            text.includes('/ejercicios');
+          const wordCount = text.split(/\s+/).length;
+          return !hasInternalLinks || wordCount > 700;
+        });
+        if (unadapted.length > 0) {
+          targets = unadapted;
+        }
+      }
+
+      this.addLog(`📚 Se van a adaptar y optimizar ${targets.length} artículo(s) existente(s) con Gemini 2.5 Flash...`, 'info');
+
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: SchemaType.OBJECT,
+            properties: {
+              title: { type: SchemaType.STRING },
+              summary: { type: SchemaType.STRING },
+              content: { type: SchemaType.STRING },
+              reading_time: { type: SchemaType.INTEGER },
+              seo_title: { type: SchemaType.STRING },
+              seo_description: { type: SchemaType.STRING },
+              tags: { type: SchemaType.STRING }
+            },
+            required: ['title', 'summary', 'content', 'reading_time', 'seo_title', 'seo_description']
+          }
+        }
+      });
+
+      let updatedCount = 0;
+
+      for (let i = 0; i < targets.length; i++) {
+        const art = targets[i];
+        this.currentStep = `Adaptando [${i + 1}/${targets.length}]: "${art.title}"...`;
+        this.addLog(`⚡ [${i + 1}/${targets.length}] Adaptando "${art.title}" (formato ágil 3 min + enlaces SEO)...`, 'info');
+        this.broadcastStatus();
+
+        try {
+          const prompt = `Eres el editor jefe y especialista en retención de lectores y SEO de Pro Fitness Glass.
+Reescribe y adapta el siguiente artículo ya publicado para que cumpla nuestro NUEVO ESTÁNDAR DE ALTA RETENCIÓN Y SEO DE GIMNASIO, manteniendo exactamente su temática central.
+
+ARTÍCULO ACTUAL:
+- Título actual: "${art.title}"
+- Categoría: "${art.category}"
+- Resumen actual: "${art.summary}"
+- Contenido actual:
+${art.content}
+
+REGLAS OBLIGATORIAS DE ADAPTACIÓN:
+1. EXTENSIÓN ÁGIL DE MÁXIMA RETENCIÓN (450 a 600 palabras en total, 3 minutos de lectura):
+   - Elimina cualquier relleno, introducción lenta o jerga médica/académica aburrida.
+   - Párrafos súper cortos (máximo 2 a 3 líneas por párrafo). Cero paredes de texto.
+   - Gancho directo en las primeras 2 líneas explicando por qué esto cambia tus resultados en el gimnasio o en tu dieta hoy mismo.
+2. SUBTÍTULOS ## Y ### (3 o 4 secciones dinámicas):
+   - Cada subtítulo (## o ###) debe ir en su propia línea seguido de dos saltos de línea antes del párrafo. NUNCA uses # solo.
+3. ENLACES INTERNOS SEO NATURALES (OBLIGATORIO):
+   - Incluye de forma natural dentro del texto 1 o 2 enlaces en formato Markdown hacia nuestras herramientas públicas gratuitas:
+     * [Calculadora de 1RM y Porcentajes](/calculadora-1rm)
+     * [Calculadora de Calorías y Macros](/calculadora-calorias-macros)
+     * [Guía de Ejercicios y Rutinas de Gimnasio](/ejercicios)
+4. BLOQUES VISUALES:
+   - Incluye 1 o 2 alertas GitHub Flavored (> [!TIP] o > [!IMPORTANT]) con consejos accionables (sin usar ## dentro de la alerta).
+   - Incluye 1 tabla comparativa Markdown muy compacta (máximo 3 a 4 filas).
+5. CIERRE OBLIGATORIO:
+   - Termina con "## Puntos clave para llevarte" con 3 o 4 puntos numerados directos al grano.
+6. SEO:
+   - Puedes pulir ligeramente el título si mejora el CTR en búsquedas de gimnasio, pero manteniendo la promesa exacta del artículo.
+   - reading_time debe ser 3.`;
+
+          const aiRes = await model.generateContent(prompt);
+          const parsed = JSON.parse(aiRes.response.text());
+
+          const cleanContent = sanitizeNewsContent(parsed.content || art.content);
+          const wordCount = cleanContent.split(/\s+/).length;
+          const readingTime = Math.min(4, Math.max(2, Math.round(wordCount / 190)));
+
+          await art.update({
+            title: parsed.title || art.title,
+            summary: parsed.summary || art.summary,
+            content: cleanContent,
+            reading_time: readingTime,
+            seo_title: parsed.seo_title || parsed.title || art.seo_title,
+            seo_description: parsed.seo_description || parsed.summary || art.seo_description,
+            tags: parsed.tags || art.tags
+          });
+
+          updatedCount++;
+          invalidateNewsCache();
+          this.addLog(`✅ [${i + 1}/${targets.length}] Adaptado con éxito: "${art.title}" (${wordCount} palabras, ~${readingTime} min lectura)`, 'success');
+        } catch (itemErr) {
+          this.addLog(`⚠️ Error adaptando "${art.title}": ${itemErr.message}`, 'warn');
+        }
+      }
+
+      const durationSeconds = ((Date.now() - startTime) / 1000).toFixed(1);
+      this.status = 'completed';
+      this.currentStep = `¡Adaptación completada! ${updatedCount} artículo(s) actualizados al nuevo formato.`;
+      this.lastRunAt = new Date().toISOString();
+      this.lastResult = {
+        success: true,
+        articleTitle: `${updatedCount} noticia(s) adaptadas al nuevo formato SEO y retención`,
+        category: 'Optimización IA',
+        completedAt: this.lastRunAt,
+        durationSeconds
+      };
+
+      this.addLog(`🎉 ¡PROCESO COMPLETADO en ${durationSeconds}s! Se han adaptado ${updatedCount} noticia(s) existentes conservando sus URLs.`, 'success');
+      this.savePersistedState();
+      this.broadcastStatus();
+
+      return { success: true, updatedCount, durationSeconds };
+    } catch (err) {
+      console.error('[NewsAutomation] Error en optimizeExistingArticlesWithAI:', err);
+      this.status = 'error';
+      this.currentStep = `Error: ${err.message}`;
+      this.addLog(`❌ Error en adaptación de noticias: ${err.message}`, 'error');
+      this.savePersistedState();
+      this.broadcastStatus();
+      return { success: false, error: err.message };
+    } finally {
+      this.isGenerating = false;
+      this.broadcastStatus();
+    }
+  }
+
   updateSchedule(hour, minute = 0) {
     this.scheduledHour = parseInt(hour, 10) || 9;
     this.scheduledMinute = parseInt(minute, 10) || 0;
