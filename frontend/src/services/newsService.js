@@ -278,6 +278,23 @@ export const fetchNewsBySlug = async (slug, { bypassCache = false } = {}) => {
         }
       }
       return data;
+    } catch (err) {
+      // Fallback a cachedNewsList si la API remota da 404 o no responde
+      const localMatch = Array.isArray(cachedNewsList)
+        ? cachedNewsList.find((item) => item.slug === slug)
+        : null;
+      if (localMatch) {
+        const fallbackData = {
+          article: localMatch,
+          relatedNews: [],
+          nextArticle: null,
+          prevArticle: null,
+          isPartial: false
+        };
+        articleMemoryCache.set(slug, fallbackData);
+        return fallbackData;
+      }
+      throw err;
     } finally {
       inflightPromises.delete(slug);
     }

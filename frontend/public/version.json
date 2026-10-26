@@ -1,4 +1,4 @@
 {
-  "version": "7.10.35",
-  "releaseNotes": "Actualización v7.10.35: Enlazado interno semántico estricto con etiquetas anchor HTML (href) en catálogo de noticias, carrusel popular, artículos relacionados y navegación contigua para acelerar el rastreo e indexación automática de Googlebot."
+  "version": "7.10.36",
+  "releaseNotes": "Actualización v7.10.36: Prerenderizado exhaustivo combinando artículos de la API y caché local para garantizar la generación estática de todas las noticias (incluyendo citrulina y suplementación) con sus metadatos y etiquetas canónicas propias."
 }

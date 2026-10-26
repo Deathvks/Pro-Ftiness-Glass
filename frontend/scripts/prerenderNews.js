@@ -116,6 +116,7 @@ function markdownToSemanticHtml(md = '') {
 }
 
 async function fetchArticles() {
+  let apiArticles = [];
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);
@@ -127,29 +128,42 @@ async function fetchArticles() {
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data.news) && data.news.length > 0) {
+        apiArticles = data.news;
         console.log(`[Prerender] Obtenidos ${data.news.length} artículos desde la API.`);
-        return data.news;
       }
     }
   } catch (err) {
     console.warn('[Prerender] No se pudo consultar la API remota:', err.message);
   }
 
-  // Fallback a cachedNews.json
+  // Cargar artículos desde cachedNews.json para combinar y asegurar que NINGÚN artículo falte
   const cachePath = path.resolve(__dirname, '../src/data/cachedNews.json');
+  let cachedArticles = [];
   if (fs.existsSync(cachePath)) {
     try {
       const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
       if (Array.isArray(cached) && cached.length > 0) {
-        console.log(`[Prerender] Usando ${cached.length} artículos desde el caché local.`);
-        return cached;
+        cachedArticles = cached;
       }
     } catch (e) {
       console.warn('[Prerender] Error leyendo caché local:', e.message);
     }
   }
 
-  return [];
+  // Fusión por slug: primero locales, sobreescritos por API si existen
+  const combinedMap = new Map();
+  cachedArticles.forEach(a => {
+    if (a.slug) combinedMap.set(a.slug, a);
+  });
+  apiArticles.forEach(a => {
+    if (a.slug) {
+      combinedMap.set(a.slug, { ...(combinedMap.get(a.slug) || {}), ...a });
+    }
+  });
+
+  const merged = Array.from(combinedMap.values());
+  console.log(`[Prerender] Total de artículos únicos a prerenderizar: ${merged.length}`);
+  return merged;
 }
 
 function injectMeta(html, {
