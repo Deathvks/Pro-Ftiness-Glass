@@ -559,7 +559,9 @@ REGLAS DE RETENCIÓN, EXTENSIÓN Y ESTILO EDITORIAL (OBLIGATORIAS):
    (REGLA: NUNCA uses almohadillas ## dentro de las alertas ni corchetes sueltos como [ESTUDIO]).
 5. TABLA COMPARATIVA VISUAL Y CONCISA:
    - Tabla Markdown sencilla (| Parámetro | Enfoque A | Enfoque B |) de máximo 3 a 4 filas, para que se entienda de un vistazo sin cansar.
-6. CIERRE OBLIGATORIO:
+6. INTERLINKING SEO INTERNO:
+   - Incluye de forma natural en el cuerpo del artículo 1 o 2 enlaces Markdown hacia nuestras herramientas públicas si encajan con el tema: [Calculadora de 1RM](/calculadora-1rm), [Calculadora de Calorías y Macros](/calculadora-calorias-macros) o [Guía de Ejercicios de Gimnasio](/ejercicios).
+7. CIERRE OBLIGATORIO:
    - Termina con la sección "## Puntos clave para llevarte" con 3 o 4 conclusiones numeradas muy directas ("Haz esto", "Evita esto", "Tu meta hoy").`;
 
     const result = await model.generateContent(prompt);

@@ -24,6 +24,13 @@
     <priority>0.9</priority>
   </url>
 
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/ejercicios</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- Hub de Noticias & Artículos -->
   <url>
     <loc>https://pro-fitness-glass.zeabur.app/noticias</loc>

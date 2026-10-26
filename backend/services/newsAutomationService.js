@@ -107,6 +107,26 @@ const CATEGORY_IMAGE_POOLS = {
   ]
 };
 
+
+// Banco SEO de consultas reales de gimnasio con alto volumen de búsqueda en España y Latinoamérica (Long-Tail SEO)
+const HIGH_INTENT_GYM_SEARCH_TOPICS = [
+  'Rutina Push Pull Legs (Empuje, Tirón, Pierna) de 3 y 6 días: estructura exacta y series para hipertrofia',
+  'Rutina Torso Pierna 4 días en el gimnasio: cómo distribuir ejercicios para ganar masa muscular y fuerza',
+  'Cómo subir tu 1RM en Press de Banca sin dolor de hombro: retracción escapular, leg drive y progresión',
+  'Cuántas series por grupo muscular a la semana necesitas realmente para hipertrofia según la ciencia',
+  'Sentadilla Búlgara en el gimnasio: cómo colocar el pie y el torso para enfocar glúteo vs cuádriceps',
+  'Mejores ejercicios de espalda en gimnasio para amplitud dorsal (forma en V) vs densidad muscular',
+  'Volumen limpio o definición: qué hacer primero si eres principiante con grasa abdominal (recomposición corporal)',
+  'Elevaciones laterales con mancuernas vs polea baja: biomecánica para construir hombros 3D',
+  'Qué es el RIR y el RPE en el gimnasio: a cuántas repeticiones del fallo entrenar en cada ejercicio',
+  'Peso Muerto Rumano vs Peso Muerto Convencional: cuál elegir para hipertrofiar isquiosurales y glúteos',
+  'Press Inclinado con mancuernas a 30 grados vs Press Plano: cómo llenar el pecho superior (haz clavicular)',
+  'Cómo estructurar una dieta de volumen limpio de 2500 a 3000 kcal sin ganar grasa excesiva',
+  'Dominadas pronas vs Jalón al pecho: diferencias reales de activación dorsal y cómo progresar en lastre',
+  'Hip Thrust con barra vs Prensa de piernas: cómo combinarlos para maximizar el desarrollo del glúteo',
+  'Tríceps gigantes en el gimnasio: por qué necesitas entrenar la cabeza larga con extensiones trasnuca (overhead)'
+];
+
 const DEFAULT_POOL = [
   'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=80',
   'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1200&q=80',
@@ -497,7 +517,11 @@ ESTRUCTURA EDITORIAL Y DE RETENCIÓN OBLIGATORIA (Markdown enriquecido):
    > **Desmintiendo el Mito:** Aclaración clara y directa.
    REGLAS: NUNCA uses almohadillas (## o ###) dentro de una alerta (>), ni corchetes sueltos como [ESTUDIO].
 7. TABLA COMPARATIVA MARKDOWN COMPACTA (| Parámetro | Opción A | Opción B |) de 3-4 filas máx, muy visual.
-8. SECCIÓN FINAL OBLIGATORIA: "## Puntos clave para llevarte" con 3 a 4 puntos accionables muy directos para el gimnasio o la nutrición.
+8. ENLACES INTERNOS SEO NATURALES (OBLIGATORIO): Incluye de forma natural dentro del texto 1 o 2 enlaces en formato Markdown hacia nuestras herramientas públicas gratuitas cuando menciones fuerza, calorías o ejercicios:
+   - [Calculadora de 1RM y Porcentajes](/calculadora-1rm)
+   - [Calculadora de Calorías y Macros](/calculadora-calorias-macros)
+   - [Guía de Ejercicios y Rutinas de Gimnasio](/ejercicios)
+9. SECCIÓN FINAL OBLIGATORIA: "## Puntos clave para llevarte" con 3 a 4 puntos accionables muy directos para el gimnasio o la nutrición.
 9. SEO Y METADATOS:
    - seo_title: Título optimizado para Google (50-60 caracteres).
    - seo_description: Meta descripción persuasiva con llamada a la acción (140-160 caracteres).
@@ -664,7 +688,7 @@ Extensión recomendada: 450 a 650 palabras de máxima retención y alto valor pr
           host,
           key,
           keyLocation,
-          urlList: [articleUrl, `${baseUrl}/sitemap.xml`, `${baseUrl}/rss.xml`]
+          urlList: [articleUrl, `${baseUrl}/calculadora-1rm`, `${baseUrl}/calculadora-calorias-macros`, `${baseUrl}/ejercicios`, `${baseUrl}/sitemap.xml`, `${baseUrl}/rss.xml`]
         })
       });
 

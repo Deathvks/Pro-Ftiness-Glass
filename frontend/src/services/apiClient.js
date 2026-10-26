@@ -96,6 +96,7 @@ const apiClient = async (endpoint, options = {}) => {
                 const isPublic = currentPath.startsWith('/noticias') ||
                                  currentPath === '/calculadora-1rm' ||
                                  currentPath === '/calculadora-calorias-macros' ||
+                                 currentPath === '/ejercicios' ||
                                  currentPath === '/privacy' ||
                                  currentPath === '/terms' ||
                                  currentPath.startsWith('/share/');

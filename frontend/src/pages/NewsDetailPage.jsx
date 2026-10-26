@@ -615,6 +615,36 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           </div>
         )}
 
+        {/* HERRAMIENTAS PÚBLICAS DE GIMNASIO (INTERLINKING SEO) */}
+        <div className="my-6 p-5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/10 dark:border-white/10">
+          <span className="text-[11px] font-black uppercase tracking-widest text-accent block mb-3">
+            Herramientas Gratuitas de Gimnasio Relacionadas
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <a
+              href="/calculadora-1rm"
+              className="p-3.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-accent/10 border border-black/5 dark:border-white/10 hover:border-accent/40 transition-all no-underline block"
+            >
+              <strong className="text-xs font-black text-text-primary block mb-0.5">Calculadora de 1RM →</strong>
+              <span className="text-[11px] text-text-secondary">Calcula tu fuerza máxima y porcentajes de carga</span>
+            </a>
+            <a
+              href="/calculadora-calorias-macros"
+              className="p-3.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-emerald-500/10 border border-black/5 dark:border-white/10 hover:border-emerald-500/40 transition-all no-underline block"
+            >
+              <strong className="text-xs font-black text-text-primary block mb-0.5">Calculadora de Macros →</strong>
+              <span className="text-[11px] text-text-secondary">Calorías, proteínas, déficit y volumen limpio</span>
+            </a>
+            <a
+              href="/ejercicios"
+              className="p-3.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-purple-500/10 border border-black/5 dark:border-white/10 hover:border-purple-500/40 transition-all no-underline block"
+            >
+              <strong className="text-xs font-black text-text-primary block mb-0.5">Guía de Ejercicios y Rutinas →</strong>
+              <span className="text-[11px] text-text-secondary">Técnica biomecánica y rutinas Push Pull Legs</span>
+            </a>
+          </div>
+        </div>
+
         {/* PUERTA DE ENTRADA A ASESORÍA CON ENTRENADORES */}
         <TrainerAdvisoryCard customNavigate={customNavigate} />
 

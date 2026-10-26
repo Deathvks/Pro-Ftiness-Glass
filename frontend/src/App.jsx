@@ -140,6 +140,7 @@ const VIEW_CHUNK_LOADERS = {
   noticiaDetalle: () => import('./pages/NewsDetailPage'),
   calculadora1rm: () => import('./pages/OneRMCalculatorPage'),
   calculadoraMacros: () => import('./pages/MacroCalculatorPage'),
+  ejercicios: () => import('./pages/PublicExercisesPage'),
 };
 
 const preloadedViews = new Set();
@@ -209,6 +210,7 @@ const NewsListPage = lazyWithRetry(VIEW_CHUNK_LOADERS.noticias, 'noticias');
 const NewsDetailPage = lazyWithRetry(VIEW_CHUNK_LOADERS.noticiaDetalle, 'noticiaDetalle');
 const OneRMCalculatorPage = lazyWithRetry(VIEW_CHUNK_LOADERS.calculadora1rm, 'calculadora1rm');
 const MacroCalculatorPage = lazyWithRetry(VIEW_CHUNK_LOADERS.calculadoraMacros, 'calculadoraMacros');
+const PublicExercisesPage = lazyWithRetry(VIEW_CHUNK_LOADERS.ejercicios, 'ejercicios');
 const AsesoriaScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.asesoria, 'asesoria');
 
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
@@ -828,6 +830,7 @@ export default function App() {
     location.pathname.startsWith('/noticias') ||
     location.pathname === '/calculadora-1rm' ||
     location.pathname === '/calculadora-calorias-macros' ||
+    location.pathname === '/ejercicios' ||
     location.pathname === '/privacy' ||
     location.pathname === '/terms' ||
     location.pathname.startsWith('/share/') ||
@@ -936,6 +939,19 @@ export default function App() {
         <Route path="/calculadora-calorias-macros" element={
             <Suspense fallback={<NewsLoadingSkeleton />}>
                 <MacroCalculatorPage
+                  onBack={() => {
+                    if (isAuthenticated) {
+                      navigateInternal('hub');
+                    } else {
+                      navigate('/');
+                    }
+                  }}
+                />
+            </Suspense>
+        } />
+        <Route path="/ejercicios" element={
+            <Suspense fallback={<NewsLoadingSkeleton />}>
+                <PublicExercisesPage
                   onBack={() => {
                     if (isAuthenticated) {
                       navigateInternal('hub');

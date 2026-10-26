@@ -490,6 +490,45 @@ async function main() {
   fs.writeFileSync(path.join(calcMacrosDir, 'index.html'), calcMacrosHtml, 'utf8');
   console.log('[Prerender] Generadas calculadoras SEO en dist/calculadora-1rm/index.html y dist/calculadora-calorias-macros/index.html.');
 
+  const ejerciciosDir = path.join(distDir, 'ejercicios');
+  if (!fs.existsSync(ejerciciosDir)) fs.mkdirSync(ejerciciosDir, { recursive: true });
+
+  const ejerciciosBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 960px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Volver a Pro Fitness Glass</a> |
+      <a href="/calculadora-1rm" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Calculadora de 1RM</a> |
+      <a href="/calculadora-calorias-macros" style="color: #34d399; text-decoration: none; font-weight: 700;">Calculadora de Calorías y Macros</a> |
+      <a href="/noticias" style="color: #a855f7; text-decoration: none; font-weight: 700;">Guías de Gimnasio</a>
+    </nav>
+    <header style="margin-bottom: 2.5rem;">
+      <span style="display: inline-block; font-size: 0.75rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.08em;">Enciclopedia Biomecánica de Gimnasio</span>
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">Mejores Ejercicios de Gimnasio y Rutinas de Hipertrofia (Guía Técnica)</h1>
+      <p style="font-size: 1.15rem; color: #94a3b8;">Aprende la técnica biomecánica paso a paso de Press de Banca, Sentadilla Libre, Sentadilla Búlgara, Peso Muerto Rumano, Hip Thrust, Dominadas, Remo con Barra, Press Militar y Elevaciones Laterales, junto con las mejores rutinas Push Pull Legs, Torso Pierna y Full Body.</p>
+    </header>
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Ejercicios Fundamentales por Grupo Muscular</h2>
+      <ul style="padding-left: 1.5rem; color: #e2e8f0;">
+        <li><strong>Pecho:</strong> Press de Banca Plano con Barra y Press Inclinado con Mancuernas a 30°.</li>
+        <li><strong>Pierna y Glúteo:</strong> Sentadilla Libre con Barra, Sentadilla Búlgara, Peso Muerto Rumano y Hip Thrust.</li>
+        <li><strong>Espalda:</strong> Dominadas Pronas Lastradas, Jalón al Pecho y Remo con Barra / Polea.</li>
+        <li><strong>Hombros y Brazos:</strong> Press Militar, Elevaciones Laterales, Curl de Bíceps Inclinado y Extensión de Tríceps en Polea.</li>
+      </ul>
+    </section>
+  </main>`;
+
+  let ejerciciosHtml = injectMeta(baseHtml, {
+    title: 'Ejercicios de Gimnasio y Rutinas de Hipertrofia (Guía Técnica)',
+    description: 'Aprende la técnica correcta de los mejores ejercicios de gimnasio para pecho, espalda, piernas, glúteos, hombros y brazos, junto con las mejores rutinas Push Pull Legs y Torso Pierna.',
+    image: `${BASE_URL}/entrenamiento.png`,
+    url: `${BASE_URL}/ejercicios`,
+    type: 'website'
+  });
+  ejerciciosHtml = ejerciciosHtml.replace(/<div id="root">[\s\S]*?<\/div>(\s*<noscript>)/i, `<div id="root">${ejerciciosBody}</div>$1`);
+  ejerciciosHtml = ejerciciosHtml.replace(/<noscript>[\s\S]*?<\/noscript>/i, `<noscript>${ejerciciosBody}</noscript>`);
+  fs.writeFileSync(path.join(ejerciciosDir, 'index.html'), ejerciciosHtml, 'utf8');
+  console.log('[Prerender] Generada enciclopedia de ejercicios en dist/ejercicios/index.html.');
+
 }
 
 main().catch(err => {

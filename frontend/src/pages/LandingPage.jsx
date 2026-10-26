@@ -888,7 +888,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                 </div>
                             </ScrollRevealCard>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <ScrollRevealCard delay={100} className="h-full">
                                     <a
                                         href="/calculadora-1rm"
@@ -957,7 +957,84 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                         </span>
                                     </a>
                                 </ScrollRevealCard>
+
+                                <ScrollRevealCard delay={400} className="h-full">
+                                    <a
+                                        href="/ejercicios"
+                                        className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-blue-500/60 backdrop-blur-xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/15 group relative overflow-hidden"
+                                    >
+                                        <div>
+                                            <div className="w-14 h-14 rounded-[20px] bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
+                                                <Activity size={28} strokeWidth={2} />
+                                            </div>
+                                            <span className="inline-block text-[11px] font-black uppercase tracking-widest text-blue-400 mb-2">Técnica y Rutinas</span>
+                                            <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-blue-400 transition-colors">
+                                                Enciclopedia de Ejercicios y Splits
+                                            </h3>
+                                            <p className="text-sm font-medium text-text-secondary leading-relaxed mb-6">
+                                                Técnica paso a paso de Press de Banca, Sentadilla Búlgara, Peso Muerto Rumano, Dominadas y plantillas semanales Push Pull Legs y Torso Pierna.
+                                            </p>
+                                        </div>
+                                        <span className="inline-flex items-center gap-2 text-sm font-black text-blue-400 group-hover:translate-x-1 transition-transform">
+                                            Ver Guía de Ejercicios <ArrowRight size={16} />
+                                        </span>
+                                    </a>
+                                </ScrollRevealCard>
                             </div>
+                        </div>
+
+                        {/* --- SECCIÓN: COMPARATIVA FRENTE A OTRAS APPS DE GIMNASIO (SEO) --- */}
+                        <div className="w-full mt-32 max-w-5xl mx-auto px-4 text-left relative z-10">
+                            <ScrollRevealCard>
+                                <div className="text-center mb-12">
+                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 ring-1 ring-accent/30 mb-4">
+                                        <Trophy size={14} className="text-accent" />
+                                        <span className="text-xs font-black uppercase tracking-widest text-accent">Todo en Uno Sin Límites</span>
+                                    </div>
+                                    <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-text-primary mb-4">
+                                        La Alternativa Gratuita a las <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-blue-400">Apps de Gimnasio de Pago</span>
+                                    </h2>
+                                    <p className="text-text-secondary font-medium text-base sm:text-lg max-w-2xl mx-auto">
+                                        Mientras que otras aplicaciones limitan cuántas rutinas puedes guardar o cobran suscripciones mensuales por el escáner de códigos de barras y gráficas, en <strong>Pro Fitness Glass</strong> tienes todo desbloqueado.
+                                    </p>
+                                </div>
+
+                                <div className="landing-liquid-glass rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="border-b border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 text-xs font-black uppercase tracking-wider text-text-secondary">
+                                                    <th className="py-4 px-5">Función de Entrenamiento y Nutrición</th>
+                                                    <th className="py-4 px-5 text-accent">Pro Fitness Glass</th>
+                                                    <th className="py-4 px-5 text-text-tertiary">Apps Tradicionales (Versión Gratis)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm font-medium">
+                                                <tr>
+                                                    <td className="py-3.5 px-5 font-bold text-text-primary">Rutinas de Gimnasio Personalizadas</td>
+                                                    <td className="py-3.5 px-5 text-emerald-400 font-black">Ilimitadas Gratis</td>
+                                                    <td className="py-3.5 px-5 text-text-tertiary">Limitado a 3 o 4 rutinas</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="py-3.5 px-5 font-bold text-text-primary">Entrenador IA de Sobrecarga Progresiva</td>
+                                                    <td className="py-3.5 px-5 text-emerald-400 font-black">Incluido Gratis</td>
+                                                    <td className="py-3.5 px-5 text-text-tertiary">Solo en suscripción Pro</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="py-3.5 px-5 font-bold text-text-primary">Contador de Calorías, Macros y Escáner con IA</td>
+                                                    <td className="py-3.5 px-5 text-emerald-400 font-black">Integrado en la misma App</td>
+                                                    <td className="py-3.5 px-5 text-text-tertiary">Requiere instalar otra app de pago</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="py-3.5 px-5 font-bold text-text-primary">Mapa Térmico de Fatiga Muscular y 1RM</td>
+                                                    <td className="py-3.5 px-5 text-emerald-400 font-black">100% Desbloqueado</td>
+                                                    <td className="py-3.5 px-5 text-text-tertiary">De pago mensual / anual</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </ScrollRevealCard>
                         </div>
 
                         {/* --- SECCIÓN: PREGUNTAS FRECUENTES DE GIMNASIO (SEO FAQ) --- */}
@@ -1143,6 +1220,10 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             <span className="hidden sm:block text-text-secondary/30">•</span>
                             <a href="/calculadora-calorias-macros" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
                                 Calculadora de Macros
+                            </a>
+                            <span className="hidden sm:block text-text-secondary/30">•</span>
+                            <a href="/ejercicios" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
+                                Guía de Ejercicios
                             </a>
                             <span className="hidden sm:block text-text-secondary/30">•</span>
                             <a href="/noticias" className="hover:text-accent transition-colors flex items-center justify-center gap-2">

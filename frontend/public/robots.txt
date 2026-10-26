@@ -6,6 +6,7 @@ Allow: /noticias
 Allow: /noticias/
 Allow: /calculadora-1rm
 Allow: /calculadora-calorias-macros
+Allow: /ejercicios
 Disallow: /api/
 Disallow: /dashboard
 Disallow: /workout
