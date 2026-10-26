@@ -37,18 +37,18 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
     const retryKey = "pfg_chunk_retry_" + name;
     const hasRetried = sessionStorage.getItem(retryKey);
 
-    const loadWithTimeout = async () => {
+    const loadWithTimeout = async (timeoutMs = 4500) => {
       return await Promise.race([
         componentImport(),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Timeout de red cargando chunk "${name}"`)), 8000)
+          setTimeout(() => reject(new Error(`Timeout de red cargando chunk "${name}"`)), timeoutMs)
         )
       ]);
     };
 
     try {
       // 1. Intento primario
-      const component = await loadWithTimeout();
+      const component = await loadWithTimeout(4500);
       sessionStorage.removeItem(retryKey);
       return component;
     } catch (firstError) {
@@ -56,8 +56,8 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
       
       // 2. Reintento inmediato en memoria (evita recargas innecesarias ante cortes transitorios)
       try {
-        await new Promise(r => setTimeout(r, 600));
-        const component = await loadWithTimeout();
+        await new Promise(r => setTimeout(r, 250));
+        const component = await loadWithTimeout(6000);
         sessionStorage.removeItem(retryKey);
         return component;
       } catch (error) {
@@ -109,6 +109,7 @@ const OnboardingScreen = lazyWithRetry(() => import('./pages/OnboardingScreen'),
 const LandingPage = lazyWithRetry(() => import('./pages/LandingPage'), 'landingPage');
 
 const VIEW_CHUNK_LOADERS = {
+  landingPage: () => import('./pages/LandingPage'),
   dashboard: () => import('./pages/Dashboard'),
   progress: () => import('./pages/Progress'),
   routines: () => import('./pages/Routines'),
@@ -160,9 +161,26 @@ export const preloadViewChunk = (viewId) => {
   }
 };
 
+// Disparo inmediato en tiempo de evaluación del módulo para evitar cascada React -> Router -> Suspense
+if (typeof window !== 'undefined' && window.location) {
+  const initialPath = window.location.pathname;
+  if (initialPath === '/calculadora-1rm') preloadViewChunk('calculadora1rm');
+  else if (initialPath === '/calculadora-calorias-macros') preloadViewChunk('calculadoraMacros');
+  else if (initialPath === '/ejercicios') preloadViewChunk('ejercicios');
+  else if (initialPath === '/noticias') preloadViewChunk('noticias');
+  else if (initialPath.startsWith('/noticias/')) preloadViewChunk('noticiaDetalle');
+  else if (initialPath === '/privacy') preloadViewChunk('privacyPolicy');
+  else if (initialPath === '/terms') preloadViewChunk('terms');
+  else if (initialPath === '/') preloadViewChunk('landingPage');
+}
+
 export const preloadAllPrimaryViews = () => {
   if (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData) return;
-  const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub', 'publicProfile', 'profile', 'noticias', 'noticiaDetalle'];
+  const primaryNavViews = [
+    'dashboard', 'routines', 'nutrition', 'social', 'hub',
+    'calculadora1rm', 'calculadoraMacros', 'ejercicios',
+    'noticias', 'noticiaDetalle', 'publicProfile', 'profile'
+  ];
   const user = useAppStore.getState().userProfile;
   if (user?.role === 'admin' || user?.role === 'trainer') {
     primaryNavViews.push('adminPanel');
@@ -526,8 +544,15 @@ export default function App() {
   const fullPageTitle = `${currentTitle} - Pro Fitness Glass`;
   const workoutTimer = view === 'workout' ? timer : 0;
 
-  // Precargar de forma agresiva y persistente los módulos primarios y secundarios tras autenticarse
+  // Precargar de forma agresiva y persistente las páginas públicas (calculadoras, ejercicios, noticias) y vistas principales
   useEffect(() => {
+    const publicSeoViews = ['calculadora1rm', 'calculadoraMacros', 'ejercicios', 'noticias', 'noticiaDetalle', 'landingPage'];
+    publicSeoViews.forEach((v, idx) => {
+      setTimeout(() => {
+        preloadViewChunk(v);
+      }, 60 + idx * 50);
+    });
+
     if (!isAuthenticated) return;
 
     // Asegurar que la vista activa empiece de inmediato
@@ -542,11 +567,11 @@ export default function App() {
     });
 
     // Precargar vistas secundarias escalonadas
-    const secondaryNavViews = ['noticias', 'workout', 'progress', 'profile', 'settings', 'notifications', 'challenges', 'appearance'];
+    const secondaryNavViews = ['noticias', 'calculadora1rm', 'calculadoraMacros', 'ejercicios', 'workout', 'progress', 'profile', 'settings', 'notifications', 'challenges', 'appearance'];
     secondaryNavViews.forEach((v, idx) => {
       setTimeout(() => {
         preloadViewChunk(v);
-      }, 500 + idx * 80);
+      }, 400 + idx * 70);
     });
   }, [isAuthenticated]);
 

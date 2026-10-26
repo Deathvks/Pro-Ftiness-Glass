@@ -3,7 +3,6 @@ import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Award, X, Download, Camera, Trash2, ArrowLeft } from 'lucide-react';
 import { FaInstagram } from 'react-icons/fa';
-import html2canvas from 'html2canvas';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { getToastThemePalette } from '../contexts/ToastProvider';
 import useAppStore from '../store/useAppStore';
@@ -60,6 +59,7 @@ const PRToast = ({ newPRs, onClose }) => {
 
   const generateCardBlob = async () => {
     if (!prCardRef.current) throw new Error('Referencia de tarjeta no encontrada');
+    const { default: html2canvas } = await import('html2canvas');
     return await html2canvas(prCardRef.current, {
       scale: 1,
       useCORS: true,

@@ -93,7 +93,28 @@ export default defineConfig({
         globIgnores: [
           '**/node_modules/**/*',
           'stats.html',
-          'noticias/**/*.html'
+          'noticias/**/*.html',
+          'calculadora-1rm/**/*.html',
+          'calculadora-calorias-macros/**/*.html',
+          'ejercicios/**/*.html',
+          'aver.jpg',
+          'entrenamiento.png',
+          'nutrici*.png',
+          'graficas.png',
+          'social.png',
+          'mapa.png',
+          'ajustes.png',
+          'perfil.png',
+          'trainer-profile.jpg',
+          'assets/themes/**/*',
+          'assets/*GymLocationModal*',
+          'assets/*BarcodeScanner*',
+          'assets/*vendor-recharts*',
+          'assets/*vendor-leaflet*',
+          'assets/*AdminPanel*',
+          'assets/*TrainerPanel*',
+          'assets/*RoutineEditor*',
+          'assets/*html2canvas*'
         ],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       },
@@ -111,9 +132,10 @@ export default defineConfig({
       name: 'css-before-js',
       enforce: 'post',
       transformIndexHtml(html) {
-        const cssLinks = html.match(/<link\s+[^>]*rel=["']stylesheet["'][^>]*>/gi);
-        if (!cssLinks || cssLinks.length === 0) return html;
-        let cleaned = html;
+        // Eliminar modulepreload pesados innecesarios en el arranque inicial (como recharts o leaflet)
+        let cleaned = html.replace(/<link\s+[^>]*rel=["']modulepreload["'][^>]*href=["'][^"']*vendor-(recharts|leaflet)[^"']*["'][^>]*>\s*/gi, '');
+        const cssLinks = cleaned.match(/<link\s+[^>]*rel=["']stylesheet["'][^>]*>/gi);
+        if (!cssLinks || cssLinks.length === 0) return cleaned;
         for (const link of cssLinks) {
           cleaned = cleaned.replace(link, '');
         }
@@ -129,11 +151,27 @@ export default defineConfig({
     chunkSizeWarningLimit: 1500, 
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-recharts': ['recharts'],
-          'vendor-leaflet': ['leaflet', 'react-leaflet'],
-          'vendor-icons': ['lucide-react']
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (
+              id.includes('/react/') ||
+              id.includes('/react-dom/') ||
+              id.includes('/scheduler/') ||
+              id.includes('/react-router') ||
+              id.includes('/@remix-run/router')
+            ) {
+              return 'vendor-react';
+            }
+            if (id.includes('/recharts/') || id.includes('/d3-')) {
+              return 'vendor-recharts';
+            }
+            if (id.includes('/leaflet/') || id.includes('/react-leaflet/')) {
+              return 'vendor-leaflet';
+            }
+            if (id.includes('/lucide-react/')) {
+              return 'vendor-icons';
+            }
+          }
         }
       }
     }

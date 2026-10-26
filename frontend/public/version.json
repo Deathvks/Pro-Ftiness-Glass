@@ -1,4 +1,4 @@
 {
-  "version": "7.10.49",
-  "releaseNotes": "Actualización v7.10.49: Eliminación definitiva del parpadeo sin estilos (FOUC) al recargar cualquier ruta de la web, priorizando la hoja de estilos principal antes de montar React y manteniendo el splash screen activo en las rutas prerenderizadas."
+  "version": "7.10.50",
+  "releaseNotes": "Actualización v7.10.50: Carga ultrarrápida tras actualizaciones de versión con modulepreload directo en calculadoras, enciclopedia de ejercicios y noticias, preservación de chunks con hash y reducción masiva del peso de descarga inicial."
 }

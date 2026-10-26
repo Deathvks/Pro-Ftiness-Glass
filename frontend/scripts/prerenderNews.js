@@ -219,7 +219,16 @@ function injectMeta(html, {
   return output;
 }
 
-function injectPrerenderBody(html, seoBodyHtml) {
+function findChunkHref(prefix) {
+  const assetsDir = path.join(distDir, 'assets');
+  if (!fs.existsSync(assetsDir)) return null;
+  const match = fs.readdirSync(assetsDir).find(
+    (f) => f.startsWith(`${prefix}-`) && f.endsWith('.js')
+  );
+  return match ? `/assets/${match}` : null;
+}
+
+function injectPrerenderBody(html, seoBodyHtml, chunkPrefix = null) {
   // Conservamos .app-splash-screen visible para evitar FOUC (parpadeo sin CSS al recargar)
   // e inyectamos el HTML semántico SEO oculto visualmente dentro de #root + visible en <noscript>.
   const hiddenSeoBlock = `<div data-seo-prerender="true" style="position:fixed;inset:0;z-index:-1;opacity:0;pointer-events:none;overflow:hidden;max-height:100vh;" aria-hidden="true">${seoBodyHtml}</div>`;
@@ -228,6 +237,15 @@ function injectPrerenderBody(html, seoBodyHtml) {
     `$1\n    ${hiddenSeoBlock}\n  $2`
   );
   output = output.replace(/<noscript>[\s\S]*?<\/noscript>/i, `<noscript>${seoBodyHtml}</noscript>`);
+  if (chunkPrefix) {
+    const chunkHref = findChunkHref(chunkPrefix);
+    if (chunkHref && !output.includes(chunkHref)) {
+      output = output.replace(
+        '</head>',
+        `  <link rel="modulepreload" crossorigin href="${chunkHref}">\n</head>`
+      );
+    }
+  }
   return output;
 }
 
@@ -313,7 +331,7 @@ async function main() {
     url: `${BASE_URL}/noticias`,
     type: 'website'
   });
-  newsIndexHtml = injectPrerenderBody(newsIndexHtml, newsBodyHtml);
+  newsIndexHtml = injectPrerenderBody(newsIndexHtml, newsBodyHtml, 'NewsListPage');
   fs.writeFileSync(path.join(newsIndexDir, 'index.html'), newsIndexHtml, 'utf8');
   console.log('[Prerender] Generado dist/noticias/index.html con lista de artículos semánticos.');
 
@@ -412,7 +430,7 @@ async function main() {
       dateModified: article.updatedAt || article.published_at || article.createdAt
     });
 
-    articleHtml = injectPrerenderBody(articleHtml, articleBodyHtml);
+    articleHtml = injectPrerenderBody(articleHtml, articleBodyHtml, 'NewsDetailPage');
     fs.writeFileSync(path.join(articleDir, 'index.html'), articleHtml, 'utf8');
     count++;
   }
@@ -458,7 +476,7 @@ async function main() {
     url: `${BASE_URL}/calculadora-1rm`,
     type: 'website'
   });
-  calc1rmHtml = injectPrerenderBody(calc1rmHtml, calc1rmBody);
+  calc1rmHtml = injectPrerenderBody(calc1rmHtml, calc1rmBody, 'OneRMCalculatorPage');
   fs.writeFileSync(path.join(calc1rmDir, 'index.html'), calc1rmHtml, 'utf8');
 
   const calcMacrosDir = path.join(distDir, 'calculadora-calorias-macros');
@@ -494,7 +512,7 @@ async function main() {
     url: `${BASE_URL}/calculadora-calorias-macros`,
     type: 'website'
   });
-  calcMacrosHtml = injectPrerenderBody(calcMacrosHtml, calcMacrosBody);
+  calcMacrosHtml = injectPrerenderBody(calcMacrosHtml, calcMacrosBody, 'MacroCalculatorPage');
   fs.writeFileSync(path.join(calcMacrosDir, 'index.html'), calcMacrosHtml, 'utf8');
   console.log('[Prerender] Generadas calculadoras SEO en dist/calculadora-1rm/index.html y dist/calculadora-calorias-macros/index.html.');
 
@@ -532,7 +550,7 @@ async function main() {
     url: `${BASE_URL}/ejercicios`,
     type: 'website'
   });
-  ejerciciosHtml = injectPrerenderBody(ejerciciosHtml, ejerciciosBody);
+  ejerciciosHtml = injectPrerenderBody(ejerciciosHtml, ejerciciosBody, 'PublicExercisesPage');
   fs.writeFileSync(path.join(ejerciciosDir, 'index.html'), ejerciciosHtml, 'utf8');
   console.log('[Prerender] Generada enciclopedia de ejercicios en dist/ejercicios/index.html.');
 
