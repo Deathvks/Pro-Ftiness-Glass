@@ -4,10 +4,10 @@ import { getTrainerAdvice } from '../services/aiService.js';
 
 const DAILY_LIMIT = 5;
 
-// Cooldown anti-spam por usuario: impide que un usuario consuma sus 5 preguntas en ráfaga (protege el límite de 15 RPM)
+// Cooldown anti-spam por usuario: impide que un usuario consuma sus 5 preguntas en ráfaga (máximo 2 consultas por minuto por usuario)
 const userLastRequestTimes = new Map();
-const USER_COOLDOWN_MS = 10000; // 10 segundos de espera entre preguntas sucesivas
-const FOOD_COOLDOWN_MS = 8000;  // 8 segundos entre escaneos de alimentos
+const USER_COOLDOWN_MS = 30000; // 30 segundos de espera entre preguntas sucesivas
+const FOOD_COOLDOWN_MS = 15000; // 15 segundos entre escaneos de alimentos
 const MAX_PROMPT_LENGTH = 15000; // Máximo para prevenir abusos de tokens
 
 const cleanupOldCooldowns = () => {
