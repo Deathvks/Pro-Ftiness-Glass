@@ -1,4 +1,4 @@
 {
-  "version": "7.10.48",
-  "releaseNotes": "Actualización v7.10.48: Nuevo motor en el Panel Admin (\"Adaptar Existentes\") para re-optimizar automáticamente con IA todas las noticias ya publicadas al formato corto de alta retención (3 min lectura) e inyectar enlaces internos SEO sin alterar sus URLs."
+  "version": "7.10.49",
+  "releaseNotes": "Actualización v7.10.49: Eliminación definitiva del parpadeo sin estilos (FOUC) al recargar cualquier ruta de la web, priorizando la hoja de estilos principal antes de montar React y manteniendo el splash screen activo en las rutas prerenderizadas."
 }

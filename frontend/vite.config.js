@@ -107,6 +107,22 @@ export default defineConfig({
       gzipSize: true,
       brotliSize: true,
     }),
+    {
+      name: 'css-before-js',
+      enforce: 'post',
+      transformIndexHtml(html) {
+        const cssLinks = html.match(/<link\s+[^>]*rel=["']stylesheet["'][^>]*>/gi);
+        if (!cssLinks || cssLinks.length === 0) return html;
+        let cleaned = html;
+        for (const link of cssLinks) {
+          cleaned = cleaned.replace(link, '');
+        }
+        return cleaned.replace(
+          /(<script\s+type=["']module["'][^>]*>)/i,
+          `${cssLinks.join('\n  ')}\n  $1`
+        );
+      },
+    },
   ],
   build: {
     sourcemap: false,

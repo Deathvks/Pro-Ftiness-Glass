@@ -219,6 +219,18 @@ function injectMeta(html, {
   return output;
 }
 
+function injectPrerenderBody(html, seoBodyHtml) {
+  // Conservamos .app-splash-screen visible para evitar FOUC (parpadeo sin CSS al recargar)
+  // e inyectamos el HTML semántico SEO oculto visualmente dentro de #root + visible en <noscript>.
+  const hiddenSeoBlock = `<div data-seo-prerender="true" style="position:fixed;inset:0;z-index:-1;opacity:0;pointer-events:none;overflow:hidden;max-height:100vh;" aria-hidden="true">${seoBodyHtml}</div>`;
+  let output = html.replace(
+    /(<div id="root">[\s\S]*?)(<\/div>\s*<noscript>)/i,
+    `$1\n    ${hiddenSeoBlock}\n  $2`
+  );
+  output = output.replace(/<noscript>[\s\S]*?<\/noscript>/i, `<noscript>${seoBodyHtml}</noscript>`);
+  return output;
+}
+
 function generateRssFeed(articles) {
   const items = articles.map(a => {
     const pubDate = a.published_at || a.createdAt || new Date().toISOString();
@@ -301,8 +313,7 @@ async function main() {
     url: `${BASE_URL}/noticias`,
     type: 'website'
   });
-  newsIndexHtml = newsIndexHtml.replace(/<div id="root">[\s\S]*?<\/div>(\s*<noscript>)/i, `<div id="root">${newsBodyHtml}</div>$1`);
-  newsIndexHtml = newsIndexHtml.replace(/<noscript>[\s\S]*?<\/noscript>/i, `<noscript>${newsBodyHtml}</noscript>`);
+  newsIndexHtml = injectPrerenderBody(newsIndexHtml, newsBodyHtml);
   fs.writeFileSync(path.join(newsIndexDir, 'index.html'), newsIndexHtml, 'utf8');
   console.log('[Prerender] Generado dist/noticias/index.html con lista de artículos semánticos.');
 
@@ -401,8 +412,7 @@ async function main() {
       dateModified: article.updatedAt || article.published_at || article.createdAt
     });
 
-    articleHtml = articleHtml.replace(/<div id="root">[\s\S]*?<\/div>(\s*<noscript>)/i, `<div id="root">${articleBodyHtml}</div>$1`);
-    articleHtml = articleHtml.replace(/<noscript>[\s\S]*?<\/noscript>/i, `<noscript>${articleBodyHtml}</noscript>`);
+    articleHtml = injectPrerenderBody(articleHtml, articleBodyHtml);
     fs.writeFileSync(path.join(articleDir, 'index.html'), articleHtml, 'utf8');
     count++;
   }
@@ -448,8 +458,7 @@ async function main() {
     url: `${BASE_URL}/calculadora-1rm`,
     type: 'website'
   });
-  calc1rmHtml = calc1rmHtml.replace(/<div id="root">[\s\S]*?<\/div>(\s*<noscript>)/i, `<div id="root">${calc1rmBody}</div>$1`);
-  calc1rmHtml = calc1rmHtml.replace(/<noscript>[\s\S]*?<\/noscript>/i, `<noscript>${calc1rmBody}</noscript>`);
+  calc1rmHtml = injectPrerenderBody(calc1rmHtml, calc1rmBody);
   fs.writeFileSync(path.join(calc1rmDir, 'index.html'), calc1rmHtml, 'utf8');
 
   const calcMacrosDir = path.join(distDir, 'calculadora-calorias-macros');
@@ -485,8 +494,7 @@ async function main() {
     url: `${BASE_URL}/calculadora-calorias-macros`,
     type: 'website'
   });
-  calcMacrosHtml = calcMacrosHtml.replace(/<div id="root">[\s\S]*?<\/div>(\s*<noscript>)/i, `<div id="root">${calcMacrosBody}</div>$1`);
-  calcMacrosHtml = calcMacrosHtml.replace(/<noscript>[\s\S]*?<\/noscript>/i, `<noscript>${calcMacrosBody}</noscript>`);
+  calcMacrosHtml = injectPrerenderBody(calcMacrosHtml, calcMacrosBody);
   fs.writeFileSync(path.join(calcMacrosDir, 'index.html'), calcMacrosHtml, 'utf8');
   console.log('[Prerender] Generadas calculadoras SEO en dist/calculadora-1rm/index.html y dist/calculadora-calorias-macros/index.html.');
 
@@ -524,8 +532,7 @@ async function main() {
     url: `${BASE_URL}/ejercicios`,
     type: 'website'
   });
-  ejerciciosHtml = ejerciciosHtml.replace(/<div id="root">[\s\S]*?<\/div>(\s*<noscript>)/i, `<div id="root">${ejerciciosBody}</div>$1`);
-  ejerciciosHtml = ejerciciosHtml.replace(/<noscript>[\s\S]*?<\/noscript>/i, `<noscript>${ejerciciosBody}</noscript>`);
+  ejerciciosHtml = injectPrerenderBody(ejerciciosHtml, ejerciciosBody);
   fs.writeFileSync(path.join(ejerciciosDir, 'index.html'), ejerciciosHtml, 'utf8');
   console.log('[Prerender] Generada enciclopedia de ejercicios en dist/ejercicios/index.html.');
 

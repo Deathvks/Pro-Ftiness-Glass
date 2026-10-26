@@ -90,18 +90,52 @@ if (isIOS) {
   document.documentElement.classList.add('is-ios');
 }
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <GoogleOAuthProvider clientId={googleClientId}>
-        <HelmetProvider>
-          <BrowserRouter>
-            <ToastProvider>
-              <App />
-            </ToastProvider>
-          </BrowserRouter>
-        </HelmetProvider>
-      </GoogleOAuthProvider>
-    </ErrorBoundary>
-  </StrictMode>,
-);
+const mountApp = () => {
+  createRoot(document.getElementById('root')).render(
+    <StrictMode>
+      <ErrorBoundary>
+        <GoogleOAuthProvider clientId={googleClientId}>
+          <HelmetProvider>
+            <BrowserRouter>
+              <ToastProvider>
+                <App />
+              </ToastProvider>
+            </BrowserRouter>
+          </HelmetProvider>
+        </GoogleOAuthProvider>
+      </ErrorBoundary>
+    </StrictMode>,
+  );
+};
+
+// Evitar FOUC (pérdida momentánea de CSS al recargar): si hay hojas de estilo externas pendientes
+// de terminar de cargarse en <head>, mantenemos el .app-splash-screen (con CSS inline) hasta que
+// la hoja de estilos esté lista antes de montar React.
+const pendingStylesheets = Array.from(
+  document.querySelectorAll('link[rel="stylesheet"]')
+).filter((link) => !link.sheet);
+
+if (pendingStylesheets.length === 0) {
+  mountApp();
+} else {
+  let mounted = false;
+  const finishMount = () => {
+    if (mounted) return;
+    mounted = true;
+    mountApp();
+  };
+  const fallbackTimer = setTimeout(finishMount, 1200);
+  Promise.all(
+    pendingStylesheets.map(
+      (link) =>
+        new Promise((resolve) => {
+          if (link.sheet) return resolve();
+          link.addEventListener('load', resolve, { once: true });
+          link.addEventListener('error', resolve, { once: true });
+        })
+    )
+  ).then(() => {
+    clearTimeout(fallbackTimer);
+    finishMount();
+  });
+}

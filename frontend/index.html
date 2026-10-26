@@ -3,12 +3,12 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=68" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=45" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=45" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=45" />
-  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon.png?v=45" />
-  <link rel="shortcut icon" href="/favicon.ico?v=68" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=69" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=46" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=46" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=46" />
+  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon.png?v=46" />
+  <link rel="shortcut icon" href="/favicon.ico?v=69" />
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -165,7 +165,7 @@
   <meta name="color-scheme" content="dark light" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-  <link rel="manifest" href="/manifest.json?v=45" />
+  <link rel="manifest" href="/manifest.json?v=46" />
 
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -190,6 +190,8 @@
       --glass-radius: 28px;
       --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
       --bg-color: #0f172a;
+      --bg-primary: #0f172a;
+      --text-primary: #e5e7eb;
     }
 
     html.light-theme {
@@ -198,6 +200,8 @@
       --glass-border-opacity: 0.5;
       --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
       --bg-color: #f8fafc;
+      --bg-primary: #f8fafc;
+      --text-primary: #0f172a;
     }
 
     html.dark-theme {
@@ -206,6 +210,8 @@
       --glass-border-opacity: 0.2;
       --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       --bg-color: #0f172a;
+      --bg-primary: #0f172a;
+      --text-primary: #e5e7eb;
     }
 
     html.oled-theme {
@@ -214,6 +220,8 @@
       --glass-border-opacity: 0.3;
       --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
       --bg-color: #000000;
+      --bg-primary: #000000;
+      --text-primary: #ffffff;
     }
 
     html.galaxy-theme {
@@ -223,20 +231,26 @@
       --glass-blur: 2px;
       --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       --bg-color: #080814;
+      --bg-primary: #080814;
+      --text-primary: #f8fafc;
     }
 
     html.desert-theme {
       --bg-color: #fff1e6;
+      --bg-primary: #fff1e6;
     }
     html.dark.desert-theme {
       --bg-color: #3d2b1f;
+      --bg-primary: #3d2b1f;
     }
 
     html.ocean-theme {
       --bg-color: #e0f2fe;
+      --bg-primary: #e0f2fe;
     }
     html.dark.ocean-theme {
       --bg-color: #0f172a;
+      --bg-primary: #0f172a;
     }
 
     /* =========================================================
@@ -566,6 +580,7 @@
         var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
         root.style.setProperty('--bg-color', selectedHeaderColor);
+        root.style.setProperty('--bg-primary', selectedBgColor);
 
         var splash = document.querySelector('.app-splash-screen');
         if (splash) {
@@ -633,7 +648,7 @@
     </main>
   </noscript>
 
-  <script type="module" src="/src/main.jsx?v=45"></script>
+  <script type="module" src="/src/main.jsx?v=46"></script>
 </body>
 
 </html>
