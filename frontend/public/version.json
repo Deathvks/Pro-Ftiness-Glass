@@ -1,4 +1,4 @@
 {
-  "version": "7.10.37",
-  "releaseNotes": "Actualización v7.10.37: Sustitución de iconos genéricos por Font Awesome 6 con coherencia semántica en navegación, rutinas, nutrición, métricas de peso, créditos IA y paneles de la app."
+  "version": "7.10.38",
+  "releaseNotes": "Actualización v7.10.38: Corrección integral de carga en Panel Admin y Asesoría: ampliación de timeouts a 25s, eliminación de bloqueo prematuro de 7s, exclusión total de endpoints de chat y admin del service worker, reintentos en memoria y botón de reintento directo."
 }

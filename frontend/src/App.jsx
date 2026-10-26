@@ -36,60 +36,68 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
   lazy(async () => {
     const retryKey = "pfg_chunk_retry_" + name;
     const hasRetried = sessionStorage.getItem(retryKey);
-    try {
-      // Timeout de 9 segundos para prevenir cuelgues indefinidos en Suspense
-      const component = await Promise.race([
+
+    const loadWithTimeout = async () => {
+      return await Promise.race([
         componentImport(),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Timeout de red cargando chunk "${name}"`)), 9000)
+          setTimeout(() => reject(new Error(`Timeout de red cargando chunk "${name}"`)), 25000)
         )
       ]);
+    };
+
+    try {
+      // 1. Intento primario
+      const component = await loadWithTimeout();
       sessionStorage.removeItem(retryKey);
       return component;
-    } catch (error) {
-      console.warn(`[lazyWithRetry] Error al cargar chunk "${name}":`, error);
-      const msg = error?.message || "";
-      const isChunkError =
-        msg.includes("Failed to fetch dynamically imported module") ||
-        msg.includes("Loading chunk") ||
-        msg.includes("Importing a module script failed") ||
-        msg.includes("MIME type") ||
-        msg.includes("SyntaxError") ||
-        msg.includes("Unexpected token") ||
-        msg.includes("Timeout de red") ||
-        msg.includes("is not valid JavaScript") ||
-        error?.name === "TypeError" ||
-        error?.name === "SyntaxError";
+    } catch (firstError) {
+      console.warn(`[lazyWithRetry] Primer intento falló para "${name}", reintentando en memoria...`, firstError);
+      
+      // 2. Reintento inmediato en memoria (evita recargas innecesarias ante cortes transitorios)
+      try {
+        await new Promise(r => setTimeout(r, 600));
+        const component = await loadWithTimeout();
+        sessionStorage.removeItem(retryKey);
+        return component;
+      } catch (error) {
+        console.warn(`[lazyWithRetry] Error definitivo al cargar chunk "${name}":`, error);
+        const msg = error?.message || "";
+        const isChunkError =
+          msg.includes("Failed to fetch dynamically imported module") ||
+          msg.includes("Loading chunk") ||
+          msg.includes("Importing a module script failed") ||
+          msg.includes("MIME type") ||
+          msg.includes("SyntaxError") ||
+          msg.includes("Unexpected token") ||
+          msg.includes("Timeout de red") ||
+          msg.includes("is not valid JavaScript") ||
+          error?.name === "TypeError" ||
+          error?.name === "SyntaxError";
 
-      if (isChunkError && !hasRetried) {
-        console.warn(`[lazyWithRetry] Recargando aplicación para cargar nueva versión de "${name}"...`);
-        sessionStorage.setItem(retryKey, "true");
-        if ("caches" in window) {
-          caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
-        }
-        if ("serviceWorker" in navigator) {
-          navigator.serviceWorker.getRegistrations().then(regs => {
-            regs.forEach(r => r.unregister().catch(() => {}));
-          }).catch(() => {});
-        }
-        const freshUrl = window.location.origin + window.location.pathname + '?v=' + Date.now() + (window.location.hash || '');
-        setTimeout(() => {
-          try {
-            window.location.replace(freshUrl);
-          } catch (_) {
-            window.location.href = freshUrl;
+        if (isChunkError && !hasRetried) {
+          console.warn(`[lazyWithRetry] Nueva versión detectada para "${name}", refrescando caché de la app...`);
+          sessionStorage.setItem(retryKey, "true");
+          if ("caches" in window) {
+            caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
           }
-        }, 100);
-        setTimeout(() => {
-          try {
-            window.location.reload();
-          } catch (_) {
-            window.location.href = freshUrl;
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+              regs.forEach(r => r.unregister().catch(() => {}));
+            }).catch(() => {});
           }
-        }, 350);
-        return new Promise(() => {}); // Permanece en fallback durante la recarga sin lanzar error
+          const freshUrl = window.location.origin + window.location.pathname + '?v=' + Date.now() + (window.location.hash || '');
+          setTimeout(() => {
+            try {
+              window.location.replace(freshUrl);
+            } catch (_) {
+              window.location.href = freshUrl;
+            }
+          }, 80);
+          await new Promise(r => setTimeout(r, 1200));
+        }
+        throw error;
       }
-      throw error;
     }
   });
 
@@ -98,8 +106,7 @@ const StoryViewer = lazyWithRetry(() => import('./components/StoryViewer'), 'sto
 const SecurityDashboard = lazyWithRetry(() => import('./pages/SecurityDashboard'), 'securityDashboard');
 const PageTutorialPlayback = lazyWithRetry(() => import('./components/PageTutorialPlayback'), 'pageTutorial');
 const OnboardingScreen = lazyWithRetry(() => import('./pages/OnboardingScreen'), 'onboardingScreen');
-const LandingPage = lazyWithRetry(() => import('./pages/LandingPage'), 'landingPage'); 
-const AsesoriaScreen = lazyWithRetry(() => import('./pages/AsesoriaScreen'), 'asesoriaScreen');
+const LandingPage = lazyWithRetry(() => import('./pages/LandingPage'), 'landingPage');
 
 const VIEW_CHUNK_LOADERS = {
   dashboard: () => import('./pages/Dashboard'),
@@ -196,6 +203,7 @@ const SocialLinksScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.socialLinks, 'socialL
 const ChallengesScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.challenges, 'challenges');
 const NewsListPage = lazyWithRetry(VIEW_CHUNK_LOADERS.noticias, 'noticias');
 const NewsDetailPage = lazyWithRetry(VIEW_CHUNK_LOADERS.noticiaDetalle, 'noticiaDetalle');
+const AsesoriaScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.asesoria, 'asesoria');
 
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;

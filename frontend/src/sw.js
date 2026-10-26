@@ -168,8 +168,8 @@ registerRoute(
 );
 
 // C. API - Lectura (GET) -> NetworkFirst (Intenta red, si falla usa caché)
-// NOTA CRÍTICA: Excluimos explícitamente endpoints de autenticación, perfil de usuario, admin y notificaciones
-// para garantizar que nunca se sirvan sesiones caducadas, corruptas o datos erróneos de usuario desde caché.
+// NOTA CRÍTICA: Excluimos explícitamente endpoints dinámicos, autenticación, admin, chat, asesorías y notificaciones
+// para garantizar que NUNCA se sirvan datos desfasados, bloqueos o errores de timeout prematuro desde caché.
 registerRoute(
   ({ url, request }) => {
     if (request.method !== 'GET') return false;
@@ -178,7 +178,15 @@ registerRoute(
       url.pathname.startsWith('/api/auth/') ||
       url.pathname.startsWith('/api/users/') ||
       url.pathname.startsWith('/api/admin/') ||
-      url.pathname.startsWith('/api/notifications/')
+      url.pathname.startsWith('/api/chat/') ||
+      url.pathname.startsWith('/api/trainer/') ||
+      url.pathname.startsWith('/api/notifications/') ||
+      url.pathname.startsWith('/api/reports/') ||
+      url.pathname.startsWith('/api/ratings/') ||
+      url.pathname.startsWith('/api/sessions/') ||
+      url.pathname.startsWith('/api/stories/') ||
+      url.pathname.startsWith('/api/ai/') ||
+      url.pathname.startsWith('/api/2fa/')
     ) {
       return false;
     }
@@ -192,7 +200,7 @@ registerRoute(
         maxAgeSeconds: 24 * 60 * 60, // 24 horas
       }),
     ],
-    networkTimeoutSeconds: 5, // Si tarda más de 5s, usa caché
+    networkTimeoutSeconds: 15, // Aumentado de 5s a 15s para no abortar peticiones legítimas en conexiones lentas
   })
 );
 

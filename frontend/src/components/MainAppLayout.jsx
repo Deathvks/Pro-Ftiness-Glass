@@ -69,13 +69,21 @@ const ACCENT_UNLOCK_REWARDS = {
 
 const LoadingFallback = () => {
   const [showRescue, setShowRescue] = React.useState(false);
+  const [showProgressHint, setShowProgressHint] = React.useState(false);
   const [isRepairing, setIsRepairing] = React.useState(false);
 
   React.useEffect(() => {
+    const hintTimer = setTimeout(() => {
+      setShowProgressHint(true);
+    }, 4500);
+
     const timer = setTimeout(() => {
       setShowRescue(true);
-    }, 7000); // 7s de cortesía antes de sugerir rescate
-    return () => clearTimeout(timer);
+    }, 20000); // 20s de margen real para dar tiempo suficiente a conexiones móviles y chunks pesados
+    return () => {
+      clearTimeout(hintTimer);
+      clearTimeout(timer);
+    };
   }, []);
 
   const handleRepair = () => {
@@ -141,7 +149,14 @@ const LoadingFallback = () => {
   return (
     <div className="w-full px-4 py-6 max-w-4xl mx-auto space-y-4 relative">
       <div className="space-y-4 animate-pulse pointer-events-none">
-        <div className="h-36 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
+        <div className="h-36 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 flex items-center justify-center">
+          {showProgressHint && (
+            <div className="flex items-center gap-2.5 text-xs font-semibold text-text-muted animate-[fade-in_0.3s_ease-out]">
+              <RefreshCw className="w-4 h-4 animate-spin text-accent" />
+              <span>Cargando componentes de la sección...</span>
+            </div>
+          )}
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="h-24 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
           <div className="h-24 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />

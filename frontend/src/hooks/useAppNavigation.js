@@ -134,6 +134,12 @@ export const useAppNavigation = (navigateRouter) => {
     else if (path === '/asesoria' && view !== 'asesoria') {
       setView('asesoria');
     }
+    else if (path === '/adminPanel' && view !== 'adminPanel') {
+      setView('adminPanel');
+    }
+    else if (path === '/trainerPanel' && view !== 'trainerPanel') {
+      setView('trainerPanel');
+    }
     else if (path.startsWith('/noticias') && view !== 'noticias') {
       setView('noticias');
     }

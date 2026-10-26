@@ -28,6 +28,7 @@ export default function AsesoriaScreen({ onBack }) {
   const [newMessage, setNewMessage] = useState('');
   const [fullscreenVideo, setFullscreenVideo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef(null);
   const { addToast } = useToast();
@@ -161,17 +162,19 @@ export default function AsesoriaScreen({ onBack }) {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setHasError(false);
       const trainerRes = await apiClient('/chat/trainer-info');
       setTrainer(trainerRes);
 
-      const historyRes = await apiClient(`/chat/history/${trainerRes.id}`);
-      setMessages(historyRes);
-      
-      // Mark as read when loading history unconditionally to guarantee socket event fires
-      markAsRead(trainerRes.id);
+      if (trainerRes && trainerRes.id) {
+        const historyRes = await apiClient(`/chat/history/${trainerRes.id}`);
+        setMessages(historyRes || []);
+        markAsRead(trainerRes.id);
+      }
     } catch (error) {
       console.error('Error fetching chat data:', error);
-      addToast('No se pudo cargar la asesoría', 'error');
+      setHasError(true);
+      addToast('No se pudo conectar con la asesoría. Pulsa en reintentar.', 'error');
     } finally {
       setLoading(false);
     }
@@ -379,6 +382,23 @@ export default function AsesoriaScreen({ onBack }) {
         {loading ? (
           <div className="flex justify-center p-8">
             <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : hasError ? (
+          <div className="h-full flex flex-col items-center justify-center text-center px-4 space-y-3">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-1">
+              <ChatBubbleLeftRightIcon className="w-7 h-7" />
+            </div>
+            <p className="text-sm font-bold text-text-primary">No se pudo cargar la conversación</p>
+            <p className="text-xs text-text-secondary max-w-xs leading-relaxed">
+              El servidor tardó en responder tras la actualización. Puedes reintentar la conexión de inmediato.
+            </p>
+            <button
+              type="button"
+              onClick={fetchData}
+              className="px-5 py-2.5 rounded-full text-xs font-bold bg-accent text-accent-contrast shadow-md active:scale-95 hover:scale-105 transition-all cursor-pointer"
+            >
+              Reintentar conexión
+            </button>
           </div>
         ) : messages.length === 0 ? (
           <div className={`${showPromo ? 'pt-4 pb-2' : 'h-full justify-center'} flex flex-col items-center text-center px-4 space-y-3 opacity-60`}>

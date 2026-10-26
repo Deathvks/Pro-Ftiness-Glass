@@ -255,6 +255,7 @@ const AdminPanel = ({ onCancel }) => {
 
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [usersError, setUsersError] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [userToEdit, setUserToEdit] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
@@ -267,25 +268,6 @@ const AdminPanel = ({ onCancel }) => {
   useEffect(() => {
     localStorage.setItem('admin_active_tab', activeTab);
   }, [activeTab]);
-
-  // Precarga suave en reposo de todos los submódulos pesados del panel
-  useEffect(() => {
-    const idleCallback = typeof window !== 'undefined' && window.requestIdleCallback
-      ? window.requestIdleCallback
-      : (cb) => setTimeout(cb, 400);
-
-    const handle = idleCallback(() => {
-      Object.keys(ADMIN_TAB_LOADERS).forEach((tabKey, idx) => {
-        setTimeout(() => preloadAdminTab(tabKey), idx * 200);
-      });
-    });
-
-    return () => {
-      if (typeof window !== 'undefined' && window.cancelIdleCallback && typeof handle === 'number') {
-        window.cancelIdleCallback(handle);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     localStorage.setItem('admin_users_sort', sortBy);
@@ -309,12 +291,17 @@ const AdminPanel = ({ onCancel }) => {
   }, [fetchSystemStats]);
 
   const fetchUsers = useCallback(async (isInitialLoad = false) => {
-    if (isInitialLoad) setIsLoading(true);
+    if (isInitialLoad) {
+      setIsLoading(true);
+      setUsersError(false);
+    }
     try {
       const data = await getAllUsers();
-      setUsers(data);
+      setUsers(data || []);
+      setUsersError(false);
     } catch (error) {
       if (isInitialLoad) {
+        setUsersError(true);
         addToast(error.message || 'No se pudo cargar la lista de usuarios.', 'error');
       } else {
         console.error("Error al refrescar usuarios:", error);
@@ -858,6 +845,23 @@ const AdminPanel = ({ onCancel }) => {
 
             {isLoading ? (
               <div className="flex justify-center items-center py-12"><Spinner size={32} /></div>
+            ) : usersError ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center animate-[fade-in_0.3s_ease-out] bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 mt-4 space-y-3 p-6">
+                <div className="w-14 h-14 bg-amber-500/10 text-amber-500 rounded-2xl flex items-center justify-center shadow-sm mx-auto">
+                  <RefreshCw size={24} />
+                </div>
+                <h3 className="text-lg font-bold text-text-primary">Error al conectar con la lista de usuarios</h3>
+                <p className="text-text-secondary text-xs max-w-sm mx-auto">
+                  El servidor no respondió a tiempo o se está reiniciando tras la actualización. Pulsa para reintentar la carga.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => fetchUsers(true)}
+                  className="px-5 py-2.5 rounded-full text-xs font-bold bg-accent text-accent-contrast shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                >
+                  Reintentar carga de usuarios
+                </button>
+              </div>
             ) : filteredAndSortedUsers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center animate-[fade-in_0.3s_ease-out] bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 mt-4">
                 <div className="w-20 h-20 bg-bg-primary rounded-[24px] flex items-center justify-center mb-5 ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
