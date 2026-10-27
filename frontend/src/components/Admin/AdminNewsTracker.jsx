@@ -1,5 +1,5 @@
 /* frontend/src/components/Admin/AdminNewsTracker.jsx */
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Activity,
   Radio,
@@ -12,19 +12,14 @@ import {
   Globe,
   Compass,
   Clock,
-  Calendar,
   Users,
   Eye,
   Trash2,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
   Info,
-  ShieldCheck,
   Zap,
   Terminal,
-  Sparkles,
   FlaskConical,
   X
 } from 'lucide-react';
@@ -44,6 +39,7 @@ import { es } from 'date-fns/locale';
 import Spinner from '../Spinner';
 import ModalPortal from '../ModalPortal';
 import useModalLock from '../../hooks/useModalLock';
+import CustomSelect from '../CustomSelect';
 import * as newsService from '../../services/newsService';
 import { useToast } from '../../hooks/useToast';
 
@@ -113,39 +109,55 @@ export default function AdminNewsTracker() {
   const [searchQuery, setSearchQuery] = useState('');
   const [periodFilter, setPeriodFilter] = useState('all'); // 'today' | '7d' | '30d' | 'all'
   const [modeFilter, setModeFilter] = useState('all'); // 'all' | 'real' | 'articles' | 'catalog' | 'test'
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [sort, setSort] = useState('newest');
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0, totalPages: 0 });
 
   // Modal de inspección técnica profunda
   const [inspectedVisit, setInspectedVisit] = useState(null);
-  const [expandedMobileIds, setExpandedMobileIds] = useState(new Set());
 
   // Bloquear el scroll de fondo en móvil mientras el modal de inspección esté abierto
   useModalLock(Boolean(inspectedVisit));
 
   const autoRefreshTimerRef = useRef(null);
+  const requestSequenceRef = useRef(0);
 
   const loadAnalytics = useCallback(async (showLoader = false) => {
+    const requestId = ++requestSequenceRef.current;
     if (showLoader) setIsLoading(true);
     try {
       const data = await newsService.fetchNewsAnalytics({
         period: periodFilter,
-        mode: modeFilter
+        mode: modeFilter,
+        page,
+        pageSize,
+        sort,
+        search: searchQuery,
       });
+      if (requestId !== requestSequenceRef.current) return;
       if (data?.stats) {
         setStats(data.stats);
       }
       if (Array.isArray(data?.visits)) {
         setVisits(data.visits);
       }
+      if (data?.pagination) {
+        setPagination(data.pagination);
+        const lastPage = Math.max(1, data.pagination.totalPages || 1);
+        if (page > lastPage) setPage(lastPage);
+      }
     } catch (err) {
       console.warn('Error al cargar analítica de noticias:', err);
     } finally {
-      if (showLoader) setIsLoading(false);
+      if (requestId === requestSequenceRef.current) setIsLoading(false);
     }
-  }, [periodFilter, modeFilter]);
+  }, [periodFilter, modeFilter, page, pageSize, sort, searchQuery]);
 
   // Carga inicial y ante cambio de filtros
   useEffect(() => {
-    loadAnalytics(true);
+    const timeoutId = setTimeout(() => loadAnalytics(true), 250);
+    return () => clearTimeout(timeoutId);
   }, [loadAnalytics]);
 
   // Temporizador de refresco en vivo (Radar)
@@ -193,42 +205,10 @@ export default function AdminNewsTracker() {
     }
   };
 
-  const toggleMobileExpand = (id) => {
-    setExpandedMobileIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  // Filtrado reactivo en memoria por texto de búsqueda
-  const filteredVisits = useMemo(() => {
-    if (!searchQuery.trim()) return visits;
-    const q = searchQuery.toLowerCase().trim();
-    return visits.filter(v => {
-      const title = (v.article_title || '').toLowerCase();
-      const slug = (v.article_slug || '').toLowerCase();
-      const ip = (v.ip_address || '').toLowerCase();
-      const city = (v.city || '').toLowerCase();
-      const country = (v.country || '').toLowerCase();
-      const host = (v.referrer_host || '').toLowerCase();
-      const browser = (v.browser || '').toLowerCase();
-      const os = (v.os || '').toLowerCase();
-      const user = (v.user?.name || v.user?.username || v.user?.email || '').toLowerCase();
-      return (
-        title.includes(q) ||
-        slug.includes(q) ||
-        ip.includes(q) ||
-        city.includes(q) ||
-        country.includes(q) ||
-        host.includes(q) ||
-        browser.includes(q) ||
-        os.includes(q) ||
-        user.includes(q)
-      );
-    });
-  }, [visits, searchQuery]);
+  const filteredVisits = visits;
+  const totalPages = Math.max(1, pagination.totalPages || 1);
+  const resultStart = pagination.total > 0 ? (page - 1) * pageSize + 1 : 0;
+  const resultEnd = Math.min(page * pageSize, pagination.total);
 
   // Cálculos de porcentajes para métricas
   const deviceTotal = (stats.devices.mobile || 0) + (stats.devices.desktop || 0) + (stats.devices.tablet || 0);
@@ -245,18 +225,18 @@ export default function AdminNewsTracker() {
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-lg sm:text-xl font-black text-text-primary tracking-tight flex items-center gap-2">
               <Activity className="text-accent shrink-0" size={22} />
-              <span>Tracker & Analítica en Vivo</span>
+              <span>Visitas y analítica</span>
             </h2>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span>Sniffer en Línea</span>
+              <span>Rastreo activo</span>
             </span>
           </div>
           <p className="text-xs text-text-tertiary">
-            Rastreo avanzado en tiempo real: procedencia, buscador, red social, dispositivo, IP y lector.
+            Consulta las visitas, su procedencia, el dispositivo y la página que se abrió.
           </p>
         </div>
 
@@ -271,7 +251,7 @@ export default function AdminNewsTracker() {
             title="Envía una visita de diagnóstico para comprobar que el rastreo funciona inmediatamente"
           >
             {isTestPinging ? <Spinner size="small" /> : <Zap size={14} className="shrink-0" />}
-            <span>Probar Tracker Ahora</span>
+            <span>Registrar visita de prueba</span>
           </button>
 
           {/* Toggle Radar Automático */}
@@ -351,7 +331,7 @@ export default function AdminNewsTracker() {
             </span>
           </div>
           <p className="text-[11px] text-text-tertiary mt-1">
-            Dispositivos y personas distintas
+            Navegadores distintos con ID anónimo
           </p>
         </div>
 
@@ -438,7 +418,7 @@ export default function AdminNewsTracker() {
         <div className="p-4 sm:p-5 rounded-[22px] bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 space-y-3">
           <h3 className="text-xs font-black uppercase tracking-wider text-text-secondary flex items-center gap-2">
             <Eye size={14} className="text-sky-500" />
-            <span>Artículos Más Visitados en el Tracker</span>
+            <span>Artículos más visitados</span>
           </h3>
           {stats.topArticles.length === 0 ? (
             <div className="py-6 text-center text-xs text-text-tertiary">
@@ -470,90 +450,117 @@ export default function AdminNewsTracker() {
         </div>
       </div>
 
-      {/* BARRA DE FILTROS & BÚSQUEDA */}
-      <div className="space-y-3 pt-2">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          {/* Campo de búsqueda */}
-          <div className="relative flex-1">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary" />
+      {/* FILTROS, ORDEN Y PAGINACIÓN */}
+      <div className="space-y-3 pt-2 p-3 sm:p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
+          <label className="col-span-2 lg:col-span-1 relative">
+            <span className="sr-only">Buscar visitas</span>
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por noticia, IP, ciudad, usuario, navegador..."
-              className="w-full pl-9 pr-8 py-2.5 rounded-full text-xs bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-accent/40 text-text-primary placeholder:text-text-tertiary"
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+              placeholder="Buscar artículo, visitante, IP..."
+              className="w-full h-10 pl-9 pr-8 rounded-xl text-xs bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-accent/40 text-text-primary placeholder:text-text-tertiary"
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery('')}
+                type="button"
+                onClick={() => { setSearchQuery(''); setPage(1); }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary"
+                aria-label="Limpiar búsqueda"
               >
                 <X size={13} />
               </button>
             )}
-          </div>
+          </label>
 
-          {/* Selector de periodo temporal */}
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-1 shrink-0">
-            {[
-              { id: 'today', label: 'Hoy' },
-              { id: '7d', label: '7 días' },
-              { id: '30d', label: '30 días' },
-              { id: 'all', label: 'Histórico' }
-            ].map(p => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setPeriodFilter(p.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap active:scale-95 ${
-                  periodFilter === p.id
-                    ? 'bg-accent text-accent-contrast shadow-sm'
-                    : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
+          <label className="space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Periodo</span>
+            <CustomSelect
+              value={periodFilter}
+              onChange={(value) => { setPeriodFilter(value); setPage(1); }}
+              options={[
+                { value: 'today', label: 'Hoy' },
+                { value: '7d', label: 'Últimos 7 días' },
+                { value: '30d', label: 'Últimos 30 días' },
+                { value: 'all', label: 'Todo el histórico' },
+              ]}
+              className="w-full z-30"
+              triggerClassName="w-full h-10 rounded-xl px-3 text-xs text-text-primary border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5"
+            />
+          </label>
+
+          <label className="space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Tipo de visita</span>
+            <CustomSelect
+              value={modeFilter}
+              onChange={(value) => { setModeFilter(value); setPage(1); }}
+              options={[
+                { value: 'all', label: 'Todas' },
+                { value: 'real', label: 'Reales' },
+                { value: 'articles', label: 'Artículos' },
+                { value: 'catalog', label: 'Catálogo' },
+                { value: 'test', label: 'Pruebas' },
+              ]}
+              className="w-full z-20"
+              triggerClassName="w-full h-10 rounded-xl px-3 text-xs text-text-primary border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5"
+            />
+          </label>
+
+          <label className="space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Ordenar por</span>
+            <CustomSelect
+              value={sort}
+              onChange={(value) => { setSort(value); setPage(1); }}
+              options={[
+                { value: 'newest', label: 'Más recientes' },
+                { value: 'oldest', label: 'Más antiguas' },
+                { value: 'article', label: 'Artículo A–Z' },
+                { value: 'source', label: 'Procedencia A–Z' },
+                { value: 'visitor', label: 'ID de visitante A–Z' },
+              ]}
+              className="w-full z-10"
+              triggerClassName="w-full h-10 rounded-xl px-3 text-xs text-text-primary border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5"
+            />
+          </label>
+
+          <label className="space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Por página</span>
+            <CustomSelect
+              value={String(pageSize)}
+              onChange={(value) => { setPageSize(Number(value)); setPage(1); }}
+              options={[
+                { value: '10', label: '10 visitas' },
+                { value: '20', label: '20 visitas' },
+                { value: '50', label: '50 visitas' },
+              ]}
+              className="w-full z-[5]"
+              triggerClassName="w-full h-10 rounded-xl px-3 text-xs text-text-primary border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5"
+            />
+          </label>
         </div>
 
-        {/* Filtros de modo (Tipo de tráfico) */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-1 px-1">
-          {[
-            { id: 'all', label: 'Todas las visitas' },
-            { id: 'real', label: 'Solo Tráfico Real' },
-            { id: 'articles', label: 'Solo Artículos' },
-            { id: 'catalog', label: 'Solo Catálogo (/noticias)' },
-            { id: 'test', label: 'Solo Pruebas' }
-          ].map(m => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => setModeFilter(m.id)}
-              className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all whitespace-nowrap active:scale-95 ${
-                modeFilter === m.id
-                  ? 'bg-black/80 dark:bg-white/80 text-white dark:text-black shadow-sm'
-                  : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10'
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Contador de resultados debajo para no tener que deslizar horizontalmente en móvil */}
-        <div className="flex items-center justify-between text-[11px] text-text-tertiary px-1">
-          <span>Mostrando <strong>{filteredVisits.length}</strong> {filteredVisits.length === 1 ? 'visita' : 'visitas'}</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-text-tertiary">
+          <span>
+            {pagination.total === 0
+              ? 'No hay visitas para estos filtros'
+              : `Mostrando ${resultStart}–${resultEnd} de ${pagination.total} visitas`}
+          </span>
           {searchQuery && (
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
-              className="text-accent hover:underline font-semibold"
+              onClick={() => { setSearchQuery(''); setPage(1); }}
+              className="text-accent hover:underline font-semibold self-start sm:self-auto"
             >
               Limpiar búsqueda
             </button>
           )}
         </div>
+        <p className="flex items-start gap-1.5 text-[10px] leading-relaxed text-text-tertiary">
+          <Info size={12} className="mt-0.5 shrink-0" />
+          <span>El prefijo <code className="font-mono">vis_</code> identifica un navegador de forma aleatoria para contar visitas repetidas; no es el nombre ni la cuenta del visitante.</span>
+        </p>
       </div>
 
       {/* FEED EN VIVO DE VISITAS (RESPONSIVE: CARDS EN MÓVIL, TABLA EN DESKTOP) */}
@@ -561,7 +568,7 @@ export default function AdminNewsTracker() {
         {isLoading ? (
           <div className="py-16 flex flex-col items-center justify-center gap-3">
             <Spinner size={36} />
-            <p className="text-xs text-text-tertiary">Recuperando registros del sniffer...</p>
+            <p className="text-xs text-text-tertiary">Cargando visitas...</p>
           </div>
         ) : filteredVisits.length === 0 ? (
           <div className="py-12 px-4 rounded-[24px] bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 text-center space-y-3">
@@ -587,13 +594,12 @@ export default function AdminNewsTracker() {
             {/* VISTA MÓVIL (< 768px): TARJETAS TÁCTILES RICAS */}
             <div className="block md:hidden space-y-3">
               {filteredVisits.map((v) => {
-                const isExpanded = expandedMobileIds.has(v.id);
                 const isRecent = v.created_at && (Date.now() - new Date(v.created_at).getTime() < 5 * 60 * 1000);
 
                 return (
                   <div
                     key={v.id}
-                    className={`p-4 rounded-[20px] bg-black/[0.03] dark:bg-white/[0.03] border transition-all ${
+                    className={`p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.03] border transition-all ${
                       v.is_test
                         ? 'border-purple-500/30 bg-purple-500/[0.02]'
                         : isRecent
@@ -602,7 +608,7 @@ export default function AdminNewsTracker() {
                     }`}
                   >
                     {/* Fila superior: Momento & Badges */}
-                    <div className="flex items-center justify-between gap-2 text-[11px] mb-2">
+                    <div className="flex items-center justify-between gap-2 text-[11px] mb-2.5">
                       <div className="flex items-center gap-1.5 text-text-tertiary">
                         <Clock size={12} />
                         <span>
@@ -627,7 +633,7 @@ export default function AdminNewsTracker() {
                     </div>
 
                     {/* Noticia / Página */}
-                    <div className="mb-2">
+                    <div className="mb-3">
                       {v.article_slug ? (
                         <a
                           href={`/noticias/${v.article_slug}`}
@@ -645,81 +651,49 @@ export default function AdminNewsTracker() {
                       )}
                     </div>
 
-                    {/* Fila de usuario / visitante */}
-                    <div className="flex items-center justify-between text-xs py-1.5 border-t border-black/5 dark:border-white/5">
-                      <span className="text-text-tertiary">Visitante:</span>
-                      {v.user ? (
-                        <span className="font-bold text-accent flex items-center gap-1.5">
-                          {(v.user.profile_image_url || v.user.profile_image) ? (<img src={v.user.profile_image_url || v.user.profile_image} alt="" className="w-4 h-4 rounded-full object-cover" />
-                          ) : (
-                            <Users size={12} />
-                          )}
-                          <span className="truncate max-w-[150px]">{v.user.name || v.user.username}</span>
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-black/5 dark:border-white/5 pt-2.5 text-[11px]">
+                      <div className="min-w-0">
+                        <span className="block text-[10px] text-text-tertiary">Visitante</span>
+                        {v.user ? (
+                          <span className="font-semibold text-accent truncate block">{v.user.name || v.user.username || 'Usuario'}</span>
+                        ) : (
+                          <span className="flex items-center gap-1 min-w-0" title="ID aleatorio guardado en este navegador para contar visitas repetidas; no es una cuenta ni identifica por sí solo a la persona.">
+                            <Info size={12} className="text-text-tertiary shrink-0" />
+                            <span className="text-text-secondary shrink-0">Anónimo</span>
+                            <code className="font-mono text-[10px] text-text-tertiary truncate">{v.visitor_id || 'sin ID'}</code>
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="block text-[10px] text-text-tertiary">Procedencia</span>
+                        <span className="font-semibold text-text-primary flex items-center gap-1 truncate">
+                          {getReferrerIcon(v.referrer_type, v.referrer_host)}
+                          <span className="truncate">{v.referrer_host || 'Directa'}</span>
                         </span>
-                      ) : (
-                        <span className="text-text-secondary font-mono text-[11px] truncate max-w-[160px] inline-flex items-center gap-1">
-                          <Users size={11} className="text-text-tertiary shrink-0" />
-                          <span>{v.visitor_id ? v.visitor_id.substring(0, 14) : 'Anónimo'}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <span className="block text-[10px] text-text-tertiary">Dispositivo</span>
+                        <span className="font-semibold text-text-secondary flex items-center gap-1 truncate">
+                          {getDeviceIcon(v.device_type)}
+                          <span className="truncate">{v.os || v.device_type || 'Desconocido'} · {v.browser || 'Navegador'}</span>
                         </span>
-                      )}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="block text-[10px] text-text-tertiary">Ubicación</span>
+                        <span className="font-semibold text-text-secondary truncate block">
+                          {getCountryFlagEmoji(v.country)} {v.city ? `${v.city}, ` : ''}{v.country || 'Desconocida'}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Fila de Procedencia (Referrer) */}
-                    <div className="flex items-center justify-between text-xs py-1.5 border-t border-black/5 dark:border-white/5">
-                      <span className="text-text-tertiary">Procedencia:</span>
-                      <span className="font-bold text-text-primary flex items-center gap-1.5 truncate max-w-[180px]">
-                        {getReferrerIcon(v.referrer_type, v.referrer_host)}
-                        <span className="truncate">{v.referrer_host || 'Directo'}</span>
-                      </span>
-                    </div>
-
-                    {/* Fila de Dispositivo & Ubicación */}
-                    <div className="flex items-center justify-between text-xs py-1.5 border-t border-black/5 dark:border-white/5">
-                      <span className="text-text-tertiary">Dispositivo:</span>
-                      <span className="flex items-center gap-1 font-semibold text-text-secondary text-[11px]">
-                        {getDeviceIcon(v.device_type)}
-                        <span>{v.os || 'SO'}</span>
-                        <span>•</span>
-                        <span>{v.browser || 'Navegador'}</span>
-                      </span>
-                    </div>
-
-                    {/* Ubicación & IP */}
-                    <div className="flex items-center justify-between text-xs py-1.5 border-t border-black/5 dark:border-white/5">
-                      <span className="text-text-tertiary">Ubicación:</span>
-                      <span className="flex items-center gap-1 font-semibold text-text-secondary text-[11px]">
-                        <span>{getCountryFlagEmoji(v.country)}</span>
-                        <span>{v.city ? `${v.city}, ` : ''}{v.country || 'ES'}</span>
-                        <span className="font-mono text-[10px] text-text-tertiary">({v.ip_address || 'IP'})</span>
-                      </span>
-                    </div>
-
-                    {/* Botón expandir detalles técnicos de sniffing */}
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={() => toggleMobileExpand(v.id)}
-                        className="w-full py-1.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 text-[11px] font-bold text-text-secondary flex items-center justify-center gap-1 transition-colors"
-                      >
-                        <Terminal size={12} />
-                        <span>{isExpanded ? 'Ocultar telemetría' : 'Ver datos de sniffing'}</span>
-                        {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                      </button>
-
-                      {isExpanded && (
-                        <div className="mt-2 p-3 rounded-xl bg-black/10 dark:bg-black/30 font-mono text-[10px] space-y-1.5 text-text-secondary break-all">
-                          <div><strong>IP:</strong> {v.ip_address || 'N/A'}</div>
-                          <div><strong>Pantalla:</strong> {v.screen_resolution || 'N/A'}</div>
-                          <div><strong>Idioma:</strong> {v.language || 'N/A'}</div>
-                          <div><strong>Referrer URL:</strong> {v.referrer || 'Acceso directo (sin referrer)'}</div>
-                          {v.utm_source && (
-                            <div><strong>Campaña UTM:</strong> {v.utm_source} / {v.utm_medium}</div>
-                          )}
-                          <div><strong>Visitor ID:</strong> {v.visitor_id}</div>
-                          <div><strong>User Agent:</strong> {v.user_agent || 'N/A'}</div>
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setInspectedVisit(v)}
+                      className="mt-3 w-full py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 text-[11px] font-bold text-text-secondary flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <Eye size={13} />
+                      <span>Ver detalles</span>
+                    </button>
                   </div>
                 );
               })}
@@ -731,12 +705,12 @@ export default function AdminNewsTracker() {
                 <thead>
                   <tr className="border-b border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 text-text-tertiary uppercase font-black tracking-wider text-[10px]">
                     <th className="py-3.5 px-4">Momento</th>
-                    <th className="py-3.5 px-4">Lector / IP</th>
+                    <th className="py-3.5 px-4">Visitante / ID</th>
                     <th className="py-3.5 px-4">Noticia / Página</th>
                     <th className="py-3.5 px-4">Procedencia</th>
                     <th className="py-3.5 px-4">Dispositivo</th>
                     <th className="py-3.5 px-4">Ubicación</th>
-                    <th className="py-3.5 px-4 text-right">Sniffing</th>
+                    <th className="py-3.5 px-4 text-right">Detalle</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/5 dark:divide-white/5">
@@ -796,10 +770,10 @@ export default function AdminNewsTracker() {
                           ) : (
                             <div className="flex flex-col">
                               <span className="font-semibold text-text-secondary text-xs">
-                                Visitante Invitado
+                                Visitante anónimo
                               </span>
                               <span className="font-mono text-[10px] text-text-tertiary truncate max-w-[120px]">
-                                {v.ip_address || (v.visitor_id ? v.visitor_id.substring(0, 10) : 'Anónimo')}
+                                ID: {v.visitor_id ? v.visitor_id.substring(0, 12) : 'no disponible'}
                               </span>
                             </div>
                           )}
@@ -850,16 +824,16 @@ export default function AdminNewsTracker() {
                           </div>
                         </td>
 
-                        {/* Acción / Ver Sniffing */}
+                        {/* Acción / Ver detalle */}
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           <button
                             type="button"
                             onClick={() => setInspectedVisit(v)}
                             className="p-1.5 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1 text-[11px] font-bold"
-                            title="Ver reporte completo de telemetría"
+                            title="Ver detalles de esta visita"
                           >
-                            <Terminal size={13} />
-                            <span>Inspeccionar</span>
+                            <Eye size={13} />
+                            <span>Ver detalle</span>
                           </button>
                         </td>
                       </tr>
@@ -868,11 +842,33 @@ export default function AdminNewsTracker() {
                 </tbody>
               </table>
             </div>
+
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setPage(current => Math.max(1, current - 1))}
+                disabled={page <= 1 || isLoading}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-xs font-bold text-text-secondary disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition"
+              >
+                <ChevronLeft size={14} />
+                <span>Anterior</span>
+              </button>
+              <span className="text-xs font-semibold text-text-secondary">Página {page} de {totalPages}</span>
+              <button
+                type="button"
+                onClick={() => setPage(current => Math.min(totalPages, current + 1))}
+                disabled={page >= totalPages || isLoading}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-xs font-bold text-text-secondary disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition"
+              >
+                <span>Siguiente</span>
+                <ChevronRight size={14} />
+              </button>
+            </div>
           </>
         )}
       </div>
 
-      {/* MODAL DE INSPECCIÓN TÉCNICA PROFUNDA (SNIFFING DETAILS) */}
+      {/* Detalle técnico de la visita */}
       {inspectedVisit && (
         <ModalPortal>
           <div
@@ -891,7 +887,7 @@ export default function AdminNewsTracker() {
                 <div className="flex items-center gap-2">
                   <Terminal className="text-accent" size={20} />
                   <h3 className="text-base sm:text-lg font-bold text-text-primary tracking-tight">
-                    Telemetría & Sniffing de Visita #{inspectedVisit.id}
+                    Detalle de visita #{inspectedVisit.id}
                   </h3>
                 </div>
                 <button
@@ -962,8 +958,9 @@ export default function AdminNewsTracker() {
 
                 <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 sm:col-span-2 flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] text-text-tertiary uppercase block font-bold">Fingerprint Visitor ID</span>
-                    <span className="text-text-secondary text-[11px]">{inspectedVisit.visitor_id}</span>
+                    <span className="text-[10px] text-text-tertiary uppercase block font-bold">ID aleatorio del navegador</span>
+                    <span className="text-text-secondary text-[11px] break-all">{inspectedVisit.visitor_id || 'No disponible'}</span>
+                    <span className="text-[10px] text-text-tertiary block mt-1">Se guarda en este navegador para contar visitas repetidas; no es una cuenta ni un nombre.</span>
                   </div>
                   {inspectedVisit.is_test && (
                     <span className="px-2 py-0.5 rounded text-[10px] font-black bg-purple-500/20 text-purple-400 inline-flex items-center gap-1">

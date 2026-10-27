@@ -508,8 +508,22 @@ export const trackNewsVisit = async (payload = {}) => {
 /**
  * Obtener estadísticas de analítica y visitas para el panel admin
  */
-export const fetchNewsAnalytics = async ({ period = 'all', mode = 'all' } = {}) => {
-  const query = new URLSearchParams({ period, mode }).toString();
+export const fetchNewsAnalytics = async ({
+  period = 'all',
+  mode = 'all',
+  page = 1,
+  pageSize = 10,
+  sort = 'newest',
+  search = '',
+} = {}) => {
+  const query = new URLSearchParams({
+    period,
+    mode,
+    page: String(page),
+    pageSize: String(pageSize),
+    sort,
+    search,
+  }).toString();
   return requestWithRetry(
     `${API_URL}/news/admin/analytics?${query}`,
     {

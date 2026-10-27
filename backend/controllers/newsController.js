@@ -1045,7 +1045,30 @@ export const fixDuplicateCovers = async (req, res) => {
  */
 export const getNewsAnalytics = async (req, res) => {
   try {
-    const { period = 'all', mode = 'all' } = req.query;
+    const {
+      period = 'all',
+      mode = 'all',
+      page: pageParam = '1',
+      pageSize: pageSizeParam = '10',
+      sort = 'newest',
+      search = ''
+    } = req.query;
+
+    const pageSizeOptions = [10, 20, 50];
+    const requestedPage = Math.max(1, parseInt(pageParam, 10) || 1);
+    const pageSizeValue = parseInt(pageSizeParam, 10) || 10;
+    const pageSize = pageSizeOptions.includes(pageSizeValue) ? pageSizeValue : 10;
+    const safeSearch = String(search).trim().slice(0, 100);
+    const searchPattern = `%${safeSearch}%`;
+
+    const sortOrders = {
+      newest: [['created_at', 'DESC'], ['id', 'DESC']],
+      oldest: [['created_at', 'ASC'], ['id', 'ASC']],
+      article: [['article_title', 'ASC'], ['created_at', 'DESC']],
+      source: [['referrer_host', 'ASC'], ['created_at', 'DESC']],
+      visitor: [['visitor_id', 'ASC'], ['created_at', 'DESC']],
+    };
+    const order = sortOrders[sort] || sortOrders.newest;
 
     let timeWhere = {};
     const now = new Date();
@@ -1072,6 +1095,23 @@ export const getNewsAnalytics = async (req, res) => {
     }
 
     const where = { ...timeWhere, ...modeWhere };
+    const visitWhere = safeSearch
+      ? {
+          [Op.and]: [
+            where,
+            {
+              [Op.or]: [
+                ...['article_title', 'article_slug', 'page_path', 'visitor_id', 'ip_address', 'city', 'country', 'referrer_host', 'browser', 'os'].map(field => ({
+                  [field]: { [Op.like]: searchPattern }
+                })),
+                { '$user.name$': { [Op.like]: searchPattern } },
+                { '$user.username$': { [Op.like]: searchPattern } },
+                { '$user.email$': { [Op.like]: searchPattern } },
+              ]
+            }
+          ]
+        }
+      : where;
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     const [
@@ -1080,7 +1120,7 @@ export const getNewsAnalytics = async (req, res) => {
       todayVisits,
       realVisits,
       testVisits,
-      recentLogs,
+      visitResult,
       deviceCounts,
       referrerCounts,
       articleCounts
@@ -1099,10 +1139,14 @@ export const getNewsAnalytics = async (req, res) => {
       }),
       NewsVisitLog.count({ where: { is_test: false, ...timeWhere } }),
       NewsVisitLog.count({ where: { is_test: true, ...timeWhere } }),
-      NewsVisitLog.findAll({
-        where,
-        order: [['created_at', 'DESC']],
-        limit: 150,
+      NewsVisitLog.findAndCountAll({
+        where: visitWhere,
+        order,
+        limit: pageSize,
+        offset: (requestedPage - 1) * pageSize,
+        distinct: true,
+        col: 'id',
+        subQuery: false,
         include: [
           {
             model: User,
@@ -1146,6 +1190,9 @@ export const getNewsAnalytics = async (req, res) => {
       })
     ]);
 
+    const visitTotal = Number(visitResult.count) || 0;
+    const totalPages = Math.ceil(visitTotal / pageSize);
+
     const devices = { mobile: 0, desktop: 0, tablet: 0 };
     deviceCounts.forEach(d => {
       const type = d.getDataValue('device_type') || 'desktop';
@@ -1177,7 +1224,14 @@ export const getNewsAnalytics = async (req, res) => {
           count: parseInt(a.getDataValue('count'), 10) || 0
         }))
       },
-      visits: recentLogs
+      visits: visitResult.rows,
+      pagination: {
+        page: requestedPage,
+        pageSize,
+        total: visitTotal,
+        totalPages,
+        sort
+      }
     });
   } catch (err) {
     console.error('Error al obtener analítica de noticias:', err);

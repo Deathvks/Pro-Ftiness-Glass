@@ -346,7 +346,7 @@ export default function AdminNewsManager() {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
             <Activity size={14} />
-            <span>Tracker & Sniffing</span>
+            <span>Visitas y analítica</span>
           </button>
 
           <button
@@ -390,7 +390,7 @@ export default function AdminNewsManager() {
         </div>
       </div>
 
-      {/* VISTA: TRACKER & ANALÍTICA EN VIVO (SNIFFER) */}
+      {/* Vista de visitas y analítica en vivo */}
       {viewMode === 'tracker' && (
         <AdminNewsTracker />
       )}

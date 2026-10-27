@@ -1,13 +1,13 @@
 {
-  "version": "7.11.6",
-  "releaseNotes": "Actualización v7.11.6: Las vistas atascadas ofrecen recuperación y vuelta al inicio. Mejoras de caché para evitar cargas infinitas sin borrar tus datos ni cerrar sesión.",
+  "version": "7.11.7",
+  "releaseNotes": "Actualización v7.11.7: Mejoras en visitas y analítica de noticias, con búsqueda, filtros, orden y paginación. Identificación anónima más clara y diseño móvil simplificado.",
   "welcome": {
-    "title": "Carga más fiable",
-    "subtitle": "Mejoramos la recuperación cuando una sección tarda demasiado en responder.",
+    "title": "Analítica de noticias mejorada",
+    "subtitle": "Ahora es más sencillo consultar, filtrar y ordenar las visitas desde el panel de administración.",
     "features": [
       {
-        "title": "Recuperación sin perder tus datos",
-        "description": "Si una vista se queda cargando, puedes volver al inicio o recargar la caché sin cerrar sesión ni borrar tu progreso."
+        "title": "Visitas más fáciles de revisar",
+        "description": "La analítica incluye búsqueda, filtros, orden y paginación; además, el ID anónimo del navegador se explica con claridad y las tarjetas móviles son más sencillas."
       }
     ]
   }
