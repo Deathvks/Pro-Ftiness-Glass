@@ -1,4 +1,4 @@
 {
-  "version": "7.10.65",
-  "releaseNotes": "Actualización v7.10.65: Reorganización completa de la enciclopedia de ejercicios en móvil, con barra de filtros deslizable horizontalmente y fichas de ejercicios optimizadas."
+  "version": "7.10.66",
+  "releaseNotes": "Actualización v7.10.66: Incrementada la separación inferior (paddingBottom y márgenes) en la enciclopedia de ejercicios y calculadoras públicas para evitar cortes en el borde de pantalla y barras de navegación móvil."
 }

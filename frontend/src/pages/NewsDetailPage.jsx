@@ -330,7 +330,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
         WebkitOverflowScrolling: 'touch',
         touchAction: 'pan-y',
         paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 3rem)'
+        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 6rem)'
       }}
     >
       {/* BARRA DE PROGRESO DE LECTURA SUPERIOR */}
@@ -342,7 +342,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
       </div>
 
       {/* CONTENEDOR EDITORIAL CENTRADO (ESTILO XATAKA / MEDIO DIGITAL) */}
-      <article className="min-h-full max-w-3xl mx-auto px-4 sm:px-6 py-6 flex flex-col animate-[fade-in_0.3s_ease-out]">
+      <article className="min-h-full max-w-3xl mx-auto px-4 sm:px-6 py-6 pb-10 sm:pb-14 flex flex-col animate-[fade-in_0.3s_ease-out]">
         {/* COMPONENTE SEO COMPLETO (Meta, Open Graph, Twitter, JSON-LD NewsArticle) */}
         <ArticleSEO article={article} />
 

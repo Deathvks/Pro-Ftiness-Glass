@@ -307,7 +307,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
         WebkitOverflowScrolling: 'touch',
         touchAction: 'pan-y',
         paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 2rem)'
+        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 6rem)'
       }}
     >
       <div className="min-h-full px-4 sm:px-6 py-6 max-w-6xl mx-auto flex flex-col gap-8 animate-[fade-in_0.4s_ease-out]">

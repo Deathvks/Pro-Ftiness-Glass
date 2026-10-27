@@ -324,10 +324,10 @@ export default function PublicExercisesPage({ onBack }) {
       </Helmet>
 
       <main
-        className="max-w-6xl mx-auto px-3.5 sm:px-6 pb-12 sm:pb-16"
+        className="max-w-6xl mx-auto px-3.5 sm:px-6 pb-20 sm:pb-28"
         style={{
           paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 1rem)',
-          paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 3rem)'
+          paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 6.5rem)'
         }}
       >
         {/* Clean Integrated Header (No full-bleed borders or browser gap) */}
@@ -629,7 +629,7 @@ export default function PublicExercisesPage({ onBack }) {
         </section>
 
         {/* CTA Banner */}
-        <div className="p-5 sm:p-10 rounded-[26px] sm:rounded-[32px] bg-gradient-to-br from-accent/20 via-purple-500/15 to-blue-500/15 border border-accent/30 text-center">
+        <div className="p-5 sm:p-10 rounded-[26px] sm:rounded-[32px] bg-gradient-to-br from-accent/20 via-purple-500/15 to-blue-500/15 border border-accent/30 text-center mb-10">
           <h2 className="text-xl sm:text-3xl font-black text-text-primary mb-2.5">
             Apunta tus Pesos, Series y Récords con Sobrecarga Progresiva Automática
           </h2>

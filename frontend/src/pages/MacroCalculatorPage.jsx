@@ -191,10 +191,10 @@ export default function MacroCalculatorPage({ onBack }) {
       </Helmet>
 
       <main
-        className="max-w-5xl mx-auto px-3.5 sm:px-6 pb-12 sm:pb-16"
+        className="max-w-5xl mx-auto px-3.5 sm:px-6 pb-20 sm:pb-28"
         style={{
           paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 1rem)',
-          paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 3rem)'
+          paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 6.5rem)'
         }}
       >
         {/* Clean Integrated Header (No full-bleed borders or browser gap) */}
@@ -679,7 +679,7 @@ export default function MacroCalculatorPage({ onBack }) {
         </section>
 
         {/* SEO Content Section */}
-        <article className="space-y-6 max-w-4xl mx-auto">
+        <article className="space-y-6 max-w-4xl mx-auto mb-10">
           <div className="p-5 sm:p-8 rounded-[24px] sm:rounded-[28px] bg-black/5 dark:bg-white/[0.03] border border-black/10 dark:border-white/10 space-y-4">
             <h2 className="text-xl sm:text-2xl font-black text-text-primary flex items-center gap-2.5">
               <FaCircleQuestion className="text-emerald-400 shrink-0" />
