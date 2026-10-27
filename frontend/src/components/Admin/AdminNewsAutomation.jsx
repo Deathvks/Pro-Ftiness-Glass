@@ -311,9 +311,15 @@ export default function AdminNewsAutomation({ onNavigateToArticle, onAutomationC
         <div className="relative z-10 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 sm:gap-6">
           {/* Lado izquierdo: Título y descripción */}
           <div className="flex flex-col gap-1.5 sm:gap-2 max-w-xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-accent/10 text-accent border border-accent/20 w-fit">
-              <Sparkles size={13} className={isGenerating ? 'animate-spin' : ''} />
-              <span>Automatización Editorial Diaria</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-accent/10 text-accent border border-accent/20 w-fit">
+                <Sparkles size={13} className={isGenerating ? 'animate-spin' : ''} />
+                <span>Automatización Editorial Diaria</span>
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black uppercase tracking-wider bg-purple-500/15 text-purple-400 border border-purple-500/30 w-fit">
+                <Sparkles size={12} className="shrink-0" />
+                <span>Modelo: Gemini 3.6 Flash</span>
+              </div>
             </div>
 
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-text-primary tracking-tight">
@@ -897,6 +903,11 @@ export default function AdminNewsAutomation({ onNavigateToArticle, onAutomationC
                 >
                   <X size={18} />
                 </button>
+              </div>
+
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold">
+                <Sparkles size={14} className="shrink-0" />
+                <span>Modelo asignado: Gemini 3.6 Flash (formato conciso 280-400 palabras)</span>
               </div>
 
               <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">

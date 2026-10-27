@@ -545,15 +545,15 @@ Genera un artículo de blog/noticia ágil, fascinante y optimizado para SEO sobr
 Categoría sugerida: ${category}.
 
 REGLAS DE RETENCIÓN, EXTENSIÓN Y ESTILO EDITORIAL (OBLIGATORIAS):
-1. EXTENSIÓN ESTRICTA PARA MÁXIMA RETENCIÓN: Entre 450 y 650 palabras en total. ¡NO lo hagas largo ni denso! Debe poder leerse completo con interés en menos de 3 minutos.
+1. EXTENSIÓN ESTRICTA PARA MÁXIMA RETENCIÓN: Entre 280 y 400 palabras en total (~2 minutos de lectura ágil). ¡NO lo hagas largo ni denso! Debe ser ultra directo, conciso y de alto impacto, eliminando cualquier introducción o frase de relleno.
 2. RITMO, TONO Y PÁRRAFOS CORTOS:
    - Párrafos muy cortos (máximo 2 a 3 líneas por párrafo). NUNCA generes bloques o paredes de texto densas.
    - Gancho inicial ("Hook"): Las primeras 2-3 líneas deben plantear una curiosidad, un error común o un beneficio directo para el lector. Prohibido empezar con introducciones genéricas o aburridas ("Desde hace siglos...", "El deporte es fundamental..."). Ve directo a la acción.
    - Lenguaje claro, magnético y aplicable: Traduce la ciencia a un lenguaje directo para el gimnasio o la cocina. Cero tecnicismos farragosos o jerga académica que aburra al lector.
-3. ESTRUCTURA CON SUBTÍTULOS ## (3 o 4 secciones concisas):
+3. ESTRUCTURA CON SUBTÍTULOS ## (2 o 3 secciones concisas):
    - Usa subtítulos intrigantes y enfocados al beneficio del lector.
    - REGLA TÉCNICA ESTRICTA: Cada subtítulo (## o ###) debe ir OBLIGATORIAMENTE en su propia línea, seguido de dos saltos de línea antes del texto explicativo. NUNCA coloques texto en la misma línea que el ##. NUNCA uses # solo.
-4. BLOQUES DE ALERTA MARKDOWN (1 o 2 máximo):
+4. BLOQUES DE ALERTA MARKDOWN (1 solo bloque clave de alto valor):
    > [!TIP]
    > **Consejo Práctico:** El truco accionable directo para aplicar hoy.
    O

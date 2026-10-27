@@ -499,14 +499,14 @@ O SI EL TEMA LO REQUIERE, puedes crear y nombrar una NUEVA categoría coherente 
 ESTRUCTURA EDITORIAL Y DE RETENCIÓN OBLIGATORIA (Markdown enriquecido):
 1. TÍTULO ATRACTIVO: Gancho potente y profesional sin ser clickbait engañoso (máx. 85 caracteres).
 2. RESUMEN EN 2 FRASES: Explicar el beneficio directo y tangible para el lector.
-3. EXTENSIÓN ESTRICTA PARA MÁXIMA RETENCIÓN: Entre 450 y 650 palabras en total. PROHIBIDO crear artículos largos, densos, aburridos o con exceso de tecnicismos. Debe poder leerse completo en 3 minutos.
+3. EXTENSIÓN ESTRICTA PARA MÁXIMA RETENCIÓN: Entre 280 y 400 palabras en total (~2 minutos de lectura ágil). PROHIBIDO crear artículos largos, densos o con exceso de texto. Debe poder leerse completo en 2 minutos sin cansar.
 4. RITMO Y PÁRRAFOS CORTOS:
    - Máximo 2 a 3 líneas por párrafo. Prohibidas las paredes de texto.
    - Gancho potente al inicio ("Hook"): Ve directo al grano sin introducciones tópicas ni rodeos ("Desde la antigüedad...", "El deporte es vital...").
    - Explica la ciencia de forma visual, amena y conversacional, como un entrenador de élite hablando con su atleta. Cero jerga pesada o aburrida.
-5. SUBTÍTULOS ## Y ### (3 a 4 secciones bien estructuradas):
+5. SUBTÍTULOS ## Y ### (2 o 3 secciones breves y directas al grano):
    - REGLA TÉCNICA ESTRICTA: Usa siempre ## para secciones principales y ### para subapartados. CADA SUBTÍTULO DEBE IR OBLIGATORIAMENTE EN SU PROPIA LÍNEA SEGUIDO DE DOS SALTOS DE LÍNEA ANTES DEL PÁRRAFO. NUNCA coloques el párrafo pegado en la misma línea que el ##. NUNCA uses # solo.
-6. ALERTAS GITHUB FLAVORED (1 o 2 máximo):
+6. ALERTAS GITHUB FLAVORED (1 sola alerta clave de alto impacto):
    > [!TIP]
    > **Consejo Práctico:** Explica aquí el consejo o truco directo.
    O
@@ -526,10 +526,10 @@ ESTRUCTURA EDITORIAL Y DE RETENCIÓN OBLIGATORIA (Markdown enriquecido):
    - seo_title: Título optimizado para Google (50-60 caracteres).
    - seo_description: Meta descripción persuasiva con llamada a la acción (140-160 caracteres).
    - tags: 5 a 8 palabras clave separadas por comas.
-   - reading_time: Tiempo de lectura estimado en minutos (debe ser 2 o 3 minutos).
+   - reading_time: Tiempo de lectura estimado en minutos (debe ser 2 minutos).
    - theme_keyword: 1 o 2 palabras clave en inglés o español para elegir la mejor imagen de portada.
 
-Extensión recomendada: 450 a 650 palabras de máxima retención y alto valor práctico.`;
+Extensión recomendada: 280 a 400 palabras de máxima retención, ultra concisas y de alto valor práctico.`;
 
       this.addLog('⚡ Enviando directrices editoriales y SEO a Gemini 3.6 Flash...', 'info');
       let aiResponse;
@@ -810,7 +810,7 @@ ARTÍCULO ACTUAL:
 ${art.content}
 
 REGLAS OBLIGATORIAS DE ADAPTACIÓN:
-1. EXTENSIÓN ÁGIL DE MÁXIMA RETENCIÓN (450 a 600 palabras en total, 3 minutos de lectura):
+1. EXTENSIÓN ÁGIL DE MÁXIMA RETENCIÓN (280 a 400 palabras en total, 2 minutos de lectura):
    - Elimina cualquier relleno, introducción lenta o jerga médica/académica aburrida.
    - Párrafos súper cortos (máximo 2 a 3 líneas por párrafo). Cero paredes de texto.
    - Gancho directo en las primeras 2 líneas explicando por qué esto cambia tus resultados en el gimnasio o en tu dieta hoy mismo.
@@ -828,7 +828,7 @@ REGLAS OBLIGATORIAS DE ADAPTACIÓN:
    - Termina con "## Puntos clave para llevarte" con 3 o 4 puntos numerados directos al grano.
 6. SEO:
    - Puedes pulir ligeramente el título si mejora el CTR en búsquedas de gimnasio, pero manteniendo la promesa exacta del artículo.
-   - reading_time debe ser 3.`;
+   - reading_time debe ser 2.`;
 
           let aiRes;
           try {

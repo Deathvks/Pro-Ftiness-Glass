@@ -15,6 +15,7 @@ import { askTrainerAI } from "../../../services/aiService";
 import ExerciseMedia from "../../ExerciseMedia";
 import CustomSelect from "../../CustomSelect";
 import { useTranslation } from "react-i18next";
+import useAppStore from "../../../store/useAppStore";
 
 const REP_OPTIONS = [
   { isHeader: true, label: "Repeticiones" },
@@ -68,6 +69,8 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith("/api")
   : API_BASE_URL;
 
 const ExerciseDetailView = ({
+  // admin check
+
   exercise,
   onBack,
   onAdd,
@@ -305,10 +308,17 @@ const ExerciseDetailView = ({
 
             <div className="pt-6 border-t border-black/5 dark:border-white/10 space-y-5">
               <div className="flex justify-between items-center px-1">
-                <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2 text-text-primary tracking-tight">
-                  <Sparkles className="w-5 h-5 text-accent" />
-                  Técnica y Consejos IA
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg sm:text-xl font-bold flex items-center gap-2 text-text-primary tracking-tight">
+                    <Sparkles className="w-5 h-5 text-accent" />
+                    Técnica y Consejos IA
+                  </h3>
+                  {isAdmin && (
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/30">
+                      Gemini 3.6 Flash
+                    </span>
+                  )}
+                </div>
                 {remainingUses !== null && (
                   <div className="text-right">
                     <span

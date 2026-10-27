@@ -5,6 +5,7 @@ import { X, Activity, Layers, Sparkles, AlertCircle, Loader2, ArrowUpRight, Arro
 import { analyzeRoutine } from '../../utils/trainerLogic';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { askTrainerAI } from '../../services/aiService';
+import useAppStore from '../../store/useAppStore';
 import useModalLock from '../../hooks/useModalLock';
 
 const MUSCLE_LABELS = {
@@ -18,6 +19,8 @@ const formatPlannedSets = value => Number.isInteger(value) ? value : value.toFix
 
 const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
   const { resolvedTheme } = useAppTheme();
+  const userProfile = useAppStore((state) => state.userProfile);
+  const isAdmin = userProfile?.role === 'admin';
   const [analysisAnswers, setAnalysisAnswers] = useState({});
   const analysis = useMemo(() => analyzeRoutine(exercises, analysisAnswers), [exercises, analysisAnswers]);
 
@@ -393,9 +396,16 @@ const RoutineAnalysisModal = ({ isOpen, onClose, exercises = [] }) => {
                             <Sparkles className="w-5 h-5" />
                           </div>
                           <div>
-                            <h4 className={`text-sm font-black tracking-wide uppercase ${remainingUses === 0 ? 'text-red-500' : 'text-text-primary'}`}>
-                              Entrenador IA
-                            </h4>
+                            <div className="flex items-center gap-2">
+                              <h4 className={`text-sm font-black tracking-wide uppercase ${remainingUses === 0 ? 'text-red-500' : 'text-text-primary'}`}>
+                                Entrenador IA
+                              </h4>
+                              {isAdmin && (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/30">
+                                  Gemini 3.6 Flash
+                                </span>
+                              )}
+                            </div>
                             <span className="text-[10px] text-text-secondary font-semibold block mt-0.5">
                               Recarga a medianoche
                             </span>

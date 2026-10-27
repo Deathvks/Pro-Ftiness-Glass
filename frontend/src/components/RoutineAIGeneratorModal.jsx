@@ -15,6 +15,8 @@ const RoutineAIGeneratorModal = ({ isOpen, onClose, onGenerate }) => {
 
   const { resolvedTheme } = useAppTheme();
   const getOrFetchAllExercises = useAppStore((state) => state.getOrFetchAllExercises);
+  const userProfile = useAppStore((state) => state.userProfile);
+  const isAdmin = userProfile?.role === 'admin';
   const { t } = useTranslation(['exercise_names']);
 
   const [userPrompt, setUserPrompt] = useState('');
@@ -175,7 +177,14 @@ FORMATO SI ES VÁLIDO:
               <Wand2 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold leading-none text-text-primary">Generar con IA</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold leading-none text-text-primary">Generar con IA</h2>
+                {isAdmin && (
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/30">
+                    Gemini 3.6 Flash
+                  </span>
+                )}
+              </div>
               <span className="text-xs font-medium text-text-secondary">Crea tu sesión ideal</span>
             </div>
           </div>
@@ -188,6 +197,17 @@ FORMATO SI ES VÁLIDO:
           <p className="text-sm text-text-secondary">
             Describe tu objetivo, equipo disponible o nivel de experiencia.
           </p>
+          {isAdmin && (
+            <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <Sparkles size={13} className="shrink-0" />
+                <span>Modo Admin Activo</span>
+              </div>
+              <span className="bg-purple-500/20 px-2 py-0.5 rounded-md font-extrabold text-[10px] uppercase tracking-wider">
+                Modelo: Gemini 3.6 Flash
+              </span>
+            </div>
+          )}
 
           <textarea
             value={userPrompt}

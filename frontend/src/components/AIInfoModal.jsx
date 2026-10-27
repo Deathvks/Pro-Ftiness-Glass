@@ -4,12 +4,15 @@ import { FaXmark, FaBrain, FaClock, FaBolt, FaCircleInfo, FaShieldHalved, FaChev
 import ModalPortal from './ModalPortal';
 import { useAppTheme } from '../hooks/useAppTheme';
 import useModalLock from '../hooks/useModalLock';
+import useAppStore from '../store/useAppStore';
 
 const AIInfoModal = ({ onClose }) => {
   // --- Bloquear scroll del fondo y swipe entre páginas ---
   useModalLock();
 
   const { resolvedTheme } = useAppTheme();
+  const userProfile = useAppStore((state) => state.userProfile);
+  const isAdmin = userProfile?.role === 'admin';
 
   const [remainingUses, setRemainingUses] = useState(() => localStorage.getItem('ai_remaining_uses') || '5');
   const [dailyLimit, setDailyLimit] = useState(() => localStorage.getItem('ai_daily_limit') || '5');
@@ -148,6 +151,17 @@ const AIInfoModal = ({ onClose }) => {
 
           {/* Contenido */}
           <div className="p-5 sm:p-6 space-y-5 relative z-10">
+            {isAdmin && (
+              <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 text-purple-400 font-black uppercase tracking-wider text-[11px]">
+                  <FaShieldHalved className="text-sm shrink-0" />
+                  <span>Modo Administrador</span>
+                </div>
+                <span className="font-bold text-text-primary text-xs">
+                  Modelo: <strong className="text-accent">Gemini 3.6 Flash</strong> (Sin límites)
+                </span>
+              </div>
+            )}
             {/* Tarjetas de Estadísticas */}
             <div className="grid grid-cols-2 gap-3">
               <div

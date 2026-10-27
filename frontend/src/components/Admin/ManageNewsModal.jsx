@@ -343,8 +343,13 @@ export default function ManageNewsModal({ isOpen, onClose }) {
                     Generador de Artículos Científicos con IA
                   </h4>
                   <p className="text-xs text-text-secondary">
-                    Google Gemini 2.5 Flash redactará un artículo ágil de alta retención (450-650 palabras), directo al grano, con formato visual profesional y optimización SEO.
+                    Generación ágil y concisa (280-400 palabras, lectura rápida de 2 min) con formato visual profesional, enlaces internos y optimización SEO.
                   </p>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/15 border border-accent/30 text-accent text-[11px] font-black uppercase tracking-wider mt-1">
+                    <Sparkles size={12} className="shrink-0" />
+                    <span>Modelo IA: Gemini 3.6 Flash</span>
+                    <span className="opacity-60 text-[10px] font-semibold">(Fallback: 3.5 Flash Lite)</span>
+                  </div>
                 </div>
 
                 <div>

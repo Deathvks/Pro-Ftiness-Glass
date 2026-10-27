@@ -15,8 +15,10 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
 
   const { getOrFetchAllExercises } = useAppStore(useShallow(state => ({
     getOrFetchAllExercises: state.getOrFetchAllExercises,
+    userProfile: state.userProfile,
   })));
 
+  const isAdmin = localDetails?.userProfile?.role === 'admin' || exercise?.userProfile?.role === 'admin' || useAppStore.getState().userProfile?.role === 'admin';
   const [localDetails, setLocalDetails] = useState({ ...exercise, ...(exercise.exercise_details || {}) });
   const [isOffline, setIsOffline] = useState(() => typeof navigator !== 'undefined' ? !navigator.onLine : false);
 
@@ -381,12 +383,19 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
               {/* Sección del Entrenador IA */}
               <div className="pt-6 border-t border-black/5 dark:border-white/10">
                 <div className="flex justify-between items-center mb-5">
-                  <h3 className="text-lg font-extrabold flex items-center gap-3 text-text-primary tracking-tight">
-                    <div className="p-2 bg-accent/10 rounded-[12px] ring-1 ring-accent/30 text-accent shrink-0">
-                      <Sparkles size={18} strokeWidth={2.5} />
-                    </div>
-                    Técnica y Consejos IA
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-extrabold flex items-center gap-3 text-text-primary tracking-tight">
+                      <div className="p-2 bg-accent/10 rounded-[12px] ring-1 ring-accent/30 text-accent shrink-0">
+                        <Sparkles size={18} strokeWidth={2.5} />
+                      </div>
+                      Técnica y Consejos IA
+                    </h3>
+                    {isAdmin && (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/30">
+                        Gemini 3.6 Flash
+                      </span>
+                    )}
+                  </div>
                   {remainingUses !== null && (
                     <div className="text-right">
                       <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider block ${isLimitReached ? 'text-red' : 'text-text-secondary'}`}>

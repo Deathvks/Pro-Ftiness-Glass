@@ -1,4 +1,4 @@
 {
-  "version": "7.10.68",
-  "releaseNotes": "Actualización v7.10.68: Separación física inferior garantizada mediante bloque espaciador de 180px en la enciclopedia de ejercicios y calculadoras públicas para evitar cualquier solapamiento o corte con el margen inferior de la pantalla en móviles."
+  "version": "7.10.69",
+  "releaseNotes": "Actualización v7.10.69: Artículos generados por Gemini optimizados a formato ultra conciso (280-400 palabras, 2 min de lectura) e indicación exclusiva para administradores del modelo IA activo (Gemini 3.6 Flash) en panel de noticias, generador de rutinas, análisis y consultas técnicas."
 }
