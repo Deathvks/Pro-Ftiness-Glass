@@ -8,9 +8,12 @@
     # Define la carpeta raíz donde están los archivos de la web.
     root * /usr/share/caddy
 
-    # Desactivar caché estricto para archivos que controlan la versión y el service worker
+    # Compresión Zstandard y Gzip obligatoria para reducir JS/CSS un 75-85%
+    encode zstd gzip
+
+    # Desactivar caché estricto para /, rutas SPA, HTML, version.json y service worker
     @noCache {
-        path /sw.js /index.html /version.json /manifest.json /manifest.webmanifest /robots.txt /sitemap.xml /rss.xml /feed.xml /noticias/* /calculadora-1rm* /calculadora-calorias-macros* /ejercicios* *.html
+        not path /assets/* /icons/* *.png *.webp *.ico *.svg *.jpg *.jpeg *.woff *.woff2
     }
     header @noCache {
         Cache-Control "no-cache, no-store, must-revalidate"
@@ -45,7 +48,7 @@
     }
     respond @missingAsset 404
 
-    # Caché agresivo inmutable SOLO para los assets que realmente existen en disco
+    # Caché agresivo inmutable SOLO para los assets con hash que realmente existen en disco
     @staticAssets {
         path /assets/*
         file

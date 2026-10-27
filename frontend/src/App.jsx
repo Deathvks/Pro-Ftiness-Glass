@@ -42,27 +42,18 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
     const retryKey = "pfg_chunk_retry_" + name;
     const hasRetried = sessionStorage.getItem(retryKey);
 
-    const loadWithTimeout = async (timeoutMs = 4500) => {
-      return await Promise.race([
-        componentImport(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Timeout de red cargando chunk "${name}"`)), timeoutMs)
-        )
-      ]);
-    };
-
     try {
-      // 1. Intento primario
-      const component = await loadWithTimeout(4500);
+      // 1. Intento primario directo sin abortar descargas en curso
+      const component = await componentImport();
       sessionStorage.removeItem(retryKey);
       return component;
     } catch (firstError) {
-      console.warn(`[lazyWithRetry] Primer intento falló para "${name}", reintentando en memoria...`, firstError);
-      
+      console.warn(`[lazyWithRetry] Primer intento falló para "${name}", reintentando...`, firstError);
+
       // 2. Reintento inmediato en memoria (evita recargas innecesarias ante cortes transitorios)
       try {
-        await new Promise(r => setTimeout(r, 250));
-        const component = await loadWithTimeout(6000);
+        await new Promise(r => setTimeout(r, 300));
+        const component = await componentImport();
         sessionStorage.removeItem(retryKey);
         return component;
       } catch (error) {
@@ -75,22 +66,11 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
           msg.includes("MIME type") ||
           msg.includes("SyntaxError") ||
           msg.includes("Unexpected token") ||
-          msg.includes("Timeout de red") ||
-          msg.includes("is not valid JavaScript") ||
-          error?.name === "TypeError" ||
-          error?.name === "SyntaxError";
+          msg.includes("is not valid JavaScript");
 
         if (isChunkError && !hasRetried) {
-          console.warn(`[lazyWithRetry] Nueva versión detectada para "${name}", refrescando caché de la app...`);
+          console.warn(`[lazyWithRetry] Nueva versión detectada para "${name}", recargando limpiamente...`);
           sessionStorage.setItem(retryKey, "true");
-          if ("caches" in window) {
-            caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
-          }
-          if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.getRegistrations().then(regs => {
-              regs.forEach(r => r.unregister().catch(() => {}));
-            }).catch(() => {});
-          }
           const freshUrl = window.location.origin + window.location.pathname + '?v=' + Date.now() + (window.location.hash || '');
           setTimeout(() => {
             try {

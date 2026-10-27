@@ -123,6 +123,9 @@ if (isIOS) {
 }
 
 const mountApp = () => {
+  if (typeof window !== 'undefined') {
+    window.__pfg_mounted = true;
+  }
   createRoot(document.getElementById('root')).render(
     <StrictMode>
       <ErrorBoundary>
@@ -140,12 +143,17 @@ const mountApp = () => {
   );
 };
 
-// Evitar FOUC (pérdida momentánea de CSS al recargar): si hay hojas de estilo externas pendientes
-// de terminar de cargarse en <head>, mantenemos el .app-splash-screen (con CSS inline) hasta que
-// la hoja de estilos esté lista antes de montar React.
+// Evitar FOUC manteniendo el .app-splash-screen (con CSS inline) hasta que la hoja de estilos principal esté lista
 const pendingStylesheets = Array.from(
   document.querySelectorAll('link[rel="stylesheet"]')
-).filter((link) => !link.sheet);
+).filter((link) => {
+  try {
+    const href = link.getAttribute('href') || '';
+    return href.includes('/assets/') && !link.sheet;
+  } catch {
+    return false;
+  }
+});
 
 if (pendingStylesheets.length === 0) {
   mountApp();
@@ -156,12 +164,16 @@ if (pendingStylesheets.length === 0) {
     mounted = true;
     mountApp();
   };
-  const fallbackTimer = setTimeout(finishMount, 1200);
+  const fallbackTimer = setTimeout(finishMount, 600);
   Promise.all(
     pendingStylesheets.map(
       (link) =>
         new Promise((resolve) => {
-          if (link.sheet) return resolve();
+          try {
+            if (link.sheet) return resolve();
+          } catch {
+            return resolve();
+          }
           link.addEventListener('load', resolve, { once: true });
           link.addEventListener('error', resolve, { once: true });
         })

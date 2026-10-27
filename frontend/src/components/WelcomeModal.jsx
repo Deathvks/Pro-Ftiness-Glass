@@ -8,9 +8,7 @@ import { FaMeteor } from 'react-icons/fa6';
 import { Capacitor } from '@capacitor/core';
 import { APP_VERSION } from '../config/version';
 import useModalLock from '../hooks/useModalLock';
-import { preloadViewChunk, preloadAllPrimaryViews } from '../App';
 import useAppStore from '../store/useAppStore';
-import * as newsService from '../services/newsService';
 
 const WelcomeModal = ({ onClose }) => {
 

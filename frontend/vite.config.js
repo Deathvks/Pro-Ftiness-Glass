@@ -104,32 +104,11 @@ export default defineConfig({
       filename: 'sw.js',
       injectManifest: {
         globPatterns: [
-          '**/*.{js,css,html,ico,png,svg,webp,webmanifest}'
-        ],
-        globIgnores: [
-          '**/node_modules/**/*',
-          'stats.html',
-          'noticias/**/*.html',
-          'calculadora-1rm/**/*.html',
-          'calculadora-calorias-macros/**/*.html',
-          'ejercicios/**/*.html',
-          'aver.jpg',
-          'entrenamiento.png',
-          'nutrici*.png',
-          'graficas.png',
-          'social.png',
-          'mapa.png',
-          'ajustes.png',
-          'perfil.png',
-          'trainer-profile.jpg',
-          'assets/themes/**/*',
-          'assets/*GymLocationModal*',
-          'assets/*BarcodeScanner*',
-          'assets/*vendor-recharts*',
-          'assets/*AdminPanel*',
-          'assets/*TrainerPanel*',
-          'assets/*RoutineEditor*',
-          'assets/*html2canvas*'
+          'index.html',
+          'manifest.webmanifest',
+          'favicon.ico',
+          'logo.webp',
+          'pwa-192x192.webp'
         ],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       },
@@ -144,20 +123,21 @@ export default defineConfig({
       brotliSize: true,
     }),
     {
-      name: 'css-before-js',
+      name: 'non-blocking-splash-css',
       enforce: 'post',
       transformIndexHtml(html) {
-        // Eliminar modulepreload pesados innecesarios en el arranque inicial (como recharts)
+        // 1. Eliminar modulepreload pesados innecesarios en el arranque inicial
         let cleaned = html.replace(/<link\s+[^>]*rel=["']modulepreload["'][^>]*href=["'][^"']*vendor-recharts[^"']*["'][^>]*>\s*/gi, '');
-        const cssLinks = cleaned.match(/<link\s+[^>]*rel=["']stylesheet["'][^>]*>/gi);
-        if (!cssLinks || cssLinks.length === 0) return cleaned;
-        for (const link of cssLinks) {
-          cleaned = cleaned.replace(link, '');
+        // 2. Mover hojas de estilo y scripts de entrada al final de <body> (después de #root y .app-splash-screen)
+        // para que el navegador pinte el splash inline en 0ms sin pantalla blanca al recargar con Shift
+        const cssLinks = cleaned.match(/<link\s+[^>]*rel=["']stylesheet["'][^>]*>/gi) || [];
+        const scriptTags = cleaned.match(/<script\s+type=["']module["'][^>]*><\/script>/gi) || [];
+        const preloadLinks = cleaned.match(/<link\s+[^>]*rel=["']modulepreload["'][^>]*>/gi) || [];
+        for (const tag of [...cssLinks, ...scriptTags, ...preloadLinks]) {
+          cleaned = cleaned.replace(tag, '');
         }
-        return cleaned.replace(
-          /(<script\s+type=["']module["'][^>]*>)/i,
-          `${cssLinks.join('\n  ')}\n  $1`
-        );
+        const injectedAtBodyEnd = [...preloadLinks, ...cssLinks, ...scriptTags].join('\n  ');
+        return cleaned.replace('</body>', `  ${injectedAtBodyEnd}\n</body>`);
       },
     },
   ],
