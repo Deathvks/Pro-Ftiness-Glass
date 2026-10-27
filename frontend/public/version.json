@@ -1,4 +1,4 @@
 {
-  "version": "7.10.66",
-  "releaseNotes": "Actualización v7.10.66: Incrementada la separación inferior (paddingBottom y márgenes) en la enciclopedia de ejercicios y calculadoras públicas para evitar cortes en el borde de pantalla y barras de navegación móvil."
+  "version": "7.10.67",
+  "releaseNotes": "Actualización v7.10.67: Recarga limpia y síncrona al aceptar el modal de bienvenida (WelcomeModal) para activar el nuevo Service Worker y cargar todos los nuevos bundles al 100% de velocidad sin bloqueos ni retrasos."
 }

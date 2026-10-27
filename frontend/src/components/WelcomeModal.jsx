@@ -19,35 +19,48 @@ const WelcomeModal = ({ onClose }) => {
   const userProfile = useAppStore((state) => state.userProfile);
 
   // Precarga suave y no intrusiva en segundo plano cuando el navegador esté en reposo
-  useEffect(() => {
-    let timerId = null;
-    try {
-      timerId = setTimeout(() => {
-        const runPreload = () => {
-          preloadViewChunk('noticias');
-          if (userProfile?.role === 'admin') {
-            preloadViewChunk('adminPanel');
-          }
-        };
-        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-          window.requestIdleCallback(runPreload, { timeout: 3000 });
-        } else {
-          runPreload();
-        }
-      }, 1200);
-    } catch (e) {
-      console.warn('[WelcomeModal] Error en precarga suave:', e);
-    }
-    return () => {
-      if (timerId) clearTimeout(timerId);
-    };
-  }, [userProfile?.role]);
+  // Al aceptar el modal se realiza una recarga completa y limpia, evitando colisiones de precarga en segundo plano
 
   const appVersion = `v${APP_VERSION}`;
   const majorVersion = APP_VERSION.split('.')[0];
+  const [isUpdating, setIsUpdating] = React.useState(false);
 
   const handleGetStarted = () => {
-    if (onClose) onClose();
+    if (isUpdating) return;
+    setIsUpdating(true);
+
+    try {
+      localStorage.setItem('lastSeenVersion', APP_VERSION);
+      localStorage.removeItem('pfg_crash_loop_count');
+      localStorage.removeItem('pfg_auto_reloaded_version');
+      sessionStorage.removeItem('pfg_last_safe_reload_time');
+      sessionStorage.removeItem('pfg_reload_count');
+    } catch (e) {
+      console.warn('[WelcomeModal] Error guardando estado de versión:', e);
+    }
+
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then((reg) => {
+        if (reg?.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+      }).catch(() => {});
+    }
+
+    const { activeWorkout, workoutStartTime } = useAppStore.getState();
+    if (activeWorkout && workoutStartTime) {
+      if (onClose) onClose();
+      return;
+    }
+
+    if (onClose) {
+      onClose();
+    }
+
+    // Recarga limpia de la web tras aceptar el welcome para cargar al 100% todos los nuevos bundles
+    setTimeout(() => {
+      window.location.reload();
+    }, 120);
   };
 
   return (
@@ -432,9 +445,11 @@ const WelcomeModal = ({ onClose }) => {
 
             {/*  Footer  */}
             <div className="wm-btn-in">
-              <button className="wm-btn" onClick={handleGetStarted}>
-                <span style={{ position: 'relative', zIndex: 1 }}>DESCUBRIR NOVEDADES</span>
-                <ChevronRight size={18} strokeWidth={2.5} style={{ position: 'relative', zIndex: 1 }} />
+              <button className="wm-btn" onClick={handleGetStarted} disabled={isUpdating}>
+                <span style={{ position: 'relative', zIndex: 1 }}>
+                  {isUpdating ? 'APLICANDO ACTUALIZACIÓN...' : 'DESCUBRIR NOVEDADES'}
+                </span>
+                <ChevronRight size={18} strokeWidth={2.5} style={{ position: 'relative', zIndex: 1 }} className={isUpdating ? 'animate-spin' : ''} />
               </button>
 
               <p style={{
