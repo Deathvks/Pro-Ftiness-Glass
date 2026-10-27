@@ -29,6 +29,20 @@ export default defineConfig({
       }
     }
   },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-dom/client',
+      'react-router-dom',
+      'react-helmet-async',
+      '@react-oauth/google',
+      '@capacitor/core',
+      'zustand',
+      'lucide-react',
+      'react-icons/fa6'
+    ]
+  },
   plugins: [
     react(),
     // Mantenemos esto porque reduce el peso de las imágenes sin romper el código
