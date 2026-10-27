@@ -381,6 +381,8 @@ export const createAuthSlice = (set, get) => {
                 showWelcomeModal: true,
                 welcomeRemoteVersion: targetVersion,
                 welcomeRemoteData: remoteData || null,
+                show2FAPromo: false,
+                tourActive: false,
             });
         }
     },

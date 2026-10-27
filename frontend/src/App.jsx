@@ -69,8 +69,26 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
           msg.includes("is not valid JavaScript");
 
         if (isChunkError && !hasRetried) {
-          console.warn(`[lazyWithRetry] Nueva versión detectada para "${name}", recargando limpiamente...`);
           sessionStorage.setItem(retryKey, "true");
+          // Si el usuario está autenticado, comprobamos /version.json primero para mostrar el WelcomeModal en caliente
+          // en lugar de recargar de golpe sin mostrar las novedades
+          const storeState = useAppStore.getState();
+          if (storeState.isAuthenticated || localStorage.getItem('pro_fitness_token')) {
+            try {
+              const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' });
+              if (res.ok) {
+                const data = await res.json();
+                const remoteVersion = data?.version;
+                const lastSeenVersion = localStorage.getItem('lastSeenVersion');
+                if (remoteVersion && lastSeenVersion !== remoteVersion && typeof storeState.triggerRemoteWelcomeModal === 'function') {
+                  storeState.triggerRemoteWelcomeModal(remoteVersion, data);
+                  throw error;
+                }
+              }
+            } catch {}
+          }
+
+          console.warn(`[lazyWithRetry] Nueva versión detectada para "${name}", recargando limpiamente...`);
           const freshUrl = window.location.origin + window.location.pathname + '?v=' + Date.now() + (window.location.hash || '');
           setTimeout(() => {
             try {

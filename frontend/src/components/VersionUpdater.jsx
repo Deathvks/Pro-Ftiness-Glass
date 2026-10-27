@@ -1,8 +1,8 @@
 import ModalPortal from './ModalPortal';
+import WelcomeModal from './WelcomeModal';
 /* frontend/src/components/VersionUpdater.jsx */
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Capacitor } from '@capacitor/core';
 import { APP_VERSION } from '../config/version';
 import useAppStore from '../store/useAppStore';
@@ -18,9 +18,12 @@ const isNewerVersion = (current, remote) => {
   return false;
 };
 
-const SWUpdaterCore = ({ initialChunkError }) => {
-  const [isChunkError, setIsChunkError] = useState(initialChunkError);
+const SWUpdaterCore = () => {
+  const [isChunkError, setIsChunkError] = useState(false);
+  const [needRefresh, setNeedRefresh] = useState(false);
   const showWelcomeModal = useAppStore((state) => state.showWelcomeModal);
+  const welcomeRemoteVersion = useAppStore((state) => state.welcomeRemoteVersion);
+  const closeWelcomeModal = useAppStore((state) => state.closeWelcomeModal);
   const swRegRef = useRef(null);
   const isCheckingRef = useRef(false);
   const lastCheckTimeRef = useRef(0);
@@ -69,47 +72,29 @@ const SWUpdaterCore = ({ initialChunkError }) => {
     return true;
   }, []);
 
-  const {
-    needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker
-  } = useRegisterSW({
-    onRegisteredSW(_swUrl, r) {
-      if (!r) return;
-      swRegRef.current = r;
-      r.update().catch(() => {});
-    },
-    onRegistered(r) {
-      if (!r) return;
-      swRegRef.current = r;
-      r.update().catch(() => {});
-    }
-  });
+  // Registro directo del Service Worker sin workbox-window (evita auto-recargas ocultas y chunks dinámicos borrados)
+  useEffect(() => {
+    if (import.meta.env.DEV) return;
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    navigator.serviceWorker
+      .register('/sw.js', { scope: '/' })
+      .then((reg) => {
+        swRegRef.current = reg;
+      })
+      .catch(() => {});
+  }, []);
 
   const checkForUpdates = useCallback(async (force = false) => {
     const now = Date.now();
-    if (!force && now - lastCheckTimeRef.current < 5000) return;
+    if (!force && now - lastCheckTimeRef.current < 4000) return;
     if (isCheckingRef.current || isReloadingRef.current) return;
 
     lastCheckTimeRef.current = now;
     isCheckingRef.current = true;
 
     try {
-      // 1. Iniciar comprobación del Service Worker en paralelo (SIN bloquear la lectura de /version.json)
-      if ('serviceWorker' in navigator) {
-        Promise.resolve(swRegRef.current || navigator.serviceWorker.getRegistration())
-          .then((reg) => {
-            if (!reg) return;
-            swRegRef.current = reg;
-            return reg.update().then(() => {
-              if (reg.waiting) {
-                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-              }
-            });
-          })
-          .catch(() => {});
-      }
-
-      // 2. Comprobar /version.json contra APP_VERSION y lastSeenVersion de inmediato
+      // 1. Comprobar /version.json contra APP_VERSION y lastSeenVersion de inmediato
       const res = await fetch(`/version.json?t=${now}`, {
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' }
@@ -121,21 +106,37 @@ const SWUpdaterCore = ({ initialChunkError }) => {
       if (!remoteVersion) return;
 
       const lastSeenVersion = localStorage.getItem('lastSeenVersion');
-      const hasNewerThanMemory = isNewerVersion(APP_VERSION, remoteVersion);
-      const hasNewerThanSeen = lastSeenVersion ? isNewerVersion(lastSeenVersion, remoteVersion) : false;
+      const hasNewerThanMemory = isNewerVersion(APP_VERSION, remoteVersion) || remoteVersion !== APP_VERSION;
+      const hasNewerThanSeen = !lastSeenVersion || isNewerVersion(lastSeenVersion, remoteVersion) || lastSeenVersion !== remoteVersion;
 
-      if (hasNewerThanMemory || hasNewerThanSeen) {
+      // Si hay una versión distinta en el servidor o aún no vista:
+      if (isNewerVersion(APP_VERSION, remoteVersion) || (lastSeenVersion && isNewerVersion(lastSeenVersion, remoteVersion))) {
         const storeState = useAppStore.getState();
-        const isAuthenticatedUser = Boolean(storeState.isAuthenticated && storeState.userProfile);
+        const hasAuthSession = Boolean(storeState.isAuthenticated || localStorage.getItem('pro_fitness_token'));
 
-        // Si el usuario está dentro de la app y aún no ha visto el WelcomeModal de esta versión:
+        // Pre-descargar el nuevo Service Worker en segundo plano SIN enviar SKIP_WAITING todavía
+        // (SKIP_WAITING y la recarga limpia ocurren cuando el usuario pulsa "DESCUBRIR NOVEDADES")
+        if ('serviceWorker' in navigator) {
+          Promise.resolve(swRegRef.current || navigator.serviceWorker.getRegistration())
+            .then((reg) => {
+              if (!reg) return;
+              swRegRef.current = reg;
+              reg.update().catch(() => {});
+            })
+            .catch(() => {});
+        }
+
+        // Si el usuario tiene sesión activa y aún no ha aceptado el WelcomeModal de esta versión:
         // mostramos directamente el WelcomeModal en caliente SIN recargar antes.
-        // Al pulsar "DESCUBRIR NOVEDADES", el propio WelcomeModal recarga la página limpia.
-        if (isAuthenticatedUser && lastSeenVersion !== remoteVersion) {
+        if (hasAuthSession && hasNewerThanSeen) {
           if (typeof storeState.triggerRemoteWelcomeModal === 'function') {
             storeState.triggerRemoteWelcomeModal(remoteVersion, data);
           } else {
-            useAppStore.setState({ showWelcomeModal: true });
+            useAppStore.setState({
+              showWelcomeModal: true,
+              welcomeRemoteVersion: remoteVersion,
+              welcomeRemoteData: data
+            });
           }
           return;
         }
@@ -152,20 +153,10 @@ const SWUpdaterCore = ({ initialChunkError }) => {
     } finally {
       isCheckingRef.current = false;
     }
-  }, [setNeedRefresh, triggerSafeReload]);
+  }, [triggerSafeReload]);
 
   useEffect(() => {
-    // Al cambiar el controlador del Service Worker, comprobar /version.json para mostrar el WelcomeModal en caliente
-    const handleControllerChange = () => {
-      if (isReloadingRef.current) return;
-      checkForUpdates(true);
-    };
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
-    }
-
-    // Comprobar al iniciar
+    // Comprobar inmediatamente al montar
     checkForUpdates(true);
 
     // Comprobar al volver a la app (salir y entrar en PWA / cambiar de pestaña / recuperar red)
@@ -177,7 +168,6 @@ const SWUpdaterCore = ({ initialChunkError }) => {
     const handleFocus = () => checkForUpdates(true);
     const handlePageShow = () => checkForUpdates(true);
     const handleOnline = () => checkForUpdates(true);
-    // Comprobar de forma ligera al moverse por la app (throttled a 5s)
     const handleUserNavigation = () => checkForUpdates(false);
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -187,12 +177,12 @@ const SWUpdaterCore = ({ initialChunkError }) => {
     window.addEventListener('popstate', handleUserNavigation);
     window.addEventListener('click', handleUserNavigation, { passive: true });
 
-    // Polling ligero cada 10s mientras la pestaña está visible para detectar nuevas versiones sin recargar
+    // Polling ligero cada 6s mientras la pestaña está visible para detectar nuevas versiones en tiempo real sin recargar
     const intervalId = setInterval(() => {
       if (document.visibilityState === 'visible') {
         checkForUpdates(true);
       }
-    }, 10 * 1000);
+    }, 6 * 1000);
 
     const handleError = (error) => {
       const msg = error?.message || '';
@@ -201,14 +191,21 @@ const SWUpdaterCore = ({ initialChunkError }) => {
         msg.includes('dynamically imported module') ||
         msg.includes('MIME type') ||
         msg.includes('SyntaxError') ||
-        msg.includes('Unexpected token');
+        msg.includes('Unexpected token') ||
+        msg.includes('is not valid JavaScript');
 
       if (isChunkLoadError) {
-        console.warn('ChunkLoadError detectado: Versión desactualizada.');
-        if (!triggerSafeReload('chunk_error')) {
-          setIsChunkError(true);
-          setNeedRefresh(true);
-        }
+        console.warn('[VersionUpdater] ChunkLoadError detectado: comprobando si hay nueva versión para mostrar WelcomeModal...');
+        // Primero intentamos comprobar /version.json para que salga el WelcomeModal en vez de recargar de golpe
+        checkForUpdates(true).finally(() => {
+          const { showWelcomeModal: welcomeNow } = useAppStore.getState();
+          if (!welcomeNow) {
+            if (!triggerSafeReload('chunk_error')) {
+              setIsChunkError(true);
+              setNeedRefresh(true);
+            }
+          }
+        });
       }
     };
 
@@ -218,9 +215,6 @@ const SWUpdaterCore = ({ initialChunkError }) => {
     window.addEventListener('unhandledrejection', handleRejection);
 
     return () => {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
-      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('pageshow', handlePageShow);
@@ -231,7 +225,11 @@ const SWUpdaterCore = ({ initialChunkError }) => {
       window.removeEventListener('error', handleError);
       window.removeEventListener('unhandledrejection', handleRejection);
     };
-  }, [checkForUpdates, setNeedRefresh, triggerSafeReload]);
+  }, [checkForUpdates, triggerSafeReload]);
+
+  if (showWelcomeModal && welcomeRemoteVersion) {
+    return <WelcomeModal onClose={closeWelcomeModal} />;
+  }
 
   if ((showWelcomeModal && !isChunkError) || (!needRefresh && !isChunkError)) return null;
 
@@ -256,100 +254,52 @@ const SWUpdaterCore = ({ initialChunkError }) => {
     sessionStorage.removeItem('pfg_auto_reloaded_version');
     sessionStorage.removeItem('pfg_last_safe_reload_time');
     sessionStorage.removeItem('pfg_reload_count');
-    if (updateServiceWorker) {
-      updateServiceWorker(true);
-    }
     setTimeout(() => {
-      window.location.reload();
-    }, 300);
+      const cleanUrl = window.location.origin + window.location.pathname + (window.location.hash || '');
+      window.location.replace(cleanUrl);
+    }, 150);
   };
 
-  return <ModalPortal>
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[100] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
-      <div className="bg-bg-primary border border-glass-border rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center animate-in fade-in zoom-in duration-300">
-        <div className="mx-auto w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center mb-4">
-          {isChunkError ?
-            <AlertTriangle className="text-accent animate-pulse" size={24} /> :
-            <RefreshCw className="text-accent animate-spin-slow" size={24} />
-          }
+  return (
+    <ModalPortal>
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-[100] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
+        <div className="bg-bg-primary border border-glass-border rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center animate-in fade-in zoom-in duration-300">
+          <div className="mx-auto w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center mb-4">
+            {isChunkError ? (
+              <AlertTriangle className="text-accent animate-pulse" size={24} />
+            ) : (
+              <RefreshCw className="text-accent animate-spin-slow" size={24} />
+            )}
+          </div>
+
+          <h3 className="text-xl font-bold mb-2 text-text-primary">
+            {isChunkError ? 'Recarga necesaria' : 'Nueva versión disponible'}
+          </h3>
+
+          <p className="text-text-secondary mb-6 text-sm">
+            {isChunkError
+              ? 'Hemos detectado un problema de conexión con la versión actual. Recarga para solucionar el bloqueo.'
+              : 'Hay una actualización lista con mejoras y correcciones. Actualiza ahora para disfrutar de la mejor experiencia.'}
+          </p>
+
+          <button
+            onClick={handleUpdate}
+            className="w-full py-3 px-4 bg-accent text-accent-contrast font-bold rounded-xl hover:bg-accent/90 transition-all flex items-center justify-center gap-2"
+          >
+            <RefreshCw size={18} />
+            Actualizar ahora
+          </button>
         </div>
-
-        <h3 className="text-xl font-bold mb-2 text-text-primary">
-          {isChunkError ? 'Recarga necesaria' : 'Nueva versión disponible'}
-        </h3>
-
-        <p className="text-text-secondary mb-6 text-sm">
-          {isChunkError ?
-            'Hemos detectado un problema de conexión con la versión actual. Recarga para solucionar el bloqueo.' :
-            'Hay una actualización lista con mejoras y correcciones. Actualiza ahora para disfrutar de la mejor experiencia.'}
-        </p>
-
-        <button
-          onClick={handleUpdate}
-          className="w-full py-3 px-4 bg-accent text-accent-contrast font-bold rounded-xl hover:bg-accent/90 transition-all flex items-center justify-center gap-2">
-          <RefreshCw size={18} />
-          Actualizar ahora
-        </button>
       </div>
-    </div>
-  </ModalPortal>;
+    </ModalPortal>
+  );
 };
 
 const VersionUpdater = () => {
-  // En aplicaciones nativas (Android APK / Capacitor), las actualizaciones se gestionan mediante el paquete APK nativo.
-  // Desactivamos el Service Worker updater para evitar bucles o interferencias en el WebView.
   if (Capacitor.isNativePlatform()) {
     return null;
   }
-
-  const [swReady, setSwReady] = useState(false);
-  const [initialChunkError, setInitialChunkError] = useState(false);
-
-  useEffect(() => {
-    let timerId;
-    const enableSW = () => {
-      timerId = setTimeout(() => setSwReady(true), 250);
-    };
-
-    if (document.readyState === 'complete') {
-      enableSW();
-    } else {
-      window.addEventListener('load', enableSW, { once: true });
-    }
-
-    const handleError = (error) => {
-      const msg = error?.message || '';
-      const isChunkLoadError =
-        msg.includes('Loading chunk') ||
-        msg.includes('dynamically imported module') ||
-        msg.includes('MIME type') ||
-        msg.includes('SyntaxError') ||
-        msg.includes('Unexpected token') ||
-        msg.includes('is not valid JavaScript');
-
-      if (isChunkLoadError) {
-        console.warn('ChunkLoadError detectado tempranamente.');
-        setInitialChunkError(true);
-        setSwReady(true);
-      }
-    };
-
-    const handleRejection = (e) => handleError(e.reason);
-
-    window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', handleRejection);
-
-    return () => {
-      clearTimeout(timerId);
-      window.removeEventListener('load', enableSW);
-      window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleRejection);
-    };
-  }, []);
-
-  if (!swReady && !initialChunkError) return null;
-
-  return <SWUpdaterCore initialChunkError={initialChunkError} />;
+  return <SWUpdaterCore />;
 };
 
 export default VersionUpdater;

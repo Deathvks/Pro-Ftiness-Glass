@@ -9,8 +9,8 @@ import { ExpirationPlugin } from 'workbox-expiration';
 import { BackgroundSyncPlugin } from 'workbox-background-sync';
 import { clientsClaim } from 'workbox-core';
 
-// 1. Tomar control inmediato de la página y forzar actualización automática
-self.skipWaiting(); // <-- Obliga a instalar la nueva versión sin esperar
+// 1. El nuevo Service Worker espera a que el usuario acepte el WelcomeModal (o se envíe SKIP_WAITING)
+// para evitar recargas automáticas sorpresa mientras el usuario está usando la app.
 clientsClaim();
 
 self.addEventListener('activate', (event) => {

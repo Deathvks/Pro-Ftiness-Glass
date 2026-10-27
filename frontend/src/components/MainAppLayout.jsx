@@ -379,6 +379,7 @@ export default function MainAppLayout({
     userProfile,
     prNotification,
     showWelcomeModal,
+    welcomeRemoteVersion,
     closeWelcomeModal,
     cookieConsent,
     handleAcceptCookies,
@@ -401,6 +402,7 @@ export default function MainAppLayout({
     userProfile: state.userProfile,
     prNotification: state.prNotification,
     showWelcomeModal: state.showWelcomeModal,
+    welcomeRemoteVersion: state.welcomeRemoteVersion,
     closeWelcomeModal: state.closeWelcomeModal,
     cookieConsent: state.cookieConsent,
     handleAcceptCookies: state.handleAcceptCookies,
@@ -1472,7 +1474,7 @@ export default function MainAppLayout({
 
         <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 
-        {showWelcomeModal && cookieConsent !== null && !show2FAPromo && !tourActive && (
+        {showWelcomeModal && !welcomeRemoteVersion && cookieConsent !== null && !show2FAPromo && !tourActive && (
           <WelcomeModal onClose={closeWelcomeModal} />
         )}
         

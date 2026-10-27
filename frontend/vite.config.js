@@ -69,7 +69,8 @@ export default defineConfig({
       webp: { quality: 75, lossless: false },
     }),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
+      injectRegister: false,
       includeManifestIcons: false,
       manifest: {
         name: 'Pro Fitness Glass',
