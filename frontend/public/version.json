@@ -1,4 +1,4 @@
 {
-  "version": "7.10.63",
-  "releaseNotes": "Actualización v7.10.63: Corrección de importación de autenticación en la vista de detalle de noticias."
+  "version": "7.10.64",
+  "releaseNotes": "Actualización v7.10.64: Optimización responsive completa en el encabezado y navegación de artículos de noticias en móvil, evitando solapamientos entre la marca y las acciones."
 }

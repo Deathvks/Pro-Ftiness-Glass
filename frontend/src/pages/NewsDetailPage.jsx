@@ -348,7 +348,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
 
         {/* NAVEGACIÓN SUPERIOR / BREADCRUMB CON LOGO Y MARCA */}
         <nav aria-label="Ruta de navegación" className="flex items-center justify-between gap-2 pb-4 pt-1 w-full">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             <Link
               to="/"
               className="inline-flex items-center gap-2 group cursor-pointer shrink-0"
@@ -365,7 +365,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 decoding="async"
                 className="w-8 h-8 rounded-xl object-contain shadow-xs ring-1 ring-black/10 dark:ring-white/10 group-hover:scale-105 transition-transform shrink-0"
               />
-              <div className="flex flex-col text-left">
+              <div className="hidden sm:flex flex-col text-left">
                 <span className="font-black text-xs sm:text-sm tracking-tight text-text-primary leading-none group-hover:text-accent transition-colors truncate">
                   Pro Fitness Glass
                 </span>
@@ -384,18 +384,18 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
             >
               <FaChevronLeft className="text-xs shrink-0" /> Noticias
             </button>
-            <span className="shrink-0 hidden sm:inline text-text-tertiary text-xs">/</span>
+            <span className="shrink-0 hidden md:inline text-text-tertiary text-xs">/</span>
             <button
               type="button"
               onClick={() => navigate(`/noticias?category=${encodeURIComponent(article.category)}`)}
-              className="cursor-pointer uppercase tracking-wider text-accent hover:underline transition-colors font-bold truncate hidden sm:inline text-xs"
+              className="cursor-pointer uppercase tracking-wider text-accent hover:underline transition-colors font-bold truncate hidden md:inline text-xs max-w-[140px]"
               title={`Ver artículos de ${article.category}`}
             >
               {article.category}
             </button>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 ml-auto">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
             {isAuthenticated ? (
               <button
                 type="button"
@@ -452,12 +452,12 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           </button>
 
           {/* Gran Titular */}
-          <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-black text-text-primary tracking-tight leading-[1.2] mb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[42px] font-black text-text-primary tracking-tight leading-[1.2] mb-4 break-words">
             {article.title}
           </h1>
 
           {/* Entradilla (Subtítulo explicativo del reportaje) */}
-          <p className="text-lg sm:text-xl text-text-secondary leading-relaxed font-normal mb-6">
+          <p className="text-base sm:text-lg lg:text-xl text-text-secondary leading-relaxed font-normal mb-6 break-words">
             {article.summary}
           </p>
 
@@ -497,7 +497,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
             </div>
 
             {/* Botones Sociales con colores de marca siempre activos */}
-            <div className="flex items-center gap-2 shrink-0 self-start sm:self-center pt-1 sm:pt-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap shrink-0 self-start sm:self-center pt-1 sm:pt-0">
               <button
                 type="button"
                 onClick={handleShareNative}
