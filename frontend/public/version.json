@@ -1,13 +1,13 @@
 {
-  "version": "7.11.8",
-  "releaseNotes": "Actualización v7.11.8: Inicio más ágil del panel de entrenador y mejoras en la recarga tras actualizar.",
+  "version": "7.11.9",
+  "releaseNotes": "Actualización v7.11.9: Recarga de versión más ligera, conservando las cachés útiles de la app.",
   "welcome": {
-    "title": "Panel de entrenador más ágil",
-    "subtitle": "Mejoramos la carga del panel y la recuperación de la app después de una actualización.",
+    "title": "Actualización más ligera",
+    "subtitle": "La recarga tras actualizar conserva las cachés útiles de la app.",
     "features": [
       {
-        "title": "Carga y actualización mejoradas",
-        "description": "El panel de entrenador comienza a prepararse al iniciar la app y la recarga de una nueva versión limpia los recursos antiguos con un límite de espera."
+        "title": "Recarga optimizada",
+        "description": "Al aceptar las novedades, esperamos brevemente al Service Worker nuevo y recargamos sin borrar las cachés que aceleran la app y su uso sin conexión."
       }
     ]
   }

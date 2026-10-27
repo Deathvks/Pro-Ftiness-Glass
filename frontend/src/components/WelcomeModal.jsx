@@ -9,7 +9,41 @@ import { Capacitor } from '@capacitor/core';
 import { APP_VERSION } from '../config/version';
 import useModalLock from '../hooks/useModalLock';
 import useAppStore from '../store/useAppStore';
-import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
+
+const reloadAfterWelcome = async () => {
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    try {
+      const registration = await Promise.race([
+        navigator.serviceWorker.getRegistration(),
+        new Promise((resolve) => setTimeout(() => resolve(null), 1000)),
+      ]);
+
+      if (registration?.waiting) {
+        const controllerChanged = new Promise((resolve) => {
+          let timeoutId;
+          const finish = () => {
+            clearTimeout(timeoutId);
+            navigator.serviceWorker.removeEventListener('controllerchange', finish);
+            resolve();
+          };
+          navigator.serviceWorker.addEventListener('controllerchange', finish, { once: true });
+          timeoutId = setTimeout(finish, 2500);
+        });
+
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        await controllerChanged;
+      }
+    } catch (error) {
+      console.warn('[WelcomeModal] No se pudo esperar al Service Worker nuevo:', error);
+    }
+  }
+
+  // Conservamos las cachés de la app y añadimos un parámetro para pedir un
+  // documento fresco, incluso si el navegador conserva la navegación anterior.
+  const freshUrl = new URL(window.location.href);
+  freshUrl.searchParams.set('pfg_update', String(Date.now()));
+  window.location.replace(freshUrl.toString());
+};
 
 const WelcomeModal = ({ onClose }) => {
 
@@ -54,10 +88,10 @@ const WelcomeModal = ({ onClose }) => {
       onClose();
     }
 
-    // En navegador web, quitar de forma acotada cualquier caché/Service Worker obsoleto
-    // antes de recargar. No esperamos indefinidamente la activación del SW nuevo.
+    // En navegador web, esperar brevemente al Service Worker nuevo y recargar
+    // sin borrar las cachés que mantienen ágil la app y su uso sin conexión.
     if (typeof window !== 'undefined' && !Capacitor.isNativePlatform()) {
-      reloadAppWithoutStaleCache();
+      reloadAfterWelcome();
     }
   };
 
