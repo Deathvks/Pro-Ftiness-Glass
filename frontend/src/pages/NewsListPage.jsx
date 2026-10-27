@@ -88,6 +88,14 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   }, [currentPage, currentCategory, currentSearch]);
 
   const [news, setNews] = useState(() => cachedInitial?.news || []);
+
+  useEffect(() => {
+    if (cachedInitial?.news && cachedInitial.news.length > 0) {
+      setNews(cachedInitial.news);
+      if (cachedInitial.total) setTotal(cachedInitial.total);
+      if (cachedInitial.totalPages) setTotalPages(cachedInitial.totalPages);
+    }
+  }, [cachedInitial]);
   const [total, setTotal] = useState(() => cachedInitial?.total || 0);
   const [totalAll, setTotalAll] = useState(() => cachedInitial?.totalAll || 0);
   const [totalPages, setTotalPages] = useState(() => cachedInitial?.totalPages || 1);
@@ -107,6 +115,8 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   };
 
   // Categorías calculadas dinámicamente: base + cualquier nueva categoría devuelta por la API o categoryCounts
+  const isActuallyLoading = isLoading && (!news || news.length === 0);
+
   const categories = useMemo(() => {
     const list = [...DEFAULT_CATEGORIES];
     if (apiCategories && Array.isArray(apiCategories)) {
@@ -133,6 +143,12 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
 
   useEffect(() => {
     let isMounted = true;
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    }, 2500);
+
     const loadNews = async () => {
       if (!cachedInitialRef.current && (!newsRef.current || newsRef.current.length === 0)) {
         setIsLoading(true);
@@ -170,12 +186,18 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           }
         }
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          clearTimeout(safetyTimer);
+          setIsLoading(false);
+        }
       }
     };
 
     loadNews();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+      clearTimeout(safetyTimer);
+    };
   }, [currentCategory, currentPage, currentSearch, reloadKey]);
 
   // Precarga agresiva de contenido de los primeros 3 artículos en segundo plano para abrir a 0ms
@@ -589,7 +611,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
       </nav>
 
             {/* CONTENIDO PRINCIPAL */}
-      {isLoading ? (
+      {isActuallyLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <div

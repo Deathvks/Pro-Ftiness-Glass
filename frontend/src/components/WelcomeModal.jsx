@@ -5,6 +5,7 @@ import {
   ChevronRight, Brain, Timer, Palette, Smartphone, MessageCircle, Flame, Sparkles } from
 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6';
+import { Capacitor } from '@capacitor/core';
 import { APP_VERSION } from '../config/version';
 import useModalLock from '../hooks/useModalLock';
 import { preloadViewChunk, preloadAllPrimaryViews } from '../App';
@@ -30,6 +31,11 @@ const WelcomeModal = ({ onClose }) => {
       localStorage.removeItem('pfg_auto_reloaded_version');
       sessionStorage.removeItem('pfg_last_safe_reload_time');
       sessionStorage.removeItem('pfg_reload_count');
+      Object.keys(sessionStorage).forEach((key) => {
+        if (key.startsWith('pfg_chunk_retry_')) {
+          sessionStorage.removeItem(key);
+        }
+      });
     } catch (e) {
       console.warn('[WelcomeModal] Error guardando estado de versión:', e);
     }
@@ -42,9 +48,16 @@ const WelcomeModal = ({ onClose }) => {
       }).catch(() => {});
     }
 
-    // Cierre limpio y fluido sin recarga destructiva para conservar módulos y estado en RAM
     if (onClose) {
       onClose();
+    }
+
+    // En navegador web, sincronizar de forma limpia con la nueva versión compilada
+    if (typeof window !== 'undefined' && !Capacitor.isNativePlatform()) {
+      setTimeout(() => {
+        const cleanUrl = window.location.origin + window.location.pathname + (window.location.hash || '');
+        window.location.replace(cleanUrl);
+      }, 120);
     }
   };
 

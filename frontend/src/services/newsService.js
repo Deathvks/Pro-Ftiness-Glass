@@ -208,7 +208,7 @@ export const fetchPublicNews = async ({ page = 1, limit = 6, category = '', sear
       const data = await requestWithRetry(`${API_URL}/news?${params.toString()}`, {
         headers: getAuthHeaders(),
         cache: bypassCache ? 'no-store' : 'default'
-      }, 1, 4000);
+      }, 0, 2500);
 
       if (data && Array.isArray(data.news)) {
         publicListMemoryCache.set(cacheKey, data);
@@ -288,7 +288,8 @@ export const fetchNewsBySlug = async (slug, { bypassCache = false } = {}) => {
       const data = await requestWithRetry(
         `${API_URL}/news/article/${encodeURIComponent(slug)}`,
         { headers: getAuthHeaders() },
-        1
+        0,
+        2500
       );
 
       if (data && data.article) {

@@ -1,7 +1,7 @@
 {
   "name": "pro-fitness-glass",
   "private": true,
-  "version": "7.10.72",
+  "version": "7.10.73",
   "type": "module",
   "engines": {
     "node": ">=20.0.0",

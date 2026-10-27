@@ -31,6 +31,11 @@ import AndroidDownloadPrompt from './components/AndroidDownloadPrompt';
 import SEOHead from './components/SEOHead';
 import PermissionModal from './components/PermissionModal'; 
 import NotFoundPage from './pages/NotFoundPage';
+import NewsListPage from './pages/NewsListPage';
+import NewsDetailPage from './pages/NewsDetailPage';
+import OneRMCalculatorPage from './pages/OneRMCalculatorPage';
+import MacroCalculatorPage from './pages/MacroCalculatorPage';
+import PublicExercisesPage from './pages/PublicExercisesPage';
 
 export const lazyWithRetry = (componentImport, name = "chunk") =>
   lazy(async () => {
@@ -137,11 +142,11 @@ const VIEW_CHUNK_LOADERS = {
   socialLinks: () => import('./pages/SocialLinksScreen'),
   challenges: () => import('./pages/ChallengesScreen'),
   asesoria: () => import('./pages/AsesoriaScreen'),
-  noticias: () => import('./pages/NewsListPage'),
-  noticiaDetalle: () => import('./pages/NewsDetailPage'),
-  calculadora1rm: () => import('./pages/OneRMCalculatorPage'),
-  calculadoraMacros: () => import('./pages/MacroCalculatorPage'),
-  ejercicios: () => import('./pages/PublicExercisesPage'),
+  noticias: () => Promise.resolve({ default: NewsListPage }),
+  noticiaDetalle: () => Promise.resolve({ default: NewsDetailPage }),
+  calculadora1rm: () => Promise.resolve({ default: OneRMCalculatorPage }),
+  calculadoraMacros: () => Promise.resolve({ default: MacroCalculatorPage }),
+  ejercicios: () => Promise.resolve({ default: PublicExercisesPage }),
 };
 
 const preloadedViews = new Set();
@@ -223,11 +228,6 @@ const AppearanceScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.appearance, 'appearanc
 const SupportScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.support, 'support');
 const SocialLinksScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.socialLinks, 'socialLinks');
 const ChallengesScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.challenges, 'challenges');
-const NewsListPage = lazyWithRetry(VIEW_CHUNK_LOADERS.noticias, 'noticias');
-const NewsDetailPage = lazyWithRetry(VIEW_CHUNK_LOADERS.noticiaDetalle, 'noticiaDetalle');
-const OneRMCalculatorPage = lazyWithRetry(VIEW_CHUNK_LOADERS.calculadora1rm, 'calculadora1rm');
-const MacroCalculatorPage = lazyWithRetry(VIEW_CHUNK_LOADERS.calculadoraMacros, 'calculadoraMacros');
-const PublicExercisesPage = lazyWithRetry(VIEW_CHUNK_LOADERS.ejercicios, 'ejercicios');
 const AsesoriaScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.asesoria, 'asesoria');
 
 const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';

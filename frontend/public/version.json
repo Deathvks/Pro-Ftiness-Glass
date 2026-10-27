@@ -1,4 +1,4 @@
 {
-  "version": "7.10.72",
-  "releaseNotes": "Actualización v7.10.72: Optimización extrema de velocidad de carga: eliminación de recarga forzada destructiva tras welcome modal, precarga diferida en idle sin saturación de red, y persistencia local inmediata (0ms) en noticias y utilidades."
+  "version": "7.10.73",
+  "releaseNotes": "Actualización v7.10.73: Importación estática y carga instantánea (0ms) de Noticias y Calculadoras, eliminación de skeletons infinitos y sincronización suave del bundle en modal de bienvenida."
 }
