@@ -82,9 +82,12 @@ try {
       caches.delete('api-read-cache').catch(() => {});
     }
     try {
-      // Limpiar solo tokens temporales de reintento de chunks sin eliminar cachés de noticias ni datos útiles
+      // Limpiar solo tokens temporales de reintento de chunks y contadores de recarga sin eliminar cachés de noticias ni datos útiles
+      sessionStorage.removeItem('pfg_auto_reloaded_version');
+      sessionStorage.removeItem('pfg_last_safe_reload_time');
+      sessionStorage.removeItem('pfg_reload_count');
       Object.keys(sessionStorage).forEach((key) => {
-        if (key.startsWith('pfg_chunk_retry_') || key === 'pfg_reload_count') {
+        if (key.startsWith('pfg_chunk_retry_')) {
           sessionStorage.removeItem(key);
         }
       });

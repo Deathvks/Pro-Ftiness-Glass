@@ -18,17 +18,28 @@ const WelcomeModal = ({ onClose }) => {
   useModalLock();
 
   const userProfile = useAppStore((state) => state.userProfile);
+  const welcomeRemoteVersion = useAppStore((state) => state.welcomeRemoteVersion);
+  const welcomeRemoteData = useAppStore((state) => state.welcomeRemoteData);
 
   // Precarga suave y no intrusiva en segundo plano cuando el navegador esté en reposo
   // Al aceptar el modal se realiza una recarga completa y limpia, evitando colisiones de precarga en segundo plano
 
-  const appVersion = `v${APP_VERSION}`;
-  const majorVersion = APP_VERSION.split('.')[0];
+  const effectiveVersion = welcomeRemoteVersion || APP_VERSION;
+  const appVersion = `v${effectiveVersion}`;
+  const welcomeTitle = welcomeRemoteData?.welcome?.title || 'Noticias y Herramientas';
+  const welcomeSubtitle =
+    welcomeRemoteData?.welcome?.subtitle ||
+    'Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y velocidad instantánea en toda la app.';
+  const remoteFeatures = welcomeRemoteData?.welcome?.features;
+
   const handleGetStarted = () => {
     try {
-      localStorage.setItem('lastSeenVersion', APP_VERSION);
+      localStorage.setItem('lastSeenVersion', effectiveVersion);
+      localStorage.setItem('pfg_app_version', effectiveVersion);
+      localStorage.setItem('pfg_cache_version', effectiveVersion);
       localStorage.removeItem('pfg_crash_loop_count');
       localStorage.removeItem('pfg_auto_reloaded_version');
+      sessionStorage.removeItem('pfg_auto_reloaded_version');
       sessionStorage.removeItem('pfg_last_safe_reload_time');
       sessionStorage.removeItem('pfg_reload_count');
       Object.keys(sessionStorage).forEach((key) => {
@@ -40,10 +51,17 @@ const WelcomeModal = ({ onClose }) => {
       console.warn('[WelcomeModal] Error guardando estado de versión:', e);
     }
 
+    if (typeof window !== 'undefined' && 'caches' in window) {
+      caches.delete('api-read-cache').catch(() => {});
+    }
+
     if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistration().then((reg) => {
-        if (reg?.waiting) {
-          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        if (reg) {
+          reg.update().catch(() => {});
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
         }
       }).catch(() => {});
     }
@@ -317,7 +335,7 @@ const WelcomeModal = ({ onClose }) => {
                       padding: '2px 6px', borderRadius: '6px',
                       letterSpacing: '0.05em',
                       lineHeight: 1
-                    }}>v{APP_VERSION}</span>
+                    }}>v{effectiveVersion}</span>
                 </div>
 
                 {/* Badge */}
@@ -331,7 +349,7 @@ const WelcomeModal = ({ onClose }) => {
                     borderRadius: '99px',
                     boxShadow: '0 4px 16px -2px color-mix(in srgb, var(--color-accent) 60%, transparent)',
                     whiteSpace: 'nowrap'
-                  }}>NOVEDADES V{APP_VERSION}</div>
+                  }}>NOVEDADES V{effectiveVersion}</div>
               </div>
 
               {/* Title */}
@@ -341,7 +359,7 @@ const WelcomeModal = ({ onClose }) => {
                   letterSpacing: '-0.5px',
                   lineHeight: 1.15
                 }}>
-                Noticias y Herramientas
+                {welcomeTitle}
               </h1>
 
               <p style={{
@@ -352,7 +370,7 @@ const WelcomeModal = ({ onClose }) => {
                   maxWidth: '320px',
                   marginInline: 'auto'
                 }}>
-                Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y velocidad instantánea en toda la app.
+                {welcomeSubtitle}
               </p>
             </div>
 
@@ -386,9 +404,9 @@ const WelcomeModal = ({ onClose }) => {
                   <Newspaper size={18} style={{ color: '#a855f7' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>Portal de Noticias y Ciencia Fitness</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[0]?.title || 'Portal de Noticias y Ciencia Fitness'}</p>
                   <p style={{ fontSize: '13px', color: 'rgba(203,213,225,0.9)', margin: 0, lineHeight: 1.55 }}>
-                    Descubre artículos actualizados sobre hipertrofia, nutrición, suplementación y salud con modo de lectura adaptable y artículos recomendados.
+                    {remoteFeatures?.[0]?.description || 'Descubre artículos actualizados sobre hipertrofia, nutrición, suplementación y salud con modo de lectura adaptable y artículos recomendados.'}
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#a855f7' }}>01</span>
@@ -401,9 +419,9 @@ const WelcomeModal = ({ onClose }) => {
                   <Calculator size={18} style={{ color: '#3b82f6' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>Calculadoras 1RM, Macros y Ejercicios</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[1]?.title || 'Calculadoras 1RM, Macros y Ejercicios'}</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Calcula tu fuerza máxima (1RM), tus calorías y macronutrientes ideales, y explora la enciclopedia completa de ejercicios con vídeo y técnica.
+                    {remoteFeatures?.[1]?.description || 'Calcula tu fuerza máxima (1RM), tus calorías y macronutrientes ideales, y explora la enciclopedia completa de ejercicios con vídeo y técnica.'}
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#3b82f6' }}>02</span>
@@ -416,9 +434,9 @@ const WelcomeModal = ({ onClose }) => {
                   <Dumbbell size={18} style={{ color: '#f97316' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f97316', margin: '0 0 4px', textTransform: 'uppercase' }}>Asesorías y Progreso en Dashboard</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f97316', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[2]?.title || 'Asesorías y Progreso en Dashboard'}</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Recibe pautas de entrenamiento y dieta de tu entrenador en el inicio, controla tus series semanales por músculo y chatea en tiempo real.
+                    {remoteFeatures?.[2]?.description || 'Recibe pautas de entrenamiento y dieta de tu entrenador en el inicio, controla tus series semanales por músculo y chatea en tiempo real.'}
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#f97316' }}>03</span>
@@ -431,9 +449,9 @@ const WelcomeModal = ({ onClose }) => {
                   <Zap size={18} style={{ color: '#10b981' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#10b981', margin: '0 0 4px', textTransform: 'uppercase' }}>Apertura Instantánea (0ms)</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#10b981', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[3]?.title || 'Apertura Instantánea (0ms)'}</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Noticias, calculadoras, sistema de créditos IA y vistas principales ahora se abren al instante sin tiempos de espera en web y móvil.
+                    {remoteFeatures?.[3]?.description || 'Noticias, calculadoras, sistema de créditos IA y vistas principales ahora se abren al instante sin tiempos de espera en web y móvil.'}
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#10b981' }}>04</span>

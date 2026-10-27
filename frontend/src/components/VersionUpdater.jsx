@@ -20,6 +20,7 @@ const isNewerVersion = (current, remote) => {
 
 const SWUpdaterCore = ({ initialChunkError }) => {
   const [isChunkError, setIsChunkError] = useState(initialChunkError);
+  const showWelcomeModal = useAppStore((state) => state.showWelcomeModal);
   const swRegRef = useRef(null);
   const isCheckingRef = useRef(false);
   const lastCheckTimeRef = useRef(0);
@@ -27,10 +28,17 @@ const SWUpdaterCore = ({ initialChunkError }) => {
 
   const triggerSafeReload = useCallback((targetVersion) => {
     if (isReloadingRef.current) return true;
-    const { activeWorkout, workoutStartTime } = useAppStore.getState();
-    // Si el usuario está en mitad de un entrenamiento activo, no recargamos de golpe sin avisar
-    if (activeWorkout && workoutStartTime) {
+    const { activeWorkout, workoutStartTime, showWelcomeModal: isWelcomeOpen } = useAppStore.getState();
+    // Si el usuario está en mitad de un entrenamiento activo o viendo el WelcomeModal, no recargamos de golpe
+    if ((activeWorkout && workoutStartTime) || isWelcomeOpen) {
       return false;
+    }
+
+    if (targetVersion) {
+      const lastReloaded = sessionStorage.getItem('pfg_auto_reloaded_version');
+      if (lastReloaded === targetVersion) {
+        return false;
+      }
     }
 
     const now = Date.now();
@@ -53,14 +61,9 @@ const SWUpdaterCore = ({ initialChunkError }) => {
     sessionStorage.setItem('pfg_reload_count', String(reloadCount + 1));
 
     if (targetVersion) {
-      const lastReloaded = sessionStorage.getItem('pfg_auto_reloaded_version');
-      if (lastReloaded === targetVersion) {
-        // Ya se intentó auto-recargar para esta versión pero la caché sigue en la versión anterior.
-        // Devolvemos false para mostrar el modal de actualización en lugar de quedar en bucle silencioso.
-        return false;
-      }
       sessionStorage.setItem('pfg_auto_reloaded_version', targetVersion);
     }
+
     isReloadingRef.current = true;
     window.location.reload();
     return true;
@@ -84,60 +87,64 @@ const SWUpdaterCore = ({ initialChunkError }) => {
 
   const checkForUpdates = useCallback(async (force = false) => {
     const now = Date.now();
-    if (!force && now - lastCheckTimeRef.current < 15000) return;
+    if (!force && now - lastCheckTimeRef.current < 5000) return;
     if (isCheckingRef.current || isReloadingRef.current) return;
 
     lastCheckTimeRef.current = now;
     isCheckingRef.current = true;
 
     try {
-      // 1. Pedir al Service Worker que compruebe si hay un nuevo sw.js
-      let reg = swRegRef.current;
-      if (!reg && 'serviceWorker' in navigator) {
-        reg = await navigator.serviceWorker.getRegistration();
-        if (reg) swRegRef.current = reg;
-      }
-      if (reg) {
-        await reg.update().catch(() => {});
-        if (reg.waiting) {
-          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-        }
+      // 1. Iniciar comprobación del Service Worker en paralelo (SIN bloquear la lectura de /version.json)
+      if ('serviceWorker' in navigator) {
+        Promise.resolve(swRegRef.current || navigator.serviceWorker.getRegistration())
+          .then((reg) => {
+            if (!reg) return;
+            swRegRef.current = reg;
+            return reg.update().then(() => {
+              if (reg.waiting) {
+                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          })
+          .catch(() => {});
       }
 
-      // 2. Comprobar /version.json contra APP_VERSION en memoria
+      // 2. Comprobar /version.json contra APP_VERSION y lastSeenVersion de inmediato
       const res = await fetch(`/version.json?t=${now}`, {
         cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' }
       });
       if (!res.ok) return;
 
       const data = await res.json();
       const remoteVersion = data?.version;
+      if (!remoteVersion) return;
 
-      if (remoteVersion && isNewerVersion(APP_VERSION, remoteVersion)) {
-        if (reg) {
-          await reg.update().catch(() => {});
-          const pendingWorker = reg.installing || reg.waiting;
+      const lastSeenVersion = localStorage.getItem('lastSeenVersion');
+      const hasNewerThanMemory = isNewerVersion(APP_VERSION, remoteVersion);
+      const hasNewerThanSeen = lastSeenVersion ? isNewerVersion(lastSeenVersion, remoteVersion) : false;
 
-          if (pendingWorker) {
-            if (reg.waiting) {
-              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-            }
-            pendingWorker.addEventListener('statechange', () => {
-              if (pendingWorker.state === 'activated') {
-                if (!triggerSafeReload(remoteVersion)) {
-                  setNeedRefresh(true);
-                }
-              }
-            });
-            return;
+      if (hasNewerThanMemory || hasNewerThanSeen) {
+        const storeState = useAppStore.getState();
+        const isAuthenticatedUser = Boolean(storeState.isAuthenticated && storeState.userProfile);
+
+        // Si el usuario está dentro de la app y aún no ha visto el WelcomeModal de esta versión:
+        // mostramos directamente el WelcomeModal en caliente SIN recargar antes.
+        // Al pulsar "DESCUBRIR NOVEDADES", el propio WelcomeModal recarga la página limpia.
+        if (isAuthenticatedUser && lastSeenVersion !== remoteVersion) {
+          if (typeof storeState.triggerRemoteWelcomeModal === 'function') {
+            storeState.triggerRemoteWelcomeModal(remoteVersion, data);
+          } else {
+            useAppStore.setState({ showWelcomeModal: true });
           }
+          return;
         }
 
-        // Si el nuevo SW ya estaba activado (por ej. se activó antes de montar React)
-        // o si no hay SW pendiente, recargamos directamente para aplicar la nueva versión
-        if (!triggerSafeReload(remoteVersion)) {
-          setNeedRefresh(true);
+        // Si no está autenticado (ej. Landing / Login) o ya aceptó el modal pero sigue en bundle antiguo:
+        if (hasNewerThanMemory) {
+          if (!triggerSafeReload(remoteVersion)) {
+            setNeedRefresh(true);
+          }
         }
       }
     } catch {
@@ -148,14 +155,10 @@ const SWUpdaterCore = ({ initialChunkError }) => {
   }, [setNeedRefresh, triggerSafeReload]);
 
   useEffect(() => {
-    // Escuchar cambio de controlador del Service Worker para recargar al instante
-    let refreshing = false;
+    // Al cambiar el controlador del Service Worker, comprobar /version.json para mostrar el WelcomeModal en caliente
     const handleControllerChange = () => {
-      if (refreshing || isReloadingRef.current) return;
-      refreshing = true;
-      if (!triggerSafeReload('controller_change')) {
-        setNeedRefresh(true);
-      }
+      if (isReloadingRef.current) return;
+      checkForUpdates(true);
     };
 
     if ('serviceWorker' in navigator) {
@@ -165,28 +168,31 @@ const SWUpdaterCore = ({ initialChunkError }) => {
     // Comprobar al iniciar
     checkForUpdates(true);
 
-    // Comprobar al volver a la app (salir y entrar en PWA / cambiar de pestaña)
+    // Comprobar al volver a la app (salir y entrar en PWA / cambiar de pestaña / recuperar red)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         checkForUpdates(true);
       }
     };
-    const handleFocus = () => checkForUpdates(false);
+    const handleFocus = () => checkForUpdates(true);
     const handlePageShow = () => checkForUpdates(true);
-    // Comprobar de forma ligera al moverse por la app (throttled a 15s)
+    const handleOnline = () => checkForUpdates(true);
+    // Comprobar de forma ligera al moverse por la app (throttled a 5s)
     const handleUserNavigation = () => checkForUpdates(false);
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
     window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('online', handleOnline);
     window.addEventListener('popstate', handleUserNavigation);
     window.addEventListener('click', handleUserNavigation, { passive: true });
 
+    // Polling ligero cada 10s mientras la pestaña está visible para detectar nuevas versiones sin recargar
     const intervalId = setInterval(() => {
       if (document.visibilityState === 'visible') {
         checkForUpdates(true);
       }
-    }, 2 * 60 * 1000);
+    }, 10 * 1000);
 
     const handleError = (error) => {
       const msg = error?.message || '';
@@ -218,6 +224,7 @@ const SWUpdaterCore = ({ initialChunkError }) => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('online', handleOnline);
       window.removeEventListener('popstate', handleUserNavigation);
       window.removeEventListener('click', handleUserNavigation);
       clearInterval(intervalId);
@@ -226,7 +233,7 @@ const SWUpdaterCore = ({ initialChunkError }) => {
     };
   }, [checkForUpdates, setNeedRefresh, triggerSafeReload]);
 
-  if (!needRefresh && !isChunkError) return null;
+  if ((showWelcomeModal && !isChunkError) || (!needRefresh && !isChunkError)) return null;
 
   const handleUpdate = async () => {
     try {
@@ -301,7 +308,7 @@ const VersionUpdater = () => {
   useEffect(() => {
     let timerId;
     const enableSW = () => {
-      timerId = setTimeout(() => setSwReady(true), 1200);
+      timerId = setTimeout(() => setSwReady(true), 250);
     };
 
     if (document.readyState === 'complete') {

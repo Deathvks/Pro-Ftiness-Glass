@@ -40,6 +40,8 @@ export const createAuthSlice = (set, get) => {
     userProfile: cachedProfile,
     isLoading: !cachedProfile,
     showWelcomeModal: false,
+    welcomeRemoteVersion: null,
+    welcomeRemoteData: null,
     show2FAPromo: false,
     tourActive: false,
     sessionExpired: false, // <-- NUEVO: Estado para el modal instantáneo de caducidad
@@ -353,16 +355,42 @@ export const createAuthSlice = (set, get) => {
         if (lastSeenVersion !== APP_VERSION) {
             localStorage.removeItem('pfg_crash_loop_count');
             localStorage.removeItem('pfg_auto_reloaded_version');
+            try {
+                sessionStorage.removeItem('pfg_auto_reloaded_version');
+                sessionStorage.removeItem('pfg_last_safe_reload_time');
+                sessionStorage.removeItem('pfg_reload_count');
+            } catch {}
             localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
             set({ showWelcomeModal: true });
         }
     },
 
+    // Dispara el modal de bienvenida en caliente cuando /version.json detecta nueva versión sin recargar la página
+    triggerRemoteWelcomeModal: (remoteVersion, remoteData = null) => {
+        const targetVersion = remoteVersion || APP_VERSION;
+        const lastSeenVersion = localStorage.getItem('lastSeenVersion');
+        if (lastSeenVersion !== targetVersion) {
+            localStorage.removeItem('pfg_crash_loop_count');
+            localStorage.removeItem('pfg_auto_reloaded_version');
+            try {
+                sessionStorage.removeItem('pfg_auto_reloaded_version');
+                sessionStorage.removeItem('pfg_last_safe_reload_time');
+                sessionStorage.removeItem('pfg_reload_count');
+            } catch {}
+            set({
+                showWelcomeModal: true,
+                welcomeRemoteVersion: targetVersion,
+                welcomeRemoteData: remoteData || null,
+            });
+        }
+    },
+
     // Cierra el modal de bienvenida
     closeWelcomeModal: () => {
-        localStorage.setItem('lastSeenVersion', APP_VERSION);
-        localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
-        set({ showWelcomeModal: false });
+        const effectiveVersion = get().welcomeRemoteVersion || APP_VERSION;
+        localStorage.setItem('lastSeenVersion', effectiveVersion);
+        localStorage.setItem(CACHE_VERSION_KEY, effectiveVersion);
+        set({ showWelcomeModal: false, welcomeRemoteVersion: null, welcomeRemoteData: null });
     },
 
     setShow2FAPromo: (val) => set({ show2FAPromo: val }),

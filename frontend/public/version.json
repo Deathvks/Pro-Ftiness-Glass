@@ -1,4 +1,26 @@
 {
-  "version": "7.11.0",
-  "releaseNotes": "Actualización v7.11.0: Nuevo Portal de Noticias y Ciencia Fitness, Calculadoras de 1RM y Macros, Enciclopedia de Ejercicios, Asesorías de Entrenador y apertura instantánea a 0ms."
+  "version": "7.11.1",
+  "releaseNotes": "Actualización v7.11.1: Nuevo Portal de Noticias y Ciencia Fitness, Calculadoras de 1RM y Macros, Enciclopedia de Ejercicios, Asesorías de Entrenador y detección de actualizaciones en tiempo real.",
+  "welcome": {
+    "title": "Noticias y Herramientas",
+    "subtitle": "Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y velocidad instantánea en toda la app.",
+    "features": [
+      {
+        "title": "Portal de Noticias y Ciencia Fitness",
+        "description": "Descubre artículos actualizados sobre hipertrofia, nutrición, suplementación y salud con modo de lectura adaptable y artículos recomendados."
+      },
+      {
+        "title": "Calculadoras 1RM, Macros y Ejercicios",
+        "description": "Calcula tu fuerza máxima (1RM), tus calorías y macronutrientes ideales, y explora la enciclopedia completa de ejercicios con vídeo y técnica."
+      },
+      {
+        "title": "Asesorías y Progreso en Dashboard",
+        "description": "Recibe pautas de entrenamiento y dieta de tu entrenador en el inicio, controla tus series semanales por músculo y chatea en tiempo real."
+      },
+      {
+        "title": "Apertura Instantánea (0ms)",
+        "description": "Noticias, calculadoras, sistema de créditos IA y vistas principales ahora se abren al instante sin tiempos de espera en web y móvil."
+      }
+    ]
+  }
 }
