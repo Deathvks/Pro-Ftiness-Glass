@@ -23,12 +23,7 @@ const WelcomeModal = ({ onClose }) => {
 
   const appVersion = `v${APP_VERSION}`;
   const majorVersion = APP_VERSION.split('.')[0];
-  const [isUpdating, setIsUpdating] = React.useState(false);
-
   const handleGetStarted = () => {
-    if (isUpdating) return;
-    setIsUpdating(true);
-
     try {
       localStorage.setItem('lastSeenVersion', APP_VERSION);
       localStorage.removeItem('pfg_crash_loop_count');
@@ -47,20 +42,10 @@ const WelcomeModal = ({ onClose }) => {
       }).catch(() => {});
     }
 
-    const { activeWorkout, workoutStartTime } = useAppStore.getState();
-    if (activeWorkout && workoutStartTime) {
-      if (onClose) onClose();
-      return;
-    }
-
+    // Cierre limpio y fluido sin recarga destructiva para conservar módulos y estado en RAM
     if (onClose) {
       onClose();
     }
-
-    // Recarga limpia de la web tras aceptar el welcome para cargar al 100% todos los nuevos bundles
-    setTimeout(() => {
-      window.location.reload();
-    }, 120);
   };
 
   return (
@@ -445,11 +430,9 @@ const WelcomeModal = ({ onClose }) => {
 
             {/*  Footer  */}
             <div className="wm-btn-in">
-              <button className="wm-btn" onClick={handleGetStarted} disabled={isUpdating}>
-                <span style={{ position: 'relative', zIndex: 1 }}>
-                  {isUpdating ? 'APLICANDO ACTUALIZACIÓN...' : 'DESCUBRIR NOVEDADES'}
-                </span>
-                <ChevronRight size={18} strokeWidth={2.5} style={{ position: 'relative', zIndex: 1 }} className={isUpdating ? 'animate-spin' : ''} />
+              <button className="wm-btn" onClick={handleGetStarted}>
+                <span style={{ position: 'relative', zIndex: 1 }}>DESCUBRIR NOVEDADES</span>
+                <ChevronRight size={18} strokeWidth={2.5} style={{ position: 'relative', zIndex: 1 }} />
               </button>
 
               <p style={{

@@ -1,4 +1,4 @@
 {
-  "version": "7.10.71",
-  "releaseNotes": "Actualización v7.10.71: Restauración del estilo original de previsualización en biblioteca de ejercicios: formato completo (cover), sin bandas vacías, con bordes redondeados y reproducción GIF fluida."
+  "version": "7.10.72",
+  "releaseNotes": "Actualización v7.10.72: Optimización extrema de velocidad de carga: eliminación de recarga forzada destructiva tras welcome modal, precarga diferida en idle sin saturación de red, y persistencia local inmediata (0ms) en noticias y utilidades."
 }

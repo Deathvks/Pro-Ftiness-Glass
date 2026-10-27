@@ -57,7 +57,12 @@ try {
       caches.delete('api-read-cache').catch(() => {});
     }
     try {
-      sessionStorage.clear();
+      // Limpiar solo tokens temporales de reintento de chunks sin eliminar cachés de noticias ni datos útiles
+      Object.keys(sessionStorage).forEach((key) => {
+        if (key.startsWith('pfg_chunk_retry_') || key === 'pfg_reload_count') {
+          sessionStorage.removeItem(key);
+        }
+      });
     } catch {}
 
     // Desregistrar SW huérfanos solo en Android nativo (Capacitor)

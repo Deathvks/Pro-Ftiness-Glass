@@ -154,9 +154,8 @@ export const preloadViewChunk = (viewId) => {
       preloadedViews.delete(viewId);
     });
     if (viewId === 'noticias') {
-      import('./services/newsService').then((ns) => {
-        ns.fetchPublicNews({ page: 1, limit: 6 }).catch(() => {});
-      }).catch(() => {});
+      // Importar el servicio silenciosamente sin disparar peticiones de red prematuras
+      import('./services/newsService').catch(() => {});
     }
   }
 };
@@ -544,35 +543,59 @@ export default function App() {
   const fullPageTitle = `${currentTitle} - Pro Fitness Glass`;
   const workoutTimer = view === 'workout' ? timer : 0;
 
-  // Precargar de forma agresiva y persistente las páginas públicas (calculadoras, ejercicios, noticias) y vistas principales
+  // Precarga suave, inteligente y diferida en segundo plano:
+  // Se ejecuta únicamente cuando el navegador y la red están en reposo (idle)
+  // para NO competir con la carga del perfil, datos del usuario ni saturar conexiones.
   useEffect(() => {
-    const publicSeoViews = ['calculadora1rm', 'calculadoraMacros', 'ejercicios', 'noticias', 'noticiaDetalle', 'landingPage'];
-    publicSeoViews.forEach((v, idx) => {
-      setTimeout(() => {
-        preloadViewChunk(v);
-      }, 60 + idx * 50);
-    });
+    if (typeof window === 'undefined') return;
 
-    if (!isAuthenticated) return;
+    let isCancelled = false;
+    const runDeferredPreload = () => {
+      if (isCancelled) return;
+      if (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData) return;
 
-    // Asegurar que la vista activa empiece de inmediato
-    preloadViewChunk(view);
+      const idleViews = [
+        'dashboard',
+        'routines',
+        'nutrition',
+        'social',
+        'hub',
+        'noticias',
+        'ejercicios',
+        'calculadora1rm',
+        'calculadoraMacros',
+        'workout',
+        'progress',
+        'profile',
+        'settings'
+      ];
 
-    // Precargar inmediatamente las otras 4 vistas primarias (no cancelable al cambiar de vista)
-    const primaryNavViews = ['dashboard', 'routines', 'nutrition', 'social', 'hub'];
-    primaryNavViews.forEach((v, idx) => {
-      setTimeout(() => {
-        preloadViewChunk(v);
-      }, 30 + idx * 40);
-    });
+      idleViews.forEach((v, idx) => {
+        setTimeout(() => {
+          if (isCancelled) return;
+          if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(() => preloadViewChunk(v), { timeout: 3000 });
+          } else {
+            preloadViewChunk(v);
+          }
+        }, 1800 + idx * 300);
+      });
+    };
 
-    // Precargar vistas secundarias escalonadas
-    const secondaryNavViews = ['noticias', 'calculadora1rm', 'calculadoraMacros', 'ejercicios', 'workout', 'progress', 'profile', 'settings', 'notifications', 'challenges', 'appearance'];
-    secondaryNavViews.forEach((v, idx) => {
-      setTimeout(() => {
-        preloadViewChunk(v);
-      }, 400 + idx * 70);
-    });
+    let idleId = null;
+    let timerId = null;
+
+    if ('requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(runDeferredPreload, { timeout: 3000 });
+    } else {
+      timerId = setTimeout(runDeferredPreload, 2000);
+    }
+
+    return () => {
+      isCancelled = true;
+      if (idleId && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleId);
+      if (timerId) clearTimeout(timerId);
+    };
   }, [isAuthenticated]);
 
   useEffect(() => {

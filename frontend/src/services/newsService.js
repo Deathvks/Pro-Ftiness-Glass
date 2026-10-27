@@ -5,6 +5,7 @@ import cachedNewsList from '../data/cachedNews.json';
 // Caché en memoria para transiciones instantáneas a 0ms
 const articleMemoryCache = new Map();
 const inflightPromises = new Map();
+const inflightListPromises = new Map();
 
 /**
  * Obtiene síncronamente (0ms) datos cacheados de un artículo
@@ -72,7 +73,7 @@ const getAuthHeaders = () => {
 /**
  * Petición HTTP resiliente con reintento automático y traducción humana de errores de red
  */
-const requestWithRetry = async (url, options = {}, retries = 1, timeoutMs = 8000) => {
+const requestWithRetry = async (url, options = {}, retries = 1, timeoutMs = 4000) => {
   let attempts = 0;
   while (attempts <= retries) {
     const controller = new AbortController();
@@ -190,39 +191,61 @@ export const getCachedPublicNews = ({ page = 1, limit = 6, category = '', search
 
 export const fetchPublicNews = async ({ page = 1, limit = 6, category = '', search = '', bypassCache = false } = {}) => {
   const cacheKey = `${page}_${limit}_${category || 'all'}_${search || 'all'}`;
-  const params = new URLSearchParams();
-  if (page) params.append('page', page);
-  if (limit) params.append('limit', limit);
-  if (category && category !== 'Todas') params.append('category', category);
-  if (search) params.append('search', search);
-  if (bypassCache) params.append('_t', Date.now());
 
-  const data = await requestWithRetry(`${API_URL}/news?${params.toString()}`, {
-    headers: getAuthHeaders(),
-    cache: bypassCache ? 'no-store' : 'default'
-  }, 1);
-
-  if (data && Array.isArray(data.news)) {
-    publicListMemoryCache.set(cacheKey, data);
-    try {
-      sessionStorage.setItem(`pfg_news_list_${cacheKey}`, JSON.stringify(data));
-    } catch {}
-
-    // Registrar art�culos en articleMemoryCache como parciales para apertura instant�nea al pulsar
-    data.news.forEach((art) => {
-      if (art && art.slug && !articleMemoryCache.has(art.slug)) {
-        articleMemoryCache.set(art.slug, {
-          article: art,
-          relatedNews: [],
-          nextArticle: null,
-          prevArticle: null,
-          isPartial: true
-        });
-      }
-    });
+  if (!bypassCache && inflightListPromises.has(cacheKey)) {
+    return inflightListPromises.get(cacheKey);
   }
 
-  return data;
+  const promise = (async () => {
+    try {
+      const params = new URLSearchParams();
+      if (page) params.append('page', page);
+      if (limit) params.append('limit', limit);
+      if (category && category !== 'Todas') params.append('category', category);
+      if (search) params.append('search', search);
+      if (bypassCache) params.append('_t', Date.now());
+
+      const data = await requestWithRetry(`${API_URL}/news?${params.toString()}`, {
+        headers: getAuthHeaders(),
+        cache: bypassCache ? 'no-store' : 'default'
+      }, 1, 4000);
+
+      if (data && Array.isArray(data.news)) {
+        publicListMemoryCache.set(cacheKey, data);
+        try {
+          localStorage.setItem(`pfg_news_list_${cacheKey}`, JSON.stringify(data));
+          sessionStorage.setItem(`pfg_news_list_${cacheKey}`, JSON.stringify(data));
+        } catch {}
+
+        // Registrar artículos en articleMemoryCache como parciales para apertura instantánea al pulsar
+        data.news.forEach((art) => {
+          if (art && art.slug && !articleMemoryCache.has(art.slug)) {
+            articleMemoryCache.set(art.slug, {
+              article: art,
+              relatedNews: [],
+              nextArticle: null,
+              prevArticle: null,
+              isPartial: true
+            });
+          }
+        });
+      }
+
+      return data;
+    } catch (err) {
+      // Fallback transparente a datos cacheados o bundle local para evitar pantallas en blanco o bloqueos
+      const fallback = getCachedPublicNews({ page, limit, category, search });
+      if (fallback) {
+        return fallback;
+      }
+      throw err;
+    } finally {
+      inflightListPromises.delete(cacheKey);
+    }
+  })();
+
+  inflightListPromises.set(cacheKey, promise);
+  return promise;
 };
 
 /**

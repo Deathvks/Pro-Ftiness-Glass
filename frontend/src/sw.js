@@ -189,22 +189,22 @@ registerRoute(
     if (request.method !== 'GET') return false;
     if (!url.pathname.startsWith('/api/')) return false;
     if (
-      url.pathname.startsWith('/api/auth/') ||
-      url.pathname.startsWith('/api/users/') ||
-      url.pathname.startsWith('/api/admin/') ||
-      url.pathname.startsWith('/api/chat/') ||
-      url.pathname.startsWith('/api/trainer/') ||
-      url.pathname.startsWith('/api/notifications/') ||
-      url.pathname.startsWith('/api/reports/') ||
-      url.pathname.startsWith('/api/ratings/') ||
-      url.pathname.startsWith('/api/sessions/') ||
-      url.pathname.startsWith('/api/stories/') ||
-      url.pathname.startsWith('/api/ai/') ||
-      url.pathname.startsWith('/api/2fa/') ||
-      url.pathname.startsWith('/api/exercise-list/') ||
-      url.pathname.startsWith('/api/exercises/') ||
-      url.pathname.startsWith('/api/news/') ||
-      url.pathname.startsWith('/api/system-settings/')
+      url.pathname.startsWith('/api/auth') ||
+      url.pathname.startsWith('/api/users') ||
+      url.pathname.startsWith('/api/admin') ||
+      url.pathname.startsWith('/api/chat') ||
+      url.pathname.startsWith('/api/trainer') ||
+      url.pathname.startsWith('/api/notifications') ||
+      url.pathname.startsWith('/api/reports') ||
+      url.pathname.startsWith('/api/ratings') ||
+      url.pathname.startsWith('/api/sessions') ||
+      url.pathname.startsWith('/api/stories') ||
+      url.pathname.startsWith('/api/ai') ||
+      url.pathname.startsWith('/api/2fa') ||
+      url.pathname.startsWith('/api/exercise-list') ||
+      url.pathname.startsWith('/api/exercises') ||
+      url.pathname.startsWith('/api/news') ||
+      url.pathname.startsWith('/api/system-settings')
     ) {
       return false;
     }
@@ -218,7 +218,7 @@ registerRoute(
         maxAgeSeconds: 24 * 60 * 60, // 24 horas
       }),
     ],
-    networkTimeoutSeconds: 15, // Aumentado de 5s a 15s para no abortar peticiones legítimas en conexiones lentas
+    networkTimeoutSeconds: 3, // Reducido a 3s para nunca congelar ni retrasar la navegación
   })
 );
 
