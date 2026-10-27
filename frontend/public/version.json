@@ -1,4 +1,4 @@
 {
-  "version": "7.10.67",
-  "releaseNotes": "Actualización v7.10.67: Recarga limpia y síncrona al aceptar el modal de bienvenida (WelcomeModal) para activar el nuevo Service Worker y cargar todos los nuevos bundles al 100% de velocidad sin bloqueos ni retrasos."
+  "version": "7.10.68",
+  "releaseNotes": "Actualización v7.10.68: Separación física inferior garantizada mediante bloque espaciador de 180px en la enciclopedia de ejercicios y calculadoras públicas para evitar cualquier solapamiento o corte con el margen inferior de la pantalla en móviles."
 }

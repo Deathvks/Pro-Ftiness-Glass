@@ -647,6 +647,15 @@ export default function PublicExercisesPage({ onBack }) {
             </button>
           </div>
         </div>
+        {/* Espaciador inferior generoso: garantiza separación real del fin de la pantalla y barras de navegación en móviles */}
+        <div
+          className="w-full shrink-0 select-none pointer-events-none"
+          style={{
+            height: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 24px)) + 10rem)',
+            minHeight: '180px'
+          }}
+          aria-hidden="true"
+        />
       </main>
     </div>
   );
