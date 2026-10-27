@@ -1,6 +1,5 @@
 /* frontend/vite.config.js */
 import { defineConfig } from 'vite';
-import path from 'path';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -31,11 +30,20 @@ export default defineConfig({
     }
   },
   resolve: {
-    dedupe: ['react', 'react-dom'],
-    alias: {
-      react: path.resolve(__dirname, './node_modules/react'),
-      'react-dom': path.resolve(__dirname, './node_modules/react-dom')
-    }
+    dedupe: ['react', 'react-dom']
+  },
+  optimizeDeps: {
+    entries: [
+      'index.html',
+      'src/**/*.{js,jsx}'
+    ],
+    include: [
+      'react',
+      'react-dom',
+      'react-dom/client',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime'
+    ]
   },
   plugins: [
     react(),
@@ -61,8 +69,8 @@ export default defineConfig({
       webp: { quality: 75, lossless: false },
     }),
     VitePWA({
-      registerType: 'autoUpdate', // <-- CAMBIO AQUI: Actualización automática
-      includeAssets: ['favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png', 'apple-touch-icon.png', 'logo.webp', 'icons/icon-96.png', 'icons/icon-192.png'],
+      registerType: 'autoUpdate',
+      includeManifestIcons: false,
       manifest: {
         name: 'Pro Fitness Glass',
         short_name: 'Pro Fitness Glass',

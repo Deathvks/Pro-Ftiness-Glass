@@ -90,7 +90,11 @@ registerRoute(
 );
 
 cleanupOutdatedCaches();
-precacheAndRoute(self.__WB_MANIFEST || []);
+const rawManifest = self.__WB_MANIFEST || [];
+const deduplicatedManifest = Array.from(
+  new Map(rawManifest.filter((e) => e && e.url).map((e) => [e.url, e])).values()
+);
+precacheAndRoute(deduplicatedManifest);
 
 // --- 3. ESTRATEGIAS DE CACHÉ (RUNTIME) ---
 

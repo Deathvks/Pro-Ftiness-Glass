@@ -1,4 +1,4 @@
 {
-  "version": "7.10.73",
-  "releaseNotes": "Actualización v7.10.73: Importación estática y carga instantánea (0ms) de Noticias y Calculadoras, eliminación de skeletons infinitos y sincronización suave del bundle en modal de bienvenida."
+  "version": "7.10.74",
+  "releaseNotes": "Actualización v7.10.74: Corrección definitiva de conflicto de entradas duplicadas en Service Worker (Workbox precache), desduplicación estricta de React 19.2.3 y carga instantánea."
 }
