@@ -36,30 +36,44 @@ import NewsDetailPage from './pages/NewsDetailPage';
 import OneRMCalculatorPage from './pages/OneRMCalculatorPage';
 import MacroCalculatorPage from './pages/MacroCalculatorPage';
 import PublicExercisesPage from './pages/PublicExercisesPage';
+import { reloadAppWithoutStaleCache } from './utils/appRecovery';
 
 export const lazyWithRetry = (componentImport, name = "chunk") =>
   lazy(async () => {
-    const retryKey = "pfg_chunk_retry_" + name;
-    const hasRetried = sessionStorage.getItem(retryKey);
+    const loadWithTimeout = () => {
+      let timeoutId;
+      const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          const error = new Error(`La carga del apartado ${name} superó el tiempo límite.`);
+          error.name = 'ChunkLoadError';
+          reject(error);
+        }, 20000);
+      });
+
+      return Promise.race([Promise.resolve().then(componentImport), timeout]).finally(() => clearTimeout(timeoutId));
+    };
 
     try {
-      // 1. Intento primario directo sin abortar descargas en curso
-      const component = await componentImport();
-      sessionStorage.removeItem(retryKey);
+      const component = await loadWithTimeout();
       return component;
     } catch (firstError) {
       console.warn(`[lazyWithRetry] Primer intento falló para "${name}", reintentando...`, firstError);
 
-      // 2. Reintento inmediato en memoria (evita recargas innecesarias ante cortes transitorios)
+      // Una importación pendiente no puede cancelarse ni repetirse de forma fiable.
+      // Rechazarla permite salir del Suspense y mostrar las opciones de recuperación.
+      if (firstError?.name === 'ChunkLoadError') {
+        throw firstError;
+      }
+
       try {
         await new Promise(r => setTimeout(r, 300));
-        const component = await componentImport();
-        sessionStorage.removeItem(retryKey);
+        const component = await loadWithTimeout();
         return component;
       } catch (error) {
         console.warn(`[lazyWithRetry] Error definitivo al cargar chunk "${name}":`, error);
         const msg = error?.message || "";
         const isChunkError =
+          error?.name === 'ChunkLoadError' ||
           msg.includes("Failed to fetch dynamically imported module") ||
           msg.includes("Loading chunk") ||
           msg.includes("Importing a module script failed") ||
@@ -68,36 +82,31 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
           msg.includes("Unexpected token") ||
           msg.includes("is not valid JavaScript");
 
-        if (isChunkError && !hasRetried) {
-          sessionStorage.setItem(retryKey, "true");
+        if (isChunkError) {
           // Si el usuario está autenticado, comprobamos /version.json primero para mostrar el WelcomeModal en caliente
           // en lugar de recargar de golpe sin mostrar las novedades
           const storeState = useAppStore.getState();
           if (storeState.isAuthenticated || localStorage.getItem('pro_fitness_token')) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
             try {
-              const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' });
+              const res = await fetch(`/version.json?t=${Date.now()}`, {
+                cache: 'no-store',
+                signal: controller.signal,
+              });
               if (res.ok) {
                 const data = await res.json();
                 const remoteVersion = data?.version;
                 const lastSeenVersion = localStorage.getItem('lastSeenVersion');
                 if (remoteVersion && lastSeenVersion !== remoteVersion && typeof storeState.triggerRemoteWelcomeModal === 'function') {
                   storeState.triggerRemoteWelcomeModal(remoteVersion, data);
-                  throw error;
                 }
               }
-            } catch {}
+            } catch {} finally {
+              clearTimeout(timeoutId);
+            }
           }
 
-          console.warn(`[lazyWithRetry] Nueva versión detectada para "${name}", recargando limpiamente...`);
-          const freshUrl = window.location.origin + window.location.pathname + '?v=' + Date.now() + (window.location.hash || '');
-          setTimeout(() => {
-            try {
-              window.location.replace(freshUrl);
-            } catch (_) {
-              window.location.href = freshUrl;
-            }
-          }, 80);
-          await new Promise(r => setTimeout(r, 1200));
         }
         throw error;
       }
@@ -728,23 +737,7 @@ export default function App() {
               </button>
               <button
                 type="button"
-                onClick={async () => {
-                  try {
-                    if ('caches' in window) {
-                      const keys = await caches.keys();
-                      await Promise.all(keys.map(k => caches.delete(k)));
-                    }
-                    localStorage.removeItem('pfg_cached_initial_state_v1');
-                    sessionStorage.clear();
-                    if ('serviceWorker' in navigator) {
-                      const regs = await navigator.serviceWorker.getRegistrations();
-                      for (const reg of regs) await reg.unregister();
-                    }
-                  } catch {}
-                  const freshUrl = new URL(window.location.href);
-                  freshUrl.searchParams.set('pfg_fresh', String(Date.now()));
-                  window.location.replace(freshUrl.toString());
-                }}
+                onClick={() => reloadAppWithoutStaleCache({ path: '/' })}
                 className="px-5 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-primary font-bold text-sm cursor-pointer hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5"
               >
                 <RefreshCw className="w-4 h-4" />

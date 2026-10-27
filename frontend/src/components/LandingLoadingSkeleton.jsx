@@ -1,6 +1,7 @@
 /* frontend/src/components/LandingLoadingSkeleton.jsx */
 import React, { useState, useEffect } from 'react';
 import { RefreshCw } from 'lucide-react';
+import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
 
 export default function LandingLoadingSkeleton() {
   const [showRescue, setShowRescue] = useState(false);
@@ -15,41 +16,7 @@ export default function LandingLoadingSkeleton() {
 
   const handleRepair = () => {
     setIsRepairing(true);
-    try {
-      sessionStorage.clear();
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const k = localStorage.key(i);
-        if (k && (k.startsWith('pfg_chunk_retry_') || k.startsWith('pfg_reload_'))) {
-          localStorage.removeItem(k);
-        }
-      }
-    } catch (_) {}
-
-    if ('caches' in window) {
-      caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
-    }
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => {
-        regs.forEach(r => r.unregister().catch(() => {}));
-      }).catch(() => {});
-    }
-
-    const freshUrl = window.location.origin + window.location.pathname + '?r=' + Date.now() + (window.location.hash || '');
-    setTimeout(() => {
-      try {
-        window.location.replace(freshUrl);
-      } catch (_) {
-        window.location.href = freshUrl;
-      }
-    }, 120);
-
-    setTimeout(() => {
-      try {
-        window.location.reload();
-      } catch (_) {
-        window.location.href = freshUrl;
-      }
-    }, 350);
+    reloadAppWithoutStaleCache();
   };
 
   return (

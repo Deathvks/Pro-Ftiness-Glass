@@ -9,6 +9,7 @@ import { APP_VERSION } from '../config/version';
 import { useToast } from '../hooks/useToast';
 import { useOfflineSync } from '../hooks/useOfflineSync';
 import { useAppTheme } from '../hooks/useAppTheme';
+import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
 import { initSocket } from '../services/socket';
 import * as userService from '../services/userService';
 
@@ -67,7 +68,7 @@ const ACCENT_UNLOCK_REWARDS = {
   ],
 };
 
-const LoadingFallback = () => {
+const LoadingFallback = ({ onGoHome }) => {
   const [showRescue, setShowRescue] = React.useState(false);
   const [showProgressHint, setShowProgressHint] = React.useState(false);
   const [isRepairing, setIsRepairing] = React.useState(false);
@@ -88,46 +89,7 @@ const LoadingFallback = () => {
 
   const handleRepair = () => {
     setIsRepairing(true);
-
-    // 1. Limpieza síncrona inmediata en storage para que no bloquee jamás
-    try {
-      sessionStorage.clear();
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const k = localStorage.key(i);
-        if (k && (k.startsWith('pfg_chunk_retry_') || k.startsWith('pfg_reload_') || k === 'pfg_cached_initial_state_v1')) {
-          localStorage.removeItem(k);
-        }
-      }
-    } catch (_) {}
-
-    // 2. Limpieza de caches y SW en segundo plano (fire-and-forget, SIN AWAIT BLOQUEANTE que congele la UI)
-    if ('caches' in window) {
-      caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
-    }
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then((regs) => {
-        regs.forEach((r) => r.unregister().catch(() => {}));
-      }).catch(() => {});
-    }
-
-    // 3. Garantía absoluta de recarga limpia e instantánea
-    const freshUrl = window.location.origin + window.location.pathname + '?r=' + Date.now() + (window.location.hash || '');
-    setTimeout(() => {
-      try {
-        window.location.replace(freshUrl);
-      } catch (_) {
-        window.location.href = freshUrl;
-      }
-    }, 120);
-
-    // 4. Fallback incondicional si el navegador no navegó tras 350ms
-    setTimeout(() => {
-      try {
-        window.location.reload();
-      } catch (_) {
-        window.location.href = freshUrl;
-      }
-    }, 350);
+    reloadAppWithoutStaleCache();
   };
 
   const handleResetSession = () => {
@@ -191,6 +153,14 @@ const LoadingFallback = () => {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  onClick={onGoHome}
+                  disabled={isRepairing}
+                  className="flex-1 py-2 px-3 rounded-xl bg-accent/10 border border-accent/20 text-accent font-semibold text-xs active:scale-95 transition-all cursor-pointer"
+                >
+                  Ir al inicio
+                </button>
+                <button
+                  type="button"
                   onClick={() => setShowRescue(false)}
                   disabled={isRepairing}
                   className="flex-1 py-2 px-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-secondary hover:text-text-primary font-semibold text-xs active:scale-95 transition-all cursor-pointer"
@@ -238,22 +208,11 @@ class ViewErrorBoundary extends React.Component {
     this.setState({ hasError: false, error: null });
   };
 
-  handleReload = async () => {
+  handleReload = () => {
     try {
-      sessionStorage.clear();
       localStorage.removeItem('lastView');
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
-      }
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (const reg of registrations) {
-          await reg.unregister();
-        }
-      }
     } catch {}
-    window.location.replace(window.location.origin + '/?v=' + Date.now());
+    reloadAppWithoutStaleCache({ path: '/' });
   };
 
   handleGoHome = () => {
@@ -261,7 +220,9 @@ class ViewErrorBoundary extends React.Component {
     try {
       localStorage.setItem('lastView', 'dashboard');
     } catch {}
-    if (this.props.navigate) {
+    if (this.props.onGoHome) {
+      this.props.onGoHome();
+    } else if (this.props.navigate) {
       this.props.navigate('dashboard');
     } else {
       window.location.replace(window.location.origin + '/');
@@ -1375,8 +1336,8 @@ export default function MainAppLayout({
           )}
 
           <div className="w-full relative">
-            <ViewErrorBoundary view={view} navigate={navigate}>
-            <Suspense fallback={<LoadingFallback />}>
+            <ViewErrorBoundary view={view} navigate={navigate} onGoHome={() => handleNavClick('dashboard')}>
+            <Suspense fallback={<LoadingFallback onGoHome={() => handleNavClick('dashboard')} />}>
               <React.Fragment key={`${view}-${viewResetKey}`}>
                 {currentViewComponent}
               </React.Fragment>

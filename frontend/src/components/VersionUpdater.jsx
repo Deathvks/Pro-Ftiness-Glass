@@ -92,11 +92,14 @@ const SWUpdaterCore = () => {
 
     lastCheckTimeRef.current = now;
     isCheckingRef.current = true;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     try {
       // 1. Comprobar /version.json contra APP_VERSION y lastSeenVersion de inmediato
       const res = await fetch(`/version.json?t=${now}`, {
         cache: 'no-store',
+        signal: controller.signal,
         headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' }
       });
       if (!res.ok) return;
@@ -151,6 +154,7 @@ const SWUpdaterCore = () => {
     } catch {
       // Ignorar errores de red temporales (offline)
     } finally {
+      clearTimeout(timeoutId);
       isCheckingRef.current = false;
     }
   }, [triggerSafeReload]);
