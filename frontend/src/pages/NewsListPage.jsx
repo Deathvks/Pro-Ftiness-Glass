@@ -307,7 +307,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
         WebkitOverflowScrolling: 'touch',
         touchAction: 'pan-y',
         paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 6rem)'
+        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 2rem)'
       }}
     >
       <div className="min-h-full px-4 sm:px-6 py-6 max-w-6xl mx-auto flex flex-col gap-8 animate-[fade-in_0.4s_ease-out]">
@@ -810,15 +810,8 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
         </>
       )}
       </div>
-        {/* Espaciador inferior generoso: garantiza separación real del fin de la pantalla y barras de navegación en móviles */}
-        <div
-          className="w-full shrink-0 select-none pointer-events-none"
-          style={{
-            height: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 24px)) + 10rem)',
-            minHeight: '180px'
-          }}
-          aria-hidden="true"
-        />
+        {/* Espaciador inferior equilibrado: separación armónica con el resto de la web */}
+        <div className="w-full h-8 sm:h-6 shrink-0 select-none pointer-events-none" aria-hidden="true" />
     </div>
   );
 }

@@ -191,10 +191,10 @@ export default function MacroCalculatorPage({ onBack }) {
       </Helmet>
 
       <main
-        className="max-w-5xl mx-auto px-3.5 sm:px-6 pb-20 sm:pb-28"
+        className="max-w-5xl mx-auto px-3.5 sm:px-6 pb-8 sm:pb-12"
         style={{
           paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 1rem)',
-          paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 6.5rem)'
+          paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 2rem)'
         }}
       >
         {/* Clean Integrated Header (No full-bleed borders or browser gap) */}
@@ -710,15 +710,8 @@ export default function MacroCalculatorPage({ onBack }) {
             </ul>
           </div>
         </article>
-        {/* Espaciador inferior generoso: garantiza separación real del fin de la pantalla y barras de navegación en móviles */}
-        <div
-          className="w-full shrink-0 select-none pointer-events-none"
-          style={{
-            height: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 24px)) + 10rem)',
-            minHeight: '180px'
-          }}
-          aria-hidden="true"
-        />
+        {/* Espaciador inferior equilibrado: separación armónica con el resto de la web */}
+        <div className="w-full h-8 sm:h-6 shrink-0 select-none pointer-events-none" aria-hidden="true" />
       </main>
     </div>
   );

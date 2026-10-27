@@ -101,6 +101,26 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
     setScrollProgress(Math.min(100, Math.max(0, currentProgress)));
   }, []);
 
+  // Resetea el scroll de forma inmediata y fiable tanto en contenedor fixed como en window
+  const scrollToTop = useCallback(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+      containerRef.current.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+    setScrollProgress(0);
+  }, []);
+
+  const handleArticleNavigate = useCallback((targetSlug, previewObj) => {
+    scrollToTop();
+    navigate(`/noticias/${targetSlug}`, { state: { previewArticle: previewObj } });
+    requestAnimationFrame(() => {
+      scrollToTop();
+    });
+  }, [navigate, scrollToTop]);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -159,12 +179,14 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
     };
 
     if (slug) {
+      scrollToTop();
       loadArticle();
-      if (containerRef.current) {
-        containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      requestAnimationFrame(() => {
+        scrollToTop();
+      });
+      setTimeout(() => {
+        scrollToTop();
+      }, 50);
     }
 
     return () => { isMounted = false; };
@@ -330,7 +352,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
         WebkitOverflowScrolling: 'touch',
         touchAction: 'pan-y',
         paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 6rem)'
+        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 2rem)'
       }}
     >
       {/* BARRA DE PROGRESO DE LECTURA SUPERIOR */}
@@ -342,7 +364,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
       </div>
 
       {/* CONTENEDOR EDITORIAL CENTRADO (ESTILO XATAKA / MEDIO DIGITAL) */}
-      <article className="min-h-full max-w-3xl mx-auto px-4 sm:px-6 py-6 pb-10 sm:pb-14 flex flex-col animate-[fade-in_0.3s_ease-out]">
+      <article className="min-h-full max-w-3xl mx-auto px-4 sm:px-6 py-6 pb-6 sm:pb-8 flex flex-col animate-[fade-in_0.3s_ease-out]">
         {/* COMPONENTE SEO COMPLETO (Meta, Open Graph, Twitter, JSON-LD NewsArticle) */}
         <ArticleSEO article={article} />
 
@@ -693,7 +715,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 onClick={(e) => {
                   if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
                     e.preventDefault();
-                    navigate(`/noticias/${prevArticle.slug}`, { state: { previewArticle: prevArticle } });
+                    handleArticleNavigate(prevArticle.slug, prevArticle);
                   }
                 }}
                 onMouseEnter={() => newsService.prefetchNewsBySlug(prevArticle.slug)}
@@ -715,7 +737,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                 onClick={(e) => {
                   if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
                     e.preventDefault();
-                    navigate(`/noticias/${nextArticle.slug}`, { state: { previewArticle: nextArticle } });
+                    handleArticleNavigate(nextArticle.slug, nextArticle);
                   }
                 }}
                 onMouseEnter={() => newsService.prefetchNewsBySlug(nextArticle.slug)}
@@ -747,7 +769,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
                   onClick={(e) => {
                     if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
                       e.preventDefault();
-                      navigate(`/noticias/${rel.slug}`, { state: { previewArticle: rel } });
+                      handleArticleNavigate(rel.slug, rel);
                     }
                   }}
                   onMouseEnter={() => newsService.prefetchNewsBySlug(rel.slug)}
@@ -788,15 +810,8 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           </section>
         )}
       </article>
-        {/* Espaciador inferior generoso: garantiza separación real del fin de la pantalla y barras de navegación en móviles */}
-        <div
-          className="w-full shrink-0 select-none pointer-events-none"
-          style={{
-            height: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 24px)) + 10rem)',
-            minHeight: '180px'
-          }}
-          aria-hidden="true"
-        />
+        {/* Espaciador inferior equilibrado: separación armónica con el resto de la web */}
+        <div className="w-full h-8 sm:h-6 shrink-0 select-none pointer-events-none" aria-hidden="true" />
     </div>
   );
 }

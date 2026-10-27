@@ -1,4 +1,4 @@
 {
-  "version": "7.10.69",
-  "releaseNotes": "Actualización v7.10.69: Artículos generados por Gemini optimizados a formato ultra conciso (280-400 palabras, 2 min de lectura) e indicación exclusiva para administradores del modelo IA activo (Gemini 3.6 Flash) en panel de noticias, generador de rutinas, análisis y consultas técnicas."
+  "version": "7.10.70",
+  "releaseNotes": "Actualización v7.10.70: Ajuste armónico del espaciado inferior en calculadoras, enciclopedia y noticias, y corrección de navegación automática hacia arriba al abrir artículos relacionados."
 }
