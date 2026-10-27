@@ -12,6 +12,31 @@ import App from './App.jsx';
 import ToastProvider from './contexts/ToastProvider.jsx';
 import ErrorBoundary from './components/ErrorBoundary';
 
+// --- ENTORNO LOCAL / DESARROLLO: NUNCA PERMITIR SERVICE WORKER ACTIVO EN LOCALHOST ---
+if (
+  import.meta.env.DEV ||
+  (typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+) {
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const reg of registrations) {
+        console.warn('[ViteDev] Desregistrando Service Worker residual en localhost:', reg.scope);
+        reg.unregister();
+      }
+    }).catch(() => {});
+  }
+  if (typeof window !== 'undefined' && 'caches' in window) {
+    caches.keys().then((keys) => {
+      for (const key of keys) {
+        console.warn('[ViteDev] Purgando caché residual en localhost:', key);
+        caches.delete(key);
+      }
+    }).catch(() => {});
+  }
+}
+
+
 // --- MANEJADOR DE RESCATE DE EMERGENCIA POR URL (?reset=1 / ?repair=1 / ?clear=1) ---
 try {
   if (typeof window !== 'undefined' && window.location && window.location.search) {
