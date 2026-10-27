@@ -198,12 +198,12 @@ FORMATO SI ES VÁLIDO:
             Describe tu objetivo, equipo disponible o nivel de experiencia.
           </p>
           {isAdmin && (
-            <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
+            <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+              <div className="flex items-center gap-1.5 whitespace-nowrap shrink-0">
                 <Sparkles size={13} className="shrink-0" />
                 <span>Modo Admin Activo</span>
               </div>
-              <span className="bg-purple-500/20 px-2 py-0.5 rounded-md font-extrabold text-[10px] uppercase tracking-wider">
+              <span className="bg-purple-500/20 px-2 py-0.5 rounded-md font-extrabold text-[10px] uppercase tracking-wider whitespace-nowrap ml-auto sm:ml-0">
                 Modelo: Gemini 3.6 Flash
               </span>
             </div>

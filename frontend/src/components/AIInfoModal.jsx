@@ -96,7 +96,7 @@ const AIInfoModal = ({ onClose }) => {
 
         {/* Tarjeta Bottom Sheet en móvil / Modal centrado en escritorio */}
         <div
-          className={`relative w-full sm:max-w-md rounded-t-[32px] sm:rounded-[28px] shadow-2xl flex flex-col transition-colors duration-300 overflow-hidden border-t sm:border border-transparent dark:border-white/10 pb-[calc(max(env(safe-area-inset-bottom,0px),20px)+12px)] sm:pb-6 animate-[slide-up_0.25s_cubic-bezier(0.32,0.72,0,1)] sm:animate-[scale-in_0.2s_ease-out] z-10 max-h-[90vh] overflow-y-auto no-scrollbar ${
+          className={`relative w-full sm:max-w-[480px] rounded-t-[32px] sm:rounded-[28px] shadow-2xl flex flex-col transition-colors duration-300 overflow-hidden border-t sm:border border-transparent dark:border-white/10 pb-[calc(max(env(safe-area-inset-bottom,0px),20px)+12px)] sm:pb-6 animate-[slide-up_0.25s_cubic-bezier(0.32,0.72,0,1)] sm:animate-[scale-in_0.2s_ease-out] z-10 max-h-[90vh] overflow-y-auto no-scrollbar ${
             isOled ? 'bg-black' : 'bg-bg-secondary'
           }`}
           style={{
@@ -152,13 +152,13 @@ const AIInfoModal = ({ onClose }) => {
           {/* Contenido */}
           <div className="p-5 sm:p-6 space-y-5 relative z-10">
             {isAdmin && (
-              <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/25 flex items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2 text-purple-400 font-black uppercase tracking-wider text-[11px]">
-                  <FaShieldHalved className="text-sm shrink-0" />
+              <div className="px-3 sm:px-3.5 py-2.5 sm:py-3 rounded-2xl bg-purple-500/10 border border-purple-500/25 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                <div className="flex items-center gap-1.5 text-purple-400 font-black uppercase tracking-normal sm:tracking-wide text-[10px] sm:text-[11px] whitespace-nowrap shrink-0">
+                  <FaShieldHalved className="text-[11px] sm:text-xs shrink-0" />
                   <span>Modo Administrador</span>
                 </div>
-                <span className="font-bold text-text-primary text-xs">
-                  Modelo: <strong className="text-accent">Gemini 3.6 Flash</strong> (Sin límites)
+                <span className="font-bold text-text-primary text-[10.5px] sm:text-xs whitespace-nowrap">
+                  Modelo: <strong className="text-accent">Gemini 3.6 Flash</strong> <span className="opacity-80">(Sin límites)</span>
                 </span>
               </div>
             )}
