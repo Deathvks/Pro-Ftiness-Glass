@@ -169,12 +169,13 @@ const ExerciseSummaryView = ({
                   </button>
 
                   {/* Media (Top) */}
-                  <div className="w-full aspect-square bg-transparent flex items-center justify-center overflow-hidden cursor-pointer rounded-t-[24px]">
+                  <div className="w-full aspect-[4/5] bg-black/5 dark:bg-white/5 flex items-center justify-center overflow-hidden cursor-pointer rounded-t-[24px] relative">
                     <div className="w-full h-full transition-transform duration-500 group-hover:scale-[1.02] flex items-center justify-center">
                       <ExerciseMedia
                         details={item.exercise}
-                        fitMode="cover"
-                        className="w-full h-full rounded-t-[24px] opacity-90 group-hover:opacity-100 object-cover"
+                        fitMode="contain"
+                        fillContain={true}
+                        className="w-full h-full rounded-t-[24px] opacity-90 group-hover:opacity-100"
                       />
                     </div>
                   </div>

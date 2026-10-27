@@ -1,6 +1,6 @@
 {
-  "version": "7.11.4",
-  "releaseNotes": "Actualización v7.11.4: Nuevo Portal de Noticias y Ciencia Fitness, Calculadoras de 1RM y Macros, Enciclopedia de Ejercicios, Asesorías de Entrenador y detección de actualizaciones en tiempo real.",
+  "version": "7.11.5",
+  "releaseNotes": "Actualización v7.11.5: Optimización visual completa en la biblioteca de ejercicios del dashboard, editor de rutinas y creador de rutinas del panel de entrenador (proporción vertical 4:5, sin recortes superiores o inferiores y soporte de vídeos Shorts).",
   "welcome": {
     "title": "Noticias y Herramientas",
     "subtitle": "Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y velocidad instantánea en toda la app.",

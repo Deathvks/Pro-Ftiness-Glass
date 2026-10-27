@@ -266,8 +266,9 @@ const ExerciseDetailView = ({
             <div className="w-full relative">
               <ExerciseMedia
                 details={exercise}
-                fitMode="cover"
-                className="w-full aspect-square sm:aspect-[4/3] rounded-[24px] overflow-hidden object-cover shadow-md"
+                fitMode="contain"
+                fillContain={true}
+                className="w-full aspect-[4/5] max-h-[60vh] rounded-[24px] overflow-hidden bg-black/5 dark:bg-white/5 shadow-md flex items-center justify-center"
                 playYouTube={true}
               />
             </div>

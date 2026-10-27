@@ -109,7 +109,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   const getYouTubeId = (url) => {
     if (!url || url === 'null' || url === 'undefined') return null;
     if (typeof url !== 'string') url = String(url);
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
   };
@@ -216,7 +216,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     const imgBaseClass = isAuto 
       ? 'w-full h-auto' 
       : (isContain
-          ? `absolute inset-0 ${fillContain ? 'w-full h-full' : 'm-auto max-w-[90%] max-h-[90%]'} object-contain ${imageRadiusClass}`
+          ? `absolute inset-0 w-full h-full object-contain ${imageRadiusClass}`
           : `absolute inset-0 w-full h-full ${imageRadiusClass}`);
 
     if (finalImagesUrls.length > 0) {
@@ -241,7 +241,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
             const sizeClass = isAuto
               ? 'w-full h-auto'
               : (isUrlContain
-                  ? `${fillContain ? 'w-full h-full' : 'm-auto max-w-[90%] max-h-[90%]'} object-contain ${imageRadiusClass}`
+                  ? `w-full h-full object-contain ${imageRadiusClass}`
                   : `w-full h-full ${imageRadiusClass}`);
             
             let visibilityStyle = {};
