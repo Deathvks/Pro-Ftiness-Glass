@@ -1,13 +1,13 @@
 {
-  "version": "7.11.7",
-  "releaseNotes": "Actualización v7.11.7: Mejoras en visitas y analítica de noticias, con búsqueda, filtros, orden y paginación. Identificación anónima más clara y diseño móvil simplificado.",
+  "version": "7.11.8",
+  "releaseNotes": "Actualización v7.11.8: Inicio más ágil del panel de entrenador y mejoras en la recarga tras actualizar.",
   "welcome": {
-    "title": "Analítica de noticias mejorada",
-    "subtitle": "Ahora es más sencillo consultar, filtrar y ordenar las visitas desde el panel de administración.",
+    "title": "Panel de entrenador más ágil",
+    "subtitle": "Mejoramos la carga del panel y la recuperación de la app después de una actualización.",
     "features": [
       {
-        "title": "Visitas más fáciles de revisar",
-        "description": "La analítica incluye búsqueda, filtros, orden y paginación; además, el ID anónimo del navegador se explica con claridad y las tarjetas móviles son más sencillas."
+        "title": "Carga y actualización mejoradas",
+        "description": "El panel de entrenador comienza a prepararse al iniciar la app y la recarga de una nueva versión limpia los recursos antiguos con un límite de espera."
       }
     ]
   }

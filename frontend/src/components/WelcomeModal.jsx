@@ -1,5 +1,5 @@
 /* frontend/src/components/WelcomeModal.jsx */
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import ModalPortal from './ModalPortal';
 import {
   ChevronRight, Newspaper, Calculator, Dumbbell, Zap, Sparkles } from
@@ -9,6 +9,7 @@ import { Capacitor } from '@capacitor/core';
 import { APP_VERSION } from '../config/version';
 import useModalLock from '../hooks/useModalLock';
 import useAppStore from '../store/useAppStore';
+import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
 
 const WelcomeModal = ({ onClose }) => {
 
@@ -49,31 +50,14 @@ const WelcomeModal = ({ onClose }) => {
       console.warn('[WelcomeModal] Error guardando estado de versión:', e);
     }
 
-    if (typeof window !== 'undefined' && 'caches' in window) {
-      caches.delete('api-read-cache').catch(() => {});
-    }
-
-    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistration().then((reg) => {
-        if (reg) {
-          reg.update().catch(() => {});
-          if (reg.waiting) {
-            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-          }
-        }
-      }).catch(() => {});
-    }
-
     if (onClose) {
       onClose();
     }
 
-    // En navegador web, sincronizar de forma limpia con la nueva versión compilada
+    // En navegador web, quitar de forma acotada cualquier caché/Service Worker obsoleto
+    // antes de recargar. No esperamos indefinidamente la activación del SW nuevo.
     if (typeof window !== 'undefined' && !Capacitor.isNativePlatform()) {
-      setTimeout(() => {
-        const cleanUrl = window.location.origin + window.location.pathname + (window.location.hash || '');
-        window.location.replace(cleanUrl);
-      }, 120);
+      reloadAppWithoutStaleCache();
     }
   };
 

@@ -73,7 +73,14 @@ export const getClients = async (req, res) => {
         const clients = await User.findAll({
             where: {
                 trainer_id: req.user.userId
-            }
+            },
+            // El panel solo necesita estos campos; no cargar columnas de
+            // credenciales, preferencias y datos de cuenta en cada visita.
+            attributes: [
+                'id', 'name', 'username', 'lastSeen', 'createdAt', 'profile_image_url',
+                'height', 'age', 'gender', 'goal', 'activity_level',
+                'anamnesis_data', 'role', 'email'
+            ]
         });
 
         // Check workouts for today
@@ -83,15 +90,17 @@ export const getClients = async (req, res) => {
         endOfDay.setHours(23, 59, 59, 999);
 
         const clientIds = clients.map(c => c.id);
-        const todayWorkouts = await WorkoutLog.findAll({
-            where: {
-                user_id: clientIds,
-                workout_date: {
-                    [Op.between]: [startOfDay, endOfDay]
-                }
-            },
-            attributes: ['user_id']
-        });
+        const todayWorkouts = clientIds.length > 0
+            ? await WorkoutLog.findAll({
+                where: {
+                    user_id: clientIds,
+                    workout_date: {
+                        [Op.between]: [startOfDay, endOfDay]
+                    }
+                },
+                attributes: ['user_id']
+            })
+            : [];
 
         const usersWhoTrainedToday = new Set(todayWorkouts.map(w => w.user_id));
 

@@ -609,6 +609,15 @@ export default function App() {
     if (view) preloadViewChunk(view);
   }, [view]);
 
+  // El panel de entrenador es una sección con varios componentes propios.
+  // Precargar su chunk en cuanto conocemos el rol evita que la primera visita
+  // después de una actualización tenga que esperar a descargarlo al abrirlo.
+  useEffect(() => {
+    if (userProfile?.role === 'admin' || userProfile?.role === 'trainer') {
+      preloadViewChunk('trainerPanel');
+    }
+  }, [userProfile?.role]);
+
   const currentViewComponent = useMemo(() => {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigateInternal} />;
