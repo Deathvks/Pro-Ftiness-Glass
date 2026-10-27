@@ -1,6 +1,6 @@
-import ModalPortal from './ModalPortal';
 /* frontend/src/components/WelcomeModal.jsx */
 import React, { useEffect, useRef } from 'react';
+import ModalPortal from './ModalPortal';
 import {
   ChevronRight, Brain, Timer, Palette, Smartphone, MessageCircle, Flame, Sparkles } from
 'lucide-react';
