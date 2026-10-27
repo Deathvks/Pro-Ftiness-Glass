@@ -106,6 +106,10 @@ export default defineConfig({
       injectManifest: {
         globPatterns: [
           'index.html',
+          'assets/index-*.js',
+          'assets/index-*.css',
+          'assets/vendor-react-*.js',
+          'assets/vendor-icons-*.js',
           'manifest.webmanifest',
           'favicon.ico',
           'logo.webp',

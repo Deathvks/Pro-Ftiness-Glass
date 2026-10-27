@@ -1,13 +1,13 @@
 {
-  "version": "7.11.9",
-  "releaseNotes": "Actualización v7.11.9: Recarga de versión más ligera, conservando las cachés útiles de la app.",
+  "version": "7.11.10",
+  "releaseNotes": "Actualización v7.11.10: Preparación previa de los archivos principales para acelerar la recarga de versión.",
   "welcome": {
-    "title": "Actualización más ligera",
-    "subtitle": "La recarga tras actualizar conserva las cachés útiles de la app.",
+    "title": "Recarga más rápida",
+    "subtitle": "Los archivos principales de la app se preparan antes de activar la actualización.",
     "features": [
       {
-        "title": "Recarga optimizada",
-        "description": "Al aceptar las novedades, esperamos brevemente al Service Worker nuevo y recargamos sin borrar las cachés que aceleran la app y su uso sin conexión."
+        "title": "Recarga preparada",
+        "description": "El Service Worker guarda durante la actualización el HTML, el código principal y los estilos, para que la recarga tenga esos recursos listos."
       }
     ]
   }

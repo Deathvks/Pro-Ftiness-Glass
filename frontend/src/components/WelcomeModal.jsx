@@ -18,6 +18,26 @@ const reloadAfterWelcome = async () => {
         new Promise((resolve) => setTimeout(() => resolve(null), 1000)),
       ]);
 
+      if (registration?.installing && !registration.waiting) {
+        await new Promise((resolve) => {
+          const installingWorker = registration.installing;
+          let timeoutId;
+          const finish = () => {
+            clearTimeout(timeoutId);
+            installingWorker.removeEventListener('statechange', handleStateChange);
+            resolve();
+          };
+          const handleStateChange = () => {
+            if (installingWorker.state === 'installed' || installingWorker.state === 'redundant') {
+              finish();
+            }
+          };
+          installingWorker.addEventListener('statechange', handleStateChange);
+          timeoutId = setTimeout(finish, 10000);
+          handleStateChange();
+        });
+      }
+
       if (registration?.waiting) {
         const controllerChanged = new Promise((resolve) => {
           let timeoutId;
@@ -53,9 +73,6 @@ const WelcomeModal = ({ onClose }) => {
   const userProfile = useAppStore((state) => state.userProfile);
   const welcomeRemoteVersion = useAppStore((state) => state.welcomeRemoteVersion);
   const welcomeRemoteData = useAppStore((state) => state.welcomeRemoteData);
-
-  // Precarga suave y no intrusiva en segundo plano cuando el navegador esté en reposo
-  // Al aceptar el modal se realiza una recarga completa y limpia, evitando colisiones de precarga en segundo plano
 
   const effectiveVersion = welcomeRemoteVersion || APP_VERSION;
   const appVersion = `v${effectiveVersion}`;
