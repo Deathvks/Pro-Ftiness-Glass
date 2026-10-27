@@ -34,7 +34,7 @@ import MarkdownContent from '../components/News/MarkdownContent';
 import NewsConversionBanner from '../components/News/NewsConversionBanner';
 import TrainerAdvisoryCard from '../components/News/TrainerAdvisoryCard';
 import * as newsService from '../services/newsService';
-import { buildTrackingPayload } from '../utils/newsTracker';
+import { trackArticleVisit } from '../utils/newsTracker';
 import { useToast } from '../hooks/useToast';
 import useAppStore from '../store/useAppStore';
 
@@ -151,20 +151,12 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           const alreadyLiked = localStorage.getItem(`liked_article_${data.article?.id}`) === 'true';
           setHasLiked(alreadyLiked);
 
-          // Registrar lectura real y sniffing completo por sesión de navegación
-          const sessionKey = `viewed_news_session_${data.article?.id}`;
-          if (!sessionStorage.getItem(sessionKey)) {
-            sessionStorage.setItem(sessionKey, 'true');
-            const trackingPayload = buildTrackingPayload({
-              slug,
-              article_title: data.article?.title || ''
-            });
-            newsService.recordArticleView(slug, trackingPayload).then(res => {
-              if (res?.views_count !== undefined && isMounted) {
-                setArticle(prev => prev ? { ...prev, views_count: res.views_count } : prev);
-              }
-            });
-          }
+          // Registrar cada visita en el sniffer en tiempo real
+          trackArticleVisit(slug, data.article?.title || '').then(res => {
+            if (res?.views_count !== undefined && isMounted) {
+              setArticle(prev => prev ? { ...prev, views_count: res.views_count } : prev);
+            }
+          });
         }
       } catch (err) {
         if (isMounted) {

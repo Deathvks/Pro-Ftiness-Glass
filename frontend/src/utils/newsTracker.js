@@ -128,10 +128,11 @@ export const buildTrackingPayload = (extra = {}) => {
  * Rastrea la visita al catálogo general de noticias (/noticias)
  */
 export const trackCatalogVisit = async () => {
-  const cacheKey = `catalog_${new Date().getMinutes()}`;
+  const cacheKey = 'catalog_visit';
   if (recentlyTracked.has(cacheKey)) return;
   recentlyTracked.add(cacheKey);
-  setTimeout(() => recentlyTracked.delete(cacheKey), 30000);
+  // Anti-rebote de 3 segundos únicamente para evitar doble disparo de React StrictMode
+  setTimeout(() => recentlyTracked.delete(cacheKey), 3000);
 
   const payload = buildTrackingPayload({
     article_slug: null,
@@ -148,10 +149,11 @@ export const trackCatalogVisit = async () => {
  */
 export const trackArticleVisit = async (slug, articleTitle = '') => {
   if (!slug) return;
-  const cacheKey = `art_${slug}_${new Date().getMinutes()}`;
+  const cacheKey = `art_${slug}`;
   if (recentlyTracked.has(cacheKey)) return;
   recentlyTracked.add(cacheKey);
-  setTimeout(() => recentlyTracked.delete(cacheKey), 30000);
+  // Anti-rebote de 3 segundos únicamente para evitar doble disparo de React StrictMode
+  setTimeout(() => recentlyTracked.delete(cacheKey), 3000);
 
   const payload = buildTrackingPayload({
     slug,

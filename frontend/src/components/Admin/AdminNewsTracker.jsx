@@ -650,8 +650,7 @@ export default function AdminNewsTracker() {
                       <span className="text-text-tertiary">Visitante:</span>
                       {v.user ? (
                         <span className="font-bold text-accent flex items-center gap-1.5">
-                          {v.user.profile_image ? (
-                            <img src={v.user.profile_image} alt="" className="w-4 h-4 rounded-full object-cover" />
+                          {(v.user.profile_image_url || v.user.profile_image) ? (<img src={v.user.profile_image_url || v.user.profile_image} alt="" className="w-4 h-4 rounded-full object-cover" />
                           ) : (
                             <Users size={12} />
                           )}
@@ -779,8 +778,7 @@ export default function AdminNewsTracker() {
                         <td className="py-3 px-4">
                           {v.user ? (
                             <div className="flex items-center gap-2">
-                              {v.user.profile_image ? (
-                                <img src={v.user.profile_image} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                              {(v.user.profile_image_url || v.user.profile_image) ? (<img src={v.user.profile_image_url || v.user.profile_image} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
                               ) : (
                                 <div className="w-6 h-6 rounded-full bg-accent/20 text-accent flex items-center justify-center text-[10px] font-bold shrink-0">
                                   {v.user.name ? v.user.name[0] : 'U'}

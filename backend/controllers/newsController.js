@@ -244,7 +244,7 @@ export const recordNewsTelemetry = async (req, customData = {}) => {
       const token = req.cookies?.token || (authHeader && authHeader.split(' ')[1]);
       if (token && process.env.JWT_SECRET) {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        if (decoded?.id) userId = decoded.id;
+        if (decoded?.userId || decoded?.id) userId = decoded.userId || decoded.id;
       }
     } catch {}
 
@@ -1107,7 +1107,7 @@ export const getNewsAnalytics = async (req, res) => {
           {
             model: User,
             as: 'user',
-            attributes: ['id', 'name', 'username', 'email', 'profile_image']
+            attributes: ['id', 'name', 'username', 'email', 'profile_image_url']
           }
         ]
       }),
