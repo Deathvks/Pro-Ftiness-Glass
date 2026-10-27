@@ -424,50 +424,75 @@ export default function PublicExercisesPage({ onBack }) {
         </nav>
 
         {/* Hero */}
-        <header className="text-center max-w-3xl mx-auto mb-6 sm:mb-10">
-          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-accent/10 ring-1 ring-accent/30 text-accent text-[10px] sm:text-xs font-black uppercase tracking-wider mb-3 sm:mb-4 max-w-full text-center">
+        <header className="text-center max-w-3xl mx-auto mb-5 sm:mb-8">
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-accent/10 ring-1 ring-accent/30 text-accent text-[10px] sm:text-xs font-black uppercase tracking-wider mb-2.5 sm:mb-3 max-w-full text-center">
             <FaDumbbell className="text-xs shrink-0" />
             <span className="sm:hidden">Enciclopedia de Gimnasio • 100% Gratis</span>
             <span className="hidden sm:inline">Pro Fitness Glass • Enciclopedia de Gimnasio 100% Gratis</span>
           </div>
-          <h1 className="text-2xl sm:text-5xl font-black tracking-tight text-text-primary leading-tight mb-3 sm:mb-4">
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-text-primary leading-tight mb-2.5 sm:mb-3 break-words">
             Mejores Ejercicios de Gimnasio y{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-blue-400 to-purple-400">
               Rutinas de Hipertrofia
             </span>
           </h1>
-          <p className="text-text-secondary text-sm sm:text-lg font-medium leading-relaxed px-1">
-            Domina la técnica exacta de los ejercicios multiarticulares y analíticos con mayor activación electromiográfica, evita errores lesivos y estructura tu rutina semanal en <strong>Pro Fitness Glass</strong> 100% gratis.
+          <p className="text-text-secondary text-xs sm:text-base font-medium leading-relaxed px-1 max-w-2xl mx-auto">
+            Domina la técnica exacta de los ejercicios con mayor activación electromiográfica, evita errores lesivos y estructura tu rutina semanal en <strong>Pro Fitness Glass</strong> 100% gratis.
           </p>
         </header>
 
-        {/* Buscador y Filtros por Grupo Muscular */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3.5 mb-6 sm:mb-8">
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 sm:gap-2 w-full md:w-auto">
-            {MUSCLE_GROUPS.map((group) => (
-              <button
-                key={group}
-                onClick={() => setSelectedMuscle(group)}
-                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all ${
-                  selectedMuscle === group
-                    ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25'
-                    : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary border border-black/5 dark:border-white/10'
-                }`}
-              >
-                {group}
-              </button>
-            ))}
+        {/* Buscador y Filtros por Grupo Muscular Reorganizados */}
+        <div className="flex flex-col gap-3 sm:gap-4 mb-6 sm:mb-8">
+          {/* Fila del Buscador + Contador */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+            <div className="relative flex-1 max-w-full sm:max-w-md">
+              <FaMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary text-xs sm:text-sm" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar ejercicio o músculo..."
+                className="w-full pl-9 pr-8 py-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-xs sm:text-sm font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary text-xs cursor-pointer p-1"
+                  title="Limpiar búsqueda"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between sm:justify-end gap-2 text-[11px] font-bold text-text-tertiary px-1">
+              <span>
+                {filteredExercises.length} ejercicio{filteredExercises.length === 1 ? '' : 's'}
+                {selectedMuscle !== 'Todos' && <span className="text-accent ml-1">· {selectedMuscle}</span>}
+              </span>
+            </div>
           </div>
 
-          <div className="relative w-full md:w-72">
-            <FaMagnifyingGlass className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary text-sm" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar ejercicio o músculo..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-base sm:text-sm font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
-            />
+          {/* Filtros por Grupo Muscular: fila horizontal deslizable en móvil, sin descolocarse */}
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1.5 pt-0.5 scrollbar-none no-scrollbar -mx-3.5 px-3.5 sm:mx-0 sm:px-0 sm:flex-wrap">
+            {MUSCLE_GROUPS.map((group) => {
+              const isSelected = selectedMuscle === group;
+              return (
+                <button
+                  key={group}
+                  type="button"
+                  onClick={() => setSelectedMuscle(group)}
+                  className={`shrink-0 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer active:scale-95 ${
+                    isSelected
+                      ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25'
+                      : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary border border-black/5 dark:border-white/10'
+                  }`}
+                >
+                  {group}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -477,69 +502,81 @@ export default function PublicExercisesPage({ onBack }) {
             <article
               key={ex.id}
               id={ex.id}
-              className="p-4 sm:p-7 rounded-[24px] sm:rounded-[28px] bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl flex flex-col justify-between gap-4 hover:border-accent/40 transition-all"
+              className="p-4 sm:p-6 rounded-[24px] sm:rounded-[28px] bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl flex flex-col justify-between gap-4 hover:border-accent/40 transition-all shadow-xs"
             >
               <div>
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-                  <span className="px-2.5 py-1 rounded-full bg-accent/15 text-accent text-[11px] font-black uppercase tracking-wider">
+                {/* Cabecera del ejercicio: Músculo + Material */}
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <span className="px-2.5 py-0.5 rounded-full bg-accent/15 text-accent text-[10px] sm:text-[11px] font-black uppercase tracking-wider shrink-0">
                     {ex.muscleGroup}
                   </span>
-                  <span className="text-[11px] font-bold text-text-tertiary">{ex.equipment}</span>
+                  <span className="text-[11px] font-bold text-text-tertiary truncate text-right">
+                    {ex.equipment}
+                  </span>
                 </div>
 
-                <h2 className="text-lg sm:text-2xl font-black text-text-primary mb-1.5">{ex.name}</h2>
-                <p className="text-xs font-bold text-text-secondary mb-3.5">
-                  <span className="text-text-tertiary">Sinergistas:</span> {ex.secondaryMuscles}
+                <h2 className="text-lg sm:text-2xl font-black text-text-primary mb-1.5 leading-snug break-words">
+                  {ex.name}
+                </h2>
+                <p className="text-xs font-semibold text-text-secondary mb-3.5 leading-snug">
+                  <span className="text-text-tertiary font-bold">Sinergistas:</span> {ex.secondaryMuscles}
                 </p>
 
-                <div className="grid grid-cols-2 gap-2 p-3 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 mb-4 text-xs">
-                  <div>
-                    <span className="block text-[10px] font-black uppercase tracking-wider text-text-tertiary">
-                      Rango Óptimo
+                {/* Caja de Rango Óptimo y Descanso: adaptada a móvil sin partir palabras */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 sm:p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 mb-4 text-xs">
+                  <div className="flex items-start sm:items-center gap-2 min-w-0">
+                    <span className="px-2 py-0.5 rounded-md bg-accent/15 text-accent text-[10px] font-black uppercase tracking-wider shrink-0 mt-0.5 sm:mt-0">
+                      Rango
                     </span>
-                    <span className="font-extrabold text-text-primary text-[11px] sm:text-xs">{ex.idealReps}</span>
+                    <span className="font-extrabold text-text-primary text-[11px] sm:text-xs leading-snug">
+                      {ex.idealReps}
+                    </span>
                   </div>
-                  <div>
-                    <span className="block text-[10px] font-black uppercase tracking-wider text-text-tertiary flex items-center gap-1">
-                      <FaStopwatch className="text-accent text-[10px]" /> Descanso
-                    </span>
-                    <span className="font-extrabold text-accent text-[11px] sm:text-xs">{ex.restTime}</span>
+                  <div className="flex items-center gap-1.5 shrink-0 text-text-secondary border-t sm:border-t-0 border-black/5 dark:border-white/5 pt-2 sm:pt-0">
+                    <FaStopwatch className="text-accent text-xs shrink-0" />
+                    <span className="text-[10px] font-black uppercase tracking-wider text-text-tertiary">Descanso:</span>
+                    <span className="font-extrabold text-accent text-xs">{ex.restTime}</span>
                   </div>
                 </div>
 
-                <h3 className="text-xs font-black uppercase tracking-wider text-text-primary mb-2 flex items-center gap-1.5">
-                  <FaCircleCheck className="text-emerald-400" />
+                {/* Técnica Biomecánica Paso a Paso */}
+                <h3 className="text-xs font-black uppercase tracking-wider text-text-primary mb-2.5 flex items-center gap-1.5">
+                  <FaCircleCheck className="text-emerald-400 text-xs shrink-0" />
                   <span>Técnica Biomecánica Paso a Paso</span>
                 </h3>
-                <ul className="space-y-1.5 text-xs sm:text-sm text-text-secondary font-medium mb-4">
+                <ol className="space-y-2 text-xs sm:text-sm text-text-secondary font-medium mb-4">
                   {ex.technique.map((step, i) => (
-                    <li key={i} className="flex items-start gap-2 leading-relaxed">
-                      <span className="text-accent font-black text-xs mt-0.5">{i + 1}.</span>
-                      <span>{step}</span>
+                    <li key={i} className="flex items-start gap-2.5 leading-relaxed">
+                      <span className="w-5 h-5 rounded-full bg-accent/15 text-accent flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">
+                        {i + 1}
+                      </span>
+                      <span className="flex-1">{step}</span>
                     </li>
                   ))}
-                </ul>
+                </ol>
               </div>
 
+              {/* Error común y botones de acción rápida */}
               <div className="pt-3.5 border-t border-black/5 dark:border-white/10 flex flex-col gap-3">
                 <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-xs text-text-secondary leading-relaxed">
                   <strong className="text-red-400 inline-flex items-center gap-1.5 font-black uppercase tracking-wider mr-1.5">
-                    <FaTriangleExclamation /> Error a evitar:
+                    <FaTriangleExclamation className="text-xs shrink-0" /> Error a evitar:
                   </strong>
-                  {ex.commonMistake}
+                  <span>{ex.commonMistake}</span>
                 </div>
 
-                <div className="flex items-center justify-between gap-2 pt-1">
+                <div className="flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-2.5 pt-1">
                   <Link
                     to="/calculadora-1rm"
-                    className="text-xs font-black text-accent hover:underline inline-flex items-center gap-1.5 whitespace-nowrap"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-accent/10 border border-black/5 dark:border-white/10 text-xs font-black text-accent transition-colors"
                   >
                     <FaCalculator className="text-[11px] shrink-0" />
                     <span>Calcular mi 1RM</span>
                   </Link>
                   <button
+                    type="button"
                     onClick={() => navigate(isAuthenticated ? '/routines' : '/register')}
-                    className="text-xs font-black text-text-primary hover:text-accent inline-flex items-center gap-1.5 transition-colors whitespace-nowrap"
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent text-accent-contrast text-xs font-black shadow-xs hover:opacity-90 active:scale-95 transition-all cursor-pointer"
                   >
                     <span>Añadir a mi rutina</span>
                     <FaArrowRight className="text-[11px] shrink-0" />
