@@ -56,17 +56,14 @@ const ExerciseListItem = ({
     >
       
       {/* Imagen / Medio (Arriba, ancho completo) */}
-      <div className="w-full aspect-video bg-transparent flex items-center justify-center overflow-hidden rounded-t-[24px]">
+      <div className="w-full aspect-square bg-transparent flex items-center justify-center overflow-hidden rounded-t-[24px]">
         <div className="w-full h-full transition-transform duration-500 group-hover:scale-105 flex items-center justify-center">
           <ExerciseMedia 
             details={exercise}
-            fitMode="contain"
+            fitMode="cover"
             forceAuto={false}
             disableAnimation={false}
-            transparentBackground={true}
-            fillContain={true}
-            roundedMedia={true}
-            className="w-full h-full"
+            className="w-full h-full rounded-t-[24px] object-cover"
           />
         </div>
       </div>

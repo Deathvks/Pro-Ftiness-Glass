@@ -1,4 +1,4 @@
 {
-  "version": "7.10.70",
-  "releaseNotes": "Actualización v7.10.70: Ajuste armónico del espaciado inferior en calculadoras, enciclopedia y noticias, y corrección de navegación automática hacia arriba al abrir artículos relacionados."
+  "version": "7.10.71",
+  "releaseNotes": "Actualización v7.10.71: Restauración del estilo original de previsualización en biblioteca de ejercicios: formato completo (cover), sin bandas vacías, con bordes redondeados y reproducción GIF fluida."
 }

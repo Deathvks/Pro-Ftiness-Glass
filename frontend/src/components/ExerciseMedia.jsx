@@ -199,7 +199,8 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     const aspectRatioClass = isAuto ? 'w-full h-auto min-h-[200px] max-h-[70vh]' : 'w-full h-full';
     
     const finalBgClass = fitMode === 'cover' || transparentBackground ? 'bg-transparent' : 'bg-black/5 dark:bg-white/5';
-    const containerClasses = `${aspectRatioClass} relative rounded-[24px] overflow-hidden ${finalBgClass} flex items-center justify-center ${className}`;
+    const radiusClass = className && (className.includes('rounded-') || className.includes('rounded')) ? '' : 'rounded-[24px]';
+    const containerClasses = `${aspectRatioClass} relative ${radiusClass} overflow-hidden ${finalBgClass} flex items-center justify-center ${className}`;
 
     // Lógica de ajuste de imagen
     const getImageBlendClass = (url) => {
