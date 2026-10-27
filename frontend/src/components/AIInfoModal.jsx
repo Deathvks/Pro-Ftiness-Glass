@@ -16,7 +16,20 @@ const AIInfoModal = ({ onClose }) => {
 
   const [remainingUses, setRemainingUses] = useState(() => localStorage.getItem('ai_remaining_uses') || '5');
   const [dailyLimit, setDailyLimit] = useState(() => localStorage.getItem('ai_daily_limit') || '5');
-  const [timeLeft, setTimeLeft] = useState('');
+  const [timeLeft, setTimeLeft] = useState(() => {
+    try {
+      const now = new Date();
+      const madridTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Madrid" }));
+      const nextMidnight = new Date(madridTime);
+      nextMidnight.setHours(24, 0, 0, 0);
+      const diffMs = nextMidnight - madridTime;
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      return `${hours}h ${minutes}m`;
+    } catch {
+      return '';
+    }
+  });
 
   // Estados para deslizamiento en móvil (Swipe down to close)
   const [dragY, setDragY] = useState(0);

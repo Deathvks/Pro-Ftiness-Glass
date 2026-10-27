@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
 const ModalPortal = ({ children, disableSwipeToClose = false }) => {
-  const [mounted, setMounted] = useState(false);
   const touchStartY = useRef(null);
   const touchCurrentY = useRef(null);
   const touchStartTime = useRef(null);
@@ -12,31 +11,23 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
   const overlayRef = useRef(null);
 
   useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
-
-  useEffect(() => {
     const el = overlayRef.current;
     if (!el) return;
     
     const onNativeTouchMove = (e) => {
       if (isValidSwipe.current && touchStartY.current !== null) {
         const currentY = e.touches[0].clientY;
-        // Añadir una pequeña zona muerta de 5px antes de matar el scroll nativo.
-        // Si el dedo tiembla 2px hacia abajo al intentar hacer scroll hacia arriba, 
-        // no queremos llamar a preventDefault() porque cancela todo el gesto de scroll en Android.
         if (currentY - touchStartY.current > 5 && e.cancelable) {
-          e.preventDefault(); // Stop native scroll / pull-to-refresh
+          e.preventDefault();
         }
       }
     };
     
     el.addEventListener('touchmove', onNativeTouchMove, { passive: false });
     return () => el.removeEventListener('touchmove', onNativeTouchMove);
-  }, [mounted]);
+  }, []);
 
-  if (!mounted || !children) return null;
+  if (typeof document === 'undefined' || !children) return null;
 
   // Filtrar elementos válidos (eliminar false, null, undefined)
   const validChildren = React.Children.toArray(children).filter(Boolean);

@@ -22,12 +22,12 @@ import AndroidDownloadPrompt from './AndroidDownloadPrompt';
 import APKUpdater from './APKUpdater';
 import UserAvatar from './UserAvatar';
 
-const ConfirmationModal = lazy(() => import('./ConfirmationModal'));
-const WelcomeModal = lazy(() => import('./WelcomeModal'));
+import ConfirmationModal from './ConfirmationModal';
+import WelcomeModal from './WelcomeModal';
 const EmailVerificationModal = lazy(() => import('./EmailVerificationModal'));
 const EmailVerification = lazy(() => import('./EmailVerification'));
 const CookieConsentBanner = lazy(() => import('./CookieConsentBanner'));
-const AIInfoModal = lazy(() => import('./AIInfoModal'));
+import AIInfoModal from './AIInfoModal';
 const MilestoneLevelUpModal = lazy(() => import('./MilestoneLevelUpModal'));
 const ReferralSuccessAnimation = lazy(() => import('./ReferralSuccessAnimation'));
 const GlobalRatingPrompt = lazy(() => import('./GlobalRatingPrompt'));

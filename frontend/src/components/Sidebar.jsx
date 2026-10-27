@@ -7,7 +7,7 @@ import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 import NetworkIndicatorBadge from './NetworkIndicatorBadge';
 
 const StoryViewer = lazy(() => import('./StoryViewer'));
-const AIInfoModal = lazy(() => import('./AIInfoModal'));
+import AIInfoModal from './AIInfoModal';
 
 const SidebarItem = ({ label, icon, isActive, onClick, onPreload, onIconClick, badgeCount, isRed, shouldTruncate, className = '', isCollapsed, badge, scaleIcon = true, disableTranslate = false }) => (
   <button

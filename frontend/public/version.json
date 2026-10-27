@@ -1,4 +1,4 @@
 {
-  "version": "7.10.74",
-  "releaseNotes": "Actualización v7.10.74: Corrección definitiva de conflicto de entradas duplicadas en Service Worker (Workbox precache), desduplicación estricta de React 19.2.3 y carga instantánea."
+  "version": "7.11.0",
+  "releaseNotes": "Actualización v7.11.0: Nuevo Portal de Noticias y Ciencia Fitness, Calculadoras de 1RM y Macros, Enciclopedia de Ejercicios, Asesorías de Entrenador y apertura instantánea a 0ms."
 }

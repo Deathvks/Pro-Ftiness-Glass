@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import ModalPortal from './ModalPortal';
 import {
-  ChevronRight, Brain, Timer, Palette, Smartphone, MessageCircle, Flame, Sparkles } from
+  ChevronRight, Newspaper, Calculator, Dumbbell, Zap, Sparkles } from
 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6';
 import { Capacitor } from '@capacitor/core';
@@ -341,7 +341,7 @@ const WelcomeModal = ({ onClose }) => {
                   letterSpacing: '-0.5px',
                   lineHeight: 1.15
                 }}>
-                Tu Progreso al Día
+                Noticias y Herramientas
               </h1>
 
               <p style={{
@@ -352,7 +352,7 @@ const WelcomeModal = ({ onClose }) => {
                   maxWidth: '320px',
                   marginInline: 'auto'
                 }}>
-                Hemos mejorado el seguimiento de tus entrenamientos y nutrición, el control de tus series semanales y la rapidez de toda la app.
+                Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y velocidad instantánea en toda la app.
               </p>
             </div>
 
@@ -362,7 +362,7 @@ const WelcomeModal = ({ onClose }) => {
             {/*  Feature Cards  */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
 
-              {/* 01: Seguimiento en el Dashboard */}
+              {/* 01: Portal de Noticias Fitness */}
               <div className="wm-feature-card wm-feature-1" style={{
                   background: 'linear-gradient(135deg, #080814 0%, #121226 100%)',
                   border: '1px solid rgba(168,85,247,0.35)',
@@ -383,57 +383,57 @@ const WelcomeModal = ({ onClose }) => {
                   }}></div>
                 <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #a855f7, #6366f1)' }} />
                 <div className="wm-icon-wrap" style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.25)' }}>
-                  <Brain size={18} style={{ color: '#a855f7' }} />
+                  <Newspaper size={18} style={{ color: '#a855f7' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>Resumen de Progreso en Inicio</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>Portal de Noticias y Ciencia Fitness</p>
                   <p style={{ fontSize: '13px', color: 'rgba(203,213,225,0.9)', margin: 0, lineHeight: 1.55 }}>
-                    Revisa de un vistazo en el Dashboard tus mejoras en verde o qué ejercicios y nutrición necesitan atención, con acceso directo para iniciar tu rutina.
+                    Descubre artículos actualizados sobre hipertrofia, nutrición, suplementación y salud con modo de lectura adaptable y artículos recomendados.
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#a855f7' }}>01</span>
               </div>
 
-              {/* 02: Control de Series Semanales */}
+              {/* 02: Calculadoras y Enciclopedia */}
               <div className="wm-feature-card wm-feature-2" style={{ border: '1px solid var(--glass-border)' }}>
                 <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #3b82f6, #06b6d4)' }} />
                 <div className="wm-icon-wrap" style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)' }}>
-                  <Flame size={18} style={{ color: '#3b82f6' }} />
+                  <Calculator size={18} style={{ color: '#3b82f6' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>Series Semanales a tu Medida</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>Calculadoras 1RM, Macros y Ejercicios</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Toca cualquier músculo en Rutinas para ver qué ejercicios cuentan en tu volumen semanal y elige fácilmente cuáles quieres incluir o excluir.
+                    Calcula tu fuerza máxima (1RM), tus calorías y macronutrientes ideales, y explora la enciclopedia completa de ejercicios con vídeo y técnica.
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#3b82f6' }}>02</span>
               </div>
 
-              {/* 03: Navegación y Carga Instantánea */}
+              {/* 03: Asesoría y Seguimiento en Inicio */}
               <div className="wm-feature-card wm-feature-3" style={{ border: '1px solid var(--glass-border)' }}>
                 <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #f97316, #eab308)' }} />
                 <div className="wm-icon-wrap" style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)' }}>
-                  <Sparkles size={18} style={{ color: '#f97316' }} />
+                  <Dumbbell size={18} style={{ color: '#f97316' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f97316', margin: '0 0 4px', textTransform: 'uppercase' }}>App Mucho Más Rápida</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f97316', margin: '0 0 4px', textTransform: 'uppercase' }}>Asesorías y Progreso en Dashboard</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Hemos agilizado el arranque de la aplicación y el cambio entre apartados del menú para que te muevas por la web y el móvil sin esperas.
+                    Recibe pautas de entrenamiento y dieta de tu entrenador en el inicio, controla tus series semanales por músculo y chatea en tiempo real.
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#f97316' }}>03</span>
               </div>
 
-              {/* 04: Avisos Adaptados a tus Temas */}
+              {/* 04: Velocidad Instantánea */}
               <div className="wm-feature-card wm-feature-4" style={{ border: '1px solid var(--glass-border)' }}>
                 <div className="wm-accent-line" style={{ background: '#10b981' }} />
                 <div className="wm-icon-wrap" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)' }}>
-                  <Palette size={18} style={{ color: '#10b981' }} />
+                  <Zap size={18} style={{ color: '#10b981' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#10b981', margin: '0 0 4px', textTransform: 'uppercase' }}>Avisos con el Estilo de tu Tema</p>
+                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#10b981', margin: '0 0 4px', textTransform: 'uppercase' }}>Apertura Instantánea (0ms)</p>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Las notificaciones y avisos de nuevos récords ahora se adaptan a los colores de tu tema activo (Galaxia, Desierto, Océano, OLED, Claro y Oscuro).
+                    Noticias, calculadoras, sistema de créditos IA y vistas principales ahora se abren al instante sin tiempos de espera en web y móvil.
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#10b981' }}>04</span>
