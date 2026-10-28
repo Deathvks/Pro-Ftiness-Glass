@@ -1,6 +1,6 @@
 {
-  "version": "7.11.10",
-  "releaseNotes": "Actualización v7.11.10: Preparación previa de los archivos principales para acelerar la recarga de versión.",
+  "version": "7.11.11",
+  "releaseNotes": "Actualización v7.11.11: Corrección en el gestor de errores de vistas de la aplicación.",
   "welcome": {
     "title": "Recarga más rápida",
     "subtitle": "Los archivos principales de la app se preparan antes de activar la actualización.",

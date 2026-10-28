@@ -16,7 +16,7 @@ import * as userService from '../services/userService';
 // Componentes UI
 import Sidebar from './Sidebar';
 import ModalPortal from './ModalPortal';
-import { Palette, RefreshCw } from 'lucide-react';
+import { Palette, RefreshCw, AlertTriangle } from 'lucide-react';
 import Spinner from './Spinner';
 import PRToast from './PRToast';
 import AndroidDownloadPrompt from './AndroidDownloadPrompt';
