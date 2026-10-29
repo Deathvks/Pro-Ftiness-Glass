@@ -6,6 +6,9 @@ const CACHE_KEY = 'pfg_cached_exercise_list';
 let cachedExerciseList = null;
 let latestExerciseList = null;
 let exerciseMediaPrefetchScheduled = false;
+let exerciseMediaPrefetchLoading = false;
+const exerciseMediaPrefetchQueue = [];
+const exerciseMediaPrefetchQueued = new Set();
 
 const getExerciseImageUrls = (exercises) => {
     const apiBase = import.meta.env.VITE_API_BASE_URL || '';
@@ -43,40 +46,72 @@ const getExerciseImageUrls = (exercises) => {
     return [...urls];
 };
 
+const canPrefetchExerciseMedia = () => {
+    if (typeof window === 'undefined' || !navigator.onLine || document.hidden) return false;
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    return !connection?.saveData && !['slow-2g', '2g', '3g'].includes(connection?.effectiveType);
+};
+
+const scheduleNextExerciseImage = () => {
+    if (
+        exerciseMediaPrefetchScheduled || exerciseMediaPrefetchLoading ||
+        exerciseMediaPrefetchQueue.length === 0 || !canPrefetchExerciseMedia()
+    ) return;
+
+    exerciseMediaPrefetchScheduled = true;
+    const startNextImage = () => {
+        exerciseMediaPrefetchScheduled = false;
+        if (!canPrefetchExerciseMedia() || exerciseMediaPrefetchLoading) return;
+
+        const url = exerciseMediaPrefetchQueue.shift();
+        if (!url) return;
+        exerciseMediaPrefetchLoading = true;
+        const image = new Image();
+        image.fetchPriority = 'low';
+
+        let finished = false;
+        const finish = () => {
+            if (finished) return;
+            finished = true;
+            clearTimeout(timeoutId);
+            image.onload = null;
+            image.onerror = null;
+            exerciseMediaPrefetchLoading = false;
+            scheduleNextExerciseImage();
+        };
+
+        const timeoutId = window.setTimeout(() => {
+            image.src = '';
+            finish();
+        }, 20000);
+        image.onload = finish;
+        image.onerror = finish;
+        image.src = url;
+    };
+
+    if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(startNextImage, { timeout: 30000 });
+    } else {
+        window.setTimeout(startNextImage, 8000);
+    }
+};
+
 const scheduleExerciseMediaPrefetch = (exercises) => {
     latestExerciseList = exercises;
-    if (exerciseMediaPrefetchScheduled || typeof window === 'undefined') return;
-    exerciseMediaPrefetchScheduled = true;
-
-    const run = async () => {
-        exerciseMediaPrefetchScheduled = false;
-        if (!navigator.onLine || !latestExerciseList?.length || !('serviceWorker' in navigator)) return;
-
-        // Respeta el modo de ahorro de datos y conexiones muy lentas.
-        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-        if (connection?.saveData || ['slow-2g', '2g', '3g'].includes(connection?.effectiveType)) return;
-
-        try {
-            const registration = await navigator.serviceWorker.ready;
-            const worker = navigator.serviceWorker.controller || registration.active;
-            if (!worker) return;
-            worker.postMessage({
-                type: 'PREFETCH_EXERCISE_IMAGES',
-                urls: getExerciseImageUrls(latestExerciseList),
-            });
-        } catch {
-            // La precarga es oportunista: nunca debe afectar al uso normal de la app.
-        }
-    };
-
-    const schedule = () => {
-        if ('requestIdleCallback' in window) window.requestIdleCallback(run, { timeout: 12000 });
-        else window.setTimeout(run, 5000);
-    };
-
-    if (navigator.onLine) schedule();
-    else window.addEventListener('online', schedule, { once: true });
+    for (const url of getExerciseImageUrls(latestExerciseList)) {
+        if (/\.(mp4|mov|webm|mkv)(?:$|\?)/i.test(url) || exerciseMediaPrefetchQueued.has(url)) continue;
+        exerciseMediaPrefetchQueued.add(url);
+        exerciseMediaPrefetchQueue.push(url);
+    }
+    scheduleNextExerciseImage();
 };
+
+if (typeof window !== 'undefined') {
+    window.addEventListener('online', scheduleNextExerciseImage);
+    document.addEventListener('visibilitychange', scheduleNextExerciseImage);
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    connection?.addEventListener?.('change', scheduleNextExerciseImage);
+}
 
 const loadPersistedExerciseList = () => {
     try {
