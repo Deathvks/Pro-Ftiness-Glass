@@ -576,7 +576,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
       {/* CATEGORÍAS */}
       <nav
         aria-label="Categorías de artículos"
-        className="flex items-center gap-2.5 overflow-x-auto pb-3 pt-1 px-1 -mx-1 scrollbar-none"
+        className="flex flex-nowrap items-center gap-2.5 overflow-x-auto pb-3 pt-1 px-1 -mx-1 scrollbar-none md:flex-wrap md:overflow-visible"
       >
         {categories.map((cat) => {
           const isActive = currentCategory === cat;

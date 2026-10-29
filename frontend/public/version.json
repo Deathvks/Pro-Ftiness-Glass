@@ -1,6 +1,6 @@
 {
-  "version": "7.11.14",
-  "releaseNotes": "Actualización v7.11.14: Precarga de imágenes más gradual para mejorar la estabilidad y el uso sin conexión.",
+  "version": "7.11.15",
+  "releaseNotes": "Actualización v7.11.15: Mejoras en la navegación de categorías de noticias en escritorio.",
   "welcome": {
     "title": "Recarga más rápida",
     "subtitle": "Los archivos principales de la app se preparan antes de activar la actualización.",
