@@ -1,6 +1,7 @@
 import models from '../models/index.js';
 const { SecurityLog, IpBlacklist } = models;
 import { Op } from 'sequelize';
+import { notifyAdminsOfIpBlock } from '../services/securityNotificationService.js';
 
 // Helper universal para extraer la IP limpia del cliente (evita listas proxy y espacios)
 export const getClientIp = (req) => {
@@ -103,13 +104,17 @@ export const logSecurityEvent = async ({ eventType, ipAddress, userId, userAgent
         // Bloquear por 24 horas
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
         
-        await IpBlacklist.findOrCreate({
+        const [blockedIp, wasCreated] = await IpBlacklist.findOrCreate({
           where: { ipAddress: targetIp },
           defaults: {
             reason: 'Autobloqueo: Múltiples intentos de inicio de sesión fallidos (Fuerza Bruta)',
             expiresAt
           }
         });
+
+        if (wasCreated) {
+          void notifyAdminsOfIpBlock({ ipAddress: targetIp, reason: blockedIp.reason });
+        }
 
         console.log(`[SECURITY LOG] Auto-banning IP por fuerza bruta: ${targetIp}`);
         await SecurityLog.create({
@@ -148,13 +153,17 @@ export const sniffingDetector = async (req, res, next) => {
     
     // Auto-ban IP permanently
     try {
-      await IpBlacklist.findOrCreate({
+      const [blockedIp, wasCreated] = await IpBlacklist.findOrCreate({
         where: { ipAddress: ip },
         defaults: {
           reason: 'Autobloqueo: Intento de Sniffing a archivo sensible (' + url + ')',
           expiresAt: null
         }
       });
+
+      if (wasCreated) {
+        void notifyAdminsOfIpBlock({ ipAddress: ip, reason: blockedIp.reason });
+      }
 
       await logSecurityEvent({
         eventType: 'AUTO_BAN_SNIFFING',

@@ -780,7 +780,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                   <span className="hidden sm:inline">Anterior</span>
                 </button>
 
-                <div className="flex items-center gap-1 sm:gap-1.5 mx-0.5 sm:mx-1 max-w-full overflow-x-auto py-0.5 scrollbar-none">
+                <div className="flex min-w-0 items-center gap-1 sm:gap-1.5 mx-0.5 sm:mx-1 max-w-full overflow-x-auto px-1 py-0.5 scrollbar-none">
                   {visiblePages.map((p, idx) => {
                     const prev = visiblePages[idx - 1];
                     const showEllipsis = prev && p - prev > 1;

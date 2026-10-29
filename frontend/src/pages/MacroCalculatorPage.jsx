@@ -26,6 +26,7 @@ import {
   FaHeartPulse
 } from 'react-icons/fa6';
 import useAppStore from '../store/useAppStore';
+import CustomSelect from '../components/CustomSelect';
 
 const ACTIVITY_LEVELS = [
   { value: 1.2, label: 'Sedentario (Oficina, sin ejercicio)', short: 'Sedentario' },
@@ -34,6 +35,10 @@ const ACTIVITY_LEVELS = [
   { value: 1.725, label: 'Intenso (Gimnasio 5 - 6 días/semana)', short: '5-6 días Gym' },
   { value: 1.9, label: 'Atleta Élite (Entreno diario + físico)', short: 'Atleta' }
 ];
+const ACTIVITY_OPTIONS = ACTIVITY_LEVELS.map((level) => ({
+  value: String(level.value),
+  label: level.label,
+}));
 
 const GOALS = [
   {
@@ -468,17 +473,13 @@ export default function MacroCalculatorPage({ onBack }) {
                   </button>
                 ))}
               </div>
-              <select
-                value={activity}
-                onChange={(e) => setActivity(Number(e.target.value))}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-bg-primary border border-black/10 dark:border-white/15 text-text-primary font-bold text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-              >
-                {ACTIVITY_LEVELS.map((lvl) => (
-                  <option key={lvl.value} value={lvl.value}>
-                    {lvl.label}
-                  </option>
-                ))}
-              </select>
+              <CustomSelect
+                value={String(activity)}
+                onChange={(value) => setActivity(Number(value))}
+                options={ACTIVITY_OPTIONS}
+                placeholder="Selecciona tu nivel de actividad"
+                triggerClassName="rounded-xl px-3.5 py-2.5 text-text-primary border border-black/10 dark:border-white/15 bg-bg-primary hover:bg-bg-secondary/70 text-xs sm:text-sm font-bold"
+              />
             </div>
 
             {/* Goal Selector */}
@@ -670,7 +671,7 @@ export default function MacroCalculatorPage({ onBack }) {
               </div>
               <button
                 onClick={() => navigate(isAuthenticated ? '/nutrition' : '/register')}
-                className="w-full sm:w-auto shrink-0 px-5 py-3 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/25 hover:scale-105 active:scale-95 transition-all whitespace-nowrap"
+                className="w-full sm:w-auto shrink-0 px-5 py-3 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 active:bg-emerald-600 transition-colors whitespace-nowrap"
               >
                 {isAuthenticated ? 'Abrir Mi Nutrición' : 'Controlar Mis Macros Gratis'}
               </button>

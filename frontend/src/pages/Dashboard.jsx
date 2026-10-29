@@ -4,8 +4,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import { toBlob } from 'html-to-image';
 import {
-  Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints,
-  Bike, Activity, Droplet, Beef, Zap, CheckCircle, XCircle,
+  Dumbbell, Target, Clock, Flame, Plus, Play, Edit,
+  Droplet, Beef, Zap, CheckCircle, XCircle,
   ArrowUp, ArrowDown, Minus, ChevronRight, Trophy as TrophyLucide, Check, Crown,
   LayoutGrid, IceCream, TriangleAlert, Info, Share2, X, Loader2, Lock, List, Copy, ListFilter,
   MapPin
@@ -25,6 +25,7 @@ import {
   FaPlay, 
   FaListCheck 
 } from 'react-icons/fa6'; 
+import { FaBicycle, FaPersonRunning } from 'react-icons/fa6';
 
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
@@ -1046,7 +1047,7 @@ const Dashboard = ({ setView }) => {
               <h2 className="text-xl font-bold">{t('Cardio Rápido', { defaultValue: 'Cardio Rápido' })}</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-              {[{ name: 'Cinta', key: 'Cinta', icon: Footprints }, { name: 'Bici', key: 'Bici', icon: Activity }].map(item => (
+              {[{ name: 'Cinta', key: 'Cinta', icon: FaPersonRunning }, { name: 'Bici', key: 'Bici', icon: FaBicycle }].map(item => (
                 <GlassCard key={item.key} className="glass relative p-0 overflow-hidden rounded-[24px] group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 h-36 cursor-pointer">
                   <button onClick={() => { startSimpleWorkout(`Cardio: ${item.name}`); setView('workout'); }} className="w-full h-full flex flex-col items-center justify-center gap-4 transition-all">
                     <div className="p-3.5 rounded-[20px] text-accent group-hover:scale-110 transition-all bg-black/5 dark:bg-white/5">

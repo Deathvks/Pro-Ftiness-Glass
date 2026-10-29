@@ -110,10 +110,10 @@ const WorkoutHeader = ({
       <div className="relative z-10 p-6 sm:p-8 flex flex-col items-center text-center text-text-primary w-full">
         
         {/* Botón Volver */}
-        <div className="w-full flex items-center justify-between mb-6">
+        <div className="w-full flex items-center justify-between gap-4 mb-6">
           <button
             onClick={onBackClick}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-bg-secondary/60 backdrop-blur-md ring-1 ring-black/5 dark:ring-white/10 text-sm font-bold hover:bg-bg-secondary/80 hover:scale-105 transition-all active:scale-95 shadow-sm text-text-primary"
+            className="flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-full bg-bg-secondary/60 backdrop-blur-md ring-1 ring-black/5 dark:ring-white/10 text-sm font-bold hover:bg-bg-secondary/80 hover:scale-105 transition-all active:scale-95 shadow-sm text-text-primary"
           >
             <ChevronLeft size={18} strokeWidth={2.5} />
             Atrás
@@ -122,7 +122,7 @@ const WorkoutHeader = ({
           {onOpenSettings && (
             <button
               onClick={onOpenSettings}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-bg-secondary/60 backdrop-blur-md ring-1 ring-black/5 dark:ring-white/10 text-sm font-bold hover:bg-bg-secondary/80 hover:scale-105 transition-all active:scale-95 shadow-sm text-text-primary"
+              className="flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-full bg-bg-secondary/60 backdrop-blur-md ring-1 ring-black/5 dark:ring-white/10 text-sm font-bold hover:bg-bg-secondary/80 hover:scale-105 transition-all active:scale-95 shadow-sm text-text-primary"
               title="Ajustes de descanso y sonido"
             >
               <Sliders size={16} />

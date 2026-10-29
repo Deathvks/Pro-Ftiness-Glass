@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Camera } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Camera as CapCamera } from '@capacitor/camera';
@@ -24,6 +24,10 @@ const ProfileEditor = ({ onDone }) => {
     
     const [showPermissionModal, setShowPermissionModal] = useState(false);
     const fileInputRef = useRef(null);
+
+    useEffect(() => () => {
+        if (previewImage?.startsWith('blob:')) URL.revokeObjectURL(previewImage);
+    }, [previewImage]);
 
     const validateForm = () => {
         const newErrors = {};
@@ -102,7 +106,11 @@ const ProfileEditor = ({ onDone }) => {
         const file = e.target.files[0];
         if (file) {
             setProfileImage(file);
-            setPreviewImage(URL.createObjectURL(file));
+            const nextPreview = URL.createObjectURL(file);
+            setPreviewImage((current) => {
+                if (current?.startsWith('blob:')) URL.revokeObjectURL(current);
+                return nextPreview;
+            });
             setErrors(prev => ({ ...prev, profileImage: null }));
         }
     };

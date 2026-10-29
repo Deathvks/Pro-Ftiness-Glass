@@ -217,12 +217,7 @@ export default function AppearanceScreen({ setView }) {
   
 
   const handleThemeClick = (mode) => {
-    if (isIOS()) {
-      setPendingThemeAction({ type: 'apply', payload: mode });
-      setShowThemeReloadModal(true);
-    } else {
-      setTheme(mode);
-    }
+    setTheme(mode);
   };
 
   const confirmThemeReload = () => {

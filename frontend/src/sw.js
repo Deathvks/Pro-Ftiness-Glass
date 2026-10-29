@@ -6,6 +6,7 @@ import { precacheAndRoute, cleanupOutdatedCaches, matchPrecache } from 'workbox-
 import { registerRoute } from 'workbox-routing';
 import { StaleWhileRevalidate, NetworkFirst, NetworkOnly, CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
+import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import { BackgroundSyncPlugin } from 'workbox-background-sync';
 import { clientsClaim } from 'workbox-core';
 
@@ -180,6 +181,22 @@ registerRoute(
       new ExpirationPlugin({
         maxEntries: 100,
         maxAgeSeconds: 14 * 24 * 60 * 60, // 14 días
+      }),
+    ],
+  })
+);
+
+// B3. Imágenes servidas desde el backend u otros dominios: conservarlas para uso offline.
+// Las respuestas opacas (status 0) son comunes cuando el servidor externo no expone CORS.
+registerRoute(
+  ({ request, url }) => request.destination === 'image' && url.origin !== self.location.origin,
+  new CacheFirst({
+    cacheName: 'remote-exercise-images-cache',
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({
+        maxEntries: 500,
+        maxAgeSeconds: 90 * 24 * 60 * 60,
       }),
     ],
   })

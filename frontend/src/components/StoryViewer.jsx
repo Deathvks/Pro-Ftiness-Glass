@@ -895,7 +895,7 @@ const StoryViewer = ({ userId, onClose }) => {
           {/* Precarga del siguiente elemento */}
           {nextMediaUrl && (
           isNextVideo ?
-          <video src={nextMediaUrl} preload="auto" className="hidden" /> :
+          <video src={nextMediaUrl} preload="metadata" className="hidden" /> :
 
           <img src={nextMediaUrl} alt="preload" className="hidden" />)
 

@@ -1,5 +1,5 @@
 /* frontend/src/components/ExerciseMedia.jsx */
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { Image as ImageIcon, WifiOff } from 'lucide-react';
 
 
@@ -15,6 +15,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [isOffline, setIsOffline] = useState(() => typeof navigator !== 'undefined' ? !navigator.onLine : false);
+  const videoElementRef = useRef(null);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -119,6 +120,46 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   // Use mqdefault.jpg for a native 16:9 aspect ratio without black bars
   const youtubeThumbnail = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
 
+  useEffect(() => {
+    const video = videoElementRef.current;
+    if (!video || !videoUrl || videoError || youtubeId) return undefined;
+
+    const releaseVideo = () => {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    };
+    const playVideo = () => {
+      if (!video.getAttribute('src')) video.src = videoUrl;
+      video.play().catch(() => {});
+    };
+    const handleVisibilityChange = () => {
+      if (document.hidden) video.pause();
+      else if (video.dataset.inViewport === 'true') playVideo();
+    };
+
+    let observer;
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver(([entry]) => {
+        const isVisible = entry.isIntersecting && entry.intersectionRatio >= 0.15;
+        video.dataset.inViewport = String(isVisible);
+        if (isVisible && !document.hidden) playVideo();
+        else releaseVideo();
+      }, { threshold: [0, 0.15] });
+      observer.observe(video);
+    } else {
+      video.dataset.inViewport = 'true';
+      playVideo();
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      observer?.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      releaseVideo();
+    };
+  }, [videoUrl, videoError, youtubeId]);
+
   // LÃƒÂ³gica de contraste para Oscuro, OLED y Galaxia:
   
   const imageBgClass = 'bg-bg-secondary dark:bg-gray-200';
@@ -177,10 +218,11 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   if (videoUrl && !videoError && !youtubeId) {
     return (
       <video
+        ref={videoElementRef}
         key={videoUrl}
         className={`w-full h-auto min-h-[200px] max-h-[70vh] overflow-hidden bg-transparent ${className}`}
-        src={videoUrl}
-        autoPlay
+        data-src={videoUrl}
+        preload="none"
         loop
         muted
         playsInline
@@ -264,7 +306,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
                 className={`${posClass} ${sizeClass} transition-opacity duration-500 ease-in-out ${getImageBlendClass(url)} ${visibilityClass}`}
                 style={visibilityStyle}
                 onError={() => setImageError(true)}
-                loading="lazy"
+                loading="eager"
               />
             );
           })}
@@ -281,7 +323,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
           alt={`DemostraciÃƒÂ³n de ${details?.name || 'ejercicio'}`}
           className={`${imgBaseClass} transition-opacity duration-500 ${getImageBlendClass(imageToRender)}`}
           onError={() => setImageError(true)}
-          loading="lazy"
+          loading="eager"
         />
       </div>
     );

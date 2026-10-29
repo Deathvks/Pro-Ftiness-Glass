@@ -6,6 +6,7 @@ import { RefreshCw, AlertTriangle } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { APP_VERSION } from '../config/version';
 import useAppStore from '../store/useAppStore';
+import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
 
 const isNewerVersion = (current, remote) => {
   if (!current || !remote) return false;
@@ -21,6 +22,7 @@ const isNewerVersion = (current, remote) => {
 const SWUpdaterCore = () => {
   const [isChunkError, setIsChunkError] = useState(false);
   const [needRefresh, setNeedRefresh] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const showWelcomeModal = useAppStore((state) => state.showWelcomeModal);
   const welcomeRemoteVersion = useAppStore((state) => state.welcomeRemoteVersion);
   const closeWelcomeModal = useAppStore((state) => state.closeWelcomeModal);
@@ -238,30 +240,12 @@ const SWUpdaterCore = () => {
   if ((showWelcomeModal && !isChunkError) || (!needRefresh && !isChunkError)) return null;
 
   const handleUpdate = async () => {
-    try {
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (const reg of registrations) {
-          await reg.update().catch(() => {});
-          if (reg.waiting) {
-            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-          }
-        }
-      }
-      if ('caches' in window) {
-        const names = await caches.keys();
-        await Promise.all(names.map((n) => caches.delete(n)));
-      }
-    } catch (e) {
-      console.warn('Error clearing caches on manual update', e);
-    }
+    if (isUpdating) return;
+    setIsUpdating(true);
     sessionStorage.removeItem('pfg_auto_reloaded_version');
     sessionStorage.removeItem('pfg_last_safe_reload_time');
     sessionStorage.removeItem('pfg_reload_count');
-    setTimeout(() => {
-      const cleanUrl = window.location.origin + window.location.pathname + (window.location.hash || '');
-      window.location.replace(cleanUrl);
-    }, 150);
+    await reloadAppWithoutStaleCache({ path: window.location.pathname + window.location.hash });
   };
 
   return (
@@ -288,10 +272,11 @@ const SWUpdaterCore = () => {
 
           <button
             onClick={handleUpdate}
-            className="w-full py-3 px-4 bg-accent text-accent-contrast font-bold rounded-xl hover:bg-accent/90 transition-all flex items-center justify-center gap-2"
+            disabled={isUpdating}
+            className="w-full py-3 px-4 bg-accent text-accent-contrast font-bold rounded-xl hover:bg-accent/90 disabled:opacity-70 transition-all flex items-center justify-center gap-2"
           >
-            <RefreshCw size={18} />
-            Actualizar ahora
+            <RefreshCw size={18} className={isUpdating ? 'animate-spin' : ''} />
+            {isUpdating ? 'Preparando actualización…' : 'Actualizar ahora'}
           </button>
         </div>
       </div>

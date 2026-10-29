@@ -1,38 +1,57 @@
-const RECOVERY_TIMEOUT_MS = 2500;
+const waitForWorkerState = (worker, targetState, timeoutMs = 10000) => new Promise((resolve) => {
+  if (!worker || worker.state === targetState) return resolve(true);
 
-export const clearAppRuntimeCache = async () => {
-  const cleanupTasks = [];
+  let timeout;
+  const onStateChange = () => {
+    if (worker.state === targetState || worker.state === 'redundant') {
+      finish(worker.state === targetState);
+    }
+  };
+  const finish = (result) => {
+    clearTimeout(timeout);
+    worker.removeEventListener('statechange', onStateChange);
+    resolve(result);
+  };
 
-  if ('caches' in window) {
-    cleanupTasks.push(
-      caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
-    );
+  timeout = setTimeout(() => finish(false), timeoutMs);
+  worker.addEventListener('statechange', onStateChange);
+  onStateChange();
+});
+
+const activatePendingServiceWorkers = async () => {
+  if (!('serviceWorker' in navigator)) return;
+
+  const previousController = navigator.serviceWorker.controller;
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(registrations.map((registration) => registration.update().catch(() => {})));
+
+  for (const registration of registrations) {
+    let worker = registration.waiting;
+    if (!worker && registration.installing) {
+      const installed = await waitForWorkerState(registration.installing, 'installed');
+      if (installed) worker = registration.waiting || registration.installing;
+    }
+    if (worker?.state === 'installed') {
+      worker.postMessage({ type: 'SKIP_WAITING' });
+    }
   }
 
-  if ('serviceWorker' in navigator) {
-    cleanupTasks.push(
-      navigator.serviceWorker.getRegistrations().then((registrations) =>
-        Promise.all(registrations.map((registration) => registration.unregister()))
-      )
-    );
+  if (previousController && navigator.serviceWorker.controller === previousController) {
+    await new Promise((resolve) => {
+      const timeout = setTimeout(resolve, 3000);
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        clearTimeout(timeout);
+        resolve();
+      }, { once: true });
+    });
   }
-
-  if (cleanupTasks.length === 0) return;
-
-  let timeoutId;
-  await Promise.race([
-    Promise.allSettled(cleanupTasks),
-    new Promise((resolve) => {
-      timeoutId = setTimeout(resolve, RECOVERY_TIMEOUT_MS);
-    }),
-  ]).finally(() => clearTimeout(timeoutId));
 };
 
 export const reloadAppWithoutStaleCache = async ({ path } = {}) => {
   try {
-    await clearAppRuntimeCache();
+    await activatePendingServiceWorkers();
   } catch {
-    // La recarga sigue siendo útil aunque el navegador no permita limpiar alguna caché.
+    // La recarga con URL nueva sigue siendo útil aunque el SW no responda.
   }
 
   try {

@@ -253,7 +253,7 @@ const RestTimerModal = ({ onNavigate }) => {
 
         {view === 'timer' &&
         <div>
-            <button onClick={goBackToSelect} className="absolute top-4 left-4 text-text-secondary hover:text-text-primary"><ArrowLeft size={20} /></button>
+            <button onClick={goBackToSelect} className="absolute top-4 left-14 p-1.5 rounded-full text-text-secondary hover:text-text-primary transition-colors"><ArrowLeft size={20} /></button>
 
             <button
             onClick={handleMinimize}
@@ -329,18 +329,6 @@ const RestTimerModal = ({ onNavigate }) => {
             </div>
           </div>
         }
-        {onNavigate && (
-          <button
-            onClick={() => {
-              setRestTimerMode('minimized');
-              onNavigate('settings', { highlight: 'workout', returnView: 'workout' });
-            }}
-            className="mt-4 w-full flex items-center justify-center gap-1.5 text-xs font-medium text-text-secondary hover:text-accent transition-colors py-1"
-          >
-            <Sliders size={13} />
-            <span>Ajustes de sonido y vibración</span>
-          </button>
-        )}
       </div>
     </div></ModalPortal>;
 

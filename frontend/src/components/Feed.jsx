@@ -43,6 +43,48 @@ const timeAgo = (dateString) => {
     return date.toLocaleDateString();
 };
 
+const FeedPreviewVideo = ({ src, className }) => {
+    const videoRef = useRef(null);
+
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return undefined;
+
+        const release = () => {
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+        };
+        const play = () => {
+            if (!video.getAttribute('src')) video.src = src;
+            video.play().catch(() => {});
+        };
+        let observer;
+        if ('IntersectionObserver' in window) {
+            observer = new IntersectionObserver(([entry]) => {
+                if (entry.isIntersecting && !document.hidden) play();
+                else release();
+            }, { threshold: 0.15 });
+            observer.observe(video);
+        } else {
+            play();
+        }
+
+        const onVisibilityChange = () => {
+            if (document.hidden) video.pause();
+            else if (video.getBoundingClientRect().bottom > 0 && video.getBoundingClientRect().top < window.innerHeight) play();
+        };
+        document.addEventListener('visibilitychange', onVisibilityChange);
+        return () => {
+            observer?.disconnect();
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+            release();
+        };
+    }, [src]);
+
+    return <video ref={videoRef} data-src={src} className={className} muted loop playsInline preload="none" />;
+};
+
 const formatDuration = (seconds) => {
     if (!seconds) return '0 min';
     const m = Math.floor(seconds / 60);
@@ -327,13 +369,9 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                         return (
                                             <div key={idx} className="flex items-start gap-3 sm:gap-4">
                                                 {finalVideoUrl && !finalImgUrl ? (
-                                                     <video
+                                                     <FeedPreviewVideo
                                                         src={finalVideoUrl}
                                                         className="w-12 h-12 sm:w-14 sm:h-14 rounded-[16px] object-cover bg-black/10 dark:bg-white/10 shrink-0 ring-1 ring-black/5 dark:ring-white/10"
-                                                        muted
-                                                        loop
-                                                        playsInline
-                                                        autoPlay
                                                     />
                                                 ) : finalImgUrl ? (
                                                     <img 

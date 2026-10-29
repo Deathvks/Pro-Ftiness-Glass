@@ -131,7 +131,11 @@ export default function SettingsScreen({
   const {
     userProfile,
     resetCookieConsent,
-    setUserProfile
+    setUserProfile,
+    hapticsEnabled,
+    setHapticsEnabled,
+    restSoundEnabled,
+    setRestSoundEnabled
   } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
     resetCookieConsent: state.resetCookieConsent,

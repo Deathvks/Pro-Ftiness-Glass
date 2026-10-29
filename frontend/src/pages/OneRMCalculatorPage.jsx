@@ -21,6 +21,7 @@ import {
   FaCircleQuestion
 } from 'react-icons/fa6';
 import useAppStore from '../store/useAppStore';
+import CustomSelect from '../components/CustomSelect';
 
 const EXERCISES = [
   { id: 'bench', name: 'Press de Banca con Barra', shortName: 'Press Banca', category: 'Pecho / Empuje' },
@@ -47,6 +48,10 @@ const PERCENTAGE_ROWS = [
 
 const QUICK_WEIGHTS = [40, 60, 80, 100, 120, 140];
 const QUICK_REPS = [3, 5, 6, 8, 10, 12];
+const EXERCISE_OPTIONS = EXERCISES.map((exercise) => ({
+  value: exercise.id,
+  label: `${exercise.name} (${exercise.category})`,
+}));
 
 export default function OneRMCalculatorPage({ onBack }) {
   const navigate = useNavigate();
@@ -287,7 +292,7 @@ export default function OneRMCalculatorPage({ onBack }) {
         {/* Interactive Calculator Grid */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start mb-10 sm:mb-14">
           {/* Left Panel: Inputs */}
-          <div className="lg:col-span-5 p-4 sm:p-7 rounded-[24px] sm:rounded-[28px] bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl shadow-xl space-y-5">
+          <div className="lg:col-span-4 p-4 sm:p-6 rounded-2xl bg-bg-primary border border-black/10 dark:border-white/10 shadow-lg space-y-5 min-w-0">
             <div className="flex items-center gap-3 pb-3.5 border-b border-black/5 dark:border-white/10">
               <div className="p-2.5 sm:p-3 rounded-2xl bg-accent/15 text-accent ring-1 ring-accent/30 shrink-0">
                 <FaDumbbell className="text-lg sm:text-xl" />
@@ -319,18 +324,14 @@ export default function OneRMCalculatorPage({ onBack }) {
                   </button>
                 ))}
               </div>
-              <select
-                id="exercise-select"
+              <CustomSelect
                 value={selectedExercise}
-                onChange={(e) => setSelectedExercise(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-bg-primary border border-black/10 dark:border-white/15 text-text-primary font-bold text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-              >
-                {EXERCISES.map((ex) => (
-                  <option key={ex.id} value={ex.id}>
-                    {ex.name} ({ex.category})
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedExercise}
+                options={EXERCISE_OPTIONS}
+                placeholder="Selecciona un ejercicio"
+                searchable
+                triggerClassName="rounded-xl px-3.5 py-2.5 text-text-primary border border-black/10 dark:border-white/15 bg-bg-primary hover:bg-bg-secondary/70"
+              />
             </div>
 
             {/* Weight Input with Touch Stepper Buttons */}
@@ -466,7 +467,7 @@ export default function OneRMCalculatorPage({ onBack }) {
             </div>
 
             {/* Result Highlight Card */}
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-accent/20 via-purple-500/15 to-transparent border border-accent/30 text-center relative overflow-hidden">
+            <div className="p-5 rounded-2xl bg-accent/10 border border-accent/25 text-center relative overflow-hidden">
               <span className="text-[11px] font-black uppercase tracking-widest text-accent block mb-1 truncate">
                 Tu 1RM Estimado ({currentExerciseObj.shortName})
               </span>
@@ -495,7 +496,7 @@ export default function OneRMCalculatorPage({ onBack }) {
           </div>
 
           {/* Right Panel: Percentage Table & Training Zones */}
-          <div className="lg:col-span-7 p-4 sm:p-7 rounded-[24px] sm:rounded-[28px] bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl shadow-xl">
+          <div className="lg:col-span-8 p-4 sm:p-6 rounded-2xl bg-bg-primary border border-black/10 dark:border-white/10 shadow-lg min-w-0">
             <div className="flex items-center justify-between gap-3 pb-4 mb-4 border-b border-black/5 dark:border-white/10">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 sm:p-3 rounded-2xl bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30 shrink-0">

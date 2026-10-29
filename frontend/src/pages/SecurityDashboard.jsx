@@ -3,12 +3,29 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts';
 import apiClient from '../services/apiClient';
+import ConfirmationModal from '../components/ConfirmationModal';
+import { useToast } from '../hooks/useToast';
 
 let cachedSecurityStats = null;
 let cachedSecurityLogs = null;
 let cachedBlacklist = null;
 
+const isValidIpAddress = (value) => {
+  const ip = value.trim();
+  const octets = ip.split('.');
+  if (octets.length === 4 && octets.every((part) => /^\d{1,3}$/.test(part) && Number(part) <= 255)) {
+    return true;
+  }
+  if (!ip.includes(':')) return false;
+  try {
+    return new URL(`http://[${ip}]/`).hostname.startsWith('[');
+  } catch {
+    return false;
+  }
+};
+
 const SecurityDashboard = ({ onBack }) => {
+  const { addToast } = useToast();
   const [stats, setStats] = useState(() => cachedSecurityStats || { 
     totalLogs: 0, 
     blockedIps: 0, 
@@ -27,6 +44,8 @@ const SecurityDashboard = ({ onBack }) => {
   const [newIpToBlock, setNewIpToBlock] = useState('');
   const [blockReason, setBlockReason] = useState('');
   const [loading, setLoading] = useState(() => !cachedSecurityStats);
+  const [ipToUnblock, setIpToUnblock] = useState(null);
+  const [isUnblocking, setIsUnblocking] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -74,30 +93,43 @@ const SecurityDashboard = ({ onBack }) => {
 
   const handleBlockIp = async (e) => {
     e.preventDefault();
-    if (!newIpToBlock.trim()) return;
+    const ipAddress = newIpToBlock.trim();
+    if (!isValidIpAddress(ipAddress)) {
+      addToast('Introduce una dirección IPv4 o IPv6 válida.', 'error');
+      return;
+    }
     
     try {
       await apiClient('/admin/security/blacklist', {
         method: 'POST',
-        body: { ipAddress: newIpToBlock.trim(), reason: blockReason.trim() }
+        body: { ipAddress, reason: blockReason.trim() }
       });
       setNewIpToBlock('');
       setBlockReason('');
-      fetchData();
+      addToast(`IP ${ipAddress} bloqueada correctamente.`, 'success');
+      await fetchData();
     } catch (error) {
       console.error('Error blocking IP', error);
-      alert('Error bloqueando IP');
+      addToast(error?.message || 'No se pudo bloquear la IP.', 'error');
     }
   };
 
-  const handleUnblockIp = async (ip) => {
-    if (!window.confirm("¿Estás seguro de desbloquear la IP " + ip + "?")) return;
-    
+  const handleUnblockIp = (ip) => setIpToUnblock(ip);
+
+  const confirmUnblockIp = async () => {
+    if (!ipToUnblock || isUnblocking) return;
+    setIsUnblocking(true);
     try {
-      await apiClient("/admin/security/blacklist/" + ip, { method: 'DELETE' });
-      fetchData();
+      await apiClient("/admin/security/blacklist/" + ipToUnblock, { method: 'DELETE' });
+      const unblockedIp = ipToUnblock;
+      setIpToUnblock(null);
+      addToast(`IP ${unblockedIp} desbloqueada correctamente.`, 'success');
+      await fetchData();
     } catch (error) {
       console.error('Error unblocking IP', error);
+      addToast(error?.message || 'No se pudo desbloquear la IP.', 'error');
+    } finally {
+      setIsUnblocking(false);
     }
   };
 
@@ -169,10 +201,10 @@ const SecurityDashboard = ({ onBack }) => {
         <div className="bg-black/5 dark:bg-white/5 p-4 rounded-2xl flex flex-col items-center justify-center ring-1 ring-black/5 dark:ring-white/10">
           <i className="fa-solid fa-ban text-red text-xl mb-1.5"></i>
           <span className="text-2xl font-black text-text-primary">{stats.blockedIps ?? 0}</span>
-          <span className="text-[10px] text-text-secondary text-center uppercase tracking-wider font-bold">IPs Bloqueadas</span>
+          <span className="text-[10px] text-text-secondary text-center uppercase tracking-wider font-bold">IPs únicas bloqueadas</span>
           {(stats.blockedAttempts > 0 || stats.totalBlockedIps > 0) && (
             <span className="text-[9px] text-text-secondary text-center font-medium mt-1">
-              {stats.blockedAttempts > 0 ? `${stats.blockedAttempts} bloqueos` : ''}
+              {stats.blockedAttempts > 0 ? `${stats.blockedAttempts} intentos bloqueados` : ''}
               {stats.blockedAttempts > 0 && stats.totalBlockedIps > 0 ? ' · ' : ''}
               {stats.totalBlockedIps > 0 ? `${stats.totalBlockedIps} en lista` : ''}
             </span>
@@ -353,6 +385,17 @@ const SecurityDashboard = ({ onBack }) => {
             )}
           </div>
         </div>
+      )}
+
+      {ipToUnblock && (
+        <ConfirmationModal
+          message={`¿Quieres desbloquear la IP ${ipToUnblock}? Podrá volver a acceder a la aplicación.`}
+          confirmText="Desbloquear IP"
+          cancelText="Cancelar"
+          onConfirm={confirmUnblockIp}
+          onCancel={() => setIpToUnblock(null)}
+          isLoading={isUnblocking}
+        />
       )}
     </div>
   );

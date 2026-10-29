@@ -47,6 +47,43 @@ const notifyAppThemeListeners = () => {
   appThemeListeners.forEach(fn => fn());
 };
 
+const syncThemeDocumentClass = (themeName) => {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  const effectiveTheme = themeName === 'system'
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : themeName;
+
+  root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme', 'desert-theme', 'ocean-theme', 'dark');
+  const classTheme = ['desert', 'desert-dark'].includes(effectiveTheme)
+    ? 'desert'
+    : ['ocean', 'ocean-dark'].includes(effectiveTheme)
+      ? 'ocean'
+      : ['light', 'oled', 'galaxy'].includes(effectiveTheme)
+        ? effectiveTheme
+        : 'dark';
+  root.classList.add(`${classTheme}-theme`);
+
+  const isLightTheme = effectiveTheme === 'light' || effectiveTheme === 'desert' || effectiveTheme === 'ocean';
+  if (!isLightTheme) root.classList.add('dark');
+
+  // index.html fija estas variables inline para colorear el splash inicial.
+  // Si permanecen inline, ganan a las variables de cada tema definidas en CSS.
+  root.style.removeProperty('--bg-primary');
+  root.style.setProperty('--bg-color', 'var(--bg-primary)');
+  root.style.removeProperty('background-color');
+
+  const appRoot = document.getElementById('root');
+  if (appRoot) {
+    if (['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(effectiveTheme)) {
+      appRoot.style.setProperty('background-color', 'transparent', 'important');
+    } else {
+      appRoot.style.setProperty('background-color', 'var(--bg-primary)', 'important');
+    }
+  }
+  document.body?.style.setProperty('background-color', 'var(--bg-primary)', 'important');
+};
+
 const getSafeTextAccent = (hexColor, isLightTheme) => {
     let r = 0, g = 0, b = 0;
     if (hexColor.startsWith('#')) hexColor = hexColor.substring(1);
@@ -140,6 +177,7 @@ export const useAppTheme = () => {
 
     if (cookieConsent) localStorage.setItem('theme', newTheme);
     themeGlobal = newTheme;
+    syncThemeDocumentClass(newTheme);
     setThemeState(newTheme);
     notifyAppThemeListeners();
 
@@ -169,6 +207,7 @@ export const useAppTheme = () => {
     testingThemeNameGlobal = themeName;
     isTestingGlobal = true;
     testTimeLeftGlobal = durationSecs;
+    syncThemeDocumentClass(themeName);
     notifyThemeListeners();
 
     testIntervalGlobal = setInterval(() => {
@@ -213,8 +252,14 @@ export const useAppTheme = () => {
     const appRootDiv = document.getElementById('root');
 
     const updateAppearance = () => {
-      let effectiveTheme = activeTheme;
-      if (activeTheme === 'system') {
+      // Este hook se usa desde varias vistas. Lee siempre la selección global más
+      // reciente para que una instancia que renderice tarde no restaure el tema previo.
+      const currentTheme = isTestingGlobal && testingThemeNameGlobal
+        ? testingThemeNameGlobal
+        : themeGlobal;
+      syncThemeDocumentClass(currentTheme);
+      let effectiveTheme = currentTheme;
+      if (currentTheme === 'system') {
         effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
       }
 

@@ -18,8 +18,8 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     userProfile: state.userProfile,
   })));
 
-  const isAdmin = localDetails?.userProfile?.role === 'admin' || exercise?.userProfile?.role === 'admin' || useAppStore.getState().userProfile?.role === 'admin';
   const [localDetails, setLocalDetails] = useState({ ...exercise, ...(exercise.exercise_details || {}) });
+  const isAdmin = localDetails?.userProfile?.role === 'admin' || exercise?.userProfile?.role === 'admin' || useAppStore.getState().userProfile?.role === 'admin';
   const [isOffline, setIsOffline] = useState(() => typeof navigator !== 'undefined' ? !navigator.onLine : false);
 
   const hasVideo = Boolean(

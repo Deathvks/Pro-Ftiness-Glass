@@ -3,6 +3,7 @@ const { SecurityLog, IpBlacklist } = models;
 import { Op } from 'sequelize';
 import sequelize from '../db.js';
 import { getClientIp } from '../middleware/securityMonitor.js';
+import { notifyAdminsOfIpBlock } from '../services/securityNotificationService.js';
 
 export const getSecurityStats = async (req, res) => {
   try {
@@ -181,10 +182,14 @@ export const blockIp = async (req, res) => {
     if (!ipAddress) return res.status(400).json({ error: 'IP requerida' });
     ipAddress = ipAddress.split(',')[0].trim();
 
-    await IpBlacklist.findOrCreate({
+    const [blockedIp, wasCreated] = await IpBlacklist.findOrCreate({
       where: { ipAddress },
       defaults: { reason: reason || 'Bloqueo manual por admin', expiresAt: null }
     });
+
+    if (wasCreated) {
+      void notifyAdminsOfIpBlock({ ipAddress, reason: blockedIp.reason });
+    }
 
     const clientIp = getClientIp(req);
 

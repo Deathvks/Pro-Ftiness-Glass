@@ -40,6 +40,7 @@ import Spinner from '../Spinner';
 import ModalPortal from '../ModalPortal';
 import useModalLock from '../../hooks/useModalLock';
 import CustomSelect from '../CustomSelect';
+import UserAvatar from '../UserAvatar';
 import * as newsService from '../../services/newsService';
 import { useToast } from '../../hooks/useToast';
 
@@ -752,12 +753,13 @@ export default function AdminNewsTracker() {
                         <td className="py-3 px-4">
                           {v.user ? (
                             <div className="flex items-center gap-2">
-                              {(v.user.profile_image_url || v.user.profile_image) ? (<img src={v.user.profile_image_url || v.user.profile_image} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
-                              ) : (
-                                <div className="w-6 h-6 rounded-full bg-accent/20 text-accent flex items-center justify-center text-[10px] font-bold shrink-0">
-                                  {v.user.name ? v.user.name[0] : 'U'}
-                                </div>
-                              )}
+                              <UserAvatar
+                                user={v.user}
+                                size={6}
+                                showRoleRing={false}
+                                showNetworkStatus={false}
+                                className="border-0"
+                              />
                               <div className="flex flex-col min-w-0">
                                 <span className="font-bold text-accent truncate text-xs">
                                   {v.user.name || v.user.username}

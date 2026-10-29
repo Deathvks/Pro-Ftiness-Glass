@@ -402,23 +402,14 @@ const DashboardInsights = ({ setView }) => {
               handleToggleExpanded(true);
             }
           }}
-          className="relative pb-3 cursor-pointer group select-none transition-transform duration-300 active:scale-[0.99]"
+          className="cursor-pointer group select-none"
         >
-          {/* Capa 2 inferior solapada */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-5 bottom-0 h-10 rounded-[26px] glass transition-all duration-300 group-hover:translate-y-1 opacity-40 scale-[0.95] ring-1 ring-glass-border bg-bg-secondary/70 shadow-sm"
-          />
-
-          {/* Capa 1 intermedia solapada */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-2.5 bottom-1.5 h-10 rounded-[26px] glass transition-all duration-300 group-hover:translate-y-0.5 opacity-70 scale-[0.98] ring-1 ring-glass-border bg-bg-secondary/90 shadow-sm"
-          />
-
-          {/* Tarjeta principal solapada */}
+          {/* Varias tarjetas representadas con sombras estratificadas, sin capas que puedan saltar */}
           <GlassCard
-            className={`glass relative z-10 flex flex-col gap-3 p-4 sm:p-5 rounded-[26px] border-none shadow-lg transition-all duration-300 ring-1 group-hover:shadow-xl group-hover:ring-accent/40 ${
+            style={{
+              boxShadow: '0 5px 0 -1px var(--bg-primary), 0 6px 0 0 var(--glass-border), 0 11px 0 -2px var(--bg-primary), 0 12px 0 -1px var(--glass-border), var(--glass-shadow)'
+            }}
+            className={`glass relative z-10 flex flex-col gap-3 p-4 sm:p-5 rounded-[26px] border-none shadow-lg transition-all duration-300 ring-1 group-hover:ring-accent/40 ${
               totalWarningCount > 0 || (nutritionPlan?.isWarning && hasAnyNutritionActivity)
                 ? 'ring-amber-500/40 bg-amber-500/10'
                 : hasGreenProgress
@@ -449,7 +440,7 @@ const DashboardInsights = ({ setView }) => {
                 <div className="min-w-0">
                   <span className="text-[10px] font-black uppercase tracking-wider text-text-muted flex items-center gap-1.5 mb-0.5">
                     <Layers size={11} className="text-accent shrink-0" />
-                    <span>{totalCardsCount > 1 ? `${totalCardsCount} tarjetas solapadas` : 'Tarjetas solapadas'}</span>
+                    <span>{totalCardsCount > 1 ? `${totalCardsCount} tarjetas de seguimiento` : 'Resumen de seguimiento'}</span>
                   </span>
                   <h4 className="text-sm sm:text-base font-black text-text-primary leading-tight truncate">
                     {totalProgressingCount > 0 && totalWarningCount > 0
@@ -473,7 +464,7 @@ const DashboardInsights = ({ setView }) => {
 
               {/* Único botón indicador en la tarjeta solapada */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent text-accent-contrast text-xs font-black shadow-sm group-hover:brightness-110 transition-all shrink-0">
-                <span>Desplegar</span>
+                <span>Ver detalles</span>
                 <ChevronDown size={14} className="shrink-0 group-hover:translate-y-0.5 transition-transform" />
               </div>
             </div>
