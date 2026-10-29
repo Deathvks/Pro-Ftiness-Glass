@@ -32,6 +32,37 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+
+  if (event.data && event.data.type === 'PREFETCH_EXERCISE_IMAGES') {
+    const urls = Array.isArray(event.data.urls) ? event.data.urls.slice(0, 1200) : [];
+    event.waitUntil((async () => {
+      const cache = await caches.open('remote-exercise-images-cache');
+
+      // Una descarga cada vez y una pausa breve para no competir con la interfaz.
+      for (const value of urls) {
+        let url;
+        try {
+          url = new URL(value);
+          if (!['http:', 'https:'].includes(url.protocol) || /\.(mp4|mov|webm|mkv)(?:$|\?)/i.test(url.href)) continue;
+          if (await cache.match(url.href)) continue;
+
+          const request = new Request(url.href, { mode: 'no-cors', credentials: 'omit' });
+          const response = await fetch(request);
+          if (response.type !== 'opaque') {
+            if (!response.ok) continue;
+            const contentType = response.headers.get('content-type') || '';
+            const contentLength = Number(response.headers.get('content-length') || 0);
+            if ((contentType && !contentType.startsWith('image/')) || contentLength > 8 * 1024 * 1024) continue;
+          }
+          await cache.put(request, response);
+        } catch {
+          // Si un archivo falla, se continúa con los demás y la app sigue funcionando.
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+    })());
+  }
 });
 
 // 2. Limpieza de cachés antiguas y precarga
@@ -195,7 +226,7 @@ registerRoute(
     plugins: [
       new CacheableResponsePlugin({ statuses: [0, 200] }),
       new ExpirationPlugin({
-        maxEntries: 500,
+        maxEntries: 1200,
         maxAgeSeconds: 90 * 24 * 60 * 60,
       }),
     ],

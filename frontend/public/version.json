@@ -1,6 +1,6 @@
 {
-  "version": "7.11.12",
-  "releaseNotes": "Actualización v7.11.12: Mejoras de estabilidad, rendimiento y experiencia en la app.",
+  "version": "7.11.13",
+  "releaseNotes": "Actualización v7.11.13: Precarga progresiva de imágenes de ejercicios para mejorar el uso sin conexión.",
   "welcome": {
     "title": "Recarga más rápida",
     "subtitle": "Los archivos principales de la app se preparan antes de activar la actualización.",

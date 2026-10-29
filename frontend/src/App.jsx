@@ -37,6 +37,7 @@ import OneRMCalculatorPage from './pages/OneRMCalculatorPage';
 import MacroCalculatorPage from './pages/MacroCalculatorPage';
 import PublicExercisesPage from './pages/PublicExercisesPage';
 import { reloadAppWithoutStaleCache } from './utils/appRecovery';
+import { getExerciseList } from './services/exerciseService';
 
 export const lazyWithRetry = (componentImport, name = "chunk") =>
   lazy(async () => {
@@ -366,6 +367,38 @@ export default function App() {
       window.removeEventListener('storage', checkTokenExistence);
       window.removeEventListener('focus', checkTokenExistence);
       clearInterval(intervalId);
+    };
+  }, [isAuthenticated, sessionExpired]);
+
+  // Descarga el catálogo en un momento ocioso para que sus animaciones puedan
+  // guardarse mientras hay conexión, sin retrasar la apertura del dashboard.
+  useEffect(() => {
+    if (!isAuthenticated || sessionExpired) return;
+
+    let cancelled = false;
+    let idleId = null;
+    let timerId = null;
+
+    const loadExerciseCatalog = () => {
+      if (!navigator.onLine || cancelled) return;
+      const load = () => {
+        if (!cancelled) getExerciseList().catch(() => {});
+      };
+
+      if ('requestIdleCallback' in window) {
+        idleId = window.requestIdleCallback(load, { timeout: 20000 });
+      } else {
+        timerId = window.setTimeout(load, 8000);
+      }
+    };
+
+    loadExerciseCatalog();
+    window.addEventListener('online', loadExerciseCatalog);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('online', loadExerciseCatalog);
+      if (idleId && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleId);
+      if (timerId) window.clearTimeout(timerId);
     };
   }, [isAuthenticated, sessionExpired]);
 
