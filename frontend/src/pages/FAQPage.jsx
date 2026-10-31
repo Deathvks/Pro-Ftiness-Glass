@@ -1,5 +1,5 @@
 /* frontend/src/pages/FAQPage.jsx */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { 
@@ -121,6 +121,57 @@ export default function FAQPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [openIndices, setOpenIndices] = useState(new Set([0, 1])); // Primeras dos abiertas por defecto
+
+  const categoriesRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragInfoRef = useRef({ isDown: false, startX: 0, scrollLeft: 0, moved: false });
+
+  const handleMouseDown = (e) => {
+    if (!categoriesRef.current) return;
+    dragInfoRef.current = {
+      isDown: true,
+      startX: e.pageX - categoriesRef.current.offsetLeft,
+      scrollLeft: categoriesRef.current.scrollLeft,
+      moved: false
+    };
+    setIsDragging(true);
+  };
+
+  const handleMouseLeave = () => {
+    dragInfoRef.current.isDown = false;
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    dragInfoRef.current.isDown = false;
+    setTimeout(() => {
+      setIsDragging(false);
+      dragInfoRef.current.moved = false;
+    }, 50);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!dragInfoRef.current.isDown || !categoriesRef.current) return;
+    const x = e.pageX - categoriesRef.current.offsetLeft;
+    const walk = x - dragInfoRef.current.startX;
+    if (Math.abs(walk) > 4) {
+      dragInfoRef.current.moved = true;
+    }
+    categoriesRef.current.scrollLeft = dragInfoRef.current.scrollLeft - walk;
+  };
+
+  const handleWheel = (e) => {
+    if (categoriesRef.current && (e.deltaY !== 0 || e.deltaX !== 0)) {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        categoriesRef.current.scrollLeft += e.deltaY;
+      }
+    }
+  };
+
+  const handleCategoryClick = (catId) => {
+    if (dragInfoRef.current.moved) return;
+    setSelectedCategory(catId);
+  };
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -252,15 +303,30 @@ export default function FAQPage() {
         </div>
 
         {/* Pestañas de categorías */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 custom-scrollbar">
+        <div
+          ref={categoriesRef}
+          onMouseDown={handleMouseDown}
+          onMouseLeave={handleMouseLeave}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
+          onWheel={handleWheel}
+          className={`flex items-center gap-2 overflow-x-auto py-1.5 mb-8 hide-scrollbar scrollbar-none sm:flex-wrap select-none ${
+            isDragging ? 'cursor-grabbing' : 'cursor-grab sm:cursor-default'
+          }`}
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            WebkitOverflowScrolling: 'touch'
+          }}
+        >
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all border ${
+              onClick={() => handleCategoryClick(cat.id)}
+              className={`faq-tab-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border outline-none select-none !transform-none !translate-y-0 hover:!translate-y-0 active:!translate-y-0 hover:!transform-none active:!transform-none ${
                 selectedCategory === cat.id
-                  ? 'bg-accent text-white border-accent shadow-md shadow-accent/20'
-                  : 'bg-bg-secondary/40 text-text-secondary border-glass-border hover:text-text-primary hover:border-text-secondary/30'
+                  ? 'bg-accent text-white border-accent shadow-sm'
+                  : 'bg-bg-secondary/40 text-text-secondary border-glass-border hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 hover:border-glass-border/80'
               }`}
             >
               {cat.label}

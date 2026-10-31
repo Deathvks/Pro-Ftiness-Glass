@@ -1257,6 +1257,16 @@ html.ocean-theme:not(.dark) .aurora-curtain {
     outline: none !important;
   }
 
+  /* FAQ category buttons: strictly disallow translateY or transform jumps */
+  button.faq-tab-btn,
+  button.faq-tab-btn:hover,
+  button.faq-tab-btn:active,
+  button.faq-tab-btn:focus,
+  button.faq-tab-btn:focus-visible {
+    transform: none !important;
+    -webkit-transform: none !important;
+  }
+
   .form-error-text {
     @apply text-red font-bold text-sm mt-1;
   }
