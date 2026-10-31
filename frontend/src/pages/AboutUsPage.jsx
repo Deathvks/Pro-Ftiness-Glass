@@ -3,22 +3,22 @@ import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { 
-  ArrowLeft, 
-  Dumbbell, 
-  HeartHandshake, 
-  Sparkles, 
-  ShieldCheck, 
-  Cpu, 
-  Flame, 
-  Timer, 
-  MapPin, 
-  Layers, 
-  CheckCircle2, 
-  Award,
-  ChevronRight,
-  HelpCircle,
-  ExternalLink
-} from 'lucide-react';
+  FaArrowLeft, 
+  FaDumbbell, 
+  FaHandshake, 
+  FaBrain, 
+  FaShieldHalved, 
+  FaFire, 
+  FaStopwatch, 
+  FaMapLocationDot, 
+  FaLayerGroup, 
+  FaCircleCheck, 
+  FaTrophy,
+  FaChevronRight,
+  FaCircleQuestion,
+  FaUsers,
+  FaLaptopCode
+} from 'react-icons/fa6';
 import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 import useAppStore from '../store/useAppStore';
 
@@ -59,7 +59,8 @@ export default function AboutUsPage() {
         author: {
           '@type': 'Person',
           name: 'Dylan Jesús Suárez Gómez',
-          jobTitle: 'Fundador y Desarrollador Principal'
+          jobTitle: 'Fundador y Desarrollador Principal',
+          image: 'https://pro-fitness-glass.zeabur.app/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg'
         }
       },
       {
@@ -69,7 +70,8 @@ export default function AboutUsPage() {
         logo: 'https://pro-fitness-glass.zeabur.app/icons/icon-512.png',
         founder: {
           '@type': 'Person',
-          name: 'Dylan Jesús Suárez Gómez'
+          name: 'Dylan Jesús Suárez Gómez',
+          image: 'https://pro-fitness-glass.zeabur.app/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg'
         },
         sameAs: [
           'https://play.google.com/store/apps/details?id=com.profitnessglass.app'
@@ -80,42 +82,42 @@ export default function AboutUsPage() {
 
   const modules = [
     {
-      icon: <Dumbbell className="text-emerald-400" size={24} />,
+      icon: <FaDumbbell className="text-emerald-400" size={22} />,
       title: 'Entrenamiento y Sobrecarga Progresiva',
       description: 'Registro serie a serie con carga (kg), repeticiones y Repeticiones en Reserva (RIR/RPE). Comparativa histórica automática contra tu sesión previa para asegurar el estímulo óptimo de hipertrofia y fuerza.'
     },
     {
-      icon: <Layers className="text-sky-400" size={24} />,
+      icon: <FaLayerGroup className="text-sky-400" size={22} />,
       title: 'Guía Biomecánica en Vídeo y Animación 3D',
       description: 'Más de 300 ejercicios de musculación clasificados por grupo muscular, con clips en alta definición y animaciones anatómicas que enseñan la trayectoria óptima y previenen lesiones articulares.'
     },
     {
-      icon: <Sparkles className="text-purple-400" size={24} />,
+      icon: <FaBrain className="text-purple-400" size={22} />,
       title: 'Entrenador con Inteligencia Artificial (Synapse)',
       description: 'Asistencia inteligente personalizada para responder dudas sobre técnica biomecánica, recomendar variantes de ejercicios y estructurar el volumen de entrenamiento según tu fatiga acumulada.'
     },
     {
-      icon: <Timer className="text-amber-400" size={24} />,
+      icon: <FaStopwatch className="text-amber-400" size={22} />,
       title: 'Temporizador Nativo en Segundo Plano',
       description: 'Cronómetro inteligente con servicio en primer plano y notificaciones flotantes en Android. Mantiene la cuenta atrás exacta con la pantalla bloqueada o mientras usas otras apps.'
     },
     {
-      icon: <Flame className="text-rose-400" size={24} />,
+      icon: <FaFire className="text-rose-400" size={22} />,
       title: 'Nutrición y Calculadoras Deportivas',
       description: 'Cálculo de Tasa Metabólica Basal (TMB) y Gasto Energético Total Diario (TDEE) con la ecuación científica de Mifflin-St Jeor. Planificación de déficit, superávit, macronutrientes, hidratación y creatina.'
     },
     {
-      icon: <MapPin className="text-teal-400" size={24} />,
+      icon: <FaMapLocationDot className="text-teal-400" size={22} />,
       title: 'Radar y Mapa de Gimnasios',
       description: 'Herramienta de geolocalización en tiempo real para encontrar salas de musculación, centros de calistenia y gimnasios cercanos con información de servicios y ubicación directa.'
     },
     {
-      icon: <Award className="text-yellow-400" size={24} />,
+      icon: <FaTrophy className="text-yellow-400" size={22} />,
       title: 'Gamificación y Temas de Cristal Líquido',
       description: 'Niveles de experiencia (XP), avatares desbloqueables y temas visuales personalizables con estética Glassmorphism, incluyendo el diseño dinámico Aurora Boreal Nivel 20.'
     },
     {
-      icon: <HeartHandshake className="text-indigo-400" size={24} />,
+      icon: <FaUsers className="text-indigo-400" size={22} />,
       title: 'Red Social Deportiva y Modo Entrenador',
       description: 'Comparte tus rutinas con enlaces web universales de un solo clic. Permite a entrenadores personales supervisar de forma privada los pesos, repeticiones y fotos de evolución de sus atletas.'
     }
@@ -154,13 +156,13 @@ export default function AboutUsPage() {
             onClick={handleBack}
             className="flex items-center gap-2 px-4 py-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-full text-text-secondary font-bold hover:text-text-primary transition-all active:scale-95 text-sm"
           >
-            <ArrowLeft size={16} />
+            <FaArrowLeft size={14} />
             <span>Volver</span>
           </button>
 
           <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm font-semibold">
             <Link to="/faq" className="px-3.5 py-1.5 rounded-full bg-accent/10 text-accent hover:bg-accent/20 transition-colors flex items-center gap-1.5">
-              <HelpCircle size={14} />
+              <FaCircleQuestion size={14} />
               <span>Preguntas Frecuentes (FAQ)</span>
             </Link>
             <Link to="/noticias" className="hidden sm:inline-block px-3.5 py-1.5 rounded-full bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary transition-colors">
@@ -190,9 +192,9 @@ export default function AboutUsPage() {
 
         {/* Tarjeta de Filosofía: ¿Por qué nació? */}
         <section aria-labelledby="mision-title" className="mb-14 p-6 sm:p-10 rounded-3xl bg-bg-secondary/40 border border-glass-border backdrop-blur-xl shadow-xl">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 rounded-2xl bg-accent/15 text-accent">
-              <HeartHandshake size={28} />
+          <div className="flex items-center gap-3.5 mb-6">
+            <div className="p-3.5 rounded-2xl bg-accent/15 text-accent flex items-center justify-center">
+              <FaHandshake size={24} />
             </div>
             <div>
               <span className="text-xs font-bold text-accent uppercase tracking-wider">Nuestra Filosofía</span>
@@ -298,31 +300,35 @@ export default function AboutUsPage() {
         </section>
 
         {/* Quién está detrás / Autor */}
-        <section aria-labelledby="creador-title" className="mb-14 p-6 sm:p-10 rounded-3xl bg-bg-secondary/40 border border-glass-border backdrop-blur-xl flex flex-col md:flex-row items-center gap-8">
-          <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-3xl overflow-hidden shrink-0 border-2 border-accent/40 shadow-xl bg-bg-primary">
+        <section aria-labelledby="creador-title" className="mb-14 p-6 sm:p-10 rounded-3xl bg-bg-secondary/40 border border-glass-border backdrop-blur-xl flex flex-col md:flex-row items-center gap-8 shadow-xl">
+          <div className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 rounded-3xl overflow-hidden shrink-0 border-2 border-accent/40 shadow-2xl bg-bg-primary group">
             <img 
-              src="/icons/icon-256.png" 
-              alt="Pro Fitness Glass Logo" 
-              className="w-full h-full object-cover p-2"
+              src="/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg" 
+              alt="Dylan Jesús Suárez Gómez — Creador de Pro Fitness Glass" 
+              className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
             />
+            <div className="absolute inset-0 rounded-3xl ring-1 ring-inset ring-white/10 pointer-events-none" />
           </div>
 
-          <div>
-            <span className="text-xs font-bold text-accent uppercase tracking-wider">Creador y Desarrollador</span>
-            <h2 id="creador-title" className="text-2xl sm:text-3xl font-extrabold text-text-primary mt-1 mb-3">
+          <div className="flex-1 text-center md:text-left">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-bold uppercase tracking-wider mb-2">
+              <FaLaptopCode size={13} />
+              <span>Creador y Desarrollador Principal</span>
+            </div>
+            <h2 id="creador-title" className="text-2xl sm:text-3xl font-extrabold text-text-primary mb-3">
               Dylan Jesús Suárez Gómez
             </h2>
-            <p className="text-sm sm:text-base text-text-secondary leading-relaxed mb-4">
+            <p className="text-sm sm:text-base text-text-secondary leading-relaxed mb-5">
               Apasionado del entrenamiento de fuerza, la biomecánica deportiva y la ingeniería de software moderna. Pro Fitness Glass fue concebida y desarrollada desde cero con la visión de combinar tecnología punta (React, Vite, Capacitor nativo, arquitectura PWA) con el respeto total hacia la comunidad del gimnasio.
             </p>
-            <div className="flex items-center gap-3 flex-wrap text-xs text-text-secondary font-semibold">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-glass-border">
-                <CheckCircle2 size={14} className="text-emerald-400" />
+            <div className="flex items-center justify-center md:justify-start gap-3 flex-wrap text-xs text-text-secondary font-semibold">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/5 dark:bg-white/5 border border-glass-border">
+                <FaCircleCheck size={13} className="text-emerald-400" />
                 Desarrollo Independiente
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-glass-border">
-                <ShieldCheck size={14} className="text-sky-400" />
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/5 dark:bg-white/5 border border-glass-border">
+                <FaShieldHalved size={13} className="text-sky-400" />
                 Privacidad y 2FA
               </span>
             </div>
@@ -350,7 +356,7 @@ export default function AboutUsPage() {
               className="w-full sm:w-auto px-6 py-3.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-glass-border text-text-primary font-bold rounded-2xl transition-all text-sm sm:text-base flex items-center justify-center gap-2"
             >
               <span>Ver Preguntas Frecuentes (FAQ)</span>
-              <ChevronRight size={16} />
+              <FaChevronRight size={14} />
             </Link>
           </div>
         </section>

@@ -618,7 +618,8 @@ async function main() {
         "author": {
           "@type": "Person",
           "name": "Dylan Jesús Suárez Gómez",
-          "jobTitle": "Fundador y Desarrollador Principal"
+          "jobTitle": "Fundador y Desarrollador Principal",
+          "image": "${BASE_URL}/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg"
         }
       },
       {
@@ -628,7 +629,8 @@ async function main() {
         "logo": "${BASE_URL}/icons/icon-512.png",
         "founder": {
           "@type": "Person",
-          "name": "Dylan Jesús Suárez Gómez"
+          "name": "Dylan Jesús Suárez Gómez",
+          "image": "${BASE_URL}/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg"
         },
         "sameAs": [
           "https://play.google.com/store/apps/details?id=com.profitnessglass.app"
@@ -679,7 +681,13 @@ async function main() {
 
     <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
       <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; color: #f8fafc;">Quién está detrás</h2>
-      <p style="color: #cbd5e1;">Pro Fitness Glass fue fundada y desarrollada por <strong>Dylan Jesús Suárez Gómez</strong>, uniendo ingeniería de software moderna con el entrenamiento de hipertrofia y fuerza. La plataforma garantiza privacidad total de datos, autenticación de dos factores (2FA) y desarrollo continuo impulsado por la comunidad.</p>
+      <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+        <img src="/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg" alt="Dylan Jesús Suárez Gómez — Creador de Pro Fitness Glass" style="width: 110px; height: 110px; border-radius: 1.25rem; object-fit: cover; object-position: top; border: 2px solid rgba(34, 197, 94, 0.5); box-shadow: 0 10px 25px rgba(0,0,0,0.4);" />
+        <div style="flex: 1; min-width: 240px;">
+          <h3 style="font-size: 1.25rem; font-weight: 900; margin: 0 0 0.5rem; color: #f8fafc;">Dylan Jesús Suárez Gómez</h3>
+          <p style="color: #cbd5e1; margin: 0; line-height: 1.6;">Pro Fitness Glass fue fundada y desarrollada por <strong>Dylan Jesús Suárez Gómez</strong>, uniendo ingeniería de software moderna con el entrenamiento de hipertrofia y fuerza. La plataforma garantiza privacidad total de datos, autenticación de dos factores (2FA) y desarrollo continuo impulsado por la comunidad.</p>
+        </div>
+      </div>
     </section>
   </main>`;
 

@@ -3,20 +3,12 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { 
-  ArrowLeft, 
-  Search, 
-  HelpCircle, 
-  ChevronDown, 
-  ChevronUp, 
-  Sparkles, 
-  Dumbbell, 
-  Smartphone, 
-  ShieldCheck, 
-  Scale, 
-  HeartHandshake,
-  ExternalLink,
-  Info
-} from 'lucide-react';
+  FaArrowLeft, 
+  FaMagnifyingGlass, 
+  FaCircleQuestion, 
+  FaChevronDown, 
+  FaCircleInfo
+} from 'react-icons/fa6';
 import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 import useAppStore from '../store/useAppStore';
 
@@ -207,13 +199,13 @@ export default function FAQPage() {
             onClick={handleBack}
             className="flex items-center gap-2 px-4 py-2 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-full text-text-secondary font-bold hover:text-text-primary transition-all active:scale-95 text-sm"
           >
-            <ArrowLeft size={16} />
+            <FaArrowLeft size={14} />
             <span>Volver</span>
           </button>
 
           <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm font-semibold">
             <Link to="/sobre-nosotros" className="px-3.5 py-1.5 rounded-full bg-accent/10 text-accent hover:bg-accent/20 transition-colors flex items-center gap-1.5">
-              <Info size={14} />
+              <FaCircleInfo size={14} />
               <span>¿Quiénes Somos?</span>
             </Link>
             <Link to="/noticias" className="hidden sm:inline-block px-3.5 py-1.5 rounded-full bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary transition-colors">
@@ -225,8 +217,8 @@ export default function FAQPage() {
         {/* Encabezado */}
         <header className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 font-bold text-xs uppercase tracking-wider mb-4">
-            <HelpCircle size={14} />
-            Centro de Ayuda y Respuestas Oficiales
+            <FaCircleQuestion size={14} />
+            <span>Centro de Ayuda y Respuestas Oficiales</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-text-primary tracking-tight leading-tight mb-4">
@@ -240,7 +232,7 @@ export default function FAQPage() {
 
         {/* Buscador de Preguntas */}
         <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
+          <FaMagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary" size={16} />
           <input
             type="text"
             value={searchQuery}
@@ -278,7 +270,7 @@ export default function FAQPage() {
         {/* Lista de Acordeones */}
         {filteredFAQs.length === 0 ? (
           <div className="p-8 text-center rounded-2xl bg-bg-secondary/30 border border-glass-border text-text-secondary my-8">
-            <HelpCircle size={36} className="mx-auto text-text-tertiary mb-3" />
+            <FaCircleQuestion size={36} className="mx-auto text-text-tertiary mb-3" />
             <h3 className="text-base font-bold text-text-primary mb-1">No encontramos preguntas para esa búsqueda</h3>
             <p className="text-xs text-text-secondary">Prueba con palabras como "gratis", "rutinas", "1RM", "Android" o borra el filtro.</p>
           </div>
@@ -307,7 +299,7 @@ export default function FAQPage() {
                       </h2>
                     </div>
                     <div className={`p-1.5 rounded-lg text-text-secondary transition-transform shrink-0 ${isOpen ? 'rotate-180 text-accent' : ''}`}>
-                      <ChevronDown size={18} />
+                      <FaChevronDown size={14} />
                     </div>
                   </button>
 
@@ -324,7 +316,7 @@ export default function FAQPage() {
 
         {/* Caja de ayuda adicional */}
         <section className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-bg-secondary/60 via-bg-secondary/40 to-accent/10 border border-glass-border text-center backdrop-blur-xl">
-          <HelpCircle size={32} className="mx-auto text-accent mb-3" />
+          <FaCircleQuestion size={32} className="mx-auto text-accent mb-3" />
           <h2 className="text-xl sm:text-2xl font-black text-text-primary mb-2">
             ¿Tienes alguna otra duda o propuesta?
           </h2>
