@@ -1,4 +1,5 @@
 import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
+import PublicPageFooter from '../components/PublicPageFooter';
 /* frontend/src/pages/PublicExercisesPage.jsx */
 import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -650,7 +651,7 @@ export default function PublicExercisesPage({ onBack }) {
           </div>
         </div>
         {/* Espaciador inferior equilibrado: separación armónica con el resto de la web */}
-        <div className="w-full h-8 sm:h-6 shrink-0 select-none pointer-events-none" aria-hidden="true" />
+        <PublicPageFooter />
       </main>
     </div>
   );

@@ -10,6 +10,7 @@ import {
   FaCircleInfo
 } from 'react-icons/fa6';
 import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
+import PublicPageFooter from '../components/PublicPageFooter';
 import useAppStore from '../store/useAppStore';
 
 const FAQ_DATA = [
@@ -339,23 +340,7 @@ export default function FAQPage() {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="mt-12 text-center text-xs text-text-tertiary space-y-3">
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Link to="/sobre-nosotros" className="hover:text-accent transition-colors">Quiénes Somos</Link>
-            <span>•</span>
-            <Link to="/calculadora-1rm" className="hover:text-accent transition-colors">Calculadora 1RM</Link>
-            <span>•</span>
-            <Link to="/calculadora-calorias-macros" className="hover:text-accent transition-colors">Calculadora Macros</Link>
-            <span>•</span>
-            <Link to="/ejercicios" className="hover:text-accent transition-colors">Ejercicios</Link>
-            <span>•</span>
-            <Link to="/privacy" className="hover:text-accent transition-colors">Privacidad</Link>
-            <span>•</span>
-            <Link to="/terms" className="hover:text-accent transition-colors">Términos</Link>
-          </div>
-          <p>© 2026 Pro Fitness Glass. Creado por Dylan Jesús Suárez Gómez.</p>
-        </footer>
+        <PublicPageFooter />
       </div>
     </div>
   );
