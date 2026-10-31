@@ -48,6 +48,16 @@ const activatePendingServiceWorkers = async () => {
 };
 
 export const reloadAppWithoutStaleCache = async ({ path } = {}) => {
+  // 1. Purga total de CacheStorage para evitar cualquier chunk huérfano o 404 cacheado
+  try {
+    if (typeof window !== 'undefined' && 'caches' in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map((name) => caches.delete(name)));
+    }
+  } catch (err) {
+    console.warn('[appRecovery] Error purgando CacheStorage:', err);
+  }
+
   try {
     await activatePendingServiceWorkers();
   } catch {
@@ -66,6 +76,7 @@ export const reloadAppWithoutStaleCache = async ({ path } = {}) => {
   try {
     localStorage.removeItem('pfg_crash_loop_count');
     localStorage.removeItem('pfg_auto_reloaded_version');
+    localStorage.removeItem('lastView');
   } catch {}
 
   const freshUrl = new URL(path || window.location.href, window.location.origin);

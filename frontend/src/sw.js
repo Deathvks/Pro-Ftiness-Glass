@@ -14,6 +14,10 @@ import { clientsClaim } from 'workbox-core';
 // para evitar recargas automáticas sorpresa mientras el usuario está usando la app.
 clientsClaim();
 
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
