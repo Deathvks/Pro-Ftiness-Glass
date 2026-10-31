@@ -1,13 +1,13 @@
 {
-  "version": "7.11.18",
-  "releaseNotes": "Actualización v7.11.18: Corrección del gesto de arrastrar para cerrar en el modal del entrenador en móvil.",
+  "version": "7.11.19",
+  "releaseNotes": "Actualización v7.11.19: Corrección al alternar entre animación y vídeo en el detalle de ejercicios durante el entrenamiento.",
   "welcome": {
-    "title": "Modal de entrenador mejorado",
-    "subtitle": "Ahora puedes deslizar cómodamente desde la cabecera o barra superior para cerrar el modal tras leer el contenido.",
+    "title": "Selector de multimedia mejorado",
+    "subtitle": "Ahora puedes alternar al instante entre la animación de técnica y el vídeo del ejercicio en cualquier momento.",
     "features": [
       {
-        "title": "Cierre táctil fluido",
-        "description": "El gesto de arrastre hacia abajo funciona desde la barra superior incluso tras scrollear el contenido, e incluye botón de cierre visible en móvil."
+        "title": "Alternancia fluida de multimedia",
+        "description": "El botón de Animación reproduce la secuencia de fotos de técnica sin quedarse bloqueado en el reproductor de vídeo."
       }
     ]
   }

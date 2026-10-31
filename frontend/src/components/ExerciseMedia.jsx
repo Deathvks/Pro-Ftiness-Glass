@@ -122,7 +122,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
 
   useEffect(() => {
     const video = videoElementRef.current;
-    if (!video || !videoUrl || videoError || youtubeId) return undefined;
+    if (forceImage || !video || !videoUrl || videoError || youtubeId) return undefined;
 
     const releaseVideo = () => {
       video.pause();
@@ -158,7 +158,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       releaseVideo();
     };
-  }, [videoUrl, videoError, youtubeId]);
+  }, [videoUrl, videoError, youtubeId, forceImage]);
 
   // LÃƒÂ³gica de contraste para Oscuro, OLED y Galaxia:
   
@@ -181,7 +181,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   }
 
   // Reproductor interactivo de YouTube (solo si está online o no hay imágenes de fallback)
-  if (youtubeId && playYouTube) {
+  if (!forceImage && youtubeId && playYouTube) {
     if (isOffline) {
       // Si estamos offline y el ejercicio cuenta con fotos/animación local, dejamos que continúe hacia el renderizado de imágenes
       if (finalImagesUrls.length > 0 || finalImageUrl) {
@@ -215,7 +215,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   }
 
   // Renderizado de vÃƒÂ­deo (no YouTube directo a <video>)
-  if (videoUrl && !videoError && !youtubeId) {
+  if (!forceImage && videoUrl && !videoError && !youtubeId) {
     return (
       <video
         ref={videoElementRef}
@@ -346,13 +346,17 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     if (!d) return '';
     let imgs = d.images || d.exercise?.images || [];
     let imgsStr = Array.isArray(imgs) ? imgs.join('|') : '';
-    return `${d.image_url_start || ''}|${d.image_url_end || ''}|${d.image_url || ''}|${d.video_url || ''}|${d.exercise?.image_url_start || ''}|${imgsStr}`;
+    return `${d.image_url_start || ''}|${d.image_url_end || ''}|${d.image_url || ''}|${d.video_url || ''}|${d.exercise?.image_url_start || ''}|${d.exercise?.image_url_end || ''}|${d.exercise?.video_url || ''}|${imgsStr}`;
   };
 
   return prevProps.src === nextProps.src &&
          prevProps.videoSrc === nextProps.videoSrc &&
          prevProps.className === nextProps.className &&
          prevProps.fitMode === nextProps.fitMode &&
+         prevProps.playYouTube === nextProps.playYouTube &&
+         prevProps.forceImage === nextProps.forceImage &&
+         prevProps.forceAuto === nextProps.forceAuto &&
+         prevProps.disableAnimation === nextProps.disableAnimation &&
          prevProps.transparentBackground === nextProps.transparentBackground &&
          prevProps.fillContain === nextProps.fillContain &&
          prevProps.roundedMedia === nextProps.roundedMedia &&

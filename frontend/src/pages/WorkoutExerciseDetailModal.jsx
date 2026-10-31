@@ -26,18 +26,32 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     localDetails?.video_url ||
     localDetails?.exercise?.video_url ||
     localDetails?.exercise_details?.video_url ||
-    exercise?.video_url
+    exercise?.video_url ||
+    exercise?.exercise?.video_url
   );
 
   const hasImages = Boolean(
     localDetails?.image_url_start ||
+    localDetails?.image_url_end ||
     localDetails?.image_url ||
+    localDetails?.image ||
     (Array.isArray(localDetails?.images) && localDetails.images.length > 0) ||
+    (typeof localDetails?.images === 'string' && localDetails.images.trim().length > 2) ||
+    localDetails?.exercise?.image_url_start ||
+    localDetails?.exercise?.image_url_end ||
+    localDetails?.exercise?.image_url ||
+    localDetails?.exercise?.image ||
+    (Array.isArray(localDetails?.exercise?.images) && localDetails.exercise.images.length > 0) ||
+    (typeof localDetails?.exercise?.images === 'string' && localDetails.exercise.images.trim().length > 2) ||
     exercise?.image_url_start ||
+    exercise?.image_url_end ||
     exercise?.image_url ||
-    (Array.isArray(exercise?.images) && exercise.images.length > 0)
+    exercise?.image ||
+    (Array.isArray(exercise?.images) && exercise.images.length > 0) ||
+    (typeof exercise?.images === 'string' && exercise.images.trim().length > 2)
   );
 
+  const [userSelectedMode, setUserSelectedMode] = useState(false);
   const [mediaMode, setMediaMode] = useState(() => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return 'images';
     return hasVideo ? 'video' : 'images';
@@ -56,6 +70,12 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  useEffect(() => {
+    if (!userSelectedMode && hasVideo && !isOffline) {
+      setMediaMode('video');
+    }
+  }, [hasVideo, isOffline, userSelectedMode]);
 
   // Estados para la IA
   const [aiExplanation, setAiExplanation] = useState(null);
@@ -90,6 +110,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     // Actualizamos la fecha
     localStorage.setItem('ai_last_date', today);
   }, []);
+
   // --- FIN DE NUEVA LÓGICA ---
 
   const nameKey = exercise.name;
@@ -110,9 +131,12 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
         const fullDetails = allExercises.find(ex => ex.name === nameKey);
 
         if (fullDetails) {
+          const cleanLocal = Object.fromEntries(
+            Object.entries(localDetails).filter(([_, v]) => v !== null && v !== undefined && v !== '')
+          );
           const mergedDetails = {
             ...fullDetails,
-            ...localDetails,
+            ...cleanLocal,
             name: nameKey,
             description: fullDetails.description_es || fullDetails.description || localDetails.description,
           };
@@ -245,6 +269,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
                         showToast('El vídeo de YouTube requiere conexión a internet activa', 'warning');
                         return;
                       }
+                      setUserSelectedMode(true);
                       setMediaMode('video');
                     }}
                     className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
@@ -258,7 +283,10 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setMediaMode('images')}
+                    onClick={() => {
+                      setUserSelectedMode(true);
+                      setMediaMode('images');
+                    }}
                     className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
                       mediaMode === 'images'
                         ? 'bg-accent text-white shadow-sm'
@@ -286,10 +314,12 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
                   </div>
                 ) : (
                   <ExerciseMedia
+                    key={mediaMode}
                     details={localDetails}
-                    fitMode="cover"
+                    fitMode={mediaMode === 'video' ? 'cover' : 'contain'}
                     playYouTube={mediaMode === 'video' && !isOffline}
-                    className="w-full h-full aspect-[9/16] object-cover"
+                    forceImage={mediaMode === 'images'}
+                    className={`w-full h-full aspect-[9/16] ${mediaMode === 'video' ? 'object-cover' : 'object-contain'}`}
                   />
                 )}
 
