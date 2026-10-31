@@ -1,6 +1,6 @@
 {
-  "version": "7.11.32",
-  "releaseNotes": "Actualización v7.11.32: Corrección de estabilidad en pestañas de FAQ sin saltos en hover, eliminación de barra de scroll visible y desplazamiento fluido en PC y móvil.",
+  "version": "7.11.33",
+  "releaseNotes": "Actualización v7.11.33: Restauración completa de efectos visuales, gradientes shimmer y animaciones en el modal de bienvenida manteniendo cierre instantáneo sin recargas.",
   "welcome": {
     "title": "Portal de Noticias y Estabilidad",
     "subtitle": "Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y máxima estabilidad en toda la app.",
