@@ -36,6 +36,8 @@ import NewsDetailPage from './pages/NewsDetailPage';
 import OneRMCalculatorPage from './pages/OneRMCalculatorPage';
 import MacroCalculatorPage from './pages/MacroCalculatorPage';
 import PublicExercisesPage from './pages/PublicExercisesPage';
+import AboutUsPage from './pages/AboutUsPage';
+import FAQPage from './pages/FAQPage';
 import { reloadAppWithoutStaleCache } from './utils/appRecovery';
 import { getExerciseList } from './services/exerciseService';
 
@@ -155,6 +157,8 @@ const VIEW_CHUNK_LOADERS = {
   calculadora1rm: () => Promise.resolve({ default: OneRMCalculatorPage }),
   calculadoraMacros: () => Promise.resolve({ default: MacroCalculatorPage }),
   ejercicios: () => Promise.resolve({ default: PublicExercisesPage }),
+  sobreNosotros: () => Promise.resolve({ default: AboutUsPage }),
+  faq: () => Promise.resolve({ default: FAQPage }),
 };
 
 const preloadedViews = new Set();
@@ -179,6 +183,8 @@ if (typeof window !== 'undefined' && window.location) {
   if (initialPath === '/calculadora-1rm') preloadViewChunk('calculadora1rm');
   else if (initialPath === '/calculadora-calorias-macros') preloadViewChunk('calculadoraMacros');
   else if (initialPath === '/ejercicios') preloadViewChunk('ejercicios');
+  else if (initialPath === '/sobre-nosotros') preloadViewChunk('sobreNosotros');
+  else if (initialPath === '/faq') preloadViewChunk('faq');
   else if (initialPath === '/noticias') preloadViewChunk('noticias');
   else if (initialPath.startsWith('/noticias/')) preloadViewChunk('noticiaDetalle');
   else if (initialPath === '/privacy') preloadViewChunk('privacyPolicy');
@@ -921,6 +927,8 @@ export default function App() {
     location.pathname === '/calculadora-1rm' ||
     location.pathname === '/calculadora-calorias-macros' ||
     location.pathname === '/ejercicios' ||
+    location.pathname === '/sobre-nosotros' ||
+    location.pathname === '/faq' ||
     location.pathname === '/privacy' ||
     location.pathname === '/terms' ||
     location.pathname.startsWith('/share/') ||
@@ -1050,6 +1058,16 @@ export default function App() {
                     }
                   }}
                 />
+            </Suspense>
+        } />
+        <Route path="/sobre-nosotros" element={
+            <Suspense fallback={<NewsLoadingSkeleton />}>
+                <AboutUsPage />
+            </Suspense>
+        } />
+        <Route path="/faq" element={
+            <Suspense fallback={<NewsLoadingSkeleton />}>
+                <FAQPage />
             </Suspense>
         } />
         <Route path="/reset-password" element={

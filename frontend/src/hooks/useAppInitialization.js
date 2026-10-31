@@ -17,6 +17,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
         path === '/calculadora-1rm' ||
         path === '/calculadora-calorias-macros' ||
         path === '/ejercicios' ||
+        path === '/sobre-nosotros' ||
+        path === '/faq' ||
         path === '/privacy' ||
         path === '/terms' ||
         path.startsWith('/share/') ||
@@ -126,6 +128,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
           window.location.pathname === '/calculadora-1rm' ||
           window.location.pathname === '/calculadora-calorias-macros' ||
           window.location.pathname === '/ejercicios' ||
+          window.location.pathname === '/sobre-nosotros' ||
+          window.location.pathname === '/faq' ||
           window.location.pathname === '/privacy' ||
           window.location.pathname === '/terms' ||
           window.location.pathname.startsWith('/share/') ||
@@ -160,6 +164,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
           window.location.pathname === '/calculadora-1rm' ||
           window.location.pathname === '/calculadora-calorias-macros' ||
           window.location.pathname === '/ejercicios' ||
+          window.location.pathname === '/sobre-nosotros' ||
+          window.location.pathname === '/faq' ||
           window.location.pathname === '/privacy' ||
           window.location.pathname === '/terms' ||
           window.location.pathname.startsWith('/share/') ||
@@ -178,6 +184,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
           window.location.pathname === '/calculadora-1rm' ||
           window.location.pathname === '/calculadora-calorias-macros' ||
           window.location.pathname === '/ejercicios' ||
+          window.location.pathname === '/sobre-nosotros' ||
+          window.location.pathname === '/faq' ||
       window.location.pathname === '/privacy' ||
       window.location.pathname === '/terms' ||
       window.location.pathname.startsWith('/share/') ||

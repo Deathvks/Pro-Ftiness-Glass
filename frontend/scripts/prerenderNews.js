@@ -585,6 +585,244 @@ async function main() {
   fs.writeFileSync(path.join(ejerciciosDir, 'index.html'), ejerciciosHtml, 'utf8');
   console.log('[Prerender] Generada enciclopedia de ejercicios en dist/ejercicios/index.html.');
 
+  // ==========================================
+  // PRERENDER: /sobre-nosotros (About Us / Quiénes Somos)
+  // ==========================================
+  const sobreNosotrosDir = path.join(distDir, 'sobre-nosotros');
+  if (!fs.existsSync(sobreNosotrosDir)) fs.mkdirSync(sobreNosotrosDir, { recursive: true });
+
+  const sobreNosotrosJsonLd = `
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "AboutPage",
+        "@id": "${BASE_URL}/sobre-nosotros#webpage",
+        "url": "${BASE_URL}/sobre-nosotros",
+        "name": "¿Qué es Pro Fitness Glass? — Quiénes Somos, Misión y Plataforma Fitness",
+        "description": "Conoce la historia, tecnología y filosofía 100% gratuita detrás de Pro Fitness Glass, la app de entrenamiento de gimnasio, hipertrofia y nutrición con diseño Glassmorphism e IA.",
+        "inLanguage": "es"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "Pro Fitness Glass",
+        "applicationCategory": "HealthApplication",
+        "operatingSystem": "Android, Web Browser, Windows, macOS, iOS",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR"
+        },
+        "description": "Aplicación de entrenamiento y nutrición para gimnasio 100% gratuita con sobrecarga progresiva, vídeos de técnica, animaciones anatómicas, temporizador nativo en segundo plano y asistente de IA Synapse.",
+        "author": {
+          "@type": "Person",
+          "name": "Dylan Jesús Suárez Gómez",
+          "jobTitle": "Fundador y Desarrollador Principal"
+        }
+      },
+      {
+        "@type": "Organization",
+        "name": "Pro Fitness Glass",
+        "url": "${BASE_URL}",
+        "logo": "${BASE_URL}/icons/icon-512.png",
+        "founder": {
+          "@type": "Person",
+          "name": "Dylan Jesús Suárez Gómez"
+        },
+        "sameAs": [
+          "https://play.google.com/store/apps/details?id=com.profitnessglass.app"
+        ]
+      }
+    ]
+  }
+  </script>`;
+
+  const sobreNosotrosBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 960px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Volver a Pro Fitness Glass</a> |
+      <a href="/faq" style="color: #34d399; text-decoration: none; font-weight: 700;">Preguntas Frecuentes (FAQ)</a> |
+      <a href="/calculadora-1rm" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Calculadora de 1RM</a> |
+      <a href="/noticias" style="color: #a855f7; text-decoration: none; font-weight: 700;">Guías de Gimnasio</a>
+    </nav>
+    <header style="margin-bottom: 2.5rem; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+        <div style="text-align: left;">
+          <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">Software Deportivo 100% Gratuito</span>
+        </div>
+      </div>
+      <br />
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">¿Qué es Pro Fitness Glass? — Quiénes Somos y Nuestra Misión</h1>
+      <p style="font-size: 1.15rem; color: #94a3b8;">La plataforma libre definitiva para registrar tus entrenamientos de musculación, hipertrofia, progresión de fuerza y nutrición deportiva. Creada por Dylan Jesús Suárez Gómez para devolver al fitness una herramienta libre de suscripciones abusivas.</p>
+    </header>
+
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; color: #34d399;">Nuestra Filosofía: 100% Gratis, Sin Muros de Pago</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1rem;">La industria de las apps de fitness cobra entre 10 € y 15 € al mes por funciones esenciales como registrar rutinas o consultar el historial de marcas. En Pro Fitness Glass creemos que las herramientas de salud y ciencia deportiva deben ser universales. Todas nuestras funciones clave son y serán gratuitas para siempre.</p>
+    </section>
+
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; color: #38bdf8;">Módulos y Características de la Plataforma</h2>
+      <ul style="padding-left: 1.5rem; color: #e2e8f0; line-height: 1.8;">
+        <li><strong>Sobrecarga Progresiva Real:</strong> Registro de series, repeticiones, kilos y RIR/RPE con comparativa automática de récords frente a tu última sesión.</li>
+        <li><strong>Guía Biomecánica en Vídeo y 3D:</strong> Más de 300 ejercicios de gimnasio con técnica en alta definición y animaciones anatómicas que enseñan la trayectoria óptima.</li>
+        <li><strong>Inteligencia Artificial Synapse:</strong> Asesor deportivo inteligente que responde dudas de entrenamiento, previene sobreentrenamiento y asiste en la progresión.</li>
+        <li><strong>Temporizador Nativo en Segundo Plano:</strong> Servicio en primer plano para Android con notificación flotante interactiva para descansar exactamente el tiempo necesario.</li>
+        <li><strong>Nutrición y Calculadoras Deportivas:</strong> Fórmulas científicas validadas (Mifflin-St Jeor para calorías y TDEE; Epley, Brzycki y Lander para 1RM).</li>
+        <li><strong>Radar de Gimnasios:</strong> Mapa interactivo con geolocalización para encontrar salas de musculación y calistenia cercanas.</li>
+        <li><strong>Comunidad y Asesorías:</strong> Compartir rutinas con un solo enlace y sincronización bidireccional entre atletas y entrenadores personales.</li>
+      </ul>
+    </section>
+
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; color: #f8fafc;">Quién está detrás</h2>
+      <p style="color: #cbd5e1;">Pro Fitness Glass fue fundada y desarrollada por <strong>Dylan Jesús Suárez Gómez</strong>, uniendo ingeniería de software moderna con el entrenamiento de hipertrofia y fuerza. La plataforma garantiza privacidad total de datos, autenticación de dos factores (2FA) y desarrollo continuo impulsado por la comunidad.</p>
+    </section>
+  </main>`;
+
+  let sobreNosotrosHtml = injectMeta(baseHtml, {
+    title: '¿Qué es Pro Fitness Glass? — Quiénes Somos, Misión y App de Gimnasio 100% Gratis',
+    description: 'Conoce la historia, tecnología y filosofía 100% gratuita detrás de Pro Fitness Glass, la app de entrenamiento de gimnasio, hipertrofia y nutrición con diseño Glassmorphism e IA.',
+    image: `${BASE_URL}/aver.jpg`,
+    url: `${BASE_URL}/sobre-nosotros`,
+    type: 'website'
+  });
+  sobreNosotrosHtml = sobreNosotrosHtml.replace('</head>', `${sobreNosotrosJsonLd}
+</head>`);
+  sobreNosotrosHtml = injectPrerenderBody(sobreNosotrosHtml, sobreNosotrosBody, 'AboutUsPage');
+  fs.writeFileSync(path.join(sobreNosotrosDir, 'index.html'), sobreNosotrosHtml, 'utf8');
+  console.log('[Prerender] Generada página Sobre Nosotros en dist/sobre-nosotros/index.html.');
+
+  // ==========================================
+  // PRERENDER: /faq (Preguntas Frecuentes)
+  // ==========================================
+  const faqDir = path.join(distDir, 'faq');
+  if (!fs.existsSync(faqDir)) fs.mkdirSync(faqDir, { recursive: true });
+
+  const faqJsonLd = `
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "¿Pro Fitness Glass es realmente gratis o tiene costos ocultos?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Pro Fitness Glass es 100% gratuita. Todas las funciones —creación ilimitada de rutinas, historial completo de por vida, vídeos biomecánicos, animaciones 3D, cronómetro en segundo plano, calculadoras de 1RM y macros, e IA Synapse— están desbloqueadas sin cuotas mensuales ni suscripciones de pago."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "¿En qué plataformas y dispositivos puedo utilizar la aplicación?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Puedes utilizarla en cualquier dispositivo: dispones de una aplicación nativa para Android en Google Play Store y de una Progressive Web App (PWA) compatible con navegadores de escritorio (Windows, macOS, Linux) y dispositivos móviles iOS (iPhone/iPad)."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "¿Cómo funciona el registro de series y la sobrecarga progresiva?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "En cada ejercicio puedes registrar la carga en kilogramos, repeticiones y Repeticiones en Reserva (RIR o RPE). Pro Fitness Glass compara de forma automática cada serie con tu registro histórico previo y te indica cuándo batir una marca para asegurar el estímulo óptimo de hipertrofia muscular."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "¿El temporizador de descanso sigue funcionando con la pantalla bloqueada?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Sí. En la aplicación de Android disponemos de un servicio nativo en primer plano con notificación interactiva. El temporizador continúa con precisión absoluta aunque apagues la pantalla o cambies a reproducir música u otra aplicación."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "¿En qué se diferencia Pro Fitness Glass de apps como Hevy o Strong?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "La diferencia principal radica en la libertad del usuario: no limitamos el número de rutinas (en Hevy gratis solo puedes guardar 3 o 4), no bloqueamos tu historial a 3 meses, incluimos vídeos y 3D en cada ejercicio, temporizador nativo en segundo plano, calculadoras deportivas e IA, todo sin cobrarte 10 € a 15 € mensuales."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "¿Qué es el Asistente de IA Synapse y en qué me ayuda?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Synapse es el asistente inteligente especializado en ciencias del deporte integrado en Pro Fitness Glass. Puedes consultarle dudas sobre cómo realizar un ejercicio, sustituciones seguras por molestias articulares, pautas de recuperación y recomendaciones de volumen según tu fatiga acumulada."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "¿Quién ha desarrollado Pro Fitness Glass y cuál es el contacto oficial?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Pro Fitness Glass ha sido creada y desarrollada de forma independiente por Dylan Jesús Suárez Gómez, con la misión de democratizar la salud deportiva. Puedes contactar con nosotros a través de nuestro soporte técnico en la plataforma o mediante los canales oficiales."
+        }
+      }
+    ]
+  }
+  </script>`;
+
+  const faqBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 960px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Volver a Pro Fitness Glass</a> |
+      <a href="/sobre-nosotros" style="color: #34d399; text-decoration: none; font-weight: 700;">Quiénes Somos y Misión</a> |
+      <a href="/calculadora-1rm" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Calculadora 1RM</a> |
+      <a href="/noticias" style="color: #a855f7; text-decoration: none; font-weight: 700;">Artículos Deportivos</a>
+    </nav>
+    <header style="margin-bottom: 2.5rem; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+        <div style="text-align: left;">
+          <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">Centro de Ayuda y FAQ Oficial</span>
+        </div>
+      </div>
+      <br />
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">Preguntas Frecuentes (FAQ) sobre Pro Fitness Glass</h1>
+      <p style="font-size: 1.15rem; color: #94a3b8;">Respuestas oficiales y detalladas sobre gratuidad, rutinas ilimitadas, funcionamiento del cronómetro en segundo plano, app Android en Play Store y la IA deportiva Synapse.</p>
+    </header>
+
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿Pro Fitness Glass es realmente gratis o tiene costos ocultos?</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1.5rem;">Pro Fitness Glass es 100% gratuita. Todas las herramientas —rutinas ilimitadas, historial completo de por vida, vídeos biomecánicos, animaciones 3D, cronómetro en segundo plano, calculadoras de 1RM y macros, e IA Synapse— están desbloqueadas sin cuotas de suscripción mensual.</p>
+
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿En qué plataformas y dispositivos puedo utilizar la app?</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1.5rem;">Está disponible como aplicación nativa para Android en Google Play Store y como Progressive Web App (PWA) universal para navegadores de escritorio (Windows, macOS, Linux) y dispositivos móviles iOS (iPhone/iPad).</p>
+
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿Cómo funciona el registro de series y sobrecarga progresiva?</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1.5rem;">En cada serie puedes registrar peso en kg, repeticiones y RIR (Repeticiones en Reserva). La plataforma compara automáticamente cada registro con tu historial previo y te indica cuándo batir una marca personal (PR).</p>
+
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿El temporizador de descanso sigue funcionando con la pantalla bloqueada?</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1.5rem;">Sí. En Android disponemos de un servicio en primer plano nativo con notificación interactiva. El temporizador continúa con precisión absoluta aunque bloquees el móvil o uses otras aplicaciones.</p>
+
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿En qué se diferencia de apps como Hevy o Strong?</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1.5rem;">No limitamos el número de rutinas (en Hevy gratis solo puedes guardar 3 o 4), no bloqueamos tu historial pasado a 3 meses, incluimos vídeos y 3D en cada ejercicio, cronómetro en segundo plano, calculadoras deportivas e IA, todo sin cobrarte 10 € a 15 € mensuales.</p>
+
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿Quién creó Pro Fitness Glass y cuál es el contacto oficial?</h2>
+      <p style="color: #cbd5e1;">Pro Fitness Glass ha sido creada y desarrollada de forma independiente por <strong>Dylan Jesús Suárez Gómez</strong>. Puedes contactar mediante el soporte técnico de la plataforma o en nuestros canales oficiales.</p>
+    </section>
+  </main>`;
+
+  let faqHtml = injectMeta(baseHtml, {
+    title: 'Preguntas Frecuentes (FAQ) sobre Pro Fitness Glass | Todo lo que Necesitas Saber',
+    description: 'Respuestas oficiales a todas las dudas sobre Pro Fitness Glass: gratuidad, rutinas ilimitadas, app Android en Play Store, IA Synapse, cálculo de 1RM y sincronización en la nube.',
+    image: `${BASE_URL}/aver.jpg`,
+    url: `${BASE_URL}/faq`,
+    type: 'website'
+  });
+  faqHtml = faqHtml.replace('</head>', `${faqJsonLd}
+</head>`);
+  faqHtml = injectPrerenderBody(faqHtml, faqBody, 'FAQPage');
+  fs.writeFileSync(path.join(faqDir, 'index.html'), faqHtml, 'utf8');
+  console.log('[Prerender] Generada página FAQ en dist/faq/index.html.');
+
 }
 
 main().catch(err => {

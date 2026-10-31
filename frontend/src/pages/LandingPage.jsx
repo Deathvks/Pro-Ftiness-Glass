@@ -1217,6 +1217,14 @@ const LandingPage = ({ onLogin, onRegister }) => {
                         </div>
 
                         <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-text-secondary font-bold mb-8 tracking-wide">
+                            <a href="/sobre-nosotros" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
+                                ¿Quiénes Somos?
+                            </a>
+                            <span className="hidden sm:block text-text-secondary/30">•</span>
+                            <a href="/faq" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
+                                Preguntas Frecuentes
+                            </a>
+                            <span className="hidden sm:block text-text-secondary/30">•</span>
                             <a href="/calculadora-1rm" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
                                 Calculadora 1RM
                             </a>

@@ -26,7 +26,7 @@ export const useAppNavigation = (navigateRouter) => {
       '/social', '/hub', '/quickCardio', '/active-cardio', '/settings', '/appearance',
       '/support', '/socialLinks', '/challenges', '/physicalProfileEditor', '/profile',
       '/adminPanel', '/securityDashboard', '/trainerPanel', '/twoFactorSetup', '/notifications',
-      '/asesoria', '/noticias', '/calculadora-1rm', '/calculadora-calorias-macros', '/ejercicios'
+      '/asesoria', '/noticias', '/calculadora-1rm', '/calculadora-calorias-macros', '/ejercicios', '/sobre-nosotros', '/faq'
     ];
 
     if (!validPaths.includes(path) && !path.match(/^\/profile\/\d+$/) && !path.startsWith('/share/routine/') && !path.startsWith('/noticias')) {

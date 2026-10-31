@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /$
+Allow: /sobre-nosotros
+Allow: /faq
 Allow: /privacy
 Allow: /terms
 Allow: /noticias
@@ -28,6 +30,32 @@ Disallow: /share/
 Disallow: /explore
 Disallow: /*?*from=
 Disallow: /*?*utm_
+
+# Rastreadores de Motores de IA y Búsqueda Generativa (GEO)
+User-agent: GPTBot
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
 
 Sitemap: https://pro-fitness-glass.zeabur.app/sitemap.xml
 Sitemap: https://pro-fitness-glass.zeabur.app/rss.xml

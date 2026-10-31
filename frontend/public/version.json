@@ -1,6 +1,6 @@
 {
-  "version": "7.11.26",
-  "releaseNotes": "Actualización v7.11.26: Aviso de mantenimiento continuo detrás del sidebar en PC.",
+  "version": "7.11.27",
+  "releaseNotes": "Actualización v7.11.27: Nuevas páginas públicas de Quiénes Somos (/sobre-nosotros) y Preguntas Frecuentes (/faq) con optimización de IA y SEO.",
   "welcome": {
     "title": "Portal de Noticias y Estabilidad",
     "subtitle": "Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y máxima estabilidad en toda la app.",

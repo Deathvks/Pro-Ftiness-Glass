@@ -9,6 +9,22 @@
     <priority>1.0</priority>
   </url>
 
+  <!-- Quiénes Somos / Sobre Nosotros -->
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/sobre-nosotros</loc>
+    <lastmod>2026-10-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- Preguntas Frecuentes (FAQ) -->
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/faq</loc>
+    <lastmod>2026-10-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
   <!-- Herramientas y Calculadoras Públicas de Gimnasio y Nutrición -->
   <url>
     <loc>https://pro-fitness-glass.zeabur.app/calculadora-1rm</loc>
