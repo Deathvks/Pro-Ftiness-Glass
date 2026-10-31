@@ -205,7 +205,6 @@ export default function MacroCalculatorPage({ onBack }) {
       >
         {/* Clean Integrated Header (No full-bleed borders or browser gap) */}
         <nav aria-label="Navegación de herramientas" className="flex flex-col gap-3.5 mb-7 sm:mb-10">
-          <MaintenanceNoticeBanner className="rounded-2xl" />
           <div className="flex items-center justify-between gap-2.5 w-full">
             {/* Logo + Marca + Badge Gratis */}
             <Link
@@ -260,6 +259,7 @@ export default function MacroCalculatorPage({ onBack }) {
               )}
             </div>
           </div>
+          <MaintenanceNoticeBanner className="rounded-2xl" />
 
           {/* Segmented Glass Switcher Pill */}
           <div className="grid grid-cols-4 gap-1 sm:gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl w-full overflow-hidden">

@@ -453,6 +453,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
             </button>
           </div>
         </nav>
+        <MaintenanceNoticeBanner className="rounded-2xl mb-4" />
 
         {/* CABECERA EDITORIAL (TITULAR + ENTRADILLA) */}
         <header className="pt-2">

@@ -1,6 +1,6 @@
 {
-  "version": "7.11.21",
-  "releaseNotes": "Actualización v7.11.21: Alineación del logo en el dashboard, ubicación del aviso debajo del header y comportamiento reactivo al scroll.",
+  "version": "7.11.22",
+  "releaseNotes": "Actualización v7.11.22: Alineación del logo en el dashboard, ubicación del aviso debajo del header y comportamiento reactivo al scroll.",
   "welcome": {
     "title": "Header y aviso perfeccionados",
     "subtitle": "El logo central del dashboard ahora está perfectamente alineado y el header se oculta y muestra dinámicamente al desplazarse.",

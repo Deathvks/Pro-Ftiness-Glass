@@ -143,7 +143,7 @@ const GymBot = ({ isDocked }) => (
         className={`landing-gym-bot fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-top sm:origin-right transform-gpu will-change-transform
             ${isDocked
                 ? 'top-1/2 -translate-y-1/2 right-4 sm:right-10 lg:right-10 scale-[0.22] sm:scale-[0.40] opacity-20 sm:opacity-40 translate-x-0' 
-                : 'top-[calc(var(--safe-top,0px)+72px)] sm:top-[22%] right-1/2 translate-x-1/2 sm:translate-x-0 sm:right-16 lg:right-24 scale-[0.40] sm:scale-100 opacity-100'
+                : 'top-[calc(var(--safe-top,0px)+116px)] sm:top-[22%] right-1/2 translate-x-1/2 sm:translate-x-0 sm:right-16 lg:right-24 scale-[0.40] sm:scale-100 opacity-100'
             }
         `}
     >
@@ -530,11 +530,11 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     {/* --- HERO SECTION --- */}
                     <main 
                         className="flex-grow flex flex-col items-center px-4 pb-24 text-center w-full max-w-7xl mx-auto overflow-x-hidden relative z-10"
-                        style={{ paddingTop: 'calc(var(--safe-top, 0px) + 6.25rem)' }}
+                        style={{ paddingTop: 'calc(var(--safe-top, 0px) + 7.75rem)' }}
                     >
 
                         {/* Espaciador reservado para la mascota GymBot entre el Header y la Versión */}
-                        <div className="h-20 sm:h-20 md:h-8 lg:h-4 w-full mb-4 sm:mb-6 pointer-events-none" aria-hidden="true"></div>
+                        <div className="h-24 sm:h-24 md:h-12 lg:h-8 w-full mb-4 sm:mb-6 pointer-events-none" aria-hidden="true"></div>
 
                         <div className={`inline-flex items-center gap-3 px-5 py-2 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 mb-8 backdrop-blur-xl shadow-sm transition-all duration-1000 delay-100 transform-gpu ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                             <span className="relative flex h-2.5 w-2.5">

@@ -422,6 +422,26 @@ export default function MainAppLayout({
   // --- DETECCIÓN DE SCROLL PARA MATCHEAR LA TRANSPARENCIA DEL NOTCH iOS 27 ---
   const [isScrolled, setIsScrolled] = useState(false);
   const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+  const mobileHeaderRef = useRef(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+
+  useEffect(() => {
+    const el = mobileHeaderRef.current;
+    if (!el) return;
+    const updateHeight = () => {
+      if (el && el.offsetHeight > 0) {
+        setHeaderHeight(el.offsetHeight);
+      }
+    };
+    updateHeight();
+    const ro = new ResizeObserver(updateHeight);
+    ro.observe(el);
+    window.addEventListener('resize', updateHeight);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, []);
 
   useEffect(() => {
     const node = mainContentRef?.current;
@@ -1232,6 +1252,7 @@ export default function MainAppLayout({
         </div>
 
         <header 
+          ref={mobileHeaderRef}
           className={`md:hidden absolute top-0 left-0 w-full z-40 transition-all duration-300 ease-out global-header-element ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : isHeaderHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'} ${isScrolled ? 'bg-bg-primary/70 backdrop-blur-xl shadow-sm' : 'bg-transparent'}`}
           style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
         >
@@ -1330,7 +1351,12 @@ export default function MainAppLayout({
             if (mainContentRef) mainContentRef.current = el;
             swipeContainerRef.current = el;
           }}
-          className="flex-1 overflow-y-auto overflow-x-hidden relative pt-[calc(var(--safe-top,0px)+5.25rem)] md:pt-4" style={{ backgroundColor: 'transparent', touchAction: 'pan-y' }}
+          className="flex-1 overflow-y-auto overflow-x-hidden relative pt-[calc(var(--safe-top,0px)+8rem)] md:pt-4"
+          style={{
+            backgroundColor: 'transparent',
+            touchAction: 'pan-y',
+            ...(headerHeight > 0 ? { paddingTop: `${headerHeight + 16}px` } : {})
+          }}
           onTouchStart={handleContentTouchStart}
           onTouchMove={handleContentTouchMove}
           onTouchEnd={handleContentTouchEnd}

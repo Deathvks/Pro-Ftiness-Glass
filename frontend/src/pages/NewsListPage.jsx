@@ -353,7 +353,6 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
 
         {/* HEADER CON FOTO, NOMBRE DE LA APP, BADGE 100% GRATIS Y NAVEGACIÓN */}
         <header className="flex flex-col gap-3.5 pt-1">
-          <MaintenanceNoticeBanner className="rounded-2xl" />
           {/* Barra superior de marca y acciones (Fila única sin saltos) */}
           <div className="flex items-center justify-between gap-2.5 w-full">
             {/* Logo de la app + Nombre + Badge 100% Gratis */}
@@ -427,6 +426,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
               )}
             </div>
           </div>
+          <MaintenanceNoticeBanner className="rounded-2xl" />
 
           {/* Segmented Tool Switcher Pill + Buscador de artículos */}
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">

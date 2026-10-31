@@ -192,7 +192,7 @@ const SharedRoutinePreview = () => {
           </div>
         </div>
 
-        <div className="relative z-10 w-full p-4 pb-10 sm:p-6 sm:pb-12 pt-16">
+        <div className="relative z-10 w-full p-4 pb-10 sm:p-6 sm:pb-12 pt-32 sm:pt-36">
             <div className="max-w-4xl mx-auto w-full">
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                     <span className="px-3 py-1 rounded-full bg-accent text-bg-secondary text-xs font-bold uppercase tracking-wider flex items-center gap-1">
