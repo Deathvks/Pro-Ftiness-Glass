@@ -10,7 +10,7 @@ const MaintenanceNoticeBanner = ({ className = '', rounded = false, borderBottom
   return (
     <aside
       aria-label="Aviso de mantenimiento programado"
-      className={`w-full bg-amber-500/15 dark:bg-amber-400/15 text-amber-950 dark:text-amber-100 py-1.5 px-3 sm:px-4 backdrop-blur-xl transition-all z-40 flex items-center justify-center ${
+      className={`w-full bg-amber-500/15 dark:bg-amber-400/15 text-amber-950 dark:text-amber-100 py-1.5 px-3 sm:px-4 backdrop-blur-xl transition-all flex items-center justify-center ${
         borderBottom && !isRounded ? 'border-b border-amber-500/30' : ''
       } ${rounded ? 'rounded-2xl border border-amber-500/30 shadow-sm' : ''} ${className}`}
     >

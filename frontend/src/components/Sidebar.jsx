@@ -97,6 +97,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
     const newState = !isCollapsed;
     setIsCollapsed(newState);
     localStorage.setItem('sidebarCollapsed', newState.toString());
+    window.dispatchEvent(new Event('sidebar_toggled'));
   };
 
   const getProfileIcon = () => {
@@ -184,7 +185,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
             )}
         </Suspense>
 
-        <nav className={`hidden md:flex flex-col h-full border-r border-glass-border bg-glass-bg backdrop-blur-glass shadow-lg overflow-y-auto overflow-x-hidden z-40 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[88px] px-3 py-6' : 'w-64 lg:w-72 p-6'}`}>
+        <nav className={`hidden md:flex flex-col h-full relative z-40 border-r border-glass-border bg-glass-bg backdrop-blur-glass shadow-lg overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[88px] px-3 py-6' : 'w-64 lg:w-72 p-6'}`}>
         
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start px-2'} mb-8 shrink-0`}>
             <button 

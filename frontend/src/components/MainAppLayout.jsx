@@ -338,6 +338,22 @@ export default function MainAppLayout({
     }
   }, [activeTheme]);
 
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return typeof window !== 'undefined' && localStorage.getItem('sidebarCollapsed') === 'true';
+  });
+
+  useEffect(() => {
+    const handleSidebarToggle = () => {
+      setIsSidebarCollapsed(localStorage.getItem('sidebarCollapsed') === 'true');
+    };
+    window.addEventListener('sidebar_toggled', handleSidebarToggle);
+    window.addEventListener('storage', handleSidebarToggle);
+    return () => {
+      window.removeEventListener('sidebar_toggled', handleSidebarToggle);
+      window.removeEventListener('storage', handleSidebarToggle);
+    };
+  }, []);
+
   const {
     userProfile,
     prNotification,
@@ -1233,6 +1249,15 @@ export default function MainAppLayout({
         />
       </Suspense>
       
+      {/* Banner de Mantenimiento en Desktop: fijo de lado a lado pasando por detrás del Sidebar */}
+      <div className="hidden md:block fixed top-0 left-0 right-0 w-full z-20 pointer-events-none">
+        <MaintenanceNoticeBanner
+          className={`pointer-events-auto transition-all duration-300 ${
+            isSidebarCollapsed ? 'md:pl-[88px]' : 'md:pl-64 lg:pl-72'
+          }`}
+        />
+      </div>
+
       <Sidebar
         view={view}
         navigate={handleNavClick}
@@ -1246,10 +1271,8 @@ export default function MainAppLayout({
 
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
-        {/* Banner de Mantenimiento en Desktop */}
-        <div className="hidden md:block w-full shrink-0 z-30">
-          <MaintenanceNoticeBanner />
-        </div>
+        {/* Espaciador de altura para el banner fijo de mantenimiento en Desktop */}
+        <div className="hidden md:block w-full h-[33px] shrink-0 pointer-events-none" aria-hidden="true" />
 
         <header 
           ref={mobileHeaderRef}
