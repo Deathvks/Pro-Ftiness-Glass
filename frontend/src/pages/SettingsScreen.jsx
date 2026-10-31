@@ -269,14 +269,14 @@ export default function SettingsScreen({
   const glassCardClass = "glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300";
 
   return (
-    <div className="px-4 pt-6 pb-32 sm:pb-36 md:pb-8 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out] min-h-screen">
+    <div className="px-4 pt-2 md:pt-6 pb-32 sm:pb-36 md:pb-8 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out] min-h-screen">
       <Helmet>
         <title>Ajustes - Pro Fitness Glass</title>
       </Helmet>
 
 
 
-      <div className="flex items-center justify-between mb-6 mt-2">
+      <div className="hidden md:flex items-center justify-between mb-6 mt-2">
         <button
           onClick={() => setView && setView(returnView || 'hub')}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95 shadow-sm shrink-0"

@@ -298,6 +298,7 @@ class ViewErrorBoundary extends React.Component {
 export default function MainAppLayout({
   view,
   navigate,
+  navParams,
   preloadView,
   mainContentRef,
   currentTitle,
@@ -1231,13 +1232,21 @@ export default function MainAppLayout({
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
               {['settings', 'progress', 'appearance', 'support', 'socialLinks', 'challenges'].includes(view) ? (
                 <button
-                  onClick={() => navigate('hub')}
+                  onClick={() => navigate(view === 'settings' && navParams?.returnView ? navParams.returnView : 'hub')}
                   className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <FaChevronLeft className="w-5 h-5" />
                 </button>
-              ) : ['profile', 'notifications', 'twoFactorSetup', 'privacyPolicy', 'terms'].includes(view) ? (
+              ) : view === 'twoFactorSetup' ? (
+                <button
+                  onClick={() => navigate('settings')}
+                  className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <FaChevronLeft className="w-5 h-5" />
+                </button>
+              ) : ['profile', 'notifications', 'privacyPolicy', 'terms'].includes(view) ? (
                 <button
                   onClick={() => navigate('dashboard')}
                   className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200"

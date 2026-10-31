@@ -827,6 +827,7 @@ export default function App() {
         <MainAppLayout
           view={view}
           navigate={navigateInternal}
+          navParams={navParams}
           preloadView={preloadViewChunk}
           mainContentRef={mainContentRef}
           currentTitle={currentTitle}

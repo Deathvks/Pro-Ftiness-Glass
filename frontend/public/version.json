@@ -1,13 +1,13 @@
 {
-  "version": "7.11.16",
-  "releaseNotes": "Actualización v7.11.16: Soporte completo de colores de acento pastel, degradados y dinámicos en la pantalla de carga.",
+  "version": "7.11.17",
+  "releaseNotes": "Actualización v7.11.17: Limpieza y unificación de encabezados y botones de volver en móvil (Ajustes y Seguridad 2FA).",
   "welcome": {
-    "title": "Acentos en pantalla de carga",
-    "subtitle": "La pantalla de carga ahora refleja fielmente los nuevos acentos y degradados de todos los niveles.",
+    "title": "Navegación móvil simplificada",
+    "subtitle": "Se eliminaron encabezados y botones duplicados en Ajustes y Seguridad 2FA.",
     "features": [
       {
-        "title": "Acentos de nivel superior",
-        "description": "El spinner y el distintivo Glass ahora adoptan los degradados y animaciones de tus niveles desbloqueados desde el inicio."
+        "title": "Cabeceras unificadas",
+        "description": "El botón de volver y el título se gestionan limpiamente desde la cabecera superior en dispositivos móviles."
       }
     ]
   }
