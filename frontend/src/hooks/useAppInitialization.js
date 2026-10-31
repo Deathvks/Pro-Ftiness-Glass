@@ -141,9 +141,7 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
           setIsInitialLoad(false);
           completed = true;
           clearTimeout(safetyTimeout);
-          if (!isPublicPath) {
-            fetchInitialData().catch(() => {});
-          }
+          fetchInitialData().catch(() => {});
           return;
         }
 
@@ -186,7 +184,7 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
       window.location.pathname === '/reset-password'
     );
 
-    if (isAuthenticated && !isCurrentPublic) {
+    if (isAuthenticated) {
       loadInitialDataAndSetView();
     } else {
       setIsInitialLoad(false); 

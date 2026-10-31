@@ -753,12 +753,20 @@ export default function App() {
     { id: 'hub', label: t('Menú', { defaultValue: 'Menú' }), badge: !visitedHub || (unreadChats > 0), icon: (active) => <FaCompass className={`w-5 h-5 transition-transform ${active ? 'scale-110 drop-shadow' : 'opacity-70'}`} /> },
   ], [t, visitedHub, unreadChats]);
 
+  // Auto-recuperar perfil si el usuario está autenticado pero userProfile aún no tiene 'role' (ej: viniendo de noticias públicas o tras reload)
+  useEffect(() => {
+    if (isAuthenticated && (!userProfile || !('role' in userProfile)) && !isLoading) {
+      fetchInitialData().catch(() => {});
+    }
+  }, [isAuthenticated, userProfile, isLoading, fetchInitialData]);
+
   const AuthenticatedAppContent = useMemo(() => {
-    // Si el perfil no tiene la propiedad 'role', significa que es el objeto parcial del login
-    // y todava no se ha ejecutado fetchInitialData. Mostramos el skeleton para evitar parpadeos.
+    // Si el perfil no tiene la propiedad 'role', mostramos skeleton mientras se completa la carga
     if (!userProfile || !('role' in userProfile) || (isLoading && !userProfile.goal)) {
-      if (!isInitialLoad) {
-        return (
+      if (isLoading || isInitialLoad) {
+        return <InitialLoadingSkeleton />;
+      }
+      return (
           <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-bg-primary">
             <div className="w-16 h-16 rounded-2xl bg-accent/15 text-accent flex items-center justify-center mb-4 shadow-lg shadow-accent/20">
               <RefreshCw className="animate-spin-slow" size={32} />
@@ -797,8 +805,6 @@ export default function App() {
             </div>
           </div>
         );
-      }
-      return <InitialLoadingSkeleton />;
     }
 
     if (!userProfile.goal && userProfile.role !== 'trainee') {

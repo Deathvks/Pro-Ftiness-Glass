@@ -2,74 +2,31 @@
 import React from 'react';
 import ModalPortal from './ModalPortal';
 import {
-  ChevronRight, Newspaper, Calculator, Dumbbell, Zap, Sparkles } from
+  ChevronRight, Newspaper, Calculator, Dumbbell, Zap, Sparkles, RefreshCw } from
 'lucide-react';
+
+const isNewerVersion = (current, remote) => {
+  if (!current || !remote) return false;
+  const cParts = String(current).split('.').map(Number);
+  const rParts = String(remote).split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((rParts[i] || 0) > (cParts[i] || 0)) return true;
+    if ((rParts[i] || 0) < (cParts[i] || 0)) return false;
+  }
+  return false;
+};
 import { FaMeteor } from 'react-icons/fa6';
 import { Capacitor } from '@capacitor/core';
 import { APP_VERSION } from '../config/version';
 import useModalLock from '../hooks/useModalLock';
 import useAppStore from '../store/useAppStore';
 
-const reloadAfterWelcome = async () => {
-  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
-    try {
-      const registration = await Promise.race([
-        navigator.serviceWorker.getRegistration(),
-        new Promise((resolve) => setTimeout(() => resolve(null), 1000)),
-      ]);
-
-      if (registration?.installing && !registration.waiting) {
-        await new Promise((resolve) => {
-          const installingWorker = registration.installing;
-          let timeoutId;
-          const finish = () => {
-            clearTimeout(timeoutId);
-            installingWorker.removeEventListener('statechange', handleStateChange);
-            resolve();
-          };
-          const handleStateChange = () => {
-            if (installingWorker.state === 'installed' || installingWorker.state === 'redundant') {
-              finish();
-            }
-          };
-          installingWorker.addEventListener('statechange', handleStateChange);
-          timeoutId = setTimeout(finish, 10000);
-          handleStateChange();
-        });
-      }
-
-      if (registration?.waiting) {
-        const controllerChanged = new Promise((resolve) => {
-          let timeoutId;
-          const finish = () => {
-            clearTimeout(timeoutId);
-            navigator.serviceWorker.removeEventListener('controllerchange', finish);
-            resolve();
-          };
-          navigator.serviceWorker.addEventListener('controllerchange', finish, { once: true });
-          timeoutId = setTimeout(finish, 2500);
-        });
-
-        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-        await controllerChanged;
-      }
-    } catch (error) {
-      console.warn('[WelcomeModal] No se pudo esperar al Service Worker nuevo:', error);
-    }
-  }
-
-  // Conservamos las cachés de la app y añadimos un parámetro para pedir un
-  // documento fresco, incluso si el navegador conserva la navegación anterior.
-  const freshUrl = new URL(window.location.href);
-  freshUrl.searchParams.set('pfg_update', String(Date.now()));
-  window.location.replace(freshUrl.toString());
-};
-
 const WelcomeModal = ({ onClose }) => {
 
   // --- Bloquear scroll del fondo y swipe entre páginas ---
   useModalLock();
 
+  const [isUpdating, setIsUpdating] = React.useState(false);
   const userProfile = useAppStore((state) => state.userProfile);
   const welcomeRemoteVersion = useAppStore((state) => state.welcomeRemoteVersion);
   const welcomeRemoteData = useAppStore((state) => state.welcomeRemoteData);
@@ -82,14 +39,15 @@ const WelcomeModal = ({ onClose }) => {
     'Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y velocidad instantánea en toda la app.';
   const remoteFeatures = welcomeRemoteData?.welcome?.features;
 
-  const handleGetStarted = () => {
+  const handleGetStarted = async (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (isUpdating) return;
+
     try {
       localStorage.setItem('lastSeenVersion', effectiveVersion);
       localStorage.setItem('pfg_app_version', effectiveVersion);
       localStorage.setItem('pfg_cache_version', effectiveVersion);
       localStorage.removeItem('pfg_crash_loop_count');
-      localStorage.removeItem('pfg_auto_reloaded_version');
-      sessionStorage.removeItem('pfg_auto_reloaded_version');
       sessionStorage.removeItem('pfg_last_safe_reload_time');
       sessionStorage.removeItem('pfg_reload_count');
       Object.keys(sessionStorage).forEach((key) => {
@@ -97,19 +55,62 @@ const WelcomeModal = ({ onClose }) => {
           sessionStorage.removeItem(key);
         }
       });
-    } catch (e) {
-      console.warn('[WelcomeModal] Error guardando estado de versión:', e);
+    } catch (err) {
+      console.warn('[WelcomeModal] Error guardando estado de versión:', err);
+    }
+
+    // Solo recargar si verdaderamente hay una versión remota MÁS NUEVA que la que corre en memoria
+    const needsReload = Boolean(
+      welcomeRemoteVersion &&
+      isNewerVersion(APP_VERSION, welcomeRemoteVersion) &&
+      typeof window !== 'undefined' &&
+      !Capacitor.isNativePlatform()
+    );
+
+    if (!needsReload) {
+      // Si ya tenemos la versión actual o no hay actualización remota pendiente,
+      // cerramos el modal al instante SIN recargar ni congelar la pantalla.
+      if (onClose) {
+        onClose();
+      }
+      return;
+    }
+
+    // Si realmente hay una nueva versión remota pendiente de activar:
+    setIsUpdating(true);
+    sessionStorage.setItem('pfg_auto_reloaded_version', welcomeRemoteVersion);
+
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      try {
+        const registration = await Promise.race([
+          navigator.serviceWorker.getRegistration(),
+          new Promise((resolve) => setTimeout(() => resolve(null), 800)),
+        ]);
+
+        if (registration?.waiting) {
+          const controllerChanged = new Promise((resolve) => {
+            let timeoutId;
+            const finish = () => {
+              clearTimeout(timeoutId);
+              navigator.serviceWorker.removeEventListener('controllerchange', finish);
+              resolve();
+            };
+            navigator.serviceWorker.addEventListener('controllerchange', finish, { once: true });
+            timeoutId = setTimeout(finish, 1500);
+          });
+
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          await controllerChanged;
+        }
+      } catch (err) {
+        console.warn('[WelcomeModal] Error activando nuevo service worker:', err);
+      }
     }
 
     if (onClose) {
       onClose();
     }
-
-    // En navegador web, esperar brevemente al Service Worker nuevo y recargar
-    // sin borrar las cachés que mantienen ágil la app y su uso sin conexión.
-    if (typeof window !== 'undefined' && !Capacitor.isNativePlatform()) {
-      reloadAfterWelcome();
-    }
+    window.location.reload();
   };
 
   return (
@@ -494,9 +495,20 @@ const WelcomeModal = ({ onClose }) => {
 
             {/*  Footer  */}
             <div className="wm-btn-in">
-              <button className="wm-btn" onClick={handleGetStarted}>
-                <span style={{ position: 'relative', zIndex: 1 }}>DESCUBRIR NOVEDADES</span>
-                <ChevronRight size={18} strokeWidth={2.5} style={{ position: 'relative', zIndex: 1 }} />
+              <button 
+                className="wm-btn" 
+                onClick={handleGetStarted}
+                disabled={isUpdating}
+                style={isUpdating ? { opacity: 0.8, cursor: 'wait' } : undefined}
+              >
+                <span style={{ position: 'relative', zIndex: 1 }}>
+                  {isUpdating ? 'ACTUALIZANDO...' : 'DESCUBRIR NOVEDADES'}
+                </span>
+                {isUpdating ? (
+                  <RefreshCw size={18} className="animate-spin" style={{ position: 'relative', zIndex: 1 }} />
+                ) : (
+                  <ChevronRight size={18} strokeWidth={2.5} style={{ position: 'relative', zIndex: 1 }} />
+                )}
               </button>
 
               <p style={{
