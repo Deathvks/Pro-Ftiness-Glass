@@ -1,5 +1,5 @@
 /* frontend/src/App.jsx */
-import React, { useState, lazy, useMemo, useCallback, useEffect, Suspense } from 'react';
+import React, { useState, lazy, useMemo, useCallback, useEffect, Suspense, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { FaHouse, FaUsers, FaUtensils, FaDumbbell, FaCompass } from 'react-icons/fa6';
