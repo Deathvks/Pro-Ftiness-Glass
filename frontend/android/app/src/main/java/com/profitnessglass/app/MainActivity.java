@@ -1,6 +1,10 @@
 package com.profitnessglass.app;
 
+import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.os.Build;
 import android.os.Bundle;
+import android.webkit.WebView;
 import androidx.activity.EdgeToEdge;
 import com.getcapacitor.BridgeActivity;
 
@@ -18,5 +22,23 @@ public class MainActivity extends BridgeActivity {
         EdgeToEdge.enable(this);
         
         super.onCreate(savedInstanceState);
+
+        // Si se actualizó la app desde Play Store (cambio de versionCode), limpiar la caché de WebView
+        try {
+            PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+            long currentVersionCode = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) 
+                ? pInfo.getLongVersionCode() 
+                : pInfo.versionCode;
+
+            SharedPreferences prefs = getSharedPreferences("pfg_app_prefs", MODE_PRIVATE);
+            long lastVersionCode = prefs.getLong("last_version_code", -1);
+            if (lastVersionCode != currentVersionCode) {
+                WebView webView = getBridge() != null ? getBridge().getWebView() : null;
+                if (webView != null) {
+                    webView.clearCache(true);
+                }
+                prefs.edit().putLong("last_version_code", currentVersionCode).apply();
+            }
+        } catch (Exception ignored) {}
     }
 }

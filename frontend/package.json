@@ -9,7 +9,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/prerenderNews.js",
+    "build": "vite build && node scripts/prerenderNews.js && npx cap copy android",
+    "cap:copy": "npx cap copy android",
+    "cap:sync": "npx cap sync android",
     "lint": "eslint .",
     "preview": "vite preview",
     "tailwind:init": "node node_modules/tailwindcss/lib/cli.js init -p",
