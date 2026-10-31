@@ -1,3 +1,4 @@
+import MaintenanceNoticeBanner from './MaintenanceNoticeBanner';
 /* frontend/src/components/AuthScreens.jsx */
 import React, { Suspense, lazy, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -59,6 +60,7 @@ const AuthScreens = ({ authView, setAuthView }) => {
 
   return (
     <div className="flex flex-col min-h-screen bg-bg-primary animate-fade-in">
+      <MaintenanceNoticeBanner />
       <Helmet>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>

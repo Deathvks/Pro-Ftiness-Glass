@@ -1,3 +1,4 @@
+import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 /* frontend/src/pages/TermsPage.jsx */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +15,7 @@ const TermsPage = () => {
       
       <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] sm:mt-0" style={{ paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 1rem)' }}>
         
+        <MaintenanceNoticeBanner className="rounded-2xl mb-6" />
         {/* Botón de regreso adaptativo */}
         <button 
           onClick={() => navigate(-1)} 

@@ -1,3 +1,4 @@
+import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 /* frontend/src/pages/SharedRoutinePreview.jsx */
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -179,13 +180,16 @@ const SharedRoutinePreview = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/80 to-transparent" />
         </div>
         
-        <div className="absolute top-0 left-0 w-full p-4 sm:p-6 z-10 flex justify-between items-start">
+        <div className="absolute top-0 left-0 w-full p-4 sm:p-6 z-10 flex flex-col gap-3">
+            <MaintenanceNoticeBanner className="rounded-2xl" />
+            <div className="flex justify-between items-start">
             <button 
               onClick={() => navigate('/')}
               className="p-2 bg-black/30 backdrop-blur-md rounded-full text-white hover:bg-black/50 transition"
             >
                 <ArrowLeft size={24} />
             </button>
+          </div>
         </div>
 
         <div className="relative z-10 w-full p-4 pb-10 sm:p-6 sm:pb-12 pt-16">

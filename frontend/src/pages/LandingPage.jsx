@@ -11,6 +11,7 @@ import { Helmet } from 'react-helmet-async';
 
 import packageJson from '../../package.json';
 import socialService from '../services/socialService';
+import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
@@ -458,6 +459,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                         aria-label="Navegación principal"
                         style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
                     >
+                        <MaintenanceNoticeBanner />
                         <div className="flex justify-between items-center p-3 sm:p-4 md:px-8 max-w-7xl mx-auto w-full relative z-10 flex-nowrap">
                             <div
                                 className="flex items-center gap-2.5 sm:gap-4 cursor-pointer group shrink-0"
@@ -528,7 +530,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     {/* --- HERO SECTION --- */}
                     <main 
                         className="flex-grow flex flex-col items-center px-4 pb-24 text-center w-full max-w-7xl mx-auto overflow-x-hidden relative z-10"
-                        style={{ paddingTop: 'calc(var(--safe-top, 0px) + 4.5rem)' }}
+                        style={{ paddingTop: 'calc(var(--safe-top, 0px) + 6.25rem)' }}
                     >
 
                         {/* Espaciador reservado para la mascota GymBot entre el Header y la Versión */}

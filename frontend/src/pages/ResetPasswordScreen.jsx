@@ -1,3 +1,4 @@
+import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 /* frontend/src/pages/ResetPasswordScreen.jsx */
 import React, { useState, useEffect } from 'react';
 import { Dumbbell, KeyRound, CheckCircle2, ArrowLeft } from 'lucide-react';
@@ -84,7 +85,8 @@ const ResetPasswordScreen = ({ showLogin }) => {
                     noIndex={true}
                 />
                 <div className="auth-container flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
-                    <div className="w-full max-w-md text-center">
+                    <MaintenanceNoticeBanner className="rounded-2xl mb-6 max-w-md" />
+                <div className="w-full max-w-md text-center">
                         <GlassCard className="glass p-8 sm:p-12 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 shadow-2xl bg-bg-primary/50">
                             <div className="w-24 h-24 bg-green-500/10 rounded-[28px] flex items-center justify-center mx-auto mb-6 text-green ring-1 ring-green-500/30 shadow-sm">
                                 <CheckCircle2 size={48} strokeWidth={1.5} />

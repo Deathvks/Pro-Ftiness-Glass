@@ -1,3 +1,4 @@
+import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 /* frontend/src/pages/MacroCalculatorPage.jsx */
 import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -204,6 +205,7 @@ export default function MacroCalculatorPage({ onBack }) {
       >
         {/* Clean Integrated Header (No full-bleed borders or browser gap) */}
         <nav aria-label="Navegación de herramientas" className="flex flex-col gap-3.5 mb-7 sm:mb-10">
+          <MaintenanceNoticeBanner className="rounded-2xl" />
           <div className="flex items-center justify-between gap-2.5 w-full">
             {/* Logo + Marca + Badge Gratis */}
             <Link

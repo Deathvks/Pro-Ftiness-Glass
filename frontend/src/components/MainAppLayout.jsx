@@ -22,6 +22,7 @@ import PRToast from './PRToast';
 import AndroidDownloadPrompt from './AndroidDownloadPrompt';
 import APKUpdater from './APKUpdater';
 import UserAvatar from './UserAvatar';
+import MaintenanceNoticeBanner from './MaintenanceNoticeBanner';
 
 import ConfirmationModal from './ConfirmationModal';
 import WelcomeModal from './WelcomeModal';
@@ -1222,12 +1223,16 @@ export default function MainAppLayout({
 
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
-
+        {/* Banner de Mantenimiento en Desktop */}
+        <div className="hidden md:block w-full shrink-0 z-30">
+          <MaintenanceNoticeBanner />
+        </div>
 
         <header 
           className={`md:hidden absolute top-0 left-0 w-full z-40 transition-all duration-300 ease-out global-header-element ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : isHeaderHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'} ${isScrolled ? 'bg-bg-primary/70 backdrop-blur-xl shadow-sm' : 'bg-transparent'}`}
           style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
         >
+          <MaintenanceNoticeBanner />
           <div className="flex justify-between items-center w-full h-14 px-4">
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
               {['settings', 'progress', 'appearance', 'support', 'socialLinks', 'challenges'].includes(view) ? (
@@ -1322,7 +1327,7 @@ export default function MainAppLayout({
             if (mainContentRef) mainContentRef.current = el;
             swipeContainerRef.current = el;
           }}
-          className="flex-1 overflow-y-auto overflow-x-hidden relative" style={{ paddingTop: 'calc(var(--safe-top) + 3.5rem)', backgroundColor: 'transparent', touchAction: 'pan-y' }}
+          className="flex-1 overflow-y-auto overflow-x-hidden relative pt-[calc(var(--safe-top,0px)+5.25rem)] md:pt-4" style={{ backgroundColor: 'transparent', touchAction: 'pan-y' }}
           onTouchStart={handleContentTouchStart}
           onTouchMove={handleContentTouchMove}
           onTouchEnd={handleContentTouchEnd}

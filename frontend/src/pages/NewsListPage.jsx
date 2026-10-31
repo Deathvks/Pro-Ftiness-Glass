@@ -1,3 +1,4 @@
+import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 /* frontend/src/pages/NewsListPage.jsx */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
@@ -352,6 +353,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
 
         {/* HEADER CON FOTO, NOMBRE DE LA APP, BADGE 100% GRATIS Y NAVEGACIÓN */}
         <header className="flex flex-col gap-3.5 pt-1">
+          <MaintenanceNoticeBanner className="rounded-2xl" />
           {/* Barra superior de marca y acciones (Fila única sin saltos) */}
           <div className="flex items-center justify-between gap-2.5 w-full">
             {/* Logo de la app + Nombre + Badge 100% Gratis */}

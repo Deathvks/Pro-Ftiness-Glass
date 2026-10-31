@@ -1,13 +1,13 @@
 {
-  "version": "7.11.19",
-  "releaseNotes": "Actualización v7.11.19: Corrección al alternar entre animación y vídeo en el detalle de ejercicios durante el entrenamiento.",
+  "version": "7.11.20",
+  "releaseNotes": "Actualización v7.11.20: Aviso de mantenimiento programado en el header de todas las páginas de la web.",
   "welcome": {
-    "title": "Selector de multimedia mejorado",
-    "subtitle": "Ahora puedes alternar al instante entre la animación de técnica y el vídeo del ejercicio en cualquier momento.",
+    "title": "Aviso de mantenimiento programado",
+    "subtitle": "El sábado 7 la web estará fuera de servicio entre 24 a 48 horas por tareas de mantenimiento.",
     "features": [
       {
-        "title": "Alternancia fluida de multimedia",
-        "description": "El botón de Animación reproduce la secuencia de fotos de técnica sin quedarse bloqueado en el reproductor de vídeo."
+        "title": "Aviso visible en toda la web",
+        "description": "Se ha añadido un banner informativo en el header visible en todas las páginas y herramientas de la plataforma."
       }
     ]
   }
