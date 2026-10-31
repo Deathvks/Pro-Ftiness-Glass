@@ -2,36 +2,30 @@
 import React from 'react';
 import ModalPortal from './ModalPortal';
 import {
-  ChevronRight, Newspaper, Calculator, Dumbbell, Zap, Sparkles, RefreshCw } from
-'lucide-react';
+  ChevronRight, Newspaper, Calculator, Dumbbell, Zap, Sparkles
+} from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6';
-import { Capacitor } from '@capacitor/core';
-import { APP_VERSION, isNewerVersion } from '../config/version';
+import { APP_VERSION } from '../config/version';
 import useModalLock from '../hooks/useModalLock';
 import useAppStore from '../store/useAppStore';
-import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
 
 const WelcomeModal = ({ onClose }) => {
-
-  // --- Bloquear scroll del fondo y swipe entre páginas ---
+  // Bloquear scroll del fondo y swipe entre páginas
   useModalLock();
 
-  const [isUpdating, setIsUpdating] = React.useState(false);
   const userProfile = useAppStore((state) => state.userProfile);
-  const welcomeRemoteVersion = useAppStore((state) => state.welcomeRemoteVersion);
   const welcomeRemoteData = useAppStore((state) => state.welcomeRemoteData);
 
-  const effectiveVersion = welcomeRemoteVersion || APP_VERSION;
+  const effectiveVersion = APP_VERSION;
   const appVersion = `v${effectiveVersion}`;
-  const welcomeTitle = welcomeRemoteData?.welcome?.title || 'Noticias y Herramientas';
+  const welcomeTitle = welcomeRemoteData?.welcome?.title || 'Portal de Noticias y Estabilidad';
   const welcomeSubtitle =
     welcomeRemoteData?.welcome?.subtitle ||
-    'Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y velocidad instantánea en toda la app.';
+    'Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y máxima estabilidad en toda la app.';
   const remoteFeatures = welcomeRemoteData?.welcome?.features;
 
-  const handleGetStarted = async (e) => {
+  const handleGetStarted = (e) => {
     if (e && e.stopPropagation) e.stopPropagation();
-    if (isUpdating) return;
 
     try {
       localStorage.setItem('lastSeenVersion', effectiveVersion);
@@ -40,67 +34,21 @@ const WelcomeModal = ({ onClose }) => {
       localStorage.removeItem('pfg_crash_loop_count');
       sessionStorage.removeItem('pfg_last_safe_reload_time');
       sessionStorage.removeItem('pfg_reload_count');
-      Object.keys(sessionStorage).forEach((key) => {
-        if (key.startsWith('pfg_chunk_retry_')) {
-          sessionStorage.removeItem(key);
+      sessionStorage.removeItem('pfg_last_chunk_autoreload');
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const k = sessionStorage.key(i);
+        if (k?.startsWith('pfg_chunk_retry_') || k?.startsWith('pfg_reload_')) {
+          sessionStorage.removeItem(k);
         }
-      });
+      }
     } catch (err) {
       console.warn('[WelcomeModal] Error guardando estado de versión:', err);
     }
 
-    // Solo recargar si verdaderamente hay una versión remota MÁS NUEVA que la que corre en memoria
-    const needsReload = Boolean(
-      welcomeRemoteVersion &&
-      isNewerVersion(APP_VERSION, welcomeRemoteVersion) &&
-      typeof window !== 'undefined' &&
-      !Capacitor.isNativePlatform()
-    );
-
-    if (!needsReload) {
-      // Si ya tenemos la versión actual o no hay actualización remota pendiente,
-      // cerramos el modal al instante SIN recargar ni congelar la pantalla.
-      if (onClose) {
-        onClose();
-      }
-      return;
-    }
-
-    // Si realmente hay una nueva versión remota pendiente de activar:
-    setIsUpdating(true);
-    sessionStorage.setItem('pfg_auto_reloaded_version', welcomeRemoteVersion);
-
-    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
-      try {
-        const registration = await Promise.race([
-          navigator.serviceWorker.getRegistration(),
-          new Promise((resolve) => setTimeout(() => resolve(null), 800)),
-        ]);
-
-        if (registration?.waiting) {
-          const controllerChanged = new Promise((resolve) => {
-            let timeoutId;
-            const finish = () => {
-              clearTimeout(timeoutId);
-              navigator.serviceWorker.removeEventListener('controllerchange', finish);
-              resolve();
-            };
-            navigator.serviceWorker.addEventListener('controllerchange', finish, { once: true });
-            timeoutId = setTimeout(finish, 1500);
-          });
-
-          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-          await controllerChanged;
-        }
-      } catch (err) {
-        console.warn('[WelcomeModal] Error activando nuevo service worker:', err);
-      }
-    }
-
+    // Cierre fluido e instantáneo (0ms) sin recargas
     if (onClose) {
       onClose();
     }
-    reloadAppWithoutStaleCache();
   };
 
   return (
@@ -128,315 +76,226 @@ const WelcomeModal = ({ onClose }) => {
         }
         @keyframes wm-badge-pop {
           0%   { transform: scale(0.6) rotate(-6deg); opacity: 0; }
-          70%  { transform: scale(1.1) rotate(2deg);  opacity: 1; }
-          100% { transform: scale(1)   rotate(0deg);  opacity: 1; }
+          70%  { transform: scale(1.08) rotate(2deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
-        @keyframes wm-card-in {
-          from { opacity: 0; transform: translateX(-10px); }
-          to   { opacity: 1; transform: translateX(0);     }
+        .wm-card-in {
+          animation: wm-slide-card 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        @keyframes wm-count-tick {
-          from { transform: translateY(6px); opacity: 0; }
-          to   { transform: translateY(0);   opacity: 1; }
+        .wm-badge-in {
+          animation: wm-badge-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
         }
-
-        .wm-backdrop {
-          animation: wm-fade-backdrop 0.35s ease-out both;
-        }
-        .wm-card {
-          animation: wm-slide-card 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
-        }
-        .wm-spin-ring {
-          animation: wm-spin-ring 10s linear infinite;
-        }
-        .wm-glow-orb {
-          animation: wm-pulse-glow 3s ease-in-out infinite;
-        }
-        .wm-badge {
-          animation: wm-badge-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.45s both;
-        }
-        .wm-feature-1 { animation: wm-card-in 0.4s ease-out 0.25s both; }
-        .wm-feature-2 { animation: wm-card-in 0.4s ease-out 0.35s both; }
-        .wm-feature-3 { animation: wm-card-in 0.4s ease-out 0.45s both; }
-        .wm-feature-4 { animation: wm-card-in 0.4s ease-out 0.55s both; }
-        .wm-btn-in    { animation: wm-card-in 0.4s ease-out 0.65s both; }
-
-        .wm-shimmer {
-          background: linear-gradient(
-            120deg,
-            var(--text-primary) 0%,
-            var(--color-accent) 35%,
-            var(--text-primary) 55%,
-            var(--color-accent) 80%,
-            var(--text-primary) 100%
-          );
-          background-size: 300% 100%;
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: wm-shimmer-text 5s linear infinite;
-        }
-
         .wm-feature-card {
           position: relative;
           display: flex;
           align-items: flex-start;
-          gap: 16px;
-          padding: 18px 20px;
-          border-radius: 20px;
-          border: 1px solid transparent;
-          background-clip: padding-box;
-          transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+          gap: 14px;
+          padding: 14px 16px;
+          border-radius: 18px;
+          background: rgba(255, 255, 255, 0.04);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          transition: all 0.25s ease;
           overflow: hidden;
         }
-        .wm-feature-card::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          background: var(--glass-bg);
-          z-index: 0;
-        }
         .wm-feature-card:hover {
-          transform: translateX(4px);
+          background: rgba(255, 255, 255, 0.07);
+          transform: translateY(-2px);
         }
-        .wm-feature-card > * {
-          position: relative;
-          z-index: 1;
-        }
-
         .wm-accent-line {
           position: absolute;
-          left: 0; top: 20%; bottom: 20%;
-          width: 3px;
-          border-radius: 0 3px 3px 0;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 3.5px;
+          border-radius: 4px 0 0 4px;
         }
-
         .wm-icon-wrap {
           flex-shrink: 0;
           width: 40px;
           height: 40px;
-          border-radius: 12px;
+          border-radius: 13px;
           display: flex;
           align-items: center;
           justify-content: center;
+          margin-top: 1px;
         }
-
         .wm-num {
-          position: absolute;
-          top: 14px;
-          right: 16px;
+          flex-shrink: 0;
           font-size: 11px;
-          font-weight: 800;
-          letter-spacing: 0.12em;
-          opacity: 0.18;
-          font-variant-numeric: tabular-nums;
+          font-weight: 900;
+          letter-spacing: 0.05em;
+          opacity: 0.35;
+          align-self: center;
         }
-
+        .wm-btn-in {
+          animation: wm-slide-card 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+        }
         .wm-btn {
           width: 100%;
-          padding: 16px 24px;
+          padding: 15px 24px;
           border-radius: 18px;
-          border: none;
-          background: var(--color-accent);
-          color: var(--btn-accent-text, #fff);
+          background: linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 75%, black) 100%);
+          color: var(--accent-contrast, #ffffff);
+          font-size: 13px;
           font-weight: 800;
-          font-size: 15px;
-          letter-spacing: 0.06em;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          border: none;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 10px;
-          transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-          box-shadow: 0 8px 32px -4px color-mix(in srgb, var(--color-accent) 50%, transparent);
+          gap: 8px;
           position: relative;
           overflow: hidden;
+          box-shadow: 0 8px 28px -4px color-mix(in srgb, var(--accent) 45%, transparent);
+          transition: all 0.22s ease;
         }
-        .wm-btn::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+        .wm-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 12px 32px -4px color-mix(in srgb, var(--accent) 60%, transparent);
+          filter: brightness(1.08);
         }
-        .wm-btn:hover  { transform: translateY(-2px); filter: brightness(1.08); }
-        .wm-btn:active { transform: scale(0.97); }
-
-        .wm-divider {
-          height: 1px;
-          background: linear-gradient(to right, transparent, var(--glass-border), transparent);
-          margin: 4px 0;
+        .wm-btn:active {
+          transform: translateY(0) scale(0.985);
         }
       `}</style>
 
-      {/* Backdrop */}
-      <ModalPortal disableSwipeToClose={true}><div
-          className="wm-backdrop fixed inset-0"
+      <ModalPortal><div 
+        className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-5"
+        style={{
+          background: 'radial-gradient(ellipse at 50% 20%, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.85) 100%)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          animation: 'wm-fade-backdrop 0.3s ease forwards',
+          paddingTop: 'max(12px, env(safe-area-inset-top, 0px))',
+          paddingBottom: 'max(12px, env(safe-area-inset-bottom, 0px))',
+        }}
+      >
+        <div 
+          className="wm-card-in relative w-full max-w-lg rounded-[28px] overflow-hidden"
           style={{
-            zIndex: 150,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '16px',
-            paddingTop: 'calc(16px + var(--safe-top, env(safe-area-inset-top, 0px)))',
-            paddingBottom: 'calc(16px + var(--safe-bottom, env(safe-area-inset-bottom, 0px)))',
-            background: 'rgba(0,0,0,0.75)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)'
+            background: 'var(--bg-card, rgba(15, 23, 42, 0.88))',
+            backdropFilter: 'blur(30px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+            border: '1px solid var(--glass-border, rgba(255,255,255,0.12))',
+            boxShadow: '0 24px 64px -12px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255,255,255,0.06) inset',
+            maxHeight: 'min(92vh, 720px)',
+            display: 'flex',
+            flexDirection: 'column',
           }}
-          onClick={handleGetStarted}
         >
-        {/* Modal Container */}
-        <div
-            className="wm-card"
+          {/* Luz ambiental de fondo */}
+          <div 
             style={{
-              position: 'relative',
-              width: '100%',
-              maxWidth: '380px',
-              maxHeight: '100%',
-              background: 'var(--bg-primary)',
-              borderRadius: '32px',
-              boxShadow: '0 24px 64px -12px rgba(0,0,0,0.4)',
-              border: '1px solid var(--glass-border)',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-
-          {/* Glow / Light effect top */}
-          <div style={{
-              position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-              width: '200px', height: '100px',
-              background: 'var(--color-accent)',
-              opacity: 0.15,
+              position: 'absolute',
+              top: '-80px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '280px',
+              height: '200px',
+              background: 'radial-gradient(circle, var(--accent) 0%, transparent 70%)',
+              opacity: 0.18,
               filter: 'blur(40px)',
               pointerEvents: 'none',
-              zIndex: 0
-            }} />
-
-          {/* Scrollable Body */}
-          <div style={{
-              padding: '32px 24px 24px',
-              overflowY: 'auto',
-              flex: 1,
-              position: 'relative',
-              zIndex: 1
+              borderRadius: '50%',
             }}
-            className="hide-scrollbar"
-          >
+          />
 
-            {/*  Header Section  */}
-            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-              
-              {/* Icon / Avatar with spinning ring */}
-              <div style={{ position: 'relative', width: '72px', height: '72px', margin: '0 auto 20px' }}>
-                <div className="wm-spin-ring" style={{
-                    position: 'absolute', inset: -6,
-                    borderRadius: '50%',
-                    background: 'conic-gradient(from 0deg, transparent 0%, transparent 40%, var(--color-accent) 80%, transparent 100%)',
-                    maskImage: 'radial-gradient(transparent 65%, black 66%)',
-                    WebkitMaskImage: 'radial-gradient(transparent 65%, black 66%)'
-                  }} />
-                <div className="wm-glow-orb" style={{
-                    position: 'absolute', inset: 0,
-                    borderRadius: '50%',
-                    background: 'var(--color-accent)',
-                    filter: 'blur(12px)',
-                  }} />
+          <div style={{ overflowY: 'auto', padding: '24px 20px 20px', flex: 1 }} className="custom-scrollbar">
+
+            {/*  Encabezado con Logo y Nivel  */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{
-                    position: 'relative', width: '100%', height: '100%',
-                    background: 'var(--bg-secondary)',
-                    borderRadius: '50%',
-                    border: '2px solid var(--glass-border)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.1)'
-                  }}>
-                  <FaMeteor size={32} style={{ color: 'var(--text-primary)' }} />
-                  <span style={{
-                      position: 'absolute', bottom: '-4px',
-                      fontSize: '10px', fontWeight: 900,
-                      background: 'var(--text-primary)', color: 'var(--bg-primary)',
-                      padding: '2px 6px', borderRadius: '6px',
-                      letterSpacing: '0.05em',
-                      lineHeight: 1
-                    }}>v{effectiveVersion}</span>
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '12px',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid var(--glass-border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                }}>
+                  <img src="/logo.webp" alt="Pro Fitness Glass" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
                 </div>
-
-                {/* Badge */}
-                <div className="wm-badge" style={{
-                    position: 'absolute', top: '-10px', right: '-22px',
-                    background: 'var(--color-accent)',
-                    color: 'var(--btn-accent-text, #fff)',
-                    fontSize: '9px', fontWeight: 900,
-                    letterSpacing: '0.15em',
-                    padding: '4px 10px',
-                    borderRadius: '99px',
-                    boxShadow: '0 4px 16px -2px color-mix(in srgb, var(--color-accent) 60%, transparent)',
-                    whiteSpace: 'nowrap'
-                  }}>NOVEDADES V{effectiveVersion}</div>
+                <div>
+                  <span style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--text-primary)', display: 'block', lineHeight: 1.2 }}>
+                    Pro Fitness Glass
+                  </span>
+                  <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Plataforma Oficial
+                  </span>
+                </div>
               </div>
 
-              {/* Title */}
-              <h1 className="wm-shimmer" style={{
-                  fontSize: '26px', fontWeight: 900,
-                  margin: '0 0 10px',
-                  letterSpacing: '-0.5px',
-                  lineHeight: 1.15
-                }}>
+              {/* Badge animado de la versión */}
+              <div 
+                className="wm-badge-in"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 13px',
+                  borderRadius: '999px',
+                  background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, transparent) 0%, rgba(255,255,255,0.04) 100%)',
+                  border: '1px solid color-mix(in srgb, var(--accent) 50%, transparent)',
+                  boxShadow: '0 2px 10px color-mix(in srgb, var(--accent) 20%, transparent)',
+                }}
+              >
+                <Sparkles size={11} style={{ color: 'var(--accent)' }} />
+                <span style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.08em', color: 'var(--text-primary)' }}>
+                  {appVersion}
+                </span>
+              </div>
+            </div>
+
+            {/*  Título y Bienvenida  */}
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+              <h1 style={{
+                fontSize: 'clamp(20px, 4.5vw, 24px)',
+                fontWeight: 900,
+                letterSpacing: '-0.03em',
+                lineHeight: 1.25,
+                margin: '0 0 8px',
+                color: 'var(--text-primary)',
+              }}>
                 {welcomeTitle}
               </h1>
-
               <p style={{
-                  fontSize: '13.5px',
-                  color: 'var(--text-secondary)',
-                  lineHeight: 1.65,
-                  margin: 0,
-                  maxWidth: '320px',
-                  marginInline: 'auto'
-                }}>
+                fontSize: '13px',
+                lineHeight: 1.55,
+                color: 'var(--text-secondary)',
+                margin: 0,
+                maxWidth: '420px',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+              }}>
                 {welcomeSubtitle}
               </p>
             </div>
 
-            {/*  Divider  */}
-            <div className="wm-divider" style={{ marginBottom: '20px' }} />
+            {/*  Lista de Novedades  */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', marginBottom: '22px' }}>
 
-            {/*  Feature Cards  */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
-
-              {/* 01: Portal de Noticias Fitness */}
-              <div className="wm-feature-card wm-feature-1" style={{
-                  background: 'linear-gradient(135deg, #080814 0%, #121226 100%)',
-                  border: '1px solid rgba(168,85,247,0.35)',
-                  boxShadow: '0 4px 20px -8px rgba(168,85,247,0.3)'
-                }}>
-                <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    backgroundImage: `
-                    radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
-                    radial-gradient(1.5px 1.5px at 70px 10px, #ffffff, rgba(0,0,0,0)),
-                    radial-gradient(1px 1px at 140px 50px, #ffffff, rgba(0,0,0,0)),
-                    url('https://www.transparenttextures.com/patterns/stardust.png')
-                  `,
-                    opacity: 0.4,
-                    pointerEvents: 'none',
-                    zIndex: 0
-                  }}></div>
+              {/* 01: Portal de Noticias */}
+              <div className="wm-feature-card wm-feature-1" style={{ border: '1px solid var(--glass-border)' }}>
                 <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #a855f7, #6366f1)' }} />
-                <div className="wm-icon-wrap" style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.25)' }}>
+                <div className="wm-icon-wrap" style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.25)' }}>
                   <Newspaper size={18} style={{ color: '#a855f7' }} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[0]?.title || 'Portal de Noticias y Ciencia Fitness'}</p>
-                  <p style={{ fontSize: '13px', color: 'rgba(203,213,225,0.9)', margin: 0, lineHeight: 1.55 }}>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
                     {remoteFeatures?.[0]?.description || 'Descubre artículos actualizados sobre hipertrofia, nutrición, suplementación y salud con modo de lectura adaptable y artículos recomendados.'}
                   </p>
                 </div>
                 <span className="wm-num" style={{ color: '#a855f7' }}>01</span>
               </div>
 
-              {/* 02: Calculadoras y Enciclopedia */}
+              {/* 02: Calculadoras 1RM y Macros */}
               <div className="wm-feature-card wm-feature-2" style={{ border: '1px solid var(--glass-border)' }}>
                 <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #3b82f6, #06b6d4)' }} />
                 <div className="wm-icon-wrap" style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)' }}>
@@ -488,17 +347,11 @@ const WelcomeModal = ({ onClose }) => {
               <button 
                 className="wm-btn" 
                 onClick={handleGetStarted}
-                disabled={isUpdating}
-                style={isUpdating ? { opacity: 0.8, cursor: 'wait' } : undefined}
               >
                 <span style={{ position: 'relative', zIndex: 1 }}>
-                  {isUpdating ? 'ACTUALIZANDO...' : 'DESCUBRIR NOVEDADES'}
+                  DESCUBRIR NOVEDADES
                 </span>
-                {isUpdating ? (
-                  <RefreshCw size={18} className="animate-spin" style={{ position: 'relative', zIndex: 1 }} />
-                ) : (
-                  <ChevronRight size={18} strokeWidth={2.5} style={{ position: 'relative', zIndex: 1 }} />
-                )}
+                <ChevronRight size={18} strokeWidth={2.5} style={{ position: 'relative', zIndex: 1 }} />
               </button>
 
               <p style={{
@@ -522,6 +375,3 @@ const WelcomeModal = ({ onClose }) => {
 };
 
 export default WelcomeModal;
-
-
-

@@ -197,6 +197,23 @@ class ViewErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.warn('[ViewErrorBoundary] Error cargando vista:', error, errorInfo);
+    const errMsg = (error?.message || '').toLowerCase();
+    const isChunk =
+      error?.name === 'ChunkLoadError' ||
+      errMsg.includes('failed to fetch dynamically imported module') ||
+      errMsg.includes('loading chunk') ||
+      errMsg.includes('loading css chunk') ||
+      errMsg.includes('importing a module script failed') ||
+      errMsg.includes('dynamically imported module');
+
+    if (isChunk) {
+      const now = Date.now();
+      const lastReload = parseInt(sessionStorage.getItem('pfg_last_chunk_autoreload') || '0', 10);
+      if (now - lastReload > 20000) {
+        sessionStorage.setItem('pfg_last_chunk_autoreload', String(now));
+        reloadAppWithoutStaleCache();
+      }
+    }
   }
 
   componentDidUpdate(prevProps) {
@@ -1501,7 +1518,7 @@ export default function MainAppLayout({
 
         <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 
-        {showWelcomeModal && !welcomeRemoteVersion && cookieConsent !== null && !show2FAPromo && !tourActive && (
+        {showWelcomeModal && cookieConsent !== null && !show2FAPromo && !tourActive && (
           <WelcomeModal onClose={closeWelcomeModal} />
         )}
         
