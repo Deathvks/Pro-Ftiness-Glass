@@ -1,13 +1,13 @@
 {
-  "version": "7.11.15",
-  "releaseNotes": "Actualización v7.11.15: Mejoras en la navegación de categorías de noticias en escritorio.",
+  "version": "7.11.16",
+  "releaseNotes": "Actualización v7.11.16: Soporte completo de colores de acento pastel, degradados y dinámicos en la pantalla de carga.",
   "welcome": {
-    "title": "Recarga más rápida",
-    "subtitle": "Los archivos principales de la app se preparan antes de activar la actualización.",
+    "title": "Acentos en pantalla de carga",
+    "subtitle": "La pantalla de carga ahora refleja fielmente los nuevos acentos y degradados de todos los niveles.",
     "features": [
       {
-        "title": "Recarga preparada",
-        "description": "El Service Worker guarda durante la actualización el HTML, el código principal y los estilos, para que la recarga tenga esos recursos listos."
+        "title": "Acentos de nivel superior",
+        "description": "El spinner y el distintivo Glass ahora adoptan los degradados y animaciones de tus niveles desbloqueados desde el inicio."
       }
     ]
   }

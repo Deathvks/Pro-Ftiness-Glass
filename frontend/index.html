@@ -3,12 +3,12 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=77" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=48" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=48" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=48" />
-  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon.png?v=48" />
-  <link rel="shortcut icon" href="/favicon.ico?v=77" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=78" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=49" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=49" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=49" />
+  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon.png?v=49" />
+  <link rel="shortcut icon" href="/favicon.ico?v=78" />
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -165,7 +165,7 @@
   <meta name="color-scheme" content="dark light" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-  <link rel="manifest" href="/manifest.json?v=48" />
+  <link rel="manifest" href="/manifest.json?v=49" />
 
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -328,11 +328,13 @@
     .app-splash-spinner {
       width: 48px;
       height: 48px;
-      border: 3px solid rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.1);
+      border: 3px solid rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.12);
       border-radius: 50%;
-      border-top-color: rgb(var(--accent-r), var(--accent-g), var(--accent-b));
+      border-top-color: var(--spinner-border-top, rgb(var(--accent-r), var(--accent-g), var(--accent-b)));
+      border-right-color: var(--spinner-border-right, transparent);
+      border-bottom-color: var(--spinner-border-bottom, transparent);
       animation: spin 1s ease-in-out infinite;
-      box-shadow: 0 0 20px -5px rgb(var(--accent-r), var(--accent-g), var(--accent-b));
+      box-shadow: 0 0 20px -5px var(--spinner-glow, rgb(var(--accent-r), var(--accent-g), var(--accent-b)));
       margin-top: 2rem;
     }
 
@@ -342,7 +344,9 @@
 
     html.light-theme .app-splash-spinner {
       border-color: rgba(0, 0, 0, 0.05);
-      border-top-color: rgb(var(--accent-r), var(--accent-g), var(--accent-b));
+      border-top-color: var(--spinner-border-top, rgb(var(--accent-r), var(--accent-g), var(--accent-b)));
+      border-right-color: var(--spinner-border-right, transparent);
+      border-bottom-color: var(--spinner-border-bottom, transparent);
     }
 
     html.galaxy-theme .app-splash-spinner {
@@ -425,13 +429,56 @@
       background-image:
         linear-gradient(rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.10), rgba(var(--accent-r), var(--accent-g), var(--accent-b), 0.10)),
         linear-gradient(rgba(var(--glass-base), var(--glass-opacity)), rgba(var(--glass-base), var(--glass-opacity)));
-      border: 1px solid rgba(var(--accent-r), var(--accent-g), var(--accent-b), var(--glass-border-opacity));
+      border: 1px solid var(--accent-border-color, rgba(var(--accent-r), var(--accent-g), var(--accent-b), var(--glass-border-opacity)));
       border-top-color: rgba(255, 255, 255, 0.3);
       backdrop-filter: blur(var(--glass-blur));
       -webkit-backdrop-filter: blur(var(--glass-blur));
       box-shadow: var(--glass-shadow);
       color: rgb(var(--accent-r), var(--accent-g), var(--accent-b));
       text-transform: uppercase;
+    }
+
+    .app-splash-title span.glass-badge .glass-badge-text {
+      display: inline-block;
+      color: inherit;
+    }
+
+    html.has-accent-gradient .app-splash-title span.glass-badge .glass-badge-text {
+      background-image: var(--accent-text-gradient, var(--accent-gradient));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+
+    html.has-animated-accent .app-splash-title span.glass-badge .glass-badge-text {
+      background-size: 250% 250%;
+      animation: living-accent-flow 5s ease infinite;
+    }
+
+    html.has-animated-accent .app-splash-spinner {
+      animation: spin 1s ease-in-out infinite, living-splash-glow 3s ease-in-out infinite;
+    }
+
+    @keyframes living-splash-glow {
+      0%, 100% {
+        box-shadow: 0 0 16px -4px var(--spinner-glow, rgb(var(--accent-r), var(--accent-g), var(--accent-b)));
+      }
+      50% {
+        box-shadow: 0 0 28px 2px var(--spinner-glow, rgb(var(--accent-r), var(--accent-g), var(--accent-b)));
+      }
+    }
+
+    @keyframes living-accent-flow {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
     }
 
     .app-splash-footer {
@@ -487,8 +534,89 @@
           'lime': '#84cc16', 'fuchsia': '#d946ef', 'emerald': '#10b981', 'indigo': '#6366f1',
           'purple': '#a855f7', 'pink': '#ec4899', 'red': '#ef4444', 'yellow': '#eab308',
           'sky': '#0ea5e9', 'slate': '#64748b', 'zinc': '#71717a', 'stone': '#78716c',
-          'neutral': '#737373', 'mint': '#a8e6cf', 'peach': '#ffd3b6', 'rose-water': '#ffaaa5', 'lavender': '#c5a3ff', 'baby-blue': '#a2cffe', 'sunset-pink': '#ff9a9e', 'pistachio': '#c5e1a5', 'mango': '#ffbe76', 'lemonade': '#fdfd96', 'cherry-blossom': '#fccbcf',
-          'aurora': '#10b981', 'sunset': '#f43f5e', 'cyberpunk': '#8b5cf6', 'deep-ocean': '#2563eb', 'imperial-gold': '#f59e0b'
+          'neutral': '#737373', 'mint': '#a8e6cf', 'peach': '#ffd3b6', 'rose-water': '#ffaaa5',
+          'lavender': '#c5a3ff', 'baby-blue': '#a2cffe', 'sunset-pink': '#ff9a9e',
+          'pistachio': '#c5e1a5', 'mango': '#ffbe76', 'lemonade': '#fdfd96', 'cherry-blossom': '#fccbcf',
+          'aurora': '#10b981', 'sunset': '#f43f5e', 'cyberpunk': '#8b5cf6', 'deep-ocean': '#2563eb', 'imperial-gold': '#f59e0b',
+          'supernova': '#8b5cf6', 'plasma': '#10b981', 'eternal-flame': '#f97316', 'abyssal-vortex': '#3b82f6', 'cosmic-gold': '#f59e0b'
+        };
+
+        var accentGradients = {
+          'aurora': {
+            gradient: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
+            textGradient: 'linear-gradient(135deg, #34d399 0%, #22d3ee 100%)',
+            colors: ['#10b981', '#06b6d4'],
+            border: 'rgba(6, 182, 212, 0.32)',
+            glow: 'rgba(16, 185, 129, 0.45)'
+          },
+          'sunset': {
+            gradient: 'linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)',
+            textGradient: 'linear-gradient(135deg, #fb7185 0%, #fb923c 100%)',
+            colors: ['#f43f5e', '#fb923c'],
+            border: 'rgba(251, 146, 60, 0.32)',
+            glow: 'rgba(244, 63, 94, 0.45)'
+          },
+          'cyberpunk': {
+            gradient: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
+            textGradient: 'linear-gradient(135deg, #a78bfa 0%, #f472b6 100%)',
+            colors: ['#8b5cf6', '#ec4899'],
+            border: 'rgba(236, 72, 153, 0.32)',
+            glow: 'rgba(139, 92, 246, 0.45)'
+          },
+          'deep-ocean': {
+            gradient: 'linear-gradient(135deg, #2563eb 0%, #00f5d4 100%)',
+            textGradient: 'linear-gradient(135deg, #60a5fa 0%, #2dd4bf 100%)',
+            colors: ['#2563eb', '#00f5d4'],
+            border: 'rgba(0, 245, 212, 0.32)',
+            glow: 'rgba(37, 99, 235, 0.45)'
+          },
+          'imperial-gold': {
+            gradient: 'linear-gradient(135deg, #f59e0b 0%, #fde047 100%)',
+            textGradient: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+            colors: ['#f59e0b', '#fde047'],
+            border: 'rgba(253, 224, 71, 0.32)',
+            glow: 'rgba(245, 158, 11, 0.45)'
+          },
+          'supernova': {
+            gradient: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 35%, #3b82f6 70%, #7c3aed 100%)',
+            textGradient: 'linear-gradient(135deg, #a78bfa 0%, #f472b6 35%, #60a5fa 70%, #a78bfa 100%)',
+            colors: ['#7c3aed', '#ec4899', '#3b82f6'],
+            border: 'rgba(236, 72, 153, 0.35)',
+            glow: 'rgba(124, 58, 237, 0.55)',
+            isAnimated: true
+          },
+          'plasma': {
+            gradient: 'linear-gradient(135deg, #10b981 0%, #06b6d4 35%, #3b82f6 70%, #10b981 100%)',
+            textGradient: 'linear-gradient(135deg, #34d399 0%, #22d3ee 35%, #60a5fa 70%, #34d399 100%)',
+            colors: ['#10b981', '#06b6d4', '#3b82f6'],
+            border: 'rgba(6, 182, 212, 0.35)',
+            glow: 'rgba(16, 185, 129, 0.55)',
+            isAnimated: true
+          },
+          'eternal-flame': {
+            gradient: 'linear-gradient(135deg, #ef4444 0%, #f97316 35%, #facc15 70%, #ef4444 100%)',
+            textGradient: 'linear-gradient(135deg, #f87171 0%, #fb923c 35%, #fde047 70%, #f87171 100%)',
+            colors: ['#ef4444', '#f97316', '#facc15'],
+            border: 'rgba(250, 204, 21, 0.35)',
+            glow: 'rgba(239, 68, 68, 0.55)',
+            isAnimated: true
+          },
+          'abyssal-vortex': {
+            gradient: 'linear-gradient(135deg, #1d4ed8 0%, #6366f1 35%, #14b8a6 70%, #1d4ed8 100%)',
+            textGradient: 'linear-gradient(135deg, #60a5fa 0%, #818cf8 35%, #2dd4bf 70%, #60a5fa 100%)',
+            colors: ['#1d4ed8', '#6366f1', '#14b8a6'],
+            border: 'rgba(99, 102, 241, 0.35)',
+            glow: 'rgba(29, 78, 216, 0.55)',
+            isAnimated: true
+          },
+          'cosmic-gold': {
+            gradient: 'linear-gradient(135deg, #d97706 0%, #fef08a 35%, #b45309 70%, #d97706 100%)',
+            textGradient: 'linear-gradient(135deg, #f59e0b 0%, #fde047 35%, #d97706 70%, #f59e0b 100%)',
+            colors: ['#d97706', '#fef08a', '#b45309'],
+            border: 'rgba(254, 240, 138, 0.35)',
+            glow: 'rgba(217, 119, 6, 0.55)',
+            isAnimated: true
+          }
         };
 
         var savedTheme = localStorage.getItem('theme') || 'system';
@@ -530,12 +658,27 @@
         root.style.setProperty('--accent-g', rgb.g);
         root.style.setProperty('--accent-b', rgb.b);
 
-        var isLightTheme = ['light', 'ocean', 'desert'].indexOf(effectiveTheme) !== -1;
-        var luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-        if (isLightTheme) {
-          root.style.setProperty('--text-accent', luminance > 0.6 ? '#111827' : hexColor);
-        } else {
-          root.style.setProperty('--text-accent', luminance < 0.3 ? '#FFFFFF' : hexColor);
+        var isSpecialTheme = ['galaxy', 'desert', 'desert-dark', 'ocean', 'ocean-dark'].indexOf(effectiveTheme) !== -1;
+        if (!isSpecialTheme) {
+          root.classList.add('accent-' + savedAccentKey);
+          var gradInfo = accentGradients[savedAccentKey];
+          if (gradInfo) {
+            root.classList.add('has-accent-gradient');
+            root.style.setProperty('--accent-gradient', gradInfo.gradient);
+            root.style.setProperty('--accent-text-gradient', gradInfo.textGradient || gradInfo.gradient);
+            if (gradInfo.border) root.style.setProperty('--accent-border-color', gradInfo.border);
+            if (gradInfo.glow) root.style.setProperty('--spinner-glow', gradInfo.glow);
+            if (gradInfo.colors && gradInfo.colors.length >= 2) {
+              root.style.setProperty('--spinner-border-top', gradInfo.colors[0]);
+              root.style.setProperty('--spinner-border-right', gradInfo.colors[1]);
+              if (gradInfo.colors.length >= 3) {
+                root.style.setProperty('--spinner-border-bottom', gradInfo.colors[2]);
+              }
+            }
+            if (gradInfo.isAnimated) {
+              root.classList.add('has-animated-accent');
+            }
+          }
         }
 
         var isLightTheme = ['light', 'ocean', 'desert'].indexOf(effectiveTheme) !== -1;
@@ -628,7 +771,7 @@
       <div class="splash-content">
         <div class="app-splash-title">
           <span class="title-text">PRO FITNESS</span>
-          <span class="glass-badge">GLASS</span>
+          <span class="glass-badge"><span class="glass-badge-text">GLASS</span></span>
         </div>
         <div class="app-splash-spinner"></div>
       </div>
@@ -662,7 +805,7 @@
     </main>
   </noscript>
 
-  <script type="module" src="/src/main.jsx?v=48"></script>
+  <script type="module" src="/src/main.jsx?v=49"></script>
 </body>
 
 </html>
