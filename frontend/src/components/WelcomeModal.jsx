@@ -4,22 +4,12 @@ import ModalPortal from './ModalPortal';
 import {
   ChevronRight, Newspaper, Calculator, Dumbbell, Zap, Sparkles, RefreshCw } from
 'lucide-react';
-
-const isNewerVersion = (current, remote) => {
-  if (!current || !remote) return false;
-  const cParts = String(current).split('.').map(Number);
-  const rParts = String(remote).split('.').map(Number);
-  for (let i = 0; i < 3; i++) {
-    if ((rParts[i] || 0) > (cParts[i] || 0)) return true;
-    if ((rParts[i] || 0) < (cParts[i] || 0)) return false;
-  }
-  return false;
-};
 import { FaMeteor } from 'react-icons/fa6';
 import { Capacitor } from '@capacitor/core';
-import { APP_VERSION } from '../config/version';
+import { APP_VERSION, isNewerVersion } from '../config/version';
 import useModalLock from '../hooks/useModalLock';
 import useAppStore from '../store/useAppStore';
+import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
 
 const WelcomeModal = ({ onClose }) => {
 
@@ -110,7 +100,7 @@ const WelcomeModal = ({ onClose }) => {
     if (onClose) {
       onClose();
     }
-    window.location.reload();
+    reloadAppWithoutStaleCache();
   };
 
   return (

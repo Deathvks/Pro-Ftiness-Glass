@@ -754,11 +754,13 @@ export default function App() {
   ], [t, visitedHub, unreadChats]);
 
   // Auto-recuperar perfil si el usuario está autenticado pero userProfile aún no tiene 'role' (ej: viniendo de noticias públicas o tras reload)
+  const recoveryAttemptedRef = useRef(false);
   useEffect(() => {
-    if (isAuthenticated && (!userProfile || !('role' in userProfile)) && !isLoading) {
+    if (isAuthenticated && (!userProfile || !('role' in userProfile)) && !recoveryAttemptedRef.current) {
+      recoveryAttemptedRef.current = true;
       fetchInitialData().catch(() => {});
     }
-  }, [isAuthenticated, userProfile, isLoading, fetchInitialData]);
+  }, [isAuthenticated, userProfile, fetchInitialData]);
 
   const AuthenticatedAppContent = useMemo(() => {
     // Si el perfil no tiene la propiedad 'role', mostramos skeleton mientras se completa la carga
@@ -881,7 +883,7 @@ export default function App() {
       </>
     );
   }, [
-    userProfile, isLoading, view, navParams, navigateInternal,
+    userProfile, isLoading, isInitialLoad, view, navParams, navigateInternal,
     performLogout, mainContentRef, currentTitle, currentViewComponent,
     navItems, handleLogoutClick, showLogoutConfirm, confirmLogout, handleShowPolicy,
     fetchInitialData, verificationProps, handleHeaderAvatarClick, myStories,

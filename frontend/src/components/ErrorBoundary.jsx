@@ -49,7 +49,7 @@ class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
-      const isRepeatCrash = this.state.reloadCount > 0;
+      const isRepeatCrash = this.state.reloadCount > 1;
 
       return (
         <ModalPortal>

@@ -4,20 +4,9 @@ import WelcomeModal from './WelcomeModal';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
-import { APP_VERSION } from '../config/version';
+import { APP_VERSION, isNewerVersion } from '../config/version';
 import useAppStore from '../store/useAppStore';
 import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
-
-const isNewerVersion = (current, remote) => {
-  if (!current || !remote) return false;
-  const cParts = String(current).split('.').map(Number);
-  const rParts = String(remote).split('.').map(Number);
-  for (let i = 0; i < 3; i++) {
-    if ((rParts[i] || 0) > (cParts[i] || 0)) return true;
-    if ((rParts[i] || 0) < (cParts[i] || 0)) return false;
-  }
-  return false;
-};
 
 const SWUpdaterCore = () => {
   const [isChunkError, setIsChunkError] = useState(false);
@@ -70,7 +59,7 @@ const SWUpdaterCore = () => {
     }
 
     isReloadingRef.current = true;
-    window.location.reload();
+    reloadAppWithoutStaleCache();
     return true;
   }, []);
 
@@ -111,11 +100,11 @@ const SWUpdaterCore = () => {
       if (!remoteVersion) return;
 
       const lastSeenVersion = localStorage.getItem('lastSeenVersion');
-      const hasNewerThanMemory = isNewerVersion(APP_VERSION, remoteVersion) || remoteVersion !== APP_VERSION;
-      const hasNewerThanSeen = !lastSeenVersion || isNewerVersion(lastSeenVersion, remoteVersion) || lastSeenVersion !== remoteVersion;
+      const hasNewerThanMemory = isNewerVersion(APP_VERSION, remoteVersion);
+      const hasNewerThanSeen = !lastSeenVersion || isNewerVersion(lastSeenVersion, remoteVersion);
 
-      // Si hay una versión distinta en el servidor o aún no vista:
-      if (isNewerVersion(APP_VERSION, remoteVersion) || (lastSeenVersion && isNewerVersion(lastSeenVersion, remoteVersion))) {
+      // Si hay una versión genuinamente más nueva en el servidor o aún no vista:
+      if (hasNewerThanMemory || hasNewerThanSeen) {
         const storeState = useAppStore.getState();
         const hasAuthSession = Boolean(storeState.isAuthenticated || localStorage.getItem('pro_fitness_token'));
 

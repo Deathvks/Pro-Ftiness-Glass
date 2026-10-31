@@ -1,7 +1,7 @@
 /* frontend/src/store/authSlice.js */
 import * as authService from '../services/authService';
 import * as userService from '../services/userService';
-import { APP_VERSION } from '../config/version';
+import { APP_VERSION, isNewerVersion } from '../config/version';
 
 const CACHE_VERSION_KEY = 'pfg_cache_version';
 const INITIAL_CACHE_KEY = 'pfg_cached_initial_state_v1';
@@ -352,14 +352,8 @@ export const createAuthSlice = (set, get) => {
     // Comprueba si se debe mostrar el modal de bienvenida
     checkWelcomeModal: () => {
         const lastSeenVersion = localStorage.getItem('lastSeenVersion');
-        if (lastSeenVersion !== APP_VERSION) {
-            localStorage.removeItem('pfg_crash_loop_count');
-            localStorage.removeItem('pfg_auto_reloaded_version');
-            try {
-                sessionStorage.removeItem('pfg_auto_reloaded_version');
-                sessionStorage.removeItem('pfg_last_safe_reload_time');
-                sessionStorage.removeItem('pfg_reload_count');
-            } catch {}
+        const shouldShow = !lastSeenVersion || isNewerVersion(lastSeenVersion, APP_VERSION);
+        if (shouldShow) {
             localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
             set({ showWelcomeModal: true });
         }
@@ -369,14 +363,8 @@ export const createAuthSlice = (set, get) => {
     triggerRemoteWelcomeModal: (remoteVersion, remoteData = null) => {
         const targetVersion = remoteVersion || APP_VERSION;
         const lastSeenVersion = localStorage.getItem('lastSeenVersion');
-        if (lastSeenVersion !== targetVersion) {
-            localStorage.removeItem('pfg_crash_loop_count');
-            localStorage.removeItem('pfg_auto_reloaded_version');
-            try {
-                sessionStorage.removeItem('pfg_auto_reloaded_version');
-                sessionStorage.removeItem('pfg_last_safe_reload_time');
-                sessionStorage.removeItem('pfg_reload_count');
-            } catch {}
+        const shouldShow = !lastSeenVersion || isNewerVersion(lastSeenVersion, targetVersion);
+        if (shouldShow) {
             set({
                 showWelcomeModal: true,
                 welcomeRemoteVersion: targetVersion,
@@ -390,8 +378,11 @@ export const createAuthSlice = (set, get) => {
     // Cierra el modal de bienvenida
     closeWelcomeModal: () => {
         const effectiveVersion = get().welcomeRemoteVersion || APP_VERSION;
-        localStorage.setItem('lastSeenVersion', effectiveVersion);
-        localStorage.setItem(CACHE_VERSION_KEY, effectiveVersion);
+        const lastSeenVersion = localStorage.getItem('lastSeenVersion');
+        if (!lastSeenVersion || isNewerVersion(lastSeenVersion, effectiveVersion) || lastSeenVersion === effectiveVersion) {
+            localStorage.setItem('lastSeenVersion', effectiveVersion);
+            localStorage.setItem(CACHE_VERSION_KEY, effectiveVersion);
+        }
         set({ showWelcomeModal: false, welcomeRemoteVersion: null, welcomeRemoteData: null });
     },
 

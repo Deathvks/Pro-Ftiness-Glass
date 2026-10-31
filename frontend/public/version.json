@@ -1,13 +1,25 @@
 {
-  "version": "7.11.23",
-  "releaseNotes": "Actualización v7.11.23: Alineación del logo en el dashboard, ubicación del aviso debajo del header y comportamiento reactivo al scroll.",
+  "version": "7.11.24",
+  "releaseNotes": "Actualización v7.11.24: Estabilidad total en recargas, protección anti-bucles y prevención de fallos en el modal de bienvenida.",
   "welcome": {
-    "title": "Header y aviso perfeccionados",
-    "subtitle": "El logo central del dashboard ahora está perfectamente alineado y el header se oculta y muestra dinámicamente al desplazarse.",
+    "title": "Portal de Noticias y Estabilidad",
+    "subtitle": "Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y máxima estabilidad en toda la app.",
     "features": [
       {
-        "title": "Alineación perfecta y scroll dinámico",
-        "description": "El aviso de mantenimiento se sitúa debajo de la barra de navegación del header y se oculta de forma fluida al bajar y reaparece al subir."
+        "title": "Portal de Noticias y Ciencia Fitness",
+        "description": "Descubre artículos actualizados sobre hipertrofia, nutrición, suplementación y salud con modo de lectura adaptable y artículos recomendados."
+      },
+      {
+        "title": "Calculadoras 1RM, Macros y Ejercicios",
+        "description": "Calcula tu fuerza máxima (1RM), tus calorías y macronutrientes ideales, y explora la enciclopedia completa de ejercicios con vídeo y técnica."
+      },
+      {
+        "title": "Asesorías y Progreso en Dashboard",
+        "description": "Recibe pautas de entrenamiento y dieta de tu entrenador en el inicio, controla tus series semanales por músculo y chatea en tiempo real."
+      },
+      {
+        "title": "Apertura Instantánea (0ms)",
+        "description": "Noticias, calculadoras, sistema de créditos IA y vistas principales ahora se abren al instante sin tiempos de espera en web y móvil."
       }
     ]
   }
