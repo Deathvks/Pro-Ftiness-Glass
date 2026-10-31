@@ -459,7 +459,6 @@ const LandingPage = ({ onLogin, onRegister }) => {
                         aria-label="Navegación principal"
                         style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
                     >
-                        <MaintenanceNoticeBanner />
                         <div className="flex justify-between items-center p-3 sm:p-4 md:px-8 max-w-7xl mx-auto w-full relative z-10 flex-nowrap">
                             <div
                                 className="flex items-center gap-2.5 sm:gap-4 cursor-pointer group shrink-0"
@@ -525,6 +524,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                 </button>
                             </div>
                         </div>
+                        <MaintenanceNoticeBanner />
                     </nav>
 
                     {/* --- HERO SECTION --- */}

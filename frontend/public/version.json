@@ -1,13 +1,13 @@
 {
-  "version": "7.11.20",
-  "releaseNotes": "Actualización v7.11.20: Aviso de mantenimiento programado en el header de todas las páginas de la web.",
+  "version": "7.11.21",
+  "releaseNotes": "Actualización v7.11.21: Alineación del logo en el dashboard, ubicación del aviso debajo del header y comportamiento reactivo al scroll.",
   "welcome": {
-    "title": "Aviso de mantenimiento programado",
-    "subtitle": "El sábado 7 la web estará fuera de servicio entre 24 a 48 horas por tareas de mantenimiento.",
+    "title": "Header y aviso perfeccionados",
+    "subtitle": "El logo central del dashboard ahora está perfectamente alineado y el header se oculta y muestra dinámicamente al desplazarse.",
     "features": [
       {
-        "title": "Aviso visible en toda la web",
-        "description": "Se ha añadido un banner informativo en el header visible en todas las páginas y herramientas de la plataforma."
+        "title": "Alineación perfecta y scroll dinámico",
+        "description": "El aviso de mantenimiento se sitúa debajo de la barra de navegación del header y se oculta de forma fluida al bajar y reaparece al subir."
       }
     ]
   }

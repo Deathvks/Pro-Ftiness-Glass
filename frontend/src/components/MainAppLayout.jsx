@@ -430,17 +430,20 @@ export default function MainAppLayout({
     // Cuando cambiamos de vista, asegúrate de scrollear arriba y a la izquierda de forma instantánea
     node.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     node.scrollLeft = 0;
+    setIsHeaderHidden(false);
 
+    let lastScrollTop = 0;
     const handleScroll = () => {
       const currentScrollTop = node.scrollTop;
       setIsScrolled(currentScrollTop > 4);
       
-      const isAndroid = /Android/i.test(navigator.userAgent);
-      if (!isAndroid) {
-        setIsHeaderHidden(currentScrollTop > 20);
-      } else {
+      // Ocultar header al bajar (después de 60px) y reaparecer al subir o al estar arriba
+      if (currentScrollTop > lastScrollTop + 8 && currentScrollTop > 60) {
+        setIsHeaderHidden(true);
+      } else if (currentScrollTop < lastScrollTop - 8 || currentScrollTop <= 30) {
         setIsHeaderHidden(false);
       }
+      lastScrollTop = Math.max(0, currentScrollTop);
     };
 
     handleScroll();
@@ -1232,8 +1235,7 @@ export default function MainAppLayout({
           className={`md:hidden absolute top-0 left-0 w-full z-40 transition-all duration-300 ease-out global-header-element ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : isHeaderHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'} ${isScrolled ? 'bg-bg-primary/70 backdrop-blur-xl shadow-sm' : 'bg-transparent'}`}
           style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
         >
-          <MaintenanceNoticeBanner />
-          <div className="flex justify-between items-center w-full h-14 px-4">
+          <div className="relative flex justify-between items-center w-full h-14 px-4">
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
               {['settings', 'progress', 'appearance', 'support', 'socialLinks', 'challenges'].includes(view) ? (
                 <button
@@ -1280,7 +1282,7 @@ export default function MainAppLayout({
 
               {/* Logo Central (Solo en Dashboard) */}
               {view === 'dashboard' && (
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none mt-[max(0px,calc(var(--safe-top,0px)/2))]">
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
                   <img src="/logo.webp" alt="Pro Fitness Glass" className="h-8 w-auto object-contain drop-shadow-md rounded-lg" />
                 </div>
               )}
@@ -1320,6 +1322,7 @@ export default function MainAppLayout({
 
             </div>
           </div>
+          <MaintenanceNoticeBanner />
         </header>
 
         <main
