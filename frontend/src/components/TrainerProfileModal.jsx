@@ -15,6 +15,7 @@ import useModalLock from '../hooks/useModalLock';
 export default function TrainerProfileModal({ visible, onClose, trainer }) {
   useModalLock(visible);
   
+  const modalRef = useRef(null);
   const scrollRef = useRef(null);
   const imageRef = useRef(null);
   const headerRef = useRef(null);
@@ -26,6 +27,15 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
   const [touchStart, setTouchStart] = useState(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
 
+  const isTopAreaTouch = useRef(false);
+  const touchStartY = useRef(0);
+  const touchStartX = useRef(0);
+  const currentOffsetRef = useRef(0);
+
+  useEffect(() => {
+    currentOffsetRef.current = swipeOffset;
+  }, [swipeOffset]);
+
   useEffect(() => {
     if (visible) {
       if (scrollRef.current) {
@@ -35,11 +45,39 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
         if (hintRef.current) { hintRef.current.style.opacity=1; }
       }
       setSwipeOffset(0);
+      setTouchStart(null);
+      isTopAreaTouch.current = false;
       setTimeout(() => setIsLoaded(true), 50);
     } else {
       setIsLoaded(false);
     }
   }, [visible]);
+
+  // Listener nativo no-pasivo para prevenir scroll de rebote cuando se arrastra hacia abajo
+  useEffect(() => {
+    const modalEl = modalRef.current;
+    if (!modalEl || !visible) return;
+
+    const onNativeTouchMove = (e) => {
+      if (touchStart === null) return;
+      const currentY = e.touches[0].clientY;
+      const currentX = e.touches[0].clientX;
+      const diffY = currentY - touchStartY.current;
+      const diffX = Math.abs(currentX - touchStartX.current);
+
+      if (diffY > 5 && diffY > diffX) {
+        const isScrollAtTop = scrollRef.current ? scrollRef.current.scrollTop <= 5 : true;
+        if (isTopAreaTouch.current || isScrollAtTop) {
+          if (e.cancelable) {
+            e.preventDefault();
+          }
+        }
+      }
+    };
+
+    modalEl.addEventListener('touchmove', onNativeTouchMove, { passive: false });
+    return () => modalEl.removeEventListener('touchmove', onNativeTouchMove);
+  }, [visible, touchStart]);
 
   if (!visible) return null;
 
@@ -68,35 +106,74 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
   };
 
   const handleTouchStart = (e) => {
-    // Solo permitir deslizar para cerrar si estamos arriba del todo
-    if (scrollRef.current && scrollRef.current.scrollTop <= 0) {
-      setTouchStart(e.touches[0].clientY);
+    const touch = e.touches[0];
+    const clientY = touch.clientY;
+    const clientX = touch.clientX;
+    touchStartY.current = clientY;
+    touchStartX.current = clientX;
+
+    const modalRect = modalRef.current?.getBoundingClientRect();
+    const isAtTopArea = modalRect ? (clientY - modalRect.top) <= 70 : false;
+    const isScrollAtTop = scrollRef.current ? scrollRef.current.scrollTop <= 5 : true;
+
+    // Si toca en la barra/cabecera superior, o si el contenido ya está arriba del todo:
+    if (isAtTopArea || isScrollAtTop) {
+      isTopAreaTouch.current = isAtTopArea;
+      setTouchStart(clientY);
+    } else {
+      isTopAreaTouch.current = false;
+      setTouchStart(null);
     }
   };
 
   const handleTouchMove = (e) => {
-    if (touchStart === null) return;
-    const currentY = e.touches[0].clientY;
+    const touch = e.touches[0];
+    const currentY = touch.clientY;
+    const currentX = touch.clientX;
+    const diffX = Math.abs(currentX - touchStartX.current);
+
+    if (touchStart === null) {
+      // Si el usuario scrolleó el contenido hacia arriba y ya está en el tope, permitir drag
+      if (scrollRef.current && scrollRef.current.scrollTop <= 0) {
+        const diffY = currentY - touchStartY.current;
+        if (diffY > 10 && diffY > diffX) {
+          touchStartY.current = currentY;
+          setTouchStart(currentY);
+        }
+      }
+      return;
+    }
+
     const diff = currentY - touchStart;
-    
+
     if (diff > 0) {
-      setSwipeOffset(diff);
+      const isScrollAtTop = scrollRef.current ? scrollRef.current.scrollTop <= 5 : true;
+      if (isTopAreaTouch.current || isScrollAtTop) {
+        setSwipeOffset(diff);
+      }
+    } else if (diff < -5 && !isTopAreaTouch.current) {
+      setTouchStart(null);
+      setSwipeOffset(0);
     }
   };
 
   const handleTouchEnd = () => {
-    if (swipeOffset > 100) {
+    if (currentOffsetRef.current > 80) {
       onClose();
     }
     setTouchStart(null);
     setSwipeOffset(0);
+    isTopAreaTouch.current = false;
   };
 
-  // Si scrollPos es negativo (overscroll en iOS), la imagen crece para que no se vea una franja blanca
-  
+  const handleTouchCancel = () => {
+    setTouchStart(null);
+    setSwipeOffset(0);
+    isTopAreaTouch.current = false;
+  };
 
   return (
-    <ModalPortal>
+    <ModalPortal disableSwipeToClose={true} onClose={onClose}>
       <div className="fixed inset-0 z-[100] flex flex-col justify-end sm:items-center sm:justify-center p-0 sm:p-4 animate-fade-in isolate text-left">
         {/* Backdrop Épico */}
         <div 
@@ -106,6 +183,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
 
         {/* Contenedor Principal */}
         <div 
+          ref={modalRef}
           className="relative w-full h-[calc(100dvh-4.5rem)] sm:h-[90vh] sm:w-[540px] sm:max-w-full bg-bg-primary sm:rounded-[36px] rounded-t-[36px] shadow-[0_0_80px_rgba(var(--accent-rgb, 234,179,8),0.15)] flex flex-col overflow-hidden animate-slide-up-ios border border-white/5"
           style={{
             transform: swipeOffset > 0 ? `translateY(${swipeOffset}px)` : undefined,
@@ -114,6 +192,7 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchCancel}
         >
           {/* Header Pegajoso (Aparece al scrollear) */}
           <div ref={headerRef} className="absolute top-0 left-0 right-0 h-16 sm:h-20 bg-bg-primary/80 backdrop-blur-2xl z-50 flex items-center justify-between px-4 sm:px-6 border-b border-glass-border transition-opacity duration-300" style={{ opacity: 0, pointerEvents: 'none' }}>
@@ -128,16 +207,23 @@ export default function TrainerProfileModal({ visible, onClose, trainer }) {
           </div>
 
           {/* Boton Cerrar ÚNICO y Fijo */}
-          <button ref={closeBtnRef} onClick={onClose} className="hidden sm:flex absolute top-3 right-4 sm:top-5 sm:right-6 w-10 h-10 rounded-full items-center justify-center backdrop-blur-md transition-all active:scale-95 z-[60] border" style={{ backgroundColor: 'rgba(0,0,0,0.2)', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}>
+          <button
+            ref={closeBtnRef}
+            onClick={onClose}
+            className="flex absolute top-3 right-4 sm:top-5 sm:right-6 w-10 h-10 rounded-full items-center justify-center backdrop-blur-md transition-all active:scale-95 z-[80] border"
+            style={{ backgroundColor: 'rgba(0,0,0,0.2)', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
+            aria-label="Cerrar"
+          >
             <XMarkIcon className="w-6 h-6" strokeWidth={2.5} />
           </button>
 
           {/* Barra de móvil para cerrar */}
           <div 
             onClick={onClose}
-            className="absolute top-0 inset-x-0 h-10 z-[70] sm:hidden flex items-center justify-center cursor-pointer"
+            className="absolute top-0 inset-x-0 h-10 z-[70] sm:hidden flex items-center justify-center cursor-pointer select-none"
+            aria-label="Deslizar para cerrar"
           >
-            <div className="w-12 h-1.5 bg-white/50 backdrop-blur-md rounded-full" />
+            <div className="w-12 h-1.5 bg-white/50 backdrop-blur-md rounded-full shadow-sm" />
           </div>
 
           {/* Area de Scroll */}

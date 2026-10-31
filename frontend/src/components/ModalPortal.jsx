@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
-const ModalPortal = ({ children, disableSwipeToClose = false }) => {
+const ModalPortal = ({ children, onClose, disableSwipeToClose = false }) => {
   const touchStartY = useRef(null);
   const touchCurrentY = useRef(null);
   const touchStartTime = useRef(null);
@@ -130,7 +130,10 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
         setTimeout(() => {
           let closed = false;
           
-          if (child.props.onClick) {
+          if (onClose) {
+            onClose();
+            closed = true;
+          } else if (child.props.onClick) {
             child.props.onClick({ 
               target: currentTarget, 
               currentTarget: currentTarget, 
@@ -144,6 +147,7 @@ const ModalPortal = ({ children, disableSwipeToClose = false }) => {
             for (const btn of buttons) {
               if (
                 btn.querySelector('svg.lucide-x') || 
+                btn.getAttribute('aria-label') === 'Cerrar' ||
                 btn.textContent.toLowerCase().includes('cancelar') || 
                 btn.textContent.toLowerCase().includes('cerrar')
               ) {
