@@ -13,6 +13,7 @@ import LevelBadge from '../components/LevelBadge';
 import ConfirmationModal from '../components/ConfirmationModal';
 import ModalPortal from '../components/ModalPortal';
 import useModalLock from '../hooks/useModalLock';
+import { LiquidGlass } from '../components/LiquidGlass';
 
 const GalaxyEffectsWarningModal = ({ onConfirm, onCancel }) => {
   useModalLock();
@@ -286,6 +287,36 @@ export default function AppearanceScreen({ setView }) {
                   </span>
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Motor Liquid Glass WebGL2 (StarKnightt/liquid-glass) */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-3 ml-1">
+              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider flex items-center gap-2">
+                <Sparkles size={14} className="text-accent" />
+                Motor Liquid Glass (WebGL2)
+              </h3>
+              <span className="text-[10px] font-bold text-accent bg-accent/10 px-2.5 py-0.5 rounded-full border border-accent/20">
+                StarKnightt/liquid-glass
+              </span>
+            </div>
+            <p className="text-xs text-text-secondary mb-3 ml-1">
+              Refracción óptica en tiempo real con lente líquida, aberración cromática e interacción por ondas (StarKnightt WebGL2). Mueve el cursor o toca para probarlo:
+            </p>
+            <div className="w-full h-44 rounded-[24px] overflow-hidden relative border border-black/10 dark:border-white/10 shadow-lg">
+              <LiquidGlass
+                text={["PRO FITNESS", "GLASS"]}
+                subText="MOTOR LIQUID GLASS"
+                tagline="Toca o desliza para generar refracción y ondas"
+                backgroundColor={activeTheme === 'light' ? '#f8fafc' : activeTheme === 'oled' ? '#000000' : activeTheme === 'galaxy' ? '#080814' : '#0f172a'}
+                textColor={activeTheme === 'light' ? '#0f172a' : '#f8fafc'}
+                lensRadius={46}
+                magnification={1.16}
+                refraction={0.55}
+                frost={0.15}
+                className="w-full h-full"
+              />
             </div>
           </div>
 

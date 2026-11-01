@@ -1,5 +1,5 @@
 {
-  "version": "7.11.43",
+  "version": "7.11.44",
   "releaseNotes": "Actualización v7.11.41: Importador y Exportador de Historial (CSV). Migración en 1 clic desde Hevy o Strong sin perder entrenamientos ni récords personales, y exportación completa a Excel (CSV con UTF-8 BOM).",
   "welcome": {
     "title": "Migración desde Hevy/Strong y Copias",

@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import React, { useEffect, useRef } from "react"
 
 /**
  * LiquidGlass — a cursor-following glass lens that refracts, magnifies and
  * distorts the content beneath it. Written from scratch in raw WebGL2.
+ * Based on https://github.com/StarKnightt/liquid-glass
  * No three.js, no external shader libraries, zero runtime dependencies.
  */
 
@@ -19,7 +20,7 @@ const FRAG = `#version 300 es
 precision highp float;
 precision highp int;
 
-uniform sampler2D uTex;     // page content (text) rendered to a texture
+uniform sampler2D uTex;     // page content (text/icons) rendered to a texture
 uniform vec2  uRes;         // drawing buffer size in device px
 uniform float uTime;        // seconds
 uniform float uDpr;
@@ -33,6 +34,7 @@ uniform int   uAccentCount;
 uniform vec3  uAccents[4];
 uniform int   uRippleCount;
 uniform vec4  uRipples[8];  // xy: origin (device px), z: age s, w: amplitude
+uniform float uAlpha;
 
 out vec4 outColor;
 
@@ -171,15 +173,15 @@ void main() {
     col = mix(col, glass, inside);
   }
 
-  outColor = vec4(col, 1.0);
+  outColor = vec4(col, uAlpha);
 }`
 
 const DEFAULT_ACCENTS = ["#bfd7ff", "#ffd6e8", "#ffe9c7", "#c9f2e4"]
 
 function hexToRgb(hex) {
-  let h = hex.replace("#", "")
+  let h = (hex || "#000000").replace("#", "")
   if (h.length === 3) h = h.split("").map((c) => c + c).join("")
-  const n = parseInt(h, 16)
+  const n = parseInt(h, 16) || 0
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]
 }
 
@@ -225,18 +227,28 @@ export function LiquidGlass({
   magnification = 1.12,
   refraction = 0.55,
   frost = 0.18,
+  alpha = 1.0,
+  enableIdleDrift = true,
+  targetPos = null,
+  renderContent = null,
+  onTap = null,
   className,
-} {
+}) {
   const containerRef = useRef(null)
   const canvasRef = useRef(null)
-  const accentsKey = accentColors.join(",")
+  const targetPosRef = useRef(targetPos)
+  const accentsKey = (accentColors || []).join(",")
+
+  useEffect(() => {
+    targetPosRef.current = targetPos
+  }, [targetPos?.x, targetPos?.y])
 
   useEffect(() => {
     const container = containerRef.current
     const canvas = canvasRef.current
     if (!container || !canvas) return
 
-    const accents = accentColors.slice(0, 4).map(hexToRgb)
+    const accents = (accentColors || DEFAULT_ACCENTS).slice(0, 4).map(hexToRgb)
     const bgRgb = hexToRgb(backgroundColor)
     const bgLum = 0.299 * bgRgb[0] + 0.587 * bgRgb[1] + 0.114 * bgRgb[2]
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -254,6 +266,11 @@ export function LiquidGlass({
 
       ctx.fillStyle = backgroundColor
       ctx.fillRect(0, 0, w, h)
+
+      if (typeof renderContent === "function") {
+        renderContent(ctx, w, h, dpr)
+        return
+      }
 
       // Soft ambient light so the glass has something to reflect (light themes only).
       if (bgLum > 0.5) {
@@ -313,7 +330,7 @@ export function LiquidGlass({
 
     // ---- WebGL2 setup ----
     const gl = canvas.getContext("webgl2", {
-      alpha: false,
+      alpha: true,
       antialias: false,
       depth: false,
       stencil: false,
@@ -350,6 +367,7 @@ export function LiquidGlass({
     const uAccents = loc("uAccents[0]")
     const uRippleCount = loc("uRippleCount")
     const uRipples = loc("uRipples[0]")
+    const uAlpha = loc("uAlpha")
 
     const texture = gl.createTexture()
     gl.activeTexture(gl.TEXTURE0)
@@ -358,47 +376,45 @@ export function LiquidGlass({
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    gl.uniform1i(uTex, 0)
 
-    // Static uniforms
+    gl.uniform1i(uTex, 0)
     gl.uniform1f(uMag, magnification)
     gl.uniform1f(uRefract, refraction)
     gl.uniform1f(uFrost, frost)
     gl.uniform1f(uBgLum, bgLum)
+    gl.uniform1f(uAlpha, alpha)
     gl.uniform1i(uAccentCount, accents.length)
-    const accentData = new Float32Array(12)
-    accents.forEach((c, i) => accentData.set(c, i * 3))
-    gl.uniform3fv(uAccents, accentData)
+    if (accents.length > 0) {
+      const flat = new Float32Array(accents.flat())
+      gl.uniform3fv(uAccents, flat)
+    }
 
     let dpr = 1
-    const uploadTexture = () => {
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
+    const updateSize = () => {
+      const rect = container.getBoundingClientRect()
+      if (rect.width === 0 || rect.height === 0) return
+      dpr = Math.min(window.devicePixelRatio || 1, 2)
+      canvas.width = Math.max(1, Math.round(rect.width * dpr))
+      canvas.height = Math.max(1, Math.round(rect.height * dpr))
+      gl.viewport(0, 0, canvas.width, canvas.height)
+
+      paintText(rect.width, rect.height, dpr)
       gl.bindTexture(gl.TEXTURE_2D, texture)
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textCanvas)
       gl.generateMipmap(gl.TEXTURE_2D)
     }
 
-    const resize = () => {
-      const rect = container.getBoundingClientRect()
-      dpr = Math.min(window.devicePixelRatio || 1, 2)
-      canvas.width = Math.max(1, Math.round(rect.width * dpr))
-      canvas.height = Math.max(1, Math.round(rect.height * dpr))
-      gl.viewport(0, 0, canvas.width, canvas.height)
-      paintText(rect.width, rect.height, dpr)
-      uploadTexture()
-    }
-    resize()
-
+    updateSize()
     let resizeTimer = 0
     const ro = new ResizeObserver(() => {
       window.clearTimeout(resizeTimer)
-      resizeTimer = window.setTimeout(resize, 150)
+      resizeTimer = window.setTimeout(updateSize, 40)
     })
     ro.observe(container)
 
-    // ---- Simulation state (device px, origin bottom-left like gl_FragCoord) ----
-    let px = canvas.width / 2
-    let py = canvas.height / 2
+    // Initial lens position
+    let px = canvas.width * 0.5
+    let py = canvas.height * 0.5
     let vx = 0
     let vy = 0
     let tx = px
@@ -442,6 +458,7 @@ export function LiquidGlass({
       pressT0 = lastMove
       ripples.push({ x, y, t0: lastMove, amp: 1 })
       if (ripples.length > 8) ripples.shift()
+      if (onTap) onTap({ x, y, clientX: e.clientX, clientY: e.clientY })
     }
     const onLeave = () => {
       pointerActive = false
@@ -460,23 +477,33 @@ export function LiquidGlass({
       prev = now
       const time = now - t0
 
-      // Idle: drift on a slow Lissajous path and emit gentle ripples so the
-      // scene stays alive without input (great for screen recordings).
-      const idle = !pointerActive || now - lastMove > 2.6
-      if (idle && !reducedMotion) {
-        idleT += dt
-        tx = canvas.width * (0.5 + 0.24 * Math.sin(idleT * 0.43))
-        ty = canvas.height * (0.52 + 0.16 * Math.sin(idleT * 0.61 + 1.3))
-        if (now - lastAutoRipple > 4.5) {
-          lastAutoRipple = now
-          ripples.push({ x: px, y: py, t0: now, amp: 0.5 })
-          if (ripples.length > 8) ripples.shift()
+      // Prioritize active target if provided (e.g. active tab in navbar)
+      const hasTarget = targetPosRef.current != null
+      if (hasTarget && (!pointerActive || now - lastMove > 1.2)) {
+        const rect = canvas.getBoundingClientRect()
+        const sx = canvas.width / Math.max(rect.width, 1)
+        const sy = canvas.height / Math.max(rect.height, 1)
+        tx = targetPosRef.current.x * sx
+        ty = targetPosRef.current.y != null
+          ? (rect.height - targetPosRef.current.y) * sy
+          : canvas.height * 0.5
+      } else {
+        const idle = !pointerActive || now - lastMove > 2.6
+        if (idle && enableIdleDrift && !reducedMotion) {
+          idleT += dt
+          tx = canvas.width * (0.5 + 0.24 * Math.sin(idleT * 0.43))
+          ty = canvas.height * (0.52 + 0.16 * Math.sin(idleT * 0.61 + 1.3))
+          if (now - lastAutoRipple > 4.5) {
+            lastAutoRipple = now
+            ripples.push({ x: px, y: py, t0: now, amp: 0.5 })
+            if (ripples.length > 8) ripples.shift()
+          }
         }
       }
 
       // Spring-follow the target: slightly underdamped for a liquid lag.
-      vx += (tx - px) * 130 * dt
-      vy += (ty - py) * 130 * dt
+      vx += (tx - px) * 140 * dt
+      vy += (ty - py) * 140 * dt
       const damp = Math.exp(-14 * dt)
       vx *= damp
       vy *= damp
@@ -551,6 +578,9 @@ export function LiquidGlass({
     magnification,
     refraction,
     frost,
+    alpha,
+    enableIdleDrift,
+    renderContent,
   ])
 
   return (
@@ -566,3 +596,5 @@ export function LiquidGlass({
     </div>
   )
 }
+
+export default LiquidGlass
