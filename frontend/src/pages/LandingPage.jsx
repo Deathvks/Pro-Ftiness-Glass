@@ -395,7 +395,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
         if (scrollTop > lastScrollY.current + 10 && scrollTop > 100) {
             setIsHeaderHidden(true);
-        } else if (scrollTop < lastScrollY.current - 10 || scrollTop < 50) {
+        } else if (scrollTop <= 50) {
             setIsHeaderHidden(false);
         }
         lastScrollY.current = scrollTop;

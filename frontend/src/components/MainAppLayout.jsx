@@ -490,10 +490,10 @@ export default function MainAppLayout({
       const currentScrollTop = node.scrollTop;
       setIsScrolled(currentScrollTop > 4);
       
-      // Ocultar header al bajar (después de 60px) y reaparecer al subir o al estar arriba
-      if (currentScrollTop > lastScrollTop + 8 && currentScrollTop > 60) {
+      // Ocultar header al bajar (después de 50px) y reaparecer ÚNICAMENTE al volver arriba
+      if (currentScrollTop > lastScrollTop + 6 && currentScrollTop > 50) {
         setIsHeaderHidden(true);
-      } else if (currentScrollTop < lastScrollTop - 8 || currentScrollTop <= 30) {
+      } else if (currentScrollTop <= 35) {
         setIsHeaderHidden(false);
       }
       lastScrollTop = Math.max(0, currentScrollTop);
