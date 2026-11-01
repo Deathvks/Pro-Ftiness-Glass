@@ -88,7 +88,15 @@ const SWUpdaterCore = () => {
   }, []);
 
   // 4. Comprobación no agresiva de nuevas versiones en el servidor
-  const checkForNewVersion = useCallback(async () => {
+    const checkForNewVersion = useCallback(async () => {
+    const isLocal =
+      import.meta.env.DEV ||
+      (typeof window !== 'undefined' &&
+        (window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1' ||
+          window.location.hostname.endsWith('.local')));
+    if (isLocal) return;
+
     const now = Date.now();
     // No comprobar más de una vez cada 60 segundos
     if (now - lastCheckTimeRef.current < 60000) return;
@@ -189,7 +197,14 @@ const SWUpdaterCore = () => {
 };
 
 const VersionUpdater = () => {
-  if (Capacitor.isNativePlatform()) {
+  if (
+    Capacitor.isNativePlatform() ||
+    import.meta.env.DEV ||
+    (typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname.endsWith('.local')))
+  ) {
     return null;
   }
   return <SWUpdaterCore />;

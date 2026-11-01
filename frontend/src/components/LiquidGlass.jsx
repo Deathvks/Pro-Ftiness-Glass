@@ -586,7 +586,7 @@ export function LiquidGlass({
   return (
     <div
       ref={containerRef}
-      className={"relative h-full w-full overflow-hidden " + (className ?? "")}
+      className={`${className?.includes("absolute") ? "" : "relative "}h-full w-full overflow-hidden ${className ?? ""}`.trim()}
     >
       <canvas
         ref={canvasRef}

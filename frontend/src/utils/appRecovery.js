@@ -1,67 +1,38 @@
-const waitForWorkerState = (worker, targetState, timeoutMs = 10000) => new Promise((resolve) => {
-  if (!worker || worker.state === targetState) return resolve(true);
+const RECOVERY_TIMEOUT_MS = 2000;
 
-  let timeout;
-  const onStateChange = () => {
-    if (worker.state === targetState || worker.state === 'redundant') {
-      finish(worker.state === targetState);
-    }
-  };
-  const finish = (result) => {
-    clearTimeout(timeout);
-    worker.removeEventListener('statechange', onStateChange);
-    resolve(result);
-  };
+export const clearAppRuntimeCache = async () => {
+  const cleanupTasks = [];
 
-  timeout = setTimeout(() => finish(false), timeoutMs);
-  worker.addEventListener('statechange', onStateChange);
-  onStateChange();
-});
-
-const activatePendingServiceWorkers = async () => {
-  if (!('serviceWorker' in navigator)) return;
-
-  const previousController = navigator.serviceWorker.controller;
-  const registrations = await navigator.serviceWorker.getRegistrations();
-  await Promise.all(registrations.map((registration) => registration.update().catch(() => {})));
-
-  for (const registration of registrations) {
-    let worker = registration.waiting;
-    if (!worker && registration.installing) {
-      const installed = await waitForWorkerState(registration.installing, 'installed');
-      if (installed) worker = registration.waiting || registration.installing;
-    }
-    if (worker?.state === 'installed') {
-      worker.postMessage({ type: 'SKIP_WAITING' });
-    }
+  if (typeof window !== 'undefined' && 'caches' in window) {
+    cleanupTasks.push(
+      caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+    );
   }
 
-  if (previousController && navigator.serviceWorker.controller === previousController) {
-    await new Promise((resolve) => {
-      const timeout = setTimeout(resolve, 3000);
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        clearTimeout(timeout);
-        resolve();
-      }, { once: true });
-    });
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    cleanupTasks.push(
+      navigator.serviceWorker.getRegistrations().then((registrations) =>
+        Promise.all(registrations.map((registration) => registration.unregister()))
+      )
+    );
   }
+
+  if (cleanupTasks.length === 0) return;
+
+  let timeoutId;
+  await Promise.race([
+    Promise.allSettled(cleanupTasks),
+    new Promise((resolve) => {
+      timeoutId = setTimeout(resolve, RECOVERY_TIMEOUT_MS);
+    }),
+  ]).finally(() => clearTimeout(timeoutId));
 };
 
 export const reloadAppWithoutStaleCache = async ({ path } = {}) => {
-  // 1. Purga total de CacheStorage para evitar cualquier chunk huérfano o 404 cacheado
   try {
-    if (typeof window !== 'undefined' && 'caches' in window) {
-      const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map((name) => caches.delete(name)));
-    }
+    await clearAppRuntimeCache();
   } catch (err) {
-    console.warn('[appRecovery] Error purgando CacheStorage:', err);
-  }
-
-  try {
-    await activatePendingServiceWorkers();
-  } catch {
-    // La recarga con URL nueva sigue siendo útil aunque el SW no responda.
+    console.warn('[appRecovery] Error limpiando caché:', err);
   }
 
   try {

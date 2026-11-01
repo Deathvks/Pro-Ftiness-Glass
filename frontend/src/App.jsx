@@ -51,7 +51,7 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
           const error = new Error(`La carga del apartado ${name} superó el tiempo límite.`);
           error.name = 'ChunkLoadError';
           reject(error);
-        }, 20000);
+        }, 10000);
       });
 
       return Promise.race([Promise.resolve().then(componentImport), timeout]).finally(() => clearTimeout(timeoutId));
@@ -63,54 +63,32 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
     } catch (firstError) {
       console.warn(`[lazyWithRetry] Primer intento falló para "${name}", reintentando...`, firstError);
 
-      // Una importación pendiente no puede cancelarse ni repetirse de forma fiable.
-      // Rechazarla permite salir del Suspense y mostrar las opciones de recuperación.
-      if (firstError?.name === 'ChunkLoadError') {
-        throw firstError;
-      }
-
       try {
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 200));
         const component = await loadWithTimeout();
         return component;
       } catch (error) {
         console.warn(`[lazyWithRetry] Error definitivo al cargar chunk "${name}":`, error);
-        const msg = error?.message || "";
+        const msg = (error?.message || "").toLowerCase();
         const isChunkError =
           error?.name === 'ChunkLoadError' ||
-          msg.includes("Failed to fetch dynamically imported module") ||
-          msg.includes("Loading chunk") ||
-          msg.includes("Importing a module script failed") ||
-          msg.includes("MIME type") ||
-          msg.includes("SyntaxError") ||
-          msg.includes("Unexpected token") ||
-          msg.includes("is not valid JavaScript");
+          msg.includes("failed to fetch dynamically imported module") ||
+          msg.includes("loading chunk") ||
+          msg.includes("loading css chunk") ||
+          msg.includes("importing a module script failed") ||
+          msg.includes("mime type") ||
+          msg.includes("syntaxerror") ||
+          msg.includes("unexpected token") ||
+          msg.includes("is not valid javascript");
 
         if (isChunkError) {
-          // Si el usuario está autenticado, comprobamos /version.json primero para mostrar el WelcomeModal en caliente
-          // en lugar de recargar de golpe sin mostrar las novedades
-          const storeState = useAppStore.getState();
-          if (storeState.isAuthenticated || localStorage.getItem('pro_fitness_token')) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 4000);
-            try {
-              const res = await fetch(`/version.json?t=${Date.now()}`, {
-                cache: 'no-store',
-                signal: controller.signal,
-              });
-              if (res.ok) {
-                const data = await res.json();
-                const remoteVersion = data?.version;
-                const lastSeenVersion = localStorage.getItem('lastSeenVersion');
-                if (remoteVersion && lastSeenVersion !== remoteVersion && typeof storeState.triggerRemoteWelcomeModal === 'function') {
-                  storeState.triggerRemoteWelcomeModal(remoteVersion, data);
-                }
-              }
-            } catch {} finally {
-              clearTimeout(timeoutId);
-            }
+          const now = Date.now();
+          const lastAutoReload = parseInt(sessionStorage.getItem('pfg_last_chunk_autoreload') || '0', 10);
+          if (now - lastAutoReload > 15000) {
+            sessionStorage.setItem('pfg_last_chunk_autoreload', String(now));
+            console.warn(`[lazyWithRetry] Recuperando versión limpia de la app tras error en "${name}"...`);
+            reloadAppWithoutStaleCache();
           }
-
         }
         throw error;
       }

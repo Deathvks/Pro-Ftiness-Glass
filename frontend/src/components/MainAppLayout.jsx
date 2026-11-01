@@ -82,7 +82,7 @@ const LoadingFallback = ({ onGoHome }) => {
 
     const timer = setTimeout(() => {
       setShowRescue(true);
-    }, 20000); // 20s de margen real para dar tiempo suficiente a conexiones móviles y chunks pesados
+    }, 9000); // 9s de margen real para dar tiempo suficiente a conexiones móviles y chunks pesados
     return () => {
       clearTimeout(hintTimer);
       clearTimeout(timer);
@@ -1463,7 +1463,7 @@ export default function MainAppLayout({
         className={`md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isGlobalModalOpen ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
         style={{ bottom: 'calc(var(--safe-bottom) + 12px)' }}
       >
-        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative liquid-glass-navbar px-3 rounded-full overflow-hidden shadow-2xl">
+        <div className="pointer-events-auto relative w-full max-w-sm h-16 liquid-glass-navbar rounded-full overflow-hidden shadow-2xl">
           {/* Motor WebGL2 Liquid Glass (StarKnightt/liquid-glass) */}
           <LiquidGlass
             backgroundColor={navThemeBg}
@@ -1476,7 +1476,7 @@ export default function MainAppLayout({
             alpha={0.96}
             enableIdleDrift={false}
             targetPos={dragX > 0 ? { x: dragX, y: 32 } : null}
-            className="absolute inset-0 w-full h-full pointer-events-none"
+            className="absolute inset-0 w-full h-full pointer-events-none z-0"
           />
 
           <nav 
