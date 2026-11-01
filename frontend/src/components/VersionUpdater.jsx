@@ -58,14 +58,14 @@ const SWUpdaterCore = () => {
 
       const now = Date.now();
       const lastAutoReload = parseInt(sessionStorage.getItem('pfg_last_chunk_autoreload') || '0', 10);
-      if (now - lastAutoReload > 20000) {
+      if (now - lastAutoReload > 25000) {
         sessionStorage.setItem('pfg_last_chunk_autoreload', String(now));
         reloadAppWithoutStaleCache();
       }
     };
 
     const handleWindowError = (e) => {
-      const msg = (e?.message || e?.reason?.message || '').toLowerCase();
+      const msg = (e?.message || '').toLowerCase();
       if (
         msg.includes('failed to fetch dynamically imported module') ||
         msg.includes('loading chunk') ||
@@ -78,12 +78,10 @@ const SWUpdaterCore = () => {
 
     window.addEventListener('vite:preloadError', handlePreloadError);
     window.addEventListener('error', handleWindowError);
-    window.addEventListener('unhandledrejection', handleWindowError);
 
     return () => {
       window.removeEventListener('vite:preloadError', handlePreloadError);
       window.removeEventListener('error', handleWindowError);
-      window.removeEventListener('unhandledrejection', handleWindowError);
     };
   }, []);
 

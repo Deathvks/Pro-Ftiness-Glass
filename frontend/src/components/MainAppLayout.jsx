@@ -81,16 +81,19 @@ const LoadingFallback = ({ onGoHome }) => {
 
     const timer = setTimeout(() => {
       setShowRescue(true);
-    }, 9000); // 9s de margen real para dar tiempo suficiente a conexiones móviles y chunks pesados
+    }, 14000); // 14s de margen real para dar tiempo suficiente a conexiones móviles y chunks pesados
     return () => {
       clearTimeout(hintTimer);
       clearTimeout(timer);
     };
   }, []);
 
-  const handleRepair = () => {
+  const handleRepair = async () => {
     setIsRepairing(true);
-    reloadAppWithoutStaleCache();
+    await reloadAppWithoutStaleCache();
+    setTimeout(() => {
+      setIsRepairing(false);
+    }, 3000);
   };
 
   const handleResetSession = () => {
@@ -209,7 +212,7 @@ class ViewErrorBoundary extends React.Component {
     if (isChunk) {
       const now = Date.now();
       const lastReload = parseInt(sessionStorage.getItem('pfg_last_chunk_autoreload') || '0', 10);
-      if (now - lastReload > 20000) {
+      if (now - lastReload > 25000) {
         sessionStorage.setItem('pfg_last_chunk_autoreload', String(now));
         reloadAppWithoutStaleCache();
       }

@@ -81,7 +81,10 @@ registerRoute(
       );
       
       const headers = new Headers(response.headers);
-      headers.set('Content-Type', 'text/html');
+      headers.set('Content-Type', 'text/html; charset=utf-8');
+      headers.delete('content-encoding');
+      headers.delete('content-length');
+      headers.delete('content-range');
       
       return new Response(modifiedHtml, {
         headers: headers,

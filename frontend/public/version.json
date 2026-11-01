@@ -1,6 +1,6 @@
 {
-  "version": "7.11.46",
-  "releaseNotes": "Actualización v7.11.46: Restauración del diseño original del navbar móvil flotante glass con gota fluida y máxima estabilidad.",
+  "version": "7.11.47",
+  "releaseNotes": "Actualización v7.11.47: Corrección de estabilidad en carga de apartados web, eliminación de bucle de recarga y optimización de cabeceras de Service Worker.",
   "welcome": {
     "title": "Migración desde Hevy/Strong y Copias",
     "subtitle": "Llega la migración de datos: importa todo tu historial de entrenamientos desde Hevy o Strong en un solo clic y exporta a Excel cuando quieras.",
