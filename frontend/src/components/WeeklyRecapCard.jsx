@@ -68,17 +68,54 @@ const WeeklyRecapCard = forwardRef(({ weeklyData, userProfile }, ref) => {
         >
             <div className="absolute top-[-10%] left-[-20%] w-[1400px] h-[1400px] bg-blue-700/20 rounded-full blur-[200px]" />
             <div className="absolute bottom-[-10%] right-[-20%] w-[1400px] h-[1400px] bg-purple-700/20 rounded-full blur-[200px]" />
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-[0.1]" />
+            <div
+                className="absolute inset-0 opacity-[0.06] pointer-events-none"
+                style={{
+                    backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(96,165,250,0.6) 1px, transparent 0)',
+                    backgroundSize: '48px 48px'
+                }}
+            />
             <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/90 z-0" />
 
-            <div className="relative z-10 flex flex-col h-full p-12 pt-24 w-full">
+            <div className="relative z-10 flex flex-col h-full p-12 pt-20 w-full">
                 
-                {/* Cabecera */}
-                <div className="flex justify-between items-center w-full mb-16 px-4">
-                    <div className="flex items-center gap-6">
+                {/* 1. BRANDING SUPERIOR: LOGO OFICIAL + PRO FITNESS GLASS + FECHA */}
+                <div className="flex justify-between items-center w-full mb-10 px-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-500 via-indigo-600 to-purple-600 flex items-center justify-center shadow-xl border border-blue-400/30 overflow-hidden shrink-0">
+                            <img 
+                                src={APP_LOGO_BASE64} 
+                                alt="Pro Fitness Glass" 
+                                className="w-10 h-10 object-contain drop-shadow" 
+                                loading="eager"
+                                decoding="sync"
+                                onError={(e) => { e.currentTarget.src = '/logo.webp'; }}
+                            />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-3xl font-black tracking-wider text-white uppercase italic drop-shadow-md">
+                                Pro Fitness Glass
+                            </span>
+                            <span className="text-xs font-bold uppercase tracking-[0.25em] text-blue-400/80">
+                                Weekly Recap Story • 9:16
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center bg-white/10 backdrop-blur-xl border border-white/15 px-6 py-3.5 rounded-2xl shadow-xl whitespace-nowrap shrink-0">
+                        <FaCalendarAlt className="text-blue-400 mr-3 shrink-0" size={22} />
+                        <span className="text-lg font-bold text-gray-100 uppercase tracking-widest font-mono">
+                            {getWeekRange()}
+                        </span>
+                    </div>
+                </div>
+
+                {/* 2. FILA DEL ATLETA */}
+                <div className="flex items-center justify-between bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-3xl p-5 mb-10 mx-4 shadow-2xl">
+                    <div className="flex items-center gap-5">
                         <div className="relative group shrink-0">
                             <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-full blur-lg opacity-60" />
-                            <div className="w-32 h-32 rounded-full border-[6px] border-[#111] overflow-hidden relative z-10 bg-[#222] flex items-center justify-center shadow-2xl">
+                            <div className="w-20 h-20 rounded-full border-2 border-blue-400/50 overflow-hidden relative z-10 bg-[#222] flex items-center justify-center shadow-lg">
                                 {profileImgSrc ? (
                                     <img 
                                         src={profileImgSrc} 
@@ -91,26 +128,23 @@ const WeeklyRecapCard = forwardRef(({ weeklyData, userProfile }, ref) => {
                                     <FaUserCircle className="w-full h-full text-gray-500" />
                                 )}
                             </div>
-                            <div className="absolute -bottom-2 -right-2 z-20 bg-gradient-to-r from-yellow-500 to-amber-600 text-white p-3 rounded-full border-[6px] border-[#111] shadow-lg">
-                                <FaTrophy size={20} />
+                            <div className="absolute -bottom-1 -right-1 z-20 bg-gradient-to-r from-yellow-500 to-amber-600 text-white p-2 rounded-full border-2 border-[#111] shadow-lg">
+                                <FaTrophy size={14} />
                             </div>
                         </div>
                         
-                        <div className="flex flex-col gap-1 whitespace-nowrap">
-                            <h2 className="text-5xl font-black text-white tracking-tight drop-shadow-lg uppercase m-0 p-0 pr-2">
+                        <div className="flex flex-col">
+                            <h2 className="text-3xl font-black text-white tracking-tight uppercase m-0 p-0">
                                 {username}
                             </h2>
-                            <span className="text-xl text-blue-400 font-bold uppercase tracking-[0.2em] block">
-                                Resumen Semanal
+                            <span className="text-sm font-bold text-blue-400 uppercase tracking-wider">
+                                Atleta de la Semana
                             </span>
                         </div>
                     </div>
 
-                    <div className="flex items-center bg-white/5 border border-white/10 px-8 py-5 rounded-full shadow-2xl whitespace-nowrap shrink-0">
-                        <FaCalendarAlt className="text-gray-400 mr-4 shrink-0" size={28} />
-                        <span className="text-3xl font-bold text-gray-100 uppercase tracking-widest font-mono m-0 p-0">
-                            {getWeekRange()}
-                        </span>
+                    <div className="px-5 py-2 rounded-full text-xs font-black tracking-widest uppercase bg-blue-500/20 border border-blue-400/40 text-blue-300 shadow-md">
+                        {totalWorkouts} {totalWorkouts === 1 ? 'Sesión' : 'Sesiones'}
                     </div>
                 </div>
 
@@ -218,6 +252,9 @@ const WeeklyRecapCard = forwardRef(({ weeklyData, userProfile }, ref) => {
                                 src={APP_LOGO_BASE64} 
                                 alt="Pro Fitness Glass" 
                                 className="w-14 h-14 object-contain drop-shadow-2xl mr-4 shrink-0" 
+                                loading="eager"
+                                decoding="sync"
+                                onError={(e) => { e.currentTarget.src = '/logo.webp'; }}
                             />
                             <span className="text-3xl font-black text-white tracking-wide m-0 p-0 pr-2">Pro Fitness Glass</span>
                         </div>

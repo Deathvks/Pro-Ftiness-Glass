@@ -642,6 +642,20 @@ const Dashboard = ({ setView }) => {
     setIsSharing(true);
 
     try {
+      if (ref.current) {
+        const innerImgs = ref.current.querySelectorAll('img');
+        await Promise.all(
+          Array.from(innerImgs).map(async (img) => {
+            if (img.complete) return;
+            try {
+              if ('decode' in img) {
+                await img.decode();
+              }
+            } catch (_) {}
+          })
+        );
+      }
+
       const blob = await toBlob(ref.current, {
         pixelRatio: 1,
         backgroundColor: '#000000',

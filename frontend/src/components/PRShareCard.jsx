@@ -1,8 +1,9 @@
 /* frontend/src/components/PRShareCard.jsx */
 import React, { forwardRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { TrendingUp, Crown, Sparkles, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, Crown, CheckCircle2 } from 'lucide-react';
 import { FaTrophy, FaCalendarAlt, FaDumbbell, FaUserCircle } from 'react-icons/fa';
+import { APP_LOGO_BASE64 } from '../assets/logoBase64';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_HOST = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
@@ -108,8 +109,15 @@ const PRShareCard = forwardRef(({ prData, userName, userImage, customBgPhoto }, 
                 <div className="flex flex-col gap-6">
                     <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-600 flex items-center justify-center shadow-xl border border-yellow-400/30">
-                                <Sparkles size={28} className="text-white drop-shadow" />
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-600 flex items-center justify-center shadow-xl border border-yellow-400/30 overflow-hidden shrink-0">
+                                <img 
+                                    src={APP_LOGO_BASE64} 
+                                    alt="Pro Fitness Glass" 
+                                    className="w-10 h-10 object-contain drop-shadow" 
+                                    loading="eager"
+                                    decoding="sync"
+                                    onError={(e) => { e.currentTarget.src = '/logo.webp'; }}
+                                />
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-3xl font-black tracking-wider text-white uppercase italic drop-shadow-md">
@@ -223,7 +231,17 @@ const PRShareCard = forwardRef(({ prData, userName, userImage, customBgPhoto }, 
 
                 {/* 4. FOOTER */}
                 <div className="w-full flex justify-between items-center border-t border-white/15 pt-6 pb-2 shrink-0">
-                    <span className="text-xl font-bold text-white/80">pro-fitness-glass.zeabur.app</span>
+                    <div className="flex items-center gap-3">
+                        <img 
+                            src={APP_LOGO_BASE64} 
+                            alt="Pro Fitness Glass" 
+                            className="w-8 h-8 object-contain rounded-xl drop-shadow shrink-0" 
+                            loading="eager"
+                            decoding="sync"
+                            onError={(e) => { e.currentTarget.src = '/logo.webp'; }}
+                        />
+                        <span className="text-xl font-bold text-white/80">pro-fitness-glass.zeabur.app</span>
+                    </div>
                     <span className="text-lg font-black tracking-widest text-yellow-400/80 font-mono">#PRRECORD #STRAVASTYLE</span>
                 </div>
 

@@ -1,6 +1,6 @@
 {
-  "version": "7.11.34",
-  "releaseNotes": "Actualización v7.11.34: Corrección de respuesta automática del bot de asesoría para usuarios prospectos y cuentas de prueba.",
+  "version": "7.11.35",
+  "releaseNotes": "Actualización v7.11.35: Carga garantizada del icono oficial de la app en historias y modales de récords (PR) y resumen semanal de domingo con fallback y precarga.",
   "welcome": {
     "title": "Portal de Noticias y Estabilidad",
     "subtitle": "Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y máxima estabilidad en toda la app.",
