@@ -1,4 +1,4 @@
-export const APP_VERSION = '7.11.48';
+export const APP_VERSION = '7.11.49';
 
 export const isNewerVersion = (current, remote) => {
   if (!current || !remote) return false;
