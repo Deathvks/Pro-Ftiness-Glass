@@ -98,6 +98,13 @@ router.post(
 );
 
 router.post(
+  '/admin/polish-content',
+  authenticateToken,
+  authorizeAdmin,
+  newsController.polishNewsContent
+);
+
+router.post(
   '/',
   authenticateToken,
   authorizeAdmin,

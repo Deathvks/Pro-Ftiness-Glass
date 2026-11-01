@@ -195,6 +195,10 @@ export const getNewsBySlug = async (req, res) => {
       })
     ]);
 
+    if (article?.content) {
+      article.content = sanitizeNewsContent(article.content);
+    }
+
     const payload = {
       article,
       relatedNews,
@@ -609,6 +613,149 @@ REGLAS DE RETENCIÓN, EXTENSIÓN Y ESTILO EDITORIAL (OBLIGATORIAS):
 };
 
 /**
+ * Corregir, pulir y adaptar un artículo con IA según las normas editoriales y SEO de Pro Fitness Glass
+ */
+export const polishNewsContent = async (req, res) => {
+  try {
+    const { content, title = '', category = 'Entrenamiento', summary = '' } = req.body || {};
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: 'Debes proporcionar el contenido del artículo para poder corregirlo.' });
+    }
+
+    // 1. Sanitización base inmediata (desescapar \n, auto-vincular herramientas, corregir etiquetas)
+    let sanitizedBase = sanitizeNewsContent(content);
+
+    // 2. Si no hay clave de Gemini configurada, devolvemos la versión sanitizada directamente
+    if (!process.env.GEMINI_API_KEY) {
+      return res.json({
+        success: true,
+        article: {
+          title: title || 'Artículo Optimizado',
+          summary: summary,
+          content: sanitizedBase,
+          reading_time: Math.max(1, Math.ceil(sanitizedBase.split(/\s+/).length / 180))
+        },
+        notice: 'Contenido corregido con el motor editorial local (sin conexión Gemini).'
+      });
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const targetModel = 'gemini-3.6-flash';
+    const fallbackModel = 'gemini-3.5-flash-lite';
+
+    const getAiModel = (m) => genAI.getGenerativeModel({
+      model: m,
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: SchemaType.OBJECT,
+          properties: {
+            title: { type: SchemaType.STRING },
+            summary: { type: SchemaType.STRING },
+            content: { type: SchemaType.STRING },
+            tags: { type: SchemaType.STRING },
+            reading_time: { type: SchemaType.INTEGER }
+          },
+          required: ['title', 'summary', 'content']
+        }
+      }
+    });
+
+    const prompt = `Eres el editor jefe y especialista en SEO y retención de lectura de Pro Fitness Glass (plataforma de entrenamiento, sobrecarga progresiva y nutrición deportiva).
+Tu objetivo es REVISAR, CORREGIR Y PULIR el siguiente borrador de artículo para que cumpla a la perfección con nuestro NUEVO ESTÁNDAR DE MÁXIMA RETENCIÓN Y SEO DE ÉLITE.
+
+DATOS DEL BORRADOR ACTUAL:
+- TÍTULO ACTUAL: "${title || '(Sin título)'}"
+- CATEGORÍA: "${category}"
+- RESUMEN ACTUAL: "${summary || '(Sin resumen)'}"
+- CONTENIDO A CORREGIR:
+"""
+${sanitizedBase}
+"""
+
+REGLAS DE ORO OBLIGATORIAS (CUMPLE TODAS RIGUROSAMENTE):
+1. FORMATO MARKDOWN Y SALTOS DE LÍNEA:
+   - Prohibido devolver secuencias de escape literales como "\\n". Usa saltos de línea reales de Markdown.
+   - Párrafos cortos de máximo 2 a 3 líneas. Prohibidas las paredes de texto densas.
+   - Subtítulos: Usa siempre "## " para apartados principales y "### " para subapartados. Cada subtítulo debe ir OBLIGATORIAMENTE en su propia línea, con espacio antes y después.
+2. ALERTAS GITHUB FLAVORED (1 o 2 bloques de alto valor visual):
+   - Transforma cualquier cita, evidencia o truco en alertas limpias oficiales:
+     > [!IMPORTANT]
+     > **Dato Científico:** El hallazgo científico explicado en lenguaje humano claro.
+     O
+     > [!TIP]
+     > **Consejo Práctico:** El truco directo para aplicar en el gimnasio o en la cocina.
+   - Prohibido dejar líneas "> " vacías o colocar almohadillas dentro de las alertas.
+3. TABLA COMPARATIVA MARKDOWN:
+   - Si el artículo compara intensidades, series, alimentos o ejercicios, incluye una tabla Markdown compacta (| Parámetro | Opción A | Opción B |) de 3-4 filas máximo.
+4. ENLACES INTERNOS OBLIGATORIOS (SEO DE PRO FITNESS GLASS):
+   - Inserta de forma completamente natural en el texto 1 o 2 enlaces hacia nuestras herramientas gratuitas:
+     * Si menciona fuerza, cargas, porcentajes o 1RM: [Calculadora de 1RM y Porcentajes](/calculadora-1rm)
+     * Si menciona calorías, macros, proteína o dieta: [Calculadora de Calorías y Macros](/calculadora-calorias-macros)
+     * Si menciona ejercicios, biomecánica o rutinas: [Guía de Ejercicios y Rutinas de Gimnasio](/ejercicios)
+5. CIERRE OBLIGATORIO:
+   - Finaliza con la sección "## Puntos clave para llevarte" con 3 puntos clave numerados y accionables.
+6. EXTENSIÓN Y RETENCIÓN:
+   - Extensión ágil: entre 280 y 400 palabras en total (~2 minutos de lectura). Ultra directo, ameno y fascinante.`;
+
+    let result;
+    try {
+      const model = getAiModel(targetModel);
+      result = await model.generateContent(prompt);
+    } catch (modelErr) {
+      console.warn(`[News Controller - Polish] ${targetModel} ocupado (${modelErr.message}). Fallback a ${fallbackModel}...`);
+      const fallback = getAiModel(fallbackModel);
+      result = await fallback.generateContent(prompt);
+    }
+
+    const responseText = result.response.text();
+    let parsed;
+    try {
+      parsed = JSON.parse(responseText);
+    } catch (parseErr) {
+      console.error('Error parseando JSON de Gemini en polishNewsContent:', responseText);
+      return res.json({
+        success: true,
+        article: {
+          title: title,
+          summary: summary,
+          content: sanitizedBase,
+          reading_time: Math.max(1, Math.ceil(sanitizedBase.split(/\s+/).length / 180))
+        },
+        notice: 'Formato y saltos de línea corregidos con sanitizador.'
+      });
+    }
+
+    if (parsed.content) {
+      parsed.content = sanitizeNewsContent(parsed.content);
+    }
+
+    return res.json({
+      success: true,
+      article: parsed
+    });
+  } catch (error) {
+    console.error('Error en polishNewsContent:', error);
+    try {
+      const fallbackClean = sanitizeNewsContent(req.body?.content || '');
+      return res.json({
+        success: true,
+        article: {
+          title: req.body?.title || '',
+          summary: req.body?.summary || '',
+          content: fallbackClean,
+          reading_time: Math.max(1, Math.ceil(fallbackClean.split(/\s+/).length / 180))
+        },
+        notice: 'Formato corregido localmente por sanitizador editorial.'
+      });
+    } catch {
+      return res.status(500).json({ error: error.message || 'Error al pulir el artículo con IA.' });
+    }
+  }
+};
+
+/**
  * Crear noticia (Admin)
  */
 export const createNews = async (req, res) => {
@@ -640,14 +787,15 @@ export const createNews = async (req, res) => {
       finalSlug = `${finalSlug}-${Date.now().toString().slice(-4)}`;
     }
 
-    const calculatedReadingTime = reading_time || Math.max(2, Math.ceil(content.split(/\s+/).length / 200));
+    const sanitizedContent = sanitizeNewsContent(content);
+    const calculatedReadingTime = reading_time || Math.max(2, Math.ceil(sanitizedContent.split(/\s+/).length / 200));
 
     invalidateNewsCache();
     const newArticle = await News.create({
       title,
       slug: finalSlug,
       summary,
-      content,
+      content: sanitizedContent,
       image_url: image_url || CATEGORY_DEFAULT_IMAGES[category] || CATEGORY_DEFAULT_IMAGES['Entrenamiento'],
       category: category || 'Entrenamiento',
       tags: tags || '',
@@ -713,11 +861,12 @@ export const updateNews = async (req, res) => {
     }
 
     invalidateNewsCache();
+    const sanitizedContent = content !== undefined ? sanitizeNewsContent(content) : undefined;
     await article.update({
       title: title ?? article.title,
       slug: finalSlug,
       summary: summary ?? article.summary,
-      content: content ?? article.content,
+      content: sanitizedContent !== undefined ? sanitizedContent : article.content,
       image_url: image_url ?? article.image_url,
       category: category ?? article.category,
       tags: tags ?? article.tags,

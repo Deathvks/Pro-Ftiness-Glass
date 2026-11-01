@@ -19,9 +19,14 @@ import {
   HelpCircle,
   X,
   Clock,
-  FileText
+  FileText,
+  CheckCheck
 } from 'lucide-react';
 import MarkdownContent from '../News/MarkdownContent';
+import Spinner from '../Spinner';
+import { sanitizeNewsContent } from '../../utils/newsSanitizer';
+import { polishNewsContent } from '../../services/newsService';
+import { useToast } from '../../hooks/useToast';
 
 /**
  * Editor editorial en lenguaje humano para noticias y artículos.
@@ -32,11 +37,17 @@ export default function NewsContentEditor({
   content = '',
   onChange,
   onReadingTimeChange,
+  title = '',
+  summary = '',
+  category = 'Entrenamiento',
+  onArticlePolished,
   placeholder = 'Escribe o pega aquí el contenido de tu artículo. Usa los botones superiores para añadir títulos, negritas o cajas de consejos con un solo clic...'
 }) {
+  const { addToast } = useToast();
   const textareaRef = useRef(null);
   const [viewMode, setViewMode] = useState('write'); // 'write' | 'preview' | 'split'
   const [showHumanGuide, setShowHumanGuide] = useState(false);
+  const [isPolishing, setIsPolishing] = useState(false);
 
   // Estadísticas en tiempo real en lenguaje humano
   const wordCount = (content || '').trim() ? (content || '').trim().split(/\s+/).length : 0;
@@ -47,6 +58,54 @@ export default function NewsContentEditor({
       onReadingTimeChange(readingTime);
     }
   }, [readingTime, onReadingTimeChange]);
+
+  const handleAutoSanitize = () => {
+    if (!content || !content.trim()) {
+      addToast('No hay contenido para corregir', 'info');
+      return;
+    }
+    const cleaned = sanitizeNewsContent(content);
+    onChange(cleaned);
+    addToast('¡Formato, saltos de línea y enlaces corregidos al instante!', 'success');
+  };
+
+  const handlePolishWithAI = async () => {
+    if (!content || !content.trim()) {
+      addToast('Escribe o pega el contenido primero para poder pulirlo con IA', 'error');
+      return;
+    }
+
+    setIsPolishing(true);
+    addToast('Enviando a Gemini para adaptar a las normas Pro Fitness Glass...', 'info');
+    try {
+      const res = await polishNewsContent({
+        content,
+        title,
+        summary,
+        category
+      });
+
+      if (res?.article?.content) {
+        const cleanContent = sanitizeNewsContent(res.article.content);
+        onChange(cleanContent);
+        if (onArticlePolished) {
+          onArticlePolished(res.article);
+        }
+        addToast('¡Artículo adaptado y perfeccionado con éxito según las normas oficiales!', 'success');
+      } else {
+        const fallbackClean = sanitizeNewsContent(content);
+        onChange(fallbackClean);
+        addToast('Formato corregido con el motor editorial local', 'success');
+      }
+    } catch (err) {
+      console.warn('Error al pulir con IA:', err);
+      const fallbackClean = sanitizeNewsContent(content);
+      onChange(fallbackClean);
+      addToast('Formato corregido localmente con el sanitizador editorial', 'success');
+    } finally {
+      setIsPolishing(false);
+    }
+  };
 
   /**
    * Aplica formato en lenguaje humano al texto seleccionado o inserta una plantilla lista.
@@ -242,6 +301,60 @@ export default function NewsContentEditor({
           >
             <Columns size={13} />
             <span>Dividido</span>
+          </button>
+        </div>
+      </div>
+
+      {/* BARRA ASISTENTE IA: CORREGIR Y PULIR SEGÚN NORMAS OFICIALES */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl bg-gradient-to-r from-accent/10 via-sky-500/10 to-purple-500/10 border border-accent/25 shadow-sm">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-accent/20 text-accent flex items-center justify-center shrink-0 shadow-sm">
+            <Sparkles size={16} className="animate-pulse" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs sm:text-sm font-black text-text-primary">
+                Corrector de Normas Pro Fitness Glass
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-accent/20 text-accent border border-accent/30">
+                IA Editorial
+              </span>
+            </div>
+            <p className="text-[11px] text-text-secondary leading-snug truncate">
+              Elimina \n crudos, formatea citas, crea tablas y auto-vincula calculadoras y ejercicios.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+          <button
+            type="button"
+            onClick={handleAutoSanitize}
+            className="px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 border border-black/10 dark:border-white/10 shrink-0"
+            title="Desescapa \n, limpia etiquetas y auto-enlaza calculadoras en 0ms sin esperar a la red"
+          >
+            <CheckCheck size={14} className="text-emerald-500" />
+            <span>Auto-corregir (0ms)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePolishWithAI}
+            disabled={isPolishing}
+            className="px-3.5 py-1.5 rounded-xl bg-accent text-accent-contrast text-xs font-black flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 shadow-md shadow-accent/25 disabled:opacity-50 shrink-0 cursor-pointer"
+            title="Usa Gemini para reescribir y estructurar el artículo completo con las normas oficiales"
+          >
+            {isPolishing ? (
+              <>
+                <Spinner size="small" color="white" />
+                <span>Pulir con IA...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles size={14} />
+                <span>Corregir con IA</span>
+              </>
+            )}
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 {
-  "version": "7.11.39",
-  "releaseNotes": "Actualización v7.11.39: Optimización del aviso de mantenimiento en móvil reduciéndolo a 1 sola línea compacta y habilitación de scroll completo y fluido en la página informativa de migración.",
+  "version": "7.11.40",
+  "releaseNotes": "Actualización v7.11.40: Asistente IA de corrección editorial en el panel de noticias (desescapado automático de \\n, alertas GitHub Flavored, formato de tablas y enlaces internos) y corrección del artículo de Potenciación Post-Activación (PAP).",
   "welcome": {
     "title": "Portal de Noticias y Estabilidad",
     "subtitle": "Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y máxima estabilidad en toda la app.",

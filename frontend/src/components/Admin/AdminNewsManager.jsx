@@ -690,8 +690,22 @@ export default function AdminNewsManager() {
             <div className="min-w-0 sm:col-span-2">
               <NewsContentEditor
                 content={formData.content}
+                title={formData.title}
+                summary={formData.summary}
+                category={formData.category}
                 onChange={(newContent) => setFormData(prev => ({ ...prev, content: newContent }))}
                 onReadingTimeChange={(rt) => setFormData(prev => ({ ...prev, reading_time: rt }))}
+                onArticlePolished={(art) => {
+                  if (art) {
+                    setFormData(prev => ({
+                      ...prev,
+                      title: art.title || prev.title,
+                      summary: art.summary || prev.summary,
+                      tags: art.tags || prev.tags,
+                      reading_time: art.reading_time || prev.reading_time
+                    }));
+                  }
+                }}
               />
             </div>
 

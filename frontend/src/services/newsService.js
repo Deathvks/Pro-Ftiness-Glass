@@ -562,3 +562,19 @@ export const clearTestVisits = async () => {
     0
   );
 };
+
+/**
+ * Corregir, pulir y adaptar contenido de un artículo con IA según las normas de Pro Fitness Glass
+ */
+export const polishNewsContent = async ({ content, title, category, summary }) => {
+  return requestWithRetry(
+    `${API_URL}/news/admin/polish-content`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ content, title, category, summary })
+    },
+    1,
+    25000 // 25s timeout para Gemini
+  );
+};

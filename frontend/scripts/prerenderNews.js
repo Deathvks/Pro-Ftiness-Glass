@@ -42,6 +42,10 @@ function formatInlineMarkdown(str = '') {
 
 function markdownToSemanticHtml(md = '') {
   if (!md) return '';
+  if (md.includes('\\n') || md.includes('\\r')) {
+    md = md.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\n');
+  }
+  md = md.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const lines = md.split('\n');
   const htmlParts = [];
   let inList = false;
