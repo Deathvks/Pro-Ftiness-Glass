@@ -1480,10 +1480,10 @@ export default function MainAppLayout({
                   onMouseEnter={() => preloadView && preloadView(item.id)}
                   onTouchStart={() => preloadView && preloadView(item.id)}
                   onClick={() => handleNavClick(item.id)}
-                  className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-colors duration-300 ease-out active:scale-90 outline-none focus:outline-none ring-0 ${isVisuallyActive ? '' : 'text-text-secondary'}`}
+                  className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-colors duration-300 ease-out active:scale-90 outline-none focus:outline-none ring-0 ${isVisuallyActive ? '' : 'text-text-primary/75 hover:text-text-primary'}`}
                   style={{ color: isVisuallyActive ? 'var(--color-accent)' : undefined, animationDelay: `${index * 100}ms`, animationFillMode: 'both', WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <div className={`transition-transform duration-300 ${isVisuallyActive ? 'scale-125' : 'group-hover:scale-110'} relative`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
+                  <div className={`transition-transform duration-300 ${isVisuallyActive ? 'scale-125' : 'group-hover:scale-110'} relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
                     {typeof item.icon === 'function' ? item.icon(isVisuallyActive) : item.icon}
                     {pendingCount > 0 && <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-accent rounded-full border-[1.5px] border-bg-primary z-10 pointer-events-none"></span>}
                     {pendingCount === 0 && item.badge && (
