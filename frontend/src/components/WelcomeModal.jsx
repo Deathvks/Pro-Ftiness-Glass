@@ -2,7 +2,7 @@
 import React from 'react';
 import ModalPortal from './ModalPortal';
 import {
-  ChevronRight, Newspaper, Calculator, Dumbbell, Zap
+  ChevronRight, Newspaper, Calculator, Dumbbell, Zap, FileSpreadsheet
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6';
 import { APP_VERSION } from '../config/version';
@@ -18,10 +18,10 @@ const WelcomeModal = ({ onClose }) => {
 
   const effectiveVersion = APP_VERSION;
   const appVersion = `v${effectiveVersion}`;
-  const welcomeTitle = welcomeRemoteData?.welcome?.title || 'Noticias y Herramientas';
+  const welcomeTitle = welcomeRemoteData?.welcome?.title || 'Migración desde Hevy/Strong y Copias';
   const welcomeSubtitle =
     welcomeRemoteData?.welcome?.subtitle ||
-    'Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y velocidad instantánea en toda la app.';
+    'Importa todos tus entrenamientos desde Hevy y Strong en un solo clic sin perder ningún dato ni récord histórico, y exporta a Excel cuando quieras.';
   const remoteFeatures = welcomeRemoteData?.welcome?.features;
 
   const handleGetStarted = (e) => {
@@ -353,7 +353,7 @@ const WelcomeModal = ({ onClose }) => {
               {/*  Feature Cards  */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
 
-                {/* 01: Portal de Noticias Fitness */}
+                {/* 01: Migración desde Hevy y Strong */}
                 <div className="wm-feature-card wm-feature-1" style={{
                     background: 'linear-gradient(135deg, #080814 0%, #121226 100%)',
                     border: '1px solid rgba(168,85,247,0.35)',
@@ -374,27 +374,27 @@ const WelcomeModal = ({ onClose }) => {
                     }}></div>
                   <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #a855f7, #6366f1)' }} />
                   <div className="wm-icon-wrap" style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.25)' }}>
-                    <Newspaper size={18} style={{ color: '#a855f7' }} />
+                    <FileSpreadsheet size={18} style={{ color: '#a855f7' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[0]?.title || 'Portal de Noticias y Ciencia Fitness'}</p>
+                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[0]?.title || '🚀 Migración desde Hevy y Strong (CSV)'}</p>
                     <p style={{ fontSize: '13px', color: 'rgba(203,213,225,0.9)', margin: 0, lineHeight: 1.55 }}>
-                      {remoteFeatures?.[0]?.description || 'Descubre artículos actualizados sobre hipertrofia, nutrición, suplementación y salud con modo de lectura adaptable y artículos recomendados.'}
+                      {remoteFeatures?.[0]?.description || '¿Llevas meses o años en Hevy o Strong? Ahora puedes importar todo tu historial en un clic sin perder ni un solo entrenamiento, serie o récord personal.'}
                     </p>
                   </div>
                   <span className="wm-num" style={{ color: '#a855f7' }}>01</span>
                 </div>
 
-                {/* 02: Calculadoras y Enciclopedia */}
+                {/* 02: Exportador a Excel */}
                 <div className="wm-feature-card wm-feature-2" style={{ border: '1px solid var(--glass-border)' }}>
                   <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #3b82f6, #06b6d4)' }} />
                   <div className="wm-icon-wrap" style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)' }}>
                     <Calculator size={18} style={{ color: '#3b82f6' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[1]?.title || 'Calculadoras 1RM, Macros y Ejercicios'}</p>
+                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[1]?.title || '📥 Exportador Completo a Excel (CSV)'}</p>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                      {remoteFeatures?.[1]?.description || 'Calcula tu fuerza máxima (1RM), tus calorías y macronutrientes ideales, y explora la enciclopedia completa de ejercicios con vídeo y técnica.'}
+                      {remoteFeatures?.[1]?.description || 'Descarga tu historial completo en formato CSV compatible con Excel, Google Sheets y números para total control de tus progresos.'}
                     </p>
                   </div>
                   <span className="wm-num" style={{ color: '#3b82f6' }}>02</span>

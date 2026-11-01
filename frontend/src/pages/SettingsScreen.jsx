@@ -5,7 +5,8 @@ import {
   Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
   ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
-  Bug, Download, Vibrate, Volume2, Timer, Sliders, Globe, Clock, MapPin, Youtube, Play, LockOpen, Lock
+  Bug, Download, Vibrate, Volume2, Timer, Sliders, Globe, Clock, MapPin, Youtube, Play, LockOpen, Lock,
+  FileSpreadsheet, UploadCloud
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6'; 
 import useAppStore from '../store/useAppStore';
@@ -20,6 +21,7 @@ import BugReportModal from '../components/BugReportModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import CustomSelect from '../components/CustomSelect';
 import GlassCard from '../components/GlassCard';
+import WorkoutDataTransferModal from '../components/WorkoutDataTransferModal';
 import { useAppTheme } from '../hooks/useAppTheme';
 
 // --- Constantes ---// --- TIMEZONES COMUNES ---
@@ -147,6 +149,9 @@ export default function SettingsScreen({
   })));
 
   const { addToast } = useToast();
+
+  const [showDataTransferModal, setShowDataTransferModal] = useState(false);
+  const [dataTransferTab, setDataTransferTab] = useState('import');
 
   const [isUpdatingEmailPref, setIsUpdatingEmailPref] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
@@ -317,34 +322,62 @@ export default function SettingsScreen({
         <div id="tutorial-settings-content" className="flex-1 w-full flex flex-col gap-6 lg:gap-8">
 
           {activeTab === 'workout' && (
-          <GlassCard className={glassCardClass}>
-            <SectionTitle icon={Timer} title="Entrenamiento y Descanso" />
-            <div className="flex flex-col gap-3">
-              <SwitchItem
-                icon={Volume2}
-                title="Sonido de Fin de Descanso"
-                subtitle="Doble pitido suave al terminar la cuenta atrás entre series"
-                checked={restSoundEnabled}
-                onChange={() => {
-                  const newValue = !restSoundEnabled;
-                  setRestSoundEnabled(newValue);
-                  addToast(newValue ? 'Sonido de descanso activado' : 'Sonido de descanso desactivado', 'success');
-                }}
-              />
+          <>
+            <GlassCard className={glassCardClass}>
+              <SectionTitle icon={Timer} title="Entrenamiento y Descanso" />
+              <div className="flex flex-col gap-3">
+                <SwitchItem
+                  icon={Volume2}
+                  title="Sonido de Fin de Descanso"
+                  subtitle="Doble pitido suave al terminar la cuenta atrás entre series"
+                  checked={restSoundEnabled}
+                  onChange={() => {
+                    const newValue = !restSoundEnabled;
+                    setRestSoundEnabled(newValue);
+                    addToast(newValue ? 'Sonido de descanso activado' : 'Sonido de descanso desactivado', 'success');
+                  }}
+                />
 
-              <SwitchItem
-                icon={Vibrate}
-                title="Vibración Háptica"
-                subtitle="Vibración en el bolsillo al terminar el descanso y feedback al marcar series"
-                checked={hapticsEnabled}
-                onChange={() => {
-                  const newValue = !hapticsEnabled;
-                  setHapticsEnabled(newValue);
-                  addToast(newValue ? 'Vibración activada' : 'Vibración desactivada', 'success');
-                }}
-              />
-            </div>
-          </GlassCard>
+                <SwitchItem
+                  icon={Vibrate}
+                  title="Vibración Háptica"
+                  subtitle="Vibración en el bolsillo al terminar el descanso y feedback al marcar series"
+                  checked={hapticsEnabled}
+                  onChange={() => {
+                    const newValue = !hapticsEnabled;
+                    setHapticsEnabled(newValue);
+                    addToast(newValue ? 'Vibración activada' : 'Vibración desactivada', 'success');
+                  }}
+                />
+              </div>
+            </GlassCard>
+
+            <GlassCard className={glassCardClass}>
+              <SectionTitle icon={FileSpreadsheet} title="Migración y Copias de Seguridad" />
+              <div className="flex flex-col gap-3">
+                <SettingsItem
+                  icon={UploadCloud}
+                  title="Importar desde Hevy o Strong (CSV)"
+                  subtitle="Migra todos tus entrenamientos históricos sin perder tus datos"
+                  onClick={() => {
+                    setDataTransferTab('import');
+                    setShowDataTransferModal(true);
+                  }}
+                  action={<ChevronRight size={18} className="text-text-muted" />}
+                />
+                <SettingsItem
+                  icon={Download}
+                  title="Exportar Historial Completo (Excel / CSV)"
+                  subtitle="Descarga todas tus sesiones, series y notas en un archivo CSV para Excel"
+                  onClick={() => {
+                    setDataTransferTab('export');
+                    setShowDataTransferModal(true);
+                  }}
+                  action={<ChevronRight size={18} className="text-text-muted" />}
+                />
+              </div>
+            </GlassCard>
+          </>
           )}
 
           {activeTab === 'notifications' && (
@@ -391,19 +424,21 @@ export default function SettingsScreen({
 
               <SettingsItem
                 icon={Download}
-                title="Exportar Datos"
-                subtitle="Descarga tu historial"
+                title="Exportar Datos y Entrenamientos"
+                subtitle="Copia de seguridad en JSON o Excel (CSV)"
                 action={
                   <div className="flex gap-2 shrink-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleExport('json'); }}
                       className="px-3 py-2 rounded-[12px] bg-black/5 dark:bg-white/5 text-text-secondary text-[10px] font-bold hover:bg-accent hover:text-accent-contrast transition-all hover:scale-105 hover:shadow-md"
+                      title="Exportar datos completos en JSON"
                     >
                       JSON
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleExport('csv'); }}
+                      onClick={(e) => { e.stopPropagation(); setDataTransferTab('export'); setShowDataTransferModal(true); }}
                       className="px-3 py-2 rounded-[12px] bg-black/5 dark:bg-white/5 text-text-secondary text-[10px] font-bold hover:bg-accent hover:text-accent-contrast transition-all hover:scale-105 hover:shadow-md"
+                      title="Exportar entrenamientos en CSV para Excel"
                     >
                       CSV
                     </button>
@@ -526,6 +561,12 @@ export default function SettingsScreen({
           )}
       </div>
       </div>
+
+      <WorkoutDataTransferModal
+        isOpen={showDataTransferModal}
+        onClose={() => setShowDataTransferModal(false)}
+        initialTab={dataTransferTab}
+      />
     </div>
   );
 }

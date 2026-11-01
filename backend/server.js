@@ -163,7 +163,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 // --- ARCHIVOS ESTÁTICOS (con caché para ahorrar tráfico) ---
 const staticPath = path.join(__dirname, 'public');

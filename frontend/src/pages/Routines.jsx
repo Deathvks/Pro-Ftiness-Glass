@@ -25,13 +25,15 @@ import {
   Flame,
   TrendingUp,
   ArrowRight,
-  Activity
+  Activity,
+  FileSpreadsheet
 } from 'lucide-react';
 import { FaBrain, FaDumbbell, FaCompass, FaListCheck, FaHeartPulse } from 'react-icons/fa6';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import ModalPortal from '../components/ModalPortal';
 const RoutineEditor = lazy(() => import('./RoutineEditor'));
+const WorkoutDataTransferModal = lazy(() => import('../components/WorkoutDataTransferModal'));
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
@@ -401,6 +403,7 @@ const Routines = ({ setView, mainContentRef }) => {
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showDataTransferModal, setShowDataTransferModal] = useState(false);
   const [routineToDelete, setRoutineToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState('');
@@ -829,6 +832,14 @@ const Routines = ({ setView, mainContentRef }) => {
       >
         <Globe size={18} />
         <span className="hidden sm:inline">Muro</span>
+      </button>
+      <button
+        onClick={() => setShowDataTransferModal(true)}
+        className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full bg-black/5 dark:bg-white/5 text-text-primary font-bold transition hover:scale-105 hover:bg-black/10 dark:hover:bg-white/10"
+        title="Importar historial desde Hevy o Strong en CSV"
+      >
+        <FileSpreadsheet size={18} className="text-accent" />
+        <span className="hidden sm:inline">Importar CSV</span>
       </button>
       <button
           onClick={() => setShowAIGenerator(true)}
@@ -1390,6 +1401,15 @@ const Routines = ({ setView, mainContentRef }) => {
             isOpen={showAIGenerator}
             onClose={() => setShowAIGenerator(false)}
             onGenerate={(generatedRoutine) => setEditingRoutine(generatedRoutine)}
+          />
+        </Suspense>
+      )}
+
+      {showDataTransferModal && (
+        <Suspense fallback={null}>
+          <WorkoutDataTransferModal
+            isOpen={showDataTransferModal}
+            onClose={() => setShowDataTransferModal(false)}
           />
         </Suspense>
       )}

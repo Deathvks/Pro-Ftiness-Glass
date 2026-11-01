@@ -1,10 +1,18 @@
 {
-  "version": "7.11.40",
-  "releaseNotes": "Actualización v7.11.40: Asistente IA de corrección editorial en el panel de noticias (desescapado automático de \\n, alertas GitHub Flavored, formato de tablas y enlaces internos) y corrección del artículo de Potenciación Post-Activación (PAP).",
+  "version": "7.11.41",
+  "releaseNotes": "Actualización v7.11.41: Importador y Exportador de Historial (CSV). Migración en 1 clic desde Hevy o Strong sin perder entrenamientos ni récords personales, y exportación completa a Excel (CSV con UTF-8 BOM).",
   "welcome": {
-    "title": "Portal de Noticias y Estabilidad",
-    "subtitle": "Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y máxima estabilidad en toda la app.",
+    "title": "Migración desde Hevy/Strong y Copias",
+    "subtitle": "Llega la migración de datos: importa todo tu historial de entrenamientos desde Hevy o Strong en un solo clic y exporta a Excel cuando quieras.",
     "features": [
+      {
+        "title": "🚀 Migración desde Hevy y Strong (CSV)",
+        "description": "¿Llevas meses o años en Hevy o Strong? Ahora puedes importar todo tu historial en un solo clic sin perder ni un solo entrenamiento, serie o récord."
+      },
+      {
+        "title": "📥 Exportador Completo a Excel y CSV",
+        "description": "Descarga tu historial completo con codificación UTF-8 compatible con Microsoft Excel, Google Sheets y Numbers para total propiedad de tus datos."
+      },
       {
         "title": "Portal de Noticias y Ciencia Fitness",
         "description": "Descubre artículos actualizados sobre hipertrofia, nutrición, suplementación y salud con modo de lectura adaptable y artículos recomendados."
@@ -12,14 +20,6 @@
       {
         "title": "Calculadoras 1RM, Macros y Ejercicios",
         "description": "Calcula tu fuerza máxima (1RM), tus calorías y macronutrientes ideales, y explora la enciclopedia completa de ejercicios con vídeo y técnica."
-      },
-      {
-        "title": "Asesorías y Progreso en Dashboard",
-        "description": "Recibe pautas de entrenamiento y dieta de tu entrenador en el inicio, controla tus series semanales por músculo y chatea en tiempo real."
-      },
-      {
-        "title": "Apertura Instantánea (0ms)",
-        "description": "Noticias, calculadoras, sistema de créditos IA y vistas principales ahora se abren al instante sin tiempos de espera en web y móvil."
       }
     ]
   }
