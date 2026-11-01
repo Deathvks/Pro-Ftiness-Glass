@@ -1,7 +1,8 @@
 /* frontend/src/components/MaintenanceNoticeBanner.jsx */
 import React from 'react';
-import { Wrench } from 'lucide-react';
+import { Wrench, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Link, useLocation } from 'react-router-dom';
 
 const MaintenanceNoticeBanner = ({
   className = '',
@@ -11,8 +12,10 @@ const MaintenanceNoticeBanner = ({
   style = {}
 }) => {
   const { t } = useTranslation();
+  const location = useLocation();
   const isRounded = rounded || className.includes('rounded');
   const needsSafeArea = withSafeArea || className.includes('with-safe-area') || className.includes('safe-top');
+  const isMaintenancePage = location?.pathname === '/mantenimiento' || location?.pathname === '/migracion';
 
   const computedStyle = {
     ...(needsSafeArea ? { paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 0.5rem)' } : {}),
@@ -40,6 +43,15 @@ const MaintenanceNoticeBanner = ({
         <span className="text-[11px] sm:text-xs font-bold text-amber-950 dark:text-amber-100">
           {t('maintenance_banner_msg', { defaultValue: 'El sábado 7 la web estará fuera de servicio entre 24 a 48 horas.' })}
         </span>
+        {!isMaintenancePage && (
+          <Link
+            to="/mantenimiento"
+            className="inline-flex items-center gap-0.5 text-[11px] sm:text-xs font-extrabold text-amber-900 dark:text-amber-200 underline underline-offset-2 hover:text-amber-950 dark:hover:text-white transition-colors shrink-0 ml-1"
+          >
+            <span>{t('maintenance_more_info', { defaultValue: 'Más información' })}</span>
+            <ArrowRight size={12} className="shrink-0" />
+          </Link>
+        )}
       </div>
     </aside>
   );

@@ -38,6 +38,7 @@ import MacroCalculatorPage from './pages/MacroCalculatorPage';
 import PublicExercisesPage from './pages/PublicExercisesPage';
 import AboutUsPage from './pages/AboutUsPage';
 import FAQPage from './pages/FAQPage';
+import MaintenanceInfoPage from './pages/MaintenanceInfoPage';
 import { reloadAppWithoutStaleCache } from './utils/appRecovery';
 import { getExerciseList } from './services/exerciseService';
 
@@ -1070,6 +1071,12 @@ export default function App() {
                 <FAQPage />
             </Suspense>
         } />
+        <Route path="/mantenimiento" element={
+            <Suspense fallback={<NewsLoadingSkeleton />}>
+                <MaintenanceInfoPage />
+            </Suspense>
+        } />
+        <Route path="/migracion" element={<Navigate to="/mantenimiento" replace />} />
         <Route path="/reset-password" element={
             <Suspense fallback={<InitialLoadingSkeleton />}>
                  <ResetPasswordScreen showLogin={() => navigate('/login')} />

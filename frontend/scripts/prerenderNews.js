@@ -831,6 +831,75 @@ async function main() {
   fs.writeFileSync(path.join(faqDir, 'index.html'), faqHtml, 'utf8');
   console.log('[Prerender] Generada página FAQ en dist/faq/index.html.');
 
+  // ==========================================
+  // PRERENDER: /mantenimiento (Aviso Oficial de Mantenimiento y Migración)
+  // ==========================================
+  const mantenimientoDir = path.join(distDir, 'mantenimiento');
+  if (!fs.existsSync(mantenimientoDir)) fs.mkdirSync(mantenimientoDir, { recursive: true });
+
+  const mantenimientoJsonLd = `
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Mantenimiento Programado y Nueva Infraestructura — Pro Fitness Glass",
+    "description": "Información oficial sobre el mantenimiento programado del sábado 7: traslado seguro a servidores propios dedicados y nuevo dominio oficial profitnessglass.com.",
+    "url": "${BASE_URL}/mantenimiento",
+    "inLanguage": "es"
+  }
+  </script>`;
+
+  const mantenimientoBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 960px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Volver a Pro Fitness Glass</a> |
+      <a href="/faq" style="color: #34d399; text-decoration: none; font-weight: 700;">Preguntas Frecuentes</a> |
+      <a href="/sobre-nosotros" style="color: #a855f7; text-decoration: none; font-weight: 700;">Quiénes Somos</a>
+    </nav>
+    <header style="margin-bottom: 2.5rem; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+        <div style="text-align: left;">
+          <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">Aviso Oficial de Infraestructura</span>
+        </div>
+      </div>
+      <br />
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">Evolucionamos a Servidores Propios y Nuevo Dominio Oficial</h1>
+      <p style="font-size: 1.15rem; color: #94a3b8;">Actualización planificada: traslado seguro a servidores propios dedicados y nuevo dominio oficial profitnessglass.com.</p>
+    </header>
+
+    <section style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #fbbf24;">Horario y Ventana de Mantenimiento</h2>
+      <p style="color: #cbd5e1; margin-bottom: 0;">El próximo sábado 7 la web entrará en una ventana de mantenimiento programado de aproximadamente 24 a 48 horas mientras se realiza la migración completa de los sistemas.</p>
+    </section>
+
+    <section style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #34d399;">Tus Datos Están 100% Seguros y Protegidos</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1rem;">No tienes nada de qué preocuparte: ningún dato se perderá ni estará en peligro. Todas tus rutinas, historial de entrenamientos, pesos, series y marcas personales (PR) se migran de forma íntegra y cifrada a los nuevos servidores.</p>
+      <p style="color: #cbd5e1; margin-bottom: 0;">No tendrás que volver a registrarte ni volver a configurar nada. Iniciarás sesión con tu misma cuenta y contraseña habituales.</p>
+    </section>
+
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿Por qué realizamos este cambio?</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1rem;">Nuestro proveedor externo de servidores actual cesará sus servicios. Por ello, hemos dado el paso definitivo a servidores propios dedicados exclusivamente para Pro Fitness Glass, garantizando mayor velocidad, estabilidad y soberanía sobre nuestra plataforma.</p>
+      <p style="color: #cbd5e1; margin-bottom: 0;">Además, pasaremos a operar en nuestro nuevo dominio oficial: <strong>profitnessglass.com</strong>.</p>
+    </section>
+  </main>`;
+
+  let mantenimientoHtml = injectMeta(baseHtml, {
+    title: 'Mantenimiento Programado y Nueva Infraestructura — Pro Fitness Glass',
+    description: 'Información oficial sobre el mantenimiento programado del sábado 7: traslado seguro a servidores propios dedicados y nuevo dominio oficial profitnessglass.com.',
+    image: `${BASE_URL}/aver.jpg`,
+    url: `${BASE_URL}/mantenimiento`,
+    type: 'website'
+  });
+  mantenimientoHtml = mantenimientoHtml.replace('</head>', `${mantenimientoJsonLd}
+</head>`);
+  mantenimientoHtml = injectPrerenderBody(mantenimientoHtml, mantenimientoBody, 'MaintenanceInfoPage');
+  fs.writeFileSync(path.join(mantenimientoDir, 'index.html'), mantenimientoHtml, 'utf8');
+  console.log('[Prerender] Generada página Mantenimiento en dist/mantenimiento/index.html.');
+
 }
 
 main().catch(err => {
