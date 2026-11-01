@@ -1,6 +1,5 @@
 /* frontend/src/components/MainAppLayout.jsx */
 import React, { Suspense, lazy, useEffect, useState, useRef, startTransition } from 'react';
-import { LiquidGlass } from './LiquidGlass';
 import { Cog8ToothIcon as SettingsIcon, UserIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import { FaBrain, FaBell, FaChevronLeft, FaDumbbell } from 'react-icons/fa6';
@@ -342,29 +341,6 @@ export default function MainAppLayout({
   const { activeTheme, accent } = useAppTheme();
   const isLevel20Accent = ['supernova', 'plasma', 'eternal-flame', 'abyssal-vortex', 'cosmic-gold'].includes(accent);
 
-  const navThemeBg = activeTheme === 'light'
-    ? '#f8fafc'
-    : activeTheme === 'oled'
-      ? '#000000'
-      : activeTheme === 'galaxy'
-        ? '#080814'
-        : (activeTheme === 'ocean' || activeTheme === 'ocean-dark')
-          ? '#082f49'
-          : (activeTheme === 'desert' || activeTheme === 'desert-dark')
-            ? '#2c1e16'
-            : '#0f172a';
-
-  const navThemeText = activeTheme === 'light' ? '#0f172a' : '#f8fafc';
-
-  const navThemeAccents = activeTheme === 'galaxy'
-    ? ['#a855f7', '#ec4899', '#3b82f6', '#8b5cf6']
-    : (activeTheme === 'ocean' || activeTheme === 'ocean-dark')
-      ? ['#38bdf8', '#0ea5e9', '#06b6d4', '#0284c7']
-      : (activeTheme === 'desert' || activeTheme === 'desert-dark')
-        ? ['#f59e0b', '#d97706', '#b45309', '#78350f']
-        : activeTheme === 'light'
-          ? ['#bfd7ff', '#ffd6e8', '#ffe9c7', '#c9f2e4']
-          : ['#22c55e', '#10b981', '#3b82f6', '#4ade80'];
 
   // Workaround para re-calcular env(safe-area-inset-top) en iOS PWA al cambiar el tema
   useEffect(() => {
@@ -1458,37 +1434,46 @@ export default function MainAppLayout({
 
       </div>
 
-      {/* Navbar Móvil Flotante Liquid Glass */}
+      {/* ESPACIO INFERIOR DIFUMINADO (Optimizado para Android de gama baja) */}
+      <div
+        className={`md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-40 bg-gradient-to-t from-bg-primary via-bg-primary/80 to-transparent transition-opacity duration-300 ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
+        style={{
+          height: 'calc(var(--safe-bottom) + 100px)',
+          transform: 'translateZ(0)',
+        }}
+      ></div>
+
       <div
         className={`md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isGlobalModalOpen ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
         style={{ bottom: 'calc(var(--safe-bottom) + 12px)' }}
       >
-        <div className="pointer-events-auto relative w-full max-w-sm h-16 liquid-glass-navbar rounded-full overflow-hidden shadow-2xl">
-          {/* Motor WebGL2 Liquid Glass (StarKnightt/liquid-glass) */}
-          <LiquidGlass
-            backgroundColor={navThemeBg}
-            textColor={navThemeText}
-            accentColors={navThemeAccents}
-            lensRadius={26}
-            magnification={1.14}
-            refraction={0.55}
-            frost={0.12}
-            alpha={0.96}
-            enableIdleDrift={false}
-            targetPos={dragX > 0 ? { x: dragX, y: 32 } : null}
-            className="absolute inset-0 w-full h-full pointer-events-none z-0"
-          />
-
+        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
+          
           <nav 
             ref={navRef} 
-            className="relative z-10 w-full h-full flex justify-evenly items-center nav-touch-area"
+            className="relative w-full h-full flex justify-evenly items-center nav-touch-area"
             onTouchStart={handleDropDragStart}
             onTouchMove={handleDropDragMove}
             onTouchEnd={handleDropDragEnd}
             onTouchCancel={handleDropDragEnd}
           >
-            {/* Elemento de referencia invisible para no romper los cálculos de arrastre */}
-            <div ref={dropRef} className="hidden" aria-hidden="true" />
+            
+            <div
+              ref={dropRef}
+              className="absolute top-1/2 w-[60px] h-12 rounded-[24px] pointer-events-none z-[1] flex items-start justify-center"
+              style={{
+                left: 0,
+                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) ${isJumping ? 'scaleX(1.3) scaleY(0.75)' : 'scaleX(1) scaleY(1)'}`,
+                opacity: isDropVisible ? 1 : 0,
+                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)',
+                backdropFilter: 'blur(8px) brightness(1.1)',
+                WebkitBackdropFilter: 'blur(8px) brightness(1.1)',
+                boxShadow: 'inset 0px 1px 1px rgba(255,255,255,0.25), inset 0px -1px 2px rgba(0,0,0,0.15), 0px 4px 10px rgba(0,0,0,0.15)',
+                willChange: 'transform'
+              }}
+            >
+            </div>
 
             {navItems.map((item, index) => {
               const isActive = view === item.id;
