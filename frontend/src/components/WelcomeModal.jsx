@@ -377,7 +377,7 @@ const WelcomeModal = ({ onClose }) => {
                     <FileSpreadsheet size={18} style={{ color: '#a855f7' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[0]?.title || '🚀 Migración desde Hevy y Strong (CSV)'}</p>
+                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[0]?.title || 'Migración desde Hevy y Strong (CSV)'}</p>
                     <p style={{ fontSize: '13px', color: 'rgba(203,213,225,0.9)', margin: 0, lineHeight: 1.55 }}>
                       {remoteFeatures?.[0]?.description || '¿Llevas meses o años en Hevy o Strong? Ahora puedes importar todo tu historial en un clic sin perder ni un solo entrenamiento, serie o récord personal.'}
                     </p>
@@ -392,7 +392,7 @@ const WelcomeModal = ({ onClose }) => {
                     <Calculator size={18} style={{ color: '#3b82f6' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[1]?.title || '📥 Exportador Completo a Excel (CSV)'}</p>
+                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[1]?.title || 'Exportador Completo a Excel (CSV)'}</p>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
                       {remoteFeatures?.[1]?.description || 'Descarga tu historial completo en formato CSV compatible con Excel, Google Sheets y números para total control de tus progresos.'}
                     </p>

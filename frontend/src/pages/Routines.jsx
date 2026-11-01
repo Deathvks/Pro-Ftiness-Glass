@@ -814,57 +814,121 @@ const Routines = ({ setView, mainContentRef }) => {
         : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
   }`;
 
-  const RoutineActionButtons = ({ className = '', id }) => (
-    <div className={`flex gap-2.5 ${className}`} id={id}>
-      {routines && routines.length > 0 && (
+  const RoutineActionButtons = ({ className = '', id }) => {
+    const isMobile = id === 'routines-actions-mobile';
+
+    if (isMobile) {
+      return (
+        <div className={`flex flex-col gap-2.5 w-full ${className}`} id={id}>
+          {/* Fila principal: Crear Rutina (destacado sin partirse) + IA */}
+          <div className="flex items-center gap-2.5 w-full">
+            <button
+              onClick={() => {
+                setEditingRoutine({
+                  name: '',
+                  description: '',
+                  exercises: [],
+                  folder: selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : ''
+                });
+              }}
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-5 rounded-2xl bg-accent text-accent-contrast font-extrabold text-sm shadow-lg shadow-accent/25 active:scale-[0.98] transition-all whitespace-nowrap"
+            >
+              <Plus size={18} strokeWidth={2.5} />
+              <span>Crear Rutina</span>
+            </button>
+            <button
+              onClick={() => setShowAIGenerator(true)}
+              className="flex items-center justify-center gap-1.5 py-3 px-4 rounded-2xl font-extrabold text-sm bg-gradient-to-r from-accent via-purple-500 to-pink-500 text-white shadow-md active:scale-[0.98] transition-all whitespace-nowrap shrink-0"
+              title="Generar rutina con IA"
+            >
+              <FaBrain size={16} />
+              <span>IA</span>
+            </button>
+          </div>
+
+          {/* Fila secundaria: Herramientas útiles (Importar CSV, Muro, Papelera) */}
+          <div className="flex items-center gap-2 w-full">
+            <button
+              onClick={() => setShowDataTransferModal(true)}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-black/5 dark:bg-white/5 border border-glass-border font-bold text-xs text-text-primary active:scale-[0.98] transition-all whitespace-nowrap"
+            >
+              <FileSpreadsheet size={15} className="text-accent shrink-0" />
+              <span>Importar CSV</span>
+            </button>
+            <button
+              onClick={() => setShowPrivacyModal(true)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-black/5 dark:bg-white/5 border border-glass-border font-bold text-xs text-text-primary active:scale-[0.98] transition-all whitespace-nowrap"
+            >
+              <Globe size={15} className="shrink-0" />
+              <span>Muro</span>
+            </button>
+            {routines && routines.length > 0 && (
+              <button
+                onClick={() => setShowDeleteAllModal(true)}
+                className="flex items-center justify-center p-2.5 rounded-xl bg-red-500/10 text-red-500 font-bold active:scale-[0.98] transition-all shrink-0"
+                title="Borrar todas las rutinas"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Desktop
+    return (
+      <div className={`flex items-center gap-2.5 ${className}`} id={id}>
+        {routines && routines.length > 0 && (
+          <button
+            onClick={() => setShowDeleteAllModal(true)}
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-red-500/10 text-red-500 font-bold transition hover:scale-105 hover:bg-red-500/20"
+            title="Borrar todas las rutinas"
+          >
+            <Trash2 size={18} />
+          </button>
+        )}
         <button
-          onClick={() => setShowDeleteAllModal(true)}
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-red-500/10 text-red-500 font-bold transition hover:scale-105 hover:bg-red-500/20"
-          title="Borrar todas las rutinas"
+          onClick={() => setShowPrivacyModal(true)}
+          className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full bg-black/5 dark:bg-white/5 text-text-primary font-bold transition hover:scale-105 hover:bg-black/10 dark:hover:bg-white/10"
+          title="Privacidad del Muro"
         >
-          <Trash2 size={18} />
+          <Globe size={18} />
+          <span>Muro</span>
         </button>
-      )}
-      <button
-        onClick={() => setShowPrivacyModal(true)}
-        className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full bg-black/5 dark:bg-white/5 text-text-primary font-bold transition hover:scale-105 hover:bg-black/10 dark:hover:bg-white/10"
-        title="Privacidad del Muro"
-      >
-        <Globe size={18} />
-        <span className="hidden sm:inline">Muro</span>
-      </button>
-      <button
-        onClick={() => setShowDataTransferModal(true)}
-        className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full bg-black/5 dark:bg-white/5 text-text-primary font-bold transition hover:scale-105 hover:bg-black/10 dark:hover:bg-white/10"
-        title="Importar historial desde Hevy o Strong en CSV"
-      >
-        <FileSpreadsheet size={18} className="text-accent" />
-        <span className="hidden sm:inline">Importar CSV</span>
-      </button>
-      <button
+        <button
+          onClick={() => setShowDataTransferModal(true)}
+          className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full bg-black/5 dark:bg-white/5 text-text-primary font-bold transition hover:scale-105 hover:bg-black/10 dark:hover:bg-white/10"
+          title="Importar historial desde Hevy o Strong en CSV"
+        >
+          <FileSpreadsheet size={18} className="text-accent" />
+          <span>Importar CSV</span>
+        </button>
+        <button
           onClick={() => setShowAIGenerator(true)}
           className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full font-bold transition hover:scale-105 bg-gradient-to-r from-accent via-purple-500 to-pink-500 text-white animate-gradient-x shadow-lg shadow-accent/20 border-none"
           title="Generar rutina con IA"
         >
-        <FaBrain size={16} />
-        <span className="hidden sm:inline">IA</span>
-      </button>
-      <button
-        onClick={() => {
-          setEditingRoutine({
-            name: '',
-            description: '',
-            exercises: [],
-            folder: selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : ''
-          });
-        }}
-        className="flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-accent-contrast font-bold transition hover:scale-105 shadow-lg shadow-accent/30 flex-1 md:flex-none"
-      >
-        <Plus size={18} />
-        Crear Rutina
-      </button>
-    </div>
-  );
+          <FaBrain size={16} />
+          <span>IA</span>
+        </button>
+        <button
+          onClick={() => {
+            setEditingRoutine({
+              name: '',
+              description: '',
+              exercises: [],
+              folder: selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : ''
+            });
+          }}
+          className="flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-accent-contrast font-bold transition hover:scale-105 shadow-lg shadow-accent/30 whitespace-nowrap"
+        >
+          <Plus size={18} />
+          <span>Crear Rutina</span>
+        </button>
+      </div>
+    );
+  };
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 pb-28 md:p-8 md:pb-8 animate-[fade-in_0.5s_ease_out]">

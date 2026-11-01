@@ -7,8 +7,9 @@ import { useToast } from '../hooks/useToast';
 import {
   UploadCloud, Download, FileSpreadsheet, CheckCircle2, AlertCircle,
   X, ChevronDown, ChevronUp, Dumbbell, Calendar, Layers, ShieldCheck,
-  RefreshCw, Sparkles, ArrowRight
+  RefreshCw, Sparkles, ArrowRight, Info
 } from 'lucide-react';
+import { FaMobileScreen, FaBolt } from 'react-icons/fa6';
 import { parseWorkoutCSV, exportWorkoutsToCSV, downloadCSVFile } from '../utils/csvWorkoutParser';
 import * as workoutService from '../services/workoutService';
 import Spinner from './Spinner';
@@ -237,7 +238,7 @@ export default function WorkoutDataTransferModal({ isOpen, onClose, initialTab =
   };
 
   return (
-    <ModalPortal>
+    <ModalPortal onClose={onClose}>
       <div
         className="fixed inset-0 z-[160] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-md animate-[fade-in_0.25s_ease-out]"
         onClick={isImporting ? undefined : onClose}
@@ -246,8 +247,11 @@ export default function WorkoutDataTransferModal({ isOpen, onClose, initialTab =
           className="relative w-full max-w-xl max-h-[92vh] sm:max-h-[85vh] bg-bg-primary rounded-t-[32px] sm:rounded-[32px] border border-glass-border shadow-2xl flex flex-col overflow-hidden animate-[slide-up_0.25s_ease-out] sm:animate-[scale-in_0.25s_ease-out]"
           onClick={e => e.stopPropagation()}
         >
+          {/* Drag handle for mobile */}
+          <div className="w-12 h-1.5 bg-black/15 dark:bg-white/20 rounded-full mx-auto mt-3 -mb-1 sm:hidden shrink-0 cursor-grab" />
+
           {/* Header */}
-          <div className="relative px-6 pt-6 pb-4 border-b border-glass-border flex items-center justify-between shrink-0">
+          <div className="relative px-6 pt-3 sm:pt-6 pb-4 border-b border-glass-border flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-2xl bg-accent/10 text-accent border border-accent/20">
                 <FileSpreadsheet size={22} />
@@ -341,8 +345,9 @@ export default function WorkoutDataTransferModal({ isOpen, onClose, initialTab =
                     </div>
 
                     {importSuccessData.skippedCount > 0 && (
-                      <p className="text-xs text-text-muted">
-                        ℹ️ {importSuccessData.skippedCount} entrenamientos omitidos porque ya estaban registrados en las mismas fechas.
+                      <p className="text-xs text-text-muted flex items-center justify-center gap-1.5">
+                        <Info size={14} className="shrink-0 text-accent" />
+                        <span>{importSuccessData.skippedCount} entrenamientos omitidos porque ya estaban registrados en las mismas fechas.</span>
                       </p>
                     )}
 
@@ -372,11 +377,17 @@ export default function WorkoutDataTransferModal({ isOpen, onClose, initialTab =
                         ¿De dónde vienes? Cómo obtener tu CSV:
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-text-secondary leading-relaxed">
-                        <div className="p-2.5 rounded-xl bg-surface/50 border border-glass-border">
-                          <span className="font-extrabold text-text-primary">📱 Hevy:</span> Ve a Perfil &gt; Ajustes ⚙️ &gt; <strong className="text-emerald-500">Exportar datos (CSV)</strong>.
+                        <div className="p-2.5 rounded-xl bg-surface/50 border border-glass-border flex items-start gap-2">
+                          <FaMobileScreen className="text-emerald-500 shrink-0 mt-0.5 text-xs" />
+                          <div>
+                            <span className="font-extrabold text-text-primary">Hevy:</span> Ve a Perfil &gt; Ajustes &gt; <strong className="text-emerald-500">Exportar datos (CSV)</strong>.
+                          </div>
                         </div>
-                        <div className="p-2.5 rounded-xl bg-surface/50 border border-glass-border">
-                          <span className="font-extrabold text-text-primary">⚡ Strong:</span> Ve a Configuración ⚙️ &gt; <strong className="text-blue-500">Exportar entrenamientos (CSV)</strong>.
+                        <div className="p-2.5 rounded-xl bg-surface/50 border border-glass-border flex items-start gap-2">
+                          <FaBolt className="text-blue-500 shrink-0 mt-0.5 text-xs" />
+                          <div>
+                            <span className="font-extrabold text-text-primary">Strong:</span> Ve a Configuración &gt; <strong className="text-blue-500">Exportar entrenamientos (CSV)</strong>.
+                          </div>
                         </div>
                       </div>
                     </div>
