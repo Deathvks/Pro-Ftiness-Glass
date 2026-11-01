@@ -1,3 +1,4 @@
+import LiquidGlassNavShader from './LiquidGlassNavShader';
 /* frontend/src/components/MainAppLayout.jsx */
 import React, { Suspense, lazy, useEffect, useState, useRef, startTransition } from 'react';
 import { Cog8ToothIcon as SettingsIcon, UserIcon } from '@heroicons/react/24/outline';
@@ -1433,24 +1434,18 @@ export default function MainAppLayout({
 
       </div>
 
-            {/* ESPACIO INFERIOR DIFUMINADO (Optimizado para Android de gama baja) */}
-      <div
-        className={`md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-40 bg-gradient-to-t from-bg-primary/40 to-transparent backdrop-blur-[6px] transition-opacity duration-300 ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
-        style={{
-          height: 'calc(var(--safe-bottom) + 100px)',
-          transform: 'translateZ(0)',
-        }}
-      ></div>
-
+            {/* Navbar Móvil Flotante con Shader WebGL2 Liquid Glass */}
       <div
         className={`md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isGlobalModalOpen ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
         style={{ bottom: 'calc(var(--safe-bottom) + 12px)' }}
       >
-        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative liquid-glass-navbar px-3">
+        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative liquid-glass-navbar px-3 rounded-full overflow-hidden">
+          {/* WebGL2 Liquid Glass Shader con aberración cromática y refracción óptica */}
+          <LiquidGlassNavShader activeX={dragX} isJumping={isJumping} />
           
           <nav 
             ref={navRef} 
-            className="relative w-full h-full flex justify-evenly items-center nav-touch-area"
+            className="relative z-10 w-full h-full flex justify-evenly items-center nav-touch-area"
             onTouchStart={handleDropDragStart}
             onTouchMove={handleDropDragMove}
             onTouchEnd={handleDropDragEnd}
