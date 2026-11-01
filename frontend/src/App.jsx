@@ -737,11 +737,11 @@ export default function App() {
   const hasUnseen = useMemo(() => hasStories && myStories.some(s => !s.viewed), [hasStories, myStories]);
 
   const navItems = useMemo(() => [
-    { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: (active) => <FaHouse className={`w-5 h-5 transition-transform ${active ? 'scale-110 drop-shadow' : 'opacity-70'}`} /> },
-    { id: 'social', label: t('Comunidad', { defaultValue: 'Comunidad' }), icon: (active) => <FaUsers className={`w-5 h-5 transition-transform ${active ? 'scale-110 drop-shadow' : 'opacity-70'}`} /> },
-    { id: 'nutrition', label: t('Nutrición', { defaultValue: 'Nutrición' }), icon: (active) => <FaUtensils className={`w-5 h-5 transition-transform ${active ? 'scale-110 drop-shadow' : 'opacity-70'}`} /> },
-    { id: 'routines', label: t('Rutinas', { defaultValue: 'Rutinas' }), icon: (active) => <FaDumbbell className={`w-5 h-5 transition-transform ${active ? 'scale-110 drop-shadow' : 'opacity-70'}`} /> },
-    { id: 'hub', label: t('Menú', { defaultValue: 'Menú' }), badge: !visitedHub || (unreadChats > 0), icon: (active) => <FaCompass className={`w-5 h-5 transition-transform ${active ? 'scale-110 drop-shadow' : 'opacity-70'}`} /> },
+    { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: <FaHouse className="w-5 h-5" /> },
+    { id: 'social', label: t('Comunidad', { defaultValue: 'Comunidad' }), icon: <FaUsers className="w-5 h-5" /> },
+    { id: 'nutrition', label: t('Nutrición', { defaultValue: 'Nutrición' }), icon: <FaUtensils className="w-5 h-5" /> },
+    { id: 'routines', label: t('Rutinas', { defaultValue: 'Rutinas' }), icon: <FaDumbbell className="w-5 h-5" /> },
+    { id: 'hub', label: t('Menú', { defaultValue: 'Menú' }), badge: !visitedHub || (unreadChats > 0), icon: <FaCompass className="w-5 h-5" /> },
   ], [t, visitedHub, unreadChats]);
 
   // Auto-recuperar perfil si el usuario está autenticado pero userProfile aún no tiene 'role' (ej: viniendo de noticias públicas o tras reload)

@@ -1177,11 +1177,11 @@ html.ocean-theme:not(.dark) .aurora-curtain {
     background-color: rgba(255, 255, 255, 0.12) !important;
     background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
     border-radius: 9999px !important;
-    border: 0.5px solid rgba(255, 255, 255, 0.25) !important;
+    border: 0.5px solid rgba(255, 255, 255, 0.20) !important;
     box-shadow:
       0 4px 12px -2px rgba(0, 0, 0, 0.25),
       0 0 14px -2px var(--color-accent-transparent),
-      inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.50),
+      inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.30),
       inset 0 -1px 0.5px 0 rgba(0, 0, 0, 0.15) !important;
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
@@ -1260,11 +1260,11 @@ html.ocean-theme:not(.dark) .aurora-curtain {
   html.oled-theme .liquid-glass-drop {
     background-color: rgba(255, 255, 255, 0.10) !important;
     background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
-    border: 0.5px solid rgba(255, 255, 255, 0.20) !important;
+    border: 0.5px solid rgba(255, 255, 255, 0.18) !important;
     box-shadow:
       0 4px 14px -2px rgba(0, 0, 0, 0.60),
       0 0 16px -2px var(--color-accent-transparent),
-      inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.45) !important;
+      inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.30) !important;
   }
 
   html.oled-theme .liquid-glass-sidebar {
@@ -1290,11 +1290,11 @@ html.ocean-theme:not(.dark) .aurora-curtain {
   html.galaxy-theme .liquid-glass-drop {
     background-color: rgba(168, 85, 247, 0.18) !important;
     background-image: linear-gradient(135deg, rgba(168, 85, 247, 0.28) 0%, rgba(59, 130, 246, 0.08) 100%) !important;
-    border: 0.5px solid rgba(168, 85, 247, 0.35) !important;
+    border: 0.5px solid rgba(168, 85, 247, 0.25) !important;
     box-shadow:
       0 4px 14px -2px rgba(8, 8, 20, 0.50),
       0 0 16px -2px rgba(168, 85, 247, 0.35),
-      inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.55) !important;
+      inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.35) !important;
   }
 
   html.galaxy-theme .liquid-glass-sidebar {
