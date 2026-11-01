@@ -1437,15 +1437,7 @@ export default function MainAppLayout({
 
       </div>
 
-      {/* ESPACIO INFERIOR DIFUMINADO (Suave y translúcido para permitir refracción real en el navbar) */}
-      <div
-        className={`md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-40 bg-gradient-to-t from-bg-primary/45 via-bg-primary/10 to-transparent transition-opacity duration-300 ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
-        style={{
-          height: 'calc(var(--safe-bottom) + 65px)',
-          transform: 'translateZ(0)',
-        }}
-      ></div>
-
+      {/* Navbar Móvil Flotante Liquid Glass */}
       <div
         className={`md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isGlobalModalOpen ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
         style={{ bottom: 'calc(var(--safe-bottom) + 12px)' }}

@@ -1154,19 +1154,19 @@ html.ocean-theme:not(.dark) .aurora-curtain {
      APPLE HIG LIQUID GLASS (mid-2026) - Floating Functional Navigation Layer
      ========================================================================== */
   .liquid-glass-navbar {
-    /* Mobile Floating Capsule: Theme-adaptive Apple Liquid Glass */
-    background-color: rgba(var(--bg-primary-rgb, 15, 23, 42), 0.22) !important;
-    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.05) 40%, rgba(255, 255, 255, 0.01) 100%) !important;
-    backdrop-filter: blur(18px) saturate(190%) brightness(1.12) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(190%) brightness(1.12) !important;
+    /* Mobile Floating Capsule: True Ultra-Translucent Apple Liquid Glass */
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(255, 255, 255, 0) 100%) !important;
+    backdrop-filter: blur(16px) saturate(190%) brightness(1.14) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(190%) brightness(1.14) !important;
     border-radius: 9999px !important;
-    border: 1px solid rgba(255, 255, 255, 0.24) !important;
+    border: 1px solid rgba(255, 255, 255, 0.30) !important;
     box-shadow:
-      0 16px 40px -4px rgba(0, 0, 0, 0.40),
-      0 4px 14px -2px rgba(0, 0, 0, 0.20),
-      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.60),   /* Crisp specular top rim */
-      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.30),          /* Curvature bottom rim */
-      inset 0 0 20px 0 rgba(255, 255, 255, 0.06) !important; /* Diffuse internal glass glow */
+      0 16px 36px -4px rgba(0, 0, 0, 0.35),
+      0 4px 12px -2px rgba(0, 0, 0, 0.15),
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.70),   /* Crisp crystalline top rim */
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.25),          /* Curvature bottom rim */
+      inset 0 0 14px 0 rgba(255, 255, 255, 0.08) !important; /* Internal glass prism glow */
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
     will-change: transform;
@@ -1175,15 +1175,15 @@ html.ocean-theme:not(.dark) .aurora-curtain {
 
   /* Single Fluid Liquid Glass Droplet / Lens - GPU Optimized (No nested backdrop-filter for iPhone WebKit) */
   .liquid-glass-drop {
-    background-color: rgba(255, 255, 255, 0.12) !important;
-    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.04) 100%) !important;
+    background-color: rgba(255, 255, 255, 0.16) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.06) 100%) !important;
     border-radius: 9999px !important;
-    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    border: 1px solid rgba(255, 255, 255, 0.45) !important;
     box-shadow:
-      0 4px 14px -2px rgba(0, 0, 0, 0.30),
-      0 0 16px -2px var(--color-accent-transparent),
-      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.75), /* Specular top light */
-      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.20) !important; /* Bottom refraction bevel */
+      0 4px 14px -2px rgba(0, 0, 0, 0.35),
+      0 0 18px -2px var(--color-accent-transparent),
+      inset 0 2px 1.5px 0 rgba(255, 255, 255, 0.85), /* Specular top light */
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.25) !important; /* Bottom refraction bevel */
     transform: translateZ(0);
     -webkit-transform: translateZ(0);
     will-change: transform;
@@ -1208,17 +1208,17 @@ html.ocean-theme:not(.dark) .aurora-curtain {
 
   /* --- LIGHT THEME ADAPTATION --- */
   html.light-theme .liquid-glass-navbar {
-    background-color: rgba(255, 255, 255, 0.40) !important;
-    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.30) 100%) !important;
-    backdrop-filter: blur(18px) saturate(190%) brightness(1.04) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(190%) brightness(1.04) !important;
+    background-color: rgba(255, 255, 255, 0.32) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.70) 0%, rgba(255, 255, 255, 0.20) 100%) !important;
+    backdrop-filter: blur(16px) saturate(190%) brightness(1.05) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(190%) brightness(1.05) !important;
     border: 1px solid rgba(255, 255, 255, 0.90) !important;
     box-shadow:
       0 12px 32px -4px rgba(15, 23, 42, 0.10),
       0 4px 10px rgba(15, 23, 42, 0.04),
       inset 0 1.5px 1px 0 #ffffff,
       inset 0 -1px 0.5px 0 rgba(0, 0, 0, 0.05),
-      inset 0 0 20px 0 rgba(255, 255, 255, 0.50) !important;
+      inset 0 0 20px 0 rgba(255, 255, 255, 0.40) !important;
   }
 
   html.light-theme .liquid-glass-drop {
@@ -1248,26 +1248,26 @@ html.ocean-theme:not(.dark) .aurora-curtain {
 
   /* --- OLED THEME ADAPTATION --- */
   html.oled-theme .liquid-glass-navbar {
-    background-color: rgba(0, 0, 0, 0.25) !important;
-    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(0, 0, 0, 0) 100%) !important;
-    backdrop-filter: blur(18px) saturate(190%) brightness(1.15) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(190%) brightness(1.15) !important;
-    border: 1px solid rgba(255, 255, 255, 0.20) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(0, 0, 0, 0) 100%) !important;
+    backdrop-filter: blur(16px) saturate(190%) brightness(1.15) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(190%) brightness(1.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.26) !important;
     box-shadow:
       0 20px 50px -4px rgba(0, 0, 0, 0.85),
-      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.55),
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.65),
       inset 0 -1px 1px 0 rgba(255, 255, 255, 0.05),
-      inset 0 0 18px 0 rgba(255, 255, 255, 0.03) !important;
+      inset 0 0 16px 0 rgba(255, 255, 255, 0.05) !important;
   }
 
   html.oled-theme .liquid-glass-drop {
-    background-color: rgba(255, 255, 255, 0.10) !important;
-    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.26) !important;
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.30) !important;
     box-shadow:
       0 4px 16px -2px rgba(0, 0, 0, 0.60),
       0 0 16px -2px var(--color-accent-transparent),
-      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.65) !important;
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.70) !important;
   }
 
   html.oled-theme .liquid-glass-sidebar {
@@ -1278,15 +1278,15 @@ html.ocean-theme:not(.dark) .aurora-curtain {
 
   /* --- GALAXY THEME ADAPTATION --- */
   html.galaxy-theme .liquid-glass-navbar {
-    background-color: rgba(8, 8, 20, 0.24) !important;
+    background-color: rgba(168, 85, 247, 0.08) !important;
     background-image: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(59, 130, 246, 0.08) 45%, rgba(255, 255, 255, 0.02) 100%) !important;
-    backdrop-filter: blur(18px) saturate(190%) brightness(1.15) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(190%) brightness(1.15) !important;
+    backdrop-filter: blur(16px) saturate(190%) brightness(1.15) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(190%) brightness(1.15) !important;
     border: 1px solid rgba(168, 85, 247, 0.35) !important;
     box-shadow:
       0 20px 50px -4px rgba(8, 8, 20, 0.85),
       0 0 24px -2px rgba(168, 85, 247, 0.25),
-      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.60),
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.65),
       inset 0 -1px 1px 0 rgba(0, 0, 0, 0.40),
       inset 0 0 20px 0 rgba(168, 85, 247, 0.15) !important;
   }
@@ -1310,28 +1310,28 @@ html.ocean-theme:not(.dark) .aurora-curtain {
 
   /* --- OCEAN THEME ADAPTATION --- */
   html.ocean-theme .liquid-glass-navbar {
-    background-color: rgba(var(--bg-primary-rgb), 0.22) !important;
+    background-color: rgba(56, 189, 248, 0.08) !important;
     background-image: linear-gradient(135deg, rgba(56, 189, 248, 0.22) 0%, rgba(14, 165, 233, 0.06) 50%, rgba(255, 255, 255, 0.02) 100%) !important;
-    backdrop-filter: blur(18px) saturate(190%) brightness(1.12) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(190%) brightness(1.12) !important;
+    backdrop-filter: blur(16px) saturate(190%) brightness(1.15) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(190%) brightness(1.15) !important;
     border: 1px solid rgba(56, 189, 248, 0.35) !important;
     box-shadow:
       0 18px 44px -4px rgba(8, 47, 73, 0.45),
       0 0 20px -2px rgba(56, 189, 248, 0.20),
-      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.60) !important;
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.65) !important;
   }
 
   /* --- DESERT THEME ADAPTATION --- */
   html.desert-theme .liquid-glass-navbar {
-    background-color: rgba(var(--bg-primary-rgb), 0.22) !important;
-    background-image: linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(217, 119, 6, 0.05) 50%, rgba(255, 255, 255, 0.02) 100%) !important;
-    backdrop-filter: blur(18px) saturate(190%) brightness(1.12) !important;
-    -webkit-backdrop-filter: blur(18px) saturate(190%) brightness(1.12) !important;
+    background-color: rgba(245, 158, 11, 0.08) !important;
+    background-image: linear-gradient(135deg, rgba(245, 158, 11, 0.20) 0%, rgba(217, 119, 6, 0.05) 50%, rgba(255, 255, 255, 0.02) 100%) !important;
+    backdrop-filter: blur(16px) saturate(190%) brightness(1.15) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(190%) brightness(1.15) !important;
     border: 1px solid rgba(245, 158, 11, 0.30) !important;
     box-shadow:
       0 18px 44px -4px rgba(44, 30, 22, 0.40),
       0 0 20px -2px rgba(245, 158, 11, 0.18),
-      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.60) !important;
+      inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.65) !important;
   }
 
   /* Liquid Glass Buttons Unification */
