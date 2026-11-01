@@ -1,6 +1,6 @@
 {
-  "version": "7.11.38",
-  "releaseNotes": "Actualización v7.11.38: Corrección en modales de historias para récords (PR) y resumen dominical: logotipo oficial más grande sin contenedor de fondo y carga garantizada de la foto de perfil en producción con proxy inverso y fallback.",
+  "version": "7.11.39",
+  "releaseNotes": "Actualización v7.11.39: Optimización del aviso de mantenimiento en móvil reduciéndolo a 1 sola línea compacta y habilitación de scroll completo y fluido en la página informativa de migración.",
   "welcome": {
     "title": "Portal de Noticias y Estabilidad",
     "subtitle": "Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y máxima estabilidad en toda la app.",

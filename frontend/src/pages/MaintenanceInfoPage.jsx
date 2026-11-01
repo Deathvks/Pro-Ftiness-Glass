@@ -39,7 +39,7 @@ export default function MaintenanceInfoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-primary text-text-primary selection:bg-amber-500/30">
+    <div className="fixed inset-0 z-50 bg-bg-primary text-text-primary overflow-y-auto overflow-x-hidden custom-scrollbar selection:bg-amber-500/30">
       <Helmet>
         <title>Mantenimiento Programado y Nueva Infraestructura — Pro Fitness Glass</title>
         <meta
@@ -59,7 +59,7 @@ export default function MaintenanceInfoPage() {
       </Helmet>
 
       <div 
-        className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10" 
+        className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 pb-[calc(var(--safe-bottom,env(safe-area-inset-bottom,0px))+4rem)]" 
         style={{ paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 1.5rem)' }}
       >
         {/* Barra superior de navegación */}

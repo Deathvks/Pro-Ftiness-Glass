@@ -930,6 +930,8 @@ export default function App() {
     location.pathname === '/ejercicios' ||
     location.pathname === '/sobre-nosotros' ||
     location.pathname === '/faq' ||
+    location.pathname === '/mantenimiento' ||
+    location.pathname === '/migracion' ||
     location.pathname === '/privacy' ||
     location.pathname === '/terms' ||
     location.pathname.startsWith('/share/') ||
