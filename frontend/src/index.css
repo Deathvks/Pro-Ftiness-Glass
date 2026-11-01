@@ -1188,12 +1188,12 @@ html.ocean-theme:not(.dark) .aurora-curtain {
 
   /* Desktop Sidebar Liquid Glass (macOS style) */
   .liquid-glass-sidebar {
-    background-color: rgba(var(--bg-primary-rgb, 15, 23, 42), 0.65) !important;
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
-    backdrop-filter: blur(28px) saturate(190%) brightness(1.08) !important;
-    -webkit-backdrop-filter: blur(28px) saturate(190%) brightness(1.08) !important;
-    border-right: 1.5px solid rgba(255, 255, 255, 0.14) !important;
-    box-shadow: 6px 0 30px rgba(0, 0, 0, 0.25) !important;
+    background-color: rgba(var(--bg-primary-rgb, 15, 23, 42), 0.28) !important;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.01) 100%) !important;
+    backdrop-filter: blur(20px) saturate(180%) brightness(1.05) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.05) !important;
+    border-right: 1.5px solid rgba(255, 255, 255, 0.10) !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15) !important;
   }
 
   .liquid-glass-sidebar-active {
@@ -1230,10 +1230,10 @@ html.ocean-theme:not(.dark) .aurora-curtain {
   }
 
   html.light-theme .liquid-glass-sidebar {
-    background-color: rgba(255, 255, 255, 0.75) !important;
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.60) 100%) !important;
-    border-right: 1.5px solid rgba(0, 0, 0, 0.08) !important;
-    box-shadow: 6px 0 24px rgba(15, 23, 42, 0.08) !important;
+    background-color: rgba(255, 255, 255, 0.40) !important;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.70) 0%, rgba(255, 255, 255, 0.25) 100%) !important;
+    border-right: 1.5px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 4px 0 20px rgba(15, 23, 42, 0.05) !important;
   }
 
   html.light-theme .liquid-glass-sidebar-active {
@@ -1266,9 +1266,9 @@ html.ocean-theme:not(.dark) .aurora-curtain {
   }
 
   html.oled-theme .liquid-glass-sidebar {
-    background-color: rgba(0, 0, 0, 0.78) !important;
-    border-right: 1.5px solid rgba(255, 255, 255, 0.12) !important;
-    box-shadow: 6px 0 32px rgba(0, 0, 0, 0.85) !important;
+    background-color: rgba(0, 0, 0, 0.38) !important;
+    border-right: 1.5px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 6px 0 32px rgba(0, 0, 0, 0.60) !important;
   }
 
   /* --- GALAXY THEME ADAPTATION --- */
@@ -1295,10 +1295,10 @@ html.ocean-theme:not(.dark) .aurora-curtain {
   }
 
   html.galaxy-theme .liquid-glass-sidebar {
-    background-color: rgba(8, 8, 20, 0.72) !important;
-    background-image: linear-gradient(180deg, rgba(168, 85, 247, 0.12) 0%, rgba(59, 130, 246, 0.04) 100%) !important;
-    border-right: 1.5px solid rgba(168, 85, 247, 0.28) !important;
-    box-shadow: 6px 0 32px rgba(8, 8, 20, 0.75) !important;
+    background-color: rgba(8, 8, 20, 0.32) !important;
+    background-image: linear-gradient(180deg, rgba(168, 85, 247, 0.08) 0%, rgba(59, 130, 246, 0.02) 100%) !important;
+    border-right: 1.5px solid rgba(168, 85, 247, 0.20) !important;
+    box-shadow: 6px 0 32px rgba(8, 8, 20, 0.60) !important;
   }
 
   /* --- OCEAN THEME ADAPTATION --- */

@@ -6,13 +6,39 @@ const MAX_RELOADS_PER_WINDOW = 2;
 export const clearAppRuntimeCache = async () => {
   const cleanupTasks = [];
 
+  const isIOS =
+    typeof navigator !== "undefined" &&
+    (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+  const isStandalone =
+    typeof window !== "undefined" &&
+    (window.navigator.standalone ||
+      window.matchMedia("(display-mode: standalone)").matches);
+
   if (typeof window !== "undefined" && "caches" in window) {
+    // Si estamos en iOS PWA, no borrar las precachés de la app para no dejar a WebKit sin assets durante la recarga
     cleanupTasks.push(
-      caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      caches.keys().then((keys) =>
+        Promise.all(
+          keys
+            .filter(
+              (key) =>
+                !isStandalone ||
+                key.includes("api-") ||
+                key.includes("runtime") ||
+                key.includes("user-uploads") ||
+                key.includes("dynamic")
+            )
+            .map((key) => caches.delete(key))
+        )
+      )
     );
   }
 
-  if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+  // NUNCA desregistrar el Service Worker en iOS PWA durante una recarga en caliente:
+  // en WebKit standalone, desregistrar el SW en caliente deja la petición de navegación en deadlock,
+  // congelando la app indefinidamente en la pantalla de carga (splash screen) hasta forzar cierre.
+  if (!isIOS && !isStandalone && typeof navigator !== "undefined" && "serviceWorker" in navigator) {
     cleanupTasks.push(
       navigator.serviceWorker.getRegistrations().then((registrations) =>
         Promise.all(registrations.map((registration) => registration.unregister()))
@@ -85,8 +111,22 @@ export const reloadAppWithoutStaleCache = async ({ path } = {}) => {
   } catch {}
 
   const targetPath = path || "/";
-  const freshUrl = new URL(targetPath, window.location.origin);
-  freshUrl.searchParams.set("pfg_fresh", String(now));
-  window.location.replace(freshUrl.toString());
+  const isIOS =
+    typeof navigator !== "undefined" &&
+    (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+  const isStandalone =
+    typeof window !== "undefined" &&
+    (window.navigator.standalone ||
+      window.matchMedia("(display-mode: standalone)").matches);
+
+  if (isIOS || isStandalone) {
+    // En iOS PWA navegar a URL limpia sin parámetros para no romper el match de precache en Workbox
+    window.location.href = window.location.origin + targetPath;
+  } else {
+    const freshUrl = new URL(targetPath, window.location.origin);
+    freshUrl.searchParams.set("pfg_fresh", String(now));
+    window.location.replace(freshUrl.toString());
+  }
   return true;
 };

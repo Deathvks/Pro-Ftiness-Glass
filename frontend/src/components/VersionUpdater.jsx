@@ -146,7 +146,36 @@ const SWUpdaterCore = () => {
   const handleApplyUpdate = async () => {
     if (isUpdating) return;
     setIsUpdating(true);
-    await reloadAppWithoutStaleCache();
+
+    try {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (registration) {
+          if (registration.waiting) {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
+          try {
+            await registration.update();
+          } catch {}
+        }
+      }
+    } catch {}
+
+    try {
+      sessionStorage.removeItem('pfg_auto_reloaded_version');
+      sessionStorage.removeItem('pfg_last_chunk_autoreload');
+      sessionStorage.removeItem('pfg_last_safe_reload_time');
+      sessionStorage.removeItem('pfg_reload_count');
+      localStorage.removeItem('pfg_auto_reloaded_version');
+      localStorage.removeItem('pfg_crash_loop_count');
+      localStorage.removeItem('lastView');
+    } catch {}
+
+    // Pausa suave para permitir al nuevo Service Worker tomar el control
+    await new Promise((r) => setTimeout(r, 250));
+
+    // Navegación limpia sin desregistrar el Service Worker (evita congelar WebKit en iOS PWA)
+    window.location.href = window.location.origin + '/';
   };
 
   // Si no hay versión pendiente o el usuario descartó el aviso en esta sesión:
