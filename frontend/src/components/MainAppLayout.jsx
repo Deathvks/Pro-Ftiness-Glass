@@ -1433,11 +1433,16 @@ export default function MainAppLayout({
 
       </div>
 
-      {/* ESPACIO INFERIOR DIFUMINADO (Optimizado para Android de gama baja) */}
+      {/* ESPACIO INFERIOR DIFUMINADO - Apple Scroll Edge Effect */}
       <div
-        className={`md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-40 bg-gradient-to-t from-bg-primary via-bg-primary/80 to-transparent transition-opacity duration-300 ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
+        className={`md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-40 transition-opacity duration-300 ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
         style={{
-          height: 'calc(var(--safe-bottom) + 100px)',
+          height: 'calc(var(--safe-bottom) + 104px)',
+          background: 'linear-gradient(to top, var(--bg-primary) 35%, rgba(var(--bg-primary-rgb), 0.75) 70%, transparent 100%)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          maskImage: 'linear-gradient(to top, black 40%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to top, black 40%, transparent 100%)',
           transform: 'translateZ(0)',
         }}
       ></div>
@@ -1446,7 +1451,7 @@ export default function MainAppLayout({
         className={`md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isGlobalModalOpen ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
         style={{ bottom: 'calc(var(--safe-bottom) + 12px)' }}
       >
-        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
+        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative liquid-glass-navbar px-3">
           
           <nav 
             ref={navRef} 
@@ -1459,16 +1464,12 @@ export default function MainAppLayout({
             
             <div
               ref={dropRef}
-              className="absolute top-1/2 w-[60px] h-12 rounded-[24px] pointer-events-none z-[1] flex items-start justify-center"
+              className="absolute top-1/2 w-[62px] h-12 rounded-full pointer-events-none z-[1] flex items-start justify-center liquid-glass-drop"
               style={{
                 left: 0,
-                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) ${isJumping ? 'scaleX(1.3) scaleY(0.75)' : 'scaleX(1) scaleY(1)'}`,
+                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) ${isJumping ? 'scaleX(1.25) scaleY(0.8)' : 'scaleX(1) scaleY(1)'}`,
                 opacity: isDropVisible ? 1 : 0,
-                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)',
-                backdropFilter: 'blur(8px) brightness(1.1)',
-                WebkitBackdropFilter: 'blur(8px) brightness(1.1)',
-                boxShadow: 'inset 0px 1px 1px rgba(255,255,255,0.25), inset 0px -1px 2px rgba(0,0,0,0.15), 0px 4px 10px rgba(0,0,0,0.15)',
+                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.42s cubic-bezier(0.28, 0.11, 0.32, 1), opacity 0.25s ease',
                 willChange: 'transform'
               }}
             >
@@ -1488,12 +1489,12 @@ export default function MainAppLayout({
                   onMouseEnter={() => preloadView && preloadView(item.id)}
                   onTouchStart={() => preloadView && preloadView(item.id)}
                   onClick={() => handleNavClick(item.id)}
-                  className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-colors duration-300 ease-out active:scale-90 outline-none focus:outline-none ring-0 ${isVisuallyActive ? '' : 'text-text-secondary'}`}
+                  className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-all duration-200 ease-[cubic-bezier(0.28,0.11,0.32,1)] active:scale-[0.92] active:opacity-80 outline-none focus:outline-none ring-0 ${isVisuallyActive ? '' : 'text-text-secondary/75 hover:text-text-primary'}`}
                   style={{ color: isVisuallyActive ? 'var(--color-accent)' : undefined, animationDelay: `${index * 100}ms`, animationFillMode: 'both', WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <div className={`transition-transform duration-300 ${isVisuallyActive ? 'scale-125' : 'group-hover:scale-110'} relative`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
+                  <div className={`transition-transform duration-300 ease-[cubic-bezier(0.28,0.11,0.32,1)] ${isVisuallyActive ? 'scale-120' : 'group-hover:scale-105'} relative`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
                     {typeof item.icon === 'function' ? item.icon(isVisuallyActive) : item.icon}
-                    {pendingCount > 0 && <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-accent rounded-full border-[1.5px] border-bg-primary z-10 pointer-events-none"></span>}
+                    {pendingCount > 0 && <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-accent rounded-full border-[1.5px] border-bg-primary z-10 pointer-events-none shadow-sm"></span>}
                     {pendingCount === 0 && item.badge && (
                       <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-accent rounded-full border-[1.5px] border-bg-primary z-10 pointer-events-none">
                         <span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-75"></span>
