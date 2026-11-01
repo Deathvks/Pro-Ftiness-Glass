@@ -1,19 +1,22 @@
 /* frontend/src/components/PRShareCard.jsx */
-import React, { forwardRef, useMemo } from 'react';
+import React, { forwardRef, useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TrendingUp, Crown, CheckCircle2 } from 'lucide-react';
 import { FaTrophy, FaCalendarAlt, FaDumbbell, FaUserCircle } from 'react-icons/fa';
 import { APP_LOGO_BASE64 } from '../assets/logoBase64';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const BACKEND_HOST = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BACKEND_HOST = (API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL) || 'https://pro-fitness-glass-api.zeabur.app';
 
 const PRShareCard = forwardRef(({ prData, userName, userImage, customBgPhoto }, ref) => {
     const { t, i18n } = useTranslation(['translation', 'exercise_names']);
+    const [imgError, setImgError] = useState(false);
+
+    const rawUserImage = userImage || prData?.userAvatar || prData?.userImage;
 
     const profileImgSrc = useMemo(() => {
-        if (!userImage) return null;
-        let url = userImage;
+        if (!rawUserImage) return null;
+        let url = rawUserImage;
 
         if (!url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('blob:')) {
              const separator = url.startsWith('/') ? '' : '/';
@@ -26,7 +29,11 @@ const PRShareCard = forwardRef(({ prData, userName, userImage, customBgPhoto }, 
         }
 
         return url;
-    }, [userImage]);
+    }, [rawUserImage]);
+
+    useEffect(() => {
+        setImgError(false);
+    }, [profileImgSrc]);
 
     if (!prData) return null;
 
@@ -109,16 +116,14 @@ const PRShareCard = forwardRef(({ prData, userName, userImage, customBgPhoto }, 
                 <div className="flex flex-col gap-6">
                     <div className="flex justify-between items-center w-full">
                         <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-600 flex items-center justify-center shadow-xl border border-yellow-400/30 overflow-hidden shrink-0">
-                                <img 
-                                    src={APP_LOGO_BASE64} 
-                                    alt="Pro Fitness Glass" 
-                                    className="w-10 h-10 object-contain drop-shadow" 
-                                    loading="eager"
-                                    decoding="sync"
-                                    onError={(e) => { e.currentTarget.src = '/logo.webp'; }}
-                                />
-                            </div>
+                            <img 
+                                src={APP_LOGO_BASE64} 
+                                alt="Pro Fitness Glass" 
+                                className="w-20 h-20 object-contain drop-shadow-2xl shrink-0" 
+                                loading="eager"
+                                decoding="sync"
+                                onError={(e) => { e.currentTarget.src = '/logo.webp'; }}
+                            />
                             <div className="flex flex-col">
                                 <span className="text-3xl font-black tracking-wider text-white uppercase italic drop-shadow-md">
                                     Pro Fitness Glass
@@ -141,13 +146,15 @@ const PRShareCard = forwardRef(({ prData, userName, userImage, customBgPhoto }, 
                     <div className="flex items-center justify-between bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl">
                         <div className="flex items-center gap-4">
                             <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-yellow-400/50 bg-black/40 flex items-center justify-center shrink-0 shadow-lg">
-                                {profileImgSrc ? (
+                                {!imgError && profileImgSrc ? (
                                     <img 
                                         src={profileImgSrc} 
                                         alt={safeUserName} 
                                         className="w-full h-full object-cover" 
-                                        crossOrigin="anonymous" 
+                                        loading="eager"
+                                        decoding="sync"
                                         referrerPolicy="no-referrer"
+                                        onError={() => setImgError(true)}
                                     />
                                 ) : (
                                     <FaUserCircle className="w-full h-full text-gray-500" />
@@ -235,7 +242,7 @@ const PRShareCard = forwardRef(({ prData, userName, userImage, customBgPhoto }, 
                         <img 
                             src={APP_LOGO_BASE64} 
                             alt="Pro Fitness Glass" 
-                            className="w-8 h-8 object-contain rounded-xl drop-shadow shrink-0" 
+                            className="w-10 h-10 object-contain rounded-xl drop-shadow-lg shrink-0" 
                             loading="eager"
                             decoding="sync"
                             onError={(e) => { e.currentTarget.src = '/logo.webp'; }}

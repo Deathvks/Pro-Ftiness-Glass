@@ -171,7 +171,11 @@ app.use(express.static(staticPath, {
   maxAge: '7d',        // El navegador/app guarda los archivos 7 días sin volver a pedirlos
   etag: true,          // Si el archivo cambia en el servidor, se descarga la versión nueva
   lastModified: true,  // Permite al navegador verificar si el archivo fue modificado
-  immutable: false     // Los archivos pueden cambiar (ej: foto de perfil actualizada)
+  immutable: false,    // Los archivos pueden cambiar (ej: foto de perfil actualizada)
+  setHeaders: (res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
 }));
 
 // --- Rutas API ---

@@ -141,7 +141,7 @@ const PRToast = ({ newPRs, onClose }) => {
           ref={prCardRef}
           prData={prShareData}
           userName={userProfile?.username}
-          userImage={userProfile?.profile_image || userProfile?.profile_image_url}
+          userImage={userProfile?.profile_image_url || userProfile?.avatar || userProfile?.profile_image || userProfile?.avatar_url}
           customBgPhoto={customPhoto}
         />
       </div>
@@ -276,7 +276,7 @@ const PRToast = ({ newPRs, onClose }) => {
                   <PRShareCard
                     prData={prShareData}
                     userName={userProfile?.username}
-                    userImage={userProfile?.profile_image || userProfile?.profile_image_url}
+                    userImage={userProfile?.profile_image_url || userProfile?.avatar || userProfile?.profile_image || userProfile?.avatar_url}
                     customBgPhoto={customPhoto}
                   />
                 </div>

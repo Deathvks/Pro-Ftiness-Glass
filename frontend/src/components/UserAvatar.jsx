@@ -6,7 +6,7 @@ import useAppStore from '../store/useAppStore';
 import NetworkIndicatorBadge from './NetworkIndicatorBadge';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-const BACKEND_HOST = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+const BACKEND_HOST = (API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL) || 'https://pro-fitness-glass-api.zeabur.app';
 
 const SIZE_MAP = {
     6: 'w-6 h-6',
@@ -52,15 +52,16 @@ const UserAvatar = ({
     const roleConfig = getUserRoleRingConfig(user, viewerProfile);
 
     const getSecureImageUrl = () => {
-        const rawUrl = user?.profile_image_url || user?.avatar || user?.profile_image;
+        const rawUrl = user?.profile_image_url || user?.avatar || user?.profile_image || user?.avatar_url;
         if (!rawUrl) return null;
 
         let url = rawUrl;
 
-        // 1. Si es ruta relativa (ej: /uploads/foto.jpg), añadir el host del backend
-        if (!url.startsWith('http') && !url.startsWith('blob:')) {
+        // 1. Si es ruta relativa (ej: /uploads/foto.jpg o /images/...), añadir el host del backend
+        if (!url.startsWith('http') && !url.startsWith('blob:') && !url.startsWith('data:')) {
             const separator = url.startsWith('/') ? '' : '/';
-            url = BACKEND_HOST ? `${BACKEND_HOST}${separator}${url}` : `${separator}${url}`;
+            const host = BACKEND_HOST || 'https://pro-fitness-glass-api.zeabur.app';
+            url = `${host}${separator}${url}`;
         }
 
         // 2. FORZAR HTTPS (Solo si NO es localhost)

@@ -40,6 +40,18 @@
         }
     }
 
+    handle /uploads/* {
+        reverse_proxy https://pro-fitness-glass-api.zeabur.app {
+            header_up Host pro-fitness-glass-api.zeabur.app
+        }
+    }
+
+    handle /images/* {
+        reverse_proxy https://pro-fitness-glass-api.zeabur.app {
+            header_up Host pro-fitness-glass-api.zeabur.app
+        }
+    }
+
     # Si se solicita un asset en /assets/* que NO existe físicamente en disco, devolver 404 inmediato.
     # Evita que chunks obsoletos devuelvan index.html con código 200 y se guarden en caché como JS roto.
     @missingAsset {

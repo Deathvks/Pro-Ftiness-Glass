@@ -1,5 +1,5 @@
 /* frontend/src/components/WeeklyRecapCard.jsx */
-import React, { forwardRef, useMemo } from 'react';
+import React, { forwardRef, useMemo, useState, useEffect } from 'react';
 import { APP_LOGO_BASE64 } from '../assets/logoBase64';
 import { 
     getFunWeightComparison, 
@@ -18,16 +18,17 @@ import {
     FaDumbbell
 } from 'react-icons/fa';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const BACKEND_HOST = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BACKEND_HOST = (API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL) || 'https://pro-fitness-glass-api.zeabur.app';
 
 const WeeklyRecapCard = forwardRef(({ weeklyData, userProfile }, ref) => {
     if (!weeklyData) return null;
+    const [imgError, setImgError] = useState(false);
 
     const { totalVolume, totalWorkouts, totalDuration, totalCalories } = weeklyData;
     
     const { username } = userProfile || { username: 'Usuario' };
-    const rawProfileImage = userProfile?.profile_image || userProfile?.profile_image_url;
+    const rawProfileImage = userProfile?.profile_image_url || userProfile?.avatar || userProfile?.profile_image || userProfile?.avatar_url;
 
     const profileImgSrc = useMemo(() => {
         if (!rawProfileImage) return null;
@@ -45,6 +46,10 @@ const WeeklyRecapCard = forwardRef(({ weeklyData, userProfile }, ref) => {
 
         return url;
     }, [rawProfileImage]);
+
+    useEffect(() => {
+        setImgError(false);
+    }, [profileImgSrc]);
 
     // Generamos las comparaciones solo si hay datos reales
     const weightComp = useMemo(() => totalVolume > 0 ? getFunWeightComparison(totalVolume) : null, [totalVolume]);
@@ -82,16 +87,14 @@ const WeeklyRecapCard = forwardRef(({ weeklyData, userProfile }, ref) => {
                 {/* 1. BRANDING SUPERIOR: LOGO OFICIAL + PRO FITNESS GLASS + FECHA */}
                 <div className="flex justify-between items-center w-full mb-10 px-4">
                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-500 via-indigo-600 to-purple-600 flex items-center justify-center shadow-xl border border-blue-400/30 overflow-hidden shrink-0">
-                            <img 
-                                src={APP_LOGO_BASE64} 
-                                alt="Pro Fitness Glass" 
-                                className="w-10 h-10 object-contain drop-shadow" 
-                                loading="eager"
-                                decoding="sync"
-                                onError={(e) => { e.currentTarget.src = '/logo.webp'; }}
-                            />
-                        </div>
+                        <img 
+                            src={APP_LOGO_BASE64} 
+                            alt="Pro Fitness Glass" 
+                            className="w-20 h-20 object-contain drop-shadow-2xl shrink-0" 
+                            loading="eager"
+                            decoding="sync"
+                            onError={(e) => { e.currentTarget.src = '/logo.webp'; }}
+                        />
                         <div className="flex flex-col">
                             <span className="text-3xl font-black tracking-wider text-white uppercase italic drop-shadow-md">
                                 Pro Fitness Glass
@@ -116,13 +119,15 @@ const WeeklyRecapCard = forwardRef(({ weeklyData, userProfile }, ref) => {
                         <div className="relative group shrink-0">
                             <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-full blur-lg opacity-60" />
                             <div className="w-20 h-20 rounded-full border-2 border-blue-400/50 overflow-hidden relative z-10 bg-[#222] flex items-center justify-center shadow-lg">
-                                {profileImgSrc ? (
+                                {!imgError && profileImgSrc ? (
                                     <img 
                                         src={profileImgSrc} 
                                         alt={username} 
                                         className="w-full h-full object-cover" 
-                                        crossOrigin="anonymous" 
+                                        loading="eager"
+                                        decoding="sync"
                                         referrerPolicy="no-referrer"
+                                        onError={() => setImgError(true)}
                                     />
                                 ) : (
                                     <FaUserCircle className="w-full h-full text-gray-500" />

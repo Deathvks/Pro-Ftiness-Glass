@@ -660,7 +660,9 @@ const Dashboard = ({ setView }) => {
         pixelRatio: 1,
         backgroundColor: '#000000',
         width: 1080,
-        height: 1920
+        height: 1920,
+        skipFonts: true,
+        cacheBust: false
       });
 
       if (!blob) {
@@ -1222,7 +1224,7 @@ const Dashboard = ({ setView }) => {
           {showWeeklyRecap && <WeeklyRecapCard weeklyData={weeklyRecapData} userProfile={userProfile} />}
         </div>
         <div ref={prCardRef} style={{ width: '1080px', height: '1920px' }}>
-          {showPRModal && prShareData && <PRShareCard prData={prShareData} userName={userProfile?.username} userImage={userProfile?.profile_image || userProfile?.profile_image_url} />}
+          {showPRModal && prShareData && <PRShareCard prData={prShareData} userName={userProfile?.username} userImage={userProfile?.profile_image_url || userProfile?.avatar || userProfile?.profile_image || userProfile?.avatar_url} />}
         </div>
       </div>
 
@@ -1298,7 +1300,7 @@ const Dashboard = ({ setView }) => {
             <div className="flex-1 w-full min-h-0 my-4 flex items-center justify-center pointer-events-none">
               <ScaleToFit width={1080} height={1920}>
                 <div className="w-[1080px] h-[1920px] rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 pointer-events-auto">
-                  <PRShareCard prData={prShareData} userName={userProfile?.username} userImage={userProfile?.profile_image || userProfile?.profile_image_url} />
+                  <PRShareCard prData={prShareData} userName={userProfile?.username} userImage={userProfile?.profile_image_url || userProfile?.avatar || userProfile?.profile_image || userProfile?.avatar_url} />
                 </div>
               </ScaleToFit>
             </div>

@@ -1,6 +1,6 @@
 {
-  "version": "7.11.37",
-  "releaseNotes": "Actualización v7.11.37: Página informativa oficial sobre la migración a servidores propios y nuevo dominio profitnessglass.com con enlace directo desde el aviso de mantenimiento.",
+  "version": "7.11.38",
+  "releaseNotes": "Actualización v7.11.38: Corrección en modales de historias para récords (PR) y resumen dominical: logotipo oficial más grande sin contenedor de fondo y carga garantizada de la foto de perfil en producción con proxy inverso y fallback.",
   "welcome": {
     "title": "Portal de Noticias y Estabilidad",
     "subtitle": "Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y máxima estabilidad en toda la app.",
