@@ -148,23 +148,26 @@ const SWUpdaterCore = () => {
     return null;
   }
 
-  // Pill sutil, moderno y no bloqueante
+  // Pill sutil, moderno, 100% adaptado a temas y responsive en cualquier móvil
   return (
     <div
       role="status"
       aria-live="polite"
-      className="fixed top-3 left-1/2 -translate-x-1/2 z-[100] animate-[fade-in_0.3s_ease-out] max-w-[92vw]"
-      style={{ top: 'calc(var(--safe-top, 0px) + 0.75rem)' }}
+      className="fixed left-1/2 -translate-x-1/2 z-[200] animate-[fade-in_0.3s_ease-out] w-auto max-w-[calc(100vw-1.5rem)] px-1"
+      style={{ top: 'calc(var(--safe-top, 0px) + 0.65rem)' }}
     >
-      <div className="flex items-center gap-2 sm:gap-3 px-3.5 sm:px-4 py-2 rounded-full bg-slate-900/90 dark:bg-slate-950/90 text-white shadow-2xl border border-accent/40 backdrop-blur-xl ring-1 ring-black/20">
-        <Sparkles size={15} className="text-accent shrink-0 animate-pulse" />
-        <span className="text-xs sm:text-sm font-semibold tracking-tight text-white whitespace-nowrap">
-          Nueva versión <strong className="text-accent">v{pendingRemoteVersion}</strong> disponible
+      <div className="flex items-center gap-2 sm:gap-3 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-bg-secondary/95 text-text-primary shadow-2xl border border-glass-border ring-1 ring-accent/30 dark:ring-accent/40 backdrop-blur-2xl transition-colors">
+        <Sparkles size={14} className="text-accent shrink-0 animate-pulse" />
+        <span className="text-xs sm:text-sm font-semibold tracking-tight text-text-primary whitespace-nowrap">
+          <span className="hidden xs:inline">Nueva versión </span>
+          <span className="xs:hidden">Nueva </span>
+          <strong className="text-accent font-extrabold">v{pendingRemoteVersion}</strong>
+          <span className="hidden sm:inline"> disponible</span>
         </span>
         <button
           onClick={handleApplyUpdate}
           disabled={isUpdating}
-          className="ml-1 px-3 py-1 bg-accent text-accent-contrast font-extrabold text-xs rounded-full hover:brightness-110 active:scale-95 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+          className="ml-0.5 sm:ml-1 px-2.5 sm:px-3 py-1 bg-accent text-accent-contrast font-extrabold text-[11px] sm:text-xs rounded-full hover:brightness-110 active:scale-95 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-60 shrink-0"
         >
           {isUpdating ? (
             <RefreshCw size={12} className="animate-spin" />
@@ -174,7 +177,7 @@ const SWUpdaterCore = () => {
         </button>
         <button
           onClick={() => setIsDismissed(true)}
-          className="text-white/60 hover:text-white p-1 rounded-full transition-colors ml-0.5"
+          className="text-text-muted hover:text-text-primary p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors shrink-0"
           title="Descartar aviso"
           aria-label="Cerrar aviso"
         >
