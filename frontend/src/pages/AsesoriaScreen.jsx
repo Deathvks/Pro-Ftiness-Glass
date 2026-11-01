@@ -67,10 +67,18 @@ export default function AsesoriaScreen({ onBack }) {
   }, [messages]);
 
   const handleNewMessage = (message) => {
-    setMessages(prev => [...prev, message]);
+    if (!message) return;
+    if (message.type === 'refresh') {
+      fetchData();
+      return;
+    }
+    setMessages(prev => {
+      if (message.id && prev.some(m => m.id === message.id)) return prev;
+      return [...prev, message];
+    });
     // If we receive a message from the trainer while the screen is open, mark it as read
     const currentUserId = useAppStore.getState().userProfile?.id;
-    if (String(message.sender_id) !== String(currentUserId)) {
+    if (message.sender_id && String(message.sender_id) !== String(currentUserId)) {
       markAsRead(message.sender_id);
     }
   };
@@ -242,11 +250,17 @@ export default function AsesoriaScreen({ onBack }) {
       });
       
       // Replace temp message, preserving read_at if updated by socket
-      setMessages(prev => prev.map(msg => 
-        msg.id === tempId 
-          ? { ...res, read_at: msg.read_at || res.read_at } 
-          : msg
-      ));
+      setMessages(prev => {
+        const updated = prev.map(msg => 
+          msg.id === tempId 
+            ? { ...res, read_at: msg.read_at || res.read_at } 
+            : msg
+        );
+        if (res?.botReply && !updated.some(m => m.id === res.botReply.id)) {
+          return [...updated, res.botReply];
+        }
+        return updated;
+      });
     } catch (error) {
       console.error('Error sending message:', error);
       addToast('Error al enviar el mensaje', 'error');
@@ -328,7 +342,13 @@ export default function AsesoriaScreen({ onBack }) {
         method: 'POST',
         body: { receiverId: trainer.id, content }
       });
-      setMessages(prev => prev.map(msg => msg.id === tempId ? { ...res, read_at: msg.read_at || res.read_at } : msg));
+      setMessages(prev => {
+        const updated = prev.map(msg => msg.id === tempId ? { ...res, read_at: msg.read_at || res.read_at } : msg);
+        if (res?.botReply && !updated.some(m => m.id === res.botReply.id)) {
+          return [...updated, res.botReply];
+        }
+        return updated;
+      });
       scrollToBottom();
     } catch (error) {
       console.error(error);

@@ -155,6 +155,57 @@ export const getChatHistory = async (req, res, next) => {
       }
     }
 
+    // Auto-curación para usuarios que solicitaron información sin compromiso
+    // y no han recibido respuesta del bot o del entrenador (p.ej. la cuenta de prueba del revisor)
+    if (requestor && requestor.role !== 'trainer' && requestor.role !== 'admin') {
+      try {
+        const trainersAndAdmins = await User.findAll({
+          where: { role: { [Op.in]: ['admin', 'trainer'] } },
+          attributes: ['id']
+        });
+        const trainerAdminIds = trainersAndAdmins.map(u => u.id);
+        const targetTrainerId = trainerAdminIds.includes(parseInt(otherUserId))
+          ? parseInt(otherUserId)
+          : (trainerAdminIds[0] || parseInt(otherUserId));
+
+        if (targetTrainerId) {
+          const lastSinCompromiso = await Message.findOne({
+            where: {
+              sender_id: userId,
+              content: { [Op.like]: '%sin compromiso%' }
+            },
+            order: [['created_at', 'DESC']]
+          });
+
+          if (lastSinCompromiso) {
+            const hasAnyReply = await Message.count({
+              where: {
+                receiver_id: userId,
+                [Op.or]: [
+                  { attachment_type: 'bot_reply' },
+                  { sender_id: { [Op.in]: trainerAdminIds } }
+                ]
+              }
+            });
+
+            if (hasAnyReply === 0) {
+              console.log('[BOT] Auto-generating missing bot reply in getChatHistory for user:', userId);
+              const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
+              await Message.create({
+                sender_id: targetTrainerId,
+                receiver_id: userId,
+                content: botContent,
+                attachment_type: 'bot_reply',
+                created_at: new Date(new Date(lastSinCompromiso.created_at).getTime() + 1000)
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[BOT] Error in getChatHistory auto-heal:', e);
+      }
+    }
+
     if (requestor && requestor.role === 'user') {
       whereCondition = {
         [Op.and]: [
@@ -217,9 +268,13 @@ export const sendMessage = async (req, res, next) => {
     // --- LOGICA DEL BOT RESPONDEDOR ---
     console.log('[BOT] Checking bot reply for userId:', userId, 'content:', content.trim().substring(0, 50));
     const requestor = await User.findByPk(userId);
-    if (requestor && requestor.role === 'trainee') {
-      const isRequestInfoMessage = content.trim().toLowerCase().includes('sin compromiso');
-      console.log('[BOT] Is trainee:', true, 'isRequestInfoMessage:', isRequestInfoMessage);
+    let populatedBotMessage = null;
+
+    if (requestor && requestor.role !== 'trainer' && requestor.role !== 'admin') {
+      const isRequestInfoMessage = 
+        content.trim().toLowerCase().includes('sin compromiso') ||
+        (content.trim().toLowerCase().includes('asesoría') && content.trim().toLowerCase().includes('información'));
+      console.log('[BOT] Is prospective user/client:', true, 'isRequestInfoMessage:', isRequestInfoMessage);
       
       if (isRequestInfoMessage) {
         // Asegurar que solo se envíe una vez por usuario
@@ -239,7 +294,7 @@ export const sendMessage = async (req, res, next) => {
           });
           console.log('[BOT] Bot message created with id:', botMessage.id);
 
-          const populatedBotMessage = await Message.findByPk(botMessage.id, {
+          populatedBotMessage = await Message.findByPk(botMessage.id, {
             include: [
               { model: User, as: 'Sender', attributes: ['id', 'username', 'profile_image_url'] }
             ]
@@ -260,10 +315,15 @@ export const sendMessage = async (req, res, next) => {
         }
       }
     } else {
-      console.log('[BOT] Skipped: user is not trainee or not found. role:', requestor?.role);
+      console.log('[BOT] Skipped: user is staff or not found. role:', requestor?.role);
     }
 
-    res.status(201).json(populatedMessage);
+    const jsonResponse = populatedMessage.toJSON ? populatedMessage.toJSON() : { ...populatedMessage };
+    if (populatedBotMessage) {
+      jsonResponse.botReply = populatedBotMessage.toJSON ? populatedBotMessage.toJSON() : populatedBotMessage;
+    }
+
+    res.status(201).json(jsonResponse);
   } catch (error) {
     console.error('Error al enviar mensaje:', error);
     next(error);
@@ -852,17 +912,25 @@ export const runRetroactiveBotReplies = async () => {
       if (hasBotReply === 0) {
         const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
         
-        await Message.create({
+        const createdBot = await Message.create({
           sender_id: receiverId,
           receiver_id: senderId,
           content: botContent,
-          attachment_type: 'bot_reply'
+          attachment_type: 'bot_reply',
+          created_at: new Date(new Date(msg.created_at).getTime() + 1000)
+        });
+
+        const populatedBotMessage = await Message.findByPk(createdBot.id, {
+          include: [
+            { model: User, as: 'Sender', attributes: ['id', 'username', 'profile_image_url'] }
+          ]
         });
 
         // Notificar
         await notifyUserIfNeeded(receiverId, senderId, "Hola, tus mensajes son totalmente privados. Recibirás respuesta...");
         
         if (io) {
+          io.to(senderId.toString()).emit('chat_message', populatedBotMessage);
           io.to(senderId.toString()).emit('chat_message', { type: 'refresh' });
         }
         sentCount++;
