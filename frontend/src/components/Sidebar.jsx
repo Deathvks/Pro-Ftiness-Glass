@@ -21,7 +21,7 @@ const SidebarItem = ({ label, icon, isActive, onClick, onPreload, onIconClick, b
       isRed
         ? 'text-text-secondary hover:bg-red-500/10 hover:text-red-500'
         : isActive
-        ? `glass shadow-sm text-text-primary ${disableTranslate ? '' : 'translate-x-1'}`
+        ? `liquid-glass-sidebar-active text-text-primary ${disableTranslate ? '' : 'translate-x-1'}`
         : `text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 ${disableTranslate ? '' : 'hover:translate-x-1'}`
     }`}
   >
@@ -185,7 +185,7 @@ const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_B
             )}
         </Suspense>
 
-        <nav className={`hidden md:flex flex-col h-full relative z-40 border-r border-glass-border bg-glass-bg backdrop-blur-glass shadow-lg overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[88px] px-3 py-6' : 'w-64 lg:w-72 p-6'}`}>
+        <nav className={`hidden md:flex flex-col h-full relative z-40 liquid-glass-sidebar overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[88px] px-3 py-6' : 'w-64 lg:w-72 p-6'}`}>
         
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start px-2'} mb-8 shrink-0`}>
             <button 

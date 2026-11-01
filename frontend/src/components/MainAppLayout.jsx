@@ -1435,7 +1435,7 @@ export default function MainAppLayout({
 
             {/* ESPACIO INFERIOR DIFUMINADO (Optimizado para Android de gama baja) */}
       <div
-        className={`md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-40 bg-gradient-to-t from-bg-primary via-bg-primary/80 to-transparent transition-opacity duration-300 ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
+        className={`md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-40 bg-gradient-to-t from-bg-primary/40 to-transparent backdrop-blur-[6px] transition-opacity duration-300 ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
         style={{
           height: 'calc(var(--safe-bottom) + 100px)',
           transform: 'translateZ(0)',
