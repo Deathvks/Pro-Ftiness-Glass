@@ -1433,12 +1433,11 @@ export default function MainAppLayout({
 
       </div>
 
-      {/* ESPACIO INFERIOR SUTIL - Permite ver el contenido a través del cristal del navbar */}
+            {/* ESPACIO INFERIOR DIFUMINADO (Optimizado para Android de gama baja) */}
       <div
-        className={`md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-40 transition-opacity duration-300 ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
+        className={`md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-40 bg-gradient-to-t from-bg-primary via-bg-primary/80 to-transparent transition-opacity duration-300 ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
         style={{
-          height: 'calc(var(--safe-bottom) + 90px)',
-          background: 'linear-gradient(to top, rgba(var(--bg-primary-rgb), 0.5) 0%, transparent 100%)',
+          height: 'calc(var(--safe-bottom) + 100px)',
           transform: 'translateZ(0)',
         }}
       ></div>
@@ -1460,13 +1459,16 @@ export default function MainAppLayout({
             
             <div
               ref={dropRef}
-              className="absolute top-1/2 w-[62px] h-12 rounded-full pointer-events-none z-[1] flex items-start justify-center liquid-glass-drop"
+              className="absolute top-1/2 w-[60px] h-12 rounded-[24px] pointer-events-none z-[1] flex items-start justify-center"
               style={{
                 left: 0,
-                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) ${isJumping ? 'scaleX(1.22) scaleY(0.82)' : 'scaleX(1) scaleY(1)'}`,
+                transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) ${isJumping ? 'scaleX(1.3) scaleY(0.75)' : 'scaleX(1) scaleY(1)'}`,
                 opacity: isDropVisible ? 1 : 0,
-                /* Responde al instante (0ms dead-time) con curva de desaceleracion inmediata */
-                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease',
+                transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)',
+                backdropFilter: 'blur(8px) brightness(1.1)',
+                WebkitBackdropFilter: 'blur(8px) brightness(1.1)',
+                boxShadow: 'inset 0px 1px 1px rgba(255,255,255,0.25), inset 0px -1px 2px rgba(0,0,0,0.15), 0px 4px 10px rgba(0,0,0,0.15)',
                 willChange: 'transform'
               }}
             >
@@ -1486,12 +1488,12 @@ export default function MainAppLayout({
                   onMouseEnter={() => preloadView && preloadView(item.id)}
                   onTouchStart={() => preloadView && preloadView(item.id)}
                   onClick={() => handleNavClick(item.id)}
-                  className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-colors duration-150 outline-none focus:outline-none ring-0 ${isVisuallyActive ? '' : 'text-text-secondary/70 hover:text-text-primary'}`}
+                  className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-colors duration-300 ease-out active:scale-90 outline-none focus:outline-none ring-0 ${isVisuallyActive ? '' : 'text-text-secondary'}`}
                   style={{ color: isVisuallyActive ? 'var(--color-accent)' : undefined, animationDelay: `${index * 100}ms`, animationFillMode: 'both', WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <div className={`transition-transform duration-200 ease-out active:scale-90 ${isVisuallyActive ? 'scale-115' : 'group-hover:scale-105'} relative`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
+                  <div className={`transition-transform duration-300 ${isVisuallyActive ? 'scale-125' : 'group-hover:scale-110'} relative`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
                     {typeof item.icon === 'function' ? item.icon(isVisuallyActive) : item.icon}
-                    {pendingCount > 0 && <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-accent rounded-full border-[1.5px] border-bg-primary z-10 pointer-events-none shadow-sm"></span>}
+                    {pendingCount > 0 && <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-accent rounded-full border-[1.5px] border-bg-primary z-10 pointer-events-none"></span>}
                     {pendingCount === 0 && item.badge && (
                       <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-accent rounded-full border-[1.5px] border-bg-primary z-10 pointer-events-none">
                         <span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-75"></span>
