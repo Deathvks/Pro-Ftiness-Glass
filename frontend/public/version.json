@@ -1,6 +1,6 @@
 {
-  "version": "7.11.35",
-  "releaseNotes": "Actualización v7.11.35: Carga garantizada del icono oficial de la app en historias y modales de récords (PR) y resumen semanal de domingo con fallback y precarga.",
+  "version": "7.11.36",
+  "releaseNotes": "Actualización v7.11.36: Ajuste de área segura (safe-area-inset-top) en el aviso de mantenimiento para evitar solapamiento con el notch y barra de estado en pantallas móviles de autenticación.",
   "welcome": {
     "title": "Portal de Noticias y Estabilidad",
     "subtitle": "Estrenamos el portal de Noticias Fitness, calculadoras deportivas, enciclopedia visual de ejercicios y máxima estabilidad en toda la app.",

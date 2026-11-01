@@ -1,9 +1,9 @@
-import MaintenanceNoticeBanner from './MaintenanceNoticeBanner';
 /* frontend/src/components/AuthScreens.jsx */
 import React, { Suspense, lazy, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import Spinner from './Spinner';
+import MaintenanceNoticeBanner from './MaintenanceNoticeBanner';
 
 // Lazy loading con precarga inmediata cuando no hay sesión activa para evitar esperas en /login y /register
 const hasActiveToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('pro_fitness_token'));
@@ -60,7 +60,7 @@ const AuthScreens = ({ authView, setAuthView }) => {
 
   return (
     <div className="flex flex-col min-h-screen bg-bg-primary animate-fade-in">
-      <MaintenanceNoticeBanner />
+      <MaintenanceNoticeBanner withSafeArea />
       <Helmet>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>

@@ -3,14 +3,29 @@ import React from 'react';
 import { Wrench } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-const MaintenanceNoticeBanner = ({ className = '', rounded = false, borderBottom = true }) => {
+const MaintenanceNoticeBanner = ({
+  className = '',
+  rounded = false,
+  borderBottom = true,
+  withSafeArea = false,
+  style = {}
+}) => {
   const { t } = useTranslation();
   const isRounded = rounded || className.includes('rounded');
+  const needsSafeArea = withSafeArea || className.includes('with-safe-area') || className.includes('safe-top');
+
+  const computedStyle = {
+    ...(needsSafeArea ? { paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 0.5rem)' } : {}),
+    ...style
+  };
 
   return (
     <aside
       aria-label="Aviso de mantenimiento programado"
-      className={`w-full bg-amber-500/15 dark:bg-amber-400/15 text-amber-950 dark:text-amber-100 py-1.5 px-3 sm:px-4 backdrop-blur-xl transition-all flex items-center justify-center ${
+      style={computedStyle}
+      className={`w-full bg-amber-500/15 dark:bg-amber-400/15 text-amber-950 dark:text-amber-100 ${
+        needsSafeArea ? 'pb-2' : 'py-1.5'
+      } px-3 sm:px-4 backdrop-blur-xl transition-all flex items-center justify-center shrink-0 ${
         borderBottom && !isRounded ? 'border-b border-amber-500/30' : ''
       } ${rounded ? 'rounded-2xl border border-amber-500/30 shadow-sm' : ''} ${className}`}
     >
