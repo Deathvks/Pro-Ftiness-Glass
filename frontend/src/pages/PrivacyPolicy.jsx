@@ -159,6 +159,16 @@ const PrivacyPolicy = ({ onBack }) => {
                     </div>
                   </div>
 
+                  {/* Edad Mínima de Consentimiento */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Edad Mínima de Consentimiento
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      El tratamiento de datos personales en la plataforma está fijado en <strong className="text-text-primary">14 años cumplidos</strong> (Art. 7 de la Ley Orgánica 3/2018 - LOPDGDD y Art. 8 del RGPD UE 2016/679). Los menores de 14 años requieren el consentimiento y supervisión previa de sus progenitores o tutores legales.
+                    </div>
+                  </div>
+
                   {/* Reclamación AEPD */}
                   <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
                     <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
