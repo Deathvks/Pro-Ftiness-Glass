@@ -37,6 +37,7 @@ import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
 import AdSenseSlot from '../components/News/AdSenseSlot';
 import TrainerAdvisoryCard from '../components/News/TrainerAdvisoryCard';
+import PublicPageFooter from '../components/PublicPageFooter';
 import * as newsService from '../services/newsService';
 import { trackCatalogVisit } from '../utils/newsTracker';
 import useAppStore from '../store/useAppStore';
@@ -833,9 +834,9 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           </div>
         </>
       )}
+
+        <PublicPageFooter />
       </div>
-        {/* Espaciador inferior equilibrado: separación armónica con el resto de la web */}
-        <div className="w-full h-8 sm:h-6 shrink-0 select-none pointer-events-none" aria-hidden="true" />
     </div>
   );
 }

@@ -34,6 +34,7 @@ import AdSenseSlot from '../components/News/AdSenseSlot';
 import MarkdownContent from '../components/News/MarkdownContent';
 import NewsConversionBanner from '../components/News/NewsConversionBanner';
 import TrainerAdvisoryCard from '../components/News/TrainerAdvisoryCard';
+import PublicPageFooter from '../components/PublicPageFooter';
 import * as newsService from '../services/newsService';
 import { trackArticleVisit } from '../utils/newsTracker';
 import { useToast } from '../hooks/useToast';
@@ -804,8 +805,8 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
           </section>
         )}
       </article>
-        {/* Espaciador inferior equilibrado: separación armónica con el resto de la web */}
-        <div className="w-full h-8 sm:h-6 shrink-0 select-none pointer-events-none" aria-hidden="true" />
+
+      <PublicPageFooter />
     </div>
   );
 }
