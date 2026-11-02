@@ -863,7 +863,7 @@ const StoryViewer = ({ userId, onClose }) => {
             ref={videoRef}
             key={currentStory.id}
             src={currentMediaUrl}
-            className={`w-full h-full object-contain transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
+            className={`w-full h-full object-cover transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
             playsInline
             webkit-playsinline="true"
             autoPlay
@@ -883,7 +883,7 @@ const StoryViewer = ({ userId, onClose }) => {
             key={currentStory.id}
             src={currentMediaUrl}
             alt="Story"
-            className={`w-full h-full object-contain transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
+            className={`w-full h-full object-cover transition-opacity duration-300 ${mediaLoaded ? 'opacity-100' : 'opacity-0'}`}
             onLoad={() => setMediaLoaded(true)}
             onError={() => {setMediaError(true);setMediaLoaded(true);}}
             style={hdrStyles} />)

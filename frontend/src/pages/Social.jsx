@@ -209,9 +209,9 @@ const StoryTermsModal = ({ onAccept, onReject }) => {
     );
 };
 
-/// Helper para extraer la imagen recortada en formato 9:16 vertical
+/// Helper para extraer la imagen recortada en formato 9:16 vertical sin bordes negros
 const getCroppedImg = async (imageSrc, pixelCrop) => {
-    if (!pixelCrop) throw new Error('Área de recorte no definida');
+    if (!pixelCrop) throw new Error('Area de recorte no definida');
 
     const image = new Image();
     image.crossOrigin = 'anonymous';
@@ -221,15 +221,31 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
         image.onerror = reject;
     });
 
+    const naturalWidth = image.naturalWidth || image.width;
+    const naturalHeight = image.naturalHeight || image.height;
+
+    // Asegurar que las coordenadas y dimensiones de recorte se mantengan estrictamente
+    // dentro de los limites reales de la imagen, evitando desfases o margenes vacios/negros
+    const cropX = Math.max(0, Math.min(Math.round(pixelCrop.x), naturalWidth - 1));
+    const cropY = Math.max(0, Math.min(Math.round(pixelCrop.y), naturalHeight - 1));
+    const cropWidth = Math.max(1, Math.min(Math.round(pixelCrop.width), naturalWidth - cropX));
+    const cropHeight = Math.max(1, Math.min(Math.round(pixelCrop.height), naturalHeight - cropY));
+
+    // El canvas de destino coincide exactamente con la region recortada
     const canvas = document.createElement('canvas');
-    canvas.width = Math.round(pixelCrop.width);
-    canvas.height = Math.round(pixelCrop.height);
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
     const ctx = canvas.getContext('2d');
+
+    if (!ctx) throw new Error('No se pudo inicializar el contexto del lienzo');
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     ctx.drawImage(
         image,
-        Math.round(pixelCrop.x), Math.round(pixelCrop.y), Math.round(pixelCrop.width), Math.round(pixelCrop.height),
-        0, 0, Math.round(pixelCrop.width), Math.round(pixelCrop.height)
+        cropX, cropY, cropWidth, cropHeight,
+        0, 0, cropWidth, cropHeight
     );
 
     return new Promise((resolve, reject) => {
@@ -247,11 +263,46 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
 const StoryCropModal = ({ imageSrc, onComplete, onCancel }) => {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
+    const [minZoom, setMinZoom] = useState(1);
+    const [mediaAspect, setMediaAspect] = useState(null);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
     const onCropCompleteCallback = (croppedArea, pixels) => {
         setCroppedAreaPixels(pixels);
     };
+
+    const updateMediaDimensions = (nw, nh) => {
+        if (!nw || !nh) return;
+        const aspect = nw / nh;
+        setMediaAspect(aspect);
+        const targetAspect = 9 / 16;
+        // Si la imagen es mas estrecha que 9:16, calculamos el zoom minimo para que el ancho
+        // cubra completamente el marco 9:16 sin dejar franjas negras a los lados al desplazarla
+        if (aspect < targetAspect) {
+            const requiredMinZoom = Math.max(1, targetAspect / aspect);
+            setMinZoom(requiredMinZoom);
+            setZoom((prev) => Math.max(prev, requiredMinZoom));
+        } else {
+            setMinZoom(1);
+        }
+    };
+
+    const handleMediaLoaded = (mediaSize) => {
+        const nw = mediaSize?.naturalWidth || mediaSize?.width;
+        const nh = mediaSize?.naturalHeight || mediaSize?.height;
+        updateMediaDimensions(nw, nh);
+    };
+
+    useEffect(() => {
+        if (!imageSrc) return;
+        const img = new Image();
+        img.src = imageSrc;
+        img.onload = () => {
+            updateMediaDimensions(img.naturalWidth || img.width, img.naturalHeight || img.height);
+        };
+    }, [imageSrc]);
+
+    const maxZoomCalculated = Math.max(minZoom * 3, 3);
 
     return createPortal(
         <div 
@@ -281,18 +332,22 @@ const StoryCropModal = ({ imageSrc, onComplete, onCancel }) => {
                         aspect={9 / 16}
                         cropShape="rect"
                         showGrid={true}
-                        objectFit="cover"
-                        minZoom={1}
-                        maxZoom={3}
+                        restrictPosition={true}
+                        roundCropAreaPixels={true}
+                        objectFit={mediaAspect && mediaAspect < 9 / 16 ? 'horizontal-cover' : 'cover'}
+                        minZoom={minZoom}
+                        maxZoom={maxZoomCalculated}
                         zoomWithScroll={true}
                         onCropChange={setCrop}
                         onCropComplete={onCropCompleteCallback}
+                        onCropAreaChange={onCropCompleteCallback}
                         onZoomChange={setZoom}
+                        onMediaLoaded={handleMediaLoaded}
                     />
                 </React.Suspense>
             </div>
 
-            {/* Controles y Botones de acción */}
+            {/* Controles y Botones de accion */}
             <div 
                 className="bg-bg-primary/95 dark:bg-[#121214]/95 backdrop-blur-xl border-t border-black/5 dark:border-white/10 p-5 pb-8 flex flex-col gap-4 z-10 shrink-0"
                 style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom,env(safe-area-inset-bottom,0px)))' }}
@@ -301,8 +356,8 @@ const StoryCropModal = ({ imageSrc, onComplete, onCancel }) => {
                     <span className="text-xs text-text-secondary font-bold shrink-0">Zoom</span>
                     <input
                         type="range"
-                        min={1}
-                        max={3}
+                        min={minZoom}
+                        max={maxZoomCalculated}
                         step={0.05}
                         value={zoom}
                         onChange={(e) => setZoom(Number(e.target.value))}
