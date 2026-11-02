@@ -147,8 +147,22 @@ const SWUpdaterCore = () => {
     if (isUpdating) return;
     setIsUpdating(true);
 
+    const isIOS =
+      typeof navigator !== 'undefined' &&
+      (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+    const isStandalone =
+      typeof window !== 'undefined' &&
+      (window.navigator.standalone ||
+        window.matchMedia('(display-mode: standalone)').matches);
+
     try {
       if ('serviceWorker' in navigator) {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+          navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHES' });
+        }
+
         const registration = await navigator.serviceWorker.getRegistration();
         if (registration) {
           if (registration.waiting) {
@@ -157,25 +171,42 @@ const SWUpdaterCore = () => {
           try {
             await registration.update();
           } catch {}
+
+          if (!isIOS && !isStandalone) {
+            try {
+              await registration.unregister();
+            } catch {}
+          }
         }
       }
     } catch {}
+
+    if (typeof window !== 'undefined' && 'caches' in window) {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(
+          keys
+            .filter((key) => !isStandalone || key.includes('api-') || key.includes('runtime') || key.includes('vite-hashed') || key.includes('workbox-precache'))
+            .map((key) => caches.delete(key))
+        );
+      } catch {}
+    }
 
     try {
       sessionStorage.removeItem('pfg_auto_reloaded_version');
       sessionStorage.removeItem('pfg_last_chunk_autoreload');
       sessionStorage.removeItem('pfg_last_safe_reload_time');
       sessionStorage.removeItem('pfg_reload_count');
+      sessionStorage.removeItem('pfg_entry_rescue_ts');
+      sessionStorage.removeItem('pfg_splash_rescue_count');
       localStorage.removeItem('pfg_auto_reloaded_version');
       localStorage.removeItem('pfg_crash_loop_count');
       localStorage.removeItem('lastView');
     } catch {}
 
-    // Pausa suave para permitir al nuevo Service Worker tomar el control
-    await new Promise((r) => setTimeout(r, 250));
+    await new Promise((r) => setTimeout(r, 200));
 
-    // Navegación limpia sin desregistrar el Service Worker (evita congelar WebKit en iOS PWA)
-    window.location.href = window.location.origin + '/';
+    window.location.replace(window.location.origin + '/?updated=' + Date.now());
   };
 
   // Si no hay versión pendiente o el usuario descartó el aviso en esta sesión:

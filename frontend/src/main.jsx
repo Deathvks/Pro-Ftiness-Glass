@@ -125,6 +125,27 @@ if (isIOS) {
 const mountApp = () => {
   if (typeof window !== 'undefined') {
     window.__pfg_mounted = true;
+    try {
+      sessionStorage.removeItem('pfg_splash_rescue_count');
+      sessionStorage.removeItem('pfg_entry_rescue_ts');
+      if (
+        window.location.search &&
+        (window.location.search.includes('rescue=') ||
+          window.location.search.includes('updated=') ||
+          window.location.search.includes('pfg_fresh='))
+      ) {
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete('rescue');
+        cleanUrl.searchParams.delete('updated');
+        cleanUrl.searchParams.delete('r');
+        cleanUrl.searchParams.delete('pfg_fresh');
+        const nextUrl =
+          cleanUrl.pathname +
+          (cleanUrl.search && cleanUrl.search !== '?' ? cleanUrl.search : '') +
+          cleanUrl.hash;
+        window.history.replaceState({}, document.title, nextUrl);
+      }
+    } catch {}
   }
   createRoot(document.getElementById('root')).render(
     <StrictMode>

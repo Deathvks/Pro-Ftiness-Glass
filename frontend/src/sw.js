@@ -36,24 +36,36 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+  if (event.data && (event.data.type === 'CLEAR_CACHES' || event.data.type === 'PURGE_CACHES')) {
+    event.waitUntil(
+      caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+    );
+  }
 });
 
 // 2. Limpieza de cachés antiguas y precarga
 registerRoute(
   ({ request, url }) => request.mode === 'navigate' && !url.pathname.startsWith('/sitemap.xml') && !url.pathname.startsWith('/robots.txt'),
-  async ({ request }) => {
+  async ({ request, url }) => {
+    const isExplicitBust = url.searchParams.has('rescue') || url.searchParams.has('updated') || url.searchParams.has('reset') || url.searchParams.has('clean') || url.searchParams.has('pfg_fresh');
     try {
       let response;
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3500);
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
         response = await fetch(request, { signal: controller.signal, cache: 'no-cache' });
         clearTimeout(timeoutId);
       } catch {
-        response = await matchPrecache('/index.html');
+        if (!isExplicitBust) {
+          response = await matchPrecache('/index.html');
+        }
       }
       if (!response || !response.ok) {
-        response = await matchPrecache('/index.html') || await fetch(request);
+        if (!isExplicitBust) {
+          response = (await matchPrecache('/index.html')) || (await fetch(request));
+        } else {
+          response = await fetch(request);
+        }
       }
       if (!response) return fetch(request);
       

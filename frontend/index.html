@@ -165,7 +165,7 @@
   <meta name="color-scheme" content="dark light" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-  <link rel="manifest" href="/manifest.json?v=76" />
+  <link rel="manifest" href="/manifest.json?v=77" />
 
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -725,19 +725,117 @@
         root.style.setProperty('--bg-color', selectedHeaderColor);
         root.style.setProperty('--bg-primary', selectedBgColor);
         root.style.backgroundColor = selectedBgColor;
-        window.addEventListener('error', function (ev) {
-          var t = ev && ev.target;
-          if (!t || window.__pfg_mounted) return;
-          var url = t.src || t.href || '';
-          if (url && url.indexOf('/assets/') !== -1) {
-            var lastRescue = parseInt(sessionStorage.getItem('pfg_entry_rescue_ts') || '0', 10);
-            var now = Date.now();
-            if (now - lastRescue > 8000) {
-              sessionStorage.setItem('pfg_entry_rescue_ts', String(now));
-              window.location.replace(window.location.origin + window.location.pathname + '?r=' + now + (window.location.hash || ''));
+        // Auto-rescate y Watchdog del Splash Screen
+        function performEmergencyRescue(reason) {
+          if (window.__pfg_mounted || window.__pfg_rescuing) return;
+          window.__pfg_rescuing = true;
+          console.warn('[AutoRescue] Iniciando rescate de splash screen:', reason);
+
+          var rescueAttempts = parseInt(sessionStorage.getItem('pfg_splash_rescue_count') || '0', 10);
+          if (rescueAttempts >= 3) {
+            var splashSpinner = document.querySelector('.app-splash-spinner');
+            var splashContent = document.querySelector('.splash-content');
+            if (splashContent) {
+              if (splashSpinner) splashSpinner.style.display = 'none';
+              var existingCard = document.getElementById('splash-recovery-card');
+              if (!existingCard) {
+                var card = document.createElement('div');
+                card.id = 'splash-recovery-card';
+                card.style.cssText = 'margin-top: 2rem; padding: 1.25rem 1.5rem; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; backdrop-filter: blur(16px); text-align: center; max-width: 320px; animation: fadeUp 0.4s ease-out;';
+                card.innerHTML = '<p style="margin: 0 0 1rem; font-size: 0.9rem; font-weight: 500; color: #f8fafc; line-height: 1.4;">Se ha detectado una versión actualizada o un retraso en la carga.</p><button id="splash-reload-btn" style="padding: 0.75rem 1.5rem; background: #22c55e; color: #0f172a; border: none; border-radius: 9999px; font-weight: 700; font-size: 0.9rem; cursor: pointer;">Actualizar ahora</button>';
+                splashContent.appendChild(card);
+                var btn = document.getElementById('splash-reload-btn');
+                if (btn) {
+                  btn.onclick = function () {
+                    btn.disabled = true;
+                    btn.innerText = 'Cargando...';
+                    sessionStorage.removeItem('pfg_splash_rescue_count');
+                    if ('caches' in window) {
+                      caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }).catch(function () {});
+                    }
+                    if ('serviceWorker' in navigator) {
+                      navigator.serviceWorker.getRegistrations().then(function (regs) { return Promise.all(regs.map(function (r) { return r.unregister(); })); }).catch(function () {});
+                    }
+                    setTimeout(function () {
+                      window.location.replace(window.location.origin + '/?updated=' + Date.now());
+                    }, 200);
+                  };
+                }
+              }
             }
+            return;
+          }
+
+          sessionStorage.setItem('pfg_splash_rescue_count', String(rescueAttempts + 1));
+
+          var clearCaches = Promise.resolve();
+          if ('caches' in window) {
+            clearCaches = caches.keys().then(function (keys) {
+              return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+            }).catch(function () {});
+          }
+
+          var clearSW = Promise.resolve();
+          var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+          var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+          if (!isIOS && !isStandalone && 'serviceWorker' in navigator) {
+            clearSW = navigator.serviceWorker.getRegistrations().then(function (regs) {
+              return Promise.all(regs.map(function (r) { return r.unregister(); }));
+            }).catch(function () {});
+          }
+
+          try {
+            sessionStorage.removeItem('pfg_entry_rescue_ts');
+            sessionStorage.removeItem('pfg_last_chunk_autoreload');
+            sessionStorage.removeItem('pfg_last_safe_reload_time');
+            sessionStorage.removeItem('pfg_reload_count');
+          } catch (e) {}
+
+          Promise.all([clearCaches, clearSW]).then(function () {
+            var now = Date.now();
+            window.location.replace(window.location.origin + window.location.pathname + '?rescue=' + now + (window.location.hash || ''));
+          }).catch(function () {
+            window.location.reload();
+          });
+        }
+
+        // 1. Watchdog: si tras 6 segundos React no ha montado, auto-recuperar
+        setTimeout(function () {
+          if (!window.__pfg_mounted) {
+            performEmergencyRescue('Watchdog: react no montado tras 6s');
+          }
+        }, 6000);
+
+        // 2. Errores de carga de scripts y tags
+        window.addEventListener('error', function (ev) {
+          if (window.__pfg_mounted) return;
+          var t = ev && ev.target;
+          var isAssetTag = t && (t.tagName === 'SCRIPT' || t.tagName === 'LINK');
+          var msg = (ev && ev.message) ? String(ev.message).toLowerCase() : '';
+          var isFatalStartupError =
+            msg.indexOf('loading chunk') !== -1 ||
+            msg.indexOf('failed to fetch dynamically imported module') !== -1 ||
+            msg.indexOf('syntaxerror') !== -1 ||
+            msg.indexOf('unexpected token') !== -1;
+
+          if (isAssetTag || isFatalStartupError) {
+            performEmergencyRescue('Error cargando recurso inicial: ' + (msg || (t && (t.src || t.href)) || 'desconocido'));
           }
         }, true);
+
+        // 3. Promesas rechazadas no controladas antes de montar
+        window.addEventListener('unhandledrejection', function (ev) {
+          if (window.__pfg_mounted) return;
+          var reason = ev && ev.reason;
+          var msg = reason ? (reason.message || String(reason)).toLowerCase() : '';
+          if (
+            msg.indexOf('loading chunk') !== -1 ||
+            msg.indexOf('failed to fetch dynamically imported module') !== -1 ||
+            msg.indexOf('mime type') !== -1
+          ) {
+            performEmergencyRescue('Rechazo no manejado antes de montar: ' + msg);
+          }
+        });
 
         var splash = document.querySelector('.app-splash-screen');
         if (splash) {
@@ -805,7 +903,7 @@
     </main>
   </noscript>
 
-  <script type="module" src="/src/main.jsx?v=76"></script>
+  <script type="module" src="/src/main.jsx?v=77"></script>
 </body>
 
 </html>

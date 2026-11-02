@@ -410,6 +410,24 @@ const NotificationsScreen = ({ setView }) => {
     return <div className="flex justify-center items-center h-full min-h-[50vh]"><Spinner size="large" /></div>;
   }
 
+  if (notificationsError && notifications.length === 0) {
+    return (
+      <div className="flex flex-col justify-center items-center h-full min-h-[50vh] p-6 text-center animate-[fade-in_0.3s_ease-out]">
+        <div className="p-3 bg-red-500/10 text-red-500 rounded-full mb-3">
+          <AlertCircle size={28} />
+        </div>
+        <p className="text-sm font-semibold text-text-primary mb-1">No se pudieron cargar las notificaciones</p>
+        <p className="text-xs text-text-muted mb-4">{notificationsError}</p>
+        <button
+          onClick={() => fetchNotifications(1)}
+          className="px-5 py-2.5 bg-accent text-accent-contrast font-bold text-xs rounded-full hover:brightness-110 active:scale-95 transition-all shadow-md shadow-accent/20"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
   const hasNotifications = notifications.length > 0;
   const isListEmpty = filteredList.length === 0;
   const canLoadMore = notificationPage < notificationTotalPages && activeFilter === 'all';
