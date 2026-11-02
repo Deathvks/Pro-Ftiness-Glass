@@ -1,8 +1,7 @@
 import ModalPortal from './ModalPortal';
 /* frontend/src/components/ErrorBoundary.jsx */
 import React from 'react';
-import { AlertTriangle, RefreshCw, LogOut, Wrench } from 'lucide-react';
-import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
+import { AlertTriangle, RefreshCw, Trash2, LogOut, Wrench } from 'lucide-react';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -16,7 +15,6 @@ class ErrorBoundary extends React.Component {
   }
 
   static getDerivedStateFromError(error) {
-    // Actualiza el estado para que el siguiente renderizado muestre la UI de repuesto
     return { hasError: true, error };
   }
 
@@ -27,24 +25,59 @@ class ErrorBoundary extends React.Component {
       const nextCrashes = currentCrashes + 1;
       localStorage.setItem('pfg_crash_loop_count', String(nextCrashes));
       this.setState({ reloadCount: nextCrashes });
+
+      // En cuanto se detecta un fallo, purgar de inmediato snapshots volátiles
+      // para que al recargar la app nazca saneada
+      localStorage.removeItem('pfg_cached_initial_state_v1');
+      localStorage.removeItem('pfg_cache_version');
+      localStorage.removeItem('lastView');
+      sessionStorage.clear();
     } catch {}
   }
+
+  purgeLocalCache = () => {
+    try {
+      localStorage.removeItem('pfg_cached_initial_state_v1');
+      localStorage.removeItem('pfg_cache_version');
+      localStorage.removeItem('lastView');
+      localStorage.removeItem('activeWorkout');
+      localStorage.removeItem('workoutStartTime');
+      localStorage.removeItem('isWorkoutPaused');
+      localStorage.removeItem('workoutAccumulatedTime');
+      localStorage.removeItem('isResting');
+      localStorage.removeItem('restTimerEndTime');
+      localStorage.removeItem('pfg_crash_loop_count');
+      sessionStorage.clear();
+
+      if ('caches' in window) {
+        caches.keys().then((keys) =>
+          Promise.all(keys.filter((k) => k.includes('vite-hashed') || k.includes('api-') || k.includes('runtime')).map((k) => caches.delete(k)))
+        ).catch(() => {});
+      }
+    } catch {}
+  };
 
   handleReload = () => {
     if (this.state.isActionRunning) return;
     this.setState({ isActionRunning: true });
 
-    try { localStorage.removeItem('lastView'); } catch {}
-    reloadAppWithoutStaleCache({ path: '/' });
+    this.purgeLocalCache();
+    window.location.reload();
   };
 
-  handleEmergencyLogout = async () => {
+  handleResetAllData = () => {
     if (this.state.isActionRunning) return;
     this.setState({ isActionRunning: true });
 
-    try { localStorage.clear(); } catch {}
-    try { sessionStorage.clear(); } catch {}
-    reloadAppWithoutStaleCache({ path: '/' });
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+      if ('caches' in window) {
+        caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
+      }
+    } catch (_) {}
+
+    window.location.replace('/login');
   };
 
   render() {
@@ -69,8 +102,8 @@ class ErrorBoundary extends React.Component {
 
               <p className="text-text-muted text-sm leading-relaxed mb-6">
                 {isRepeatCrash
-                  ? 'La app ha encontrado el mismo fallo más de una vez. Puedes volver a cargarla limpiando la caché, sin borrar tus datos ni cerrar sesión.'
-                  : 'La aplicación ha encontrado un problema al procesar la pantalla. Pulsa en recargar para restablecer los componentes.'}
+                  ? 'Hemos detectado un fallo recurrente. Pulsa en Reparar para sanear la memoria de la app automáticamente sin perder tu cuenta.'
+                  : 'La aplicación ha encontrado un problema al procesar los datos de la pantalla. Pulsa en Reparar y Recargar para continuar.'}
               </p>
 
               <div className="flex flex-col gap-2.5">
@@ -86,9 +119,19 @@ class ErrorBoundary extends React.Component {
 
                 <button
                   type="button"
-                  onClick={this.handleEmergencyLogout}
+                  onClick={this.handleResetAllData}
                   disabled={this.state.isActionRunning}
-                  className="w-full py-2.5 px-4 text-xs font-semibold text-text-muted hover:text-red-500 transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 mt-1"
+                  className="w-full py-2.5 px-4 bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 font-bold rounded-2xl transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer disabled:opacity-50"
+                >
+                  <Trash2 size={16} />
+                  <span>Restablecer datos locales</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={this.handleResetAllData}
+                  disabled={this.state.isActionRunning}
+                  className="w-full py-2 px-4 text-xs font-semibold text-text-muted hover:text-red-500 transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 mt-1"
                 >
                   <LogOut size={14} />
                   <span>Cerrar sesión de emergencia</span>

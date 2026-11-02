@@ -61,7 +61,7 @@ try {
   console.warn('[EmergencyReset] Error procesando reset de emergencia:', e);
 }
 
-// --- SANEAMIENTO HIGIÉNICO EN ACTUALIZACIONES ---
+// --- SANEAMIENTO HIGIÉNICO EN ACTUALIZACIONES Y AUTOPROTECCIÓN ---
 const APP_VERSION_STORAGE_KEY = 'pfg_app_version';
 try {
   const previousVersion = localStorage.getItem(APP_VERSION_STORAGE_KEY);
@@ -70,33 +70,33 @@ try {
     localStorage.removeItem('pfg_auto_reloaded_version');
     localStorage.removeItem('pfg_crash_loop_count');
     localStorage.removeItem('profitness_insights_expanded');
-    // Retenemos pfg_cached_initial_state_v1 para apertura instantánea (0ms) en actualizaciones
+    // En actualización, purgar snapshot de estado anterior y lastView para evitar esquemas incompatibles
+    localStorage.removeItem('pfg_cached_initial_state_v1');
+    localStorage.removeItem('pfg_cache_version');
+    localStorage.removeItem('lastView');
 
-    // En todas las plataformas (web y nativo), purgar caché obsoleta de lectura de API en actualización
     if ('caches' in window) {
       caches.delete('api-read-cache').catch(() => {});
+      caches.delete('vite-hashed-assets').catch(() => {});
     }
     try {
-      // Limpiar solo tokens temporales de reintento de chunks y contadores de recarga sin eliminar cachés de noticias ni datos útiles
-      sessionStorage.removeItem('pfg_auto_reloaded_version');
-      sessionStorage.removeItem('pfg_last_safe_reload_time');
-      sessionStorage.removeItem('pfg_reload_count');
-      Object.keys(sessionStorage).forEach((key) => {
-        if (key.startsWith('pfg_chunk_retry_')) {
-          sessionStorage.removeItem(key);
-        }
-      });
+      sessionStorage.clear();
     } catch {}
-
-    // Desregistrar SW huérfanos solo en Android nativo (Capacitor)
-    if (Capacitor.isNativePlatform() && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then((regs) => {
-        for (const reg of regs) reg.unregister();
-      }).catch(() => {});
-    }
 
     localStorage.setItem(APP_VERSION_STORAGE_KEY, APP_VERSION);
     localStorage.setItem('pfg_cache_version', APP_VERSION);
+  } else {
+    // Si la versión es la misma pero hubo un fallo previo (pfg_crash_loop_count >= 1),
+    // autosanear antes de montar React para auto-recuperar silenciosamente
+    const crashCount = parseInt(localStorage.getItem('pfg_crash_loop_count') || '0', 10);
+    if (crashCount >= 1) {
+      console.warn(`[CrashGuard] Fallo previo detectado (${crashCount}). Autolimpiando snapshots...`);
+      localStorage.removeItem('pfg_cached_initial_state_v1');
+      localStorage.removeItem('pfg_cache_version');
+      localStorage.removeItem('lastView');
+      localStorage.removeItem('pfg_crash_loop_count');
+      sessionStorage.clear();
+    }
   }
 } catch (e) {
   console.warn('[AppUpdate] Error durante migración de versión:', e);
