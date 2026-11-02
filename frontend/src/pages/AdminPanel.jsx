@@ -27,6 +27,7 @@ import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getS
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
 import useAppStore from '../store/useAppStore';
+import apiClient from '../services/apiClient';
 import { useShallow } from 'zustand/react/shallow';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -445,11 +446,8 @@ const AdminPanel = ({ onCancel }) => {
           role: updatedUser.role,
           name: updatedUser.name,
           username: updatedUser.username,
+          ...(updatedUser.profile_image_url ? { profile_image_url: updatedUser.profile_image_url } : {})
         });
-        
-        if (updatedUser.profile_image_url) {
-           setProfileImgSrc(updatedUser.profile_image_url);
-        }
       }
 
       addToast('Usuario guardado exitosamente', 'success');

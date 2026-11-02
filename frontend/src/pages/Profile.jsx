@@ -715,6 +715,9 @@ const DeleteConfirmationModal = ({
   hasPassword,
 }) => {
   
+  const [touchStartY, setTouchStartY] = useState(null);
+  const [dragY, setDragY] = useState(0);
+
   if (!modalAction) return null;
 
   const isDeleteAccount = modalAction === "deleteAccount";

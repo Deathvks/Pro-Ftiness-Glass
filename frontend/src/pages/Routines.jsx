@@ -410,7 +410,7 @@ const Routines = ({ setView, mainContentRef }) => {
 
   const [sharingRoutineId, setSharingRoutineId] = useState(null);
   const sharingRoutine = useMemo(() => {
-    if (!sharingRoutineId) return null;
+    if (!sharingRoutineId || !Array.isArray(routines)) return null;
     return routines.find(r => r.id === sharingRoutineId);
   }, [routines, sharingRoutineId]);
 
@@ -500,9 +500,9 @@ const Routines = ({ setView, mainContentRef }) => {
   }, [workoutLog]);
 
   const uniqueFolders = useMemo(() => {
-    if (!routines) return [];
+    if (!routines || !Array.isArray(routines)) return [];
     const folders = routines
-      .map(r => r.folder)
+      .map(r => r?.folder)
       .filter(f => f && f.trim() !== '');
     return [...new Set(folders)].sort();
   }, [routines]);

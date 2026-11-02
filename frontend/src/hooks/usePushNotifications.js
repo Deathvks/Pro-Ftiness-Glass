@@ -191,7 +191,7 @@ export const usePushNotifications = () => {
           addToast('Permiso denegado. Se abrirán los ajustes para activarlo.', 'warning');
           setTimeout(async () => {
               try {
-                const { NativeSettings, AndroidSettings, IOSSettings } = require('capacitor-native-settings');
+                const { NativeSettings, AndroidSettings, IOSSettings } = await import('capacitor-native-settings');
                 if (Capacitor.getPlatform() === 'android') {
                     // AppNotification abre directamente la pestaña de notificaciones de la app
                     await NativeSettings.openAndroid({ option: AndroidSettings.AppNotification });

@@ -23,7 +23,7 @@ const ChallengesScreen = ({ setView }) => {
         const fetchChallenges = async () => {
             try {
                 const data = await apiClient('/gamification/challenges');
-                setChallenges(data);
+                setChallenges(Array.isArray(data) ? data : []);
             } catch (err) {
                 console.error("Error cargando retos", err);
             } finally {
@@ -33,15 +33,17 @@ const ChallengesScreen = ({ setView }) => {
         fetchChallenges();
     }, []);
 
-    const dailyChallenges = challenges
+    const safeChallenges = Array.isArray(challenges) ? challenges : [];
+
+    const dailyChallenges = safeChallenges
         .filter(c => c.type === 'daily')
         .sort((a, b) => (a.completed === b.completed ? 0 : a.completed ? 1 : -1));
         
-    const generalChallenges = challenges
+    const generalChallenges = safeChallenges
         .filter(c => c.type === 'general' || c.type === 'weekly')
         .sort((a, b) => (a.completed === b.completed ? 0 : a.completed ? 1 : -1));
         
-    const completedChallenges = challenges.filter(c => c.completed);
+    const completedChallenges = safeChallenges.filter(c => c && c.completed);
 
     const renderChallengeCard = (challenge) => {
         const percentage = Math.min((challenge.progress / challenge.target) * 100, 100);

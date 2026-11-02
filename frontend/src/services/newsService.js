@@ -448,7 +448,7 @@ export const updateNewsAutomationSchedule = async ({ hour, minute = 0 }) => {
 export const optimizeExistingArticlesWithAI = async ({ articleId = null, forceAll = false } = {}) => {
   // Limpiar cachés locales de artículos para que al terminar se cargue el nuevo texto adaptado
   articleMemoryCache.clear();
-  listMemoryCache.clear();
+  publicListMemoryCache.clear();
   try {
     Object.keys(localStorage).forEach((k) => {
       if (k.startsWith('pfg_art_') || k.startsWith('pfg_news_list_') || k === 'pfg_admin_news') {

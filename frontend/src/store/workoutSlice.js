@@ -889,6 +889,7 @@ export const createWorkoutSlice = (set, get) => ({
   },
 
   logWorkout: async (workoutData) => {
+    let finalWorkoutData = null;
     try {
       const state = get();
       const workoutDate = state.activeWorkout?.startTime || new Date().toISOString();
@@ -905,7 +906,7 @@ export const createWorkoutSlice = (set, get) => ({
           });
       }
 
-      const finalWorkoutData = {
+      finalWorkoutData = {
         ...workoutData,
         details: processedDetails || workoutData.details,
         date: workoutDate, 
@@ -992,7 +993,7 @@ export const createWorkoutSlice = (set, get) => ({
             endpoint: '/workouts',
             options: {
               method: 'POST',
-              body: finalWorkoutData
+              body: finalWorkoutData || workoutData
             }
           });
         }
@@ -1025,7 +1026,7 @@ export const createWorkoutSlice = (set, get) => ({
           success: true,
           isOffline: true,
           message: 'Entrenamiento guardado en tu móvil. Se sincronizará automáticamente al recuperar conexión.',
-          finalWorkoutData
+          finalWorkoutData: finalWorkoutData || workoutData
         };
       }
 

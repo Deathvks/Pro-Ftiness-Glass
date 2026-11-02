@@ -1,6 +1,6 @@
 {
-  "version": "7.11.61",
-  "releaseNotes": "Actualización v7.11.61: Corrección de error de referencia en notificaciones, aceleración de auto-recuperación de chunks y bypass forzado anti-bloqueo.",
+  "version": "7.11.62",
+  "releaseNotes": "Actualización v7.11.62: Corrección de referencias en panel de administración, rutinas, retos y ejercicios, y optimización de robustez de vistas.",
   "welcome": {
     "title": "Migración desde Hevy/Strong y Copias",
     "subtitle": "Llega la migración de datos: importa todo tu historial de entrenamientos desde Hevy o Strong en un solo clic y exporta a Excel cuando quieras.",

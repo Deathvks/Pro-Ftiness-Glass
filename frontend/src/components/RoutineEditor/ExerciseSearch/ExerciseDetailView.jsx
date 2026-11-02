@@ -81,6 +81,8 @@ const ExerciseDetailView = ({
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState("8-12");
   const [rest, setRest] = useState(60);
+  const userProfile = useAppStore((state) => state.userProfile);
+  const isAdmin = userProfile?.role === "admin";
   const { theme } = useAppTheme();
   const { t } = useTranslation([
     "exercise_names",

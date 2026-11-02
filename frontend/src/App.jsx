@@ -772,7 +772,7 @@ export default function App() {
               </button>
               <button
                 type="button"
-                onClick={() => reloadAppWithoutStaleCache({ path: '/' })}
+                onClick={() => reloadAppWithoutStaleCache({ path: '/', force: true })}
                 className="px-5 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-primary font-bold text-sm cursor-pointer hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5"
               >
                 <RefreshCw className="w-4 h-4" />
