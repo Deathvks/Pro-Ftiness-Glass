@@ -58,9 +58,9 @@ const SWUpdaterCore = () => {
 
       const now = Date.now();
       const lastAutoReload = parseInt(sessionStorage.getItem('pfg_last_chunk_autoreload') || '0', 10);
-      if (now - lastAutoReload > 25000) {
+      if (now - lastAutoReload > 6000) {
         sessionStorage.setItem('pfg_last_chunk_autoreload', String(now));
-        reloadAppWithoutStaleCache();
+        reloadAppWithoutStaleCache({ force: true });
       }
     };
 

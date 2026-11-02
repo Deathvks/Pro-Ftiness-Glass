@@ -73,7 +73,7 @@ const apiClient = async (endpoint, options = {}) => {
                 try {
                     const maintenanceData = await response.json();
                     if (maintenanceData.error === 'maintenance') {
-                        const maintenanceErr = new Error(maintenanceData.message || '🔧 Estamos en mantenimiento. Volvemos enseguida.');
+                        const maintenanceErr = new Error(maintenanceData.message || 'Estamos en mantenimiento. Volvemos enseguida.');
                         maintenanceErr.status = 503;
                         maintenanceErr.isMaintenance = true;
                         throw maintenanceErr;

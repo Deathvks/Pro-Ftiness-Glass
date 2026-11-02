@@ -57,7 +57,7 @@ export const clearAppRuntimeCache = async () => {
   ]).finally(() => clearTimeout(timeoutId));
 };
 
-export const reloadAppWithoutStaleCache = async ({ path } = {}) => {
+export const reloadAppWithoutStaleCache = async ({ path, force = false } = {}) => {
   if (typeof window === "undefined") return false;
 
   const now = Date.now();
@@ -69,21 +69,23 @@ export const reloadAppWithoutStaleCache = async ({ path } = {}) => {
     reloadCount = parseInt(sessionStorage.getItem("pfg_reload_count") || "0", 10);
   } catch {}
 
-  // 1. Si ya se intentó una recarga hace menos de 8s, abortar para no solapar procesos
-  if (now - lastReloadTime < MIN_RELOAD_INTERVAL_MS) {
-    console.warn("[appRecovery] Recarga abortada: recarga ya ejecutada o en curso hace menos de 8s");
-    return false;
-  }
+  if (!force) {
+    // 1. Si ya se intentó una recarga hace menos de 8s, abortar para no solapar procesos
+    if (now - lastReloadTime < MIN_RELOAD_INTERVAL_MS) {
+      console.warn("[appRecovery] Recarga abortada: recarga ya ejecutada o en curso hace menos de 8s");
+      return false;
+    }
 
-  // 2. Si ya van 2 recargas en 45 segundos, abortar para romper cualquier bucle infinito
-  if (now - lastReloadTime < ANTI_LOOP_WINDOW_MS && reloadCount >= MAX_RELOADS_PER_WINDOW) {
-    console.warn("[appRecovery] Bucle de recargas detectado (>2 recargas en 45s). Deteniendo para no recargar infinitamente.");
-    return false;
+    // 2. Si ya van 2 recargas en 45 segundos, abortar para romper cualquier bucle infinito
+    if (now - lastReloadTime < ANTI_LOOP_WINDOW_MS && reloadCount >= MAX_RELOADS_PER_WINDOW) {
+      console.warn("[appRecovery] Bucle de recargas detectado (>2 recargas en 45s). Deteniendo para no recargar infinitamente.");
+      return false;
+    }
   }
 
   // Registrar el intento antes de recargar
   try {
-    const updatedCount = (now - lastReloadTime < ANTI_LOOP_WINDOW_MS) ? reloadCount + 1 : 1;
+    const updatedCount = (now - lastReloadTime < ANTI_LOOP_WINDOW_MS && !force) ? reloadCount + 1 : 1;
     sessionStorage.setItem("pfg_last_safe_reload_time", String(now));
     sessionStorage.setItem("pfg_reload_count", String(updatedCount));
   } catch {}

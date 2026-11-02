@@ -256,6 +256,7 @@ const NotificationsScreen = ({ setView }) => {
     notifications,
     unreadCount,
     notificationsLoading,
+    notificationsError,
     notificationPage,
     notificationTotalPages,
     fetchNotifications,
@@ -264,7 +265,20 @@ const NotificationsScreen = ({ setView }) => {
     removeNotification,
     clearAllNotifications,
     userProfile
-   } = useAppStore(useShallow(state => ({ notifications: state.notifications, unreadCount: state.unreadCount, notificationsLoading: state.notificationsLoading, notificationPage: state.notificationPage, notificationTotalPages: state.notificationTotalPages, fetchNotifications: state.fetchNotifications, markNotificationAsRead: state.markNotificationAsRead, markAllNotificationsAsRead: state.markAllNotificationsAsRead, removeNotification: state.removeNotification, clearAllNotifications: state.clearAllNotifications, userProfile: state.userProfile })));
+   } = useAppStore(useShallow(state => ({
+     notifications: state.notifications,
+     unreadCount: state.unreadCount,
+     notificationsLoading: state.notificationsLoading,
+     notificationsError: state.notificationsError,
+     notificationPage: state.notificationPage,
+     notificationTotalPages: state.notificationTotalPages,
+     fetchNotifications: state.fetchNotifications,
+     markNotificationAsRead: state.markNotificationAsRead,
+     markAllNotificationsAsRead: state.markAllNotificationsAsRead,
+     removeNotification: state.removeNotification,
+     clearAllNotifications: state.clearAllNotifications,
+     userProfile: state.userProfile
+   })));
 
   const { scheduleEngagementNotifications, scheduleDailyReminders } = useLocalNotifications();
 

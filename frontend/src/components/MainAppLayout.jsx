@@ -81,7 +81,7 @@ const LoadingFallback = ({ onGoHome }) => {
 
     const timer = setTimeout(() => {
       setShowRescue(true);
-    }, 14000); // 14s de margen real para dar tiempo suficiente a conexiones móviles y chunks pesados
+    }, 4000); // 4s de margen para respuesta rápida
     return () => {
       clearTimeout(hintTimer);
       clearTimeout(timer);
@@ -90,10 +90,10 @@ const LoadingFallback = ({ onGoHome }) => {
 
   const handleRepair = async () => {
     setIsRepairing(true);
-    await reloadAppWithoutStaleCache();
+    await reloadAppWithoutStaleCache({ force: true });
     setTimeout(() => {
       setIsRepairing(false);
-    }, 3000);
+    }, 2000);
   };
 
   const handleResetSession = () => {
@@ -212,9 +212,9 @@ class ViewErrorBoundary extends React.Component {
     if (isChunk) {
       const now = Date.now();
       const lastReload = parseInt(sessionStorage.getItem('pfg_last_chunk_autoreload') || '0', 10);
-      if (now - lastReload > 25000) {
+      if (now - lastReload > 6000) {
         sessionStorage.setItem('pfg_last_chunk_autoreload', String(now));
-        reloadAppWithoutStaleCache();
+        reloadAppWithoutStaleCache({ force: true });
       }
     }
   }
@@ -233,7 +233,7 @@ class ViewErrorBoundary extends React.Component {
     try {
       localStorage.removeItem('lastView');
     } catch {}
-    reloadAppWithoutStaleCache({ path: '/' });
+    reloadAppWithoutStaleCache({ path: '/', force: true });
   };
 
   handleGoHome = () => {

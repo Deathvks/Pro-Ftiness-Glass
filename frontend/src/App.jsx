@@ -51,47 +51,39 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
           const error = new Error(`La carga del apartado ${name} superó el tiempo límite.`);
           error.name = 'ChunkLoadError';
           reject(error);
-        }, 14000);
+        }, 5000);
       });
 
       return Promise.race([Promise.resolve().then(componentImport), timeout]).finally(() => clearTimeout(timeoutId));
     };
 
     try {
-      const component = await loadWithTimeout();
-      return component;
+      return await loadWithTimeout();
     } catch (firstError) {
-      console.warn(`[lazyWithRetry] Primer intento falló para "${name}", reintentando...`, firstError);
+      console.warn(`[lazyWithRetry] Error definitivo al cargar chunk "${name}":`, firstError);
+      const msg = (firstError?.message || "").toLowerCase();
+      const isChunkError =
+        firstError?.name === 'ChunkLoadError' ||
+        msg.includes("failed to fetch dynamically imported module") ||
+        msg.includes("loading chunk") ||
+        msg.includes("loading css chunk") ||
+        msg.includes("importing a module script failed") ||
+        msg.includes("mime type") ||
+        msg.includes("syntaxerror") ||
+        msg.includes("unexpected token") ||
+        msg.includes("chunk no encontrado") ||
+        msg.includes("is not valid javascript");
 
-      try {
-        await new Promise(r => setTimeout(r, 300));
-        const component = await loadWithTimeout();
-        return component;
-      } catch (error) {
-        console.warn(`[lazyWithRetry] Error definitivo al cargar chunk "${name}":`, error);
-        const msg = (error?.message || "").toLowerCase();
-        const isChunkError =
-          error?.name === 'ChunkLoadError' ||
-          msg.includes("failed to fetch dynamically imported module") ||
-          msg.includes("loading chunk") ||
-          msg.includes("loading css chunk") ||
-          msg.includes("importing a module script failed") ||
-          msg.includes("mime type") ||
-          msg.includes("syntaxerror") ||
-          msg.includes("unexpected token") ||
-          msg.includes("is not valid javascript");
-
-        if (isChunkError) {
-          const now = Date.now();
-          const lastAutoReload = parseInt(sessionStorage.getItem('pfg_last_chunk_autoreload') || '0', 10);
-          if (now - lastAutoReload > 25000) {
-            sessionStorage.setItem('pfg_last_chunk_autoreload', String(now));
-            console.warn(`[lazyWithRetry] Recuperando versión limpia de la app tras error en "${name}"...`);
-            reloadAppWithoutStaleCache();
-          }
+      if (isChunkError) {
+        const now = Date.now();
+        const lastAutoReload = parseInt(sessionStorage.getItem('pfg_last_chunk_autoreload') || '0', 10);
+        if (now - lastAutoReload > 6000) {
+          sessionStorage.setItem('pfg_last_chunk_autoreload', String(now));
+          console.warn(`[lazyWithRetry] Recuperando versión limpia de la app tras error en "${name}"...`);
+          reloadAppWithoutStaleCache({ force: true });
         }
-        throw error;
       }
+      throw firstError;
     }
   });
 

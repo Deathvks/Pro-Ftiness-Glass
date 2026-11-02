@@ -1,6 +1,6 @@
 {
-  "version": "7.11.60",
-  "releaseNotes": "Actualización v7.11.60: Incorporación del cuadro formal de primera capa informativa del Responsable del Tratamiento y derechos RGPD en la Política de Privacidad.",
+  "version": "7.11.61",
+  "releaseNotes": "Actualización v7.11.61: Corrección de error de referencia en notificaciones, aceleración de auto-recuperación de chunks y bypass forzado anti-bloqueo.",
   "welcome": {
     "title": "Migración desde Hevy/Strong y Copias",
     "subtitle": "Llega la migración de datos: importa todo tu historial de entrenamientos desde Hevy o Strong en un solo clic y exporta a Excel cuando quieras.",
