@@ -3,6 +3,8 @@ import { Op } from 'sequelize';
 import db from '../models/index.js';
 import { createNotification } from '../services/notificationService.js';
 import os from 'os';
+import { processUploadedFile } from '../services/uploadService.js';
+import { deleteFile } from '../services/imageService.js';
 
 const User = db.User;
 const SystemSettings = db.SystemSettings;
@@ -196,6 +198,84 @@ export const deleteUser = async (req, res, next) => {
     await user.destroy();
     res.status(200).json({ message: 'Usuario eliminado correctamente' });
   } catch (error) {
+    next(error);
+  }
+};
+
+// Actualizar o eliminar la foto de perfil de un entrenador (restringido a entrenadores)
+export const updateTrainerProfileImage = async (req, res, next) => {
+  const { userId } = req.params;
+  try {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      if (req.file) {
+        try {
+          await deleteFile(req.file.path);
+        } catch (e) {
+          // ignorar
+        }
+      }
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // Restriccion estricta: UNICAMENTE para usuarios con rol de entrenador
+    if (user.role !== 'trainer' && user.role !== 'entrenador') {
+      if (req.file) {
+        try {
+          await deleteFile(req.file.path);
+        } catch (e) {
+          // ignorar
+        }
+      }
+      return res.status(403).json({ error: 'Solo se puede asignar o modificar la foto de perfil a entrenadores.' });
+    }
+
+    let newImagePath = null;
+    if (req.file) {
+      try {
+        const processed = await processUploadedFile(req.file);
+        newImagePath = processed.url;
+      } catch (uploadError) {
+        return res.status(400).json({ error: 'Error procesando la imagen: ' + uploadError.message });
+      }
+    } else if (req.body.removeImage === 'true' || req.body.removeImage === true || req.method === 'DELETE') {
+      newImagePath = null;
+    } else {
+      return res.status(400).json({ error: 'No se envio ninguna imagen.' });
+    }
+
+    const oldImageUrl = user.profile_image_url;
+    await user.update({ profile_image_url: newImagePath });
+
+    if (oldImageUrl && oldImageUrl !== newImagePath) {
+      try {
+        await deleteFile(oldImageUrl);
+      } catch (e) {
+        console.warn('Error al eliminar imagen anterior del entrenador:', e.message);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: newImagePath ? 'Foto de perfil del entrenador actualizada correctamente' : 'Foto de perfil eliminada',
+      profile_image_url: newImagePath,
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profile_image_url: newImagePath
+      }
+    });
+  } catch (error) {
+    if (req.file) {
+      try {
+        await deleteFile(req.file.path);
+      } catch (e) {
+        // ignorar
+      }
+    }
     next(error);
   }
 };

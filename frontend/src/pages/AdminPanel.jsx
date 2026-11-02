@@ -1,7 +1,7 @@
 /* frontend/src/pages/AdminPanel.jsx */
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Star,
-  ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle, Check,
+  ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle, Check, Camera,
   Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw, ShieldAlert, Bell, Mail, Cloud,
   Newspaper
 } from 'lucide-react';
@@ -12,6 +12,7 @@ import UserEditModal from './UserEditModal';
 import UserCreateModal from './UserCreateModal';
 import UserAvatar from '../components/UserAvatar';
 import CustomSelect from '../components/CustomSelect';
+import ImageCropModal, { getCroppedImg } from '../components/ImageCropModal';
 
 import AdminRatings from '../components/AdminRatings';
 import AdminUploads from '../components/AdminUploads';
@@ -22,7 +23,7 @@ import SecurityDashboard from './SecurityDashboard';
 import AdminNewsManager from '../components/Admin/AdminNewsManager';
 
 export const preloadAdminTab = () => {};
-import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getSystemStats } from '../services/adminService';
+import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getSystemStats, updateTrainerProfileImage, deleteTrainerProfileImage } from '../services/adminService';
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
 import useAppStore from '../store/useAppStore';
@@ -243,6 +244,111 @@ const AdminPanel = ({ onCancel }) => {
   const [userToDelete, setUserToDelete] = useState(null);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [systemStats, setSystemStats] = useState(null);
+
+  // Estados para gestion de foto de perfil (solo entrenadores)
+  const [trainerPhotoTarget, setTrainerPhotoTarget] = useState(null);
+  const [cropImageSrc, setCropImageSrc] = useState(null);
+  const [isCroppingTrainer, setIsCroppingTrainer] = useState(false);
+  const [isUploadingTrainerPhoto, setIsUploadingTrainerPhoto] = useState(false);
+  const trainerFileInputRef = useRef(null);
+
+  // Limpieza de memoria para URLs blob
+  useEffect(() => {
+    return () => {
+      if (cropImageSrc && cropImageSrc.startsWith('blob:')) {
+        URL.revokeObjectURL(cropImageSrc);
+      }
+    };
+  }, [cropImageSrc]);
+
+  const handleStartTrainerPhoto = (user) => {
+    if (!user || (user.role !== 'trainer' && user.role !== 'entrenador')) {
+      addToast('Solo se puede gestionar la foto de perfil de entrenadores.', 'warning');
+      return;
+    }
+    setTrainerPhotoTarget(user);
+    if (trainerFileInputRef.current) {
+      trainerFileInputRef.current.value = '';
+      trainerFileInputRef.current.click();
+    }
+  };
+
+  const handleTrainerFileSelected = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isValidType = file.type.startsWith('image/') || /\.(jpe?g|png|webp)$/i.test(file.name);
+    if (!isValidType) {
+      addToast('Formato de imagen no valido (solo JPG, PNG, WebP).', 'error');
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      addToast('La imagen es demasiado grande (max 15MB).', 'error');
+      return;
+    }
+
+    if (cropImageSrc && cropImageSrc.startsWith('blob:')) {
+      URL.revokeObjectURL(cropImageSrc);
+    }
+
+    setCropImageSrc(URL.createObjectURL(file));
+    setIsCroppingTrainer(true);
+  };
+
+  const handleTrainerCropComplete = async (croppedAreaPixels) => {
+    if (!trainerPhotoTarget || !cropImageSrc) return;
+
+    try {
+      setIsUploadingTrainerPhoto(true);
+      const croppedFile = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+      const formData = new FormData();
+      formData.append('profileImage', croppedFile);
+
+      const res = await updateTrainerProfileImage(trainerPhotoTarget.id, formData);
+      const newUrl = res.profile_image_url;
+
+      setUsers(prev => prev.map(u => u.id === trainerPhotoTarget.id ? { ...u, profile_image_url: newUrl } : u));
+      if (userToEdit && userToEdit.id === trainerPhotoTarget.id) {
+        setUserToEdit(prev => ({ ...prev, profile_image_url: newUrl }));
+      }
+      if (userProfile && String(userProfile.id) === String(trainerPhotoTarget.id)) {
+        setUserProfile({ ...userProfile, profile_image_url: newUrl });
+      }
+
+      addToast('Foto de perfil del entrenador actualizada correctamente', 'success');
+      setIsCroppingTrainer(false);
+      if (cropImageSrc && cropImageSrc.startsWith('blob:')) {
+        URL.revokeObjectURL(cropImageSrc);
+      }
+      setCropImageSrc(null);
+      setTrainerPhotoTarget(null);
+    } catch (err) {
+      console.error('Error al actualizar foto del entrenador:', err);
+      addToast(err.message || 'Error al actualizar la foto de perfil', 'error');
+    } finally {
+      setIsUploadingTrainerPhoto(false);
+    }
+  };
+
+  const handleRemoveTrainerPhoto = async (user) => {
+    if (!user || (user.role !== 'trainer' && user.role !== 'entrenador')) return;
+
+    try {
+      await deleteTrainerProfileImage(user.id);
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, profile_image_url: null } : u));
+      if (userToEdit && userToEdit.id === user.id) {
+        setUserToEdit(prev => ({ ...prev, profile_image_url: null }));
+      }
+      if (userProfile && String(userProfile.id) === String(user.id)) {
+        setUserProfile({ ...userProfile, profile_image_url: null });
+      }
+      addToast('Foto de perfil eliminada', 'info');
+    } catch (err) {
+      console.error('Error al eliminar foto del entrenador:', err);
+      addToast(err.message || 'Error al eliminar la foto', 'error');
+    }
+  };
 
   const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
   const SERVER_URL = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : API_URL.replace('/api', '');
@@ -873,8 +979,25 @@ const AdminPanel = ({ onCancel }) => {
                           {/* 1. Usuario (Avatar + Nombre + Email) */}
                           <td className="p-4 pl-6 align-middle">
                             <div className="flex items-center gap-4">
-                              <div className="relative shrink-0">
-                                <UserAvatar user={user} size={12} className="ring-2 ring-black/5 dark:ring-white/10 shadow-sm" />
+                              <div className="relative shrink-0 group/avatar">
+                                <UserAvatar
+                                  user={user}
+                                  size={12}
+                                  className={`ring-2 ring-black/5 dark:ring-white/10 shadow-sm ${
+                                    (user.role === 'trainer' || user.role === 'entrenador') ? 'cursor-pointer hover:ring-orange-500/50 transition-all' : ''
+                                  }`}
+                                  onClick={(user.role === 'trainer' || user.role === 'entrenador') ? () => handleStartTrainerPhoto(user) : undefined}
+                                />
+                                {(user.role === 'trainer' || user.role === 'entrenador') && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStartTrainerPhoto(user)}
+                                    className="absolute -top-1 -left-1 p-1 rounded-full bg-orange-500 text-white shadow-md opacity-0 group-hover/avatar:opacity-100 hover:scale-110 active:scale-95 transition-all"
+                                    title="Cambiar foto de perfil del entrenador"
+                                  >
+                                    <Camera size={10} />
+                                  </button>
+                                )}
                                 <div className="absolute -bottom-1 -right-2 flex items-center gap-0.5">
                                   <LoginMethodBadge user={user} />
                                   <PlatformBadge user={user} />
@@ -949,6 +1072,15 @@ const AdminPanel = ({ onCancel }) => {
                           {/* 5. Acciones */}
                           <td className="p-4 pr-6 align-middle text-right">
                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {(user.role === 'trainer' || user.role === 'entrenador') && (
+                                <button
+                                  onClick={() => handleStartTrainerPhoto(user)}
+                                  title="Cambiar foto de perfil del entrenador"
+                                  className="p-2 rounded-xl bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white transition-all active:scale-95"
+                                >
+                                  <Camera size={16} />
+                                </button>
+                              )}
                               <button onClick={() => setUserToEdit(user)} className="p-2 rounded-xl bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-accent hover:text-accent-contrast transition-all active:scale-95">
                                 <Edit size={16} />
                               </button>
@@ -970,7 +1102,24 @@ const AdminPanel = ({ onCancel }) => {
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex-1 min-w-0 pr-2 flex items-center gap-4">
                           <div className="relative shrink-0">
-                            <UserAvatar user={user} size={14} className="ring-2 ring-black/5 dark:ring-white/10 shadow-sm" />
+                            <UserAvatar
+                              user={user}
+                              size={14}
+                              className={`ring-2 ring-black/5 dark:ring-white/10 shadow-sm ${
+                                (user.role === 'trainer' || user.role === 'entrenador') ? 'cursor-pointer active:scale-95 transition-all' : ''
+                              }`}
+                              onClick={(user.role === 'trainer' || user.role === 'entrenador') ? () => handleStartTrainerPhoto(user) : undefined}
+                            />
+                            {(user.role === 'trainer' || user.role === 'entrenador') && (
+                              <button
+                                type="button"
+                                onClick={() => handleStartTrainerPhoto(user)}
+                                className="absolute -top-1 -left-1 p-1.5 rounded-full bg-orange-500 text-white shadow-md active:scale-95 transition-all"
+                                title="Cambiar foto de perfil del entrenador"
+                              >
+                                <Camera size={11} />
+                              </button>
+                            )}
                             <div className="absolute -bottom-1 -right-2 flex items-center gap-0.5">
                               <LoginMethodBadge user={user} />
                               <PlatformBadge user={user} />
@@ -982,6 +1131,15 @@ const AdminPanel = ({ onCancel }) => {
                           </div>
                         </div>
                         <div className="flex flex-col gap-2 shrink-0">
+                          {(user.role === 'trainer' || user.role === 'entrenador') && (
+                            <button
+                              onClick={() => handleStartTrainerPhoto(user)}
+                              title="Cambiar foto del entrenador"
+                              className="p-2.5 bg-orange-500/10 rounded-xl text-orange-500 hover:bg-orange-500 hover:text-white transition-all active:scale-95 flex items-center justify-center"
+                            >
+                              <Camera size={16} />
+                            </button>
+                          )}
                           <button onClick={() => setUserToEdit(user)} className="p-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary hover:bg-accent hover:text-accent-contrast transition-all active:scale-95"><Edit size={16} /></button>
                           <button onClick={() => setUserToDelete(user)} className="p-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95"><Trash2 size={16} /></button>
                         </div>
@@ -1222,6 +1380,35 @@ const AdminPanel = ({ onCancel }) => {
           onSave={handleSaveUser}
           onCancel={() => setUserToEdit(null)}
           isLoading={isUpdating}
+          onEditPhoto={handleStartTrainerPhoto}
+          onRemovePhoto={handleRemoveTrainerPhoto}
+        />
+      )}
+
+      {/* Input de archivo oculto para gestionar foto de perfil de entrenadores */}
+      <input
+        type="file"
+        ref={trainerFileInputRef}
+        onChange={handleTrainerFileSelected}
+        accept="image/*"
+        className="hidden"
+      />
+
+      {/* Modal de recorte de imagen solo para entrenadores */}
+      {isCroppingTrainer && cropImageSrc && (
+        <ImageCropModal
+          imageSrc={cropImageSrc}
+          title={`Foto de perfil: ${trainerPhotoTarget?.username || trainerPhotoTarget?.name || 'Entrenador'}`}
+          isSaving={isUploadingTrainerPhoto}
+          onCancel={() => {
+            setIsCroppingTrainer(false);
+            if (cropImageSrc && cropImageSrc.startsWith('blob:')) {
+              URL.revokeObjectURL(cropImageSrc);
+            }
+            setCropImageSrc(null);
+            setTrainerPhotoTarget(null);
+          }}
+          onComplete={handleTrainerCropComplete}
         />
       )}
 

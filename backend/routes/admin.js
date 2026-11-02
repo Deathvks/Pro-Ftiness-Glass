@@ -6,6 +6,7 @@ import * as reportController from '../controllers/reportController.js';
 import * as ratingController from '../controllers/ratingController.js';
 import authenticateToken from '../middleware/authenticateToken.js';
 import authorizeAdmin from '../middleware/authorizeAdmin.js';
+import { uploadProfileImage } from '../services/uploadService.js';
 
 const router = express.Router();
 
@@ -32,6 +33,8 @@ router.get('/users', adminController.getAllUsers);
 router.post('/users', userCreateValidationRules, adminController.createUser);
 router.put('/users/:userId', userUpdateValidationRules, adminController.updateUser);
 router.delete('/users/:userId', adminController.deleteUser);
+router.post('/users/:userId/profile-image', uploadProfileImage, adminController.updateTrainerProfileImage);
+router.delete('/users/:userId/profile-image', adminController.updateTrainerProfileImage);
 
 // Rutas de gestión de reportes de bugs
 router.get('/reports', reportController.getReports);

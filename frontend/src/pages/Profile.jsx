@@ -18,7 +18,7 @@ import {
   deleteMyAccount,
 } from '../services/userService';
 import ProfileImageModal from '../components/ProfileImageModal';
-import Cropper from 'react-easy-crop';
+import ImageCropModal from '../components/ImageCropModal';
 import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -698,43 +698,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
         )}
       </AnimatePresence>
     </>
-  );
-};
-
-// --- Componente: Modal de Recorte ---
-const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-
-  const onCropComplete = (croppedArea, croppedAreaPixels) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[200] bg-bg-primary flex flex-col animate-[fade-in_0.2s_ease-out]">
-      <div className="relative flex-1 bg-black">
-        <Cropper
-          image={imageSrc}
-          crop={crop}
-          zoom={zoom}
-          aspect={1}
-          cropShape="round"
-          showGrid={false}
-          onCropChange={setCrop}
-          onCropComplete={onCropComplete}
-          onZoomChange={setZoom}
-        />
-      </div>
-      <div className="bg-bg-primary p-5 pb-8 flex justify-between items-center px-6 sm:px-10 border-t border-black/5 dark:border-white/10" style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom))' }}>
-        <button type="button" onClick={onCancel} className="text-text-secondary font-bold px-6 py-3.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-[16px] transition-colors active:scale-95">
-          Cancelar
-        </button>
-        <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-accent-contrast font-bold px-8 py-3.5 rounded-[20px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20">
-          Recortar
-        </button>
-      </div>
-    </div>
   );
 };
 

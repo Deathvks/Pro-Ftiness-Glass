@@ -40,6 +40,28 @@ export const createUser = (userData) => {
     });
 };
 
+/**
+ * Actualiza la foto de perfil de un entrenador.
+ * @param {number} userId - ID del entrenador.
+ * @param {FormData} formData - Objeto FormData con 'profileImage'.
+ */
+export const updateTrainerProfileImage = (userId, formData) => {
+    return apiClient(`/admin/users/${userId}/profile-image`, {
+        method: 'POST',
+        body: formData,
+    });
+};
+
+/**
+ * Elimina la foto de perfil de un entrenador.
+ * @param {number} userId - ID del entrenador.
+ */
+export const deleteTrainerProfileImage = (userId) => {
+    return apiClient(`/admin/users/${userId}/profile-image`, {
+        method: 'DELETE',
+    });
+};
+
 export const getSetting = (key) => {
     return apiClient(`/admin/settings/${key}`);
 };
