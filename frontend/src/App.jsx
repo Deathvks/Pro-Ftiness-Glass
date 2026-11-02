@@ -44,46 +44,46 @@ import { getExerciseList } from './services/exerciseService';
 
 export const lazyWithRetry = (componentImport, name = "chunk") =>
   lazy(async () => {
-    const loadWithTimeout = () => {
-      let timeoutId;
-      const timeout = new Promise((_, reject) => {
-        timeoutId = setTimeout(() => {
-          const error = new Error(`La carga del apartado ${name} superó el tiempo límite.`);
-          error.name = 'ChunkLoadError';
-          reject(error);
-        }, 5000);
-      });
-
-      return Promise.race([Promise.resolve().then(componentImport), timeout]).finally(() => clearTimeout(timeoutId));
-    };
-
     try {
-      return await loadWithTimeout();
+      return await componentImport();
     } catch (firstError) {
-      console.warn(`[lazyWithRetry] Error definitivo al cargar chunk "${name}":`, firstError);
-      const msg = (firstError?.message || "").toLowerCase();
-      const isChunkError =
-        firstError?.name === 'ChunkLoadError' ||
-        msg.includes("failed to fetch dynamically imported module") ||
-        msg.includes("loading chunk") ||
-        msg.includes("loading css chunk") ||
-        msg.includes("importing a module script failed") ||
-        msg.includes("mime type") ||
-        msg.includes("syntaxerror") ||
-        msg.includes("unexpected token") ||
-        msg.includes("chunk no encontrado") ||
-        msg.includes("is not valid javascript");
+      console.warn(`[lazyWithRetry] Primer intento fallido para "${name}", reintentando en 600ms...`, firstError);
+      await new Promise((r) => setTimeout(r, 600));
 
-      if (isChunkError) {
-        const now = Date.now();
-        const lastAutoReload = parseInt(sessionStorage.getItem('pfg_last_chunk_autoreload') || '0', 10);
-        if (now - lastAutoReload > 6000) {
-          sessionStorage.setItem('pfg_last_chunk_autoreload', String(now));
-          console.warn(`[lazyWithRetry] Recuperando versión limpia de la app tras error en "${name}"...`);
-          reloadAppWithoutStaleCache({ force: true });
+      try {
+        return await componentImport();
+      } catch (secondError) {
+        console.warn(`[lazyWithRetry] Error persistente al cargar chunk "${name}":`, secondError);
+        const msg = (secondError?.message || "").toLowerCase();
+        const isChunkError =
+          secondError?.name === 'ChunkLoadError' ||
+          msg.includes("failed to fetch dynamically imported module") ||
+          msg.includes("loading chunk") ||
+          msg.includes("loading css chunk") ||
+          msg.includes("importing a module script failed") ||
+          msg.includes("mime type") ||
+          msg.includes("syntaxerror") ||
+          msg.includes("unexpected token") ||
+          msg.includes("chunk no encontrado") ||
+          msg.includes("is not valid javascript");
+
+        if (isChunkError) {
+          const now = Date.now();
+          const lastAutoReload = parseInt(sessionStorage.getItem('pfg_last_chunk_autoreload') || '0', 10);
+          if (now - lastAutoReload > 20000) {
+            sessionStorage.setItem('pfg_last_chunk_autoreload', String(now));
+            console.warn(`[lazyWithRetry] Nueva versión detectada en servidor. Recargando versión limpia...`);
+            if ('caches' in window) {
+              try {
+                await caches.delete('vite-hashed-assets');
+              } catch (_) {}
+            }
+            window.location.reload();
+            return new Promise(() => {});
+          }
         }
+        throw secondError;
       }
-      throw firstError;
     }
   });
 
@@ -636,6 +636,13 @@ export default function App() {
       preloadViewChunk('trainerPanel');
     }
   }, [userProfile?.role]);
+
+  // Precargar progresivamente las vistas principales durante tiempo ocioso del navegador
+  useEffect(() => {
+    if (isAuthenticated && !isInitialLoad) {
+      preloadAllPrimaryViews();
+    }
+  }, [isAuthenticated, isInitialLoad]);
 
   const currentViewComponent = useMemo(() => {
     switch (view) {

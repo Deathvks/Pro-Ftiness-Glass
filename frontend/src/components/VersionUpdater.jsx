@@ -147,49 +147,27 @@ const SWUpdaterCore = () => {
     if (isUpdating) return;
     setIsUpdating(true);
 
-    const isIOS =
-      typeof navigator !== 'undefined' &&
-      (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
-    const isStandalone =
-      typeof window !== 'undefined' &&
-      (window.navigator.standalone ||
-        window.matchMedia('(display-mode: standalone)').matches);
-
     try {
       if ('serviceWorker' in navigator) {
-        if (navigator.serviceWorker.controller) {
-          navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
-          navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHES' });
-        }
-
         const registration = await navigator.serviceWorker.getRegistration();
         if (registration) {
           if (registration.waiting) {
             registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-          }
-          try {
+          } else {
             await registration.update();
-          } catch {}
-
-          if (!isIOS && !isStandalone) {
-            try {
-              await registration.unregister();
-            } catch {}
+            if (registration.waiting) {
+              registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
           }
         }
       }
-    } catch {}
+    } catch (_) {}
 
     if (typeof window !== 'undefined' && 'caches' in window) {
       try {
-        const keys = await caches.keys();
-        await Promise.all(
-          keys
-            .filter((key) => !isStandalone || key.includes('api-') || key.includes('runtime') || key.includes('vite-hashed') || key.includes('workbox-precache'))
-            .map((key) => caches.delete(key))
-        );
-      } catch {}
+        await caches.delete('vite-hashed-assets');
+        await caches.delete('api-read-cache');
+      } catch (_) {}
     }
 
     try {
@@ -199,14 +177,20 @@ const SWUpdaterCore = () => {
       sessionStorage.removeItem('pfg_reload_count');
       sessionStorage.removeItem('pfg_entry_rescue_ts');
       sessionStorage.removeItem('pfg_splash_rescue_count');
-      localStorage.removeItem('pfg_auto_reloaded_version');
-      localStorage.removeItem('pfg_crash_loop_count');
       localStorage.removeItem('lastView');
-    } catch {}
+    } catch (_) {}
 
-    await new Promise((r) => setTimeout(r, 200));
+    let reloaded = false;
+    const safeReload = () => {
+      if (reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    };
 
-    window.location.replace(window.location.origin + '/?updated=' + Date.now());
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', safeReload, { once: true });
+    }
+    setTimeout(safeReload, 600);
   };
 
   // Si no hay versión pendiente o el usuario descartó el aviso en esta sesión:

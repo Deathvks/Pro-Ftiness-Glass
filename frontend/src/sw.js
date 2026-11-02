@@ -14,9 +14,11 @@ import { clientsClaim } from 'workbox-core';
 // para evitar recargas automáticas sorpresa mientras el usuario está usando la app.
 clientsClaim();
 
-// En instalación dejamos que el worker quede en espera hasta recibir SKIP_WAITING
-// para no invalidar cachés mientras el usuario interactúa con la sesión activa.
-self.addEventListener('install', () => {});
+// 1. Activar de inmediato el nuevo Service Worker para que nunca queden workers
+// en espera indefinida sirviendo index.html desfasados con chunks 404
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
@@ -49,62 +51,29 @@ registerRoute(
   async ({ request, url }) => {
     const isExplicitBust = url.searchParams.has('rescue') || url.searchParams.has('updated') || url.searchParams.has('reset') || url.searchParams.has('clean') || url.searchParams.has('pfg_fresh');
     try {
-      let response;
-      try {
+      if (!isExplicitBust) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
-        response = await fetch(request, { signal: controller.signal, cache: 'no-cache' });
-        clearTimeout(timeoutId);
-      } catch {
-        if (!isExplicitBust) {
-          response = await matchPrecache('/index.html');
+        const timeoutId = setTimeout(() => controller.abort(), 3500);
+        try {
+          const networkResponse = await fetch(request, { signal: controller.signal, cache: 'no-cache' });
+          clearTimeout(timeoutId);
+          if (networkResponse && networkResponse.ok) {
+            return networkResponse;
+          }
+        } catch (_) {
+          clearTimeout(timeoutId);
         }
       }
-      if (!response || !response.ok) {
-        if (!isExplicitBust) {
-          response = (await matchPrecache('/index.html')) || (await fetch(request));
-        } else {
-          response = await fetch(request);
-        }
+
+      // Si la red falla o se solicita bypass, recurrir a index.html precacheado
+      const cachedResponse = await matchPrecache('/index.html');
+      if (cachedResponse) {
+        return cachedResponse;
       }
-      if (!response) return fetch(request);
-      
-      const html = await response.text();
-      
-      const cookieStr = request.headers.get('cookie') || '';
-      const match = cookieStr.match(/app_theme=([^;]+)/);
-      const theme = match ? match[1] : 'system';
-      
-      let lightColor = '#f8fafc';
-      let darkColor = '#0f172a';
-      
-      if (theme === 'light') { lightColor = '#f8fafc'; darkColor = '#f8fafc'; }
-      else if (theme === 'dark') { lightColor = '#0f172a'; darkColor = '#0f172a'; }
-      else if (theme === 'oled') { lightColor = '#000000'; darkColor = '#000000'; }
-      else if (theme === 'galaxy') { lightColor = '#000000'; darkColor = '#000000'; }
-      else if (theme === 'desert') { lightColor = '#fff1e6'; darkColor = '#2c1e16'; }
-      
-      const modifiedHtml = html.replace(
-        /<meta[^>]*id="theme-color-light"[^>]*>/i,
-        `<meta name="theme-color" media="(prefers-color-scheme: light)" content="${lightColor}" id="theme-color-light" />`
-      ).replace(
-        /<meta[^>]*id="theme-color-dark"[^>]*>/i,
-        `<meta name="theme-color" media="(prefers-color-scheme: dark)" content="${darkColor}" id="theme-color-dark" />`
-      );
-      
-      const headers = new Headers(response.headers);
-      headers.set('Content-Type', 'text/html; charset=utf-8');
-      headers.delete('content-encoding');
-      headers.delete('content-length');
-      headers.delete('content-range');
-      
-      return new Response(modifiedHtml, {
-        headers: headers,
-        status: response.status,
-        statusText: response.statusText
-      });
-    } catch (e) {
+
       return fetch(request);
+    } catch (_) {
+      return (await matchPrecache('/index.html')) || fetch(request);
     }
   }
 );

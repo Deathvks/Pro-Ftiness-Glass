@@ -5,8 +5,16 @@
     <link>https://pro-fitness-glass.zeabur.app/noticias</link>
     <description>Artículos científicos, nutrición deportiva, sobrecarga progresiva y guías de entrenamiento en Pro Fitness Glass.</description>
     <language>es-ES</language>
-    <lastBuildDate>Sat, 31 Oct 2026 20:26:06 GMT</lastBuildDate>
+    <lastBuildDate>Mon, 02 Nov 2026 23:04:38 GMT</lastBuildDate>
     <atom:link href="https://pro-fitness-glass.zeabur.app/rss.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Potenciación Post-Activación (PAP): El Truco Científico para Levantar Más Peso</title>
+      <link>https://pro-fitness-glass.zeabur.app/noticias/potenciacion-post-activacion-pap-fuerza-hipertrofia</link>
+      <guid isPermaLink="true">https://pro-fitness-glass.zeabur.app/noticias/potenciacion-post-activacion-pap-fuerza-hipertrofia</guid>
+      <pubDate>Sun, 01 Nov 2026 09:00:24 GMT</pubDate>
+      <description>Descubre cómo la Potenciación Post-Activación (PAP) utiliza el reclutamiento de fibras de alto umbral para elevar instantáneamente tu fuerza muscular. Aprende a aplicar cargas supra-máximas de forma segura en tu rutina diaria.</description>
+      <category>Biomecánica</category>
+    </item>
     <item>
       <title>Creatina Monohidrato: Guía Científica Definitiva de Dosis, Beneficios y Mitos</title>
       <link>https://pro-fitness-glass.zeabur.app/noticias/guia-cientifica-creatina-monohidrato-dosis-beneficios-mitos</link>
@@ -195,9 +203,17 @@
       <title>Hormonas del Hambre: Cómo Dominar a la Grelina y la Leptina Durante una Definición Severa</title>
       <link>https://pro-fitness-glass.zeabur.app/noticias/grelina-leptina-hormonas-hambre-estrategias-definicion</link>
       <guid isPermaLink="true">https://pro-fitness-glass.zeabur.app/noticias/grelina-leptina-hormonas-hambre-estrategias-definicion</guid>
-      <pubDate>Tue, 06 Oct 2026 16:50:06 GMT</pubDate>
+      <pubDate>Tue, 06 Oct 2026 17:40:05 GMT</pubDate>
       <description>El hambre feroz durante una etapa de definición no es falta de voluntad; es un mecanismo biológico milenario diseñado para evitar que mueras de inanición. Aprende a hackearlo.</description>
       <category>Salud</category>
+    </item>
+    <item>
+      <title>Cardio Zona 2 e Hipertrofia: ¿Existe Realmente el Efecto Interferencia?</title>
+      <link>https://pro-fitness-glass.zeabur.app/noticias/cardio-zona-2-hipertrofia-efecto-interferencia</link>
+      <guid isPermaLink="true">https://pro-fitness-glass.zeabur.app/noticias/cardio-zona-2-hipertrofia-efecto-interferencia</guid>
+      <pubDate>Mon, 02 Nov 2026 09:00:18 GMT</pubDate>
+      <description>Descubre cómo el cardio en Zona 2 acelera tu recuperación sin frenar la ganancia muscular. Aprende a combinar la resistencia aeróbica y la fuerza con respaldo científico.</description>
+      <category>Cardio y Resistencia</category>
     </item>
     <item>
       <title>Absorción de Proteína: El Mito de los 30 Gramos Desmontado</title>

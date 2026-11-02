@@ -53,11 +53,6 @@ try {
       if ('caches' in window) {
         caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
       }
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then((regs) => {
-          for (const reg of regs) reg.unregister();
-        }).catch(() => {});
-      }
       const cleanUrl = window.location.origin + window.location.pathname.replace(/\/$/, '') + '/login';
       window.location.replace(cleanUrl);
     }

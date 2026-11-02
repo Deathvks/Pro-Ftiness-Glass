@@ -27,11 +27,6 @@ const InitialLoadingSkeleton = () => {
             if ('caches' in window) {
                 caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).catch(() => {});
             }
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(regs => {
-                    regs.forEach(r => r.unregister().catch(() => {}));
-                }).catch(() => {});
-            }
         } catch (_) {}
         window.location.replace('/login');
     };

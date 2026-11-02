@@ -3,12 +3,12 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=107" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=78" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=78" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=78" />
-  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon.png?v=78" />
-  <link rel="shortcut icon" href="/favicon.ico?v=107" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico?v=108" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=79" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=79" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=79" />
+  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon.png?v=79" />
+  <link rel="shortcut icon" href="/favicon.ico?v=108" />
 
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -165,7 +165,7 @@
   <meta name="color-scheme" content="dark light" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-  <link rel="manifest" href="/manifest.json?v=85" />
+  <link rel="manifest" href="/manifest.json?v=86" />
 
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -778,9 +778,10 @@
           var clearSW = Promise.resolve();
           var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
           var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-          if (!isIOS && !isStandalone && 'serviceWorker' in navigator) {
+          // En lugar de desregistrar el Service Worker y provocar deadlocks, actualizamos limpiamente
+          if ('serviceWorker' in navigator) {
             clearSW = navigator.serviceWorker.getRegistrations().then(function (regs) {
-              return Promise.all(regs.map(function (r) { return r.unregister(); }));
+              return Promise.all(regs.map(function (r) { return r.update().catch(function () {}); }));
             }).catch(function () {});
           }
 
@@ -799,12 +800,12 @@
           });
         }
 
-        // 1. Watchdog: si tras 6 segundos React no ha montado, auto-recuperar
+        // 1. Watchdog: si tras 25 segundos React no ha montado, auto-recuperar
         setTimeout(function () {
           if (!window.__pfg_mounted) {
-            performEmergencyRescue('Watchdog: react no montado tras 6s');
+            performEmergencyRescue('Watchdog: react no montado tras 25s');
           }
-        }, 6000);
+        }, 25000);
 
         // 2. Errores de carga de scripts y tags
         window.addEventListener('error', function (ev) {
@@ -903,7 +904,7 @@
     </main>
   </noscript>
 
-  <script type="module" src="/src/main.jsx?v=85"></script>
+  <script type="module" src="/src/main.jsx?v=86"></script>
 </body>
 
 </html>

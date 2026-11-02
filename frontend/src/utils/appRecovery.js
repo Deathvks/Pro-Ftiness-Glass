@@ -35,13 +35,12 @@ export const clearAppRuntimeCache = async () => {
     );
   }
 
-  // NUNCA desregistrar el Service Worker en iOS PWA durante una recarga en caliente:
-  // en WebKit standalone, desregistrar el SW en caliente deja la petición de navegación en deadlock,
-  // congelando la app indefinidamente en la pantalla de carga (splash screen) hasta forzar cierre.
-  if (!isIOS && !isStandalone && typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+  // En lugar de desregistrar el Service Worker (lo que genera deadlocks de navegación en Chrome/WebKit),
+  // solicitamos una comprobación higiénica de actualización en segundo plano
+  if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
     cleanupTasks.push(
       navigator.serviceWorker.getRegistrations().then((registrations) =>
-        Promise.all(registrations.map((registration) => registration.unregister()))
+        Promise.all(registrations.map((registration) => registration.update().catch(() => {})))
       )
     );
   }

@@ -77,11 +77,11 @@ const LoadingFallback = ({ onGoHome }) => {
   React.useEffect(() => {
     const hintTimer = setTimeout(() => {
       setShowProgressHint(true);
-    }, 4500);
+    }, 2500);
 
     const timer = setTimeout(() => {
       setShowRescue(true);
-    }, 4000); // 4s de margen para respuesta rápida
+    }, 15000); // 4s de margen para respuesta rápida
     return () => {
       clearTimeout(hintTimer);
       clearTimeout(timer);
@@ -90,10 +90,12 @@ const LoadingFallback = ({ onGoHome }) => {
 
   const handleRepair = async () => {
     setIsRepairing(true);
-    await reloadAppWithoutStaleCache({ force: true });
-    setTimeout(() => {
-      setIsRepairing(false);
-    }, 2000);
+    if ('caches' in window) {
+      try {
+        await caches.delete('vite-hashed-assets');
+      } catch (_) {}
+    }
+    window.location.reload();
   };
 
   const handleResetSession = () => {
@@ -102,11 +104,6 @@ const LoadingFallback = ({ onGoHome }) => {
       sessionStorage.clear();
       if ('caches' in window) {
         caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
-      }
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then((regs) => {
-          regs.forEach((r) => r.unregister().catch(() => {}));
-        }).catch(() => {});
       }
     } catch (_) {}
     window.location.replace('/login');
