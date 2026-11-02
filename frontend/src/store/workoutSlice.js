@@ -103,15 +103,31 @@ const findLastPerformance = (workoutLog, exerciseName) => {
 // --- FUNCIONES DE ALMACENAMIENTO LOCAL ---
 const getWorkoutStateFromStorage = () => {
   try {
-    const activeWorkout = JSON.parse(localStorage.getItem('activeWorkout'));
-    if (!activeWorkout) return {};
+    const rawWorkout = localStorage.getItem('activeWorkout');
+    if (!rawWorkout) return {};
+    const activeWorkout = JSON.parse(rawWorkout);
+    if (!activeWorkout || typeof activeWorkout !== 'object') return {};
+
+    const rawStartTime = localStorage.getItem('workoutStartTime');
+    const parsedStartTime = rawStartTime ? JSON.parse(rawStartTime) : null;
+    const workoutStartTime = typeof parsedStartTime === 'number' && parsedStartTime > 0 ? parsedStartTime : Date.now();
+
+    if (!activeWorkout.startTime) {
+      activeWorkout.startTime = new Date(workoutStartTime).toISOString();
+    }
+
+    const rawPaused = localStorage.getItem('isWorkoutPaused');
+    const isWorkoutPaused = rawPaused ? Boolean(JSON.parse(rawPaused)) : false;
+
+    const rawAccum = localStorage.getItem('workoutAccumulatedTime');
+    const parsedAccum = rawAccum ? JSON.parse(rawAccum) : 0;
+    const workoutAccumulatedTime = typeof parsedAccum === 'number' && parsedAccum >= 0 ? parsedAccum : 0;
+
     return {
       activeWorkout,
-      workoutStartTime: JSON.parse(localStorage.getItem('workoutStartTime')),
-      isWorkoutPaused: JSON.parse(localStorage.getItem('isWorkoutPaused')),
-      workoutAccumulatedTime: JSON.parse(
-        localStorage.getItem('workoutAccumulatedTime')
-      ),
+      workoutStartTime,
+      isWorkoutPaused,
+      workoutAccumulatedTime,
     };
   } catch {
     clearWorkoutInStorage();

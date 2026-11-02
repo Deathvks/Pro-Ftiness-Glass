@@ -50,7 +50,8 @@ import WeeklyMuscleVolumeCard, {
   isExerciseIncludedInVolume
 } from '../components/Routines/WeeklyMuscleVolumeCard';
 const WorkoutSummaryModal = lazy(() => import('../components/WorkoutSummaryModal'));
-const RoutineAIGeneratorModal = lazy(() => import('../components/RoutineAIGeneratorModal'));
+const preloadRoutineAIGenerator = () => import('../components/RoutineAIGeneratorModal');
+const RoutineAIGeneratorModal = lazy(preloadRoutineAIGenerator);
 import RoutineTourGuide from '../components/RoutineTourGuide';
 import { calculateRoutineEstimatedTime } from '../utils/helpers';
 import { isWorkoutDoneToday } from '../store/workoutSlice';
@@ -463,6 +464,13 @@ const Routines = ({ setView, mainContentRef }) => {
   }, [fetchTodaysCompletedRoutines]);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      preloadRoutineAIGenerator().catch(() => {});
+    }, 150);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem('routinesActiveTab', activeTab);
   }, [activeTab]);
 
@@ -838,6 +846,8 @@ const Routines = ({ setView, mainContentRef }) => {
             </button>
             <button
               onClick={() => setShowAIGenerator(true)}
+              onMouseEnter={() => preloadRoutineAIGenerator().catch(() => {})}
+              onTouchStart={() => preloadRoutineAIGenerator().catch(() => {})}
               className="flex items-center justify-center gap-1.5 py-3 px-4 rounded-2xl font-extrabold text-sm bg-gradient-to-r from-accent via-purple-500 to-pink-500 text-white shadow-md active:scale-[0.98] transition-all whitespace-nowrap shrink-0"
               title="Generar rutina con IA"
             >
@@ -906,6 +916,8 @@ const Routines = ({ setView, mainContentRef }) => {
         </button>
         <button
           onClick={() => setShowAIGenerator(true)}
+          onMouseEnter={() => preloadRoutineAIGenerator().catch(() => {})}
+          onTouchStart={() => preloadRoutineAIGenerator().catch(() => {})}
           className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full font-bold transition hover:scale-105 bg-gradient-to-r from-accent via-purple-500 to-pink-500 text-white animate-gradient-x shadow-lg shadow-accent/20 border-none"
           title="Generar rutina con IA"
         >

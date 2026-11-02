@@ -32,6 +32,12 @@ public class MainActivity extends BridgeActivity {
 
             SharedPreferences prefs = getSharedPreferences("pfg_app_prefs", MODE_PRIVATE);
             long lastVersionCode = prefs.getLong("last_version_code", -1);
+            if (lastVersionCode == -1) {
+                // Nueva instalacion o reinstalacion: garantizar un inicio limpio evitando que copias corruptas de Google Drive bloqueen la app
+                try {
+                    android.webkit.WebStorage.getInstance().deleteAllData();
+                } catch (Exception ignored) {}
+            }
             if (lastVersionCode != currentVersionCode) {
                 WebView webView = getBridge() != null ? getBridge().getWebView() : null;
                 if (webView != null) {

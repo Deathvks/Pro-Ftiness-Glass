@@ -37,6 +37,17 @@ if (
 }
 
 
+// --- ENTORNO NATIVO (CAPACITOR): DESACTIVAR CUALQUIER SERVICE WORKER RESIDUAL ---
+if (Capacitor.isNativePlatform()) {
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const reg of registrations) {
+        reg.unregister().catch(() => {});
+      }
+    }).catch(() => {});
+  }
+}
+
 // --- MANEJADOR DE RESCATE DE EMERGENCIA POR URL (?reset=1 / ?repair=1 / ?clear=1) ---
 try {
   if (typeof window !== 'undefined' && window.location && window.location.search) {

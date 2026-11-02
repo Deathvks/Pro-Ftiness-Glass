@@ -8,8 +8,9 @@ import {
   Droplet, Beef, Zap, CheckCircle, XCircle,
   ArrowUp, ArrowDown, Minus, ChevronRight, Trophy as TrophyLucide, Check, Crown,
   LayoutGrid, IceCream, TriangleAlert, Info, Share2, X, Loader2, Lock, List, Copy, ListFilter,
-  MapPin
+  MapPin, Trash2
 } from 'lucide-react';
+import ConfirmationModal from '../components/ConfirmationModal';
 import { FaChartPie, FaTrophy, FaInstagram } from 'react-icons/fa';
 import { 
   FaMeteor, 
@@ -212,7 +213,7 @@ const Dashboard = ({ setView }) => {
     routines, workoutLog, bodyWeightLog, userProfile, logBodyWeight,
     updateTodayBodyWeight, startWorkout, startSimpleWorkout, nutritionLog,
     waterLog, todaysCreatineLog, fetchDataForDate,
-    completedRoutineIdsToday, activeWorkout, gamification, fetchTodaysCompletedRoutines,
+    completedRoutineIdsToday, activeWorkout, gamification, fetchTodaysCompletedRoutines, stopWorkout,
     checkStreak: _checkStreak, addXp: _addXp, addGamificationEvents, personalRecords
   } = useAppStore(useShallow(state => ({
     routines: state.routines,
@@ -230,6 +231,7 @@ const Dashboard = ({ setView }) => {
     completedRoutineIdsToday: state.completedRoutineIdsToday,
     fetchTodaysCompletedRoutines: state.fetchTodaysCompletedRoutines,
     activeWorkout: state.activeWorkout,
+    stopWorkout: state.stopWorkout,
     gamification: state.gamification,
     checkStreak: state.checkStreak,
     addXp: state.addXp,
@@ -258,6 +260,7 @@ const Dashboard = ({ setView }) => {
   const [selectedPR, setSelectedPR] = useState(null);
   const [isSharing, setIsSharing] = useState(false);
   const [showGymModal, setShowGymModal] = useState(false);
+  const [showDiscardWorkoutModal, setShowDiscardWorkoutModal] = useState(false);
   const [currentGym, setCurrentGym] = useState(() => {
     try {
       const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
@@ -894,6 +897,53 @@ const Dashboard = ({ setView }) => {
         </GlassCard>
       </div>
 
+            {/* BANNER DE ENTRENAMIENTO EN CURSO */}
+      {activeWorkout && (
+        <div className="mb-8 animate-[fade-in_0.3s_ease-out]">
+          <GlassCard className="glass relative p-5 sm:p-6 rounded-[28px] overflow-hidden border-2 border-accent/40 bg-accent/5 shadow-xl shadow-accent/10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-12 h-12 rounded-[20px] bg-accent text-accent-contrast flex items-center justify-center shrink-0 shadow-lg shadow-accent/30 animate-pulse">
+                  <FaDumbbell size={22} />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-accent bg-accent/15 px-2.5 py-0.5 rounded-full">
+                      {t('Entrenamiento en curso', { defaultValue: 'Entrenamiento en curso' })}
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-text-primary truncate mt-1">
+                    {activeWorkout.routineName || activeWorkout.name || t('Entrenamiento Libre', { defaultValue: 'Entrenamiento Libre' })}
+                  </h3>
+                  <p className="text-xs text-text-secondary truncate mt-0.5">
+                    {t('Tienes una sesión activa sin finalizar. Puedes continuarla o descartarla para empezar otra.', { defaultValue: 'Tienes una sesión activa sin finalizar. Puedes continuarla o descartarla para empezar otra.' })}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setView('workout')}
+                  className="flex-1 sm:flex-none px-5 py-2.5 rounded-2xl bg-accent text-accent-contrast font-bold text-sm shadow-md shadow-accent/25 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <FaPlay size={14} />
+                  <span>{t('Continuar entreno', { defaultValue: 'Continuar entreno' })}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDiscardWorkoutModal(true)}
+                  className="px-4 py-2.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 font-bold text-sm hover:bg-red-500/20 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  title={t('Descartar entrenamiento', { defaultValue: 'Descartar entrenamiento' })}
+                >
+                  <Trash2 size={16} />
+                  <span className="hidden xs:inline">{t('Descartar', { defaultValue: 'Descartar' })}</span>
+                </button>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4 mb-8">
         <GlassCard
           onClick={() => canOpenWeeklyRecap && setShowWeeklyRecap(true)}
@@ -1352,6 +1402,19 @@ const Dashboard = ({ setView }) => {
             </div>
           </div>
         </div>
+      )}
+
+            {showDiscardWorkoutModal && (
+        <ConfirmationModal
+          message={t('¿Seguro que deseas descartar el entrenamiento en curso? Perderás el progreso de la sesión actual.', { defaultValue: '¿Seguro que deseas descartar el entrenamiento en curso? Perderás el progreso de la sesión actual.' })}
+          confirmText={t('Descartar', { defaultValue: 'Descartar' })}
+          onConfirm={() => {
+            stopWorkout();
+            setShowDiscardWorkoutModal(false);
+            addToast(t('Entrenamiento descartado.', { defaultValue: 'Entrenamiento descartado.' }), 'info');
+          }}
+          onCancel={() => setShowDiscardWorkoutModal(false)}
+        />
       )}
 
       {showExerciseLibrary && (

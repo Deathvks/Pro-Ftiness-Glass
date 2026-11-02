@@ -1529,7 +1529,7 @@ export default function MainAppLayout({
       </Suspense>
 
       {/* Botón "Volver al Entreno" — bottom usa --safe-bottom en lugar de env() directo */}
-      {activeWorkout && workoutStartTime && view !== 'workout' && (
+      {Boolean(activeWorkout) && view !== 'workout' && (
         <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(5.5rem+var(--safe-bottom))] md:left-auto md:transform-none md:bottom-10 md:right-10 z-[60]">
           <button
             onClick={() => handleNavClick('workout')}

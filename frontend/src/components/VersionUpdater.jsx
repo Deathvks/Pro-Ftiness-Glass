@@ -14,9 +14,10 @@ const SWUpdaterCore = () => {
   const lastCheckTimeRef = useRef(0);
   const isCheckingRef = useRef(false);
 
-  // 1. Registro del Service Worker nativo
+  // 1. Registro del Service Worker nativo (solo Web / PWA, nunca en app nativa)
   useEffect(() => {
     if (import.meta.env.DEV) return;
+    if (Capacitor.isNativePlatform()) return;
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
 
     navigator.serviceWorker
@@ -89,6 +90,7 @@ const SWUpdaterCore = () => {
     const checkForNewVersion = useCallback(async () => {
     const isLocal =
       import.meta.env.DEV ||
+      Capacitor.isNativePlatform() ||
       (typeof window !== 'undefined' &&
         (window.location.hostname === 'localhost' ||
           window.location.hostname === '127.0.0.1' ||

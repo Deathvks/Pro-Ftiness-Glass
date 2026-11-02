@@ -77,7 +77,7 @@ class ErrorBoundary extends React.Component {
       }
     } catch (_) {}
 
-    window.location.replace('/login');
+    window.location.replace(window.location.origin + '/');
   };
 
   render() {
