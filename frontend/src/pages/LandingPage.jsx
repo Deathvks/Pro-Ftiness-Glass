@@ -12,6 +12,7 @@ import { Helmet } from 'react-helmet-async';
 import packageJson from '../../package.json';
 import socialService from '../services/socialService';
 import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
+import PublicPageFooter from '../components/PublicPageFooter';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
@@ -1192,71 +1193,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                     
 
-                    {/* --- FOOTER LEGAL Y SOCIAL --- */}
-                    <footer className="p-10 pb-16 text-center border-t border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 backdrop-blur-xl relative z-20 transform-gpu">
-
-                        <div className="flex flex-wrap justify-center gap-6 sm:gap-8 mb-8 px-4">
-                            <a href="https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-[#4285F4] transition-all transform hover:scale-125 hover:-translate-y-1">
-                                <FaGooglePlay size={26} />
-                            </a>
-                            <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-[#E1306C] transition-all transform hover:scale-125 hover:-translate-y-1">
-                                <Instagram size={28} />
-                            </a>
-                            <a href="https://www.tiktok.com/@pro_fitness_glass" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-[#00f2fe] transition-all transform hover:scale-125 hover:-translate-y-1">
-                                <TikTokIcon size={28} />
-                            </a>
-                            <a href="https://www.youtube.com/@ProFitnessGlass" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-[#FF0000] transition-all transform hover:scale-125 hover:-translate-y-1">
-                                <Youtube size={28} />
-                            </a>
-                            <a href="https://github.com/Deathvks/Pro-Ftiness-Glass" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-text-primary transition-all transform hover:scale-125 hover:-translate-y-1">
-                                <Github size={28} />
-                            </a>
-                            <a href="https://pro-fitness-glass.zeabur.app" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-accent transition-all transform hover:scale-125 hover:-translate-y-1">
-                                <Globe size={28} />
-                            </a>
-                        </div>
-
-                        <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-sm text-text-secondary font-bold mb-8 tracking-wide">
-                            <a href="/sobre-nosotros" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
-                                ¿Quiénes Somos?
-                            </a>
-                            <span className="hidden sm:block text-text-secondary/30">•</span>
-                            <a href="/faq" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
-                                Preguntas Frecuentes
-                            </a>
-                            <span className="hidden sm:block text-text-secondary/30">•</span>
-                            <a href="/calculadora-1rm" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
-                                Calculadora 1RM
-                            </a>
-                            <span className="hidden sm:block text-text-secondary/30">•</span>
-                            <a href="/calculadora-calorias-macros" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
-                                Calculadora de Macros
-                            </a>
-                            <span className="hidden sm:block text-text-secondary/30">•</span>
-                            <a href="/ejercicios" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
-                                Guía de Ejercicios
-                            </a>
-                            <span className="hidden sm:block text-text-secondary/30">•</span>
-                            <a href="/noticias" className="hover:text-accent transition-colors flex items-center justify-center gap-2">
-                                Noticias y Artículos
-                            </a>
-                            <span className="hidden sm:block text-text-secondary/30">•</span>
-                            <a href="/privacy" className="hover:text-accent transition-colors flex items-center justify-center gap-3">
-                                Política de Privacidad
-                            </a>
-                            <span className="hidden sm:block text-text-secondary/30">•</span>
-                            <a href="/terms" className="hover:text-accent transition-colors flex items-center justify-center gap-3">
-                                Términos del Servicio
-                            </a>
-                            <span className="hidden sm:block text-text-secondary/30">•</span>
-                            <a href="/aviso-legal" className="hover:text-accent transition-colors flex items-center justify-center gap-3">
-                                Aviso Legal (LSSI-CE)
-                            </a>
-                        </div>
-                        <p className="text-xs font-bold text-text-tertiary uppercase tracking-widest opacity-60">
-                            © {currentYear} Pro Fitness Glass. Desarrollado con pasión y cafeína. v{appVersion}
-                        </p>
-                    </footer>
+                    {/* --- FOOTER UNIFICADO (PublicPageFooter) --- */}
+                    <PublicPageFooter className="relative z-20" />
 
                 </div>
             </div>
