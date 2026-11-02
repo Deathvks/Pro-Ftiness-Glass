@@ -234,6 +234,13 @@
 
   <url>
     <loc>https://pro-fitness-glass.zeabur.app/terms</loc>
+  </url>
+
+  <url>
+    <loc>https://pro-fitness-glass.zeabur.app/aviso-legal</loc>
+    <lastmod>2026-11-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
     <lastmod>2026-10-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>

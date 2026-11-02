@@ -6,7 +6,7 @@ import {
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
   ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
   Bug, Download, Vibrate, Volume2, Timer, Sliders, Globe, Clock, MapPin, Youtube, Play, LockOpen, Lock,
-  FileSpreadsheet, UploadCloud
+  FileSpreadsheet, UploadCloud, Scale
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6'; 
 import useAppStore from '../store/useAppStore';
@@ -466,6 +466,14 @@ export default function SettingsScreen({
                 title="Términos y Condiciones"
                 subtitle="Reglas de uso de la app"
                 onClick={() => setView('terms')}
+                action={<ChevronRight size={18} className="text-text-muted" />}
+              />
+
+              <SettingsItem
+                icon={Scale}
+                title="Aviso Legal (LSSI-CE)"
+                subtitle="Datos del prestador y titularidad"
+                onClick={() => setView('legalNotice')}
                 action={<ChevronRight size={18} className="text-text-muted" />}
               />
 

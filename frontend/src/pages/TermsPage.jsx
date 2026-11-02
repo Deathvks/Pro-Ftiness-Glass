@@ -118,6 +118,9 @@ const TermsPage = ({ onBack }) => {
                 <li><strong className="text-text-primary">Correo electrónico de contacto y soporte:</strong> <a href="mailto:profitnessglass@gmail.com" className="text-accent underline font-bold">profitnessglass@gmail.com</a></li>
                 <li><strong className="text-text-primary">Actividad principal:</strong> Aplicación informática para la gestión de rutinas, seguimiento deportivo de hipertrofia y fuerza, calculadora de marcas (1RM) y diario nutricional.</li>
               </ul>
+              <p className="text-xs sm:text-sm font-medium text-text-tertiary pt-1">
+                Para consultar información detallada sobre titularidad, alojamiento de infraestructura, propiedad industrial y régimen de responsabilidad de la plataforma, consulta nuestro <a href="/aviso-legal" className="text-accent underline font-bold inline-flex items-center gap-1">Aviso Legal (LSSI-CE) <ExternalLink size={12} /></a>.
+              </p>
             </section>
 
             {/* 2. Capacidad Legal y Garantías del Usuario */}

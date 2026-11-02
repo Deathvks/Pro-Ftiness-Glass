@@ -101,6 +101,8 @@ const apiClient = async (endpoint, options = {}) => {
                                  currentPath === '/faq' ||
                                  currentPath === '/privacy' ||
                                  currentPath === '/terms' ||
+                                 currentPath === '/aviso-legal' ||
+                                 currentPath === '/legal' ||
                                  currentPath.startsWith('/share/');
                 if (isPublic) {
                     useAppStore.getState().handleLogout();

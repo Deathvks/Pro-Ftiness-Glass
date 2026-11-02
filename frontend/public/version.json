@@ -1,6 +1,6 @@
 {
-  "version": "7.11.64",
-  "releaseNotes": "Actualización v7.11.64: Consentimiento activo inequívoco en el formulario de registro (Art. 6.1.a y 7 RGPD / LOPDGDD 3/2018) y verificación explícita de edad mínima.",
+  "version": "7.11.65",
+  "releaseNotes": "Actualización v7.11.65: Incorporación formal de Aviso Legal e información general del prestador del servicio (Art. 10 LSSI-CE 34/2002), propiedad intelectual y resolución de litigios en línea.",
   "welcome": {
     "title": "Migración desde Hevy/Strong y Copias",
     "subtitle": "Llega la migración de datos: importa todo tu historial de entrenamientos desde Hevy o Strong en un solo clic y exporta a Excel cuando quieras.",

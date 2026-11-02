@@ -21,6 +21,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
         path === '/faq' ||
         path === '/privacy' ||
         path === '/terms' ||
+        path === '/aviso-legal' ||
+        path === '/legal' ||
         path.startsWith('/share/') ||
         path === '/reset-password'
       ) {
@@ -132,6 +134,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
           window.location.pathname === '/faq' ||
           window.location.pathname === '/privacy' ||
           window.location.pathname === '/terms' ||
+          window.location.pathname === '/aviso-legal' ||
+          window.location.pathname === '/legal' ||
           window.location.pathname.startsWith('/share/') ||
           window.location.pathname === '/reset-password' ||
           window.location.pathname.startsWith('/profile')
@@ -168,6 +172,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
           window.location.pathname === '/faq' ||
           window.location.pathname === '/privacy' ||
           window.location.pathname === '/terms' ||
+          window.location.pathname === '/aviso-legal' ||
+          window.location.pathname === '/legal' ||
           window.location.pathname.startsWith('/share/') ||
           window.location.pathname === '/reset-password' ||
           window.location.pathname.startsWith('/profile')
@@ -188,6 +194,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
           window.location.pathname === '/faq' ||
       window.location.pathname === '/privacy' ||
       window.location.pathname === '/terms' ||
+      window.location.pathname === '/aviso-legal' ||
+      window.location.pathname === '/legal' ||
       window.location.pathname.startsWith('/share/') ||
       window.location.pathname === '/reset-password'
     );

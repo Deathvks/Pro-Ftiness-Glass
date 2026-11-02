@@ -14,7 +14,8 @@ import {
   FaNewspaper,
   FaCircleQuestion,
   FaUsers,
-  FaShieldHalved
+  FaShieldHalved,
+  FaScaleBalanced
 } from 'react-icons/fa6';
 
 export default function PublicPageFooter({ className = '' }) {
@@ -202,6 +203,15 @@ export default function PublicPageFooter({ className = '' }) {
                 >
                   <span className="w-3.5 h-3.5 rounded-full bg-black/10 dark:bg-white/10 shrink-0 inline-flex items-center justify-center text-[10px] font-bold">§</span>
                   <span className="font-semibold">Términos del Servicio</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/aviso-legal" 
+                  className="flex items-center gap-2 py-2 px-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 hover:text-accent transition-colors"
+                >
+                  <FaScaleBalanced size={13} className="text-amber-400 shrink-0" />
+                  <span className="font-semibold">Aviso Legal (LSSI-CE)</span>
                 </Link>
               </li>
               <li>

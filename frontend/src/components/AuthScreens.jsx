@@ -91,6 +91,12 @@ const AuthScreens = ({ authView, setAuthView }) => {
           >
             Términos del Servicio
           </Link>
+          <Link 
+            to="/aviso-legal" 
+            className="text-xs text-text-secondary hover:text-accent transition-colors"
+          >
+            Aviso Legal
+          </Link>
         </div>
       </footer>
     </div>

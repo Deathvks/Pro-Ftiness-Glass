@@ -1248,6 +1248,10 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             <a href="/terms" className="hover:text-accent transition-colors flex items-center justify-center gap-3">
                                 Términos del Servicio
                             </a>
+                            <span className="hidden sm:block text-text-secondary/30">•</span>
+                            <a href="/aviso-legal" className="hover:text-accent transition-colors flex items-center justify-center gap-3">
+                                Aviso Legal (LSSI-CE)
+                            </a>
                         </div>
                         <p className="text-xs font-bold text-text-tertiary uppercase tracking-widest opacity-60">
                             © {currentYear} Pro Fitness Glass. Desarrollado con pasión y cafeína. v{appVersion}

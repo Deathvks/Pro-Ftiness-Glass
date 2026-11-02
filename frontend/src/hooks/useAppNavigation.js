@@ -21,7 +21,7 @@ export const useAppNavigation = (navigateRouter) => {
         const path = window.location.pathname;
 
     const validPaths = [
-      '/', '/login', '/register', '/forgot-password', '/forgotPassword', '/reset-password', '/privacy', '/terms',
+      '/', '/login', '/register', '/forgot-password', '/forgotPassword', '/reset-password', '/privacy', '/terms', '/aviso-legal', '/legal',
       '/dashboard', '/progress', '/routines', '/workout', '/nutrition',
       '/social', '/hub', '/quickCardio', '/active-cardio', '/settings', '/appearance',
       '/support', '/socialLinks', '/challenges', '/physicalProfileEditor', '/profile',
@@ -46,6 +46,9 @@ export const useAppNavigation = (navigateRouter) => {
     if (path === '/active-cardio') return 'active-cardio';
     if (path === '/asesoria') return 'asesoria';
     if (path.startsWith('/noticias')) return 'noticias';
+    if (path === '/privacy') return 'privacyPolicy';
+    if (path === '/terms') return 'terms';
+    if (path === '/aviso-legal' || path === '/legal') return 'legalNotice';
 
     const savedView = localStorage.getItem('lastView');
     return savedView || 'dashboard';

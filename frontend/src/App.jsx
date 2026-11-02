@@ -107,6 +107,7 @@ const VIEW_CHUNK_LOADERS = {
   adminNotifications: () => import('./pages/AdminNotifications'),
   privacyPolicy: () => import('./pages/PrivacyPolicy'),
   terms: () => import('./pages/TermsPage'),
+  legalNotice: () => import('./pages/LegalNoticePage'),
   profile: () => import('./pages/Profile'),
   twoFactorSetup: () => import('./pages/TwoFactorSetup'),
   notifications: () => import('./pages/NotificationsScreen'),
@@ -166,6 +167,7 @@ if (typeof window !== 'undefined' && window.location) {
   else if (initialPath.startsWith('/noticias/')) preloadViewChunk('noticiaDetalle');
   else if (initialPath === '/privacy') preloadViewChunk('privacyPolicy');
   else if (initialPath === '/terms') preloadViewChunk('terms');
+  else if (initialPath === '/aviso-legal' || initialPath === '/legal') preloadViewChunk('legalNotice');
   else if (initialPath === '/') preloadViewChunk('landingPage');
 }
 
@@ -204,6 +206,7 @@ const AdminPanel = lazyWithRetry(VIEW_CHUNK_LOADERS.adminPanel, 'adminPanel');
 const AdminNotifications = lazyWithRetry(VIEW_CHUNK_LOADERS.adminNotifications, 'adminNotifications');
 const PrivacyPolicy = lazyWithRetry(VIEW_CHUNK_LOADERS.privacyPolicy, 'privacyPolicy');
 const TermsPage = lazyWithRetry(VIEW_CHUNK_LOADERS.terms, 'terms');
+const LegalNoticePage = lazyWithRetry(VIEW_CHUNK_LOADERS.legalNotice, 'legalNotice');
 const Profile = lazyWithRetry(VIEW_CHUNK_LOADERS.profile, 'profile');
 const TwoFactorSetup = lazyWithRetry(VIEW_CHUNK_LOADERS.twoFactorSetup, 'twoFactorSetup');
 const NotificationsScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.notifications, 'notifications');
@@ -672,6 +675,7 @@ export default function App() {
       case 'trainerPanel': return (userProfile?.role === 'admin' || userProfile?.role === 'trainer') ? <TrainerPanel setView={navigateInternal} /> : <Dashboard setView={navigateInternal} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
       case 'terms': return <TermsPage onBack={handleBackFromPolicy} />;
+      case 'legalNotice': return <LegalNoticePage onBack={handleBackFromPolicy} />;
       case 'twoFactorSetup': return <TwoFactorSetup setView={navigateInternal} />;
       case 'notifications': return <NotificationsScreen setView={navigateInternal} />;
       case 'asesoria': {
@@ -880,7 +884,7 @@ export default function App() {
     if (isLandingPage) return true;
     if (!isAuthenticated) return false;
 
-    const viewsWithInternalSEO = ['dashboard', 'publicProfile', 'privacyPolicy', 'terms'];
+    const viewsWithInternalSEO = ['dashboard', 'publicProfile', 'privacyPolicy', 'terms', 'legalNotice'];
     return !viewsWithInternalSEO.includes(view);
   }, [isAuthenticated, view, isLandingPage]);
 
@@ -910,6 +914,8 @@ export default function App() {
     location.pathname === '/migracion' ||
     location.pathname === '/privacy' ||
     location.pathname === '/terms' ||
+    location.pathname === '/aviso-legal' ||
+    location.pathname === '/legal' ||
     location.pathname.startsWith('/share/') ||
     location.pathname === '/reset-password';
 
@@ -976,6 +982,16 @@ export default function App() {
         <Route path="/terms" element={
             <Suspense fallback={<div className="p-10">Cargando términos...</div>}>
                 <TermsPage />
+            </Suspense>
+        } />
+        <Route path="/aviso-legal" element={
+            <Suspense fallback={<div className="p-10">Cargando aviso legal...</div>}>
+                <LegalNoticePage />
+            </Suspense>
+        } />
+        <Route path="/legal" element={
+            <Suspense fallback={<div className="p-10">Cargando aviso legal...</div>}>
+                <LegalNoticePage />
             </Suspense>
         } />
         <Route path="/noticias" element={
