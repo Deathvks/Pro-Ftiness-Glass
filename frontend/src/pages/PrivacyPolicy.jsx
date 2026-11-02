@@ -4,7 +4,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, Cookie, Camera, Shield, Bell, Globe, Trash2, 
-  Mail, Clock, Users, HeartHandshake, MapPin 
+  Mail, Clock, Users, HeartHandshake, MapPin, ShieldCheck, ExternalLink 
 } from 'lucide-react';
 import SEOHead from '../components/SEOHead';
 
@@ -66,6 +66,111 @@ const PrivacyPolicy = ({ onBack }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+
+            {/* --- SECCIÓN FORMAL RGPD: Cuadro del Responsable del Tratamiento --- */}
+            <PolicyCard className="md:col-span-2" highlight={true}>
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3.5 bg-accent text-accent-contrast rounded-[20px] shadow-lg shadow-accent/30 ring-1 ring-white/20 shrink-0">
+                  <ShieldCheck size={28} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <span className="text-[10px] sm:text-xs font-black tracking-widest text-accent uppercase">
+                    Primera Capa Informativa — Art. 13 RGPD y Art. 11 LOPDGDD
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">
+                    Información Básica sobre Protección de Datos
+                  </h2>
+                </div>
+              </div>
+
+              <p className="text-text-secondary font-medium mb-6 text-sm sm:text-base leading-relaxed max-w-3xl">
+                En cumplimiento del <strong>Reglamento General de Protección de Datos (UE 2016/679)</strong> y la <strong>Ley Orgánica 3/2018 (LOPDGDD)</strong>, te informamos de manera formal y transparente sobre la gestión y el tratamiento de tus datos personales:
+              </p>
+
+              <div className="overflow-hidden rounded-[24px] ring-1 ring-black/10 dark:ring-white/10 bg-bg-primary/70 backdrop-blur-md shadow-sm">
+                <div className="divide-y divide-black/5 dark:divide-white/10 text-xs sm:text-sm">
+                  {/* Responsable */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Responsable del Tratamiento
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      <strong className="text-text-primary">Dylan Jesús Suárez Gómez</strong> (Titular de Pro Fitness Glass).
+                      <br />
+                      Correo de contacto y ejercicio de derechos: <a href="mailto:profitnessglass@gmail.com" className="text-accent underline font-bold">profitnessglass@gmail.com</a>
+                    </div>
+                  </div>
+
+                  {/* Finalidad */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Finalidad Principal
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      Gestión integral de cuenta de usuario, diario de entrenamiento en gimnasio, cálculo de marcas (1RM), registro de sobrecarga progresiva, control nutricional asistido y asesoría deportiva voluntaria con entrenadores vinculados. Las historias efímeras compartidas se destruyen automáticamente tras 24 horas.
+                    </div>
+                  </div>
+
+                  {/* Legitimación / Bases Jurídicas */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Bases Jurídicas (Legitimación)
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed space-y-1.5">
+                      <p>
+                        <strong className="text-text-primary">1. Ejecución del contrato (Art. 6.1.b RGPD):</strong> Necesario para la prestación del servicio, sincronización de rutinas y acceso a la plataforma.
+                      </p>
+                      <p>
+                        <strong className="text-text-primary">2. Consentimiento explícito e informado (Art. 6.1.a y 9.2.a RGPD):</strong> Aplicable a métricas de rendimiento físico, peso corporal, calorías y datos antropométricos relativos a la salud deportiva.
+                      </p>
+                      <p>
+                        <strong className="text-text-primary">3. Interés legítimo (Art. 6.1.f RGPD):</strong> Mantenimiento de la seguridad de la plataforma, prevención de fraude y registro de auditoría de sesiones.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Destinatarios */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Destinatarios
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      No se ceden ni venden datos a terceros para fines publicitarios, de marketing ni comerciales. Los datos son tratados exclusivamente por proveedores tecnológicos indispensables para el servicio (infraestructura segura de servidores e inicio de sesión de Google) bajo acuerdos vinculantes de confidencialidad y encargo de tratamiento según el RGPD.
+                    </div>
+                  </div>
+
+                  {/* Conservación */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Plazos de Conservación
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      Tus datos se conservan mientras tu cuenta permanezca activa. Puedes solicitar o ejecutar la eliminación total e irreversible de tu cuenta en cualquier momento desde tu Perfil. Las historias efímeras se eliminan de forma irrecuperable a las 24 horas.
+                    </div>
+                  </div>
+
+                  {/* Derechos */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Tus Derechos
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      Derecho de acceso, rectificación, supresión (derecho al olvido), limitación del tratamiento, oposición y portabilidad de datos (exportación completa en formatos abiertos JSON, CSV y Excel). Puedes ejercerlos al instante desde los Ajustes de tu cuenta o escribiendo a <a href="mailto:profitnessglass@gmail.com" className="text-accent underline font-bold">profitnessglass@gmail.com</a>.
+                    </div>
+                  </div>
+
+                  {/* Reclamación AEPD */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Autoridad de Control
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      Tienes derecho a presentar una reclamación ante la <strong className="text-text-primary">Agencia Española de Protección de Datos (AEPD)</strong> a través de su sede electrónica oficial en <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer" className="text-accent underline font-bold inline-flex items-center gap-1">www.aepd.es <ExternalLink size={12} /></a> si consideras vulnerados tus derechos.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </PolicyCard>
 
             {/* --- SECCIÓN DESTACADA: Historias --- */}
             <PolicyCard className="md:col-span-2" highlight={true}>
