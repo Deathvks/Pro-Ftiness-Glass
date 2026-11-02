@@ -265,6 +265,37 @@ export const sendMessage = async (req, res, next) => {
 
     notifyUserIfNeeded(userId, receiverId, cleanContent);
 
+    // Si un cliente escribe, sus mensajes previos recibidos de entrenadores/bot quedan automáticamente leídos
+    const requestor = await User.findByPk(userId);
+    if (requestor && requestor.role !== 'trainer' && requestor.role !== 'admin') {
+      try {
+        const trainersAndAdmins = await User.findAll({
+          where: { role: { [Op.in]: ['admin', 'trainer'] } },
+          attributes: ['id']
+        });
+        const trainerAdminIds = trainersAndAdmins.map(u => u.id);
+
+        const [readCount] = await Message.update(
+          { read_at: new Date() },
+          {
+            where: {
+              receiver_id: userId,
+              sender_id: { [Op.in]: trainerAdminIds },
+              read_at: null
+            }
+          }
+        );
+
+        if (readCount > 0 && io) {
+          trainerAdminIds.forEach(tId => {
+            io.to(tId.toString()).emit('messages_read', { byUserId: userId });
+          });
+        }
+      } catch (errRead) {
+        console.error('Error auto-marcando mensajes como leídos en sendMessage:', errRead);
+      }
+    }
+
     // --- LOGICA DEL BOT RESPONDEDOR ---
     console.log('[BOT] Checking bot reply for userId:', userId, 'content:', content.trim().substring(0, 50));
     const requestor = await User.findByPk(userId);
@@ -558,27 +589,37 @@ export const markMessagesAsRead = async (req, res, next) => {
 
     const requestor = await User.findByPk(userId);
     const isAdmin = requestor && requestor.role === 'admin';
+    const isTrainer = requestor && requestor.role === 'trainer';
+
+    const trainersAndAdmins = await User.findAll({
+      where: { role: { [Op.in]: ['admin', 'trainer'] } },
+      attributes: ['id']
+    });
+    const trainerAdminIds = trainersAndAdmins.map(u => u.id);
 
     let whereCondition;
 
-    if (isAdmin) {
-      const trainersAndAdmins = await User.findAll({
-        where: { role: { [Op.in]: ['admin', 'trainer'] } },
-        attributes: ['id']
-      });
-      const trainerAdminIds = trainersAndAdmins.map(u => u.id);
-
+    if (isAdmin || isTrainer) {
       whereCondition = {
         sender_id: otherUserId,
         receiver_id: { [Op.in]: trainerAdminIds },
         read_at: null
       };
     } else {
-      whereCondition = {
-        sender_id: otherUserId,
-        receiver_id: userId,
-        read_at: null
-      };
+      // Si el cliente está en el hilo de soporte/asesoría, marcar todos los mensajes recibidos del staff o bot
+      if (trainerAdminIds.includes(parseInt(otherUserId))) {
+        whereCondition = {
+          sender_id: { [Op.in]: trainerAdminIds },
+          receiver_id: userId,
+          read_at: null
+        };
+      } else {
+        whereCondition = {
+          sender_id: otherUserId,
+          receiver_id: userId,
+          read_at: null
+        };
+      }
     }
 
     const [affectedRows] = await Message.update(
@@ -589,15 +630,12 @@ export const markMessagesAsRead = async (req, res, next) => {
 
     if (io) {
       io.to(otherUserId.toString()).emit('messages_read', { byUserId: userId });
-      // Emit to all admins to sync the UI
-      if (isAdmin) {
-        const admins = await User.findAll({ where: { role: 'admin' }, attributes: ['id'] });
-        admins.forEach(admin => {
-          if (admin.id.toString() !== otherUserId.toString()) {
-            io.to(admin.id.toString()).emit('messages_read', { byUserId: userId });
-          }
-        });
-      }
+      // Sincronizar en tiempo real con todos los entrenadores y administradores
+      trainerAdminIds.forEach(tId => {
+        if (tId.toString() !== otherUserId.toString() && tId.toString() !== userId.toString()) {
+          io.to(tId.toString()).emit('messages_read', { byUserId: userId });
+        }
+      });
     }
 
     res.status(200).json({ message: 'Mensajes marcados como leídos', affectedRows });

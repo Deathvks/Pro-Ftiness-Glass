@@ -156,7 +156,10 @@ export default function TrainerChats({ onClose }) {
   };
 
   const handleIncomingMessage = (msg) => {
-    const isFromCurrentChat = selectedClientRef.current && String(selectedClientRef.current.id) === String(msg.sender_id);
+    const isForCurrentChat = selectedClientRef.current && (
+      String(selectedClientRef.current.id) === String(msg.sender_id) ||
+      String(selectedClientRef.current.id) === String(msg.receiver_id)
+    );
 
     setClients((prevClients) => {
       let updated = [...prevClients];
@@ -165,7 +168,7 @@ export default function TrainerChats({ onClose }) {
       if (clientIndex !== -1) {
         const client = updated[clientIndex];
         client.lastMessage = msg;
-        if (String(msg.sender_id) === String(client.id) && !isFromCurrentChat) {
+        if (String(msg.sender_id) === String(client.id) && !isForCurrentChat) {
           client.unreadCount = (client.unreadCount || 0) + 1;
         }
 
@@ -177,8 +180,9 @@ export default function TrainerChats({ onClose }) {
 
     const currentUserId = useAppStore.getState().userProfile?.id;
 
-    if (isFromCurrentChat || String(msg.sender_id) === String(currentUserId)) {
+    if (isForCurrentChat) {
       setMessages((prev) => {
+        if (msg.id && prev.some((m) => m.id === msg.id)) return prev;
         const next = [...prev, msg];
         if (selectedClientRef.current?.id) {
           setCachedMessages(selectedClientRef.current.id, next);
@@ -190,18 +194,29 @@ export default function TrainerChats({ onClose }) {
       if (String(msg.sender_id) === String(selectedClientRef.current?.id)) {
         markAsRead(selectedClientRef.current.id);
       }
+    } else {
+      const otherClientId = String(msg.sender_id) === String(currentUserId) ? msg.receiver_id : msg.sender_id;
+      if (otherClientId) {
+        const cached = getCachedMessages(otherClientId);
+        if (cached && !cached.some((m) => m.id === msg.id)) {
+          setCachedMessages(otherClientId, [...cached, msg]);
+        }
+      }
     }
   };
 
   const handleMessagesRead = ({ byUserId }) => {
-    const currentUserId = useAppStore.getState().userProfile?.id;
-    setMessages((prev) => prev.map((msg) =>
-    String(msg.sender_id) === String(currentUserId) &&
-    String(msg.receiver_id) === String(byUserId) &&
-    !msg.read_at ?
-    { ...msg, read_at: new Date() } :
-    msg
-    ));
+    setMessages((prev) => {
+      const next = prev.map((msg) =>
+        String(msg.receiver_id) === String(byUserId) && !msg.read_at
+          ? { ...msg, read_at: new Date() }
+          : msg
+      );
+      if (selectedClientRef.current?.id && String(selectedClientRef.current.id) === String(byUserId)) {
+        setCachedMessages(byUserId, next);
+      }
+      return next;
+    });
   };
 
   const renderMessageContent = (msg) => {
@@ -364,11 +379,22 @@ export default function TrainerChats({ onClose }) {
 
 
   const openChat = async (client) => {
+    if (!client) return;
     setSelectedClient(client);
+
+    // Cargar inmediatamente la caché de este cliente o limpiar mensajes para evitar que parpadeen los del chat anterior
+    const cached = getCachedMessages(client.id);
+    if (cached && cached.length > 0) {
+      setMessages(cached);
+    } else {
+      setMessages([]);
+    }
+
     setChatLoading(true);
     try {
       const history = await apiClient(`/chat/history/${client.id}`);
       setMessages(history);
+      setCachedMessages(client.id, history);
       scrollToBottom();
       await markAsRead(client.id);
     } catch (e) {
@@ -850,7 +876,9 @@ export default function TrainerChats({ onClose }) {
                 </div> :
 
               messages.map((msg, index) => {
-                const isMe = String(msg.sender_id) !== String(selectedClient.id);
+                const isBot = msg.attachment_type === 'bot_reply';
+                const isFromClient = selectedClient && String(msg.sender_id) === String(selectedClient.id);
+                const isMe = isBot || !isFromClient;
                 const showDate = index === 0 || new Date(msg.created_at).toDateString() !== new Date(messages[index - 1].created_at).toDateString();
                 return (
                   <React.Fragment key={msg.id || index}>
@@ -871,8 +899,8 @@ export default function TrainerChats({ onClose }) {
                         onMouseUp={handlePressEnd}
                         onMouseLeave={handlePressEnd}
                       >
-                        {msg.attachment_type === 'bot_reply' && (
-                          <div className={`text-[11px] font-bold opacity-80 mb-1 flex items-center gap-1 ${!isMe ? 'text-accent' : ''}`}>
+                        {isBot && (
+                          <div className="text-[11px] font-bold opacity-80 mb-1 flex items-center gap-1">
                             🤖 Bot Coordinador
                           </div>
                         )}
@@ -904,7 +932,7 @@ export default function TrainerChats({ onClose }) {
                         <div className={`text-[9px] mt-0.5 flex items-center justify-end gap-1 ${isMe ? 'text-accent-contrast/70' : 'text-text-muted'}`}>
                           <span>{formatTime(msg.created_at || new Date())}</span>
                           {isMe && (
-                            <div className={`flex items-center -space-x-1.5 -mt-0.5 ${msg.read_at ? 'text-blue-500' : 'opacity-70'}`}>
+                            <div className={`flex items-center -space-x-1.5 -mt-0.5 ${msg.read_at ? 'text-sky-400 font-bold' : 'opacity-70'}`}>
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                               </svg>

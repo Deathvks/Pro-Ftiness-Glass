@@ -72,24 +72,21 @@ export default function AsesoriaScreen({ onBack }) {
       fetchData();
       return;
     }
-    setMessages(prev => {
-      if (message.id && prev.some(m => m.id === message.id)) return prev;
-      return [...prev, message];
-    });
-    // If we receive a message from the trainer while the screen is open, mark it as read
+    // If we receive a message from the trainer or bot while the screen is open, mark it as read
     const currentUserId = useAppStore.getState().userProfile?.id;
     if (message.sender_id && String(message.sender_id) !== String(currentUserId)) {
       markAsRead(message.sender_id);
     }
+    setMessages(prev => {
+      if (message.id && prev.some(m => m.id === message.id)) return prev;
+      return [...prev, message];
+    });
   };
 
   const handleMessagesRead = ({ byUserId }) => {
     console.log('AsesoriaScreen: Socket messages_read received from:', byUserId);
-    const currentUserId = useAppStore.getState().userProfile?.id;
     setMessages(prev => prev.map(msg => 
-      String(msg.sender_id) === String(currentUserId) && 
-      String(msg.receiver_id) === String(byUserId) && 
-      !msg.read_at 
+      String(msg.receiver_id) === String(byUserId) && !msg.read_at 
         ? { ...msg, read_at: new Date() } 
         : msg
     ));
@@ -261,6 +258,9 @@ export default function AsesoriaScreen({ onBack }) {
         }
         return updated;
       });
+      if (res?.botReply && trainer?.id) {
+        markAsRead(trainer.id);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       addToast('Error al enviar el mensaje', 'error');
@@ -349,6 +349,9 @@ export default function AsesoriaScreen({ onBack }) {
         }
         return updated;
       });
+      if (res?.botReply && trainer?.id) {
+        markAsRead(trainer.id);
+      }
       scrollToBottom();
     } catch (error) {
       console.error(error);
