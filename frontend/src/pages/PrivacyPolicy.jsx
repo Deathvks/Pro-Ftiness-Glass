@@ -95,7 +95,7 @@ const PrivacyPolicy = ({ onBack }) => {
                       Responsable del Tratamiento
                     </span>
                     <div className="text-text-secondary font-medium leading-relaxed">
-                      <strong className="text-text-primary">Dylan Jesús Suárez Gómez</strong> (Titular de Pro Fitness Glass).
+                      <strong className="text-text-primary">Dylan Jesús Suárez Falcón</strong> (Titular de Pro Fitness Glass).
                       <br />
                       Correo de contacto y ejercicio de derechos: <a href="mailto:profitnessglass@gmail.com" className="text-accent underline font-bold">profitnessglass@gmail.com</a>
                     </div>

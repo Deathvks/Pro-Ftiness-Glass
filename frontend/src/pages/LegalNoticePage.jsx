@@ -95,7 +95,7 @@ const LegalNoticePage = ({ onBack }) => {
               <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-accent/20 text-xs sm:text-sm">
                 <div className="p-4 rounded-xl bg-bg-primary/60 backdrop-blur-sm border border-black/5 dark:border-white/10 space-y-1">
                   <span className="font-bold text-text-primary block">Titular del servicio y desarrollador responsable:</span>
-                  <p className="text-text-secondary font-medium">Dylan Jesús Suárez Gómez</p>
+                  <p className="text-text-secondary font-medium">Dylan Jesús Suárez Falcón</p>
                 </div>
                 <div className="p-4 rounded-xl bg-bg-primary/60 backdrop-blur-sm border border-black/5 dark:border-white/10 space-y-1">
                   <span className="font-bold text-text-primary block">Denominación del servicio y marca:</span>
@@ -103,7 +103,7 @@ const LegalNoticePage = ({ onBack }) => {
                 </div>
                 <div className="p-4 rounded-xl bg-bg-primary/60 backdrop-blur-sm border border-black/5 dark:border-white/10 space-y-1">
                   <span className="font-bold text-text-primary block">Domicilio y radicación territorial:</span>
-                  <p className="text-text-secondary font-medium">España (Santa Cruz de Tenerife, Canarias, España — Territorio de la Unión Europea)</p>
+                  <p className="text-text-secondary font-medium">España (Gran Canaria, Islas Canarias, España — Territorio de la Unión Europea)</p>
                 </div>
                 <div className="p-4 rounded-xl bg-bg-primary/60 backdrop-blur-sm border border-black/5 dark:border-white/10 space-y-1">
                   <span className="font-bold text-text-primary block">Correo electrónico de contacto y soporte:</span>
@@ -166,7 +166,7 @@ const LegalNoticePage = ({ onBack }) => {
                 </h2>
               </div>
               <p className="text-sm sm:text-base font-medium text-text-secondary leading-relaxed">
-                De conformidad con el <strong className="text-text-primary">Real Decreto Legislativo 1/1996</strong>, de 12 de abril, por el que se aprueba el texto refundido de la Ley de Propiedad Intelectual (LPI), todos los elementos que componen la plataforma Pro Fitness Glass —incluyendo, a título enunciativo pero no limitativo: arquitectura de software, código fuente y compilado, diseño de interfaz de usuario ("Liquid Glass"), hojas de estilo, animaciones, bases de datos de ejercicios, textos descriptivos, algoritmos de cálculo de 1RM, artículos de divulgación, logotipos, marcas comerciales y combinaciones cromáticas— son titularidad exclusiva de <strong className="text-text-primary">Dylan Jesús Suárez Gómez</strong> o bien se dispone de la correspondiente licencia o autorización de sus legítimos titulares.
+                De conformidad con el <strong className="text-text-primary">Real Decreto Legislativo 1/1996</strong>, de 12 de abril, por el que se aprueba el texto refundido de la Ley de Propiedad Intelectual (LPI), todos los elementos que componen la plataforma Pro Fitness Glass —incluyendo, a título enunciativo pero no limitativo: arquitectura de software, código fuente y compilado, diseño de interfaz de usuario ("Liquid Glass"), hojas de estilo, animaciones, bases de datos de ejercicios, textos descriptivos, algoritmos de cálculo de 1RM, artículos de divulgación, logotipos, marcas comerciales y combinaciones cromáticas— son titularidad exclusiva de <strong className="text-text-primary">Dylan Jesús Suárez Falcón</strong> o bien se dispone de la correspondiente licencia o autorización de sus legítimos titulares.
               </p>
               <p className="text-sm sm:text-base font-medium text-text-secondary leading-relaxed">
                 Quedan expresamente prohibidas la reproducción, distribución, comunicación pública, transformación o puesta a disposición con fines comerciales de la totalidad o parte de los contenidos de esta web, en cualquier soporte y por cualquier medio técnico, sin la autorización previa, expresa y por escrito del titular.
@@ -259,7 +259,7 @@ const LegalNoticePage = ({ onBack }) => {
         </GlassCard>
 
         <div className="mt-12 text-center text-[10px] sm:text-xs font-bold uppercase tracking-widest text-text-tertiary opacity-60">
-          © 2026 Pro Fitness Glass · Todos los derechos reservados · Desarrollado por Dylan Jesús Suárez Gómez
+          © 2026 Pro Fitness Glass · Todos los derechos reservados · Desarrollado por Dylan Jesús Suárez Falcón
         </div>
       </div>
     </div>

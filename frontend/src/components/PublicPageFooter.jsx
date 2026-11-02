@@ -233,7 +233,7 @@ export default function PublicPageFooter({ className = '' }) {
         {/* Franja Inferior: Copyright & Autor */}
         <div className="pt-6 border-t border-glass-border/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-tertiary text-center sm:text-left">
           <p className="leading-relaxed">
-            © {currentYear} <strong className="text-text-secondary font-bold">Pro Fitness Glass</strong> — Creado y desarrollado por <strong className="text-text-primary font-bold">Dylan Jesús Suárez Gómez</strong>.
+            © {currentYear} <strong className="text-text-secondary font-bold">Pro Fitness Glass</strong> — Creado y desarrollado por <strong className="text-text-primary font-bold">Dylan Jesús Suárez Falcón</strong>.
           </p>
           <div className="flex items-center gap-1.5 shrink-0 text-text-secondary">
             <span>Hecho con dedicación para atletas reales</span>

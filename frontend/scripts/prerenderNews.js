@@ -621,7 +621,7 @@ async function main() {
         "description": "Aplicación de entrenamiento y nutrición para gimnasio 100% gratuita con sobrecarga progresiva, vídeos de técnica, animaciones anatómicas, temporizador nativo en segundo plano y asistente de IA Synapse.",
         "author": {
           "@type": "Person",
-          "name": "Dylan Jesús Suárez Gómez",
+          "name": "Dylan Jesús Suárez Falcón",
           "jobTitle": "Fundador y Desarrollador Principal",
           "image": "${BASE_URL}/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg"
         }
@@ -633,7 +633,7 @@ async function main() {
         "logo": "${BASE_URL}/icons/icon-512.png",
         "founder": {
           "@type": "Person",
-          "name": "Dylan Jesús Suárez Gómez",
+          "name": "Dylan Jesús Suárez Falcón",
           "image": "${BASE_URL}/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg"
         },
         "sameAs": [
@@ -662,7 +662,7 @@ async function main() {
       </div>
       <br />
       <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">¿Qué es Pro Fitness Glass? — Quiénes Somos y Nuestra Misión</h1>
-      <p style="font-size: 1.15rem; color: #94a3b8;">La plataforma libre definitiva para registrar tus entrenamientos de musculación, hipertrofia, progresión de fuerza y nutrición deportiva. Creada por Dylan Jesús Suárez Gómez para devolver al fitness una herramienta libre de suscripciones abusivas.</p>
+      <p style="font-size: 1.15rem; color: #94a3b8;">La plataforma libre definitiva para registrar tus entrenamientos de musculación, hipertrofia, progresión de fuerza y nutrición deportiva. Creada por Dylan Jesús Suárez Falcón para devolver al fitness una herramienta libre de suscripciones abusivas.</p>
     </header>
 
     <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
@@ -686,10 +686,10 @@ async function main() {
     <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
       <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; color: #f8fafc;">Quién está detrás</h2>
       <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
-        <img src="/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg" alt="Dylan Jesús Suárez Gómez — Creador de Pro Fitness Glass" style="width: 110px; height: 110px; border-radius: 1.25rem; object-fit: cover; object-position: top; border: 2px solid rgba(34, 197, 94, 0.5); box-shadow: 0 10px 25px rgba(0,0,0,0.4);" />
+        <img src="/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg" alt="Dylan Jesús Suárez Falcón — Creador de Pro Fitness Glass" style="width: 110px; height: 110px; border-radius: 1.25rem; object-fit: cover; object-position: top; border: 2px solid rgba(34, 197, 94, 0.5); box-shadow: 0 10px 25px rgba(0,0,0,0.4);" />
         <div style="flex: 1; min-width: 240px;">
-          <h3 style="font-size: 1.25rem; font-weight: 900; margin: 0 0 0.5rem; color: #f8fafc;">Dylan Jesús Suárez Gómez</h3>
-          <p style="color: #cbd5e1; margin: 0; line-height: 1.6;">Pro Fitness Glass fue fundada y desarrollada por <strong>Dylan Jesús Suárez Gómez</strong>, uniendo ingeniería de software moderna con el entrenamiento de hipertrofia y fuerza. La plataforma garantiza privacidad total de datos, autenticación de dos factores (2FA) y desarrollo continuo impulsado por la comunidad.</p>
+          <h3 style="font-size: 1.25rem; font-weight: 900; margin: 0 0 0.5rem; color: #f8fafc;">Dylan Jesús Suárez Falcón</h3>
+          <p style="color: #cbd5e1; margin: 0; line-height: 1.6;">Pro Fitness Glass fue fundada y desarrollada por <strong>Dylan Jesús Suárez Falcón</strong>, uniendo ingeniería de software moderna con el entrenamiento de hipertrofia y fuerza. La plataforma garantiza privacidad total de datos, autenticación de dos factores (2FA) y desarrollo continuo impulsado por la comunidad.</p>
         </div>
       </div>
     </section>
@@ -773,7 +773,7 @@ async function main() {
         "name": "¿Quién ha desarrollado Pro Fitness Glass y cuál es el contacto oficial?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Pro Fitness Glass ha sido creada y desarrollada de forma independiente por Dylan Jesús Suárez Gómez, con la misión de democratizar la salud deportiva. Puedes contactar con nosotros a través de nuestro soporte técnico en la plataforma o mediante los canales oficiales."
+          "text": "Pro Fitness Glass ha sido creada y desarrollada de forma independiente por Dylan Jesús Suárez Falcón, con la misión de democratizar la salud deportiva. Puedes contactar con nosotros a través de nuestro soporte técnico en la plataforma o mediante los canales oficiales."
         }
       }
     ]
@@ -818,7 +818,7 @@ async function main() {
       <p style="color: #cbd5e1; margin-bottom: 1.5rem;">No limitamos el número de rutinas (en Hevy gratis solo puedes guardar 3 o 4), no bloqueamos tu historial pasado a 3 meses, incluimos vídeos y 3D en cada ejercicio, cronómetro en segundo plano, calculadoras deportivas e IA, todo sin cobrarte 10 € a 15 € mensuales.</p>
 
       <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿Quién creó Pro Fitness Glass y cuál es el contacto oficial?</h2>
-      <p style="color: #cbd5e1;">Pro Fitness Glass ha sido creada y desarrollada de forma independiente por <strong>Dylan Jesús Suárez Gómez</strong>. Puedes contactar mediante el soporte técnico de la plataforma o en nuestros canales oficiales.</p>
+      <p style="color: #cbd5e1;">Pro Fitness Glass ha sido creada y desarrollada de forma independiente por <strong>Dylan Jesús Suárez Falcón</strong>. Puedes contactar mediante el soporte técnico de la plataforma o en nuestros canales oficiales.</p>
     </section>
   </main>`;
 

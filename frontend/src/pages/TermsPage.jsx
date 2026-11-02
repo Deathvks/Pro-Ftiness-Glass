@@ -113,7 +113,7 @@ const TermsPage = ({ onBack }) => {
                 En cumplimiento de las obligaciones de información establecidas en el artículo 10 de la Ley 34/2002 (LSSI-CE), se hace constar que la titularidad de la plataforma Pro Fitness Glass corresponde a:
               </p>
               <ul className="list-disc list-inside space-y-1 text-sm sm:text-base font-medium text-text-secondary pl-2">
-                <li><strong className="text-text-primary">Titular responsable:</strong> Dylan Jesús Suárez Gómez.</li>
+                <li><strong className="text-text-primary">Titular responsable:</strong> Dylan Jesús Suárez Falcón.</li>
                 <li><strong className="text-text-primary">Denominación del servicio:</strong> Pro Fitness Glass.</li>
                 <li><strong className="text-text-primary">Correo electrónico de contacto y soporte:</strong> <a href="mailto:profitnessglass@gmail.com" className="text-accent underline font-bold">profitnessglass@gmail.com</a></li>
                 <li><strong className="text-text-primary">Actividad principal:</strong> Aplicación informática para la gestión de rutinas, seguimiento deportivo de hipertrofia y fuerza, calculadora de marcas (1RM) y diario nutricional.</li>

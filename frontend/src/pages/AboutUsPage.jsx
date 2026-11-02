@@ -59,7 +59,7 @@ export default function AboutUsPage() {
         description: 'Aplicación de entrenamiento y nutrición para gimnasio 100% gratuita con sobrecarga progresiva, vídeos de técnica, animaciones anatómicas, temporizador nativo en segundo plano y asistente de IA Synapse.',
         author: {
           '@type': 'Person',
-          name: 'Dylan Jesús Suárez Gómez',
+          name: 'Dylan Jesús Suárez Falcón',
           jobTitle: 'Fundador y Desarrollador Principal',
           image: 'https://pro-fitness-glass.zeabur.app/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg'
         }
@@ -71,7 +71,7 @@ export default function AboutUsPage() {
         logo: 'https://pro-fitness-glass.zeabur.app/icons/icon-512.png',
         founder: {
           '@type': 'Person',
-          name: 'Dylan Jesús Suárez Gómez',
+          name: 'Dylan Jesús Suárez Falcón',
           image: 'https://pro-fitness-glass.zeabur.app/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg'
         },
         sameAs: [
@@ -130,11 +130,11 @@ export default function AboutUsPage() {
         <title>¿Qué es Pro Fitness Glass? — Quiénes Somos, Misión y App de Gimnasio 100% Gratis</title>
         <meta
           name="description"
-          content="Descubre qué es Pro Fitness Glass, la plataforma de gimnasio 100% gratuita creada por Dylan Jesús Suárez Gómez con sobrecarga progresiva, vídeos biomecánicos, IA Synapse y estética Glassmorphism sin suscripciones de pago."
+          content="Descubre qué es Pro Fitness Glass, la plataforma de gimnasio 100% gratuita creada por Dylan Jesús Suárez Falcón con sobrecarga progresiva, vídeos biomecánicos, IA Synapse y estética Glassmorphism sin suscripciones de pago."
         />
         <meta
           name="keywords"
-          content="que es pro fitness glass, quienes somos pro fitness glass, app gimnasio gratis, mejor app fitness gratuita, tracker gimnasio sobrecarga progresiva, app pesas sin suscripcion, dylan jesus suarez gomez, synapse ia fitness"
+          content="que es pro fitness glass, quienes somos pro fitness glass, app gimnasio gratis, mejor app fitness gratuita, tracker gimnasio sobrecarga progresiva, app pesas sin suscripcion, dylan jesus suarez falcon, synapse ia fitness"
         />
         <link rel="canonical" href="https://pro-fitness-glass.zeabur.app/sobre-nosotros" />
         <meta property="og:title" content="¿Qué es Pro Fitness Glass? — Quiénes Somos y Misión" />
@@ -305,7 +305,7 @@ export default function AboutUsPage() {
           <div className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 rounded-3xl overflow-hidden shrink-0 border-2 border-accent/40 shadow-2xl bg-bg-primary group">
             <img 
               src="/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg" 
-              alt="Dylan Jesús Suárez Gómez — Creador de Pro Fitness Glass" 
+              alt="Dylan Jesús Suárez Falcón — Creador de Pro Fitness Glass" 
               className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
             />
@@ -318,7 +318,7 @@ export default function AboutUsPage() {
               <span>Creador y Desarrollador Principal</span>
             </div>
             <h2 id="creador-title" className="text-2xl sm:text-3xl font-extrabold text-text-primary mb-3">
-              Dylan Jesús Suárez Gómez
+              Dylan Jesús Suárez Falcón
             </h2>
             <p className="text-sm sm:text-base text-text-secondary leading-relaxed mb-5">
               Apasionado del entrenamiento de fuerza, la biomecánica deportiva y la ingeniería de software moderna. Pro Fitness Glass fue concebida y desarrollada desde cero con la visión de combinar tecnología punta (React, Vite, Capacitor nativo, arquitectura PWA) con el respeto total hacia la comunidad del gimnasio.
