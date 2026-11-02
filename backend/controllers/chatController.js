@@ -298,7 +298,6 @@ export const sendMessage = async (req, res, next) => {
 
     // --- LOGICA DEL BOT RESPONDEDOR ---
     console.log('[BOT] Checking bot reply for userId:', userId, 'content:', content.trim().substring(0, 50));
-    const requestor = await User.findByPk(userId);
     let populatedBotMessage = null;
 
     if (requestor && requestor.role !== 'trainer' && requestor.role !== 'admin') {
