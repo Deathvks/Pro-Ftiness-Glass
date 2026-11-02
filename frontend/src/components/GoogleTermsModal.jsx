@@ -72,7 +72,16 @@ const GoogleTermsModal = ({ isOpen, onClose, onAccept, onShowPolicy }) => {
               }
 
               {!previouslyDeclined && <p className="text-sm text-text-secondary leading-relaxed mt-2 p-3 bg-accent/5 rounded-xl border border-accent/10">
-                    Al continuar, <strong>aceptas</strong> nuestra{' '}
+                    Al continuar, confirmas tener al menos 14 años, <strong>aceptas</strong> los{' '}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent font-semibold hover:underline inline-flex items-center gap-0.5"
+                    >
+                      Términos de Servicio <ExternalLink size={12} />
+                    </a>
+                    {', '}nuestra{' '}
                     <button
                   onClick={onShowPolicy}
                   className="text-accent font-semibold hover:underline inline-flex items-center gap-1">

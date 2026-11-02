@@ -95,7 +95,7 @@ const SplitLayout = ({ children, onShowPolicy }) => (
                     {children}
 
                     <div className="mt-4 lg:mt-6 text-xs text-text-muted px-2">
-                        Al registrarte, aceptas nuestros{' '}
+                        Pro Fitness Glass cumple con el RGPD y la LOPDGDD. Consulta nuestros{' '}
                         <a href="/terms" className="text-accent hover:underline transition-all">Términos de Servicio</a>
                         {' '}y nuestra{' '}
                         <button onClick={onShowPolicy} className="text-accent hover:underline transition-all">Política de Privacidad</button>.
@@ -138,6 +138,7 @@ const RegisterScreen = ({ showLogin }) => {
     const [showGoogleModal, setShowGoogleModal] = useState(false);
     const [showPolicy, setShowPolicy] = useState(false);
     const [hasConsented, setHasConsented] = useState(false);
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
 
     useEffect(() => {
         initGoogleAuth();
@@ -543,6 +544,10 @@ const RegisterScreen = ({ showLogin }) => {
         if (password !== confirmPassword) {
             newErrors.confirmPassword = 'Las contraseñas no coinciden.';
         }
+
+        if (!acceptedTerms) {
+            newErrors.acceptedTerms = 'Debes aceptar los Términos del Servicio y la Política de Privacidad para continuar.';
+        }
         return newErrors;
     };
 
@@ -565,6 +570,8 @@ const RegisterScreen = ({ showLogin }) => {
                 email,
                 password,
                 social_privacy: 'private',
+                consentAccepted: true,
+                consentTimestamp: new Date().toISOString(),
                 referralCode: currentRef
             });
 
@@ -755,9 +762,59 @@ const RegisterScreen = ({ showLogin }) => {
                             )}
                         </div>
 
+                        {/* Checkbox obligatorio de Consentimiento Activo (Art. 6.1.a y 7 RGPD / Art. 7 LOPDGDD) */}
+                        <div className="pt-1 text-left">
+                            <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={acceptedTerms}
+                                    onChange={(e) => {
+                                        setAcceptedTerms(e.target.checked);
+                                        if (errors.acceptedTerms) {
+                                            setErrors((prev) => {
+                                                const updated = { ...prev };
+                                                delete updated.acceptedTerms;
+                                                return updated;
+                                            });
+                                        }
+                                    }}
+                                    className="mt-0.5 h-4 w-4 text-accent rounded border-glass-border bg-black/10 dark:bg-white/10 focus:ring-accent focus:ring-offset-bg-primary transition-all cursor-pointer shrink-0"
+                                />
+                                <span className="text-[11px] sm:text-xs font-medium text-text-secondary group-hover:text-text-primary transition-colors leading-relaxed">
+                                    He leído y acepto los{' '}
+                                    <a
+                                        href="/terms"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-accent hover:underline font-bold"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        Términos de Servicio
+                                    </a>
+                                    {' '}y la{' '}
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowPolicy(true);
+                                        }}
+                                        className="text-accent hover:underline font-bold inline"
+                                    >
+                                        Política de Privacidad
+                                    </button>
+                                    . Confirmo tener al menos 14 años y autorizo el tratamiento de mis datos de entrenamiento y nutrición.
+                                </span>
+                            </label>
+                            {errors.acceptedTerms && (
+                                <p className="form-error-text text-left text-[10px] sm:text-xs mt-1.5 font-medium px-1 text-red-500">
+                                    {errors.acceptedTerms}
+                                </p>
+                            )}
+                        </div>
+
                         <button
                             type="submit"
-                            disabled={isLoading || !isValidPassword || !confirmPassword || password !== confirmPassword}
+                            disabled={isLoading || !isValidPassword || !confirmPassword || password !== confirmPassword || !acceptedTerms}
                             className="flex items-center justify-center w-full rounded-[16px] lg:rounded-[20px] bg-accent text-bg-primary font-bold py-3 sm:py-4 lg:py-3.5 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-accent/30 active:scale-[0.98] disabled:opacity-70 disabled:grayscale disabled:cursor-not-allowed text-xs sm:text-sm mt-1 sm:mt-2 lg:mt-1"
                         >
                             {isLoading ? <Spinner /> : 'Registrarse'}
