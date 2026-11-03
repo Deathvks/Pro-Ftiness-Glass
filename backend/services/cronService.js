@@ -471,7 +471,7 @@ const resetInactiveStreaks = () => {
  * Bot de chats de asesoría para prospectos
  */
 const checkChatBotReminders = () => {
-  cron.schedule('0 11 * * *', async () => {
+  cron.schedule('0 9-21 * * *', async () => {
     try {
       console.log('[Cron] Iniciando revisión de bot de chats de asesoría...');
       const { User, Message } = db;
@@ -496,26 +496,26 @@ const checkChatBotReminders = () => {
 
           const now = new Date();
           const lastDate = new Date(lastMsg.created_at);
-          const diffDays = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
+          const diffHours = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60);
           
           const level = lastMsg.bot_reminder_level || 0;
           let nextLevel = null;
           let title = '';
           let text = '';
 
-          if (level === 0 && diffDays >= 3) {
+          if (level === 0 && diffHours >= 72) {
             nextLevel = 1;
             title = '¿Continuamos con tu cambio?';
             text = 'Hola, he visto que dejaste el chat abierto. Si tienes cualquier duda sobre la asesoría o quieres empezar, ¡escríbeme por aquí y nos ponemos a ello!';
-          } else if (level === 1 && diffDays >= 2) {
+          } else if (level === 1 && diffHours >= 48) {
             nextLevel = 2;
             title = 'Aún estás a tiempo de empezar 💪';
             text = 'Solo te escribo para recordarte que sigo por aquí si necesitas ayuda para dar el primer paso. Si no estás interesado, no te preocupes.';
-          } else if (level === 2 && diffDays >= 1) {
+          } else if (level === 2 && diffHours >= 24) {
             nextLevel = 3;
             title = 'Último aviso antes de cerrar el chat ⏳';
             text = 'Si no recibo respuesta en 1 día, cerraré esta conversación para mantener el buzón limpio. Siempre podrás volver a solicitar asesoría más adelante.';
-          } else if (level === 3 && diffDays >= 1) {
+          } else if (level === 3 && diffHours >= 24) {
             nextLevel = 4;
           }
 

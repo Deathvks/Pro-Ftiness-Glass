@@ -178,9 +178,10 @@ export const getChatHistory = async (req, res, next) => {
           });
 
           if (lastSinCompromiso) {
-            const hasAnyReply = await Message.count({
+            const hasReplyAfter = await Message.count({
               where: {
                 receiver_id: userId,
+                created_at: { [Op.gt]: lastSinCompromiso.created_at },
                 [Op.or]: [
                   { attachment_type: 'bot_reply' },
                   { sender_id: { [Op.in]: trainerAdminIds } }
@@ -188,7 +189,7 @@ export const getChatHistory = async (req, res, next) => {
               }
             });
 
-            if (hasAnyReply === 0) {
+            if (hasReplyAfter === 0) {
               console.log('[BOT] Auto-generating missing bot reply in getChatHistory for user:', userId);
               const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
               await Message.create({
@@ -307,13 +308,17 @@ export const sendMessage = async (req, res, next) => {
       console.log('[BOT] Is prospective user/client:', true, 'isRequestInfoMessage:', isRequestInfoMessage);
       
       if (isRequestInfoMessage) {
-        // Asegurar que solo se envíe una vez por usuario
-        const hasReceivedBotReply = await Message.count({
-          where: { receiver_id: userId, attachment_type: 'bot_reply' }
+                // Asegurar que no se envíe spam si ya recibió una respuesta del bot en las últimas 24 horas
+        const recentBotReply = await Message.count({
+          where: {
+            receiver_id: userId,
+            attachment_type: 'bot_reply',
+            created_at: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+          }
         });
-        console.log('[BOT] hasReceivedBotReply:', hasReceivedBotReply);
+        console.log('[BOT] recentBotReply:', recentBotReply);
         
-        if (hasReceivedBotReply === 0) {
+        if (recentBotReply === 0) {
           // Es la solicitud de información sin compromiso, crear respuesta automática del bot
           const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
           const botMessage = await Message.create({

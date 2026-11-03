@@ -296,26 +296,18 @@ export default function AsesoriaScreen({ onBack }) {
   let blockMessage = '';
 
   if (!isTrainee && !loading && trainer) {
-    const lastTrainerMsg = [...messages].reverse().find(m => String(m.sender_id) === String(trainer?.id));
-    const lastUserMsg = [...messages].reverse().find(m => String(m.sender_id) === String(userProfile?.id));
-    
-    const now = Date.now();
-    const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
-    
-    const isTrainerRecent = lastTrainerMsg && (now - new Date(lastTrainerMsg.created_at).getTime() < threeDaysMs);
-    const isUserRecent = lastUserMsg && (now - new Date(lastUserMsg.created_at).getTime() < threeDaysMs);
-    
     if (messages.length === 0) {
       showPromo = true;
       isChatBlocked = true;
-    } else if (isTrainerRecent) {
-      isChatBlocked = false;
-    } else if (isUserRecent) {
-      isChatBlocked = true;
-      blockMessage = "Esperando respuesta del entrenador...";
     } else {
-      showPromo = true;
-      isChatBlocked = true;
+      showPromo = false;
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg && String(lastMsg.sender_id) === String(userProfile?.id)) {
+        isChatBlocked = true;
+        blockMessage = "Esperando respuesta del entrenador...";
+      } else {
+        isChatBlocked = false;
+      }
     }
   }
 
