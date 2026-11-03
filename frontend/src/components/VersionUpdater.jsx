@@ -184,7 +184,7 @@ const SWUpdaterCore = () => {
     const safeReload = () => {
       if (reloaded) return;
       reloaded = true;
-      window.location.reload();
+      reloadAppWithoutStaleCache({ force: true });
     };
 
     if ('serviceWorker' in navigator) {

@@ -1,6 +1,6 @@
 {
-  "version": "7.11.76",
-  "releaseNotes": "Actualización v7.11.76: Detección acumulada continua de scroll en iOS/PWA para ocultar y mostrar el header con total fluidez tanto en desplazamientos rápidos como muy lentos.",
+  "version": "7.11.77",
+  "releaseNotes": "Actualización v7.11.77: Arranque instantáneo (0ms) en actualizaciones de iOS PWA mediante preservación segura del perfil y recarga protegida contra bloqueos de Service Worker.",
   "welcome": {
     "title": "Migración desde Hevy/Strong y Copias",
     "subtitle": "Llega la migración de datos: importa todo tu historial de entrenamientos desde Hevy o Strong en un solo clic y exporta a Excel cuando quieras.",

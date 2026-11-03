@@ -81,8 +81,21 @@ try {
     localStorage.removeItem('pfg_auto_reloaded_version');
     localStorage.removeItem('pfg_crash_loop_count');
     localStorage.removeItem('profitness_insights_expanded');
-    localStorage.removeItem('pfg_cached_initial_state_v1');
-    localStorage.removeItem('pfg_cache_version');
+    // Preservar de forma segura el perfil del usuario para permitir un arranque instantáneo (0ms)
+    // sin quedarse bloqueado en el skeleton mientras el Service Worker reconecta la red en iOS PWA
+    try {
+      const rawCache = localStorage.getItem('pfg_cached_initial_state_v1');
+      if (rawCache) {
+        const parsed = JSON.parse(rawCache);
+        if (parsed?.userProfile && typeof parsed.userProfile === 'object' && parsed.userProfile.id) {
+          localStorage.setItem('pfg_cached_initial_state_v1', JSON.stringify({ userProfile: parsed.userProfile }));
+        } else {
+          localStorage.removeItem('pfg_cached_initial_state_v1');
+        }
+      }
+    } catch {
+      localStorage.removeItem('pfg_cached_initial_state_v1');
+    }
     localStorage.removeItem('pfg_social_feed_cache');
     localStorage.removeItem('pfg_pending_target_view');
     localStorage.removeItem('lastSeenVersion');

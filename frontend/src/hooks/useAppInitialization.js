@@ -111,14 +111,15 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
 
     const loadInitialDataAndSetView = async () => {
       let completed = false;
-      // Timeout de seguridad: si tras 5 segundos la red o el backend tardan en responder,
-      // desbloqueamos el skeleton para no congelar la pantalla del usuario.
+      // Timeout de seguridad: si tras 3.5 segundos la red o el backend tardan en responder,
+      // desbloqueamos el skeleton de inmediato para no congelar la pantalla del usuario.
       const safetyTimeout = setTimeout(() => {
         if (!completed) {
-          console.warn("[useAppInitialization] Timeout de seguridad (5s) alcanzado. Desbloqueando skeleton.");
+          console.warn("[useAppInitialization] Timeout de seguridad (3.5s) alcanzado. Desbloqueando skeleton e interfaz.");
           setIsInitialLoad(false);
+          useAppStore.setState({ isLoading: false });
         }
-      }, 5000);
+      }, 3500);
 
       try {
         const initialState = useAppStore.getState();
