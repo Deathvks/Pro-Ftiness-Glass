@@ -81,18 +81,18 @@ try {
     localStorage.removeItem('pfg_auto_reloaded_version');
     localStorage.removeItem('pfg_crash_loop_count');
     localStorage.removeItem('profitness_insights_expanded');
-    // En actualización, purgar snapshot de estado anterior para evitar esquemas incompatibles, pero preservar lastView si es válida
     localStorage.removeItem('pfg_cached_initial_state_v1');
     localStorage.removeItem('pfg_cache_version');
-    const validViews = ['dashboard', 'routines', 'workout', 'nutrition', 'social', 'progress', 'hub', 'settings'];
-    const currentLastView = localStorage.getItem('lastView');
-    if (currentLastView && !validViews.includes(currentLastView)) {
-      localStorage.removeItem('lastView');
-    }
+    localStorage.removeItem('pfg_social_feed_cache');
+    localStorage.removeItem('pfg_pending_target_view');
+    localStorage.removeItem('lastSeenVersion');
+
+    // NUNCA preservar una vista problemática como 'social' al actualizar versión.
+    // Forzar SIEMPRE el inicio en 'dashboard' para garantizar que el usuario ingrese limpio.
+    localStorage.setItem('lastView', 'dashboard');
 
     if ('caches' in window) {
-      caches.delete('api-read-cache').catch(() => {});
-      caches.delete('vite-hashed-assets').catch(() => {});
+      caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
     }
     try {
       sessionStorage.clear();
@@ -108,9 +108,15 @@ try {
       console.warn(`[CrashGuard] Fallo previo detectado (${crashCount}). Autolimpiando snapshots...`);
       localStorage.removeItem('pfg_cached_initial_state_v1');
       localStorage.removeItem('pfg_cache_version');
-      localStorage.removeItem('lastView');
-      localStorage.removeItem('pfg_crash_loop_count');
+      localStorage.removeItem('pfg_social_feed_cache');
+      localStorage.setItem('lastView', 'dashboard');
       sessionStorage.clear();
+      if (crashCount >= 3) {
+        console.warn('[CrashGuard] Bucle recurrente crítico (>=3). Forzando purga de emergencia...');
+        localStorage.clear();
+      } else {
+        localStorage.removeItem('pfg_crash_loop_count');
+      }
     }
   }
 } catch (e) {

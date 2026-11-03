@@ -95,7 +95,7 @@ let memoryFeedCache = null;
 
 export default function Feed({ setView, visibleStories = [], myStories = [] }) {
     const [feed, setFeed] = useState(() => {
-        if (memoryFeedCache && memoryFeedCache.length > 0) return memoryFeedCache;
+        if (Array.isArray(memoryFeedCache) && memoryFeedCache.length > 0) return memoryFeedCache;
         try {
             const raw = sessionStorage.getItem("pfg_social_feed_cache");
             if (raw) {
@@ -105,7 +105,9 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                     return parsed;
                 }
             }
-        } catch {}
+        } catch {
+            try { sessionStorage.removeItem("pfg_social_feed_cache"); } catch {}
+        }
         return [];
     });
     const [isLoading, setIsLoading] = useState(() => {
@@ -266,18 +268,19 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
 
     return (
         <div className="space-y-6 sm:space-y-8">
-            {feed.map((log, index) => {
+            {(Array.isArray(feed) ? feed : []).map((log, index) => {
+                if (!log) return null;
                 const isMe = log.user_id === userProfile?.id;
                 const authorUser = isMe
                     ? { ...log.user, ...userProfile, role: userProfile?.role || log.user?.role, trainer_id: userProfile?.trainer_id ?? log.user?.trainer_id }
                     : (log.user || {});
                 const avatarUrl = getFullImageUrl(authorUser?.profile_image_url);
-                const comments = log.Comments || [];
+                const comments = Array.isArray(log.Comments) ? log.Comments : [];
                 
-                // Determinamos si el usuario del post tiene una historia activa
+                // Determinamos si el usuario del post tiene una historia activa de forma ultra-segura
                 const hasStory = isMe 
-                    ? myStories && myStories.length > 0 
-                    : visibleStories.some(s => (s.userId === log.user_id || s.user_id === log.user_id) && s.items && s.items.length > 0);
+                    ? (Array.isArray(myStories) && myStories.length > 0) 
+                    : (Array.isArray(visibleStories) && visibleStories.some(s => s && (s.userId === log.user_id || s.user_id === log.user_id) && Array.isArray(s.items) && s.items.length > 0));
 
                 // Clases del borde: si tiene historia -> borde naranja (accent). Si no -> sin borde adicional.
                 const ringClass = hasStory ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : "";
@@ -355,9 +358,10 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                 )}
                             </div>
 
-                            {log.WorkoutLogDetails && log.WorkoutLogDetails.length > 0 && (
+                            {Array.isArray(log.WorkoutLogDetails) && log.WorkoutLogDetails.length > 0 && (
                                 <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/10 space-y-4">
                                     {log.WorkoutLogDetails.map((detail, idx) => {
+                                        if (!detail) return null;
                                         let imgUrl = detail.image_url;
                                         if (!imgUrl && exercises && exercises.length > 0) {
                                             const localEx = exercises.find(e => e.name?.toLowerCase() === detail.exercise_name?.toLowerCase());
@@ -392,7 +396,8 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                                 <div className="flex-1 min-w-0 flex flex-col justify-center min-h-[3rem]">
                                                     <p className="text-sm font-bold text-text-primary truncate mb-1">{t(detail.exercise_name)}</p>
                                                     <div className="flex flex-wrap gap-1.5">
-                                                        {detail.WorkoutLogSets && detail.WorkoutLogSets.map((set, sIdx) => {
+                                                        {Array.isArray(detail?.WorkoutLogSets) && detail.WorkoutLogSets.map((set, sIdx) => {
+                                                            if (!set) return null;
                                                             const weight = parseFloat(set.weight_kg);
                                                             return (
                                                                 <span key={sIdx} className="inline-flex items-center text-[10px] sm:text-xs bg-black/5 dark:bg-white/10 px-2 py-1 rounded-[10px] text-text-secondary font-medium whitespace-nowrap">

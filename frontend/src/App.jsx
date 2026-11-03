@@ -40,6 +40,7 @@ import AboutUsPage from './pages/AboutUsPage';
 import FAQPage from './pages/FAQPage';
 import MaintenanceInfoPage from './pages/MaintenanceInfoPage';
 import { reloadAppWithoutStaleCache } from './utils/appRecovery';
+import ViewErrorBoundary from './components/ViewErrorBoundary';
 import { getExerciseList } from './services/exerciseService';
 
 export const lazyWithRetry = (componentImport, name = "chunk") =>
@@ -659,7 +660,12 @@ export default function App() {
       case 'routines': return <Routines setView={navigateInternal} mainContentRef={mainContentRef} />;
       case 'workout': return <Workout timer={workoutTimer} setView={navigateInternal} navParams={navParams} />;
       case 'nutrition': return <Nutrition setView={navigateInternal} navParams={navParams} />;
-      case 'social': return <Social setView={navigateInternal} />;
+      case 'social':
+        return (
+          <ViewErrorBoundary viewName="Comunidad" onGoHome={() => navigateInternal('dashboard')}>
+            <Social setView={navigateInternal} />
+          </ViewErrorBoundary>
+        );
       case 'publicProfile': return <PublicProfile userId={navParams?.userId} onBack={() => navigateInternal('social')} setView={navigateInternal} />;
       case 'hub': return <Hub setView={navigateInternal} />;
       case 'noticias': return <NewsListPage onBack={() => navigateInternal('hub')} navigate={navigateInternal} />;
@@ -744,8 +750,8 @@ export default function App() {
     return rawUrl;
   }, [userProfile]);
 
-  const hasStories = useMemo(() => myStories && myStories.length > 0, [myStories]);
-  const hasUnseen = useMemo(() => hasStories && myStories.some(s => !s.viewed), [hasStories, myStories]);
+  const hasStories = useMemo(() => Array.isArray(myStories) && myStories.length > 0, [myStories]);
+  const hasUnseen = useMemo(() => hasStories && Array.isArray(myStories) && myStories.some(s => s && !s.viewed), [hasStories, myStories]);
 
   const navItems = useMemo(() => [
     { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: <FaHouse className="w-5 h-5" /> },
@@ -829,7 +835,7 @@ export default function App() {
 
     const userProfileWithStory = {
         ...userProfile,
-        hasStories: myStories && myStories.length > 0
+        hasStories: Array.isArray(myStories) && myStories.length > 0
     };
 
     return (

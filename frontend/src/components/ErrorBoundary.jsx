@@ -27,11 +27,17 @@ class ErrorBoundary extends React.Component {
       this.setState({ reloadCount: nextCrashes });
 
       // En cuanto se detecta un fallo, purgar de inmediato snapshots volátiles
-      // para que al recargar la app nazca saneada
+      // y fijar lastView forzosamente en 'dashboard' para no reincidir en la vista dañada
       localStorage.removeItem('pfg_cached_initial_state_v1');
       localStorage.removeItem('pfg_cache_version');
-      localStorage.removeItem('lastView');
+      localStorage.removeItem('pfg_social_feed_cache');
+      localStorage.setItem('lastView', 'dashboard');
       sessionStorage.clear();
+
+      if (nextCrashes >= 3) {
+        // En bucles críticos de 3 o más fallos seguidos, purgar completamente para auto-rescatar
+        localStorage.clear();
+      }
     } catch {}
   }
 
@@ -39,19 +45,20 @@ class ErrorBoundary extends React.Component {
     try {
       localStorage.removeItem('pfg_cached_initial_state_v1');
       localStorage.removeItem('pfg_cache_version');
-      localStorage.removeItem('lastView');
+      localStorage.setItem('lastView', 'dashboard');
       localStorage.removeItem('activeWorkout');
       localStorage.removeItem('workoutStartTime');
       localStorage.removeItem('isWorkoutPaused');
       localStorage.removeItem('workoutAccumulatedTime');
       localStorage.removeItem('isResting');
       localStorage.removeItem('restTimerEndTime');
+      localStorage.removeItem('pfg_social_feed_cache');
       localStorage.removeItem('pfg_crash_loop_count');
       sessionStorage.clear();
 
       if ('caches' in window) {
         caches.keys().then((keys) =>
-          Promise.all(keys.filter((k) => k.includes('vite-hashed') || k.includes('api-') || k.includes('runtime')).map((k) => caches.delete(k)))
+          Promise.all(keys.map((k) => caches.delete(k)))
         ).catch(() => {});
       }
     } catch {}
@@ -62,7 +69,11 @@ class ErrorBoundary extends React.Component {
     this.setState({ isActionRunning: true });
 
     this.purgeLocalCache();
-    window.location.reload();
+    try {
+      localStorage.setItem('lastView', 'dashboard');
+    } catch {}
+    // Usar replace a la raíz en vez de reload() para limpiar searchParams problemáticos
+    window.location.replace(window.location.origin + '/');
   };
 
   handleResetAllData = () => {

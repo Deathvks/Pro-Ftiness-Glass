@@ -23,6 +23,7 @@ import UserAvatar from '../components/UserAvatar';
 const StoryViewer = React.lazy(() => import('../components/StoryViewer'));
 import socialService from '../services/socialService';
 import Feed from '../components/Feed';
+import ViewErrorBoundary from '../components/ViewErrorBoundary';
 const PermissionModal = React.lazy(() => import('../components/PermissionModal'));
 const SocialTourGuide = React.lazy(() => import('../components/SocialTourGuide'));
 import LevelBadge from '../components/LevelBadge';
@@ -1022,15 +1023,18 @@ export default function Social({ setView }) {
     };
 
     const visibleStories = useMemo(() => {
+        if (!Array.isArray(stories)) return [];
+        const friendsList = Array.isArray(socialFriends) ? socialFriends : [];
         return stories.filter(storyUser => {
-            const isFriend = socialFriends.some(f => f.id === storyUser.userId);
-            const hasPublicStories = storyUser.items?.some(item => item.privacy === 'public');
+            if (!storyUser) return false;
+            const isFriend = friendsList.some(f => f && f.id === storyUser.userId);
+            const hasPublicStories = Array.isArray(storyUser.items) && storyUser.items.some(item => item && item.privacy === 'public');
             return isFriend || hasPublicStories;
         });
     }, [stories, socialFriends]);
 
     const myStoriesUnseen = useMemo(() => {
-        return myStories && myStories.some(s => !s.viewed);
+        return Array.isArray(myStories) && myStories.some(s => s && !s.viewed);
     }, [myStories]);
 
     // --- Acciones de Amigos ---
@@ -1067,9 +1071,10 @@ export default function Social({ setView }) {
 
     // --- Renderers de Contenido ---
     const renderFriends = () => {
-        const totalFriends = socialFriends.length;
+        const friendsList = Array.isArray(socialFriends) ? socialFriends : [];
+        const totalFriends = friendsList.length;
         const totalPages = Math.ceil(totalFriends / FRIENDS_PER_PAGE);
-        const paginatedFriends = socialFriends.slice((friendsPage - 1) * FRIENDS_PER_PAGE, friendsPage * FRIENDS_PER_PAGE);
+        const paginatedFriends = friendsList.slice((friendsPage - 1) * FRIENDS_PER_PAGE, friendsPage * FRIENDS_PER_PAGE);
 
         return (
             <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10">
@@ -1107,8 +1112,8 @@ export default function Social({ setView }) {
     };
 
     const renderRequests = () => {
-        const received = socialRequests?.received || [];
-        const sent = socialRequests?.sent || [];
+        const received = Array.isArray(socialRequests?.received) ? socialRequests.received : [];
+        const sent = Array.isArray(socialRequests?.sent) ? socialRequests.sent : [];
         return (
             <div className="space-y-8">
                 <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10">
@@ -1147,9 +1152,10 @@ export default function Social({ setView }) {
     };
 
     const renderSearch = () => {
-        const totalResults = socialSearchResults.length;
+        const resultsList = Array.isArray(socialSearchResults) ? socialSearchResults : [];
+        const totalResults = resultsList.length;
         const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE);
-        const paginatedResults = socialSearchResults.slice((searchPage - 1) * ITEMS_PER_PAGE, searchPage * ITEMS_PER_PAGE);
+        const paginatedResults = resultsList.slice((searchPage - 1) * ITEMS_PER_PAGE, searchPage * ITEMS_PER_PAGE);
 
         return (
             <div className="space-y-6 mx-auto w-full">
@@ -1171,8 +1177,8 @@ export default function Social({ setView }) {
                         <div className="flex flex-col">
                             {paginatedResults.map((user) => {
                                 const isMe = user.id === userProfile?.id;
-                                const isFriend = socialFriends.some(f => f.id === user.id);
-                                const hasSentRequest = socialRequests?.sent?.some(r => r.addressee_id === user.id);
+                                const isFriend = Array.isArray(socialFriends) && socialFriends.some(f => f && f.id === user.id);
+                                const hasSentRequest = Array.isArray(socialRequests?.sent) && socialRequests.sent.some(r => r && r.addressee_id === user.id);
                                 return (
                                     <UserListItem key={user.id} user={user} onNavigate={goToProfile} action={
                                         !isMe && !isFriend && !hasSentRequest ? (
@@ -1218,7 +1224,7 @@ export default function Social({ setView }) {
                 <div className="flex text-[10px] sm:text-xs text-text-muted pb-3 mb-2 uppercase tracking-widest font-bold border-b border-black/5 dark:border-white/10 px-1 sm:px-2">
                     <span className="w-6 sm:w-10 text-center">#</span><span className="flex-1 pl-2">Atleta</span><span className="w-12 sm:w-16 text-right">Nivel</span><span className="w-12 sm:w-20 text-right">Racha</span><span className="w-16 sm:w-24 text-right">XP</span>
                 </div>
-                {socialLeaderboard.map((user, index) => {
+                {(Array.isArray(socialLeaderboard) ? socialLeaderboard : []).map((user, index) => {
                     const isMe = user.id === userProfile?.id;
                     const fixedUser = { ...user, avatar: getFullImageUrl(user.profile_image_url || user.avatar) };
 
@@ -1520,14 +1526,15 @@ export default function Social({ setView }) {
                             avatar: getFullImageUrl(userProfile?.profile_image_url || userProfile?.avatar)
                         }}
                         isMe={true}
-                        hasStories={myStories.length > 0}
+                        hasStories={Array.isArray(myStories) && myStories.length > 0}
                         hasUnseen={myStoriesUnseen}
                         onClick={handleMyStoryClick}
                         onAdd={initiateStoryUpload}
                     />
 
                     {/* Historias de Amigos */}
-                    {visibleStories.map(storyUser => {
+                    {(Array.isArray(visibleStories) ? visibleStories : []).map(storyUser => {
+                        if (!storyUser) return null;
                         const rawUser = storyUser.user || storyUser;
                         const username = storyUser.username || rawUser.username || 'Usuario';
                         const avatarPath = storyUser.profile_image_url || rawUser.profile_image_url || storyUser.avatar || rawUser.avatar;
@@ -1573,7 +1580,11 @@ export default function Social({ setView }) {
 
             {/* --- Contenido Principal --- */}
             <div className="min-h-[400px] max-w-3xl mx-auto w-full">
-                {activeTab === 'feed' && <Feed setView={setView} visibleStories={visibleStories} myStories={myStories} />}
+                {activeTab === 'feed' && (
+                    <ViewErrorBoundary viewName="Muro de Comunidad">
+                        <Feed setView={setView} visibleStories={visibleStories} myStories={myStories} />
+                    </ViewErrorBoundary>
+                )}
                 {activeTab === 'leaderboard' && renderLeaderboard()}
                 {activeTab === 'friends' && renderFriends()}
                 {activeTab === 'squads' && renderSquads()}

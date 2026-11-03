@@ -108,11 +108,11 @@ export const reloadAppWithoutStaleCache = async ({ path, force = false } = {}) =
   try {
     localStorage.removeItem("pfg_crash_loop_count");
     localStorage.removeItem("pfg_auto_reloaded_version");
-    const validViews = ['dashboard', 'routines', 'workout', 'nutrition', 'social', 'progress', 'hub', 'settings'];
-    const currentLastView = localStorage.getItem('lastView');
-    if (currentLastView && !validViews.includes(currentLastView)) {
-      localStorage.removeItem('lastView');
-    }
+    localStorage.removeItem("pfg_social_feed_cache");
+    localStorage.removeItem("pfg_cached_initial_state_v1");
+    localStorage.removeItem("pfg_cache_version");
+    // Al auto-recuperar, forzar SIEMPRE el aterrizaje seguro en 'dashboard'
+    localStorage.setItem("lastView", "dashboard");
   } catch {}
 
   const targetPath = path || "/";

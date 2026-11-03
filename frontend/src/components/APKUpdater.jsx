@@ -47,6 +47,14 @@ const APKUpdater = () => {
 
   const handleUpdate = () => {
     if (updateAvailable?.downloadUrl) {
+      try {
+        localStorage.setItem('lastView', 'dashboard');
+        localStorage.removeItem('pfg_cached_initial_state_v1');
+        localStorage.removeItem('pfg_cache_version');
+        localStorage.removeItem('pfg_social_feed_cache');
+        localStorage.removeItem('pfg_crash_loop_count');
+        sessionStorage.clear();
+      } catch {}
       window.open(updateAvailable.downloadUrl, '_system');
     }
   };
