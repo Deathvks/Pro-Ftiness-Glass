@@ -106,14 +106,21 @@ export default defineConfig({
       injectManifest: {
         globPatterns: [
           'index.html',
-          'assets/index-*.js',
-          'assets/index-*.css',
-          'assets/vendor-react-*.js',
-          'assets/vendor-icons-*.js',
           'manifest.webmanifest',
           'favicon.ico',
           'logo.webp',
-          'pwa-192x192.webp'
+          'pwa-*.webp',
+          'assets/index-*.js',
+          'assets/index-*.css',
+          'assets/vendor-*.js',
+          'assets/Dashboard-*.js',
+          'assets/Routines-*.js',
+          'assets/Workout-*.js',
+          'assets/Nutrition-*.js',
+          'assets/Progress-*.js',
+          'assets/Social-*.js',
+          'assets/Hub-*.js',
+          'assets/SettingsScreen-*.js'
         ],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       },

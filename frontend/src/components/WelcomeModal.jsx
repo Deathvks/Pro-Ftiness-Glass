@@ -29,6 +29,7 @@ const WelcomeModal = ({ onClose }) => {
 
     try {
       localStorage.setItem('lastSeenVersion', effectiveVersion);
+      localStorage.setItem('lastSeenWelcomeTitle', welcomeTitle);
       localStorage.setItem('pfg_app_version', effectiveVersion);
       localStorage.setItem('pfg_cache_version', effectiveVersion);
       localStorage.removeItem('pfg_crash_loop_count');

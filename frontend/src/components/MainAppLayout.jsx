@@ -1434,21 +1434,21 @@ export default function MainAppLayout({
 
       </div>
 
-      {/* Capa de desenfoque y difuminado inferior debajo del navbar */}
+      {/* Capa de desenfoque y difuminado inferior estrictamente DEBAJO del navbar (sin solapar la cápsula flotante) */}
       <div
-        className={`md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-40 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={`md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-30 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
           isGlobalModalOpen ? 'opacity-0 translate-y-8' : 'opacity-100 translate-y-0'
         }`}
         style={{
-          height: 'calc(var(--safe-bottom) + 96px)',
+          height: 'calc(var(--safe-bottom) + 16px)',
           background:
-            'linear-gradient(to top, rgba(var(--bg-primary-rgb, 15, 23, 42), 0.75) 0%, rgba(var(--bg-primary-rgb, 15, 23, 42), 0.35) 50%, transparent 100%)',
+            'linear-gradient(to top, rgba(var(--bg-primary-rgb, 15, 23, 42), 0.85) 0%, rgba(var(--bg-primary-rgb, 15, 23, 42), 0.40) 65%, transparent 100%)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           maskImage:
-            'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0) 100%)',
+            'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 60%, rgba(0,0,0,0) 100%)',
           WebkitMaskImage:
-            'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 45%, rgba(0,0,0,0) 100%)',
+            'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 60%, rgba(0,0,0,0) 100%)',
           transform: 'translateZ(0)',
           willChange: 'transform, opacity',
         }}

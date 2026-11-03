@@ -72,7 +72,10 @@ export const lazyWithRetry = (componentImport, name = "chunk") =>
           const lastAutoReload = parseInt(sessionStorage.getItem('pfg_last_chunk_autoreload') || '0', 10);
           if (now - lastAutoReload > 20000) {
             sessionStorage.setItem('pfg_last_chunk_autoreload', String(now));
-            console.warn(`[lazyWithRetry] Nueva versión detectada en servidor. Recargando versión limpia...`);
+            try {
+              sessionStorage.setItem('pfg_pending_target_view', name);
+            } catch (_) {}
+            console.warn(`[lazyWithRetry] Nueva versión detectada en servidor. Recargando versión limpia preservando vista "${name}"...`);
             if ('caches' in window) {
               try {
                 await caches.delete('vite-hashed-assets');

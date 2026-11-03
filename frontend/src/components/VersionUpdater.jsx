@@ -25,29 +25,28 @@ const SWUpdaterCore = () => {
       .catch(() => {});
   }, []);
 
-  // 2. Comprobar si acabamos de actualizar a una nueva versión para mostrar WelcomeModal
+  // 2. Comprobar si hay un anuncio nuevo de bienvenida para mostrar WelcomeModal
   useEffect(() => {
     try {
-      const lastSeenVersion = localStorage.getItem('lastSeenVersion');
-      const isUpgraded = !lastSeenVersion || isNewerVersion(lastSeenVersion, APP_VERSION);
-      if (isUpgraded) {
-        // Consultar notas de la versión actual para el WelcomeModal
-        fetch(`/version.json?t=${Date.now()}`)
-          .then((res) => (res.ok ? res.json() : null))
-          .then((data) => {
+      const lastSeenWelcomeTitle = localStorage.getItem('lastSeenWelcomeTitle');
+
+      fetch(`/version.json?t=${Date.now()}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          const remoteTitle = data?.welcome?.title;
+          // Solo mostrar el modal si el título de las novedades es genuinamente nuevo y no ha sido visto ya
+          if (remoteTitle && remoteTitle !== lastSeenWelcomeTitle) {
             useAppStore.setState({
               showWelcomeModal: true,
               welcomeRemoteData: data,
               welcomeRemoteVersion: APP_VERSION
             });
-          })
-          .catch(() => {
-            useAppStore.setState({
-              showWelcomeModal: true,
-              welcomeRemoteVersion: APP_VERSION
-            });
-          });
-      }
+          } else {
+            localStorage.setItem('lastSeenVersion', APP_VERSION);
+            if (remoteTitle) localStorage.setItem('lastSeenWelcomeTitle', remoteTitle);
+          }
+        })
+        .catch(() => {});
     } catch {}
   }, []);
 
@@ -179,7 +178,6 @@ const SWUpdaterCore = () => {
       sessionStorage.removeItem('pfg_reload_count');
       sessionStorage.removeItem('pfg_entry_rescue_ts');
       sessionStorage.removeItem('pfg_splash_rescue_count');
-      localStorage.removeItem('lastView');
     } catch (_) {}
 
     let reloaded = false;

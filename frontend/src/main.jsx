@@ -81,10 +81,14 @@ try {
     localStorage.removeItem('pfg_auto_reloaded_version');
     localStorage.removeItem('pfg_crash_loop_count');
     localStorage.removeItem('profitness_insights_expanded');
-    // En actualización, purgar snapshot de estado anterior y lastView para evitar esquemas incompatibles
+    // En actualización, purgar snapshot de estado anterior para evitar esquemas incompatibles, pero preservar lastView si es válida
     localStorage.removeItem('pfg_cached_initial_state_v1');
     localStorage.removeItem('pfg_cache_version');
-    localStorage.removeItem('lastView');
+    const validViews = ['dashboard', 'routines', 'workout', 'nutrition', 'social', 'progress', 'hub', 'settings'];
+    const currentLastView = localStorage.getItem('lastView');
+    if (currentLastView && !validViews.includes(currentLastView)) {
+      localStorage.removeItem('lastView');
+    }
 
     if ('caches' in window) {
       caches.delete('api-read-cache').catch(() => {});

@@ -50,6 +50,14 @@ export const useAppNavigation = (navigateRouter) => {
     if (path === '/terms') return 'terms';
     if (path === '/aviso-legal' || path === '/legal') return 'legalNotice';
 
+    try {
+      const pendingTarget = sessionStorage.getItem('pfg_pending_target_view');
+      if (pendingTarget) {
+        sessionStorage.removeItem('pfg_pending_target_view');
+        return pendingTarget;
+      }
+    } catch (_) {}
+
     const savedView = localStorage.getItem('lastView');
     return savedView || 'dashboard';
   });

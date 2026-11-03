@@ -108,7 +108,11 @@ export const reloadAppWithoutStaleCache = async ({ path, force = false } = {}) =
   try {
     localStorage.removeItem("pfg_crash_loop_count");
     localStorage.removeItem("pfg_auto_reloaded_version");
-    localStorage.removeItem("lastView");
+    const validViews = ['dashboard', 'routines', 'workout', 'nutrition', 'social', 'progress', 'hub', 'settings'];
+    const currentLastView = localStorage.getItem('lastView');
+    if (currentLastView && !validViews.includes(currentLastView)) {
+      localStorage.removeItem('lastView');
+    }
   } catch {}
 
   const targetPath = path || "/";
