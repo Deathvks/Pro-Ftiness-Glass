@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import Spinner from './Spinner';
 import MaintenanceNoticeBanner from './MaintenanceNoticeBanner';
+import { preloadViewChunk } from '../App';
 
 // Lazy loading con precarga inmediata cuando no hay sesión activa para evitar esperas en /login y /register
 const hasActiveToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('pro_fitness_token'));
@@ -28,6 +29,10 @@ const AuthScreens = ({ authView, setAuthView }) => {
   useEffect(() => {
     // Depuración: Verifica qué vista está solicitando el router
     console.debug("AuthScreens renderizando vista:", authView);
+    // Precarga anticipada de las políticas y avisos legales para que la navegación sea instantánea (0ms)
+    preloadViewChunk('privacyPolicy');
+    preloadViewChunk('terms');
+    preloadViewChunk('legalNotice');
   }, [authView]);
 
   // Funciones de navegación que invocan la actualización de ruta en App.jsx
@@ -58,6 +63,8 @@ const AuthScreens = ({ authView, setAuthView }) => {
     }
   };
 
+  const isFullLayoutView = authView === 'login' || authView === 'register';
+
   return (
     <div className="flex flex-col min-h-screen bg-bg-primary animate-fade-in">
       <MaintenanceNoticeBanner withSafeArea />
@@ -76,29 +83,37 @@ const AuthScreens = ({ authView, setAuthView }) => {
         </Suspense>
       </div>
 
-      {/* Links Legales - Usamos Link para evitar recarga completa */}
-      <footer className="py-6 text-center bg-bg-primary z-10">
-        <div className="flex justify-center space-x-6">
-          <Link 
-            to="/privacy" 
-            className="text-xs text-text-secondary hover:text-accent transition-colors"
-          >
-            Política de Privacidad
-          </Link>
-          <Link 
-            to="/terms" 
-            className="text-xs text-text-secondary hover:text-accent transition-colors"
-          >
-            Términos del Servicio
-          </Link>
-          <Link 
-            to="/aviso-legal" 
-            className="text-xs text-text-secondary hover:text-accent transition-colors"
-          >
-            Aviso Legal
-          </Link>
-        </div>
-      </footer>
+      {/* Links Legales solo para vistas sencillas (forgotPassword/resetPassword); login y register tienen su propio footer integrado con scroll fluido */}
+      {!isFullLayoutView && (
+        <footer className="py-6 text-center bg-bg-primary z-10">
+          <div className="flex justify-center space-x-6">
+            <Link 
+              to="/privacy" 
+              onMouseEnter={() => preloadViewChunk('privacyPolicy')}
+              onTouchStart={() => preloadViewChunk('privacyPolicy')}
+              className="text-xs text-text-secondary hover:text-accent transition-colors"
+            >
+              Política de Privacidad
+            </Link>
+            <Link 
+              to="/terms" 
+              onMouseEnter={() => preloadViewChunk('terms')}
+              onTouchStart={() => preloadViewChunk('terms')}
+              className="text-xs text-text-secondary hover:text-accent transition-colors"
+            >
+              Términos del Servicio
+            </Link>
+            <Link 
+              to="/aviso-legal" 
+              onMouseEnter={() => preloadViewChunk('legalNotice')}
+              onTouchStart={() => preloadViewChunk('legalNotice')}
+              className="text-xs text-text-secondary hover:text-accent transition-colors"
+            >
+              Aviso Legal
+            </Link>
+          </div>
+        </footer>
+      )}
     </div>
   );
 };

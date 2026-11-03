@@ -1,6 +1,8 @@
 import ModalPortal from './ModalPortal';
 /* frontend/src/components/GoogleTermsModal.jsx */
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { preloadViewChunk } from '../App';
 import { ShieldCheck, X, ExternalLink, AlertTriangle, Info } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import useModalLock from '../hooks/useModalLock';
@@ -73,17 +75,20 @@ const GoogleTermsModal = ({ isOpen, onClose, onAccept, onShowPolicy }) => {
 
               {!previouslyDeclined && <p className="text-sm text-text-secondary leading-relaxed mt-2 p-3 bg-accent/5 rounded-xl border border-accent/10">
                     Al continuar, confirmas tener al menos 14 años, <strong>aceptas</strong> los{' '}
-                    <a
-                      href="/terms"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Link
+                      to="/terms"
+                      onClick={onClose}
+                      onMouseEnter={() => preloadViewChunk('terms')}
+                      onTouchStart={() => preloadViewChunk('terms')}
                       className="text-accent font-semibold hover:underline inline-flex items-center gap-0.5"
                     >
                       Términos de Servicio <ExternalLink size={12} />
-                    </a>
+                    </Link>
                     {', '}nuestra{' '}
                     <button
                   onClick={onShowPolicy}
+                  onMouseEnter={() => preloadViewChunk('privacyPolicy')}
+                  onTouchStart={() => preloadViewChunk('privacyPolicy')}
                   className="text-accent font-semibold hover:underline inline-flex items-center gap-1">
                   
                       Política de Privacidad <ExternalLink size={12} />

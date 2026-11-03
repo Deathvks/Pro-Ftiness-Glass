@@ -172,6 +172,11 @@ if (typeof window !== 'undefined' && window.location) {
   else if (initialPath === '/terms') preloadViewChunk('terms');
   else if (initialPath === '/aviso-legal' || initialPath === '/legal') preloadViewChunk('legalNotice');
   else if (initialPath === '/') preloadViewChunk('landingPage');
+  else if (initialPath === '/login' || initialPath === '/register' || initialPath === '/forgot-password' || initialPath === '/reset-password') {
+    preloadViewChunk('privacyPolicy');
+    preloadViewChunk('terms');
+    preloadViewChunk('legalNotice');
+  }
 }
 
 export const preloadAllPrimaryViews = () => {

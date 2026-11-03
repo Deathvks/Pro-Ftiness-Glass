@@ -1,6 +1,7 @@
 /* frontend/src/components/PublicPageFooter.jsx */
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { preloadViewChunk } from '../App';
 import { 
   FaGooglePlay, 
   FaInstagram, 

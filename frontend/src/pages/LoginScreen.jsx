@@ -15,85 +15,131 @@ import { resend2FACode, initGoogleAuth, signInWithGoogle } from '../services/aut
 import EmailVerification from '../components/EmailVerification';
 import SEOHead from '../components/SEOHead';
 import { Capacitor } from '@capacitor/core';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
+import { preloadViewChunk } from '../App';
 
 const SplitLayout = ({ children, onShowPolicy }) => (
-    <div className="auth-container flex flex-col lg:flex-row w-full h-[100dvh] bg-bg-primary overflow-hidden">
+    <div className="auth-container flex flex-col lg:flex-row w-full h-[100dvh] min-h-[100dvh] bg-bg-primary overflow-hidden">
         
-        {/* Panel Izquierdo (PC) */}
-        <div className="hidden lg:flex flex-col justify-center items-center w-[30%] h-full relative border-r border-glass-border p-8 overflow-hidden shrink-0 bg-bg-primary">
+        {/* Panel Izquierdo (PC / Tablet horizontal) - Showcase con scroll adaptativo si el viewport es bajo */}
+        <div className="hidden lg:flex flex-col justify-start xl:justify-center items-center w-[32%] xl:w-[30%] h-full relative border-r border-glass-border p-6 xl:p-8 overflow-y-auto custom-scrollbar shrink-0 bg-bg-primary">
             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
 
             <div className="absolute top-1/4 -left-10 w-48 h-48 bg-accent/30 rounded-full mix-blend-screen filter blur-[60px] animate-[pulse_4s_ease-in-out_infinite]"></div>
             <div className="absolute bottom-10 -right-10 w-64 h-64 bg-[#3b82f6]/20 rounded-full mix-blend-screen filter blur-[80px] animate-[pulse_5s_ease-in-out_infinite]"></div>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-[#a855f7]/20 rounded-full mix-blend-screen filter blur-[80px] animate-[pulse_6s_ease-in-out_infinite]"></div>
 
-            <div className="relative z-10 w-full max-w-[400px] flex flex-col items-center">
-                <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-accent mb-4 text-center tracking-tight drop-shadow-sm">Pro Fitness Glass</h2>
+            <div className="relative z-10 w-full max-w-[400px] flex flex-col items-center my-auto py-4">
+                <h2 className="text-3xl xl:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-accent mb-3 xl:mb-4 text-center tracking-tight drop-shadow-sm">Pro Fitness Glass</h2>
 
-                <div className="mb-8 w-full flex justify-center">
-                    <div className="glass px-6 py-2.5 rounded-full shadow-sm flex items-center justify-center gap-2 whitespace-nowrap transition-transform hover:scale-105 cursor-default">
-                        <Sparkles className="text-accent flex-shrink-0 animate-pulse" size={20} />
-                        <span className="text-sm font-black bg-gradient-to-r from-accent via-[#a855f7] to-[#3b82f6] text-transparent bg-clip-text uppercase tracking-widest">
+                <div className="mb-6 xl:mb-8 w-full flex justify-center">
+                    <div className="glass px-5 py-2 xl:px-6 xl:py-2.5 rounded-full shadow-sm flex items-center justify-center gap-2 whitespace-nowrap transition-transform hover:scale-105 cursor-default">
+                        <Sparkles className="text-accent flex-shrink-0 animate-pulse" size={18} />
+                        <span className="text-xs xl:text-sm font-black bg-gradient-to-r from-accent via-[#a855f7] to-[#3b82f6] text-transparent bg-clip-text uppercase tracking-widest">
                             Gratis y Sin Anuncios
                         </span>
                     </div>
                 </div>
 
-                <p className="text-text-secondary text-sm text-center mb-10 font-medium">Tu ecosistema definitivo para transformar tu físico, impulsado por datos reales.</p>
+                <p className="text-text-secondary text-xs xl:text-sm text-center mb-6 xl:mb-10 font-medium">Tu ecosistema definitivo para transformar tu físico, impulsado por datos reales.</p>
 
-                <div className="grid grid-cols-2 gap-4 w-full">
-                    <div className="glass rounded-[24px] p-5 shadow-xl border-t-4 border-t-accent transition-all duration-500 hover:-translate-y-2 hover:shadow-accent/20 hover:shadow-2xl relative overflow-hidden group">
+                <div className="grid grid-cols-2 gap-3 xl:gap-4 w-full">
+                    <div className="glass rounded-[20px] xl:rounded-[24px] p-3.5 xl:p-5 shadow-xl border-t-4 border-t-accent transition-all duration-500 hover:-translate-y-2 hover:shadow-accent/20 hover:shadow-2xl relative overflow-hidden group">
                         <div className="absolute -top-10 -right-10 w-24 h-24 bg-accent/20 rounded-full blur-2xl transition-transform duration-700 group-hover:scale-150"></div>
-                        <div className="bg-accent/20 p-3 rounded-[16px] text-accent inline-flex mb-3 relative z-10 transform transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110"><Dumbbell size={20} /></div>
-                        <h3 className="text-sm font-bold text-text-primary mb-1 relative z-10">Entrenamientos</h3>
-                        <p className="text-xs text-text-secondary font-medium relative z-10">Crea y registra rutinas con precisión.</p>
+                        <div className="bg-accent/20 p-2.5 xl:p-3 rounded-[14px] xl:rounded-[16px] text-accent inline-flex mb-2 xl:mb-3 relative z-10 transform transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110"><Dumbbell size={18} /></div>
+                        <h3 className="text-xs xl:text-sm font-bold text-text-primary mb-1 relative z-10">Entrenamientos</h3>
+                        <p className="text-[11px] xl:text-xs text-text-secondary font-medium relative z-10">Crea y registra rutinas con precisión.</p>
                     </div>
 
-                    <div className="glass rounded-[24px] p-5 shadow-xl border-t-4 border-t-[#3b82f6] transition-all duration-500 hover:-translate-y-2 hover:shadow-[#3b82f6]/20 hover:shadow-2xl relative overflow-hidden group">
+                    <div className="glass rounded-[20px] xl:rounded-[24px] p-3.5 xl:p-5 shadow-xl border-t-4 border-t-[#3b82f6] transition-all duration-500 hover:-translate-y-2 hover:shadow-[#3b82f6]/20 hover:shadow-2xl relative overflow-hidden group">
                         <div className="absolute -top-10 -right-10 w-24 h-24 bg-[#3b82f6]/20 rounded-full blur-2xl transition-transform duration-700 group-hover:scale-150"></div>
-                        <div className="bg-[#3b82f6]/20 p-3 rounded-[16px] text-[#3b82f6] inline-flex mb-3 relative z-10 transform transition-transform duration-500 group-hover:-rotate-12 group-hover:scale-110"><Flame size={20} /></div>
-                        <h3 className="text-sm font-bold text-text-primary mb-1 relative z-10">Nutrición</h3>
-                        <p className="text-xs text-text-secondary font-medium relative z-10">Controla macros y calorías diarias.</p>
+                        <div className="bg-[#3b82f6]/20 p-2.5 xl:p-3 rounded-[14px] xl:rounded-[16px] text-[#3b82f6] inline-flex mb-2 xl:mb-3 relative z-10 transform transition-transform duration-500 group-hover:-rotate-12 group-hover:scale-110"><Flame size={18} /></div>
+                        <h3 className="text-xs xl:text-sm font-bold text-text-primary mb-1 relative z-10">Nutrición</h3>
+                        <p className="text-[11px] xl:text-xs text-text-secondary font-medium relative z-10">Controla macros y calorías diarias.</p>
                     </div>
 
-                    <div className="glass rounded-[24px] p-5 shadow-xl border-t-4 border-t-[#10b981] transition-all duration-500 hover:-translate-y-2 hover:shadow-[#10b981]/20 hover:shadow-2xl relative overflow-hidden group">
+                    <div className="glass rounded-[20px] xl:rounded-[24px] p-3.5 xl:p-5 shadow-xl border-t-4 border-t-[#10b981] transition-all duration-500 hover:-translate-y-2 hover:shadow-[#10b981]/20 hover:shadow-2xl relative overflow-hidden group">
                         <div className="absolute -top-10 -right-10 w-24 h-24 bg-[#10b981]/20 rounded-full blur-2xl transition-transform duration-700 group-hover:scale-150"></div>
-                        <div className="bg-[#10b981]/20 p-3 rounded-[16px] text-[#10b981] inline-flex mb-3 relative z-10 transform transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110"><TrendingUp size={20} /></div>
-                        <h3 className="text-sm font-bold text-text-primary mb-1 relative z-10">Progreso</h3>
-                        <p className="text-xs text-text-secondary font-medium relative z-10">Visualiza tu evolución al detalle.</p>
+                        <div className="bg-[#10b981]/20 p-2.5 xl:p-3 rounded-[14px] xl:rounded-[16px] text-[#10b981] inline-flex mb-2 xl:mb-3 relative z-10 transform transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110"><TrendingUp size={18} /></div>
+                        <h3 className="text-xs xl:text-sm font-bold text-text-primary mb-1 relative z-10">Progreso</h3>
+                        <p className="text-[11px] xl:text-xs text-text-secondary font-medium relative z-10">Visualiza tu evolución al detalle.</p>
                     </div>
 
-                    <div className="glass rounded-[24px] p-5 shadow-xl border-t-4 border-t-[#a855f7] transition-all duration-500 hover:-translate-y-2 hover:shadow-[#a855f7]/20 hover:shadow-2xl relative overflow-hidden group">
+                    <div className="glass rounded-[20px] xl:rounded-[24px] p-3.5 xl:p-5 shadow-xl border-t-4 border-t-[#a855f7] transition-all duration-500 hover:-translate-y-2 hover:shadow-[#a855f7]/20 hover:shadow-2xl relative overflow-hidden group">
                         <div className="absolute -top-10 -right-10 w-24 h-24 bg-[#a855f7]/20 rounded-full blur-2xl transition-transform duration-700 group-hover:scale-150"></div>
-                        <div className="bg-[#a855f7]/20 p-3 rounded-[16px] text-[#a855f7] inline-flex mb-3 relative z-10 transform transition-transform duration-500 group-hover:-rotate-12 group-hover:scale-110"><Sparkles size={20} /></div>
-                        <h3 className="text-sm font-bold text-text-primary mb-1 relative z-10">Inteligencia IA</h3>
-                        <p className="text-xs text-text-secondary font-medium relative z-10">Asistencia y planes personalizados.</p>
+                        <div className="bg-[#a855f7]/20 p-2.5 xl:p-3 rounded-[14px] xl:rounded-[16px] text-[#a855f7] inline-flex mb-2 xl:mb-3 relative z-10 transform transition-transform duration-500 group-hover:-rotate-12 group-hover:scale-110"><Sparkles size={18} /></div>
+                        <h3 className="text-xs xl:text-sm font-bold text-text-primary mb-1 relative z-10">Inteligencia IA</h3>
+                        <p className="text-[11px] xl:text-xs text-text-secondary font-medium relative z-10">Asistencia y planes personalizados.</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        {/* Panel Derecho (Móvil y PC) - Scroll propio con gestión de áreas seguras */}
-        <div className="flex-1 w-full lg:w-[70%] h-full overflow-y-auto relative z-10 bg-bg-primary custom-scrollbar">
+        {/* Panel Derecho (Móvil, Tablet y PC) - Scroll propio con gestión de áreas seguras y sin cortes */}
+        <div className="flex-1 w-full lg:w-[68%] xl:w-[70%] h-full overflow-y-auto relative z-10 bg-bg-primary custom-scrollbar flex flex-col">
             <div className="absolute inset-0 lg:hidden bg-gradient-to-b from-accent/5 to-transparent pointer-events-none min-h-[100dvh]"></div>
 
-            {/* Contenedor que centra con my-auto si sobra espacio, y baja el padding superior por debajo del Notch de iOS */}
+            {/* Contenedor que centra si sobra espacio, baja el padding superior por debajo del Notch de iOS y da amplio padding inferior */}
             <div 
-                className="flex flex-col min-h-full w-full px-4 sm:px-6 lg:px-8"
+                className="flex flex-col min-h-full w-full px-4 sm:px-6 lg:px-8 justify-start lg:justify-center items-center"
                 style={{ 
                     paddingTop: 'calc(1.5rem + var(--safe-top))', 
-                    paddingBottom: 'calc(1.5rem + var(--safe-bottom))' 
+                    paddingBottom: 'calc(5rem + var(--safe-bottom))' 
                 }}
             >
                 <div className="my-auto mx-auto w-full max-w-md text-center relative z-10 animate-[fade-in_0.5s_ease-out] py-4">
                     {children}
 
-                    <div className="mt-6 sm:mt-8 text-xs text-text-muted px-2">
+                    {/* Texto informativo de aceptación de políticas */}
+                    <div className="mt-6 sm:mt-8 text-xs text-text-muted px-2 leading-relaxed">
                         Al continuar, aceptas nuestros{' '}
-                        <a href="/terms" className="text-accent hover:underline transition-all">Términos de Servicio</a>
+                        <Link 
+                            to="/terms" 
+                            onMouseEnter={() => preloadViewChunk('terms')}
+                            onTouchStart={() => preloadViewChunk('terms')}
+                            className="text-accent font-semibold hover:underline transition-all"
+                        >
+                            Términos de Servicio
+                        </Link>
                         {' '}y nuestra{' '}
-                        <button onClick={onShowPolicy} className="text-accent hover:underline transition-all">Política de Privacidad</button>.
+                        <Link 
+                            to="/privacy" 
+                            onMouseEnter={() => preloadViewChunk('privacyPolicy')}
+                            onTouchStart={() => preloadViewChunk('privacyPolicy')}
+                            className="text-accent font-semibold hover:underline transition-all"
+                        >
+                            Política de Privacidad
+                        </Link>.
+                    </div>
+
+                    {/* Fila de enlaces directos a todas las políticas legales con precarga instantánea */}
+                    <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-6 mt-4 pt-3 border-t border-glass-border/40 text-xs text-text-secondary">
+                        <Link 
+                            to="/privacy" 
+                            onMouseEnter={() => preloadViewChunk('privacyPolicy')}
+                            onTouchStart={() => preloadViewChunk('privacyPolicy')}
+                            className="hover:text-accent transition-colors font-medium"
+                        >
+                            Política de Privacidad
+                        </Link>
+                        <span className="opacity-40">•</span>
+                        <Link 
+                            to="/terms" 
+                            onMouseEnter={() => preloadViewChunk('terms')}
+                            onTouchStart={() => preloadViewChunk('terms')}
+                            className="hover:text-accent transition-colors font-medium"
+                        >
+                            Términos del Servicio
+                        </Link>
+                        <span className="opacity-40">•</span>
+                        <Link 
+                            to="/aviso-legal" 
+                            onMouseEnter={() => preloadViewChunk('legalNotice')}
+                            onTouchStart={() => preloadViewChunk('legalNotice')}
+                            className="hover:text-accent transition-colors font-medium"
+                        >
+                            Aviso Legal
+                        </Link>
                     </div>
                 </div>
             </div>
