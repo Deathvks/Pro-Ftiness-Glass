@@ -340,6 +340,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
     const [isDocked, setIsDocked] = useState(false);
     const [isHeaderHidden, setIsHeaderHidden] = useState(false);
     const lastScrollY = useRef(0);
+    const accumulatedDownRef = useRef(0);
+    const accumulatedUpRef = useRef(0);
     const [communityUsers, setCommunityUsers] = useState([]);
     const [apkDownloadUrl, setApkDownloadUrl] = useState(null);
     const containerRef = useRef(null);
@@ -394,12 +396,29 @@ const LandingPage = ({ onLogin, onRegister }) => {
             setIsDocked(shouldBeDocked);
         }
 
-        if (scrollTop > lastScrollY.current + 10 && scrollTop > 100) {
-            setIsHeaderHidden(true);
-        } else if (scrollTop <= 50) {
+        if (scrollTop <= 50) {
             setIsHeaderHidden(false);
+            accumulatedDownRef.current = 0;
+            accumulatedUpRef.current = 0;
+            lastScrollY.current = Math.max(0, scrollTop);
+            return;
         }
-        lastScrollY.current = scrollTop;
+
+        const delta = scrollTop - lastScrollY.current;
+        if (delta > 0) {
+            accumulatedDownRef.current += delta;
+            accumulatedUpRef.current = 0;
+            if (accumulatedDownRef.current > 10 && scrollTop > 80) {
+                setIsHeaderHidden(true);
+            }
+        } else if (delta < 0) {
+            accumulatedUpRef.current += Math.abs(delta);
+            accumulatedDownRef.current = 0;
+            if (accumulatedUpRef.current > 16) {
+                setIsHeaderHidden(false);
+            }
+        }
+        lastScrollY.current = Math.max(0, scrollTop);
     };
 
     return (
