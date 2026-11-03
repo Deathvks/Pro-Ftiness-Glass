@@ -32,6 +32,7 @@ import {
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Capacitor } from '@capacitor/core';
+import { Sparkles } from 'lucide-react';
 
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
@@ -292,7 +293,12 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
     }
   }), []);
 
-  const gridArticles = useMemo(() => news, [news]);
+  const isHeroVisible = currentPage === 1 && !currentSearch && news && news.length > 0;
+  const featuredArticle = isHeroVisible ? news[0] : null;
+  const gridArticles = useMemo(() => {
+    if (!news) return [];
+    return isHeroVisible ? news.slice(1) : news;
+  }, [news, isHeroVisible]);
 
   // Cálculo estricto del total real según la categoría seleccionada
   const categoryTotal = useMemo(() => {
@@ -490,6 +496,120 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
         </p>
       </section>
 
+      {/* PORTADA DESTACADA: ÚLTIMA NOTICIA CREADA */}
+      {featuredArticle && (
+        <section aria-label="Noticia destacada reciente" className="w-full">
+          <div className="flex items-center gap-2 mb-2.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
+            </span>
+            <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-accent">
+              Última Noticia Publicada
+            </span>
+          </div>
+
+          <a
+            href={`/noticias/${featuredArticle.slug}`}
+            onClick={(e) => {
+              if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                e.preventDefault();
+                handleArticleClick(featuredArticle);
+              }
+            }}
+            onMouseEnter={() => newsService.prefetchNewsBySlug(featuredArticle.slug)}
+            onTouchStart={() => newsService.prefetchNewsBySlug(featuredArticle.slug)}
+            className="group relative block w-full rounded-[28px] sm:rounded-[36px] overflow-hidden border border-black/10 dark:border-white/10 bg-gradient-to-br from-black/[0.03] to-black/[0.08] dark:from-white/[0.03] dark:to-white/[0.07] backdrop-blur-2xl shadow-xl hover:shadow-2xl hover:border-accent/40 transition-all duration-300 no-underline text-inherit"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-6 items-stretch">
+              
+              {/* Portada en gran formato */}
+              <div className="lg:col-span-7 relative overflow-hidden bg-black/15 min-h-[220px] sm:min-h-[300px] lg:min-h-[360px] aspect-[16/10] lg:aspect-auto">
+                <img
+                  src={featuredArticle.image_url?.includes('photo-1510519138197-06b8628cbf4f')
+                    ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
+                    : (featuredArticle.image_url || '/entrenamiento.png')}
+                  alt={featuredArticle.title}
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                  loading="eager"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/entrenamiento.png';
+                  }}
+                />
+
+                {/* Gradiente cinemático de protección de lectura */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-black/10 lg:to-black/30 pointer-events-none" />
+
+                {/* Badges superiores flotantes */}
+                <div className="absolute top-3.5 left-3.5 sm:top-4 sm:left-4 flex flex-wrap items-center gap-2 z-10">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-accent text-accent-contrast shadow-lg shadow-accent/30">
+                    <Sparkles className="text-xs animate-pulse" size={13} />
+                    <span>Destacada</span>
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-black/70 backdrop-blur-md text-white border border-white/20">
+                    {featuredArticle.category}
+                  </span>
+                </div>
+              </div>
+
+              {/* Panel de texto, resumen y acción */}
+              <div className="lg:col-span-5 p-5 sm:p-7 lg:p-6 flex flex-col justify-between gap-4 sm:gap-5">
+                <div className="space-y-2.5 sm:space-y-3.5">
+                  <div className="flex items-center gap-2 text-xs text-text-tertiary font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <FaCalendarDays className="text-accent text-[11px]" />
+                      {format(new Date(featuredArticle.published_at), 'd MMMM yyyy', { locale: es })}
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <FaClock className="text-[11px]" />
+                      {featuredArticle.reading_time || 4} min
+                    </span>
+                  </div>
+
+                  <h2 className="text-lg sm:text-2xl lg:text-2xl xl:text-3xl font-black text-text-primary tracking-tight leading-snug group-hover:text-accent transition-colors line-clamp-3">
+                    {featuredArticle.title}
+                  </h2>
+
+                  <p className="text-xs sm:text-sm text-text-secondary leading-relaxed font-normal line-clamp-3 sm:line-clamp-4">
+                    {featuredArticle.summary}
+                  </p>
+                </div>
+
+                <div className="pt-3.5 sm:pt-4 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <img
+                      src={featuredArticle.author_avatar || "/logo.webp"}
+                      alt="Autor"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/logo.webp';
+                      }}
+                      className="w-7 h-7 rounded-full object-contain bg-black/5 dark:bg-white/5 p-0.5 border border-glass-border shrink-0 shadow-xs"
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold text-text-primary leading-tight truncate">
+                        {featuredArticle.author_name || 'Equipo Científico PFG'}
+                      </span>
+                      <span className="text-[10px] text-text-tertiary">
+                        {(featuredArticle.views_count || 0) > 0 ? `${featuredArticle.views_count} lecturas` : 'Recién publicado'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/25 group-hover:scale-105 active:scale-95 transition-all shrink-0">
+                    <span>Leer artículo</span>
+                    <FaArrowRight className="text-xs group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </a>
+        </section>
+      )}
+
       {/* SECCIÓN NOTICIAS MÁS VISTAS */}
       {popularNews.length > 0 && currentCategory === 'Todas' && !currentSearch && currentPage === 1 && (
         <section className="space-y-4 pt-1 pb-1">
@@ -572,6 +692,8 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                 </div>
               </a>
             ))}
+
+
           </div>
         </section>
       )}
@@ -766,6 +888,40 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
                 </div>
               </a>
             ))}
+
+            {/* Tarjeta de conversión y comunidad de Pro Fitness Glass para cerrar la cuadrícula simétrica */}
+            {featuredArticle && gridArticles.length === 5 && (
+              <div className="rounded-2xl shadow-lg border backdrop-blur-glass bg-gradient-to-br from-accent/10 via-purple-500/5 to-transparent border-accent/20 p-5 sm:p-6 rounded-[28px] overflow-hidden flex flex-col justify-between shadow-sm hover:shadow-xl hover:border-accent/40 transition-all duration-300 group">
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-2xl bg-accent/20 text-accent flex items-center justify-center shadow-inner">
+                    <Sparkles className="animate-pulse" size={20} />
+                  </div>
+                  <span className="inline-block text-[10px] font-black uppercase tracking-widest text-accent">
+                    Ecosistema Deportivo
+                  </span>
+                  <h3 className="text-base sm:text-lg font-black text-text-primary group-hover:text-accent transition-colors leading-snug">
+                    Lleva tu entrenamiento al siguiente nivel con Pro Fitness Glass
+                  </h3>
+                  <p className="text-xs text-text-secondary leading-relaxed">
+                    Sobrecarga progresiva real, calculadora de 1RM, control de macros y biomecánica en vídeo. 100% gratis y sin anuncios.
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-glass-border/40 flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-accent">
+                    {isAuthenticated ? 'Abrir Aplicación' : 'Empezar Gratis'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => navigate(isAuthenticated ? '/dashboard' : '/register')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-accent text-accent-contrast font-black text-xs shadow-md shadow-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
+                  >
+                    <span>{isAuthenticated ? 'Ir al Panel' : 'Registrarme'}</span>
+                    <FaArrowRight className="text-xs group-hover:translate-x-0.5 transition-transform" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* PAGINACIÓN ELEGANTE Y RESPONSIVE (Totalmente adaptada a móviles) */}

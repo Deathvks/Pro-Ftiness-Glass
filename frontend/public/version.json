@@ -1,6 +1,6 @@
 {
-  "version": "7.11.73",
-  "releaseNotes": "Actualización v7.11.73: Precarga instantánea (0ms) de políticas y aviso legal, enlaces SPA sin recargas en login/registro y solución integral de scroll completo y visualización en tablet horizontal sin cortes.",
+  "version": "7.11.74",
+  "releaseNotes": "Actualización v7.11.74: Nueva portada destacada en gran formato para la última noticia publicada con resumen completo, metadatos y llamada a la acción en Guías y Noticias.",
   "welcome": {
     "title": "Migración desde Hevy/Strong y Copias",
     "subtitle": "Llega la migración de datos: importa todo tu historial de entrenamientos desde Hevy o Strong en un solo clic y exporta a Excel cuando quieras.",
