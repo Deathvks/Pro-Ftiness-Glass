@@ -702,7 +702,7 @@ const syncStaleLocalFoods = () => {
           const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${food.barcode}.json?fields=product_name,product_name_es,generic_name,brands,nutriments,serving_quantity`;
           const response = await axios.get(apiUrl, {
             timeout: 8000,
-            headers: { 'User-Agent': 'ProFitnessGlass - Android - Version 7.11.81 - https://profitnessglass.com' }
+            headers: { 'User-Agent': 'ProFitnessGlass - Android - Version 7.12.0 - https://profitnessglass.com' }
           });
 
           if (response.data && response.data.status === 1 && response.data.product) {

@@ -27,7 +27,7 @@ const MAX_DAILY_WATER_XP = 50;
 const searchCache = new Map();
 const CACHE_TTL = 1000 * 60 * 60 * 24;
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const OFF_USER_AGENT = 'ProFitnessGlass - Android - Version 7.11.81 - https://profitnessglass.com';
+const OFF_USER_AGENT = 'ProFitnessGlass - Android - Version 7.12.0 - https://profitnessglass.com';
 
 const offSearchTimestamps = [];
 const canMakeOffSearch = () => {
