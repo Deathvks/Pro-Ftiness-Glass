@@ -1,6 +1,7 @@
 /* backend/services/cronService.js */
 import cron from 'node-cron';
 import { Op } from 'sequelize';
+import axios from 'axios';
 import db from '../models/index.js';
 import pushService from './pushService.js';
 import { createNotification } from './notificationService.js';
@@ -660,11 +661,93 @@ export const startCronJobs = () => {
   resetInactiveStreaks();
   checkChatBotReminders(); // <-- Añadido el nuevo vigilante
   scheduleDailyNewsAutomation();
+  syncStaleLocalFoods();
 
   // Ejecución inmediata en arranque tras 3 segundos para reparar chats pendientes
   setTimeout(() => {
     autoHealPendingWelcomeMessages().catch(e => console.error('[BOT] Error en auto-heal de inicio:', e));
   }, 3000);
+};
+
+/**
+ * Smart Sync: Sincronización nocturna de alimentos cacheados con más de 30 días.
+ * Corre a las 04:00 AM hora de Madrid con rate-limiting cuidadoso (1.5s entre peticiones).
+ */
+const syncStaleLocalFoods = () => {
+  cron.schedule('0 4 * * *', async () => {
+    try {
+      const { LocalFood } = db;
+      if (!LocalFood) return;
+
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const staleFoods = await LocalFood.findAll({
+        where: {
+          barcode: { [Op.ne]: null },
+          [Op.or]: [
+            { last_synced_at: null },
+            { last_synced_at: { [Op.lt]: thirtyDaysAgo } }
+          ]
+        },
+        order: [['last_synced_at', 'ASC']],
+        limit: 50
+      });
+
+      if (staleFoods.length === 0) return;
+
+      console.log(`[Cron] Smart Sync: Iniciando actualización de ${staleFoods.length} alimentos antiguos de OpenFoodFacts...`);
+      let updatedCount = 0;
+
+      for (const food of staleFoods) {
+        try {
+          const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${food.barcode}.json?fields=product_name,product_name_es,generic_name,brands,nutriments,serving_quantity`;
+          const response = await axios.get(apiUrl, {
+            timeout: 8000,
+            headers: { 'User-Agent': 'ProFitnessGlass - Android - Version 7.11.81 - https://profitnessglass.com' }
+          });
+
+          if (response.data && response.data.status === 1 && response.data.product) {
+            const p = response.data.product;
+            const nutriments = p.nutriments || {};
+
+            const calories = Math.round(parseFloat(nutriments['energy-kcal_100g'] ?? nutriments['energy-kcal'] ?? 0));
+            const protein_g = Math.round(parseFloat(nutriments.proteins_100g ?? nutriments.proteins ?? 0) * 10) / 10;
+            const carbs_g = Math.round(parseFloat(nutriments.carbohydrates_100g ?? nutriments.carbohydrates ?? 0) * 10) / 10;
+            const fats_g = Math.round(parseFloat(nutriments.fat_100g ?? nutriments.fat ?? 0) * 10) / 10;
+            const sugars_g = Math.round(parseFloat(nutriments.sugars_100g ?? nutriments.sugars ?? 0) * 10) / 10;
+            const brand = p.brands ? p.brands.split(',')[0].trim() : food.brand;
+            const serving_quantity = parseFloat(p.serving_quantity) || food.serving_quantity;
+
+            await food.update({
+              calories: calories || food.calories,
+              protein_g: protein_g || food.protein_g,
+              carbs_g: carbs_g || food.carbs_g,
+              fats_g: fats_g || food.fats_g,
+              sugars_g: sugars_g || food.sugars_g,
+              brand,
+              serving_quantity,
+              last_synced_at: new Date()
+            });
+            updatedCount++;
+          } else {
+            // Si el producto ya no existe en OFF o no tiene status 1, renovamos last_synced_at para no reintentar continuamente
+            await food.update({ last_synced_at: new Date() });
+          }
+        } catch (itemErr) {
+          console.error(`[Cron] Smart Sync: Error actualizando barcode ${food.barcode}:`, itemErr.message);
+          if (itemErr.response && itemErr.response.status === 404) {
+            await food.update({ last_synced_at: new Date() }).catch(() => {});
+          }
+        }
+
+        // Delay de 1500ms entre productos para respetar la API de OpenFoodFacts
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+
+      console.log(`[Cron] Smart Sync: Finalizada actualización. ${updatedCount}/${staleFoods.length} alimentos actualizados.`);
+    } catch (error) {
+      console.error('[Cron] Smart Sync: Error en tarea nocturna:', error.message);
+    }
+  }, { timezone: 'Europe/Madrid' });
 };
 
 /**
