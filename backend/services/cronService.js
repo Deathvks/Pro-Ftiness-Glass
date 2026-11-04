@@ -586,6 +586,67 @@ const checkChatBotReminders = () => {
     });
 };
 
+export const autoHealPendingWelcomeMessages = async () => {
+  try {
+    const { User, Message } = db;
+    const trainersAndAdmins = await User.findAll({
+      where: { role: { [Op.in]: ['admin', 'trainer'] } },
+      attributes: ['id']
+    });
+    const trainerAdminIds = trainersAndAdmins.map(u => u.id);
+    if (trainerAdminIds.length === 0) return;
+
+    const prospects = await User.findAll({
+      where: { role: 'user' },
+      attributes: ['id']
+    });
+
+    for (const prospect of prospects) {
+      for (const trainerId of trainerAdminIds) {
+        const lastMsg = await Message.findOne({
+          where: {
+            [Op.or]: [
+              { sender_id: prospect.id, receiver_id: trainerId },
+              { sender_id: trainerId, receiver_id: prospect.id }
+            ]
+          },
+          order: [['created_at', 'DESC']]
+        });
+
+        if (!lastMsg || lastMsg.is_closed) continue;
+
+        if (lastMsg.sender_id === prospect.id) {
+          const hasReplyAfter = await Message.count({
+            where: {
+              receiver_id: prospect.id,
+              created_at: { [Op.gt]: lastMsg.created_at },
+              [Op.or]: [
+                { attachment_type: 'bot_reply' },
+                { sender_id: { [Op.in]: trainerAdminIds } }
+              ]
+            }
+          });
+
+          if (hasReplyAfter === 0) {
+            console.log(`[BOT-AUTOHEAL] Creando respuesta de bienvenida pendiente para prospecto ${prospect.id}`);
+            const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
+            await Message.create({
+              sender_id: trainerId,
+              receiver_id: prospect.id,
+              content: botContent,
+              attachment_type: 'bot_reply',
+              created_at: new Date(new Date(lastMsg.created_at).getTime() + 1000)
+            });
+            break;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[BOT-AUTOHEAL] Error:', err);
+  }
+};
+
 export const startCronJobs = () => {
   console.log('[Cron] Iniciando tareas (Optimizado)...');
   checkNewUserRatingPrompt();
@@ -599,6 +660,11 @@ export const startCronJobs = () => {
   resetInactiveStreaks();
   checkChatBotReminders(); // <-- Añadido el nuevo vigilante
   scheduleDailyNewsAutomation();
+
+  // Ejecución inmediata en arranque tras 3 segundos para reparar chats pendientes
+  setTimeout(() => {
+    autoHealPendingWelcomeMessages().catch(e => console.error('[BOT] Error en auto-heal de inicio:', e));
+  }, 3000);
 };
 
 /**

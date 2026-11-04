@@ -155,56 +155,65 @@ export const getChatHistory = async (req, res, next) => {
       }
     }
 
-    // Auto-curación para usuarios que solicitaron información sin compromiso
-    // y no han recibido respuesta del bot o del entrenador (p.ej. la cuenta de prueba del revisor)
-    if (requestor && requestor.role !== 'trainer' && requestor.role !== 'admin') {
-      try {
-        const trainersAndAdmins = await User.findAll({
-          where: { role: { [Op.in]: ['admin', 'trainer'] } },
-          attributes: ['id']
-        });
-        const trainerAdminIds = trainersAndAdmins.map(u => u.id);
-        const targetTrainerId = trainerAdminIds.includes(parseInt(otherUserId))
-          ? parseInt(otherUserId)
-          : (trainerAdminIds[0] || parseInt(otherUserId));
+    // Auto-curación para prospectos que solicitaron información y no han recibido respuesta
+    // Funciona tanto si consulta el propio usuario como si el entrenador/admin abre la conversación
+    try {
+      const trainersAndAdmins = await User.findAll({
+        where: { role: { [Op.in]: ['admin', 'trainer'] } },
+        attributes: ['id']
+      });
+      const trainerAdminIds = trainersAndAdmins.map(u => u.id);
 
-        if (targetTrainerId) {
-          const lastSinCompromiso = await Message.findOne({
+      const isCallerStaff = requestor && (requestor.role === 'admin' || requestor.role === 'trainer');
+      const prospectUserId = isCallerStaff ? parseInt(otherUserId) : userId;
+      const targetTrainerId = isCallerStaff
+        ? userId
+        : (trainerAdminIds.includes(parseInt(otherUserId)) ? parseInt(otherUserId) : (trainerAdminIds[0] || parseInt(otherUserId)));
+
+      if (prospectUserId && targetTrainerId && prospectUserId !== targetTrainerId) {
+        const lastProspectMsg = await Message.findOne({
+          where: {
+            sender_id: prospectUserId,
+            receiver_id: { [Op.in]: trainerAdminIds }
+          },
+          order: [['created_at', 'DESC']]
+        });
+
+        if (lastProspectMsg && !lastProspectMsg.is_closed) {
+          const hasReplyAfter = await Message.count({
             where: {
-              sender_id: userId,
-              content: { [Op.like]: '%sin compromiso%' }
-            },
-            order: [['created_at', 'DESC']]
+              receiver_id: prospectUserId,
+              created_at: { [Op.gt]: lastProspectMsg.created_at },
+              [Op.or]: [
+                { attachment_type: 'bot_reply' },
+                { sender_id: { [Op.in]: trainerAdminIds } }
+              ]
+            }
           });
 
-          if (lastSinCompromiso) {
-            const hasReplyAfter = await Message.count({
-              where: {
-                receiver_id: userId,
-                created_at: { [Op.gt]: lastSinCompromiso.created_at },
-                [Op.or]: [
-                  { attachment_type: 'bot_reply' },
-                  { sender_id: { [Op.in]: trainerAdminIds } }
-                ]
-              }
+          if (hasReplyAfter === 0) {
+            console.log('[BOT] Auto-generating missing bot reply in getChatHistory for user:', prospectUserId);
+            const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
+            const botMsg = await Message.create({
+              sender_id: targetTrainerId,
+              receiver_id: prospectUserId,
+              content: botContent,
+              attachment_type: 'bot_reply',
+              created_at: new Date(new Date(lastProspectMsg.created_at).getTime() + 1000)
             });
 
-            if (hasReplyAfter === 0) {
-              console.log('[BOT] Auto-generating missing bot reply in getChatHistory for user:', userId);
-              const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
-              await Message.create({
-                sender_id: targetTrainerId,
-                receiver_id: userId,
-                content: botContent,
-                attachment_type: 'bot_reply',
-                created_at: new Date(new Date(lastSinCompromiso.created_at).getTime() + 1000)
+            if (io) {
+              const populated = await Message.findByPk(botMsg.id, {
+                include: [{ model: User, as: 'Sender', attributes: ['id', 'username', 'profile_image_url', 'role'] }]
               });
+              io.to(prospectUserId.toString()).emit('chat_message', populated);
+              io.to(targetTrainerId.toString()).emit('chat_message', populated);
             }
           }
         }
-      } catch (e) {
-        console.error('[BOT] Error in getChatHistory auto-heal:', e);
       }
+    } catch (e) {
+      console.error('[BOT] Error in getChatHistory auto-heal:', e);
     }
 
     if (requestor && requestor.role === 'user') {
@@ -301,56 +310,53 @@ export const sendMessage = async (req, res, next) => {
     console.log('[BOT] Checking bot reply for userId:', userId, 'content:', content.trim().substring(0, 50));
     let populatedBotMessage = null;
 
-    if (requestor && requestor.role !== 'trainer' && requestor.role !== 'admin') {
-      const isRequestInfoMessage = 
-        content.trim().toLowerCase().includes('sin compromiso') ||
-        (content.trim().toLowerCase().includes('asesoría') && content.trim().toLowerCase().includes('información'));
-      console.log('[BOT] Is prospective user/client:', true, 'isRequestInfoMessage:', isRequestInfoMessage);
-      
-      if (isRequestInfoMessage) {
-                // Asegurar que no se envíe spam si ya recibió una respuesta del bot en las últimas 24 horas
-        const recentBotReply = await Message.count({
-          where: {
-            receiver_id: userId,
-            attachment_type: 'bot_reply',
-            created_at: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-          }
-        });
-        console.log('[BOT] recentBotReply:', recentBotReply);
-        
-        if (recentBotReply === 0) {
-          // Es la solicitud de información sin compromiso, crear respuesta automática del bot
-          const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
-          const botMessage = await Message.create({
-            sender_id: receiverId, // Lo envía nominalmente el entrenador
-            receiver_id: userId,
-            content: botContent,
-            attachment_type: 'bot_reply'
-          });
-          console.log('[BOT] Bot message created with id:', botMessage.id);
+    const lowerContent = content.trim().toLowerCase();
+    const isRequestInfoMessage = 
+      lowerContent.includes('sin compromiso') ||
+      (lowerContent.includes('asesor') && lowerContent.includes('informaci')) ||
+      (requestor && requestor.role === 'user');
 
-          populatedBotMessage = await Message.findByPk(botMessage.id, {
-            include: [
-              { model: User, as: 'Sender', attributes: ['id', 'username', 'profile_image_url'] }
-            ]
-          });
-
-          // Enviar por socket
-          if (io) {
-            io.to(userId.toString()).emit('chat_message', populatedBotMessage);
-            admins.forEach(admin => {
-              if (admin.id.toString() !== userId.toString()) {
-                io.to(admin.id.toString()).emit('chat_message', populatedBotMessage);
-              }
-            });
-          }
-
-          // Notificar al usuario (Push, Email, In-app) - como si fuera mensaje del trainer
-          notifyUserIfNeeded(receiverId, userId, "Hola, tus mensajes son totalmente privados. Recibirás respuesta...");
+    if (isRequestInfoMessage) {
+      // Asegurar que no se envíe spam si ya recibió una respuesta del bot en las últimas 24 horas
+      const recentBotReply = await Message.count({
+        where: {
+          receiver_id: userId,
+          attachment_type: 'bot_reply',
+          created_at: { [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) }
         }
+      });
+      console.log('[BOT] recentBotReply:', recentBotReply);
+      
+      if (recentBotReply === 0) {
+        // Es la solicitud de información sin compromiso, crear respuesta automática del bot
+        const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
+        const botMessage = await Message.create({
+          sender_id: receiverId, // Lo envía nominalmente el entrenador
+          receiver_id: userId,
+          content: botContent,
+          attachment_type: 'bot_reply'
+        });
+        console.log('[BOT] Bot message created with id:', botMessage.id);
+
+        populatedBotMessage = await Message.findByPk(botMessage.id, {
+          include: [
+            { model: User, as: 'Sender', attributes: ['id', 'username', 'profile_image_url'] }
+          ]
+        });
+
+        // Enviar por socket
+        if (io) {
+          io.to(userId.toString()).emit('chat_message', populatedBotMessage);
+          admins.forEach(admin => {
+            if (admin.id.toString() !== userId.toString()) {
+              io.to(admin.id.toString()).emit('chat_message', populatedBotMessage);
+            }
+          });
+        }
+
+        // Notificar al usuario (Push, Email, In-app) - como si fuera mensaje del trainer
+        notifyUserIfNeeded(receiverId, userId, "Hola, tus mensajes son totalmente privados. Recibirás respuesta...");
       }
-    } else {
-      console.log('[BOT] Skipped: user is staff or not found. role:', requestor?.role);
     }
 
     const jsonResponse = populatedMessage.toJSON ? populatedMessage.toJSON() : { ...populatedMessage };
@@ -510,6 +516,31 @@ export const getTrainerClientsChats = async (req, res, next) => {
           },
           order: [['created_at', 'DESC']]
         });
+
+        // Si el último mensaje es del prospecto y no ha recibido respuesta del bot o entrenador, auto-crear la bienvenida
+        if (lastMessage && lastMessage.sender_id === client.id && client.role === 'user' && !lastMessage.is_closed) {
+          const hasReplyAfter = await Message.count({
+            where: {
+              receiver_id: client.id,
+              created_at: { [Op.gt]: lastMessage.created_at },
+              [Op.or]: [
+                { attachment_type: 'bot_reply' },
+                { sender_id: { [Op.in]: trainerAdminIds } }
+              ]
+            }
+          });
+          if (hasReplyAfter === 0) {
+            console.log('[BOT] Auto-generating missing welcome reply in getTrainerClientsChats for client:', client.id);
+            const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
+            lastMessage = await Message.create({
+              sender_id: trainerAdminIds[0] || userId,
+              receiver_id: client.id,
+              content: botContent,
+              attachment_type: 'bot_reply',
+              created_at: new Date(new Date(lastMessage.created_at).getTime() + 1000)
+            });
+          }
+        }
 
         unreadCount = await Message.count({
           where: {
