@@ -494,8 +494,8 @@ export default function MainAppLayout({
       const currentScrollTop = node.scrollTop;
       setIsScrolled(currentScrollTop > 4);
 
-      // Si estamos cerca de la parte superior (<= 35px), el header SIEMPRE es visible
-      if (currentScrollTop <= 35) {
+      // Si estamos cerca de la parte superior (<= 50px), el header SIEMPRE es visible
+      if (currentScrollTop <= 50) {
         setIsHeaderHidden(false);
         accumulatedDown = 0;
         accumulatedUp = 0;
@@ -515,14 +515,9 @@ export default function MainAppLayout({
           setIsHeaderHidden(true);
         }
       } else if (delta < 0) {
-        // Desplazamiento hacia arriba (scroll up): acumular distancia
+        // Desplazamiento hacia arriba: solo reaparece al llegar arriba (currentScrollTop <= 50)
         accumulatedUp += Math.abs(delta);
         accumulatedDown = 0;
-
-        // Reaparecer al deslizar hacia arriba con intención (> 16px) evitando falsos rebotes
-        if (accumulatedUp > 16) {
-          setIsHeaderHidden(false);
-        }
       }
 
       lastScrollTop = Math.max(0, currentScrollTop);

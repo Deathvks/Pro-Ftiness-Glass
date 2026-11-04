@@ -412,11 +412,9 @@ const LandingPage = ({ onLogin, onRegister }) => {
                 setIsHeaderHidden(true);
             }
         } else if (delta < 0) {
+            // Desplazamiento hacia arriba: solo reaparece al llegar arriba (scrollTop <= 50)
             accumulatedUpRef.current += Math.abs(delta);
             accumulatedDownRef.current = 0;
-            if (accumulatedUpRef.current > 16) {
-                setIsHeaderHidden(false);
-            }
         }
         lastScrollY.current = Math.max(0, scrollTop);
     };
