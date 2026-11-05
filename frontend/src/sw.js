@@ -10,8 +10,7 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import { BackgroundSyncPlugin } from 'workbox-background-sync';
 import { clientsClaim } from 'workbox-core';
 
-// 1. El nuevo Service Worker espera a que el usuario acepte el WelcomeModal (o se envíe SKIP_WAITING)
-// para evitar recargas automáticas sorpresa mientras el usuario está usando la app.
+// 1. El nuevo Service Worker toma el control en cuanto se activa
 clientsClaim();
 
 // 1. Activar de inmediato el nuevo Service Worker para que nunca queden workers
@@ -45,27 +44,33 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// 2. Limpieza de cachés antiguas y precarga
+// 2. Navegación HTML: SIEMPRE intentar red primero (y forzar no-store cuando se pide actualizar versión),
+// usando matchPrecache('/index.html') únicamente si el dispositivo está sin conexión.
 registerRoute(
   ({ request, url }) => request.mode === 'navigate' && !url.pathname.startsWith('/sitemap.xml') && !url.pathname.startsWith('/robots.txt'),
   async ({ request, url }) => {
     const isExplicitBust = url.searchParams.has('rescue') || url.searchParams.has('updated') || url.searchParams.has('reset') || url.searchParams.has('clean') || url.searchParams.has('pfg_fresh');
     try {
-      if (!isExplicitBust) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3500);
-        try {
-          const networkResponse = await fetch(request, { signal: controller.signal, cache: 'no-cache' });
-          clearTimeout(timeoutId);
-          if (networkResponse && networkResponse.ok) {
-            return networkResponse;
-          }
-        } catch (_) {
-          clearTimeout(timeoutId);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), isExplicitBust ? 8000 : 4500);
+      try {
+        const fetchTarget = isExplicitBust ? `/index.html?t=${Date.now()}` : request;
+        const networkResponse = await fetch(fetchTarget, {
+          signal: controller.signal,
+          cache: 'no-store',
+          headers: isExplicitBust
+            ? { 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' }
+            : undefined
+        });
+        clearTimeout(timeoutId);
+        if (networkResponse && networkResponse.ok) {
+          return networkResponse;
         }
+      } catch (_) {
+        clearTimeout(timeoutId);
       }
 
-      // Si la red falla o se solicita bypass, recurrir a index.html precacheado
+      // Si la red falla (modo sin conexión real), recurrir a index.html precacheado
       const cachedResponse = await matchPrecache('/index.html');
       if (cachedResponse) {
         return cachedResponse;
@@ -292,13 +297,3 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
-
-
-
-
-
-
-
-
-
-

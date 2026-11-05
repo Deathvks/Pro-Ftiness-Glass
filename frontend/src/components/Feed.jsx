@@ -1130,7 +1130,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                                 label: 'Fuego',
                                                 Icon: FaFire,
                                                 count: rCounts.fire || 0,
-                                                activeClass: 'bg-orange-500/15 text-orange-500 ring-1 ring-orange-500/40 shadow-sm',
+                                                activeClass: 'bg-orange-500/15 text-orange-500 border-orange-500/45 ring-1 ring-orange-500/30 shadow-sm',
                                                 iconColor: 'text-orange-500'
                                             },
                                             {
@@ -1138,7 +1138,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                                 label: 'Bestia',
                                                 Icon: FaDumbbell,
                                                 count: rCounts.beast || 0,
-                                                activeClass: 'bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/40 shadow-sm',
+                                                activeClass: 'bg-purple-500/15 text-purple-400 border-purple-500/45 ring-1 ring-purple-500/30 shadow-sm',
                                                 iconColor: 'text-purple-400'
                                             },
                                             {
@@ -1146,7 +1146,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                                 label: 'Respeto',
                                                 Icon: FaShieldAlt,
                                                 count: rCounts.respect || 0,
-                                                activeClass: 'bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/40 shadow-sm',
+                                                activeClass: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/45 ring-1 ring-emerald-500/30 shadow-sm',
                                                 iconColor: 'text-emerald-500'
                                             },
                                             {
@@ -1154,13 +1154,13 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                                 label: 'PR',
                                                 Icon: FaTrophy,
                                                 count: rCounts.pr || 0,
-                                                activeClass: 'bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/40 shadow-sm',
+                                                activeClass: 'bg-amber-500/15 text-amber-500 border-amber-500/45 ring-1 ring-amber-500/30 shadow-sm',
                                                 iconColor: 'text-amber-500'
                                             }
                                         ];
 
                                         return (
-                                            <div className="flex items-center justify-between gap-2 mt-0.5 pt-1 overflow-x-auto no-scrollbar -mx-1 px-1">
+                                            <div className="flex items-center justify-between gap-2 mt-0.5 py-1.5 -my-0.5 overflow-x-auto no-scrollbar -mx-1.5 px-1.5">
                                                 <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap shrink-0">
                                                     {reactionButtons.map(({ key, label, Icon, count, activeClass, iconColor }) => {
                                                         const isSelected = activeReaction === key;
@@ -1171,10 +1171,10 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                                                 onClick={() => handleToggleLike(log.id, key)}
                                                                 disabled={isActionLoading}
                                                                 title={label}
-                                                                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-[14px] text-xs font-extrabold whitespace-nowrap flex-shrink-0 transition-all active:scale-95 outline-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
+                                                                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-[14px] text-xs font-extrabold whitespace-nowrap flex-shrink-0 border transition-all active:scale-95 outline-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
                                                                     isSelected
                                                                         ? activeClass
-                                                                        : 'bg-black/[0.04] dark:bg-white/[0.04] text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
+                                                                        : 'bg-black/[0.04] dark:bg-white/[0.04] border-black/5 dark:border-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
                                                                 }`}
                                                             >
                                                                 <Icon className={`text-xs sm:text-sm shrink-0 ${isSelected ? '' : iconColor}`} />
@@ -1194,10 +1194,10 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                                 <button
                                                     type="button"
                                                     onClick={() => setShowComments(prev => ({ ...prev, [log.id]: !prev[log.id] }))}
-                                                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-[14px] text-xs sm:text-sm font-extrabold whitespace-nowrap flex-shrink-0 transition-all active:scale-95 outline-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
+                                                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-[14px] text-xs sm:text-sm font-extrabold whitespace-nowrap flex-shrink-0 border transition-all active:scale-95 outline-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
                                                         showComments[log.id]
-                                                            ? 'text-accent bg-accent/15 ring-1 ring-accent/30'
-                                                            : 'bg-black/[0.04] dark:bg-white/[0.04] text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
+                                                            ? 'text-accent bg-accent/15 border-accent/45 ring-1 ring-accent/30 shadow-sm'
+                                                            : 'bg-black/[0.04] dark:bg-white/[0.04] border-black/5 dark:border-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
                                                     }`}
                                                 >
                                                     <FaCommentDots className="text-sm shrink-0" />

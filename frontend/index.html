@@ -770,9 +770,7 @@
 
           var clearCaches = Promise.resolve();
           if ('caches' in window) {
-            clearCaches = caches.keys().then(function (keys) {
-              return Promise.all(keys.map(function (k) { return caches.delete(k); }));
-            }).catch(function () {});
+            clearCaches = caches.delete('api-read-cache').catch(function () {});
           }
 
           var clearSW = Promise.resolve();

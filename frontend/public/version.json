@@ -1,6 +1,6 @@
 {
-  "version": "7.14.16",
-  "releaseNotes": "Actualización v7.14.16: Tutoriales de Comunidad actualizados (Hub y registro) y restauración del histórico completo del Muro bajo demanda.",
+  "version": "7.14.17",
+  "releaseNotes": "Actualización v7.14.17: Ajuste de bordes en barra de reacciones del Muro y corrección de recarga instantánea de nuevas versiones en PWA.",
   "welcome": {
     "title": "Modo Sin Conexión y Smart Sync",
     "subtitle": "Descarga de ejercicios en segundo plano para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.",

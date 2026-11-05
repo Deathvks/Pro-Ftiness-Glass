@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Sparkles, RefreshCw, X } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
-import { APP_VERSION, CURRENT_WELCOME_TITLE, hasSeenCurrentWelcome, isNewerVersion } from '../config/version';
+import { APP_VERSION, hasSeenCurrentWelcome, isNewerVersion } from '../config/version';
 import useAppStore from '../store/useAppStore';
 import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
 
@@ -25,11 +25,22 @@ const SWUpdaterCore = () => {
       .catch(() => {});
   }, []);
 
-  // 2. Comprobar si hay un anuncio nuevo de bienvenida para mostrar WelcomeModal
+  // 2. Comprobar si hay un anuncio nuevo de bienvenida para mostrar WelcomeModal y limpiar params de actualización
   useEffect(() => {
     try {
-      const lastSeenWelcomeTitle = localStorage.getItem('lastSeenWelcomeTitle');
+      if (typeof window !== 'undefined' && window.location.search) {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('pfg_fresh') || url.searchParams.has('rescue') || url.searchParams.has('updated')) {
+          url.searchParams.delete('pfg_fresh');
+          url.searchParams.delete('rescue');
+          url.searchParams.delete('updated');
+          const cleanUrl = url.pathname + (url.search ? url.search : '') + (url.hash || '');
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      }
+    } catch {}
 
+    try {
       fetch(`/version.json?t=${Date.now()}`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
@@ -87,7 +98,7 @@ const SWUpdaterCore = () => {
   }, []);
 
   // 4. Comprobación no agresiva de nuevas versiones en el servidor
-    const checkForNewVersion = useCallback(async () => {
+  const checkForNewVersion = useCallback(async () => {
     const isLocal =
       import.meta.env.DEV ||
       Capacitor.isNativePlatform() ||
@@ -150,27 +161,10 @@ const SWUpdaterCore = () => {
     setIsUpdating(true);
 
     try {
-      if ('serviceWorker' in navigator) {
-        const registration = await navigator.serviceWorker.getRegistration();
-        if (registration) {
-          if (registration.waiting) {
-            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-          } else {
-            await registration.update();
-            if (registration.waiting) {
-              registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-            }
-          }
-        }
+      if (typeof window !== 'undefined' && 'caches' in window) {
+        await caches.delete('api-read-cache').catch(() => {});
       }
     } catch (_) {}
-
-    if (typeof window !== 'undefined' && 'caches' in window) {
-      try {
-        await caches.delete('vite-hashed-assets');
-        await caches.delete('api-read-cache');
-      } catch (_) {}
-    }
 
     try {
       sessionStorage.removeItem('pfg_auto_reloaded_version');
@@ -179,19 +173,47 @@ const SWUpdaterCore = () => {
       sessionStorage.removeItem('pfg_reload_count');
       sessionStorage.removeItem('pfg_entry_rescue_ts');
       sessionStorage.removeItem('pfg_splash_rescue_count');
+      localStorage.removeItem('pfg_crash_loop_count');
+      localStorage.removeItem('pfg_social_feed_cache');
+      localStorage.removeItem('pfg_cached_initial_state_v1');
+      if (pendingRemoteVersion) {
+        localStorage.setItem('lastSeenVersion', pendingRemoteVersion);
+      }
     } catch (_) {}
 
-    let reloaded = false;
-    const safeReload = () => {
-      if (reloaded) return;
-      reloaded = true;
-      reloadAppWithoutStaleCache({ force: true });
+    let navigated = false;
+    const navigateToFreshApp = () => {
+      if (navigated) return;
+      navigated = true;
+      const freshUrl = new URL(window.location.pathname || '/', window.location.origin);
+      freshUrl.searchParams.set('pfg_fresh', String(Date.now()));
+      window.location.replace(freshUrl.toString());
     };
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('controllerchange', safeReload, { once: true });
-    }
-    setTimeout(safeReload, 600);
+    try {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('controllerchange', navigateToFreshApp, { once: true });
+        const registration = await Promise.race([
+          navigator.serviceWorker.getRegistration(),
+          new Promise((resolve) => setTimeout(() => resolve(null), 600))
+        ]);
+        if (registration) {
+          if (registration.waiting) {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          } else {
+            await Promise.race([
+              registration.update().catch(() => {}),
+              new Promise((resolve) => setTimeout(resolve, 900))
+            ]);
+            if (registration.waiting) {
+              registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    setTimeout(navigateToFreshApp, 350);
   };
 
   // Si no hay versión pendiente o el usuario descartó el aviso en esta sesión:
