@@ -1,25 +1,25 @@
 {
   "version": "7.12.0",
-  "releaseNotes": "Actualización v7.12.0: Smart Sync nutricional con caché local, soporte para OpenFoodFacts API v2 y sincronización automática periódica.",
+  "releaseNotes": "Actualización v7.12.0: Modo sin conexión para entrenar en sótanos/sin cobertura y Smart Sync nutricional con caché local en base de datos.",
   "welcome": {
-    "title": "Migración desde Hevy/Strong y Copias",
-    "subtitle": "Llega la migración de datos: importa todo tu historial de entrenamientos desde Hevy o Strong en un solo clic y exporta a Excel cuando quieras.",
+    "title": "Modo Sin Conexión y Smart Sync",
+    "subtitle": "Llega la versión 7.12.0: descarga de ejercicios para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.",
     "features": [
       {
-        "title": "Migración desde Hevy y Strong (CSV)",
-        "description": "¿Llevas meses o años en Hevy o Strong? Ahora puedes importar todo tu historial en un solo clic sin perder ni un solo entrenamiento, serie o récord."
+        "title": "Modo Sin Conexión y Búnker",
+        "description": "Descarga en Ajustes toda la biblioteca de ejercicios y animaciones en tu móvil. Entrena en sótanos o zonas sin cobertura con 0 ms de espera."
       },
       {
-        "title": "Exportador Completo a Excel y CSV",
-        "description": "Descarga tu historial completo con codificación UTF-8 compatible con Microsoft Excel, Google Sheets y Numbers para total propiedad de tus datos."
+        "title": "Smart Sync Nutricional",
+        "description": "Búsqueda y escaneo instantáneo con OpenFoodFacts API v2. Los alimentos se guardan localmente y se actualizan automáticamente cada 30 días."
       },
       {
-        "title": "Portal de Noticias y Ciencia Fitness",
-        "description": "Descubre artículos actualizados sobre hipertrofia, nutrición, suplementación y salud con modo de lectura adaptable y artículos recomendados."
+        "title": "Migración desde Hevy y Strong",
+        "description": "Importa todo tu historial de entrenamientos desde Hevy o Strong en un solo clic y exporta tus datos completos a Excel (CSV) cuando quieras."
       },
       {
-        "title": "Calculadoras 1RM, Macros y Ejercicios",
-        "description": "Calcula tu fuerza máxima (1RM), tus calorías y macronutrientes ideales, y explora la enciclopedia completa de ejercicios con vídeo y técnica."
+        "title": "Apertura Instantánea (0ms)",
+        "description": "Calculadoras de 1RM, macros, portal de noticias y enciclopedia de ejercicios totalmente optimizados para máxima fluidez en móvil y web."
       }
     ]
   }

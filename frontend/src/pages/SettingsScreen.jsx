@@ -520,7 +520,7 @@ export default function SettingsScreen({
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-black/5 dark:border-white/10 text-center">
                   <div className="p-3 rounded-2xl bg-black/5 dark:bg-white/5">
                     <span className="text-[10px] text-text-secondary uppercase tracking-wider block font-semibold">Ejercicios</span>
-                    <span className="text-base sm:text-lg font-black text-text-primary">{offlineStats.exerciseCount || (offlineStats.isDownloaded ? '500+' : '0')}</span>
+                    <span className="text-base sm:text-lg font-black text-text-primary">{offlineStats.exerciseCount || 0}</span>
                   </div>
                   <div className="p-3 rounded-2xl bg-black/5 dark:bg-white/5">
                     <span className="text-[10px] text-text-secondary uppercase tracking-wider block font-semibold">Imágenes / GIFs</span>

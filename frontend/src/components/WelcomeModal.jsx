@@ -2,7 +2,7 @@
 import React from 'react';
 import ModalPortal from './ModalPortal';
 import {
-  ChevronRight, Newspaper, Calculator, Dumbbell, Zap, FileSpreadsheet
+  ChevronRight, Newspaper, Calculator, Dumbbell, Zap, FileSpreadsheet, WifiOff, Sparkles
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6';
 import { APP_VERSION } from '../config/version';
@@ -18,10 +18,10 @@ const WelcomeModal = ({ onClose }) => {
 
   const effectiveVersion = APP_VERSION;
   const appVersion = `v${effectiveVersion}`;
-  const welcomeTitle = welcomeRemoteData?.welcome?.title || 'Migración desde Hevy/Strong y Copias';
+  const welcomeTitle = welcomeRemoteData?.welcome?.title || 'Modo Sin Conexión y Smart Sync';
   const welcomeSubtitle =
     welcomeRemoteData?.welcome?.subtitle ||
-    'Importa todos tus entrenamientos desde Hevy y Strong en un solo clic sin perder ningún dato ni récord histórico, y exporta a Excel cuando quieras.';
+    'Llega la versión 7.12.0: descarga de ejercicios para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.';
   const remoteFeatures = welcomeRemoteData?.welcome?.features;
 
   const handleGetStarted = (e) => {
@@ -354,11 +354,11 @@ const WelcomeModal = ({ onClose }) => {
               {/*  Feature Cards  */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
 
-                {/* 01: Migración desde Hevy y Strong */}
+                {/* 01: Modo Sin Conexión */}
                 <div className="wm-feature-card wm-feature-1" style={{
                     background: 'linear-gradient(135deg, #080814 0%, #121226 100%)',
-                    border: '1px solid rgba(168,85,247,0.35)',
-                    boxShadow: '0 4px 20px -8px rgba(168,85,247,0.3)'
+                    border: '1px solid rgba(16,185,129,0.35)',
+                    boxShadow: '0 4px 20px -8px rgba(16,185,129,0.3)'
                   }}>
                   <div style={{
                       position: 'absolute',
@@ -373,62 +373,62 @@ const WelcomeModal = ({ onClose }) => {
                       pointerEvents: 'none',
                       zIndex: 0
                     }}></div>
-                  <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #a855f7, #6366f1)' }} />
-                  <div className="wm-icon-wrap" style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.25)' }}>
-                    <FileSpreadsheet size={18} style={{ color: '#a855f7' }} />
+                  <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #10b981, #06b6d4)' }} />
+                  <div className="wm-icon-wrap" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)' }}>
+                    <WifiOff size={18} style={{ color: '#10b981' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[0]?.title || 'Migración desde Hevy y Strong (CSV)'}</p>
+                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#10b981', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[0]?.title || 'Modo Sin Conexión y Búnker'}</p>
                     <p style={{ fontSize: '13px', color: 'rgba(203,213,225,0.9)', margin: 0, lineHeight: 1.55 }}>
-                      {remoteFeatures?.[0]?.description || '¿Llevas meses o años en Hevy o Strong? Ahora puedes importar todo tu historial en un clic sin perder ni un solo entrenamiento, serie o récord personal.'}
+                      {remoteFeatures?.[0]?.description || 'Descarga en Ajustes toda la biblioteca de ejercicios y animaciones en tu móvil. Entrena en sótanos o zonas sin cobertura con 0 ms de espera.'}
                     </p>
                   </div>
-                  <span className="wm-num" style={{ color: '#a855f7' }}>01</span>
+                  <span className="wm-num" style={{ color: '#10b981' }}>01</span>
                 </div>
 
-                {/* 02: Exportador a Excel */}
+                {/* 02: Smart Sync Nutricional */}
                 <div className="wm-feature-card wm-feature-2" style={{ border: '1px solid var(--glass-border)' }}>
                   <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #3b82f6, #06b6d4)' }} />
                   <div className="wm-icon-wrap" style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)' }}>
-                    <Calculator size={18} style={{ color: '#3b82f6' }} />
+                    <Zap size={18} style={{ color: '#3b82f6' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[1]?.title || 'Exportador Completo a Excel (CSV)'}</p>
+                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[1]?.title || 'Smart Sync Nutricional'}</p>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                      {remoteFeatures?.[1]?.description || 'Descarga tu historial completo en formato CSV compatible con Excel, Google Sheets y números para total control de tus progresos.'}
+                      {remoteFeatures?.[1]?.description || 'Búsqueda y escaneo instantáneo con OpenFoodFacts API v2. Los alimentos se guardan localmente y se actualizan automáticamente cada 30 días.'}
                     </p>
                   </div>
                   <span className="wm-num" style={{ color: '#3b82f6' }}>02</span>
                 </div>
 
-                {/* 03: Asesoría y Seguimiento en Inicio */}
+                {/* 03: Migración desde Hevy y Strong */}
                 <div className="wm-feature-card wm-feature-3" style={{ border: '1px solid var(--glass-border)' }}>
-                  <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #f97316, #eab308)' }} />
-                  <div className="wm-icon-wrap" style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)' }}>
-                    <Dumbbell size={18} style={{ color: '#f97316' }} />
+                  <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #a855f7, #6366f1)' }} />
+                  <div className="wm-icon-wrap" style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.25)' }}>
+                    <FileSpreadsheet size={18} style={{ color: '#a855f7' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f97316', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[2]?.title || 'Asesorías y Progreso en Dashboard'}</p>
+                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[2]?.title || 'Migración desde Hevy y Strong'}</p>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                      {remoteFeatures?.[2]?.description || 'Recibe pautas de entrenamiento y dieta de tu entrenador en el inicio, controla tus series semanales por músculo y chatea en tiempo real.'}
+                      {remoteFeatures?.[2]?.description || 'Importa todo tu historial de entrenamientos desde Hevy o Strong en un solo clic y exporta tus datos completos a Excel (CSV) cuando quieras.'}
                     </p>
                   </div>
-                  <span className="wm-num" style={{ color: '#f97316' }}>03</span>
+                  <span className="wm-num" style={{ color: '#a855f7' }}>03</span>
                 </div>
 
                 {/* 04: Velocidad Instantánea */}
                 <div className="wm-feature-card wm-feature-4" style={{ border: '1px solid var(--glass-border)' }}>
-                  <div className="wm-accent-line" style={{ background: '#10b981' }} />
-                  <div className="wm-icon-wrap" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)' }}>
-                    <Zap size={18} style={{ color: '#10b981' }} />
+                  <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #f97316, #eab308)' }} />
+                  <div className="wm-icon-wrap" style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)' }}>
+                    <Sparkles size={18} style={{ color: '#f97316' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#10b981', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[3]?.title || 'Apertura Instantánea (0ms)'}</p>
+                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f97316', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[3]?.title || 'Apertura Instantánea (0ms)'}</p>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                      {remoteFeatures?.[3]?.description || 'Noticias, calculadoras, sistema de créditos IA y vistas principales ahora se abren al instante sin tiempos de espera en web y móvil.'}
+                      {remoteFeatures?.[3]?.description || 'Calculadoras de 1RM, macros, portal de noticias y enciclopedia de ejercicios totalmente optimizados para máxima fluidez en móvil y web.'}
                     </p>
                   </div>
-                  <span className="wm-num" style={{ color: '#10b981' }}>04</span>
+                  <span className="wm-num" style={{ color: '#f97316' }}>04</span>
                 </div>
 
               </div>
