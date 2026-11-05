@@ -339,11 +339,82 @@ const DashboardInsights = ({ setView }) => {
   const { plan: nutritionPlan, hasAnyNutritionActivity, optimalPillars, warningPillars } =
     nutritionTracking;
 
-  // Alertas complementarias si no hay actividad aún
-  const showWelcomeCard =
-    (!workoutLog || workoutLog.length === 0) &&
-    totalProgressingCount === 0 &&
-    totalWarningCount === 0;
+  // 3. CALIBRACIÓN DE ENTRENADOR INTELIGENTE (Primeros 3 entrenamientos / Marcas base)
+  const calibrationSummary = useMemo(() => {
+    try {
+      const logs = Array.isArray(workoutLog) ? workoutLog : [];
+      const strengthLogs = logs
+        .filter((l) => Array.isArray(l?.WorkoutLogDetails) && l.WorkoutLogDetails.length > 0)
+        .sort((a, b) => new Date(b.workout_date || b.created_at || 0) - new Date(a.workout_date || a.created_at || 0));
+
+      const completedSessions = strengthLogs.length;
+      const step = Math.min(completedSessions, 3);
+
+      const marksMap = new Map();
+      const routineNames = [];
+
+      strengthLogs.forEach((log) => {
+        const rName = (log?.routine_name || log?.routineName || '').trim();
+        if (rName && !routineNames.includes(rName)) {
+          routineNames.push(rName);
+        }
+
+        (log.WorkoutLogDetails || []).forEach((detail) => {
+          const exName = (detail?.exercise_name || '').trim();
+          if (!exName) return;
+          const norm = exName.toLowerCase();
+          if (marksMap.has(norm)) return;
+
+          const sets = Array.isArray(detail?.WorkoutLogSets) ? detail.WorkoutLogSets : [];
+          const workingSets = sets.filter(
+            (s) => !(s.is_warmup === true || s.is_warmup === 'true' || s.is_warmup === 1) && (parseInt(s.reps, 10) || 0) > 0
+          );
+          const effectiveSets = workingSets.length > 0 ? workingSets : sets.filter((s) => (parseInt(s.reps, 10) || 0) > 0);
+          if (effectiveSets.length === 0) return;
+
+          let bestWeight = 0;
+          let bestReps = 0;
+          effectiveSets.forEach((s) => {
+            const w = parseFloat(s.weight_kg) || 0;
+            const r = parseInt(s.reps, 10) || 0;
+            if (w > bestWeight || (w === bestWeight && r > bestReps)) {
+              bestWeight = w;
+              bestReps = r;
+            }
+          });
+
+          const markLabel = bestWeight > 0 ? `${Math.round(bestWeight * 10) / 10} kg × ${bestReps}` : `${bestReps} reps`;
+          marksMap.set(norm, { name: exName, mark: markLabel });
+        });
+      });
+
+      const allMarks = Array.from(marksMap.values());
+      const showCalibrationCard =
+        completedSessions < 3 || (totalProgressingCount === 0 && totalWarningCount === 0);
+
+      return {
+        completedSessions,
+        step,
+        totalBaselineExercises: allMarks.length,
+        topMarks: allMarks.slice(0, 5),
+        latestRoutineName: routineNames[0] || null,
+        routineNames,
+        showCalibrationCard
+      };
+    } catch (e) {
+      return {
+        completedSessions: 0,
+        step: 0,
+        totalBaselineExercises: 0,
+        topMarks: [],
+        latestRoutineName: null,
+        routineNames: [],
+        showCalibrationCard: totalProgressingCount === 0 && totalWarningCount === 0
+      };
+    }
+  }, [workoutLog, totalProgressingCount, totalWarningCount]);
+
+  const showWelcomeCard = calibrationSummary.showCalibrationCard;
 
   const hasGreenProgress =
     totalProgressingCount > 0 ||
@@ -457,7 +528,13 @@ const DashboardInsights = ({ setView }) => {
                       ? `¡Mejorando en ${totalProgressingCount} ${
                           totalProgressingCount === 1 ? 'ejercicio' : 'ejercicios'
                         }!`
-                      : 'Estado de tu entrenamiento y nutrición de hoy'}
+                      : calibrationSummary.step === 1
+                      ? `Calibración 1/3: ${calibrationSummary.totalBaselineExercises} marcas base fijadas`
+                      : calibrationSummary.step === 2
+                      ? `Calibración 2/3: Mapa muscular activo · Falta 1 sesión`
+                      : calibrationSummary.step >= 3 && calibrationSummary.totalBaselineExercises > 0
+                      ? `Base calibrada (${calibrationSummary.totalBaselineExercises} ejercicios) · Repite rutina para ver mejoras`
+                      : 'Calibración 0/3: Completa tu 1er entreno para fijar marcas base'}
                   </h4>
                 </div>
               </div>
@@ -492,10 +569,27 @@ const DashboardInsights = ({ setView }) => {
               )}
 
               {showWelcomeCard && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-accent/15 ring-1 ring-accent/30 text-accent text-[11px] font-extrabold">
-                  <Dumbbell size={12} className="shrink-0" />
-                  <span>Inicia una rutina para activar seguimiento</span>
-                </span>
+                <>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-accent/15 ring-1 ring-accent/30 text-accent text-[11px] font-extrabold">
+                    <Dumbbell size={12} className="shrink-0" />
+                    <span>
+                      {calibrationSummary.step === 0
+                        ? 'Calibración 0/3: Inicia una rutina para fijar marcas'
+                        : calibrationSummary.step < 3
+                        ? `Calibración ${calibrationSummary.step}/3 · ${3 - calibrationSummary.step} ${3 - calibrationSummary.step === 1 ? 'sesión' : 'sesiones'} para curvas 1RM`
+                        : `Calibración 3/3 lista (${calibrationSummary.totalBaselineExercises} marcas base)`}
+                    </span>
+                  </span>
+                  {calibrationSummary.topMarks.slice(0, 2).map((item, idx) => (
+                    <span
+                      key={`${item.name}-${idx}`}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-black/5 dark:bg-white/10 ring-1 ring-glass-border text-text-primary text-[11px] font-bold"
+                    >
+                      <span className="truncate max-w-[130px]">{item.name}:</span>
+                      <span className="text-accent font-black">{item.mark}</span>
+                    </span>
+                  ))}
+                </>
               )}
 
               {nutritionPlan && (
@@ -914,41 +1008,131 @@ const DashboardInsights = ({ setView }) => {
         )}
 
         {/* ============================================================
-            4. TARJETA DE BIENVENIDA SI AÚN NO HAY ENTRENAMIENTOS
+            4. CALIBRACIÓN DE ENTRENADOR INTELIGENTE (SESIONES 0/3 -> 3/3)
            ============================================================ */}
         {showWelcomeCard && (
-          <GlassCard className="glass flex flex-col justify-between gap-4 p-5 rounded-[26px] border-none ring-1 ring-accent/30 bg-accent/10 shadow-sm transition-all">
-            <div className="space-y-2.5">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-[16px] shrink-0 bg-accent/20 text-accent ring-1 ring-accent/30">
-                  <Dumbbell size={20} strokeWidth={2.5} />
-                </div>
-                <div className="min-w-0">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/20 text-accent mb-1">
-                    <span>Seguimiento de Ejercicios</span>
-                  </span>
-                  <h4 className="text-sm sm:text-base font-black text-text-primary leading-tight">
-                    Inicia una rutina para activar el seguimiento
-                  </h4>
+          <GlassCard className="glass flex flex-col justify-between gap-4 p-5 rounded-[26px] border-none ring-1 ring-accent/35 bg-accent/10 shadow-sm transition-all">
+            <div className="space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2.5 rounded-[16px] shrink-0 bg-accent/20 text-accent ring-1 ring-accent/30">
+                    <Dumbbell size={20} strokeWidth={2.5} />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent/20 text-accent mb-1">
+                      <Sparkles size={11} />
+                      <span>
+                        {calibrationSummary.step === 0
+                          ? 'Calibración Inicial · Paso 0 de 3'
+                          : calibrationSummary.step === 1
+                          ? 'Calibración 1/3 · Marcas Base Fijadas'
+                          : calibrationSummary.step === 2
+                          ? 'Calibración 2/3 · Recuperación Muscular Activa'
+                          : 'Calibración 3/3 Completada · Listo para Sobrecarga'}
+                      </span>
+                    </span>
+                    <h4 className="text-sm sm:text-base font-black text-text-primary leading-tight">
+                      {calibrationSummary.step === 0
+                        ? 'Completa tu 1er entreno para fijar tus marcas base'
+                        : calibrationSummary.step === 1
+                        ? `¡Ya tenemos tus marcas base en ${calibrationSummary.totalBaselineExercises} ${
+                            calibrationSummary.totalBaselineExercises === 1 ? 'ejercicio' : 'ejercicios'
+                          }!`
+                        : calibrationSummary.step === 2
+                        ? `${calibrationSummary.totalBaselineExercises} ejercicios calibrados · ¡Solo falta 1 sesión!`
+                        : `Base fijada en ${calibrationSummary.totalBaselineExercises} ejercicios`}
+                    </h4>
+                  </div>
                 </div>
               </div>
+
+              {/* Barra visual de los 3 pasos de calibración */}
+              <div className="grid grid-cols-3 gap-1.5 pt-0.5">
+                {[
+                  { idx: 1, label: '1. Marcas base' },
+                  { idx: 2, label: '2. Mapa muscular' },
+                  { idx: 3, label: '3. Curvas 1RM' }
+                ].map((s) => {
+                  const done = calibrationSummary.step >= s.idx;
+                  const isNext = calibrationSummary.step + 1 === s.idx;
+                  return (
+                    <div
+                      key={s.idx}
+                      className={`px-2.5 py-1.5 rounded-xl border text-[10px] font-extrabold flex items-center justify-between gap-1 transition-all ${
+                        done
+                          ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-700 dark:text-emerald-300'
+                          : isNext
+                          ? 'bg-accent/20 border-accent/40 text-accent'
+                          : 'bg-black/5 dark:bg-white/5 border-glass-border text-text-muted'
+                      }`}
+                    >
+                      <span className="truncate">{s.label}</span>
+                      {done && <CheckCircle2 size={11} className="shrink-0" />}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {calibrationSummary.topMarks.length > 0 && (
+                <div className="space-y-1.5 pt-0.5">
+                  <span className="text-[11px] font-bold text-text-secondary block">
+                    Marcas base memorizadas para guiarte en tu siguiente sesión:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {calibrationSummary.topMarks.map((item, idx) => (
+                      <span
+                        key={`${item.name}-${idx}`}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/5 dark:bg-white/10 ring-1 ring-accent/25 text-text-primary text-[11px] font-bold"
+                      >
+                        <span>{item.name}</span>
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-accent/20 text-accent">
+                          {item.mark}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <p className="text-xs font-medium text-text-secondary leading-relaxed">
-                Conforme vayas registrando tus series, aquí verás en verde tus ejercicios en progresión o avisos de qué ejercicios y en qué rutina debes ajustar cargas.
+                {calibrationSummary.step === 0
+                  ? 'Al registrar tu primera sesión, la app memorizará tus pesos y repeticiones en cada serie para indicarte cuánto subir en el próximo entrenamiento.'
+                  : calibrationSummary.step === 1
+                  ? `En tu próxima sesión${
+                      calibrationSummary.latestRoutineName ? ` de "${calibrationSummary.latestRoutineName}"` : ''
+                    }, la app te sugerirá automáticamente cuántas repeticiones o kilos subir en cada serie. Haz 1 entreno más (2/3) para calibrar tu mapa de fatiga y equilibrio muscular.`
+                  : calibrationSummary.step === 2
+                  ? 'Tu mapa de calor muscular ya registra qué grupos están en recuperación y cuáles tienes frescos al 100%. Completa 1 sesión más (3/3) para desbloquear tus gráficas de evolución y 1RM real.'
+                  : 'Tus marcas base están listas. En cuanto repitas cualquiera de tus rutinas, verás aquí en verde cada ejercicio en el que superes tus repeticiones o cargas anteriores.'}
               </p>
             </div>
 
-            <div className="pt-2.5 border-t border-accent/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="pt-2.5 border-t border-accent/20 flex flex-wrap items-center justify-between gap-2.5">
               <span className="text-[11px] font-semibold text-text-secondary">
-                Para ver detalles de cada ejercicio, inicia tu rutina:
+                {calibrationSummary.step > 0
+                  ? 'Revisa tu mapa muscular o inicia tu siguiente sesión:'
+                  : 'Elige o crea tu rutina para registrar tu 1ª sesión:'}
               </span>
-              <button
-                type="button"
-                onClick={() => setView && setView('routines', { forceTab: 'myRoutines' })}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent text-accent-contrast hover:brightness-110 text-xs font-black transition-all active:scale-95 cursor-pointer shadow-sm shrink-0"
-              >
-                <span>Ver Rutinas</span>
-                <ArrowRight size={13} />
-              </button>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {calibrationSummary.step > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setView && setView('progress')}
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-text-primary text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0"
+                  >
+                    <Flame size={13} className="text-accent" />
+                    <span>Mapa Muscular</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setView && setView('routines', { forceTab: 'myRoutines' })}
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent text-accent-contrast hover:brightness-110 text-xs font-black transition-all active:scale-95 cursor-pointer shadow-sm shrink-0"
+                >
+                  <span>{calibrationSummary.step > 0 ? 'Siguiente Entreno' : 'Ver Rutinas'}</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
             </div>
           </GlassCard>
         )}

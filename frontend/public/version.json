@@ -1,6 +1,6 @@
 {
-  "version": "7.14.4",
-  "releaseNotes": "Actualización v7.14.4: Animación de cabeceras en móvil acelerada por GPU a 60/120 FPS (translate3d puro sin re-renders de React durante el scroll).",
+  "version": "7.14.5",
+  "releaseNotes": "Actualización v7.14.5: Sistema de Calibración Inicial (1/3, 2/3, 3/3) con marcas base por ejercicio y mapa muscular en el Dashboard.",
   "welcome": {
     "title": "Modo Sin Conexión y Smart Sync",
     "subtitle": "Descarga de ejercicios en segundo plano para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.",
