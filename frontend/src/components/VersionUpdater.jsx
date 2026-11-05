@@ -175,9 +175,10 @@ const SWUpdaterCore = () => {
       sessionStorage.removeItem('pfg_splash_rescue_count');
       localStorage.removeItem('pfg_crash_loop_count');
       localStorage.removeItem('pfg_social_feed_cache');
-      localStorage.removeItem('pfg_cached_initial_state_v1');
+      // Preservar pfg_cached_initial_state_v1 para que el arranque tras actualizar sea instantáneo (0ms)
       if (pendingRemoteVersion) {
         localStorage.setItem('lastSeenVersion', pendingRemoteVersion);
+        localStorage.setItem('pfg_cache_version', pendingRemoteVersion);
       }
     } catch (_) {}
 
@@ -192,28 +193,36 @@ const SWUpdaterCore = () => {
 
     try {
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.addEventListener('controllerchange', navigateToFreshApp, { once: true });
+        const controllerChanged = new Promise((resolve) => {
+          navigator.serviceWorker.addEventListener('controllerchange', () => resolve(true), { once: true });
+        });
+
         const registration = await Promise.race([
           navigator.serviceWorker.getRegistration(),
-          new Promise((resolve) => setTimeout(() => resolve(null), 600))
+          new Promise((resolve) => setTimeout(() => resolve(null), 500))
         ]);
+
         if (registration) {
           if (registration.waiting) {
             registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            await Promise.race([controllerChanged, new Promise((resolve) => setTimeout(resolve, 900))]);
           } else {
             await Promise.race([
               registration.update().catch(() => {}),
-              new Promise((resolve) => setTimeout(resolve, 900))
+              new Promise((resolve) => setTimeout(resolve, 1200))
             ]);
             if (registration.waiting) {
               registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+            if (registration.installing || registration.waiting) {
+              await Promise.race([controllerChanged, new Promise((resolve) => setTimeout(resolve, 900))]);
             }
           }
         }
       }
     } catch (_) {}
 
-    setTimeout(navigateToFreshApp, 350);
+    navigateToFreshApp();
   };
 
   // Si no hay versión pendiente o el usuario descartó el aviso en esta sesión:

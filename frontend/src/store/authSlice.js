@@ -9,13 +9,12 @@ const INITIAL_CACHE_KEY = 'pfg_cached_initial_state_v1';
 const getCachedUserProfile = () => {
     try {
         if (!localStorage.getItem('pro_fitness_token')) return null;
-        const cachedVer = localStorage.getItem(CACHE_VERSION_KEY);
-        if (cachedVer !== APP_VERSION) return null;
-        
         const raw = localStorage.getItem(INITIAL_CACHE_KEY);
         if (!raw) return null;
         const parsed = JSON.parse(raw);
-        return parsed?.userProfile && typeof parsed.userProfile === 'object' ? parsed.userProfile : null;
+        return parsed?.userProfile && typeof parsed.userProfile === 'object' && parsed.userProfile.id
+            ? parsed.userProfile
+            : null;
     } catch {
         return null;
     }

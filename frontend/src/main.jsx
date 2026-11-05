@@ -62,8 +62,8 @@ try {
       try { localStorage.clear(); } catch {}
       try { sessionStorage.clear(); } catch {}
       if ('caches' in window) {
-        caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
-      }
+      caches.delete('api-read-cache').catch(() => {});
+    }
       const cleanUrl = window.location.origin + window.location.pathname.replace(/\/$/, '') + '/login';
       window.location.replace(cleanUrl);
     }

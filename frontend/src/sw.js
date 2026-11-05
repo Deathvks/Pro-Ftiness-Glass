@@ -52,9 +52,10 @@ registerRoute(
     const isExplicitBust = url.searchParams.has('rescue') || url.searchParams.has('updated') || url.searchParams.has('reset') || url.searchParams.has('clean') || url.searchParams.has('pfg_fresh');
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), isExplicitBust ? 8000 : 4500);
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
       try {
-        const fetchTarget = isExplicitBust ? `/index.html?t=${Date.now()}` : request;
+        const cleanPath = url.pathname || '/';
+        const fetchTarget = isExplicitBust ? `${cleanPath}${cleanPath.includes('?') ? '&' : '?'}_cb=${Date.now()}` : request;
         const networkResponse = await fetch(fetchTarget, {
           signal: controller.signal,
           cache: 'no-store',

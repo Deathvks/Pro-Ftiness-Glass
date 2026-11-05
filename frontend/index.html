@@ -805,11 +805,15 @@
           }
         }, 25000);
 
-        // 2. Errores de carga de scripts y tags
+        // 2. Errores de carga de scripts y tags críticos (excluir iconos, preconnects y modulepreloads)
         window.addEventListener('error', function (ev) {
           if (window.__pfg_mounted) return;
           var t = ev && ev.target;
-          var isAssetTag = t && (t.tagName === 'SCRIPT' || t.tagName === 'LINK');
+          var assetUrl = t ? String(t.src || t.href || '') : '';
+          var isLocalCriticalTag =
+            t &&
+            (t.tagName === 'SCRIPT' || (t.tagName === 'LINK' && t.rel === 'stylesheet')) &&
+            (assetUrl.indexOf('/assets/') !== -1 || assetUrl.indexOf('/src/') !== -1);
           var msg = (ev && ev.message) ? String(ev.message).toLowerCase() : '';
           var isFatalStartupError =
             msg.indexOf('loading chunk') !== -1 ||
@@ -817,8 +821,8 @@
             msg.indexOf('syntaxerror') !== -1 ||
             msg.indexOf('unexpected token') !== -1;
 
-          if (isAssetTag || isFatalStartupError) {
-            performEmergencyRescue('Error cargando recurso inicial: ' + (msg || (t && (t.src || t.href)) || 'desconocido'));
+          if (isLocalCriticalTag || isFatalStartupError) {
+            performEmergencyRescue('Error cargando recurso inicial: ' + (msg || assetUrl || 'desconocido'));
           }
         }, true);
 

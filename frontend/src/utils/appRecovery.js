@@ -97,8 +97,20 @@ export const reloadAppWithoutStaleCache = async ({ path, force = false } = {}) =
     localStorage.removeItem("pfg_crash_loop_count");
     localStorage.removeItem("pfg_auto_reloaded_version");
     localStorage.removeItem("pfg_social_feed_cache");
-    localStorage.removeItem("pfg_cached_initial_state_v1");
-    localStorage.removeItem("pfg_cache_version");
+    // Preservar userProfile para evitar bloqueo en skeleton tras recargar chunks
+    try {
+      const rawCache = localStorage.getItem("pfg_cached_initial_state_v1");
+      if (rawCache) {
+        const parsed = JSON.parse(rawCache);
+        if (parsed?.userProfile && typeof parsed.userProfile === "object" && parsed.userProfile.id) {
+          localStorage.setItem("pfg_cached_initial_state_v1", JSON.stringify({ userProfile: parsed.userProfile }));
+        } else {
+          localStorage.removeItem("pfg_cached_initial_state_v1");
+        }
+      }
+    } catch {
+      localStorage.removeItem("pfg_cached_initial_state_v1");
+    }
     // Al auto-recuperar, forzar SIEMPRE el aterrizaje seguro en 'dashboard'
     localStorage.setItem("lastView", "dashboard");
   } catch {}
