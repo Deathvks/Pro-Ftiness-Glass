@@ -1,5 +1,6 @@
 /* frontend/src/components/MainAppLayout.jsx */
 import React, { Suspense, lazy, useEffect, useState, useRef, startTransition } from 'react';
+import { createPortal } from 'react-dom';
 import { Cog8ToothIcon as SettingsIcon, UserIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import { FaBrain, FaBell, FaChevronLeft, FaDumbbell } from 'react-icons/fa6';
@@ -95,7 +96,7 @@ const LoadingFallback = ({ onGoHome }) => {
         await caches.delete('vite-hashed-assets');
       } catch (_) {}
     }
-    window.location.reload();
+    reloadAppWithoutStaleCache({ force: true });
   };
 
   const handleResetSession = () => {
@@ -127,8 +128,21 @@ const LoadingFallback = ({ onGoHome }) => {
         <div className="h-44 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
       </div>
 
-      {showRescue && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/35 backdrop-blur-sm animate-[fade-in_0.2s_ease-out] pointer-events-auto">
+      {showRescue && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 dark:bg-black/85 backdrop-blur-md animate-[fade-in_0.2s_ease-out] pointer-events-auto"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100dvh',
+            zIndex: 9999,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)'
+          }}
+        >
           <div className="w-full max-w-sm p-5 rounded-3xl glass border border-amber-500/30 bg-bg-secondary/95 backdrop-blur-2xl shadow-2xl shadow-black/40 flex flex-col gap-3.5 text-center animate-[scale-in_0.2s_ease-out]">
             <div className="w-11 h-11 mx-auto rounded-2xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-500">
               <RefreshCw className="w-5 h-5" />
@@ -179,7 +193,8 @@ const LoadingFallback = ({ onGoHome }) => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

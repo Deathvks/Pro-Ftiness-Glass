@@ -1,5 +1,6 @@
 /* frontend/src/components/InitialLoadingSkeleton.jsx */
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Skeleton from './Skeleton';
 import { RefreshCw } from 'lucide-react';
 import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
@@ -114,8 +115,21 @@ const InitialLoadingSkeleton = () => {
             </div>
             </div>
 
-            {showRescue && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/35 backdrop-blur-sm animate-[fade-in_0.2s_ease-out] pointer-events-auto">
+            {showRescue && typeof document !== "undefined" && createPortal(
+                <div 
+                    className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 dark:bg-black/85 backdrop-blur-md animate-[fade-in_0.2s_ease-out] pointer-events-auto"
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        width: "100vw",
+                        height: "100dvh",
+                        zIndex: 9999,
+                        backgroundColor: "rgba(0, 0, 0, 0.75)"
+                    }}
+                >
                     <div className="w-full max-w-sm p-5 rounded-3xl glass border border-amber-500/30 bg-bg-secondary/95 backdrop-blur-2xl shadow-2xl shadow-black/40 flex flex-col gap-3.5 text-center animate-[scale-in_0.2s_ease-out]">
                         <div className="w-11 h-11 mx-auto rounded-2xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-500">
                             <RefreshCw className="w-5 h-5" />
@@ -135,8 +149,8 @@ const InitialLoadingSkeleton = () => {
                                 disabled={isRepairing}
                                 className="w-full py-2.5 px-4 rounded-xl bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
                             >
-                                <RefreshCw className={`w-3.5 h-3.5 ${isRepairing ? 'animate-spin' : ''}`} />
-                                <span>{isRepairing ? 'Reparando...' : 'Reparar y Cargar'}</span>
+                                <RefreshCw className={`w-3.5 h-3.5 ${isRepairing ? "animate-spin" : ""}`} />
+                                <span>{isRepairing ? "Reparando..." : "Reparar y Cargar"}</span>
                             </button>
                             <div className="flex items-center gap-2">
                                 <button
@@ -158,7 +172,8 @@ const InitialLoadingSkeleton = () => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

@@ -1,5 +1,6 @@
 /* frontend/src/components/LandingLoadingSkeleton.jsx */
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { RefreshCw } from 'lucide-react';
 import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
 
@@ -78,11 +79,24 @@ export default function LandingLoadingSkeleton() {
       </main>
 
       {/* Modal de rescate si la red se congela */}
-      {showRescue && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]">
+      {showRescue && typeof document !== "undefined" && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 dark:bg-black/85 backdrop-blur-md animate-[fade-in_0.2s_ease-out] pointer-events-auto"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: "100vw",
+            height: "100dvh",
+            zIndex: 9999,
+            backgroundColor: "rgba(0, 0, 0, 0.75)"
+          }}
+        >
           <div className="w-full max-w-sm p-6 rounded-3xl glass border border-accent/30 bg-bg-secondary/95 shadow-2xl flex flex-col items-center text-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-accent/15 flex items-center justify-center text-accent">
-              <RefreshCw className={`w-6 h-6 ${isRepairing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-6 h-6 ${isRepairing ? "animate-spin" : ""}`} />
             </div>
             <div className="flex flex-col gap-1">
               <h3 className="text-base font-bold text-text-primary">¿La página está tardando en cargar?</h3>
@@ -95,10 +109,11 @@ export default function LandingLoadingSkeleton() {
               disabled={isRepairing}
               className="w-full py-3 px-4 rounded-xl bg-accent text-accent-contrast font-bold text-sm shadow-lg shadow-accent/20 active:scale-95 transition-all"
             >
-              {isRepairing ? 'Recargando...' : 'Recargar página'}
+              {isRepairing ? "Recargando..." : "Recargar página"}
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
