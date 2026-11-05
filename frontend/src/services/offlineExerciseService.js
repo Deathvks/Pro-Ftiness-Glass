@@ -275,6 +275,60 @@ export const getOfflineStorageStats = async () => {
   }
 };
 
+export const getAvailableExerciseCatalogStats = async () => {
+  try {
+    const exercises = await getExerciseList();
+    if (!Array.isArray(exercises) || exercises.length === 0) {
+      return { exerciseCount: 0, mediaCount: 0, estimatedSize: '0 MB' };
+    }
+
+    const rawUrlsSet = new Set();
+    for (const ex of exercises) {
+      let images = ex.images;
+      if (typeof images === 'string') {
+        try {
+          images = JSON.parse(images);
+        } catch {
+          images = images.split(',').map((s) => s.trim());
+        }
+      }
+
+      const candidates = [
+        ex.image_url_start,
+        ex.image_url_end,
+        ex.image_url,
+        ...(Array.isArray(images) ? images : [])
+      ];
+
+      for (const cand of candidates) {
+        const norm = normalizeMediaUrl(cand);
+        if (norm && !norm.match(/\.(mp4|mov|webm|mkv)(?:$|\?)/i)) {
+          rawUrlsSet.add(norm);
+        }
+      }
+
+      if (ex.video_url && typeof ex.video_url === 'string') {
+        const match = ex.video_url.match(/(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]{11})/);
+        if (match && match[1]) {
+          rawUrlsSet.add(`https://img.youtube.com/vi/${match[1]}/mqdefault.jpg`);
+        }
+      }
+    }
+
+    const mediaCount = rawUrlsSet.size;
+    const estimatedBytes = mediaCount * 210 * 1024;
+    const mb = (estimatedBytes / (1024 * 1024)).toFixed(0);
+
+    return {
+      exerciseCount: exercises.length,
+      mediaCount,
+      estimatedSize: `~${mb} MB`
+    };
+  } catch {
+    return { exerciseCount: 0, mediaCount: 0, estimatedSize: '0 MB' };
+  }
+};
+
 export const deleteOfflineExercises = async () => {
   try {
     for (const blobUrl of blobUrlMap.values()) {
@@ -372,9 +426,15 @@ export const downloadAllExercisesForOffline = async ({ onProgress, signal } = {}
   const CONCURRENCY = 4;
   let queueIndex = 0;
 
+  const createAbortError = () => {
+    const err = new Error('Descarga cancelada');
+    err.name = 'AbortError';
+    return err;
+  };
+
   const downloadWorker = async () => {
     while (queueIndex < urlsToDownload.length) {
-      if (signal?.aborted) throw new Error('Descarga cancelada por el usuario');
+      if (signal?.aborted) throw createAbortError();
 
       const currentIndex = queueIndex++;
       const url = urlsToDownload[currentIndex];
@@ -419,9 +479,10 @@ export const downloadAllExercisesForOffline = async ({ onProgress, signal } = {}
           blobUrlMap.set(url, blobUrl);
         }
       } catch (err) {
-        if (signal?.aborted) throw err;
+        if (signal?.aborted || err.name === 'AbortError') throw createAbortError();
         console.warn(`[OfflineStorage] Advertencia al descargar ${url}:`, err.message);
       } finally {
+        if (signal?.aborted) return;
         completed++;
         if (typeof onProgress === 'function') {
           onProgress({
@@ -437,7 +498,14 @@ export const downloadAllExercisesForOffline = async ({ onProgress, signal } = {}
   };
 
   const workers = Array.from({ length: Math.min(CONCURRENCY, total) }, () => downloadWorker());
-  await Promise.all(workers);
+  try {
+    await Promise.all(workers);
+  } catch (err) {
+    if (signal?.aborted || err.name === 'AbortError') {
+      throw createAbortError();
+    }
+    throw err;
+  }
 
   // 4. Guardar metadatos finales
   await new Promise((resolve) => {

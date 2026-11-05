@@ -1,9 +1,9 @@
 {
-  "version": "7.12.0",
-  "releaseNotes": "Actualización v7.12.0: Modo sin conexión para entrenar en sótanos/sin cobertura y Smart Sync nutricional con caché local en base de datos.",
+  "version": "7.13.0",
+  "releaseNotes": "Actualización v7.13.0: Modo sin conexión para entrenar en sótanos/sin cobertura y Smart Sync nutricional con caché local en base de datos.",
   "welcome": {
     "title": "Modo Sin Conexión y Smart Sync",
-    "subtitle": "Llega la versión 7.12.0: descarga de ejercicios para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.",
+    "subtitle": "Llega la versión 7.13.0: descarga de ejercicios para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.",
     "features": [
       {
         "title": "Modo Sin Conexión y Búnker",

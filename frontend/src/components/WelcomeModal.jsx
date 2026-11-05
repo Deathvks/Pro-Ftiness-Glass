@@ -21,7 +21,7 @@ const WelcomeModal = ({ onClose }) => {
   const welcomeTitle = welcomeRemoteData?.welcome?.title || 'Modo Sin Conexión y Smart Sync';
   const welcomeSubtitle =
     welcomeRemoteData?.welcome?.subtitle ||
-    'Llega la versión 7.12.0: descarga de ejercicios para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.';
+    'Llega la versión 7.13.0: descarga de ejercicios para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.';
   const remoteFeatures = welcomeRemoteData?.welcome?.features;
 
   const handleGetStarted = (e) => {

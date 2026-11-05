@@ -189,15 +189,21 @@ export default function SettingsScreen({
   });
   const [showDeleteOfflineModal, setShowDeleteOfflineModal] = useState(false);
   const [isDeletingOffline, setIsDeletingOffline] = useState(false);
+  const [catalogStats, setCatalogStats] = useState({ exerciseCount: 0, mediaCount: 0, estimatedSize: '0 MB' });
   const abortControllerRef = useRef(null);
   const isNativeAndroid = typeof window !== 'undefined' && !!window.Capacitor?.isNativePlatform?.();
 
   useEffect(() => {
     let isMounted = true;
-    import('../services/offlineExerciseService').then(({ getOfflineStorageStats }) => {
+    import('../services/offlineExerciseService').then(({ getOfflineStorageStats, getAvailableExerciseCatalogStats }) => {
       getOfflineStorageStats().then(stats => {
         if (isMounted && stats) setOfflineStats(stats);
       });
+      if (typeof getAvailableExerciseCatalogStats === 'function') {
+        getAvailableExerciseCatalogStats().then(cat => {
+          if (isMounted && cat) setCatalogStats(cat);
+        });
+      }
     }).catch(() => {});
     return () => { isMounted = false; };
   }, [activeTab]);
@@ -222,7 +228,16 @@ export default function SettingsScreen({
       setOfflineStats(updatedStats);
       addToast(`Biblioteca offline lista: ${result.imagesCount} recursos guardados (${result.formattedSize})`, 'success');
     } catch (err) {
-      if (err.message && err.message.includes('cancelada')) {
+      const isAborted =
+        abortControllerRef.current?.signal?.aborted ||
+        err?.name === 'AbortError' ||
+        (err?.message && (
+          err.message.toLowerCase().includes('abort') ||
+          err.message.toLowerCase().includes('cancel') ||
+          err.message.toLowerCase().includes('cancelada')
+        ));
+
+      if (isAborted) {
         addToast('Descarga cancelada', 'info');
       } else {
         console.error('Error descargando biblioteca offline:', err);
@@ -520,23 +535,72 @@ export default function SettingsScreen({
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-black/5 dark:border-white/10 text-center">
                   <div className="p-3 rounded-2xl bg-black/5 dark:bg-white/5">
                     <span className="text-[10px] text-text-secondary uppercase tracking-wider block font-semibold">Ejercicios</span>
-                    <span className="text-base sm:text-lg font-black text-text-primary">{offlineStats.exerciseCount || 0}</span>
+                    <span className="text-base sm:text-lg font-black text-text-primary">
+                      {offlineStats.isDownloaded
+                        ? offlineStats.exerciseCount
+                        : (catalogStats.exerciseCount || '...')}
+                    </span>
+                    <span className="text-[10px] text-text-muted block mt-0.5">
+                      {offlineStats.isDownloaded ? 'Guardados' : 'Disponibles'}
+                    </span>
                   </div>
                   <div className="p-3 rounded-2xl bg-black/5 dark:bg-white/5">
                     <span className="text-[10px] text-text-secondary uppercase tracking-wider block font-semibold">Imágenes / GIFs</span>
-                    <span className="text-base sm:text-lg font-black text-text-primary">{offlineStats.imageCount || 0}</span>
+                    <span className="text-base sm:text-lg font-black text-text-primary">
+                      {offlineStats.isDownloaded
+                        ? offlineStats.imageCount
+                        : (catalogStats.mediaCount || '...')}
+                    </span>
+                    <span className="text-[10px] text-text-muted block mt-0.5">
+                      {offlineStats.isDownloaded ? 'En caché local' : 'Para descargar'}
+                    </span>
                   </div>
                   <div className="p-3 rounded-2xl bg-black/5 dark:bg-white/5">
-                    <span className="text-[10px] text-text-secondary uppercase tracking-wider block font-semibold">Espacio usado</span>
-                    <span className="text-base sm:text-lg font-black text-text-primary">{offlineStats.formattedSize || '0 MB'}</span>
+                    <span className="text-[10px] text-text-secondary uppercase tracking-wider block font-semibold">Espacio {offlineStats.isDownloaded ? 'usado' : 'estimado'}</span>
+                    <span className="text-base sm:text-lg font-black text-text-primary">
+                      {offlineStats.isDownloaded
+                        ? offlineStats.formattedSize
+                        : (catalogStats.estimatedSize || '~45 MB')}
+                    </span>
+                    <span className="text-[10px] text-text-muted block mt-0.5">
+                      {offlineStats.isDownloaded ? 'En almacenamiento' : 'Descarga WiFi'}
+                    </span>
                   </div>
                   <div className="p-3 rounded-2xl bg-black/5 dark:bg-white/5">
-                    <span className="text-[10px] text-text-secondary uppercase tracking-wider block font-semibold">Sincronizado</span>
-                    <span className="text-xs font-bold text-text-primary block mt-1">
-                      {offlineStats.lastDownloadedAt ? new Date(offlineStats.lastDownloadedAt).toLocaleDateString() : 'Nunca'}
+                    <span className="text-[10px] text-text-secondary uppercase tracking-wider block font-semibold">Estado</span>
+                    <span className={`text-xs font-bold block mt-1 ${offlineStats.isDownloaded ? 'text-emerald-500' : 'text-amber-500'}`}>
+                      {offlineStats.isDownloaded
+                        ? (offlineStats.lastDownloadedAt ? new Date(offlineStats.lastDownloadedAt).toLocaleDateString() : 'Activo')
+                        : 'No descargado'}
+                    </span>
+                    <span className="text-[10px] text-text-muted block mt-0.5">
+                      {offlineStats.isDownloaded ? 'Última sinc.' : 'Pendiente'}
                     </span>
                   </div>
                 </div>
+
+                {/* Banner informativo descriptivo */}
+                {!offlineStats.isDownloaded && !isDownloadingOffline && (
+                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-text-primary text-xs leading-relaxed flex items-start gap-2.5">
+                    <Sparkles size={16} className="shrink-0 text-amber-500 mt-0.5" />
+                    <div>
+                      <strong className="font-bold block text-amber-600 dark:text-amber-400">
+                        {catalogStats.exerciseCount ? `${catalogStats.exerciseCount} ejercicios listos para guardar` : 'Biblioteca lista para descargar'}
+                      </strong>
+                      Al pulsar el botón inferior, se guardarán los {catalogStats.mediaCount ? `${catalogStats.mediaCount} recursos multimedia` : 'archivos de demostración'} ({catalogStats.estimatedSize || '~45 MB'}) en la memoria de tu dispositivo. Podrás consultar cualquier técnica y animación sin conexión a internet ni gastar datos móviles.
+                    </div>
+                  </div>
+                )}
+
+                {offlineStats.isDownloaded && !isDownloadingOffline && (
+                  <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-text-primary text-xs leading-relaxed flex items-start gap-2.5">
+                    <CheckCircle2 size={16} className="shrink-0 text-emerald-500 mt-0.5" />
+                    <div>
+                      <strong className="font-bold block text-emerald-600 dark:text-emerald-400">Modo sin conexión activo (0 ms de espera)</strong>
+                      Tienes {offlineStats.exerciseCount} ejercicios y {offlineStats.imageCount} recursos multimedia guardados localmente ({offlineStats.formattedSize}). Funcionan con total fluidez incluso en sótanos sin cobertura o con modo avión activado.
+                    </div>
+                  </div>
+                )}
 
                 {/* Barra de progreso interactiva si está descargando */}
                 {isDownloadingOffline && (
@@ -551,11 +615,12 @@ export default function SettingsScreen({
                         style={{ width: `${downloadProgress.percent}%` }}
                       />
                     </div>
-                    <div className="flex justify-end mt-1">
+                    <div className="flex justify-between items-center mt-1 text-[11px] text-text-muted">
+                      <span>Memoria guardada: {((downloadProgress.bytesDownloaded || 0) / (1024 * 1024)).toFixed(1)} MB</span>
                       <button
                         type="button"
                         onClick={handleCancelOfflineDownload}
-                        className="text-xs font-bold text-red-500 hover:underline cursor-pointer"
+                        className="font-bold text-red-500 hover:underline cursor-pointer"
                       >
                         Cancelar descarga
                       </button>
