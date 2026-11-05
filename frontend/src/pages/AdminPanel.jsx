@@ -230,6 +230,8 @@ const AdminPanel = ({ onCancel }) => {
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [platformFilter, setPlatformFilter] = useState('ALL');
   const [levelFilter, setLevelFilter] = useState('ALL');
+  const [funnelRange, setFunnelRange] = useState('30d'); // '7d' | '30d' | 'all'
+  const [funnelStageFilter, setFunnelStageFilter] = useState('ALL'); // 'ALL' | 'STUCK_PROFILE' | 'STUCK_ROUTINE' | 'STUCK_WORKOUT1' | 'STUCK_WORKOUT2' | 'STUCK_NUTRITION'
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState(() => localStorage.getItem('admin_users_sort') || 'default');
 
@@ -616,9 +618,6 @@ const AdminPanel = ({ onCancel }) => {
   const galaxyUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 5).length, [users]);
   const desertUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 8).length, [users]);
   const oceanUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 11).length, [users]);
-
-  const [funnelRange, setFunnelRange] = useState('30d'); // '7d' | '30d' | 'all'
-  const [funnelStageFilter, setFunnelStageFilter] = useState('ALL'); // 'ALL' | 'STUCK_PROFILE' | 'STUCK_ROUTINE' | 'STUCK_WORKOUT1' | 'STUCK_WORKOUT2' | 'STUCK_NUTRITION'
 
   const retentionFunnel = useMemo(() => {
     const now = Date.now();
