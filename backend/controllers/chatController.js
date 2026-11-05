@@ -192,10 +192,13 @@ export const getChatHistory = async (req, res, next) => {
           });
 
           if (hasReplyAfter === 0) {
+            const replySenderId = trainerAdminIds.includes(lastProspectMsg.receiver_id)
+              ? lastProspectMsg.receiver_id
+              : targetTrainerId;
             console.log('[BOT] Auto-generating missing bot reply in getChatHistory for user:', prospectUserId);
             const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
             const botMsg = await Message.create({
-              sender_id: targetTrainerId,
+              sender_id: replySenderId,
               receiver_id: prospectUserId,
               content: botContent,
               attachment_type: 'bot_reply',
@@ -207,7 +210,7 @@ export const getChatHistory = async (req, res, next) => {
                 include: [{ model: User, as: 'Sender', attributes: ['id', 'username', 'profile_image_url', 'role'] }]
               });
               io.to(prospectUserId.toString()).emit('chat_message', populated);
-              io.to(targetTrainerId.toString()).emit('chat_message', populated);
+              io.to(replySenderId.toString()).emit('chat_message', populated);
             }
           }
         }
@@ -506,7 +509,7 @@ export const getTrainerClientsChats = async (req, res, next) => {
       let lastMessage;
       let unreadCount;
 
-      if (isAdmin) {
+      if (isAdmin || client.role === 'user') {
         lastMessage = await Message.findOne({
           where: {
             [Op.or]: [
@@ -514,7 +517,7 @@ export const getTrainerClientsChats = async (req, res, next) => {
               { sender_id: { [Op.in]: trainerAdminIds }, receiver_id: client.id }
             ]
           },
-          order: [['created_at', 'DESC']]
+          order: [['created_at', 'DESC'], ['id', 'DESC']]
         });
 
         // Si el último mensaje es del prospecto y no ha recibido respuesta del bot o entrenador, auto-crear la bienvenida
@@ -530,10 +533,13 @@ export const getTrainerClientsChats = async (req, res, next) => {
             }
           });
           if (hasReplyAfter === 0) {
+            const replySenderId = trainerAdminIds.includes(lastMessage.receiver_id)
+              ? lastMessage.receiver_id
+              : (trainerAdminIds[0] || userId);
             console.log('[BOT] Auto-generating missing welcome reply in getTrainerClientsChats for client:', client.id);
             const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
             lastMessage = await Message.create({
-              sender_id: trainerAdminIds[0] || userId,
+              sender_id: replySenderId,
               receiver_id: client.id,
               content: botContent,
               attachment_type: 'bot_reply',
@@ -545,7 +551,7 @@ export const getTrainerClientsChats = async (req, res, next) => {
         unreadCount = await Message.count({
           where: {
             sender_id: client.id,
-            receiver_id: { [Op.in]: trainerAdminIds },
+            receiver_id: isAdmin ? { [Op.in]: trainerAdminIds } : userId,
             read_at: null
           }
         });
@@ -557,7 +563,7 @@ export const getTrainerClientsChats = async (req, res, next) => {
               { sender_id: userId, receiver_id: client.id }
             ]
           },
-          order: [['created_at', 'DESC']]
+          order: [['created_at', 'DESC'], ['id', 'DESC']]
         });
 
         unreadCount = await Message.count({
@@ -570,7 +576,7 @@ export const getTrainerClientsChats = async (req, res, next) => {
       }
 
       let botReminders = [];
-      if (isAdmin) {
+      if (isAdmin || client.role === 'user') {
         botReminders = await Message.findAll({
           where: {
             [Op.or]: [
@@ -876,23 +882,55 @@ export const sendManualBotReminder = async (req, res) => {
     const prospect = await User.findByPk(prospectId);
     if (!prospect) return res.status(404).json({ error: 'Cliente no encontrado' });
 
-    // PREVENCIN DE DUPLICADOS (Evita doble click en UI o envos simultneos)
+    // PREVENCIÓN DE DUPLICADOS (Evita doble click en UI o envíos simultáneos en hilo unificado)
     const Op = Sequelize.Op;
+    const trainersAndAdmins = await User.findAll({
+      where: { role: { [Op.in]: ['admin', 'trainer'] } },
+      attributes: ['id']
+    });
+    const trainerAdminIds = trainersAndAdmins.map(u => u.id);
+    const staffIds = trainerAdminIds.length > 0 ? trainerAdminIds : [trainerId];
+
+    const threadWhere = {
+      [Op.or]: [
+        { sender_id: prospect.id, receiver_id: { [Op.in]: staffIds } },
+        { sender_id: { [Op.in]: staffIds }, receiver_id: prospect.id }
+      ]
+    };
+
     const lastMsg = await Message.findOne({
-      where: {
-        [Op.or]: [
-          { sender_id: prospect.id, receiver_id: trainerId },
-          { sender_id: trainerId, receiver_id: prospect.id }
-        ]
-      },
-      order: [['created_at', 'DESC']]
+      where: threadWhere,
+      order: [['created_at', 'DESC'], ['id', 'DESC']]
     });
 
-    if (lastMsg && (lastMsg.bot_reminder_level || 0) >= parsedLevel) {
-      return res.status(400).json({ error: 'Ya se envi este aviso (posible doble click detectado).' });
-    }
     if (lastMsg && lastMsg.is_closed) {
-      return res.status(400).json({ error: 'El chat ya est cerrado.' });
+      return res.status(400).json({ error: 'El chat ya está cerrado.' });
+    }
+
+    const lastNonBotMsg = await Message.findOne({
+      where: {
+        ...threadWhere,
+        is_closed: { [Op.not]: true },
+        [Op.or]: [
+          { attachment_type: null },
+          { attachment_type: { [Op.ne]: 'bot_reply' } }
+        ],
+        bot_reminder_level: { [Op.or]: [null, 0] }
+      },
+      order: [['created_at', 'DESC'], ['id', 'DESC']]
+    });
+
+    const existingCycleLevel = await Message.findOne({
+      where: {
+        ...threadWhere,
+        is_closed: { [Op.not]: true },
+        bot_reminder_level: { [Op.gte]: parsedLevel },
+        ...(lastNonBotMsg ? { created_at: { [Op.gte]: lastNonBotMsg.created_at } } : {})
+      }
+    });
+
+    if ((lastMsg && (lastMsg.bot_reminder_level || 0) >= parsedLevel) || existingCycleLevel) {
+      return res.status(400).json({ error: 'Ya se envió este aviso en este ciclo (posible doble click detectado).' });
     }
 
     let title = '';

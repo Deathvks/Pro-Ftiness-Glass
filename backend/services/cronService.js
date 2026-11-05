@@ -480,102 +480,153 @@ const checkChatBotReminders = () => {
       const prospects = await User.findAll({ where: { role: 'user' } });
       const trainers = await User.findAll({ where: { role: { [Op.in]: ['admin', 'trainer'] } } });
       const trainerIds = trainers.map(t => t.id);
+      if (trainerIds.length === 0) return;
+
+      const primaryTrainer = trainers.find(t => t.role === 'trainer') || trainers[0];
 
       for (const prospect of prospects) {
-        for (const trainerId of trainerIds) {
-          const lastMsg = await Message.findOne({
-            where: {
-              [Op.or]: [
-                { sender_id: prospect.id, receiver_id: trainerId },
-                { sender_id: trainerId, receiver_id: prospect.id }
-              ]
-            },
-            order: [['created_at', 'DESC']]
+        // Unificamos el hilo de asesoría del prospecto con todo el staff (admin/trainer)
+        // para evitar que se ejecuten ciclos paralelos por cada ID de staff.
+        const threadWhere = {
+          [Op.or]: [
+            { sender_id: prospect.id, receiver_id: { [Op.in]: trainerIds } },
+            { sender_id: { [Op.in]: trainerIds }, receiver_id: prospect.id }
+          ]
+        };
+
+        const lastMsg = await Message.findOne({
+          where: threadWhere,
+          order: [['created_at', 'DESC'], ['id', 'DESC']]
+        });
+
+        if (!lastMsg || lastMsg.is_closed) continue;
+
+        // Último mensaje escrito por alguien que NO sea el bot (prospecto o respuesta humana del entrenador)
+        // Esto define el inicio del ciclo actual de inactividad.
+        const lastNonBotMsg = await Message.findOne({
+          where: {
+            ...threadWhere,
+            is_closed: { [Op.not]: true },
+            [Op.or]: [
+              { attachment_type: null },
+              { attachment_type: { [Op.ne]: 'bot_reply' } }
+            ],
+            bot_reminder_level: { [Op.or]: [null, 0] }
+          },
+          order: [['created_at', 'DESC'], ['id', 'DESC']]
+        });
+
+        // Mensajes del bot enviados en el ciclo actual (desde el último mensaje no-bot)
+        const cycleRemindersWhere = {
+          ...threadWhere,
+          is_closed: { [Op.not]: true },
+          bot_reminder_level: { [Op.gt]: 0 }
+        };
+        if (lastNonBotMsg) {
+          cycleRemindersWhere.created_at = { [Op.gte]: lastNonBotMsg.created_at };
+        }
+
+        const cycleReminders = await Message.findAll({
+          where: cycleRemindersWhere,
+          order: [['bot_reminder_level', 'DESC'], ['created_at', 'ASC'], ['id', 'ASC']]
+        });
+
+        // Nivel actual real del ciclo (máximo nivel ya enviado en este ciclo)
+        const maxCycleLevel = cycleReminders.length > 0
+          ? Math.max(...cycleReminders.map(r => r.bot_reminder_level || 0))
+          : 0;
+        const level = Math.max(lastMsg.bot_reminder_level || 0, maxCycleLevel);
+
+        // Fecha de referencia para calcular las horas hacia el siguiente nivel:
+        // Si ya hay un recordatorio del nivel actual, usamos el primer mensaje de ese nivel
+        // (así un duplicado accidental nunca reinicia ni desfasa el contador de horas).
+        const currentLevelMsg = level > 0
+          ? cycleReminders.find(r => (r.bot_reminder_level || 0) === level)
+          : null;
+        const referenceDate = new Date((currentLevelMsg || lastMsg).created_at);
+
+        const now = new Date();
+        const diffHours = (now.getTime() - referenceDate.getTime()) / (1000 * 60 * 60);
+
+        // Determinar el entrenador remitente del hilo
+        const targetTrainerId = (prospect.trainer_id && trainerIds.includes(prospect.trainer_id))
+          ? prospect.trainer_id
+          : (trainerIds.includes(lastMsg.sender_id)
+              ? lastMsg.sender_id
+              : (trainerIds.includes(lastMsg.receiver_id) ? lastMsg.receiver_id : primaryTrainer.id));
+
+        let nextLevel = null;
+        let title = '';
+        let text = '';
+
+        if (level === 0 && diffHours >= 72) {
+          nextLevel = 1;
+          title = '¿Continuamos con tu cambio?';
+          text = 'Hola, he visto que dejaste el chat abierto. Si tienes cualquier duda sobre la asesoría o quieres empezar, ¡escríbeme por aquí y nos ponemos a ello!';
+        } else if (level === 1 && diffHours >= 48) {
+          nextLevel = 2;
+          title = 'Aún estás a tiempo de empezar 💪';
+          text = 'Solo te escribo para recordarte que sigo por aquí si necesitas ayuda para dar el primer paso. Si no estás interesado, no te preocupes.';
+        } else if (level === 2 && diffHours >= 24) {
+          nextLevel = 3;
+          title = 'Último aviso antes de cerrar el chat ⏳';
+          text = 'Si no recibo respuesta en 1 día, cerraré esta conversación para mantener el buzón limpio. Siempre podrás volver a solicitar asesoría más adelante.';
+        } else if (level === 3 && diffHours >= 24) {
+          nextLevel = 4;
+        }
+
+        if (nextLevel === 4) {
+          console.log(`[Cron] Cerrando chat unificado de prospecto ${prospect.id}`);
+          
+          await Message.update(
+            { is_closed: true },
+            { where: threadWhere }
+          );
+
+          // Ensure trainer_id is null
+          prospect.trainer_id = null;
+          await prospect.save();
+
+          createNotification(prospect.id, {
+            type: 'chat_closed',
+            title: 'Conversación cerrada por inactividad',
+            message: 'Tu chat de asesoría ha sido cerrado. Puedes volver a solicitarla cuando quieras.',
+            action_url: '/social'
           });
 
-          if (!lastMsg || lastMsg.is_closed) continue;
+        } else if (nextLevel !== null) {
+          // Doble verificación de idempotencia: nunca enviar el mismo nivel dos veces en el mismo ciclo
+          const alreadySentInCycle = cycleReminders.some(r => (r.bot_reminder_level || 0) >= nextLevel);
+          if (alreadySentInCycle) continue;
 
-          const now = new Date();
-          const lastDate = new Date(lastMsg.created_at);
-          const diffHours = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60);
+          console.log(`[Cron] Enviando aviso nivel ${nextLevel} a prospecto ${prospect.id} (trainer ${targetTrainerId})`);
           
-          const level = lastMsg.bot_reminder_level || 0;
-          let nextLevel = null;
-          let title = '';
-          let text = '';
+          const newMsg = await Message.create({
+            sender_id: targetTrainerId,
+            receiver_id: prospect.id,
+            content: text,
+            bot_reminder_level: nextLevel, attachment_type: 'bot_reply', created_at: new Date(),
+            bot_push_status: 'pending', bot_email_status: 'pending'
+          });
 
-          if (level === 0 && diffHours >= 72) {
-            nextLevel = 1;
-            title = '¿Continuamos con tu cambio?';
-            text = 'Hola, he visto que dejaste el chat abierto. Si tienes cualquier duda sobre la asesoría o quieres empezar, ¡escríbeme por aquí y nos ponemos a ello!';
-          } else if (level === 1 && diffHours >= 48) {
-            nextLevel = 2;
-            title = 'Aún estás a tiempo de empezar 💪';
-            text = 'Solo te escribo para recordarte que sigo por aquí si necesitas ayuda para dar el primer paso. Si no estás interesado, no te preocupes.';
-          } else if (level === 2 && diffHours >= 24) {
-            nextLevel = 3;
-            title = 'Último aviso antes de cerrar el chat ⏳';
-            text = 'Si no recibo respuesta en 1 día, cerraré esta conversación para mantener el buzón limpio. Siempre podrás volver a solicitar asesoría más adelante.';
-          } else if (level === 3 && diffHours >= 24) {
-            nextLevel = 4;
-          }
+          let pushStat = 'error';
+          let emailStat = 'error';
 
-          if (nextLevel === 4) {
-            console.log(`[Cron] Cerrando chat entre prospecto ${prospect.id} y entrenador ${trainerId}`);
-            
-            await Message.update(
-              { is_closed: true },
-              {
-                where: {
-                  [Op.or]: [
-                    { sender_id: prospect.id, receiver_id: trainerId },
-                    { sender_id: trainerId, receiver_id: prospect.id }
-                  ]
-                }
-              }
-            );
-
-            // Ensure trainer_id is null
-            prospect.trainer_id = null;
-            await prospect.save();
-
-            createNotification(prospect.id, {
-              type: 'chat_closed',
-              title: 'Conversación cerrada por inactividad',
-              message: 'Tu chat de asesoría ha sido cerrado. Puedes volver a solicitarla cuando quieras.',
-              action_url: '/social'
+          try {
+            await createNotification(prospect.id, {
+              type: 'chat_message', title: title, message: text, action_url: '/social'
             });
+            pushStat = 'ok';
+          } catch(e) {}
 
-          } else if (nextLevel !== null) {
-            console.log(`[Cron] Enviando aviso nivel ${nextLevel} a prospecto ${prospect.id}`);
-            
-            const newMsg = await Message.create({
-              sender_id: trainerId,
-              receiver_id: prospect.id,
-              content: text,
-              bot_reminder_level: nextLevel, attachment_type: 'bot_reply', created_at: new Date(),
-              bot_push_status: 'pending', bot_email_status: 'pending'
-            });
+          try {
+            await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, nextLevel);
+            emailStat = 'ok';
+          } catch(e) { console.error('[Cron] Error email bot', e); }
 
-            let pushStat = 'error';
-            let emailStat = 'error';
-
-            try {
-              await createNotification(prospect.id, {
-                type: 'chat_message', title: title, message: text, action_url: '/social'
-              });
-              pushStat = 'ok';
-            } catch(e) {}
-
-            try {
-              await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, nextLevel);
-              emailStat = 'ok';
-            } catch(e) { console.error('[Cron] Error email bot', e); }
-
-            newMsg.bot_push_status = pushStat;
-            newMsg.bot_email_status = emailStat;
-            await newMsg.save();
-          }
+          newMsg.bot_push_status = pushStat;
+          newMsg.bot_email_status = emailStat;
+          await newMsg.save();
         }
       }
       console.log('[Cron] Revisión de bot finalizada.');
@@ -592,10 +643,12 @@ export const autoHealPendingWelcomeMessages = async () => {
     const { User, Message } = db;
     const trainersAndAdmins = await User.findAll({
       where: { role: { [Op.in]: ['admin', 'trainer'] } },
-      attributes: ['id']
+      attributes: ['id', 'role']
     });
     const trainerAdminIds = trainersAndAdmins.map(u => u.id);
     if (trainerAdminIds.length === 0) return;
+
+    const primaryTrainer = trainersAndAdmins.find(u => u.role === 'trainer') || trainersAndAdmins[0];
 
     const prospects = await User.findAll({
       where: { role: 'user' },
@@ -603,43 +656,87 @@ export const autoHealPendingWelcomeMessages = async () => {
     });
 
     for (const prospect of prospects) {
-      for (const trainerId of trainerAdminIds) {
-        const lastMsg = await Message.findOne({
+      const threadWhere = {
+        [Op.or]: [
+          { sender_id: prospect.id, receiver_id: { [Op.in]: trainerAdminIds } },
+          { sender_id: { [Op.in]: trainerAdminIds }, receiver_id: prospect.id }
+        ]
+      };
+
+      const lastMsg = await Message.findOne({
+        where: threadWhere,
+        order: [['created_at', 'DESC'], ['id', 'DESC']]
+      });
+
+      if (!lastMsg || lastMsg.is_closed) continue;
+
+      // 1. Auto-limpieza de recordatorios duplicados del mismo nivel en el ciclo activo
+      const lastNonBotMsg = await Message.findOne({
+        where: {
+          ...threadWhere,
+          is_closed: { [Op.not]: true },
+          [Op.or]: [
+            { attachment_type: null },
+            { attachment_type: { [Op.ne]: 'bot_reply' } }
+          ],
+          bot_reminder_level: { [Op.or]: [null, 0] }
+        },
+        order: [['created_at', 'DESC'], ['id', 'DESC']]
+      });
+
+      const cycleRemindersWhere = {
+        ...threadWhere,
+        is_closed: { [Op.not]: true },
+        bot_reminder_level: { [Op.gt]: 0 }
+      };
+      if (lastNonBotMsg) {
+        cycleRemindersWhere.created_at = { [Op.gte]: lastNonBotMsg.created_at };
+      }
+
+      const cycleReminders = await Message.findAll({
+        where: cycleRemindersWhere,
+        order: [['created_at', 'ASC'], ['id', 'ASC']]
+      });
+
+      const seenLevels = new Set();
+      for (const rem of cycleReminders) {
+        const lvl = rem.bot_reminder_level || 0;
+        if (lvl > 0) {
+          if (seenLevels.has(lvl)) {
+            console.log(`[BOT-AUTOHEAL] Eliminando recordatorio duplicado nivel ${lvl} (msg ${rem.id}) para prospecto ${prospect.id}`);
+            await rem.destroy();
+          } else {
+            seenLevels.add(lvl);
+          }
+        }
+      }
+
+      // 2. Si el último mensaje del hilo unificado es del prospecto y no hay respuesta posterior, crear bienvenida única
+      if (lastMsg.sender_id === prospect.id) {
+        const hasReplyAfter = await Message.count({
           where: {
+            receiver_id: prospect.id,
+            created_at: { [Op.gt]: lastMsg.created_at },
             [Op.or]: [
-              { sender_id: prospect.id, receiver_id: trainerId },
-              { sender_id: trainerId, receiver_id: prospect.id }
+              { attachment_type: 'bot_reply' },
+              { sender_id: { [Op.in]: trainerAdminIds } }
             ]
-          },
-          order: [['created_at', 'DESC']]
+          }
         });
 
-        if (!lastMsg || lastMsg.is_closed) continue;
-
-        if (lastMsg.sender_id === prospect.id) {
-          const hasReplyAfter = await Message.count({
-            where: {
-              receiver_id: prospect.id,
-              created_at: { [Op.gt]: lastMsg.created_at },
-              [Op.or]: [
-                { attachment_type: 'bot_reply' },
-                { sender_id: { [Op.in]: trainerAdminIds } }
-              ]
-            }
+        if (hasReplyAfter === 0) {
+          const targetTrainerId = trainerAdminIds.includes(lastMsg.receiver_id)
+            ? lastMsg.receiver_id
+            : primaryTrainer.id;
+          console.log(`[BOT-AUTOHEAL] Creando respuesta de bienvenida pendiente para prospecto ${prospect.id}`);
+          const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
+          await Message.create({
+            sender_id: targetTrainerId,
+            receiver_id: prospect.id,
+            content: botContent,
+            attachment_type: 'bot_reply',
+            created_at: new Date(new Date(lastMsg.created_at).getTime() + 1000)
           });
-
-          if (hasReplyAfter === 0) {
-            console.log(`[BOT-AUTOHEAL] Creando respuesta de bienvenida pendiente para prospecto ${prospect.id}`);
-            const botContent = "Hola, tus mensajes son totalmente privados. Recibirás respuesta de tu entrenador en un máximo de 2 horas por lo general. Se te avisará por correo o [notificaciones push] cuando esto suceda.";
-            await Message.create({
-              sender_id: trainerId,
-              receiver_id: prospect.id,
-              content: botContent,
-              attachment_type: 'bot_reply',
-              created_at: new Date(new Date(lastMsg.created_at).getTime() + 1000)
-            });
-            break;
-          }
         }
       }
     }

@@ -1,6 +1,6 @@
 {
-  "version": "7.14.2",
-  "releaseNotes": "Actualización v7.14.2: Corrección de scroll y diseño responsive desde arriba en Login y Registro para PC, móvil y tablet horizontal.",
+  "version": "7.14.3",
+  "releaseNotes": "Actualización v7.14.3: Unificación de ciclos del Bot Coordinador en chats de asesoría y prevención de recordatorios duplicados.",
   "welcome": {
     "title": "Modo Sin Conexión y Smart Sync",
     "subtitle": "Descarga de ejercicios en segundo plano para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.",
