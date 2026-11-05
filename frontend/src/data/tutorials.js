@@ -45,12 +45,14 @@ export const APP_TUTORIALS = [
   },
   {
     id: 'social', title: 'Comunidad y ranking', category: 'Comunidad', icon: 'users', view: 'social',
-    description: 'Comparte actividad, sigue historias, encuentra personas y consulta rachas y posiciones.',
+    description: 'Muro Global, Mi Gimnasio y Amigos, reacciones rápidas, historias 24h, grupos (Squads) y ranking.',
     steps: [
-      { title: 'La comunidad', element: null, description: 'Comparte tus avances y descubre la actividad de otras personas.' },
-      { title: 'Privacidad', element: '#social-privacy-banner', description: 'Revisa si tu perfil es público y cambia la privacidad desde aquí.' },
-      { title: 'Historias', element: '#social-stories', description: 'Publica momentos de entrenamiento que desaparecen al cabo de 24 horas.' },
-      { title: 'Muro, ranking y más', element: '#social-tabs', description: 'Cambia entre el muro, el ranking, amigos, grupos, solicitudes y búsqueda.' }
+      { title: 'La Comunidad', element: null, description: 'Tu espacio social para compartir entrenamientos terminados, descubrir atletas, importar sus rutinas y competir en los rankings.' },
+      { title: 'Privacidad de Perfil y Muro', element: '#social-privacy-banner', description: 'Revisa si tu perfil es Público o Privado y cámbialo desde aquí. Además, desde Rutinas puedes elegir si tus sesiones se publican en "Todo el mundo", "Solo Amigos" o "No subir".' },
+      { title: 'Historias de 24 Horas', element: '#social-stories', description: 'Publica fotos o vídeos de entrenamiento que desaparecen a las 24 horas, visibles para toda la comunidad o solo para tus amigos.' },
+      { title: 'Muro, Ranking, Grupos y Más', element: '#social-tabs', description: 'Desliza entre el Muro, el Ranking Global (Top 50 por XP y racha), tu lista de Amigos, Grupos privados (Squads con código de invitación), Solicitudes y Búsqueda.' },
+      { title: 'Global, Mi Gimnasio y Amigos', element: '#social-feed-scopes', description: 'Cambia entre Global (entrenos públicos en "Todo el mundo"), Mi Gimnasio (vincula tu centro para descubrir atletas de tu mismo gimnasio o ciudad) y Amigos.' },
+      { title: 'Reacciones Rápidas, Rutinas e Histórico', element: '#social-feed-content', description: 'Da ánimo con reacciones de 1 toque (Fuego, Bestia, Respeto y PR), comenta, importa rutinas de otros atletas, envía solicitud rápida o carga publicaciones anteriores del histórico.' }
     ]
   },
   {

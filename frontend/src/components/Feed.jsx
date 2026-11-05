@@ -157,7 +157,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
             return memoryFeedCacheByScope[initialScope];
         }
         try {
-            const raw = sessionStorage.getItem(`pfg_social_feed_cache_v2_${initialScope}`);
+            const raw = sessionStorage.getItem(`pfg_social_feed_cache_v3_${initialScope}`);
             if (raw) {
                 const parsed = JSON.parse(raw);
                 if (Array.isArray(parsed) && parsed.length > 0) {
@@ -252,7 +252,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
             if (!includeOlder && targetGymFilter === 'all') {
                 memoryFeedCacheByScope[targetScope] = posts;
                 try {
-                    sessionStorage.setItem(`pfg_social_feed_cache_v2_${targetScope}`, JSON.stringify(posts.slice(0, 20)));
+                    sessionStorage.setItem(`pfg_social_feed_cache_v3_${targetScope}`, JSON.stringify(posts.slice(0, 20)));
                 } catch {}
             }
         } catch (error) {
@@ -481,7 +481,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
     const totalGymAthletes = (gymMeta?.sameGymCount || 0) + (gymMeta?.sameCityCount || 0);
 
     const renderScopeSelector = () => (
-        <div className="mb-5 sm:mb-6 space-y-3">
+        <div id="social-feed-scopes" className="mb-5 sm:mb-6 space-y-3">
             {/* Selector Rápido Deslizable: Global / Mi Gimnasio / Amigos */}
             <div
                 role="tablist"
@@ -819,65 +819,68 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
     return (
         <div className="w-full">
             {renderScopeSelector()}
-            {renderGymSection()}
+            <div id="social-feed-content" className="w-full">
+                {renderGymSection()}
 
-            {isLoading ? (
-                <div className="flex justify-center py-12">
-                    <Spinner size={30} />
-                </div>
-            ) : feed.length === 0 ? (
-                /* Si es Mi Gimnasio y aún no tiene gimnasio seleccionado, renderGymSection ya muestra la tarjeta principal */
-                scope === 'gym' && !myCurrentGym && !gymMeta?.hasGym ? null : (
-                    <GlassCard className="glass text-center p-7 sm:p-12 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[28px] sm:rounded-[32px] mt-2">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-black/5 dark:bg-white/5 rounded-[24px] flex items-center justify-center mb-5 text-text-muted">
-                            {scope === 'gym' ? (
-                                <FaBuilding className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-500" />
-                            ) : scope === 'friends' ? (
-                                <FaUsers className="w-7 h-7 sm:w-8 sm:h-8 text-blue-500" />
-                            ) : (
-                                <FaGlobeEurope className="w-7 h-7 sm:w-8 sm:h-8 text-accent" />
-                            )}
-                        </div>
-                        <p className="text-base sm:text-lg font-extrabold text-text-primary">
-                            {scope === 'gym'
-                                ? 'Aún no hay entrenamientos registrados en esta zona'
-                                : scope === 'friends'
-                                ? 'Sin actividad reciente de tus amigos'
-                                : 'Sin publicaciones recientes en la comunidad'}
-                        </p>
-                        <p className="text-xs sm:text-sm font-medium text-text-secondary mt-1.5 mb-6 max-w-md mx-auto leading-relaxed">
-                            {scope === 'gym'
-                                ? 'Sé el primero en registrar un entrenamiento en tu gimnasio o explora el muro Global para conectar con más atletas.'
-                                : scope === 'friends'
-                                ? 'Cambia a la pestaña Global o Mi Gimnasio para descubrir entrenamientos públicos y agregar compañeros.'
-                                : 'Completa tu próximo entrenamiento para inaugurar el muro de la comunidad.'}
-                        </p>
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                            {hasOlder && (
-                                <button
-                                    type="button"
-                                    onClick={() => loadFeed(true, scope, gymFilter)}
-                                    disabled={isLoadingOlder}
-                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-accent text-accent-contrast rounded-2xl font-bold text-xs sm:text-sm hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-accent/20 disabled:opacity-50"
-                                >
-                                    {isLoadingOlder ? <Spinner size={16} /> : <FaClock />}
-                                    <span>Cargar publicaciones anteriores</span>
-                                </button>
-                            )}
-                            {scope !== 'global' && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleScopeChange('global')}
-                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary rounded-2xl font-bold text-xs sm:text-sm transition-colors"
-                                >
-                                    <FaFire className="text-orange-500" />
-                                    <span>Ver Muro Global</span>
-                                </button>
-                            )}
-                        </div>
-                    </GlassCard>
-                )
-            ) : (
+                {isLoading ? (
+                    <div className="flex justify-center py-12">
+                        <Spinner size={30} />
+                    </div>
+                ) : feed.length === 0 ? (
+                    /* Si es Mi Gimnasio y aún no tiene gimnasio seleccionado, renderGymSection ya muestra la tarjeta principal */
+                    scope === 'gym' && !myCurrentGym && !gymMeta?.hasGym ? null : (
+                        <GlassCard className="glass text-center p-7 sm:p-12 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[28px] sm:rounded-[32px] mt-2">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-black/5 dark:bg-white/5 rounded-[24px] flex items-center justify-center mb-5 text-text-muted">
+                                {scope === 'gym' ? (
+                                    <FaBuilding className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-500" />
+                                ) : scope === 'friends' ? (
+                                    <FaUsers className="w-7 h-7 sm:w-8 sm:h-8 text-blue-500" />
+                                ) : (
+                                    <FaGlobeEurope className="w-7 h-7 sm:w-8 sm:h-8 text-accent" />
+                                )}
+                            </div>
+                            <p className="text-base sm:text-lg font-extrabold text-text-primary">
+                                {scope === 'gym'
+                                    ? 'Sin entrenamientos en los últimos 7 días en esta zona'
+                                    : scope === 'friends'
+                                    ? 'Sin actividad de tus amigos en los últimos 7 días'
+                                    : 'Sin publicaciones en los últimos 7 días'}
+                            </p>
+                            <p className="text-xs sm:text-sm font-medium text-text-secondary mt-1.5 mb-6 max-w-md mx-auto leading-relaxed">
+                                {hasOlder
+                                    ? 'Hay entrenamientos anteriores disponibles en el histórico. Pulsa el botón de abajo para ver todas las publicaciones anteriores.'
+                                    : scope === 'gym'
+                                    ? 'Sé el primero en registrar un entrenamiento en tu gimnasio o explora el muro Global para conectar con más atletas.'
+                                    : scope === 'friends'
+                                    ? 'Cambia a la pestaña Global o Mi Gimnasio para descubrir entrenamientos públicos y agregar compañeros.'
+                                    : 'Completa tu próximo entrenamiento en modo "Todo el mundo" para inaugurar el muro de la comunidad.'}
+                            </p>
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                                {hasOlder && (
+                                    <button
+                                        type="button"
+                                        onClick={() => loadFeed(true, scope, gymFilter)}
+                                        disabled={isLoadingOlder}
+                                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-accent text-accent-contrast rounded-2xl font-bold text-xs sm:text-sm hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-accent/20 disabled:opacity-50"
+                                    >
+                                        {isLoadingOlder ? <Spinner size={16} /> : <FaClock />}
+                                        <span>Cargar publicaciones anteriores</span>
+                                    </button>
+                                )}
+                                {scope !== 'global' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleScopeChange('global')}
+                                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary rounded-2xl font-bold text-xs sm:text-sm transition-colors"
+                                    >
+                                        <FaFire className="text-orange-500" />
+                                        <span>Ver Muro Global</span>
+                                    </button>
+                                )}
+                            </div>
+                        </GlassCard>
+                    )
+                ) : (
                 <div className="space-y-5 sm:space-y-7">
                     {(Array.isArray(feed) ? feed : []).map((log, index) => {
                         if (!log) return null;
@@ -1320,6 +1323,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                     )}
                 </div>
             )}
+            </div>
 
             {showGymModal && (
                 <React.Suspense fallback={null}>

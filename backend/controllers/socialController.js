@@ -712,14 +712,10 @@ export const getFeed = async (req, res) => {
             });
         }
 
-        // Ventana estricta de 7 días por defecto (y tope máximo de 30 días al cargar anteriores)
+        // Ventana estricta de 7 días por defecto (y acceso al histórico completo bajo demanda)
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         sevenDaysAgo.setHours(0, 0, 0, 0);
-
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        thirtyDaysAgo.setHours(0, 0, 0, 0);
 
         // Reglas estrictas de privacidad del muro:
         // - Global: SOLO entrenamientos en "Todo el mundo" (visibility === 'public')
@@ -764,11 +760,9 @@ export const getFeed = async (req, res) => {
             }
 
             if (isOlderCheck) {
-                clause.workout_date = { [Op.lt]: sevenDaysAgo, [Op.gte]: thirtyDaysAgo };
+                clause.workout_date = { [Op.lt]: sevenDaysAgo };
             } else if (withDateLimit) {
                 clause.workout_date = { [Op.gte]: sevenDaysAgo };
-            } else {
-                clause.workout_date = { [Op.gte]: thirtyDaysAgo };
             }
             return clause;
         };
