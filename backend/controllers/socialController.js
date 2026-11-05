@@ -699,7 +699,7 @@ export const getFeed = async (req, res) => {
                 where: { is_public_profile: true },
                 attributes: ['id']
             });
-            targetUserIds = Array.from(new Set([...publicUsers.map(u => u.id), ...friendsAndSelfIds]));
+            targetUserIds = Array.from(new Set([...publicUsers.map(u => u.id), userId]));
         }
 
         if (scope === 'gym' && !myGym) {
@@ -717,25 +717,51 @@ export const getFeed = async (req, res) => {
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         sevenDaysAgo.setHours(0, 0, 0, 0);
 
-        const visibilityConstraint =
-            scope === 'friends'
-                ? {
-                      [Op.or]: [{ visibility: 'friends' }, { visibility: 'public' }, { visibility: null }]
-                  }
-                : {
-                      [Op.or]: [
-                          { visibility: 'public' },
-                          { visibility: 'friends' },
-                          { visibility: null }
-                      ]
-                  };
+        // Reglas estrictas de privacidad del muro:
+        // - Global: SOLO entrenamientos en "Todo el mundo" (visibility === 'public')
+        // - Mi Gimnasio: entrenamientos en "Todo el mundo" (visibility === 'public'), o en "Solo Amigos" si además ese compañero ya es tu amigo
+        // - Amigos: entrenamientos de tus amigos y tuyos en "Solo Amigos" ('friends') o "Todo el mundo" ('public')
+        const buildWhereClause = (withDateLimit, isOlderCheck = false) => {
+            const safeTargetIds = targetUserIds.length > 0 ? targetUserIds : [-1];
+            let clause;
 
-        const buildWhereClause = (withDateLimit) => {
-            const clause = {
-                user_id: { [Op.in]: targetUserIds.length > 0 ? targetUserIds : [-1] },
-                ...visibilityConstraint
-            };
-            if (withDateLimit) {
+            if (scope === 'friends') {
+                clause = {
+                    user_id: { [Op.in]: safeTargetIds },
+                    [Op.or]: [{ visibility: 'friends' }, { visibility: 'public' }, { visibility: null }]
+                };
+            } else if (scope === 'gym') {
+                const gymFriendIds = safeTargetIds.filter(id => friendIdsSet.has(id) || id === userId);
+                if (gymFriendIds.length > 0) {
+                    clause = {
+                        [Op.or]: [
+                            {
+                                user_id: { [Op.in]: safeTargetIds },
+                                visibility: 'public'
+                            },
+                            {
+                                user_id: { [Op.in]: gymFriendIds },
+                                [Op.or]: [{ visibility: 'friends' }, { visibility: 'public' }, { visibility: null }]
+                            }
+                        ]
+                    };
+                } else {
+                    clause = {
+                        user_id: { [Op.in]: safeTargetIds },
+                        visibility: 'public'
+                    };
+                }
+            } else {
+                // scope === 'global' -> exclusivamente entrenamientos marcados como "Todo el mundo" ('public')
+                clause = {
+                    user_id: { [Op.in]: safeTargetIds },
+                    visibility: 'public'
+                };
+            }
+
+            if (isOlderCheck) {
+                clause.workout_date = { [Op.lt]: sevenDaysAgo };
+            } else if (withDateLimit) {
                 clause.workout_date = { [Op.gte]: sevenDaysAgo };
             }
             return clause;
@@ -920,11 +946,7 @@ export const getFeed = async (req, res) => {
         let hasOlderPosts = false;
         if (!effectiveIncludeOlder && targetUserIds.length > 0) {
             const olderLog = await WorkoutLog.findOne({
-                where: {
-                    user_id: { [Op.in]: targetUserIds },
-                    workout_date: { [Op.lt]: sevenDaysAgo },
-                    ...visibilityConstraint
-                },
+                where: buildWhereClause(false, true),
                 attributes: ['id']
             });
             hasOlderPosts = !!olderLog;
