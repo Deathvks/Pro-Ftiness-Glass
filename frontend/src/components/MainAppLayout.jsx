@@ -345,15 +345,20 @@ export default function MainAppLayout({
   // Workaround para re-calcular env(safe-area-inset-top) en iOS PWA al cambiar el tema
   useEffect(() => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    if (isStandalone) {
-      setTimeout(() => {
-        document.body.style.paddingTop = '1px';
+    if (!isStandalone) return;
+    let innerTimer = null;
+    const outerTimer = setTimeout(() => {
+      document.body.style.paddingTop = '1px';
+      innerTimer = setTimeout(() => {
+        document.body.style.paddingTop = '0px';
         window.dispatchEvent(new Event('resize'));
-        setTimeout(() => {
-          document.body.style.paddingTop = '0px';
-        }, 50);
-      }, 100);
-    }
+      }, 50);
+    }, 100);
+    return () => {
+      clearTimeout(outerTimer);
+      if (innerTimer) clearTimeout(innerTimer);
+      document.body.style.paddingTop = '0px';
+    };
   }, [activeTheme]);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -499,20 +504,45 @@ export default function MainAppLayout({
   useEffect(() => {
     const el = mobileHeaderRef.current;
     if (!el) return;
-    const updateHeight = () => {
-      if (el && el.offsetHeight > 0) {
-        setHeaderHeight(prev => (prev === el.offsetHeight ? prev : el.offsetHeight));
+
+    const resetContainerScrollDrift = () => {
+      if (window.scrollY !== 0 || document.documentElement.scrollTop !== 0 || document.body.scrollTop !== 0) {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }
+      const rootEl = document.getElementById('root');
+      if (rootEl && rootEl.scrollTop !== 0) rootEl.scrollTop = 0;
+      if (el.parentElement && el.parentElement.scrollTop !== 0) {
+        el.parentElement.scrollTop = 0;
       }
     };
+
+    const updateHeight = () => {
+      resetContainerScrollDrift();
+      if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+        setHeaderHeight(prev => (prev === 0 ? prev : 0));
+        return;
+      }
+      const h = el ? el.offsetHeight : 0;
+      if (h > 0) {
+        setHeaderHeight(prev => (prev === h ? prev : h));
+      } else {
+        setHeaderHeight(prev => (prev === 0 ? prev : 0));
+      }
+    };
+
     updateHeight();
     const ro = new ResizeObserver(updateHeight);
     ro.observe(el);
     window.addEventListener('resize', updateHeight);
+    window.addEventListener('focusout', resetContainerScrollDrift);
     return () => {
       ro.disconnect();
       window.removeEventListener('resize', updateHeight);
+      window.removeEventListener('focusout', resetContainerScrollDrift);
     };
-  }, []);
+  }, [view]);
 
   useEffect(() => {
     const node = mainContentRef?.current;
@@ -599,17 +629,6 @@ export default function MainAppLayout({
 
     updateOnScroll();
     node.addEventListener('scroll', handleScroll, { passive: true });
-
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    if (isStandalone) {
-      setTimeout(() => {
-        document.body.style.paddingTop = '1px';
-        window.dispatchEvent(new Event('resize'));
-        setTimeout(() => {
-          document.body.style.paddingTop = '0px';
-        }, 50);
-      }, 100);
-    }
 
     return () => {
       node.removeEventListener('scroll', handleScroll);
@@ -1498,11 +1517,11 @@ export default function MainAppLayout({
             if (mainContentRef) mainContentRef.current = el;
             swipeContainerRef.current = el;
           }}
-          className="flex-1 overflow-y-auto overflow-x-hidden relative pt-[calc(var(--safe-top,0px)+8rem)] md:pt-4"
+          className="flex-1 overflow-y-auto overflow-x-hidden relative pt-[var(--mobile-header-pt,calc(var(--safe-top,0px)+5.25rem))] md:pt-4"
           style={{
             backgroundColor: 'transparent',
             touchAction: 'pan-y',
-            ...(headerHeight > 0 ? { paddingTop: `${headerHeight + 16}px` } : {})
+            ...(headerHeight > 0 ? { '--mobile-header-pt': `${headerHeight + 4}px` } : {})
           }}
           onTouchStart={handleContentTouchStart}
           onTouchMove={handleContentTouchMove}
