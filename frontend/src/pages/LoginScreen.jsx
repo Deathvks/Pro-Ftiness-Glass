@@ -19,17 +19,17 @@ import { useLocation, Link } from 'react-router-dom';
 import { preloadViewChunk } from '../App';
 
 const SplitLayout = ({ children, onShowPolicy }) => (
-    <div className="auth-container flex flex-col lg:flex-row w-full h-[100dvh] min-h-[100dvh] bg-bg-primary overflow-hidden">
+    <div className="auth-container flex flex-col lg:flex-row w-full flex-1 h-full min-h-0 bg-bg-primary overflow-hidden">
         
         {/* Panel Izquierdo (PC / Tablet horizontal) - Showcase con scroll adaptativo si el viewport es bajo */}
-        <div className="hidden lg:flex flex-col justify-start xl:justify-center items-center w-[32%] xl:w-[30%] h-full relative border-r border-glass-border p-6 xl:p-8 overflow-y-auto custom-scrollbar shrink-0 bg-bg-primary">
+        <div className="hidden lg:block lg:w-[36%] xl:w-[32%] h-full min-h-0 relative border-r border-glass-border p-6 xl:p-8 overflow-y-auto overscroll-y-contain custom-scrollbar shrink-0 bg-bg-primary" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
 
             <div className="absolute top-1/4 -left-10 w-48 h-48 bg-accent/30 rounded-full mix-blend-screen filter blur-[60px] animate-[pulse_4s_ease-in-out_infinite]"></div>
             <div className="absolute bottom-10 -right-10 w-64 h-64 bg-[#3b82f6]/20 rounded-full mix-blend-screen filter blur-[80px] animate-[pulse_5s_ease-in-out_infinite]"></div>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 bg-[#a855f7]/20 rounded-full mix-blend-screen filter blur-[80px] animate-[pulse_6s_ease-in-out_infinite]"></div>
 
-            <div className="relative z-10 w-full max-w-[400px] flex flex-col items-center my-auto py-4">
+            <div className="relative z-10 w-full max-w-[400px] mx-auto flex flex-col items-center pt-4 xl:pt-6 pb-10">
                 <h2 className="text-3xl xl:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-accent mb-3 xl:mb-4 text-center tracking-tight drop-shadow-sm">Pro Fitness Glass</h2>
 
                 <div className="mb-6 xl:mb-8 w-full flex justify-center">
@@ -76,18 +76,18 @@ const SplitLayout = ({ children, onShowPolicy }) => (
         </div>
 
         {/* Panel Derecho (Móvil, Tablet y PC) - Scroll propio con gestión de áreas seguras y sin cortes */}
-        <div className="flex-1 w-full lg:w-[68%] xl:w-[70%] h-full overflow-y-auto relative z-10 bg-bg-primary custom-scrollbar flex flex-col">
-            <div className="absolute inset-0 lg:hidden bg-gradient-to-b from-accent/5 to-transparent pointer-events-none min-h-[100dvh]"></div>
+        <div className="flex-1 min-h-0 w-full lg:w-[64%] xl:w-[68%] h-full overflow-y-auto overscroll-y-contain relative z-10 bg-bg-primary custom-scrollbar" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-64 lg:hidden bg-gradient-to-b from-accent/5 to-transparent"></div>
 
             {/* Contenedor que centra si sobra espacio, baja el padding superior por debajo del Notch de iOS y da amplio padding inferior */}
             <div 
-                className="flex flex-col min-h-full w-full px-4 sm:px-6 lg:px-8 justify-start lg:justify-center items-center"
+                className="flex flex-col w-full px-4 sm:px-6 lg:px-8 justify-start items-center pt-4 sm:pt-6 lg:pt-8"
                 style={{ 
-                    paddingTop: 'calc(1.5rem + var(--safe-top))', 
-                    paddingBottom: 'calc(5rem + var(--safe-bottom))' 
+
+                    paddingBottom: 'calc(5.5rem + var(--safe-bottom, env(safe-area-inset-bottom, 0px)))' 
                 }}
             >
-                <div className="my-auto mx-auto w-full max-w-md text-center relative z-10 animate-[fade-in_0.5s_ease-out] py-4">
+                <div className="mx-auto w-full max-w-md md:max-w-lg lg:max-w-md text-center relative z-10 animate-[fade-in_0.5s_ease-out] pb-4">
                     {children}
 
                     {/* Texto informativo de aceptación de políticas */}
