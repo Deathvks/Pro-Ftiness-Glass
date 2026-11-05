@@ -1,25 +1,50 @@
 /* frontend/src/components/Feed.jsx */
-import React, { useState, useEffect, useRef } from 'react';
-import { Activity, Clock, Zap, Heart, MessageCircle, Send, Trash2, Dumbbell, Download, Flame } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+    FaFire,
+    FaGlobeEurope,
+    FaMapMarkerAlt,
+    FaUsers,
+    FaDumbbell,
+    FaUserPlus,
+    FaCheck,
+    FaClock,
+    FaCity,
+    FaBuilding,
+    FaBolt,
+    FaHeart,
+    FaRegHeart,
+    FaCommentDots,
+    FaPaperPlane,
+    FaTrashAlt,
+    FaDownload,
+    FaExchangeAlt,
+    FaCheckCircle,
+    FaSearch
+} from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import GlassCard from './GlassCard';
 import Spinner from './Spinner';
 import UserAvatar from './UserAvatar';
 import ConfirmationModal from './ConfirmationModal';
 import socialService from '../services/socialService';
+import * as userService from '../services/userService';
 import { forkRoutine } from '../services/routineService';
+import { enrichGymWithMedia } from '../utils/gymMedia';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '../hooks/useToast';
 import { getSocket } from '../services/socket';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
+const GymLocationModal = React.lazy(() => import('./GymLocationModal'));
+
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 const SERVER_URL = API_URL.replace('/api', '');
 
 const getFullImageUrl = (path) => {
     if (!path) return null;
-    if (path.startsWith('http')) return path; 
-    if (path.startsWith('blob:')) return path; 
+    if (path.startsWith('http')) return path;
+    if (path.startsWith('blob:')) return path;
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     return `${SERVER_URL}${cleanPath}`;
 };
@@ -91,67 +116,141 @@ const formatDuration = (seconds) => {
     return `${m} min`;
 };
 
-let memoryFeedCache = null;
+const memoryFeedCacheByScope = {
+    global: null,
+    gym: null,
+    friends: null
+};
+let memoryGymMetaCache = null;
+
+const parseProfileGym = (raw) => {
+    if (!raw) return null;
+    try {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        return parsed && typeof parsed === 'object' && (parsed.name || parsed.city) ? parsed : null;
+    } catch {
+        return null;
+    }
+};
 
 export default function Feed({ setView, visibleStories = [], myStories = [] }) {
-    const [feed, setFeed] = useState(() => {
-        if (Array.isArray(memoryFeedCache) && memoryFeedCache.length > 0) return memoryFeedCache;
+    const [scope, setScope] = useState(() => {
         try {
-            const raw = sessionStorage.getItem("pfg_social_feed_cache");
+            const saved = localStorage.getItem('pfg_social_feed_scope');
+            if (saved && ['global', 'gym', 'friends'].includes(saved)) return saved;
+        } catch {}
+        return 'global';
+    });
+    const [gymFilter, setGymFilter] = useState('all'); // 'all' | 'same_gym' | 'same_city'
+
+    const [feed, setFeed] = useState(() => {
+        const initialScope = (() => {
+            try {
+                const saved = localStorage.getItem('pfg_social_feed_scope');
+                if (saved && ['global', 'gym', 'friends'].includes(saved)) return saved;
+            } catch {}
+            return 'global';
+        })();
+        if (Array.isArray(memoryFeedCacheByScope[initialScope]) && memoryFeedCacheByScope[initialScope].length > 0) {
+            return memoryFeedCacheByScope[initialScope];
+        }
+        try {
+            const raw = sessionStorage.getItem(`pfg_social_feed_cache_${initialScope}`);
             if (raw) {
                 const parsed = JSON.parse(raw);
                 if (Array.isArray(parsed) && parsed.length > 0) {
-                    memoryFeedCache = parsed;
+                    memoryFeedCacheByScope[initialScope] = parsed;
                     return parsed;
                 }
             }
-        } catch {
-            try { sessionStorage.removeItem("pfg_social_feed_cache"); } catch {}
-        }
+        } catch {}
         return [];
     });
+
+    const [gymMeta, setGymMeta] = useState(() => memoryGymMetaCache);
     const [isLoading, setIsLoading] = useState(() => {
-        if (memoryFeedCache && memoryFeedCache.length > 0) return false;
-        try {
-            return !sessionStorage.getItem("pfg_social_feed_cache");
-        } catch {
-            return true;
-        }
+        const initialScope = (() => {
+            try {
+                const saved = localStorage.getItem('pfg_social_feed_scope');
+                if (saved && ['global', 'gym', 'friends'].includes(saved)) return saved;
+            } catch {}
+            return 'global';
+        })();
+        return !(Array.isArray(memoryFeedCacheByScope[initialScope]) && memoryFeedCacheByScope[initialScope].length > 0);
     });
+
     const [hasOlder, setHasOlder] = useState(false);
     const [isLoadingOlder, setIsLoadingOlder] = useState(false);
     const [isShowingOlder, setIsShowingOlder] = useState(false);
     const isShowingOlderRef = useRef(false);
+    const scopeRef = useRef(scope);
+    const gymFilterRef = useRef(gymFilter);
 
     const [activeCommentInput, setActiveCommentInput] = useState({});
     const [showComments, setShowComments] = useState({});
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [commentToDelete, setCommentToDelete] = useState(null);
-    
-    const { userProfile, exercises } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, exercises: state.exercises })));
+    const [pendingRequestsLocal, setPendingRequestsLocal] = useState({});
+    const [sendingRequestId, setSendingRequestId] = useState(null);
+    const [showGymModal, setShowGymModal] = useState(false);
+
+    const { userProfile, exercises, sendFriendRequest } = useAppStore(
+        useShallow(state => ({
+            userProfile: state.userProfile,
+            exercises: state.exercises,
+            sendFriendRequest: state.sendFriendRequest
+        }))
+    );
     const { showToast } = useToast();
     const { t } = useTranslation('exercise_names');
 
-    const loadFeed = async (includeOlder = false) => {
+    const myCurrentGym = useMemo(() => {
+        const fromProfile = parseProfileGym(userProfile?.gym_data);
+        if (fromProfile) return enrichGymWithMedia(fromProfile);
+        if (gymMeta?.myGym) return enrichGymWithMedia(gymMeta.myGym);
+        try {
+            const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
+            const raw = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
+            if (raw) return enrichGymWithMedia(JSON.parse(raw));
+        } catch {}
+        return null;
+    }, [userProfile?.gym_data, userProfile?.id, gymMeta?.myGym]);
+
+    const loadFeed = async (includeOlder = false, targetScope = scopeRef.current, targetGymFilter = gymFilterRef.current) => {
         try {
             if (includeOlder) {
                 setIsLoadingOlder(true);
-            } else if (!memoryFeedCache || memoryFeedCache.length === 0) {
-                setIsLoading(true);
+            } else {
+                const cached = memoryFeedCacheByScope[targetScope];
+                if (!cached || cached.length === 0 || targetScope === 'gym') {
+                    setIsLoading(true);
+                }
             }
 
-            const data = await socialService.getFeed({ includeOlder });
+            const data = await socialService.getFeed({
+                scope: targetScope,
+                gymFilter: targetScope === 'gym' ? targetGymFilter : 'all',
+                includeOlder
+            });
+
             const posts = Array.isArray(data) ? data : (data?.feed || []);
             const olderAvailable = Array.isArray(data) ? false : !!data?.hasOlder;
+            const effectiveOlder = Array.isArray(data) ? includeOlder : (data?.isShowingOlder ?? includeOlder);
+
+            if (data?.gymMeta) {
+                memoryGymMetaCache = data.gymMeta;
+                setGymMeta(data.gymMeta);
+            }
 
             setFeed(posts);
             setHasOlder(olderAvailable);
-            setIsShowingOlder(includeOlder);
-            isShowingOlderRef.current = includeOlder;
-            if (!includeOlder && posts.length > 0) {
-                memoryFeedCache = posts;
+            setIsShowingOlder(effectiveOlder);
+            isShowingOlderRef.current = effectiveOlder;
+
+            if (!includeOlder && targetGymFilter === 'all') {
+                memoryFeedCacheByScope[targetScope] = posts;
                 try {
-                    sessionStorage.setItem("pfg_social_feed_cache", JSON.stringify(posts.slice(0, 20)));
+                    sessionStorage.setItem(`pfg_social_feed_cache_${targetScope}`, JSON.stringify(posts.slice(0, 20)));
                 } catch {}
             }
         } catch (error) {
@@ -164,23 +263,113 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
     };
 
     useEffect(() => {
-        loadFeed(false);
-        const socket = getSocket();
+        scopeRef.current = scope;
+        gymFilterRef.current = gymFilter;
+        try {
+            localStorage.setItem('pfg_social_feed_scope', scope);
+        } catch {}
 
+        const cached = memoryFeedCacheByScope[scope];
+        if (Array.isArray(cached) && cached.length > 0 && gymFilter === 'all') {
+            setFeed(cached);
+            setIsLoading(false);
+        }
+
+        loadFeed(false, scope, gymFilter);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [scope, gymFilter]);
+
+    useEffect(() => {
+        const socket = getSocket();
         if (socket) {
-            const handleFeedUpdate = () => loadFeed(isShowingOlderRef.current);
+            const handleFeedUpdate = () => loadFeed(isShowingOlderRef.current, scopeRef.current, gymFilterRef.current);
             socket.on('feed_update', handleFeedUpdate);
             return () => socket.off('feed_update', handleFeedUpdate);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const handleScopeChange = (newScope) => {
+        if (newScope === scope) return;
+        setScope(newScope);
+        setIsShowingOlder(false);
+        isShowingOlderRef.current = false;
+    };
+
+    const handleSaveGymFromFeed = async (gymData) => {
+        try {
+            const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
+            const enriched = enrichGymWithMedia(gymData);
+            localStorage.setItem(userKey, JSON.stringify(enriched));
+            localStorage.setItem('user_gym', JSON.stringify(enriched));
+            if (typeof useAppStore.getState().setUserProfile === 'function') {
+                const cur = useAppStore.getState().userProfile;
+                if (cur) useAppStore.getState().setUserProfile({ ...cur, gym_data: enriched });
+            }
+            window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: enriched }));
+            await userService.updateUserProfile({ gym_data: enriched });
+            showToast(`Gimnasio actualizado: ${enriched.name}`, 'success');
+            setShowGymModal(false);
+            memoryFeedCacheByScope.gym = null;
+            await loadFeed(false, scopeRef.current, gymFilterRef.current);
+        } catch (err) {
+            console.warn('Error al guardar gimnasio desde el muro:', err);
+            showToast('Error al guardar el gimnasio', 'error');
+        }
+    };
+
+    const handleRemoveGymFromFeed = async () => {
+        try {
+            const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
+            localStorage.removeItem(userKey);
+            localStorage.removeItem('user_gym');
+            useAppStore.setState((s) => ({
+                userProfile: s.userProfile ? { ...s.userProfile, gym_data: null } : null
+            }));
+            window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: null }));
+            await userService.updateUserProfile({ gym_data: null });
+            memoryGymMetaCache = null;
+            setGymMeta(null);
+            setShowGymModal(false);
+            showToast('Gimnasio desvinculado', 'info');
+            await loadFeed(false, scopeRef.current, gymFilterRef.current);
+        } catch (err) {
+            showToast('Error al desvincular gimnasio', 'error');
+        }
+    };
+
+    const handleQuickFriendRequest = async (e, targetUserId) => {
+        e.stopPropagation();
+        if (!targetUserId || sendingRequestId === targetUserId || pendingRequestsLocal[targetUserId]) return;
+        setSendingRequestId(targetUserId);
+        try {
+            let ok = false;
+            if (typeof sendFriendRequest === 'function') {
+                ok = await sendFriendRequest(targetUserId);
+            } else {
+                await socialService.sendFriendRequest(targetUserId);
+                ok = true;
+            }
+            if (ok) {
+                setPendingRequestsLocal(prev => ({ ...prev, [targetUserId]: true }));
+                showToast('Solicitud de amistad enviada', 'success');
+            } else {
+                showToast('No se pudo enviar la solicitud', 'error');
+            }
+        } catch {
+            showToast('No se pudo enviar la solicitud', 'error');
+        } finally {
+            setSendingRequestId(null);
+        }
+    };
 
     const handleToggleLike = async (workoutId) => {
         if (isActionLoading) return;
         setIsActionLoading(true);
         try {
             await socialService.toggleLike(workoutId);
-            await loadFeed(isShowingOlderRef.current);
-        } catch (error) {
+            await loadFeed(isShowingOlderRef.current, scopeRef.current, gymFilterRef.current);
+        } catch {
             showToast('Error al dar me gusta', 'error');
         } finally {
             setIsActionLoading(false);
@@ -197,8 +386,8 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
             await socialService.addComment(workoutId, text);
             setActiveCommentInput(prev => ({ ...prev, [workoutId]: '' }));
             setShowComments(prev => ({ ...prev, [workoutId]: true }));
-            await loadFeed(isShowingOlderRef.current);
-        } catch (error) {
+            await loadFeed(isShowingOlderRef.current, scopeRef.current, gymFilterRef.current);
+        } catch {
             showToast('Error al comentar', 'error');
         } finally {
             setIsActionLoading(false);
@@ -210,9 +399,9 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
         setIsActionLoading(true);
         try {
             await socialService.deleteComment(commentToDelete.commentId);
-            await loadFeed(isShowingOlderRef.current);
+            await loadFeed(isShowingOlderRef.current, scopeRef.current, gymFilterRef.current);
             showToast('Comentario eliminado con éxito', 'success');
-        } catch (error) {
+        } catch {
             showToast('Error al borrar el comentario', 'error');
         } finally {
             setIsActionLoading(false);
@@ -235,297 +424,808 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
         }
     };
 
-    const goToProfile = (userId) => { 
-        if (userId === userProfile?.id) setView('profile'); 
-        else setView('publicProfile', { userId }); 
+    const goToProfile = (userId) => {
+        if (userId === userProfile?.id) setView('profile');
+        else setView('publicProfile', { userId });
     };
 
-    if (isLoading) return <div className="flex justify-center py-10"><Spinner size={30} /></div>;
-    
-    if (feed.length === 0) return (
-        <GlassCard className="glass text-center p-8 sm:p-14 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] mt-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-black/5 dark:bg-white/5 rounded-[24px] flex items-center justify-center mb-5 text-text-muted">
-                <Clock size={32} />
-            </div>
-            <p className="text-lg font-bold text-text-primary">Sin actividad en los últimos 7 días</p>
-            <p className="text-sm font-medium text-text-secondary mt-1.5 mb-6 max-w-sm mx-auto">
-                No hay entrenamientos recientes de tus amigos ni tuyos esta semana.
-            </p>
-            {hasOlder ? (
+    const filteredGymMembers = useMemo(() => {
+        const list = Array.isArray(gymMeta?.gymMembers) ? gymMeta.gymMembers : [];
+        if (gymFilter === 'same_gym') return list.filter(m => m.matchType === 'same_gym');
+        if (gymFilter === 'same_city') return list.filter(m => m.matchType === 'same_city');
+        return list;
+    }, [gymMeta?.gymMembers, gymFilter]);
+
+    const totalGymAthletes = (gymMeta?.sameGymCount || 0) + (gymMeta?.sameCityCount || 0);
+
+    const renderScopeSelector = () => (
+        <div className="mb-5 sm:mb-6 space-y-3">
+            {/* Selector Rápido: Global / Mi Gimnasio / Amigos */}
+            <div
+                role="tablist"
+                aria-label="Filtro del Muro de Comunidad"
+                className="grid grid-cols-3 gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-[22px] sm:rounded-[26px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10"
+            >
                 <button
-                    onClick={() => loadFeed(true)}
-                    disabled={isLoadingOlder}
-                    className="inline-flex items-center gap-2 px-6 py-3.5 bg-accent text-accent-contrast rounded-2xl font-bold text-sm hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-accent/20 disabled:opacity-50"
+                    type="button"
+                    role="tab"
+                    aria-selected={scope === 'global'}
+                    onClick={() => handleScopeChange('global')}
+                    className={`flex items-center justify-center gap-1.5 sm:gap-2.5 py-2.5 sm:py-3 px-2 sm:px-4 rounded-[16px] sm:rounded-[20px] font-extrabold text-xs sm:text-sm transition-all duration-200 outline-none active:scale-[0.98] min-w-0 ${
+                        scope === 'global'
+                            ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25'
+                            : 'text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5'
+                    }`}
                 >
-                    {isLoadingOlder ? <Spinner size={16} /> : <Clock size={16} />}
-                    <span>Cargar más (publicaciones anteriores)</span>
+                    <FaFire className={`shrink-0 text-xs sm:text-sm ${scope === 'global' ? 'text-accent-contrast' : 'text-orange-500'}`} />
+                    <span className="truncate">Global</span>
+                    <span className={`hidden md:inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        scope === 'global' ? 'bg-black/15 text-accent-contrast' : 'bg-black/5 dark:bg-white/10 text-text-muted'
+                    }`}>
+                        Comunidad
+                    </span>
                 </button>
-            ) : (
-                <p className="text-xs font-medium text-text-muted">¡Sigue a más amigos o registra tu primer entrenamiento!</p>
+
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={scope === 'gym'}
+                    onClick={() => handleScopeChange('gym')}
+                    className={`flex items-center justify-center gap-1.5 sm:gap-2.5 py-2.5 sm:py-3 px-2 sm:px-4 rounded-[16px] sm:rounded-[20px] font-extrabold text-xs sm:text-sm transition-all duration-200 outline-none active:scale-[0.98] min-w-0 ${
+                        scope === 'gym'
+                            ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25'
+                            : 'text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5'
+                    }`}
+                >
+                    <FaMapMarkerAlt className={`shrink-0 text-xs sm:text-sm ${scope === 'gym' ? 'text-accent-contrast' : 'text-emerald-500'}`} />
+                    <span className="truncate">Mi Gimnasio</span>
+                    {totalGymAthletes > 0 && (
+                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0 ${
+                            scope === 'gym' ? 'bg-black/20 text-accent-contrast' : 'bg-emerald-500/15 text-emerald-500'
+                        }`}>
+                            {totalGymAthletes}
+                        </span>
+                    )}
+                </button>
+
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={scope === 'friends'}
+                    onClick={() => handleScopeChange('friends')}
+                    className={`flex items-center justify-center gap-1.5 sm:gap-2.5 py-2.5 sm:py-3 px-2 sm:px-4 rounded-[16px] sm:rounded-[20px] font-extrabold text-xs sm:text-sm transition-all duration-200 outline-none active:scale-[0.98] min-w-0 ${
+                        scope === 'friends'
+                            ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25'
+                            : 'text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5'
+                    }`}
+                >
+                    <FaUsers className={`shrink-0 text-xs sm:text-sm ${scope === 'friends' ? 'text-accent-contrast' : 'text-blue-500'}`} />
+                    <span className="truncate">Amigos</span>
+                </button>
+            </div>
+
+            {/* Sub-barra contextual según el modo activo */}
+            {scope === 'global' && (
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 rounded-[18px] bg-black/[0.03] dark:bg-white/[0.03] ring-1 ring-black/5 dark:ring-white/10 text-xs text-text-secondary">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <FaGlobeEurope className="text-accent shrink-0 text-sm" />
+                        <span className="font-semibold truncate">
+                            Entrenos públicos, rutinas y debates de toda la comunidad
+                        </span>
+                    </div>
+                    {myCurrentGym?.name ? (
+                        <button
+                            type="button"
+                            onClick={() => handleScopeChange('gym')}
+                            className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-accent hover:underline shrink-0"
+                        >
+                            <FaMapMarkerAlt className="text-[10px]" />
+                            <span className="truncate max-w-[160px] sm:max-w-[220px]">{myCurrentGym.name}</span>
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => setShowGymModal(true)}
+                            className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-accent hover:underline shrink-0"
+                        >
+                            <FaMapMarkerAlt className="text-[10px]" />
+                            <span>Vincular mi gym</span>
+                        </button>
+                    )}
+                </div>
             )}
-        </GlassCard>
+
+            {scope === 'friends' && (
+                <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 rounded-[18px] bg-black/[0.03] dark:bg-white/[0.03] ring-1 ring-black/5 dark:ring-white/10 text-xs text-text-secondary">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <FaUsers className="text-blue-500 shrink-0 text-sm" />
+                        <span className="font-semibold truncate">
+                            Mostrando entrenamientos de tus amigos y tu propia actividad
+                        </span>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => handleScopeChange('global')}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-accent hover:underline shrink-0"
+                    >
+                        <FaFire className="text-[10px]" />
+                        <span>Explorar Global</span>
+                    </button>
+                </div>
+            )}
+        </div>
     );
 
-    return (
-        <div className="space-y-6 sm:space-y-8">
-            {(Array.isArray(feed) ? feed : []).map((log, index) => {
-                if (!log) return null;
-                const isMe = log.user_id === userProfile?.id;
-                const authorUser = isMe
-                    ? { ...log.user, ...userProfile, role: userProfile?.role || log.user?.role, trainer_id: userProfile?.trainer_id ?? log.user?.trainer_id }
-                    : (log.user || {});
-                const avatarUrl = getFullImageUrl(authorUser?.profile_image_url);
-                const comments = Array.isArray(log.Comments) ? log.Comments : [];
-                
-                // Determinamos si el usuario del post tiene una historia activa de forma ultra-segura
-                const hasStory = isMe 
-                    ? (Array.isArray(myStories) && myStories.length > 0) 
-                    : (Array.isArray(visibleStories) && visibleStories.some(s => s && (s.userId === log.user_id || s.user_id === log.user_id) && Array.isArray(s.items) && s.items.length > 0));
+    const renderGymSection = () => {
+        if (scope !== 'gym') return null;
 
-                // Clases del borde: si tiene historia -> borde naranja (accent). Si no -> sin borde adicional.
-                const ringClass = hasStory ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : "";
+        if (!myCurrentGym && !gymMeta?.hasGym) {
+            return (
+                <GlassCard className="glass p-6 sm:p-10 rounded-[28px] sm:rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 text-center mb-6">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-[24px] bg-accent/10 text-accent ring-1 ring-accent/30 flex items-center justify-center mb-4 shadow-inner">
+                        <FaMapMarkerAlt className="w-7 h-7 sm:w-8 sm:h-8" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-extrabold text-text-primary">
+                        Descubre quién entrena en tu gimnasio o ciudad
+                    </h3>
+                    <p className="text-xs sm:text-sm font-medium text-text-secondary mt-2 max-w-md mx-auto leading-relaxed">
+                        Vincula tu gimnasio habitual en un toque para ver los entrenamientos, récords y rutinas de atletas de tu mismo centro o de tu ciudad.
+                    </p>
+                    <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setShowGymModal(true)}
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl bg-accent text-accent-contrast font-extrabold text-sm shadow-lg shadow-accent/25 hover:brightness-110 active:scale-95 transition-all"
+                        >
+                            <FaMapMarkerAlt className="text-sm" />
+                            <span>Seleccionar mi gimnasio</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleScopeChange('global')}
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary font-bold text-xs sm:text-sm transition-colors"
+                        >
+                            <FaFire className="text-orange-500 text-xs" />
+                            <span>Ver muro Global</span>
+                        </button>
+                    </div>
+                </GlassCard>
+            );
+        }
 
-                // Indicador visual de publicaciones más antiguas de 7 días cuando se despliegan
-                const isOlder = isOlderThan7Days(log.workout_date);
-                const prevLog = index > 0 ? feed[index - 1] : null;
-                const prevIsOlder = prevLog ? isOlderThan7Days(prevLog.workout_date) : false;
-                const showOlderDivider = isShowingOlder && isOlder && (!prevLog || !prevIsOlder);
+        const activeGym = gymMeta?.myGym || myCurrentGym || {};
+        const sameGymCount = gymMeta?.sameGymCount || 0;
+        const sameCityCount = gymMeta?.sameCityCount || 0;
 
-                return (
-                    <React.Fragment key={log.id}>
-                        {showOlderDivider && (
-                            <div className="flex items-center gap-3 py-2 my-2 animate-[fade-in_0.3s_ease-out]">
-                                <div className="flex-1 h-px bg-black/10 dark:bg-white/10"></div>
-                                <span className="text-[11px] sm:text-xs font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5 px-3.5 py-1.5 bg-black/5 dark:bg-white/5 rounded-full ring-1 ring-black/5 dark:ring-white/10">
-                                    <Clock size={13} className="text-accent" /> Publicaciones de más de 7 días
-                                </span>
-                                <div className="flex-1 h-px bg-black/10 dark:bg-white/10"></div>
+        return (
+            <div className="space-y-4 mb-6">
+                {/* Cabecera del Gimnasio Actual + Subfiltros */}
+                <GlassCard className="glass p-4 sm:p-6 rounded-[26px] sm:rounded-[30px] border-none ring-1 ring-black/5 dark:ring-white/10">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+                        <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-[16px] bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30 flex items-center justify-center shrink-0">
+                                <FaDumbbell className="w-5 h-5" />
                             </div>
-                        )}
-                        <GlassCard className="glass p-5 sm:p-6 md:p-8 flex flex-col gap-5 animate-[fade-in_0.3s_ease-out] border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px] hover:shadow-xl transition-all duration-300">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4 cursor-pointer group" onClick={() => goToProfile(log.user_id)}>
-                                <UserAvatar 
-                                    user={{ ...authorUser, profile_image_url: avatarUrl }} 
-                                    size={12} 
-                                    className={`w-12 h-12 sm:w-14 sm:h-14 shadow-md shrink-0 transition-transform group-hover:scale-105 ${ringClass}`} 
-                                />
-                                <div className="min-w-0">
-                                    <p className="font-bold text-text-primary text-base sm:text-lg truncate group-hover:text-accent transition-colors">
-                                        {authorUser?.username || 'Usuario'} {isMe && <span className="text-text-tertiary font-medium ml-1 text-xs sm:text-sm">(Tú)</span>}
-                                    </p>
-                                    <div className="flex items-center gap-2 mt-0.5 min-w-0">
-                                        <p className="text-xs sm:text-sm text-text-secondary font-medium truncate">{timeAgo(log.workout_date)}</p>
-                                        <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs text-orange-500 font-bold shrink-0" title="Racha de entrenamientos">
-                                            <Flame size={12} fill="currentColor" /> {authorUser?.streak ?? 0}
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    <h3 className="text-sm sm:text-base font-extrabold text-text-primary truncate">
+                                        {activeGym.name || 'Mi Gimnasio'}
+                                    </h3>
+                                    {activeGym.isVerified && (
+                                        <FaCheckCircle className="text-accent shrink-0 text-xs" title="Gimnasio verificado" />
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5 text-[11px] sm:text-xs font-semibold text-text-secondary">
+                                    {activeGym.city && (
+                                        <span className="inline-flex items-center gap-1 truncate">
+                                            <FaCity className="text-text-muted text-[10px]" />
+                                            <span>{activeGym.city}</span>
                                         </span>
-                                    </div>
+                                    )}
+                                    <span className="inline-flex items-center gap-1 text-emerald-500 font-bold">
+                                        <FaDumbbell className="text-[10px]" />
+                                        <span>{sameGymCount} en tu gym</span>
+                                    </span>
+                                    {sameCityCount > 0 && (
+                                        <span className="inline-flex items-center gap-1 text-blue-400 font-bold">
+                                            <FaMapMarkerAlt className="text-[10px]" />
+                                            <span>{sameCityCount} en tu ciudad</span>
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-black/5 dark:bg-white/5 rounded-[24px] p-4 sm:p-5 border-none ring-1 ring-black/5 dark:ring-white/10">
-                            <div className="flex items-start sm:items-center justify-between gap-3 mb-3">
-                                <h4 className="font-bold text-text-primary text-sm sm:text-base flex items-start sm:items-center gap-2">
-                                    <span className="text-accent shrink-0">💪</span> 
-                                    <span className="line-clamp-2 leading-tight">Completó: {log.routine?.name || log.routine_name || 'Entrenamiento libre'}</span>
-                                </h4>
-                                {log.routine_id && !isMe && (
-                                    <button 
-                                        onClick={() => handleImportRoutine(log.routine_id)}
-                                        disabled={isActionLoading}
-                                        className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-accent/10 text-accent rounded-[14px] hover:bg-accent hover:text-accent-contrast transition-all text-[10px] sm:text-xs font-bold disabled:opacity-50 hover:shadow-md"
-                                        title="Importar Rutina"
-                                    >
-                                        <Download size={14} />
-                                        <span className="hidden sm:inline">Importar</span>
-                                    </button>
-                                )}
+                        <button
+                            type="button"
+                            onClick={() => setShowGymModal(true)}
+                            className="self-start sm:self-center inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary text-xs font-bold transition-colors shrink-0 ring-1 ring-black/5 dark:ring-white/10"
+                        >
+                            <FaExchangeAlt className="text-[11px] text-accent" />
+                            <span>Cambiar gym</span>
+                        </button>
+                    </div>
+
+                    {/* Píldoras de subfiltro: Todo / Mismo Gym / Mi Ciudad */}
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-4 pt-3.5 border-t border-black/5 dark:border-white/10">
+                        <button
+                            type="button"
+                            onClick={() => setGymFilter('all')}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all ${
+                                gymFilter === 'all'
+                                    ? 'bg-accent text-accent-contrast shadow-sm'
+                                    : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary'
+                            }`}
+                        >
+                            <FaGlobeEurope className="text-[11px]" />
+                            <span>Gimnasio y Ciudad ({sameGymCount + sameCityCount})</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setGymFilter('same_gym')}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all ${
+                                gymFilter === 'same_gym'
+                                    ? 'bg-emerald-500 text-white shadow-sm'
+                                    : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary'
+                            }`}
+                        >
+                            <FaDumbbell className="text-[11px]" />
+                            <span>Mismo Gym ({sameGymCount})</span>
+                        </button>
+                        { activeGym.city && (
+                            <button
+                                type="button"
+                                onClick={() => setGymFilter('same_city')}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all ${
+                                    gymFilter === 'same_city'
+                                        ? 'bg-blue-500 text-white shadow-sm'
+                                        : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary'
+                                }`}
+                            >
+                                <FaCity className="text-[11px]" />
+                                <span>En {activeGym.city} ({sameCityCount})</span>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Carrusel horizontal de atletas que entrenan en tu mismo gimnasio o ciudad */}
+                    {filteredGymMembers.length > 0 && (
+                        <div className="mt-4 pt-3.5 border-t border-black/5 dark:border-white/10">
+                            <div className="flex items-center justify-between mb-2.5">
+                                <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
+                                    <FaUsers className="text-accent" />
+                                    Atletas en tu zona ({filteredGymMembers.length})
+                                </span>
                             </div>
-
-                            <div className="flex flex-wrap gap-2 sm:gap-3 text-xs font-bold text-text-secondary">
-                                {log.duration_seconds > 0 && (
-                                    <span className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-3 py-2 rounded-[14px] ring-1 ring-black/5 dark:ring-white/10">
-                                        <Clock size={14} className="opacity-80" /> 
-                                        {formatDuration(log.duration_seconds)}
-                                    </span>
-                                )}
-                                {log.calories_burned > 0 && (
-                                    <span className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-3 py-2 rounded-[14px] ring-1 ring-black/5 dark:ring-white/10">
-                                        <Zap size={14} className="text-yellow-500 opacity-90" /> 
-                                        {log.calories_burned} kcal
-                                    </span>
-                                )}
-                            </div>
-
-                            {Array.isArray(log.WorkoutLogDetails) && log.WorkoutLogDetails.length > 0 && (
-                                <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/10 space-y-4">
-                                    {log.WorkoutLogDetails.map((detail, idx) => {
-                                        if (!detail) return null;
-                                        let imgUrl = detail.image_url;
-                                        if (!imgUrl && exercises && exercises.length > 0) {
-                                            const localEx = exercises.find(e => e.name?.toLowerCase() === detail.exercise_name?.toLowerCase());
-                                            imgUrl = localEx?.image_url_start || localEx?.image_url || null;
-                                        }
-                                        const finalImgUrl = getFullImageUrl(imgUrl);
-                                        const finalVideoUrl = getFullImageUrl(detail.video_url);
-
-                                        return (
-                                            <div key={idx} className="flex items-start gap-3 sm:gap-4">
-                                                {finalVideoUrl && !finalImgUrl ? (
-                                                     <FeedPreviewVideo
-                                                        src={finalVideoUrl}
-                                                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-[16px] object-cover bg-black/10 dark:bg-white/10 shrink-0 ring-1 ring-black/5 dark:ring-white/10"
-                                                    />
-                                                ) : finalImgUrl ? (
-                                                    <img 
-                                                        src={finalImgUrl} 
-                                                        alt={detail.exercise_name} 
-                                                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-[16px] object-cover bg-black/10 dark:bg-white/10 shrink-0 ring-1 ring-black/5 dark:ring-white/10" 
-                                                        onError={(e) => { 
-                                                            e.target.style.display = 'none'; 
-                                                            if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex'; 
-                                                        }}
-                                                    />
-                                                ) : null}
-                                                
-                                                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-[16px] bg-black/5 dark:bg-white/5 items-center justify-center shrink-0 ring-1 ring-black/5 dark:ring-white/10 ${finalImgUrl || finalVideoUrl ? 'hidden' : 'flex'}`}>
-                                                    <Dumbbell size={20} className="text-text-muted" />
-                                                </div>
-
-                                                <div className="flex-1 min-w-0 flex flex-col justify-center min-h-[3rem]">
-                                                    <p className="text-sm font-bold text-text-primary truncate mb-1">{t(detail.exercise_name)}</p>
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {Array.isArray(detail?.WorkoutLogSets) && detail.WorkoutLogSets.map((set, sIdx) => {
-                                                            if (!set) return null;
-                                                            const weight = parseFloat(set.weight_kg);
-                                                            return (
-                                                                <span key={sIdx} className="inline-flex items-center text-[10px] sm:text-xs bg-black/5 dark:bg-white/10 px-2 py-1 rounded-[10px] text-text-secondary font-medium whitespace-nowrap">
-                                                                    {set.reps}{weight > 0 ? ` × ${weight}kg` : ' reps'}
-                                                                </span>
-                                                            );
-                                                        })}
-                                                    </div>
+                            <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+                                {filteredGymMembers.map(member => {
+                                    const isPending = member.hasPendingRequest || pendingRequestsLocal[member.id];
+                                    const isSameGym = member.matchType === 'same_gym';
+                                    return (
+                                        <div
+                                            key={member.id}
+                                            onClick={() => goToProfile(member.id)}
+                                            className="flex items-center gap-2.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 transition-colors cursor-pointer shrink-0 min-w-[210px] sm:min-w-[230px] max-w-[250px]"
+                                        >
+                                            <UserAvatar
+                                                user={{
+                                                    ...member,
+                                                    profile_image_url: getFullImageUrl(member.profile_image_url)
+                                                }}
+                                                size={10}
+                                                className="w-10 h-10 shrink-0"
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-xs sm:text-sm font-bold text-text-primary truncate">
+                                                    {member.username}
+                                                </p>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <span
+                                                        className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md truncate ${
+                                                            isSameGym
+                                                                ? 'bg-emerald-500/15 text-emerald-500'
+                                                                : 'bg-blue-500/15 text-blue-400'
+                                                        }`}
+                                                    >
+                                                        {isSameGym ? <FaDumbbell className="text-[9px] shrink-0" /> : <FaMapMarkerAlt className="text-[9px] shrink-0" />}
+                                                        <span className="truncate">{isSameGym ? 'Mismo gym' : (member.gymName || member.gymCity || 'Tu ciudad')}</span>
+                                                    </span>
+                                                    {member.streak > 0 && (
+                                                        <span className="inline-flex items-center gap-0.5 text-[10px] font-extrabold text-orange-500 shrink-0">
+                                                            <FaFire className="text-[9px]" />
+                                                            {member.streak}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
-                                        );
-                                    })}
-                                </div>
+                                            {member.isFriend ? (
+                                                <span
+                                                    className="p-2 rounded-xl bg-emerald-500/15 text-emerald-500 text-xs shrink-0"
+                                                    title="Ya sois amigos"
+                                                >
+                                                    <FaCheck />
+                                                </span>
+                                            ) : isPending ? (
+                                                <span
+                                                    className="p-2 rounded-xl bg-black/5 dark:bg-white/10 text-text-muted text-xs shrink-0"
+                                                    title="Solicitud pendiente"
+                                                >
+                                                    <FaClock />
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => handleQuickFriendRequest(e, member.id)}
+                                                    disabled={sendingRequestId === member.id}
+                                                    className="p-2 rounded-xl bg-accent text-accent-contrast hover:brightness-110 active:scale-95 transition-all text-xs shrink-0 shadow-sm"
+                                                    title="Enviar solicitud de amistad"
+                                                >
+                                                    <FaUserPlus />
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </GlassCard>
+            </div>
+        );
+    };
+
+    return (
+        <div className="w-full">
+            {renderScopeSelector()}
+            {renderGymSection()}
+
+            {isLoading ? (
+                <div className="flex justify-center py-12">
+                    <Spinner size={30} />
+                </div>
+            ) : feed.length === 0 ? (
+                /* Si es Mi Gimnasio y aún no tiene gimnasio seleccionado, renderGymSection ya muestra la tarjeta principal */
+                scope === 'gym' && !myCurrentGym && !gymMeta?.hasGym ? null : (
+                    <GlassCard className="glass text-center p-7 sm:p-12 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[28px] sm:rounded-[32px] mt-2">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-black/5 dark:bg-white/5 rounded-[24px] flex items-center justify-center mb-5 text-text-muted">
+                            {scope === 'gym' ? (
+                                <FaBuilding className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-500" />
+                            ) : scope === 'friends' ? (
+                                <FaUsers className="w-7 h-7 sm:w-8 sm:h-8 text-blue-500" />
+                            ) : (
+                                <FaGlobeEurope className="w-7 h-7 sm:w-8 sm:h-8 text-accent" />
                             )}
                         </div>
-
-                        <div className="flex items-center gap-3 mt-1 px-1">
-                            <button 
-                                onClick={() => handleToggleLike(log.id)}
-                                disabled={isActionLoading}
-                                className={`flex items-center gap-2 p-2.5 rounded-[16px] text-sm sm:text-base font-bold transition-all active:scale-95 outline-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${log.hasLiked ? 'text-accent bg-accent/10' : 'text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'}`}
-                            >
-                                <Heart size={20} className={log.hasLiked ? 'fill-current' : ''} />
-                                <span>{log.likesCount || 0}</span>
-                            </button>
-                            <button 
-                                onClick={() => setShowComments(prev => ({ ...prev, [log.id]: !prev[log.id] }))}
-                                className={`flex items-center gap-2 p-2.5 rounded-[16px] text-sm sm:text-base font-bold transition-all active:scale-95 outline-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${showComments[log.id] ? 'text-accent bg-accent/10' : 'text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'}`}
-                            >
-                                <MessageCircle size={20} />
-                                <span>{comments.length}</span>
-                            </button>
+                        <p className="text-base sm:text-lg font-extrabold text-text-primary">
+                            {scope === 'gym'
+                                ? 'Aún no hay entrenamientos registrados en esta zona'
+                                : scope === 'friends'
+                                ? 'Sin actividad reciente de tus amigos'
+                                : 'Sin publicaciones recientes en la comunidad'}
+                        </p>
+                        <p className="text-xs sm:text-sm font-medium text-text-secondary mt-1.5 mb-6 max-w-md mx-auto leading-relaxed">
+                            {scope === 'gym'
+                                ? 'Sé el primero en registrar un entrenamiento en tu gimnasio o explora el muro Global para conectar con más atletas.'
+                                : scope === 'friends'
+                                ? 'Cambia a la pestaña Global o Mi Gimnasio para descubrir entrenamientos públicos y agregar compañeros.'
+                                : 'Completa tu próximo entrenamiento para inaugurar el muro de la comunidad.'}
+                        </p>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                            {hasOlder && (
+                                <button
+                                    type="button"
+                                    onClick={() => loadFeed(true, scope, gymFilter)}
+                                    disabled={isLoadingOlder}
+                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-accent text-accent-contrast rounded-2xl font-bold text-xs sm:text-sm hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-accent/20 disabled:opacity-50"
+                                >
+                                    {isLoadingOlder ? <Spinner size={16} /> : <FaClock />}
+                                    <span>Cargar publicaciones anteriores</span>
+                                </button>
+                            )}
+                            {scope !== 'global' && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleScopeChange('global')}
+                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary rounded-2xl font-bold text-xs sm:text-sm transition-colors"
+                                >
+                                    <FaFire className="text-orange-500" />
+                                    <span>Ver Muro Global</span>
+                                </button>
+                            )}
                         </div>
+                    </GlassCard>
+                )
+            ) : (
+                <div className="space-y-5 sm:space-y-7">
+                    {(Array.isArray(feed) ? feed : []).map((log, index) => {
+                        if (!log) return null;
+                        const isMe = log.user_id === userProfile?.id;
+                        const authorUser = isMe
+                            ? {
+                                  ...log.user,
+                                  ...userProfile,
+                                  role: userProfile?.role || log.user?.role,
+                                  trainer_id: userProfile?.trainer_id ?? log.user?.trainer_id,
+                                  gym_name: log.user?.gym_name || myCurrentGym?.name || null,
+                                  gym_city: log.user?.gym_city || myCurrentGym?.city || null
+                              }
+                            : (log.user || {});
+                        const avatarUrl = getFullImageUrl(authorUser?.profile_image_url);
+                        const comments = Array.isArray(log.Comments) ? log.Comments : [];
 
-                        {showComments[log.id] && (
-                            <div className="pt-4 flex flex-col gap-4 animate-[fade-in_0.2s_ease-out] border-t border-black/5 dark:border-white/10 mt-2">
-                                {comments.length > 0 && (
-                                    <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                                        {comments.map(c => {
-                                            const isCommentMe = c.user_id === userProfile?.id;
-                                            const commentUser = isCommentMe
-                                                ? { ...c.user, ...userProfile, role: userProfile?.role || c.user?.role, trainer_id: userProfile?.trainer_id ?? c.user?.trainer_id }
-                                                : (c.user || {});
-                                            const canDeleteComment = isCommentMe || isMe || userProfile?.role === 'admin';
-                                            return (
-                                                <div key={c.id} className="flex items-start gap-3 sm:gap-4 bg-black/5 dark:bg-white/5 p-4 rounded-[20px] group relative transition-colors hover:bg-black/10 dark:hover:bg-white/10">
-                                                    <UserAvatar 
-                                                        user={{ ...commentUser, profile_image_url: getFullImageUrl(commentUser?.profile_image_url) }} 
-                                                        size={10} 
-                                                        className="w-10 h-10 shrink-0 cursor-pointer transition-transform hover:scale-105" 
-                                                        onClick={() => goToProfile(c.user_id)}
-                                                    />
-                                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                        <div className="flex justify-between items-start gap-2 mb-1">
-                                                            <span className="text-sm font-bold text-text-primary cursor-pointer hover:text-accent transition-colors truncate" onClick={() => goToProfile(c.user_id)}>
-                                                                {commentUser?.username || 'Usuario'}
-                                                            </span>
-                                                            <div className="flex items-center gap-2 shrink-0">
-                                                                <span className="text-[10px] sm:text-xs font-bold text-text-muted whitespace-nowrap">
-                                                                    {timeAgo(c.created_at)}
-                                                                </span>
-                                                                {canDeleteComment && (
-                                                                    <button 
-                                                                        onClick={() => setCommentToDelete({ commentId: c.id, workoutId: log.id })} 
-                                                                        disabled={isActionLoading}
-                                                                        className="p-1.5 text-text-muted hover:text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all rounded-[10px] hover:bg-red-500/10 active:scale-95 outline-none focus:outline-none"
-                                                                        title="Borrar comentario"
-                                                                    >
-                                                                        <Trash2 size={16} />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <p className="text-xs sm:text-sm font-medium text-text-secondary whitespace-pre-wrap break-words leading-relaxed">{c.comment}</p>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                        const hasStory = isMe
+                            ? (Array.isArray(myStories) && myStories.length > 0)
+                            : (Array.isArray(visibleStories) && visibleStories.some(s => s && (s.userId === log.user_id || s.user_id === log.user_id) && Array.isArray(s.items) && s.items.length > 0));
+
+                        const ringClass = hasStory ? 'ring-2 ring-accent ring-offset-2 ring-offset-background' : '';
+
+                        const isOlder = isOlderThan7Days(log.workout_date);
+                        const prevLog = index > 0 ? feed[index - 1] : null;
+                        const prevIsOlder = prevLog ? isOlderThan7Days(prevLog.workout_date) : false;
+                        const showOlderDivider = isShowingOlder && isOlder && (!prevLog || !prevIsOlder);
+
+                        const isFriend = isMe || !!authorUser?.is_friend;
+                        const isPendingRequest = !!authorUser?.has_pending_request || !!pendingRequestsLocal[log.user_id];
+                        const isSameGymAuthor = authorUser?.gym_match_type === 'same_gym';
+                        const isSameCityAuthor = authorUser?.gym_match_type === 'same_city';
+
+                        return (
+                            <React.Fragment key={log.id}>
+                                {showOlderDivider && (
+                                    <div className="flex items-center gap-3 py-2 my-2 animate-[fade-in_0.3s_ease-out]">
+                                        <div className="flex-1 h-px bg-black/10 dark:bg-white/10" />
+                                        <span className="text-[11px] sm:text-xs font-bold text-text-muted uppercase tracking-wider flex items-center gap-1.5 px-3.5 py-1.5 bg-black/5 dark:bg-white/5 rounded-full ring-1 ring-black/5 dark:ring-white/10">
+                                            <FaClock className="text-accent text-xs" /> Publicaciones de más de 7 días
+                                        </span>
+                                        <div className="flex-1 h-px bg-black/10 dark:bg-white/10" />
                                     </div>
                                 )}
-                                
-                                <form onSubmit={(e) => handleAddComment(e, log.id)} className="flex items-center gap-3 mt-2">
-                                    <input 
-                                        type="text" 
-                                        placeholder="Añade un comentario..." 
-                                        value={activeCommentInput[log.id] || ''}
-                                        onChange={(e) => setActiveCommentInput(prev => ({ ...prev, [log.id]: e.target.value }))}
-                                        disabled={isActionLoading}
-                                        className="flex-1 bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-full px-5 py-3.5 text-sm font-medium text-text-primary outline-none focus:ring-2 focus:ring-accent/50 transition-all disabled:opacity-50 placeholder:text-text-muted"
-                                    />
-                                    <button 
-                                        type="submit" 
-                                        disabled={!activeCommentInput[log.id]?.trim() || isActionLoading} 
-                                        className="p-3.5 bg-accent text-accent-contrast rounded-full hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 transition-all shadow-lg shadow-accent/20 shrink-0 outline-none focus:outline-none active:scale-95"
-                                    >
-                                        <Send size={18} className="ml-0.5" />
-                                    </button>
-                                </form>
-                            </div>
-                        )}
-                    </GlassCard>
-                </React.Fragment>
-                );
-            })}
 
-            {hasOlder && !isShowingOlder && (
-                <div className="flex flex-col items-center justify-center pt-2 pb-6">
-                    <button
-                        onClick={() => loadFeed(true)}
-                        disabled={isLoadingOlder}
-                        className="flex items-center gap-2 px-6 py-3.5 bg-black/5 dark:bg-white/5 hover:bg-accent hover:text-accent-contrast text-text-primary rounded-2xl font-bold text-sm transition-all duration-300 shadow-sm hover:shadow-lg disabled:opacity-50 ring-1 ring-black/5 dark:ring-white/10 active:scale-95"
-                    >
-                        {isLoadingOlder ? (
-                            <>
-                                <Spinner size={16} />
-                                <span>Cargando publicaciones anteriores...</span>
-                            </>
-                        ) : (
-                            <>
-                                <Clock size={16} />
-                                <span>Cargar más (publicaciones anteriores)</span>
-                            </>
-                        )}
-                    </button>
-                    <p className="text-[11px] font-medium text-text-muted mt-2">
-                        Mostrando últimos 7 días para un rendimiento óptimo
-                    </p>
+                                <GlassCard className="glass p-4 sm:p-6 md:p-8 flex flex-col gap-4 sm:gap-5 animate-[fade-in_0.3s_ease-out] border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[28px] sm:rounded-[32px] hover:shadow-xl transition-all duration-300">
+                                    {/* Cabecera del Autor */}
+                                    <div className="flex items-start sm:items-center justify-between gap-2.5">
+                                        <div
+                                            className="flex items-center gap-3 sm:gap-4 cursor-pointer group min-w-0 flex-1"
+                                            onClick={() => goToProfile(log.user_id)}
+                                        >
+                                            <UserAvatar
+                                                user={{ ...authorUser, profile_image_url: avatarUrl }}
+                                                size={12}
+                                                className={`w-11 h-11 sm:w-14 sm:h-14 shadow-md shrink-0 transition-transform group-hover:scale-105 ${ringClass}`}
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                    <p className="font-bold text-text-primary text-sm sm:text-lg truncate group-hover:text-accent transition-colors">
+                                                        {authorUser?.username || 'Usuario'}
+                                                    </p>
+                                                    {isMe && (
+                                                        <span className="text-text-tertiary font-medium text-xs shrink-0">(Tú)</span>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-0.5 min-w-0">
+                                                    <span className="text-[11px] sm:text-xs text-text-secondary font-medium whitespace-nowrap">
+                                                        {timeAgo(log.workout_date)}
+                                                    </span>
+                                                    <span
+                                                        className="inline-flex items-center gap-1 text-[10px] sm:text-xs text-orange-500 font-bold shrink-0"
+                                                        title="Racha de entrenamientos"
+                                                    >
+                                                        <FaFire className="text-[11px]" /> {authorUser?.streak ?? 0}
+                                                    </span>
+
+                                                    {(authorUser?.gym_name || authorUser?.gym_city) && (
+                                                        <span
+                                                            className={`inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full max-w-[190px] sm:max-w-[260px] truncate ${
+                                                                isSameGymAuthor
+                                                                    ? 'bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30'
+                                                                    : isSameCityAuthor
+                                                                    ? 'bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30'
+                                                                    : 'bg-black/5 dark:bg-white/10 text-text-secondary'
+                                                            }`}
+                                                            title={
+                                                                authorUser.gym_name && authorUser.gym_city
+                                                                    ? `${authorUser.gym_name} • ${authorUser.gym_city}`
+                                                                    : authorUser.gym_name || authorUser.gym_city
+                                                            }
+                                                        >
+                                                            {isSameGymAuthor ? (
+                                                                <FaDumbbell className="text-[9px] shrink-0" />
+                                                            ) : (
+                                                                <FaMapMarkerAlt className="text-[9px] shrink-0" />
+                                                            )}
+                                                            <span className="truncate">
+                                                                {authorUser.gym_name || authorUser.gym_city}
+                                                            </span>
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Botón rápido de conexión cuando no es amigo */}
+                                        {!isMe && !isFriend && (
+                                            isPendingRequest ? (
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/10 text-text-muted text-[11px] font-bold shrink-0">
+                                                    <FaClock className="text-[10px]" />
+                                                    <span className="hidden sm:inline">Pendiente</span>
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => handleQuickFriendRequest(e, log.user_id)}
+                                                    disabled={sendingRequestId === log.user_id}
+                                                    className="inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-accent/15 hover:bg-accent text-accent hover:text-accent-contrast text-[11px] sm:text-xs font-extrabold transition-all active:scale-95 shrink-0"
+                                                    title="Añadir amigo"
+                                                >
+                                                    <FaUserPlus className="text-xs" />
+                                                    <span className="hidden xs:inline sm:inline">Conectar</span>
+                                                </button>
+                                            )
+                                        )}
+                                    </div>
+
+                                    {/* Resumen del Entrenamiento */}
+                                    <div className="bg-black/5 dark:bg-white/5 rounded-[22px] sm:rounded-[24px] p-3.5 sm:p-5 border-none ring-1 ring-black/5 dark:ring-white/10">
+                                        <div className="flex items-start sm:items-center justify-between gap-3 mb-3">
+                                            <h4 className="font-bold text-text-primary text-sm sm:text-base flex items-start sm:items-center gap-2 min-w-0">
+                                                <FaDumbbell className="text-accent shrink-0 mt-0.5 sm:mt-0" />
+                                                <span className="line-clamp-2 leading-tight">
+                                                    Completó: {log.routine?.name || log.routine_name || 'Entrenamiento libre'}
+                                                </span>
+                                            </h4>
+                                            {log.routine_id && !isMe && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleImportRoutine(log.routine_id)}
+                                                    disabled={isActionLoading}
+                                                    className="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-accent/10 text-accent rounded-[14px] hover:bg-accent hover:text-accent-contrast transition-all text-[10px] sm:text-xs font-bold disabled:opacity-50 hover:shadow-md"
+                                                    title="Importar Rutina"
+                                                >
+                                                    <FaDownload className="text-xs" />
+                                                    <span className="hidden sm:inline">Importar</span>
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-2 sm:gap-3 text-xs font-bold text-text-secondary">
+                                            {log.duration_seconds > 0 && (
+                                                <span className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-3 py-1.5 sm:py-2 rounded-[14px] ring-1 ring-black/5 dark:ring-white/10">
+                                                    <FaClock className="opacity-80 text-xs" />
+                                                    {formatDuration(log.duration_seconds)}
+                                                </span>
+                                            )}
+                                            {log.calories_burned > 0 && (
+                                                <span className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-3 py-1.5 sm:py-2 rounded-[14px] ring-1 ring-black/5 dark:ring-white/10">
+                                                    <FaBolt className="text-yellow-500 opacity-90 text-xs" />
+                                                    {log.calories_burned} kcal
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {Array.isArray(log.WorkoutLogDetails) && log.WorkoutLogDetails.length > 0 && (
+                                            <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/10 space-y-3.5 sm:space-y-4">
+                                                {log.WorkoutLogDetails.map((detail, idx) => {
+                                                    if (!detail) return null;
+                                                    let imgUrl = detail.image_url;
+                                                    if (!imgUrl && exercises && exercises.length > 0) {
+                                                        const localEx = exercises.find(e => e.name?.toLowerCase() === detail.exercise_name?.toLowerCase());
+                                                        imgUrl = localEx?.image_url_start || localEx?.image_url || null;
+                                                    }
+                                                    const finalImgUrl = getFullImageUrl(imgUrl);
+                                                    const finalVideoUrl = getFullImageUrl(detail.video_url);
+
+                                                    return (
+                                                        <div key={idx} className="flex items-start gap-3 sm:gap-4">
+                                                            {finalVideoUrl && !finalImgUrl ? (
+                                                                <FeedPreviewVideo
+                                                                    src={finalVideoUrl}
+                                                                    className="w-11 h-11 sm:w-14 sm:h-14 rounded-[14px] sm:rounded-[16px] object-cover bg-black/10 dark:bg-white/10 shrink-0 ring-1 ring-black/5 dark:ring-white/10"
+                                                                />
+                                                            ) : finalImgUrl ? (
+                                                                <img
+                                                                    src={finalImgUrl}
+                                                                    alt={detail.exercise_name}
+                                                                    className="w-11 h-11 sm:w-14 sm:h-14 rounded-[14px] sm:rounded-[16px] object-cover bg-black/10 dark:bg-white/10 shrink-0 ring-1 ring-black/5 dark:ring-white/10"
+                                                                    onError={(e) => {
+                                                                        e.target.style.display = 'none';
+                                                                        if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                                                                    }}
+                                                                />
+                                                            ) : null}
+
+                                                            <div
+                                                                className={`w-11 h-11 sm:w-14 sm:h-14 rounded-[14px] sm:rounded-[16px] bg-black/5 dark:bg-white/5 items-center justify-center shrink-0 ring-1 ring-black/5 dark:ring-white/10 ${
+                                                                    finalImgUrl || finalVideoUrl ? 'hidden' : 'flex'
+                                                                }`}
+                                                            >
+                                                                <FaDumbbell className="text-text-muted text-base sm:text-lg" />
+                                                            </div>
+
+                                                            <div className="flex-1 min-w-0 flex flex-col justify-center min-h-[2.75rem] sm:min-h-[3rem]">
+                                                                <p className="text-xs sm:text-sm font-bold text-text-primary truncate mb-1">
+                                                                    {t(detail.exercise_name)}
+                                                                </p>
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {Array.isArray(detail?.WorkoutLogSets) &&
+                                                                        detail.WorkoutLogSets.map((set, sIdx) => {
+                                                                            if (!set) return null;
+                                                                            const weight = parseFloat(set.weight_kg);
+                                                                            return (
+                                                                                <span
+                                                                                    key={sIdx}
+                                                                                    className="inline-flex items-center text-[10px] sm:text-xs bg-black/5 dark:bg-white/10 px-2 py-0.5 sm:py-1 rounded-[10px] text-text-secondary font-medium whitespace-nowrap"
+                                                                                >
+                                                                                    {set.reps}
+                                                                                    {weight > 0 ? ` × ${weight}kg` : ' reps'}
+                                                                                </span>
+                                                                            );
+                                                                        })}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Acciones de Reacción y Debate */}
+                                    <div className="flex items-center gap-3 mt-0.5 px-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleToggleLike(log.id)}
+                                            disabled={isActionLoading}
+                                            className={`flex items-center gap-2 px-3 py-2 rounded-[14px] text-xs sm:text-sm font-bold transition-all active:scale-95 outline-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
+                                                log.hasLiked
+                                                    ? 'text-accent bg-accent/10'
+                                                    : 'text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
+                                            }`}
+                                        >
+                                            {log.hasLiked ? <FaHeart className="text-base" /> : <FaRegHeart className="text-base" />}
+                                            <span>{log.likesCount || 0}</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowComments(prev => ({ ...prev, [log.id]: !prev[log.id] }))}
+                                            className={`flex items-center gap-2 px-3 py-2 rounded-[14px] text-xs sm:text-sm font-bold transition-all active:scale-95 outline-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
+                                                showComments[log.id]
+                                                    ? 'text-accent bg-accent/10'
+                                                    : 'text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
+                                            }`}
+                                        >
+                                            <FaCommentDots className="text-base" />
+                                            <span>{comments.length}</span>
+                                        </button>
+                                    </div>
+
+                                    {/* Sección de Comentarios / Debate */}
+                                    {showComments[log.id] && (
+                                        <div className="pt-4 flex flex-col gap-4 animate-[fade-in_0.2s_ease-out] border-t border-black/5 dark:border-white/10 mt-1">
+                                            {comments.length > 0 && (
+                                                <div className="space-y-3 max-h-60 overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
+                                                    {comments.map(c => {
+                                                        const isCommentMe = c.user_id === userProfile?.id;
+                                                        const commentUser = isCommentMe
+                                                            ? {
+                                                                  ...c.user,
+                                                                  ...userProfile,
+                                                                  role: userProfile?.role || c.user?.role,
+                                                                  trainer_id: userProfile?.trainer_id ?? c.user?.trainer_id
+                                                              }
+                                                            : (c.user || {});
+                                                        const canDeleteComment = isCommentMe || isMe || userProfile?.role === 'admin';
+                                                        return (
+                                                            <div
+                                                                key={c.id}
+                                                                className="flex items-start gap-3 sm:gap-4 bg-black/5 dark:bg-white/5 p-3.5 sm:p-4 rounded-[20px] group relative transition-colors hover:bg-black/10 dark:hover:bg-white/10"
+                                                            >
+                                                                <UserAvatar
+                                                                    user={{
+                                                                        ...commentUser,
+                                                                        profile_image_url: getFullImageUrl(commentUser?.profile_image_url)
+                                                                    }}
+                                                                    size={10}
+                                                                    className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 cursor-pointer transition-transform hover:scale-105"
+                                                                    onClick={() => goToProfile(c.user_id)}
+                                                                />
+                                                                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                                                    <div className="flex justify-between items-start gap-2 mb-1">
+                                                                        <span
+                                                                            className="text-xs sm:text-sm font-bold text-text-primary cursor-pointer hover:text-accent transition-colors truncate"
+                                                                            onClick={() => goToProfile(c.user_id)}
+                                                                        >
+                                                                            {commentUser?.username || 'Usuario'}
+                                                                        </span>
+                                                                        <div className="flex items-center gap-2 shrink-0">
+                                                                            <span className="text-[10px] sm:text-xs font-bold text-text-muted whitespace-nowrap">
+                                                                                {timeAgo(c.created_at)}
+                                                                            </span>
+                                                                            {canDeleteComment && (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => setCommentToDelete({ commentId: c.id, workoutId: log.id })}
+                                                                                    disabled={isActionLoading}
+                                                                                    className="p-1.5 text-text-muted hover:text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all rounded-[10px] hover:bg-red-500/10 active:scale-95 outline-none focus:outline-none"
+                                                                                    title="Borrar comentario"
+                                                                                >
+                                                                                    <FaTrashAlt className="text-xs sm:text-sm" />
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <p className="text-xs sm:text-sm font-medium text-text-secondary whitespace-pre-wrap break-words leading-relaxed">
+                                                                        {c.comment}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+
+                                            <form onSubmit={(e) => handleAddComment(e, log.id)} className="flex items-center gap-2.5 sm:gap-3 mt-1">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Añade un comentario o pregunta..."
+                                                    value={activeCommentInput[log.id] || ''}
+                                                    onChange={(e) => setActiveCommentInput(prev => ({ ...prev, [log.id]: e.target.value }))}
+                                                    disabled={isActionLoading}
+                                                    className="flex-1 min-w-0 bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 rounded-full px-4 sm:px-5 py-3 sm:py-3.5 text-xs sm:text-sm font-medium text-text-primary outline-none focus:ring-2 focus:ring-accent/50 transition-all disabled:opacity-50 placeholder:text-text-muted"
+                                                />
+                                                <button
+                                                    type="submit"
+                                                    disabled={!activeCommentInput[log.id]?.trim() || isActionLoading}
+                                                    className="p-3 sm:p-3.5 bg-accent text-accent-contrast rounded-full hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 transition-all shadow-lg shadow-accent/20 shrink-0 outline-none focus:outline-none active:scale-95"
+                                                >
+                                                    <FaPaperPlane className="text-sm" />
+                                                </button>
+                                            </form>
+                                        </div>
+                                    )}
+                                </GlassCard>
+                            </React.Fragment>
+                        );
+                    })}
+
+                    {hasOlder && !isShowingOlder && (
+                        <div className="flex flex-col items-center justify-center pt-2 pb-6">
+                            <button
+                                type="button"
+                                onClick={() => loadFeed(true, scope, gymFilter)}
+                                disabled={isLoadingOlder}
+                                className="flex items-center gap-2 px-6 py-3.5 bg-black/5 dark:bg-white/5 hover:bg-accent hover:text-accent-contrast text-text-primary rounded-2xl font-bold text-xs sm:text-sm transition-all duration-300 shadow-sm hover:shadow-lg disabled:opacity-50 ring-1 ring-black/5 dark:ring-white/10 active:scale-95"
+                            >
+                                {isLoadingOlder ? (
+                                    <>
+                                        <Spinner size={16} />
+                                        <span>Cargando publicaciones anteriores...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <FaClock className="text-sm" />
+                                        <span>Cargar más (publicaciones anteriores)</span>
+                                    </>
+                                )}
+                            </button>
+                            <p className="text-[11px] font-medium text-text-muted mt-2">
+                                Mostrando últimos 7 días para un rendimiento óptimo
+                            </p>
+                        </div>
+                    )}
                 </div>
+            )}
+
+            {showGymModal && (
+                <React.Suspense fallback={null}>
+                    <GymLocationModal
+                        isOpen={showGymModal}
+                        onClose={() => setShowGymModal(false)}
+                        currentGym={myCurrentGym}
+                        onSave={handleSaveGymFromFeed}
+                        onRemove={handleRemoveGymFromFeed}
+                    />
+                </React.Suspense>
             )}
 
             {commentToDelete && (
@@ -541,4 +1241,3 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
         </div>
     );
 }
-

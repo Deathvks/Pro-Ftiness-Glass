@@ -64,7 +64,7 @@ const PrivacyBanner = ({ privacy, onNavigate }) => {
                             <p>Actualmente <strong>todo el mundo puede ver tu perfil</strong> y estadísticas.</p>
                             <p className="flex items-center gap-1.5 opacity-90">
                                 <Check size={14} className="text-accent shrink-0" />
-                                <span>Apareces en el <strong>Ranking Global</strong> y búsquedas.</span>
+                                <span>Apareces en el <strong>Muro Global, Mi Gimnasio, Ranking</strong> y búsquedas.</span>
                             </p>
                         </>
                     ) : (
@@ -72,7 +72,7 @@ const PrivacyBanner = ({ privacy, onNavigate }) => {
                             <p>Actualmente <strong>solo tus amigos</strong> pueden ver tu actividad.</p>
                             <p className="flex items-center gap-1.5 opacity-90">
                                 <X size={14} className="text-red-500 shrink-0" />
-                                <span><strong>No apareces</strong> en el Ranking Global ni en búsquedas.</span>
+                                <span><strong>No apareces</strong> en el Muro Global, Ranking ni en búsquedas.</span>
                             </p>
                         </>
                     )}
@@ -1322,7 +1322,7 @@ export default function Social({ setView }) {
                                         </div>
                                     </div>
                                     <div className="w-14 sm:w-24 text-right text-xs sm:text-base text-orange-500 font-extrabold flex items-center justify-end gap-1 sm:gap-1.5 shrink-0">
-                                        🔥 {user.streak || 0}
+                                        <Flame size={14} className="shrink-0" fill="currentColor" /> {user.streak || 0}
                                     </div>
                                     <div className="w-16 sm:w-24 text-right text-xs sm:text-base text-text-primary font-mono font-bold tracking-tight shrink-0">{user.xp?.toLocaleString() || 0}</div>
                                 </div>

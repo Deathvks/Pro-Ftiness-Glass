@@ -1,6 +1,6 @@
 {
-  "version": "7.14.10",
-  "releaseNotes": "Actualización v7.14.7: Embudo de Retención y Abandono de Nuevos Usuarios en Panel Admin y mejoras responsive.",
+  "version": "7.14.11",
+  "releaseNotes": "Actualización v7.14.11: Muro Global, Mi Gimnasio y Amigos con descubrimiento de atletas por gimnasio y ciudad.",
   "welcome": {
     "title": "Modo Sin Conexión y Smart Sync",
     "subtitle": "Descarga de ejercicios en segundo plano para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.",

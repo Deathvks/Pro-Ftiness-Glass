@@ -92,7 +92,13 @@ const socialService = {
 
     getFeed: async (params = {}) => {
         const query = new URLSearchParams();
-        if (params && params.includeOlder) {
+        if (params?.scope) {
+            query.append('scope', params.scope);
+        }
+        if (params?.gymFilter && params.gymFilter !== 'all') {
+            query.append('gymFilter', params.gymFilter);
+        }
+        if (params?.includeOlder) {
             query.append('includeOlder', 'true');
         }
         const qs = query.toString() ? `?${query.toString()}` : '';

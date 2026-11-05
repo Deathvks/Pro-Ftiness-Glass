@@ -473,103 +473,363 @@ export const removeFriend = async (req, res) => {
 };
 
 // ==========================================
-// OPTIMIZACIÓN: NUEVA FUNCIÓN DEL FEED
+// OPTIMIZACIÓN: NUEVA FUNCIÓN DEL FEED (GLOBAL / MI GIMNASIO / AMIGOS)
 // ==========================================
+
+const parseGymDataSafe = (raw) => {
+    if (!raw) return null;
+    try {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        return parsed && typeof parsed === 'object' && (parsed.name || parsed.city) ? parsed : null;
+    } catch {
+        return null;
+    }
+};
+
+const normalizeGymString = (str) =>
+    String(str || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+const calculateGymDistanceMeters = (lat1, lon1, lat2, lon2) => {
+    const aLat = parseFloat(lat1);
+    const aLon = parseFloat(lon1);
+    const bLat = parseFloat(lat2);
+    const bLon = parseFloat(lon2);
+    if (!Number.isFinite(aLat) || !Number.isFinite(aLon) || !Number.isFinite(bLat) || !Number.isFinite(bLon)) {
+        return null;
+    }
+    const R = 6371e3;
+    const p1 = (aLat * Math.PI) / 180;
+    const p2 = (bLat * Math.PI) / 180;
+    const dp = ((bLat - aLat) * Math.PI) / 180;
+    const dl = ((bLon - aLon) * Math.PI) / 180;
+    const a = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+};
+
+const classifyGymMatchType = (myGym, otherGym) => {
+    if (!myGym || !otherGym) return null;
+
+    if (myGym.id && otherGym.id && String(myGym.id) === String(otherGym.id)) {
+        return 'same_gym';
+    }
+
+    const dist = calculateGymDistanceMeters(myGym.lat, myGym.lng, otherGym.lat, otherGym.lng);
+    if (dist !== null && dist <= 320) {
+        return 'same_gym';
+    }
+
+    const normMyName = normalizeGymString(myGym.name);
+    const normOtherName = normalizeGymString(otherGym.name);
+    const normMyCity = normalizeGymString(myGym.city);
+    const normOtherCity = normalizeGymString(otherGym.city);
+
+    if (normMyName && normOtherName && normMyName === normOtherName) {
+        if (!normMyCity || !normOtherCity || normMyCity === normOtherCity || (dist !== null && dist <= 3000)) {
+            return 'same_gym';
+        }
+    }
+
+    if (
+        normMyCity &&
+        normOtherCity &&
+        (normMyCity === normOtherCity ||
+            (normMyCity.length >= 4 && normOtherCity.includes(normMyCity)) ||
+            (normOtherCity.length >= 4 && normMyCity.includes(normOtherCity)))
+    ) {
+        return 'same_city';
+    }
+
+    if (dist !== null && dist <= 20000) {
+        return 'same_city';
+    }
+
+    return null;
+};
 
 export const getFeed = async (req, res) => {
     try {
         const userId = req.user.userId;
+        const requestedScope = String(req.query.scope || 'global').toLowerCase();
+        const scope = ['global', 'gym', 'friends'].includes(requestedScope) ? requestedScope : 'global';
+        const gymSubFilter = String(req.query.gymFilter || 'all').toLowerCase();
         const includeOlder = req.query.includeOlder === 'true' || req.query.all === 'true';
 
-        // 1. Obtener IDs de amigos aceptados
-        const friendships = await Friendship.findAll({
-            where: {
-                [Op.or]: [{ requester_id: userId }, { addressee_id: userId }],
-                status: 'accepted'
-            },
-            attributes: ['requester_id', 'addressee_id']
+        // 1. Obtener relaciones de amistad (aceptadas y pendientes) y datos del propio usuario
+        const [allFriendships, currentUser] = await Promise.all([
+            Friendship.findAll({
+                where: {
+                    [Op.or]: [{ requester_id: userId }, { addressee_id: userId }]
+                },
+                attributes: ['requester_id', 'addressee_id', 'status']
+            }),
+            User.findByPk(userId, {
+                attributes: ['id', 'username', 'gym_data', 'show_gym', 'is_public_profile']
+            })
+        ]);
+
+        const friendIds = [];
+        const pendingIdsSet = new Set();
+        allFriendships.forEach(f => {
+            const otherId = f.requester_id === userId ? f.addressee_id : f.requester_id;
+            if (f.status === 'accepted') {
+                friendIds.push(otherId);
+            } else if (f.status === 'pending') {
+                pendingIdsSet.add(otherId);
+            }
         });
+        const friendIdsSet = new Set(friendIds);
+        const friendsAndSelfIds = Array.from(new Set([...friendIds, userId]));
 
-        const friendIds = friendships.map(f => f.requester_id === userId ? f.addressee_id : f.requester_id);
-        const feedUserIds = [...friendIds, userId];
+        const myGym = parseGymDataSafe(currentUser?.gym_data);
 
-        // Ventana estricta de 7 días hacia atrás para optimizar el rendimiento del muro
+        // 2. Resolver usuarios objetivo y metadatos de gimnasio según el filtro (scope)
+        let targetUserIds = friendsAndSelfIds;
+        let gymMeta = {
+            hasGym: !!myGym,
+            myGym: myGym
+                ? {
+                      id: myGym.id || null,
+                      name: myGym.name || null,
+                      city: myGym.city || null,
+                      address: myGym.address || null,
+                      isVerified: !!myGym.isVerified
+                  }
+                : null,
+            sameGymCount: 0,
+            sameCityCount: 0,
+            gymMembers: []
+        };
+
+        const userGymMatchMap = new Map();
+
+        if (myGym) {
+            userGymMatchMap.set(userId, 'same_gym');
+            const usersWithGym = await User.findAll({
+                where: {
+                    gym_data: { [Op.ne]: null }
+                },
+                attributes: [
+                    'id',
+                    'username',
+                    'profile_image_url',
+                    'level',
+                    'xp',
+                    'streak',
+                    'show_level_xp',
+                    'role',
+                    'trainer_id',
+                    'gym_data',
+                    'show_gym',
+                    'is_public_profile'
+                ]
+            });
+
+            const sameGymUserIds = [userId];
+            const sameCityUserIds = [];
+            const gymMembersList = [];
+
+            usersWithGym.forEach(u => {
+                if (u.id === userId) return;
+                const isFriend = friendIdsSet.has(u.id);
+                if (!u.is_public_profile && !isFriend) return;
+                if (u.show_gym === false && !isFriend) return;
+
+                const uGym = parseGymDataSafe(u.gym_data);
+                if (!uGym) return;
+
+                const matchType = classifyGymMatchType(myGym, uGym);
+                if (!matchType) return;
+
+                userGymMatchMap.set(u.id, matchType);
+                if (matchType === 'same_gym') {
+                    sameGymUserIds.push(u.id);
+                } else if (matchType === 'same_city') {
+                    sameCityUserIds.push(u.id);
+                }
+
+                const cleanUser = publicUserData(u);
+                gymMembersList.push({
+                    id: cleanUser.id,
+                    username: cleanUser.username,
+                    profile_image_url: cleanUser.profile_image_url,
+                    level: cleanUser.show_level_xp ? cleanUser.level : null,
+                    xp: cleanUser.show_level_xp ? cleanUser.xp : null,
+                    streak: cleanUser.streak || 0,
+                    role: cleanUser.role,
+                    trainer_id: cleanUser.trainer_id,
+                    gymName: uGym.name || null,
+                    gymCity: uGym.city || null,
+                    matchType,
+                    isFriend,
+                    hasPendingRequest: pendingIdsSet.has(u.id)
+                });
+            });
+
+            gymMembersList.sort((a, b) => {
+                if (a.matchType === 'same_gym' && b.matchType !== 'same_gym') return -1;
+                if (b.matchType === 'same_gym' && a.matchType !== 'same_gym') return 1;
+                return (b.streak || 0) - (a.streak || 0) || (b.xp || 0) - (a.xp || 0);
+            });
+
+            gymMeta.sameGymCount = sameGymUserIds.length - 1;
+            gymMeta.sameCityCount = sameCityUserIds.length;
+            gymMeta.gymMembers = gymMembersList.slice(0, 24);
+
+            if (scope === 'gym') {
+                if (gymSubFilter === 'same_gym') {
+                    targetUserIds = Array.from(new Set(sameGymUserIds));
+                } else if (gymSubFilter === 'same_city') {
+                    targetUserIds = Array.from(new Set([...sameCityUserIds, userId]));
+                } else {
+                    targetUserIds = Array.from(new Set([...sameGymUserIds, ...sameCityUserIds]));
+                }
+            }
+        } else if (scope === 'gym') {
+            targetUserIds = [];
+        }
+
+        if (scope === 'global') {
+            const publicUsers = await User.findAll({
+                where: { is_public_profile: true },
+                attributes: ['id']
+            });
+            targetUserIds = Array.from(new Set([...publicUsers.map(u => u.id), ...friendsAndSelfIds]));
+        }
+
+        if (scope === 'gym' && !myGym) {
+            res.set('Cache-Control', 'private, max-age=10, stale-while-revalidate=30');
+            return res.json({
+                feed: [],
+                hasOlder: false,
+                scope,
+                gymMeta
+            });
+        }
+
+        // Ventana de 7 días hacia atrás para optimizar el rendimiento del muro
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         sevenDaysAgo.setHours(0, 0, 0, 0);
 
-        const whereClause = {
-            user_id: { [Op.in]: feedUserIds },
-            [Op.or]: [
-                { visibility: 'friends' },
-                { visibility: 'public' },
-                { visibility: null }
-            ]
+        const visibilityConstraint =
+            scope === 'friends'
+                ? {
+                      [Op.or]: [{ visibility: 'friends' }, { visibility: 'public' }, { visibility: null }]
+                  }
+                : {
+                      [Op.or]: [
+                          { visibility: 'public' },
+                          { visibility: 'friends' },
+                          { visibility: null }
+                      ]
+                  };
+
+        const buildWhereClause = (withDateLimit) => {
+            const clause = {
+                user_id: { [Op.in]: targetUserIds.length > 0 ? targetUserIds : [-1] },
+                ...visibilityConstraint
+            };
+            if (withDateLimit) {
+                clause.workout_date = { [Op.gte]: sevenDaysAgo };
+            }
+            return clause;
         };
 
-        if (!includeOlder) {
-            whereClause.workout_date = {
-                [Op.gte]: sevenDaysAgo
-            };
-        }
-
-        // 2. Buscar los logs de entrenamiento de esas personas
-        const logs = await WorkoutLog.findAll({
-            where: whereClause,
-            order: [
-                ['workout_date', 'DESC'], 
-                [{ model: WorkoutComment, as: 'Comments' }, 'created_at', 'ASC'] 
-            ],
-            limit: includeOlder ? 50 : 25,
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: ['id', 'username', 'profile_image_url', 'streak', 'role', 'trainer_id']
-                },
-                {
-                    model: Routine,
-                    as: 'routine',
-                    attributes: ['id', 'name', 'image_url', 'folder'],
-                    include: [{
-                        model: RoutineExercise,
-                        as: 'RoutineExercises',
-                        attributes: ['name', 'image_url_start'],
-                        include: [{
-                            model: ExerciseList,
-                            attributes: ['image_url_start']
-                        }]
-                    }]
-                },
-                {
-                    model: WorkoutLogDetail,
-                    as: 'WorkoutLogDetails',
-                    include: [{
-                        model: WorkoutLogSet,
-                        as: 'WorkoutLogSets',
-                        attributes: ['weight_kg', 'reps', 'set_number'] // OPTIMIZACIÓN: Solo traemos los campos que importan
-                    }]
-                },
-                {
-                    model: WorkoutLike,
-                    as: 'Likes',
-                    attributes: ['id', 'user_id']
-                },
-                {
-                    model: WorkoutComment,
-                    as: 'Comments',
-                    attributes: ['id', 'comment', 'created_at', 'user_id'], // OPTIMIZACIÓN
-                    include: [{
+        const queryLogs = async (withDateLimit, limitCount) =>
+            WorkoutLog.findAll({
+                where: buildWhereClause(withDateLimit),
+                order: [
+                    ['workout_date', 'DESC'],
+                    [{ model: WorkoutComment, as: 'Comments' }, 'created_at', 'ASC']
+                ],
+                limit: limitCount,
+                include: [
+                    {
                         model: User,
                         as: 'user',
-                        attributes: ['id', 'username', 'profile_image_url', 'role', 'trainer_id']
-                    }]
-                }
-            ]
-        });
+                        attributes: [
+                            'id',
+                            'username',
+                            'profile_image_url',
+                            'streak',
+                            'level',
+                            'xp',
+                            'show_level_xp',
+                            'role',
+                            'trainer_id',
+                            'gym_data',
+                            'show_gym',
+                            'is_public_profile'
+                        ]
+                    },
+                    {
+                        model: Routine,
+                        as: 'routine',
+                        attributes: ['id', 'name', 'image_url', 'folder'],
+                        include: [
+                            {
+                                model: RoutineExercise,
+                                as: 'RoutineExercises',
+                                attributes: ['name', 'image_url_start'],
+                                include: [
+                                    {
+                                        model: ExerciseList,
+                                        attributes: ['image_url_start']
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        model: WorkoutLogDetail,
+                        as: 'WorkoutLogDetails',
+                        include: [
+                            {
+                                model: WorkoutLogSet,
+                                as: 'WorkoutLogSets',
+                                attributes: ['weight_kg', 'reps', 'set_number']
+                            }
+                        ]
+                    },
+                    {
+                        model: WorkoutLike,
+                        as: 'Likes',
+                        attributes: ['id', 'user_id']
+                    },
+                    {
+                        model: WorkoutComment,
+                        as: 'Comments',
+                        attributes: ['id', 'comment', 'created_at', 'user_id'],
+                        include: [
+                            {
+                                model: User,
+                                as: 'user',
+                                attributes: ['id', 'username', 'profile_image_url', 'role', 'trainer_id']
+                            }
+                        ]
+                    }
+                ]
+            });
+
+        let effectiveIncludeOlder = includeOlder;
+        let logs = await queryLogs(!effectiveIncludeOlder, effectiveIncludeOlder ? 50 : 25);
+
+        // Si no hay entrenos en los últimos 7 días, traemos automáticamente los anteriores para evitar la sala vacía
+        if (logs.length === 0 && !effectiveIncludeOlder && targetUserIds.length > 0) {
+            const fallbackLogs = await queryLogs(false, 25);
+            if (fallbackLogs.length > 0) {
+                logs = fallbackLogs;
+                effectiveIncludeOlder = true;
+            }
+        }
 
         // 3. OPTIMIZACIÓN MASIVA: Obtener SOLO los nombres de ejercicios presentes en ESTOS entrenamientos
-        // En lugar de cargar todo el catálogo (ExerciseList.findAll()), extraemos los nombres únicos del feed de hoy
         const uniqueExerciseNamesInFeed = new Set();
         logs.forEach(log => {
             if (log.WorkoutLogDetails) {
@@ -581,15 +841,16 @@ export const getFeed = async (req, res) => {
             }
         });
 
-        // Solo buscamos en la BD las imágenes de los ejercicios que realmente se han usado hoy
-        const relevantExercises = await ExerciseList.findAll({
-            where: {
-                name: { [Op.in]: Array.from(uniqueExerciseNamesInFeed) }
-            },
-            attributes: ['name', 'image_url_start', 'video_url'] // Solo traemos campos útiles, no descripciones enteras
-        });
+        const relevantExercises =
+            uniqueExerciseNamesInFeed.size > 0
+                ? await ExerciseList.findAll({
+                      where: {
+                          name: { [Op.in]: Array.from(uniqueExerciseNamesInFeed) }
+                      },
+                      attributes: ['name', 'image_url_start', 'video_url']
+                  })
+                : [];
 
-        // Creamos un diccionario rápido en memoria para no usar .find() en cada vuelta (O(1) en vez de O(n))
         const exerciseDictionary = {};
         relevantExercises.forEach(ex => {
             exerciseDictionary[ex.name.toLowerCase()] = ex;
@@ -598,18 +859,40 @@ export const getFeed = async (req, res) => {
         const formattedFeed = logs.map(log => {
             const logData = log.toJSON();
             const likes = logData.Likes || [];
+            const rawAuthor = logData.user || {};
+            const isMe = logData.user_id === userId;
+            const isFriend = friendIdsSet.has(logData.user_id);
 
-            logData.user = publicUserData(logData.user);
+            const parsedAuthorGym =
+                rawAuthor.show_gym !== false || isMe ? parseGymDataSafe(rawAuthor.gym_data) : null;
+
+            const gymMatchType =
+                userGymMatchMap.get(logData.user_id) ||
+                (myGym && parsedAuthorGym ? classifyGymMatchType(myGym, parsedAuthorGym) : null);
+
+            const sanitizedAuthor = publicUserData(rawAuthor);
+            if (sanitizedAuthor) {
+                delete sanitizedAuthor.gym_data;
+                sanitizedAuthor.level = sanitizedAuthor.show_level_xp ? sanitizedAuthor.level : null;
+                sanitizedAuthor.xp = sanitizedAuthor.show_level_xp ? sanitizedAuthor.xp : null;
+                sanitizedAuthor.gym_name = parsedAuthorGym?.name || null;
+                sanitizedAuthor.gym_city = parsedAuthorGym?.city || null;
+                sanitizedAuthor.gym_verified = !!parsedAuthorGym?.isVerified;
+                sanitizedAuthor.gym_match_type = gymMatchType;
+                sanitizedAuthor.is_friend = isFriend;
+                sanitizedAuthor.has_pending_request = pendingIdsSet.has(logData.user_id);
+            }
+
+            logData.user = sanitizedAuthor;
             logData.Comments = (logData.Comments || []).map(comment => ({
                 ...comment,
                 user: publicUserData(comment.user)
             }));
 
-            // Añadir ejercicios, series e imágenes usando el diccionario rápido
             if (logData.WorkoutLogDetails) {
                 logData.WorkoutLogDetails = logData.WorkoutLogDetails.map(detail => {
                     const matchingEx = exerciseDictionary[detail.exercise_name?.toLowerCase()];
-                    
+
                     let validSets = [];
                     if (detail.WorkoutLogSets) {
                         validSets = detail.WorkoutLogSets
@@ -635,16 +918,12 @@ export const getFeed = async (req, res) => {
 
         // Comprobar si existen publicaciones más antiguas de 7 días disponibles
         let hasOlderPosts = false;
-        if (!includeOlder) {
+        if (!effectiveIncludeOlder && targetUserIds.length > 0) {
             const olderLog = await WorkoutLog.findOne({
                 where: {
-                    user_id: { [Op.in]: feedUserIds },
+                    user_id: { [Op.in]: targetUserIds },
                     workout_date: { [Op.lt]: sevenDaysAgo },
-                    [Op.or]: [
-                        { visibility: 'friends' },
-                        { visibility: 'public' },
-                        { visibility: null }
-                    ]
+                    ...visibilityConstraint
                 },
                 attributes: ['id']
             });
@@ -654,7 +933,10 @@ export const getFeed = async (req, res) => {
         res.set('Cache-Control', 'private, max-age=15, stale-while-revalidate=45');
         res.json({
             feed: formattedFeed,
-            hasOlder: hasOlderPosts
+            hasOlder: hasOlderPosts,
+            isShowingOlder: effectiveIncludeOlder,
+            scope,
+            gymMeta
         });
     } catch (error) {
         console.error("Error en getFeed:", error);
