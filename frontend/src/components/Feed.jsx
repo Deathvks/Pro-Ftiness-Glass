@@ -440,26 +440,26 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
 
     const renderScopeSelector = () => (
         <div className="mb-5 sm:mb-6 space-y-3">
-            {/* Selector Rápido: Global / Mi Gimnasio / Amigos */}
+            {/* Selector Rápido Deslizable: Global / Mi Gimnasio / Amigos */}
             <div
                 role="tablist"
                 aria-label="Filtro del Muro de Comunidad"
-                className="grid grid-cols-3 gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-[22px] sm:rounded-[26px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10"
+                className="flex overflow-x-auto no-scrollbar items-center gap-2.5 py-1.5 px-1 -mx-1 sm:justify-center mask-linear-fade"
             >
                 <button
                     type="button"
                     role="tab"
                     aria-selected={scope === 'global'}
                     onClick={() => handleScopeChange('global')}
-                    className={`flex items-center justify-center gap-1.5 sm:gap-2.5 py-2.5 sm:py-3 px-2 sm:px-4 rounded-[16px] sm:rounded-[20px] font-extrabold text-xs sm:text-sm transition-all duration-200 outline-none active:scale-[0.98] min-w-0 ${
+                    className={`flex items-center gap-2 py-2.5 px-5 rounded-full font-bold text-sm whitespace-nowrap flex-shrink-0 transition-all duration-300 outline-none active:scale-95 ${
                         scope === 'global'
-                            ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25'
-                            : 'text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5'
+                            ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25 scale-[1.03]'
+                            : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
                     }`}
                 >
-                    <FaFire className={`shrink-0 text-xs sm:text-sm ${scope === 'global' ? 'text-accent-contrast' : 'text-orange-500'}`} />
-                    <span className="truncate">Global</span>
-                    <span className={`hidden md:inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    <FaFire className={`shrink-0 text-sm ${scope === 'global' ? 'text-accent-contrast' : 'text-orange-500'}`} />
+                    <span>Global</span>
+                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
                         scope === 'global' ? 'bg-black/15 text-accent-contrast' : 'bg-black/5 dark:bg-white/10 text-text-muted'
                     }`}>
                         Comunidad
@@ -471,16 +471,16 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                     role="tab"
                     aria-selected={scope === 'gym'}
                     onClick={() => handleScopeChange('gym')}
-                    className={`flex items-center justify-center gap-1.5 sm:gap-2.5 py-2.5 sm:py-3 px-2 sm:px-4 rounded-[16px] sm:rounded-[20px] font-extrabold text-xs sm:text-sm transition-all duration-200 outline-none active:scale-[0.98] min-w-0 ${
+                    className={`flex items-center gap-2 py-2.5 px-5 rounded-full font-bold text-sm whitespace-nowrap flex-shrink-0 transition-all duration-300 outline-none active:scale-95 ${
                         scope === 'gym'
-                            ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25'
-                            : 'text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5'
+                            ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25 scale-[1.03]'
+                            : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
                     }`}
                 >
-                    <FaMapMarkerAlt className={`shrink-0 text-xs sm:text-sm ${scope === 'gym' ? 'text-accent-contrast' : 'text-emerald-500'}`} />
-                    <span className="truncate">Mi Gimnasio</span>
+                    <FaMapMarkerAlt className={`shrink-0 text-sm ${scope === 'gym' ? 'text-accent-contrast' : 'text-emerald-500'}`} />
+                    <span>Mi Gimnasio</span>
                     {totalGymAthletes > 0 && (
-                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0 ${
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 ${
                             scope === 'gym' ? 'bg-black/20 text-accent-contrast' : 'bg-emerald-500/15 text-emerald-500'
                         }`}>
                             {totalGymAthletes}
@@ -493,14 +493,14 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                     role="tab"
                     aria-selected={scope === 'friends'}
                     onClick={() => handleScopeChange('friends')}
-                    className={`flex items-center justify-center gap-1.5 sm:gap-2.5 py-2.5 sm:py-3 px-2 sm:px-4 rounded-[16px] sm:rounded-[20px] font-extrabold text-xs sm:text-sm transition-all duration-200 outline-none active:scale-[0.98] min-w-0 ${
+                    className={`flex items-center gap-2 py-2.5 px-5 rounded-full font-bold text-sm whitespace-nowrap flex-shrink-0 transition-all duration-300 outline-none active:scale-95 ${
                         scope === 'friends'
-                            ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25'
-                            : 'text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5'
+                            ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25 scale-[1.03]'
+                            : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
                     }`}
                 >
-                    <FaUsers className={`shrink-0 text-xs sm:text-sm ${scope === 'friends' ? 'text-accent-contrast' : 'text-blue-500'}`} />
-                    <span className="truncate">Amigos</span>
+                    <FaUsers className={`shrink-0 text-sm ${scope === 'friends' ? 'text-accent-contrast' : 'text-blue-500'}`} />
+                    <span>Amigos</span>
                 </button>
             </div>
 
@@ -646,43 +646,43 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                         </button>
                     </div>
 
-                    {/* Píldoras de subfiltro: Todo / Mismo Gym / Mi Ciudad */}
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-4 pt-3.5 border-t border-black/5 dark:border-white/10">
+                    {/* Píldoras deslizables de subfiltro: Todo / Mismo Gym / Mi Ciudad */}
+                    <div className="flex overflow-x-auto no-scrollbar items-center gap-2 mt-4 pt-3.5 border-t border-black/5 dark:border-white/10 pb-1 -mx-1 px-1 mask-linear-fade">
                         <button
                             type="button"
                             onClick={() => setGymFilter('all')}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all ${
+                            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-extrabold whitespace-nowrap flex-shrink-0 transition-all ${
                                 gymFilter === 'all'
                                     ? 'bg-accent text-accent-contrast shadow-sm'
                                     : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary'
                             }`}
                         >
-                            <FaGlobeEurope className="text-[11px]" />
+                            <FaGlobeEurope className="text-xs shrink-0" />
                             <span>Gimnasio y Ciudad ({sameGymCount + sameCityCount})</span>
                         </button>
                         <button
                             type="button"
                             onClick={() => setGymFilter('same_gym')}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all ${
+                            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-extrabold whitespace-nowrap flex-shrink-0 transition-all ${
                                 gymFilter === 'same_gym'
                                     ? 'bg-emerald-500 text-white shadow-sm'
                                     : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary'
                             }`}
                         >
-                            <FaDumbbell className="text-[11px]" />
+                            <FaDumbbell className="text-xs shrink-0" />
                             <span>Mismo Gym ({sameGymCount})</span>
                         </button>
-                        { activeGym.city && (
+                        {activeGym.city && (
                             <button
                                 type="button"
                                 onClick={() => setGymFilter('same_city')}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all ${
+                                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-extrabold whitespace-nowrap flex-shrink-0 transition-all ${
                                     gymFilter === 'same_city'
                                         ? 'bg-blue-500 text-white shadow-sm'
                                         : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary'
                                 }`}
                             >
-                                <FaCity className="text-[11px]" />
+                                <FaCity className="text-xs shrink-0" />
                                 <span>En {activeGym.city} ({sameCityCount})</span>
                             </button>
                         )}
