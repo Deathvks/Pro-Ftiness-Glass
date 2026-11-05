@@ -6,7 +6,7 @@ import {
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
   ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
   Bug, Download, Vibrate, Volume2, Timer, Sliders, Globe, Clock, MapPin, Youtube, Play, LockOpen, Lock,
-  FileSpreadsheet, UploadCloud, Scale
+  FileSpreadsheet, UploadCloud, Scale, WifiOff, HardDrive, Trash2, CheckCircle2, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6'; 
 import useAppStore from '../store/useAppStore';
@@ -163,6 +163,7 @@ export default function SettingsScreen({
 
   const SETTINGS_TABS = [
     { id: 'workout', label: 'Entrenamiento', icon: Timer },
+    { id: 'offline', label: 'Modo sin conexión', icon: WifiOff },
     { id: 'profile', label: 'Perfil', icon: User },
     { id: 'notifications', label: 'Notificaciones', icon: BellRing },
     { id: 'security', label: 'Seguridad', icon: Shield },
@@ -170,6 +171,91 @@ export default function SettingsScreen({
     { id: 'privacy', label: 'Privacidad Social', icon: Users },
     { id: 'session', label: 'Sesión', icon: LogOut, danger: true },
   ];
+
+  const [offlineStats, setOfflineStats] = useState({
+    isDownloaded: false,
+    imageCount: 0,
+    exerciseCount: 0,
+    totalBytes: 0,
+    formattedSize: '0 MB',
+    lastDownloadedAt: null
+  });
+  const [isDownloadingOffline, setIsDownloadingOffline] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState({
+    current: 0,
+    total: 0,
+    percent: 0,
+    bytesDownloaded: 0
+  });
+  const [showDeleteOfflineModal, setShowDeleteOfflineModal] = useState(false);
+  const [isDeletingOffline, setIsDeletingOffline] = useState(false);
+  const abortControllerRef = useRef(null);
+  const isNativeAndroid = typeof window !== 'undefined' && !!window.Capacitor?.isNativePlatform?.();
+
+  useEffect(() => {
+    let isMounted = true;
+    import('../services/offlineExerciseService').then(({ getOfflineStorageStats }) => {
+      getOfflineStorageStats().then(stats => {
+        if (isMounted && stats) setOfflineStats(stats);
+      });
+    }).catch(() => {});
+    return () => { isMounted = false; };
+  }, [activeTab]);
+
+  const handleStartOfflineDownload = async () => {
+    if (isDownloadingOffline) return;
+    try {
+      setIsDownloadingOffline(true);
+      setDownloadProgress({ current: 0, total: 0, percent: 0, bytesDownloaded: 0 });
+      abortControllerRef.current = new AbortController();
+
+      const { downloadAllExercisesForOffline, getOfflineStorageStats } = await import('../services/offlineExerciseService');
+      
+      const result = await downloadAllExercisesForOffline({
+        signal: abortControllerRef.current.signal,
+        onProgress: (p) => {
+          setDownloadProgress(p);
+        }
+      });
+
+      const updatedStats = await getOfflineStorageStats();
+      setOfflineStats(updatedStats);
+      addToast(`Biblioteca offline lista: ${result.imagesCount} recursos guardados (${result.formattedSize})`, 'success');
+    } catch (err) {
+      if (err.message && err.message.includes('cancelada')) {
+        addToast('Descarga cancelada', 'info');
+      } else {
+        console.error('Error descargando biblioteca offline:', err);
+        addToast('Error al descargar ejercicios para modo offline', 'error');
+      }
+    } finally {
+      setIsDownloadingOffline(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const handleCancelOfflineDownload = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+  };
+
+  const handleDeleteOfflineCache = async () => {
+    try {
+      setIsDeletingOffline(true);
+      const { deleteOfflineExercises, getOfflineStorageStats } = await import('../services/offlineExerciseService');
+      await deleteOfflineExercises();
+      const updatedStats = await getOfflineStorageStats();
+      setOfflineStats(updatedStats);
+      setShowDeleteOfflineModal(false);
+      addToast('Almacenamiento offline liberado correctamente', 'success');
+    } catch (err) {
+      console.error('Error eliminando caché offline:', err);
+      addToast('Error al liberar espacio', 'error');
+    } finally {
+      setIsDeletingOffline(false);
+    }
+  };
 
   const [autoTimezone, setAutoTimezone] = useState(() => {
     return localStorage.getItem('settings_auto_timezone') === 'true';
@@ -356,6 +442,13 @@ export default function SettingsScreen({
               <SectionTitle icon={FileSpreadsheet} title="Migración y Copias de Seguridad" />
               <div className="flex flex-col gap-3">
                 <SettingsItem
+                  icon={WifiOff}
+                  title="Modo sin conexión y Búnker"
+                  subtitle={offlineStats.isDownloaded ? `${offlineStats.imageCount} imágenes guardadas (${offlineStats.formattedSize})` : 'Descarga los ejercicios para entrenar sin cobertura'}
+                  onClick={() => setActiveTab('offline')}
+                  action={<ChevronRight size={18} className="text-text-muted" />}
+                />
+                <SettingsItem
                   icon={UploadCloud}
                   title="Importar desde Hevy o Strong (CSV)"
                   subtitle="Migra todos tus entrenamientos históricos sin perder tus datos"
@@ -378,6 +471,177 @@ export default function SettingsScreen({
               </div>
             </GlassCard>
           </>
+          )}
+
+          {activeTab === 'offline' && (
+          <div className="flex flex-col gap-6">
+            <GlassCard className={glassCardClass}>
+              <SectionTitle icon={WifiOff} title="Modo sin conexión y Búnker" />
+              
+              <p className="text-sm text-text-secondary leading-relaxed -mt-2 mb-4">
+                Descarga la biblioteca completa de ejercicios y sus animaciones/GIFs en la memoria de tu dispositivo. Ideal para gimnasios en sótanos, zonas sin cobertura o para entrenar sin gastar datos móviles.
+              </p>
+
+              {/* Tarjeta de estado de almacenamiento */}
+              <div className="p-5 rounded-[24px] bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 flex flex-col gap-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`p-2 rounded-xl shrink-0 ${offlineStats.isDownloaded ? 'bg-emerald-500/10 text-emerald-500' : isDownloadingOffline ? 'bg-accent/10 text-accent animate-pulse' : 'bg-amber-500/10 text-amber-500'}`}>
+                      {offlineStats.isDownloaded ? (
+                        <CheckCircle2 size={20} />
+                      ) : isDownloadingOffline ? (
+                        <RefreshCw size={20} className="animate-spin" />
+                      ) : (
+                        <AlertCircle size={20} />
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-text-primary">
+                        {isDownloadingOffline
+                          ? 'Descargando ejercicios e imágenes...'
+                          : offlineStats.isDownloaded
+                          ? 'Biblioteca offline lista'
+                          : 'Sin descargar en este dispositivo'}
+                      </div>
+                      <div className="text-[11px] text-text-secondary">
+                        {isNativeAndroid
+                          ? 'Almacenamiento interno de la aplicación (Android WebView Storage)'
+                          : 'Almacenamiento local persistente (IndexedDB + Cache Storage)'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full ${offlineStats.isDownloaded ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/20' : isDownloadingOffline ? 'bg-accent/15 text-accent border border-accent/20' : 'bg-amber-500/15 text-amber-500 border border-amber-500/20'}`}>
+                    {offlineStats.isDownloaded ? 'Disponible' : isDownloadingOffline ? `${downloadProgress.percent}%` : 'No descargado'}
+                  </span>
+                </div>
+
+                {/* Métricas */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-black/5 dark:border-white/10 text-center">
+                  <div className="p-3 rounded-2xl bg-black/5 dark:bg-white/5">
+                    <span className="text-[10px] text-text-secondary uppercase tracking-wider block font-semibold">Ejercicios</span>
+                    <span className="text-base sm:text-lg font-black text-text-primary">{offlineStats.exerciseCount || (offlineStats.isDownloaded ? '500+' : '0')}</span>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-black/5 dark:bg-white/5">
+                    <span className="text-[10px] text-text-secondary uppercase tracking-wider block font-semibold">Imágenes / GIFs</span>
+                    <span className="text-base sm:text-lg font-black text-text-primary">{offlineStats.imageCount || 0}</span>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-black/5 dark:bg-white/5">
+                    <span className="text-[10px] text-text-secondary uppercase tracking-wider block font-semibold">Espacio usado</span>
+                    <span className="text-base sm:text-lg font-black text-text-primary">{offlineStats.formattedSize || '0 MB'}</span>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-black/5 dark:bg-white/5">
+                    <span className="text-[10px] text-text-secondary uppercase tracking-wider block font-semibold">Sincronizado</span>
+                    <span className="text-xs font-bold text-text-primary block mt-1">
+                      {offlineStats.lastDownloadedAt ? new Date(offlineStats.lastDownloadedAt).toLocaleDateString() : 'Nunca'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Barra de progreso interactiva si está descargando */}
+                {isDownloadingOffline && (
+                  <div className="flex flex-col gap-2 pt-2">
+                    <div className="flex justify-between items-center text-xs font-semibold text-text-secondary">
+                      <span>Descargando recursos ({downloadProgress.current} de {downloadProgress.total})...</span>
+                      <span className="text-accent font-bold">{downloadProgress.percent}%</span>
+                    </div>
+                    <div className="w-full h-3 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden p-0.5">
+                      <div
+                        className="h-full bg-accent rounded-full transition-all duration-300 ease-out shadow-sm"
+                        style={{ width: `${downloadProgress.percent}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-end mt-1">
+                      <button
+                        type="button"
+                        onClick={handleCancelOfflineDownload}
+                        className="text-xs font-bold text-red-500 hover:underline cursor-pointer"
+                      >
+                        Cancelar descarga
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={handleStartOfflineDownload}
+                  disabled={isDownloadingOffline}
+                  className={`flex-1 flex items-center justify-center gap-2.5 py-4 px-6 rounded-[20px] font-extrabold text-sm transition-all duration-300 shadow-lg cursor-pointer
+                    ${isDownloadingOffline
+                      ? 'opacity-60 cursor-not-allowed bg-accent text-accent-contrast'
+                      : 'bg-accent text-accent-contrast hover:scale-[1.02] active:scale-95 shadow-accent/20'}`}
+                >
+                  {isDownloadingOffline ? (
+                    <>
+                      <RefreshCw size={18} className="animate-spin" />
+                      <span>Descargando biblioteca...</span>
+                    </>
+                  ) : offlineStats.isDownloaded ? (
+                    <>
+                      <RefreshCw size={18} />
+                      <span>Actualizar biblioteca offline</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download size={18} />
+                      <span>Descargar ejercicios para modo offline</span>
+                    </>
+                  )}
+                </button>
+
+                {offlineStats.isDownloaded && !isDownloadingOffline && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteOfflineModal(true)}
+                    className="flex items-center justify-center gap-2 py-4 px-5 rounded-[20px] font-bold text-sm bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Trash2 size={18} />
+                    <span>Liberar espacio</span>
+                  </button>
+                )}
+              </div>
+            </GlassCard>
+
+            {/* Tarjeta explicativa sobre funcionamiento en Android vs Web */}
+            <GlassCard className={glassCardClass}>
+              <SectionTitle icon={HardDrive} title="¿Cómo funciona el modo sin conexión?" />
+              <div className="flex flex-col gap-3 text-sm text-text-secondary leading-relaxed">
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-black/5 dark:bg-white/5">
+                  <div className="p-2 rounded-xl bg-accent/10 text-accent shrink-0 mt-0.5">
+                    <Check size={16} strokeWidth={3} />
+                  </div>
+                  <div>
+                    <span className="font-bold text-text-primary block">Almacenamiento 100% local en tu dispositivo</span>
+                    Tanto en la aplicación de Android como en la versión web (PWA), las imágenes y GIFs se guardan físicamente en la memoria de tu móvil mediante bases de datos indexadas y caché persistente.
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-black/5 dark:bg-white/5">
+                  <div className="p-2 rounded-xl bg-accent/10 text-accent shrink-0 mt-0.5">
+                    <Check size={16} strokeWidth={3} />
+                  </div>
+                  <div>
+                    <span className="font-bold text-text-primary block">Respuesta instantánea sin red (0 ms)</span>
+                    Cuando estás entrenando en sótanos o zonas sin cobertura, la app no espera a la conexión: extrae directamente las animaciones de la memoria del teléfono para que no te quedes colgado esperando a que cargue la técnica.
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-black/5 dark:bg-white/5">
+                  <div className="p-2 rounded-xl bg-accent/10 text-accent shrink-0 mt-0.5">
+                    <Check size={16} strokeWidth={3} />
+                  </div>
+                  <div>
+                    <span className="font-bold text-text-primary block">Ahorro de datos móviles</span>
+                    Al tener los ejercicios ya guardados en el móvil, no gastarás megas de tu tarifa repitiendo la descarga de las mismas imágenes en cada entrenamiento.
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
+          </div>
           )}
 
           {activeTab === 'notifications' && (
@@ -575,6 +839,17 @@ export default function SettingsScreen({
         onClose={() => setShowDataTransferModal(false)}
         initialTab={dataTransferTab}
       />
+
+      {showDeleteOfflineModal && (
+        <ConfirmationModal
+          message="¿Seguro que deseas eliminar todos los ejercicios e imágenes descargadas sin conexión? Se liberará el espacio en tu dispositivo, pero necesitarás conexión a internet para ver las técnicas."
+          onConfirm={handleDeleteOfflineCache}
+          onCancel={() => setShowDeleteOfflineModal(false)}
+          confirmText={isDeletingOffline ? "Borrando..." : "Eliminar y liberar espacio"}
+          cancelText="Cancelar"
+          isLoading={isDeletingOffline}
+        />
+      )}
     </div>
   );
 }

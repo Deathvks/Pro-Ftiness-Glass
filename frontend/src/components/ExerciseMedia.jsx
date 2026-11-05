@@ -1,6 +1,7 @@
 /* frontend/src/components/ExerciseMedia.jsx */
 import React, { useState, useEffect, useRef, memo } from 'react';
 import { Image as ImageIcon, WifiOff } from 'lucide-react';
+import { useOfflineMediaUrl, useOfflineMediaUrls } from '../services/offlineExerciseService';
 
 
 // Base URL para construir las rutas de imÃƒÂ¡genes/vÃƒÂ­deos
@@ -120,6 +121,11 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   // Use mqdefault.jpg for a native 16:9 aspect ratio without black bars
   const youtubeThumbnail = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
 
+  // Resolución offline (reemplaza URLs remotas por blobs locales en 0 ms si están descargados)
+  const resolvedFinalImageUrl = useOfflineMediaUrl(finalImageUrl);
+  const resolvedFinalImagesUrls = useOfflineMediaUrls(finalImagesUrls);
+  const resolvedYoutubeThumbnail = useOfflineMediaUrl(youtubeThumbnail);
+
   useEffect(() => {
     const video = videoElementRef.current;
     if (forceImage || !video || !videoUrl || videoError || youtubeId) return undefined;
@@ -234,9 +240,9 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   }
 
   // Renderizado de imagen (o miniatura de YouTube si no hay imagen propia)
-  const imageToRender = finalImageUrl || (finalImagesUrls.length > 0 ? finalImagesUrls[0] : youtubeThumbnail);
+  const imageToRender = resolvedFinalImageUrl || (resolvedFinalImagesUrls.length > 0 ? resolvedFinalImagesUrls[0] : resolvedYoutubeThumbnail);
   
-  if ((imageToRender || finalImagesUrls.length > 0) && !imageError) {
+  if ((imageToRender || resolvedFinalImagesUrls.length > 0) && !imageError) {
     const isAuto = fitMode === 'auto' || forceAuto;
     const aspectRatioClass = isAuto ? 'w-full h-auto min-h-[200px] max-h-[70vh]' : 'w-full h-full';
     
@@ -247,7 +253,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     // Lógica de ajuste de imagen
     const getImageBlendClass = (url) => {
       if (!url) return '';
-      if (url === youtubeThumbnail) {
+      if (url === resolvedYoutubeThumbnail || url === youtubeThumbnail) {
         return fitMode === 'contain' ? 'object-contain' : 'object-cover';
       }
       return isAuto ? 'object-contain' : `object-${fitMode}`;
@@ -261,15 +267,15 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
           ? `absolute inset-0 w-full h-full object-contain ${imageRadiusClass}`
           : `absolute inset-0 w-full h-full ${imageRadiusClass}`);
 
-    if (finalImagesUrls.length > 0) {
-      const hasMultiple = finalImagesUrls.length > 1 && !disableAnimation;
-      const totalDuration = finalImagesUrls.length * 2; // 2 seconds per frame
+    if (resolvedFinalImagesUrls.length > 0) {
+      const hasMultiple = resolvedFinalImagesUrls.length > 1 && !disableAnimation;
+      const totalDuration = resolvedFinalImagesUrls.length * 2; // 2 seconds per frame
       
       return (
         <div className={containerClasses}>
           {hasMultiple && (
             <style>{`
-              @keyframes slideCycle_${finalImagesUrls.length} {
+              @keyframes slideCycle_${resolvedFinalImagesUrls.length} {
                 0% { opacity: 1; z-index: 20; }
                 ${(1.8 / totalDuration) * 100}% { opacity: 1; z-index: 20; }
                 ${(2 / totalDuration) * 100}% { opacity: 0; z-index: 0; }
@@ -277,7 +283,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
               }
             `}</style>
           )}
-          {finalImagesUrls.map((url, idx) => {
+          {resolvedFinalImagesUrls.map((url, idx) => {
             const isUrlContain = fitMode === 'contain';
             const posClass = isAuto && idx === 0 ? 'relative' : 'absolute inset-0';
             const sizeClass = isAuto
@@ -291,7 +297,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
 
             if (hasMultiple) {
               visibilityStyle = {
-                animation: `slideCycle_${finalImagesUrls.length} ${totalDuration}s infinite ${idx * 2}s`
+                animation: `slideCycle_${resolvedFinalImagesUrls.length} ${totalDuration}s infinite ${idx * 2}s`
               };
               visibilityClass = 'opacity-0'; // Will be overridden by animation
             } else {
@@ -302,7 +308,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
               <img
                 key={idx}
                 src={url}
-                alt={`DemostraciÃƒÂ³n de ${details?.name || 'ejercicio'} - slide ${idx}`}
+                alt={`Demostración de ${details?.name || 'ejercicio'} - slide ${idx}`}
                 className={`${posClass} ${sizeClass} transition-opacity duration-500 ease-in-out ${getImageBlendClass(url)} ${visibilityClass}`}
                 style={visibilityStyle}
                 onError={() => setImageError(true)}
@@ -320,7 +326,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
         <img
           key={imageToRender}
           src={imageToRender}
-          alt={`DemostraciÃƒÂ³n de ${details?.name || 'ejercicio'}`}
+          alt={`Demostración de ${details?.name || 'ejercicio'}`}
           className={`${imgBaseClass} transition-opacity duration-500 ${getImageBlendClass(imageToRender)}`}
           onError={() => setImageError(true)}
           loading="eager"

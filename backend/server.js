@@ -71,6 +71,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const allowedOrigins = [
   'capacitor://localhost',
   'https://localhost',
+  'http://localhost',
   'https://pro-fitness-glass.zeabur.app',
   'https://pro-fitness-glass.app',
   process.env.FRONTEND_URL
