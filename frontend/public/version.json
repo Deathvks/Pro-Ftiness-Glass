@@ -1,17 +1,17 @@
 {
-  "version": "7.13.2",
-  "releaseNotes": "Actualización v7.13.0: Modo sin conexión para entrenar en sótanos/sin cobertura y Smart Sync nutricional con caché local en base de datos.",
+  "version": "7.13.3",
+  "releaseNotes": "Actualización v7.13.3: Descarga offline en segundo plano con indicador flotante, almacenamiento seguro persistente y optimización de botones.",
   "welcome": {
-    "title": "Modo Sin Conexión y Smart Sync",
-    "subtitle": "Llega la versión 7.13.0: descarga de ejercicios para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.",
+    "title": "Modo Sin Conexión en Segundo Plano",
+    "subtitle": "Llega la versión 7.13.3: descarga de ejercicios mientras sigues navegando, barra flotante global y optimización móvil.",
     "features": [
       {
-        "title": "Modo Sin Conexión y Búnker",
-        "description": "Descarga en Ajustes toda la biblioteca de ejercicios y animaciones en tu móvil. Entrena en sótanos o zonas sin cobertura con 0 ms de espera."
+        "title": "Modo Búnker en Segundo Plano",
+        "description": "Descarga toda la biblioteca de ejercicios y animaciones mientras sigues entrenando o usando la app, con indicador de progreso flotante."
       },
       {
-        "title": "Smart Sync Nutricional",
-        "description": "Búsqueda y escaneo instantáneo con OpenFoodFacts API v2. Los alimentos se guardan localmente y se actualizan automáticamente cada 30 días."
+        "title": "Almacenamiento Local Seguro",
+        "description": "Datos multimedia guardados en sandbox aislado (IndexedDB + Cache Storage / Android WebView Storage) sin consumo de datos móviles."
       },
       {
         "title": "Migración desde Hevy y Strong",

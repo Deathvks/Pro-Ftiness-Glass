@@ -651,17 +651,19 @@ export default function SettingsScreen({
                   {isDownloadingOffline ? (
                     <>
                       <RefreshCw size={18} className="animate-spin shrink-0" />
-                      <span className="truncate">Descargando ({downloadProgress.percent}%)...</span>
+                      <span className="truncate">Descargando ({downloadProgress.percent}%)</span>
                     </>
                   ) : offlineStats.isDownloaded ? (
                     <>
                       <RefreshCw size={18} className="shrink-0" />
-                      <span className="truncate">Actualizar biblioteca</span>
+                      <span className="hidden sm:inline truncate">Actualizar biblioteca offline</span>
+                      <span className="sm:hidden truncate">Actualizar biblioteca</span>
                     </>
                   ) : (
                     <>
                       <Download size={18} className="shrink-0" />
-                      <span className="truncate">Descargar biblioteca offline</span>
+                      <span className="hidden sm:inline truncate">Descargar biblioteca offline</span>
+                      <span className="sm:hidden truncate">Descargar biblioteca</span>
                     </>
                   )}
                 </button>
@@ -670,9 +672,9 @@ export default function SettingsScreen({
                   <button
                     type="button"
                     onClick={() => setShowDeleteOfflineModal(true)}
-                    className="flex items-center justify-center gap-2 py-4 px-5 rounded-[20px] font-bold text-sm bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-95 transition-all cursor-pointer"
+                    className="flex items-center justify-center gap-2 py-3.5 sm:py-4 px-4 sm:px-5 rounded-[20px] font-bold text-xs sm:text-sm bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={18} className="shrink-0" />
                     <span>Liberar espacio</span>
                   </button>
                 )}
