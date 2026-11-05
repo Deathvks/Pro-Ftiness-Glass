@@ -20,7 +20,9 @@ import {
     FaDownload,
     FaExchangeAlt,
     FaCheckCircle,
-    FaSearch
+    FaSearch,
+    FaShieldAlt,
+    FaTrophy
 } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import GlassCard from './GlassCard';
@@ -363,14 +365,54 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
         }
     };
 
-    const handleToggleLike = async (workoutId) => {
+    const handleToggleLike = async (workoutId, reactionType = 'fire') => {
         if (isActionLoading) return;
+
+        // Actualización optimista instantánea (0ms)
+        setFeed(prevFeed =>
+            (Array.isArray(prevFeed) ? prevFeed : []).map(item => {
+                if (!item || item.id !== workoutId) return item;
+                const prevMyReaction = item.myReaction || (item.hasLiked ? 'fire' : null);
+                const prevCounts = {
+                    fire: 0,
+                    beast: 0,
+                    respect: 0,
+                    pr: 0,
+                    ...(item.reactionsCounts || {})
+                };
+
+                let nextMyReaction = reactionType;
+                let nextLikesCount = item.likesCount || 0;
+
+                if (prevMyReaction === reactionType) {
+                    nextMyReaction = null;
+                    prevCounts[reactionType] = Math.max(0, (prevCounts[reactionType] || 1) - 1);
+                    nextLikesCount = Math.max(0, nextLikesCount - 1);
+                } else if (prevMyReaction) {
+                    prevCounts[prevMyReaction] = Math.max(0, (prevCounts[prevMyReaction] || 1) - 1);
+                    prevCounts[reactionType] = (prevCounts[reactionType] || 0) + 1;
+                } else {
+                    prevCounts[reactionType] = (prevCounts[reactionType] || 0) + 1;
+                    nextLikesCount += 1;
+                }
+
+                return {
+                    ...item,
+                    myReaction: nextMyReaction,
+                    hasLiked: !!nextMyReaction,
+                    likesCount: nextLikesCount,
+                    reactionsCounts: prevCounts
+                };
+            })
+        );
+
         setIsActionLoading(true);
         try {
-            await socialService.toggleLike(workoutId);
+            await socialService.toggleLike(workoutId, reactionType);
             await loadFeed(isShowingOlderRef.current, scopeRef.current, gymFilterRef.current);
         } catch {
-            showToast('Error al dar me gusta', 'error');
+            showToast('Error al enviar reacción', 'error');
+            await loadFeed(isShowingOlderRef.current, scopeRef.current, gymFilterRef.current);
         } finally {
             setIsActionLoading(false);
         }
@@ -506,10 +548,10 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
 
             {/* Sub-barra contextual según el modo activo */}
             {scope === 'global' && (
-                <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 rounded-[18px] bg-black/[0.03] dark:bg-white/[0.03] ring-1 ring-black/5 dark:ring-white/10 text-xs text-text-secondary">
-                    <div className="flex items-center gap-2 min-w-0">
-                        <FaGlobeEurope className="text-accent shrink-0 text-sm" />
-                        <span className="font-semibold truncate">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3.5 py-2.5 rounded-[18px] bg-black/[0.03] dark:bg-white/[0.03] ring-1 ring-black/5 dark:ring-white/10 text-xs text-text-secondary">
+                    <div className="flex items-start sm:items-center gap-2 min-w-0">
+                        <FaGlobeEurope className="text-accent shrink-0 text-sm mt-0.5 sm:mt-0" />
+                        <span className="font-semibold leading-snug">
                             Entrenos públicos, rutinas y debates de toda la comunidad
                         </span>
                     </div>
@@ -517,16 +559,16 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                         <button
                             type="button"
                             onClick={() => handleScopeChange('gym')}
-                            className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-accent hover:underline shrink-0"
+                            className="self-start sm:self-auto inline-flex items-center gap-1.5 text-[11px] font-extrabold text-accent hover:underline shrink-0"
                         >
                             <FaMapMarkerAlt className="text-[10px]" />
-                            <span className="truncate max-w-[160px] sm:max-w-[220px]">{myCurrentGym.name}</span>
+                            <span className="truncate max-w-[200px] sm:max-w-[220px]">{myCurrentGym.name}</span>
                         </button>
                     ) : (
                         <button
                             type="button"
                             onClick={() => setShowGymModal(true)}
-                            className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-accent hover:underline shrink-0"
+                            className="self-start sm:self-auto inline-flex items-center gap-1.5 text-[11px] font-extrabold text-accent hover:underline shrink-0"
                         >
                             <FaMapMarkerAlt className="text-[10px]" />
                             <span>Vincular mi gym</span>
@@ -536,17 +578,17 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
             )}
 
             {scope === 'friends' && (
-                <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 rounded-[18px] bg-black/[0.03] dark:bg-white/[0.03] ring-1 ring-black/5 dark:ring-white/10 text-xs text-text-secondary">
-                    <div className="flex items-center gap-2 min-w-0">
-                        <FaUsers className="text-blue-500 shrink-0 text-sm" />
-                        <span className="font-semibold truncate">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3.5 py-2.5 rounded-[18px] bg-black/[0.03] dark:bg-white/[0.03] ring-1 ring-black/5 dark:ring-white/10 text-xs text-text-secondary">
+                    <div className="flex items-start sm:items-center gap-2 min-w-0">
+                        <FaUsers className="text-blue-500 shrink-0 text-sm mt-0.5 sm:mt-0" />
+                        <span className="font-semibold leading-snug">
                             Mostrando entrenamientos de tus amigos y tu propia actividad
                         </span>
                     </div>
                     <button
                         type="button"
                         onClick={() => handleScopeChange('global')}
-                        className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-accent hover:underline shrink-0"
+                        className="self-start sm:self-auto inline-flex items-center gap-1.5 text-[11px] font-extrabold text-accent hover:underline shrink-0"
                     >
                         <FaFire className="text-[10px]" />
                         <span>Explorar Global</span>
@@ -1070,34 +1112,97 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                         )}
                                     </div>
 
-                                    {/* Acciones de Reacción y Debate */}
-                                    <div className="flex items-center gap-3 mt-0.5 px-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleToggleLike(log.id)}
-                                            disabled={isActionLoading}
-                                            className={`flex items-center gap-2 px-3 py-2 rounded-[14px] text-xs sm:text-sm font-bold transition-all active:scale-95 outline-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
-                                                log.hasLiked
-                                                    ? 'text-accent bg-accent/10'
-                                                    : 'text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
-                                            }`}
-                                        >
-                                            {log.hasLiked ? <FaHeart className="text-base" /> : <FaRegHeart className="text-base" />}
-                                            <span>{log.likesCount || 0}</span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowComments(prev => ({ ...prev, [log.id]: !prev[log.id] }))}
-                                            className={`flex items-center gap-2 px-3 py-2 rounded-[14px] text-xs sm:text-sm font-bold transition-all active:scale-95 outline-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
-                                                showComments[log.id]
-                                                    ? 'text-accent bg-accent/10'
-                                                    : 'text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 hover:text-text-primary'
-                                            }`}
-                                        >
-                                            <FaCommentDots className="text-base" />
-                                            <span>{comments.length}</span>
-                                        </button>
-                                    </div>
+                                    {/* Reacciones Rápidas de Gimnasio (1 toque) y Debate */}
+                                    {(() => {
+                                        const rCounts = log.reactionsCounts || {
+                                            fire: log.likesCount || 0,
+                                            beast: 0,
+                                            respect: 0,
+                                            pr: 0
+                                        };
+                                        const activeReaction = log.myReaction || (log.hasLiked ? 'fire' : null);
+                                        const reactionButtons = [
+                                            {
+                                                key: 'fire',
+                                                label: 'Fuego',
+                                                Icon: FaFire,
+                                                count: rCounts.fire || 0,
+                                                activeClass: 'bg-orange-500/15 text-orange-500 ring-1 ring-orange-500/40 shadow-sm',
+                                                iconColor: 'text-orange-500'
+                                            },
+                                            {
+                                                key: 'beast',
+                                                label: 'Bestia',
+                                                Icon: FaDumbbell,
+                                                count: rCounts.beast || 0,
+                                                activeClass: 'bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/40 shadow-sm',
+                                                iconColor: 'text-purple-400'
+                                            },
+                                            {
+                                                key: 'respect',
+                                                label: 'Respeto',
+                                                Icon: FaShieldAlt,
+                                                count: rCounts.respect || 0,
+                                                activeClass: 'bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/40 shadow-sm',
+                                                iconColor: 'text-emerald-500'
+                                            },
+                                            {
+                                                key: 'pr',
+                                                label: 'PR',
+                                                Icon: FaTrophy,
+                                                count: rCounts.pr || 0,
+                                                activeClass: 'bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/40 shadow-sm',
+                                                iconColor: 'text-amber-500'
+                                            }
+                                        ];
+
+                                        return (
+                                            <div className="flex items-center justify-between gap-2 mt-0.5 pt-1 overflow-x-auto no-scrollbar -mx-1 px-1">
+                                                <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap shrink-0">
+                                                    {reactionButtons.map(({ key, label, Icon, count, activeClass, iconColor }) => {
+                                                        const isSelected = activeReaction === key;
+                                                        return (
+                                                            <button
+                                                                key={key}
+                                                                type="button"
+                                                                onClick={() => handleToggleLike(log.id, key)}
+                                                                disabled={isActionLoading}
+                                                                title={label}
+                                                                className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-[14px] text-xs font-extrabold whitespace-nowrap flex-shrink-0 transition-all active:scale-95 outline-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
+                                                                    isSelected
+                                                                        ? activeClass
+                                                                        : 'bg-black/[0.04] dark:bg-white/[0.04] text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
+                                                                }`}
+                                                            >
+                                                                <Icon className={`text-xs sm:text-sm shrink-0 ${isSelected ? '' : iconColor}`} />
+                                                                <span>{label}</span>
+                                                                {count > 0 && (
+                                                                    <span className={`text-[11px] font-black px-1.5 py-0.5 rounded-full ${
+                                                                        isSelected ? 'bg-black/10 dark:bg-white/15' : 'bg-black/5 dark:bg-white/10 text-text-primary'
+                                                                    }`}>
+                                                                        {count}
+                                                                    </span>
+                                                                )}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowComments(prev => ({ ...prev, [log.id]: !prev[log.id] }))}
+                                                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-[14px] text-xs sm:text-sm font-extrabold whitespace-nowrap flex-shrink-0 transition-all active:scale-95 outline-none focus:outline-none [-webkit-tap-highlight-color:transparent] ${
+                                                        showComments[log.id]
+                                                            ? 'text-accent bg-accent/15 ring-1 ring-accent/30'
+                                                            : 'bg-black/[0.04] dark:bg-white/[0.04] text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
+                                                    }`}
+                                                >
+                                                    <FaCommentDots className="text-sm shrink-0" />
+                                                    <span>{comments.length}</span>
+                                                </button>
+                                            </div>
+                                        );
+                                    })()}
 
                                     {/* Sección de Comentarios / Debate */}
                                     {showComments[log.id] && (

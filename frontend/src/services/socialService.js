@@ -105,9 +105,10 @@ const socialService = {
         return await apiClient(`/social/feed${qs}`);
     },
 
-    toggleLike: async (workoutId) => {
+    toggleLike: async (workoutId, reactionType = 'fire') => {
         return await apiClient(`/social/workout/${workoutId}/like`, {
-            method: 'POST'
+            method: 'POST',
+            body: { reactionType }
         });
     },
 

@@ -1,6 +1,6 @@
 {
-  "version": "7.14.14",
-  "releaseNotes": "Actualización v7.14.11: Muro Global, Mi Gimnasio y Amigos con descubrimiento de atletas por gimnasio y ciudad.",
+  "version": "7.14.15",
+  "releaseNotes": "Actualización v7.14.15: Reacciones rápidas de gimnasio (Fuego, Bestia, Respeto, PR) y notificaciones contextuales en el Muro.",
   "welcome": {
     "title": "Modo Sin Conexión y Smart Sync",
     "subtitle": "Descarga de ejercicios en segundo plano para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.",

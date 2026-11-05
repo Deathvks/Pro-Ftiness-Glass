@@ -323,6 +323,13 @@ const isProductionDB = process.env.NODE_ENV === 'production' || !!process.env.MY
         await db.sequelize.query('ALTER TABLE users ADD COLUMN gym_data TEXT NULL').catch(() => {});
         console.log('Columna gym_data añadida a users.');
       }
+
+      const [likeCols] = await db.sequelize.query('DESCRIBE workout_likes').catch(() => [[]]);
+      const likeColNames = Array.isArray(likeCols) ? likeCols.map(c => c.Field) : [];
+      if (likeColNames.length > 0 && !likeColNames.includes('reaction_type')) {
+        await db.sequelize.query("ALTER TABLE workout_likes ADD COLUMN reaction_type VARCHAR(20) NOT NULL DEFAULT 'fire'").catch(() => {});
+        console.log('Columna reaction_type añadida a workout_likes.');
+      }
     } catch (schemaErr) {
       console.warn('Verificación defensiva de esquema en users:', schemaErr.message);
     }

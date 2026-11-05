@@ -832,7 +832,7 @@ export const getFeed = async (req, res) => {
                     {
                         model: WorkoutLike,
                         as: 'Likes',
-                        attributes: ['id', 'user_id']
+                        attributes: ['id', 'user_id', 'reaction_type']
                     },
                     {
                         model: WorkoutComment,
@@ -932,10 +932,30 @@ export const getFeed = async (req, res) => {
                 });
             }
 
+            const reactionsCounts = {
+                fire: 0,
+                beast: 0,
+                respect: 0,
+                pr: 0
+            };
+            let myReaction = null;
+
+            likes.forEach(like => {
+                const rType = ['fire', 'beast', 'respect', 'pr'].includes(like.reaction_type)
+                    ? like.reaction_type
+                    : 'fire';
+                reactionsCounts[rType] = (reactionsCounts[rType] || 0) + 1;
+                if (like.user_id === userId) {
+                    myReaction = rType;
+                }
+            });
+
             return {
                 ...logData,
                 likesCount: likes.length,
-                hasLiked: likes.some(like => like.user_id === userId)
+                hasLiked: !!myReaction,
+                myReaction,
+                reactionsCounts
             };
         });
 
@@ -963,10 +983,19 @@ export const getFeed = async (req, res) => {
     }
 };
 
+const REACTION_META = {
+    fire: { label: 'Fuego', verb: 'le dio Fuego a' },
+    beast: { label: 'Modo Bestia', verb: 'reconoció como Bestia' },
+    respect: { label: 'Respeto', verb: 'mostró Respeto por' },
+    pr: { label: 'PR / Récord', verb: 'celebró tu PR en' }
+};
+
 export const toggleLike = async (req, res) => {
     try {
         const { workoutId } = req.params;
         const userId = req.user.userId;
+        const rawReaction = String(req.body?.reactionType || 'fire').toLowerCase();
+        const reactionType = ['fire', 'beast', 'respect', 'pr'].includes(rawReaction) ? rawReaction : 'fire';
         const io = req.app.get('io');
 
         const existingLike = await WorkoutLike.findOne({
@@ -974,27 +1003,71 @@ export const toggleLike = async (req, res) => {
         });
 
         if (existingLike) {
-            await existingLike.destroy();
-            // OPTIMIZACIÓN WEB SOCKET: Enviamos solo a los amigos que tengan el muro abierto, o a nadie si queremos silenciarlo.
-            // Para simplificar y ahorrar CPU del servidor de websockets, lo quitamos, 
-            // el usuario que le de a like lo verá en su pantalla igual por React state.
-            return res.json({ success: true, liked: false });
+            const currentType = existingLike.reaction_type || 'fire';
+            if (currentType === reactionType) {
+                await existingLike.destroy();
+                return res.json({ success: true, liked: false, reactionType: null });
+            } else {
+                existingLike.reaction_type = reactionType;
+                await existingLike.save();
+                if (io) {
+                    const workout = await WorkoutLog.findByPk(workoutId, { attributes: ['user_id'] });
+                    if (workout && workout.user_id !== userId) {
+                        io.to(workout.user_id.toString()).emit('feed_update');
+                    }
+                }
+                return res.json({ success: true, liked: true, reactionType });
+            }
         } else {
-            await WorkoutLike.create({ user_id: userId, workout_id: workoutId });
-            
-            // Notificar al dueño del entrenamiento (si no soy yo mismo)
-            const workout = await WorkoutLog.findByPk(workoutId);
+            await WorkoutLike.create({
+                user_id: userId,
+                workout_id: workoutId,
+                reaction_type: reactionType
+            });
+
+            // Notificar al dueño del entrenamiento con contexto real de ejercicio/rutina y contador de atletas
+            const workout = await WorkoutLog.findByPk(workoutId, {
+                include: [
+                    {
+                        model: WorkoutLogDetail,
+                        as: 'WorkoutLogDetails',
+                        attributes: ['exercise_name']
+                    }
+                ]
+            });
+
             if (workout && workout.user_id !== userId) {
-                const liker = await User.findByPk(userId, { attributes: ['username'] });
+                const [liker, totalReactions] = await Promise.all([
+                    User.findByPk(userId, { attributes: ['username'] }),
+                    WorkoutLike.count({ where: { workout_id: workoutId } })
+                ]);
+
+                const likerName = liker?.username || 'Un atleta';
+                const starExercise = workout.WorkoutLogDetails?.[0]?.exercise_name;
+                const workoutTarget = starExercise || workout.routine_name || 'tu entrenamiento';
+                const meta = REACTION_META[reactionType] || REACTION_META.fire;
+
+                const notifTitle =
+                    totalReactions >= 2
+                        ? `¡A ${totalReactions} atletas les flipó tu entreno!`
+                        : `¡Nueva reacción: ${meta.label}!`;
+
+                const notifMessage =
+                    totalReactions >= 2
+                        ? `A ${likerName} y ${totalReactions - 1} atleta${totalReactions - 1 > 1 ? 's' : ''} más les flipó tu récord en ${workoutTarget} (${meta.label}).`
+                        : `${likerName} ${meta.verb} ${workoutTarget}.`;
+
                 await createNotification(workout.user_id, {
                     type: 'success',
-                    title: '¡Nuevo Me gusta!',
-                    message: `A ${liker.username} le ha gustado tu entrenamiento.`,
-                    data: { url: `/social?tab=feed` }
+                    title: notifTitle,
+                    message: notifMessage,
+                    data: { url: `/social?tab=feed`, workoutId: String(workoutId), reactionType }
                 });
-                
-                // Si tienes io, avísale solo a ÉL para actualizar la campana.
-                if (io) io.to(workout.user_id.toString()).emit('feed_update');
+
+                if (io) {
+                    io.to(workout.user_id.toString()).emit('feed_update');
+                    io.to(workout.user_id.toString()).emit('new_notification');
+                }
             }
 
             // Gamification
@@ -1003,7 +1076,7 @@ export const toggleLike = async (req, res) => {
                 await trackChallenge(userId, 'social_like_post', 1);
             } catch (err) {}
 
-            return res.json({ success: true, liked: true });
+            return res.json({ success: true, liked: true, reactionType });
         }
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -1017,14 +1090,15 @@ export const addComment = async (req, res) => {
         const userId = req.user.userId;
         const io = req.app.get('io');
 
-        if (!comment || !sanitizePlainText(comment)) {
+        const cleanComment = sanitizePlainText(comment);
+        if (!comment || !cleanComment) {
             return res.status(400).json({ error: 'El comentario no puede estar vacío' });
         }
 
         const newComment = await WorkoutComment.create({
             user_id: userId,
             workout_id: workoutId,
-            comment: sanitizePlainText(comment)
+            comment: cleanComment
         });
 
         // Cargar usuario para devolver el comentario completo al frontend
@@ -1036,17 +1110,32 @@ export const addComment = async (req, res) => {
             }]
         });
 
-        // Notificar al dueño
-        const workout = await WorkoutLog.findByPk(workoutId);
+        // Notificar al dueño con previsualización del comentario y ejercicio/rutina
+        const workout = await WorkoutLog.findByPk(workoutId, {
+            include: [
+                {
+                    model: WorkoutLogDetail,
+                    as: 'WorkoutLogDetails',
+                    attributes: ['exercise_name']
+                }
+            ]
+        });
         if (workout && workout.user_id !== userId) {
             const commenter = await User.findByPk(userId, { attributes: ['username'] });
+            const starExercise = workout.WorkoutLogDetails?.[0]?.exercise_name;
+            const workoutTarget = starExercise || workout.routine_name || 'tu entrenamiento';
+            const snippet = cleanComment.length > 65 ? `${cleanComment.slice(0, 62)}...` : cleanComment;
+
             await createNotification(workout.user_id, {
                 type: 'info',
-                title: 'Nuevo comentario',
-                message: `${commenter.username} ha comentado en tu entrenamiento.`,
-                data: { url: `/social?tab=feed` }
+                title: `${commenter?.username || 'Un atleta'} comentó tu sesión`,
+                message: `En ${workoutTarget}: "${snippet}"`,
+                data: { url: `/social?tab=feed`, workoutId: String(workoutId) }
             });
-            if (io) io.to(workout.user_id.toString()).emit('feed_update');
+            if (io) {
+                io.to(workout.user_id.toString()).emit('feed_update');
+                io.to(workout.user_id.toString()).emit('new_notification');
+            }
         }
 
         // Gamification
