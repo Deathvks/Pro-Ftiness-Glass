@@ -1,7 +1,7 @@
 /* frontend/src/store/authSlice.js */
 import * as authService from '../services/authService';
 import * as userService from '../services/userService';
-import { APP_VERSION, isNewerVersion } from '../config/version';
+import { APP_VERSION, CURRENT_WELCOME_TITLE, hasSeenCurrentWelcome, isNewerVersion } from '../config/version';
 
 const CACHE_VERSION_KEY = 'pfg_cache_version';
 const INITIAL_CACHE_KEY = 'pfg_cached_initial_state_v1';
@@ -355,8 +355,13 @@ export const createAuthSlice = (set, get) => {
     checkWelcomeModal: () => {
         const lastSeenVersion = localStorage.getItem('lastSeenVersion');
         const lastSeenWelcomeTitle = localStorage.getItem('lastSeenWelcomeTitle');
-        const currentWelcomeTitle = 'Modo Sin Conexión y Smart Sync';
-        const shouldShow = !lastSeenVersion || isNewerVersion(lastSeenVersion, APP_VERSION) || (lastSeenWelcomeTitle !== currentWelcomeTitle);
+        const currentWelcomeTitle = CURRENT_WELCOME_TITLE;
+        const shouldShow = !hasSeenCurrentWelcome(lastSeenWelcomeTitle, currentWelcomeTitle);
+        if (!shouldShow) {
+            localStorage.setItem('lastSeenVersion', APP_VERSION);
+            localStorage.setItem('lastSeenWelcomeTitle', currentWelcomeTitle);
+            localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
+        }
         if (shouldShow) {
             localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
             set({ showWelcomeModal: true });
@@ -387,7 +392,8 @@ export const createAuthSlice = (set, get) => {
             localStorage.setItem('lastSeenVersion', effectiveVersion);
             localStorage.setItem(CACHE_VERSION_KEY, effectiveVersion);
         }
-        localStorage.setItem('lastSeenWelcomeTitle', 'Modo Sin Conexión y Smart Sync');
+        const effectiveTitle = get().welcomeRemoteData?.welcome?.title || CURRENT_WELCOME_TITLE;
+        localStorage.setItem('lastSeenWelcomeTitle', effectiveTitle);
         set({ showWelcomeModal: false, welcomeRemoteVersion: null, welcomeRemoteData: null });
     },
 

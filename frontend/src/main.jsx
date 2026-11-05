@@ -98,7 +98,7 @@ try {
     }
     localStorage.removeItem('pfg_social_feed_cache');
     localStorage.removeItem('pfg_pending_target_view');
-    localStorage.removeItem('lastSeenVersion');
+    // Preservar lastSeenVersion y lastSeenWelcomeTitle para no repetir el modal en parches menores
 
     // NUNCA preservar una vista problemática como 'social' al actualizar versión.
     // Forzar SIEMPRE el inicio en 'dashboard' para garantizar que el usuario ingrese limpio.

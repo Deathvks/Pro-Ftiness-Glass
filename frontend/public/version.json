@@ -1,17 +1,17 @@
 {
-  "version": "7.14.0",
-  "releaseNotes": "Actualización v7.14.0: Sniffing y telemetría avanzada de Calculadoras 1RM, Macros y Ejercicios en el Panel de Administrador.",
+  "version": "7.14.1",
+  "releaseNotes": "Actualización v7.14.1: Corrección de persistencia del modal de bienvenida y mejoras de telemetría.",
   "welcome": {
-    "title": "Sniffing de Herramientas y Calculadoras",
-    "subtitle": "Llega la versión 7.14.0: telemetría en tiempo real para las calculadoras de 1RM, macros y enciclopedia de ejercicios en el panel admin.",
+    "title": "Modo Sin Conexión y Smart Sync",
+    "subtitle": "Descarga de ejercicios en segundo plano para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.",
     "features": [
       {
-        "title": "Telemetría de Herramientas Públicas",
-        "description": "Rastreo y sniffing en tiempo real de visitas a la Calculadora 1RM, Calculadora de Macros y Enciclopedia de Ejercicios."
+        "title": "Modo Sin Conexión en Segundo Plano",
+        "description": "Descarga en Ajustes toda la biblioteca de ejercicios y animaciones mientras sigues usando la app con barra flotante en vivo."
       },
       {
-        "title": "Analítica y Filtros en Panel Admin",
-        "description": "Métricas directas de visitas por herramienta, procedencia de tráfico (Google, redes sociales) y detalles técnicos de dispositivos."
+        "title": "Smart Sync Nutricional",
+        "description": "Búsqueda y escaneo instantáneo con OpenFoodFacts API v2. Los alimentos se guardan localmente y se actualizan automáticamente cada 30 días."
       },
       {
         "title": "Migración desde Hevy y Strong",

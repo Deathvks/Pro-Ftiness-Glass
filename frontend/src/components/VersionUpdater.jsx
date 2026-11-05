@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Sparkles, RefreshCw, X } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
-import { APP_VERSION, isNewerVersion } from '../config/version';
+import { APP_VERSION, CURRENT_WELCOME_TITLE, hasSeenCurrentWelcome, isNewerVersion } from '../config/version';
 import useAppStore from '../store/useAppStore';
 import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
 
@@ -35,7 +35,8 @@ const SWUpdaterCore = () => {
         .then((data) => {
           const remoteTitle = data?.welcome?.title;
           // Solo mostrar el modal si el título de las novedades es genuinamente nuevo y no ha sido visto ya
-          if (remoteTitle && remoteTitle !== lastSeenWelcomeTitle) {
+          const currentSeenTitle = localStorage.getItem('lastSeenWelcomeTitle');
+          if (remoteTitle && !hasSeenCurrentWelcome(currentSeenTitle, remoteTitle)) {
             useAppStore.setState({
               showWelcomeModal: true,
               welcomeRemoteData: data,

@@ -1,4 +1,21 @@
-export const APP_VERSION = '7.14.0';
+export const APP_VERSION = '7.14.1';
+
+export const CURRENT_WELCOME_TITLE = 'Modo Sin Conexión y Smart Sync';
+
+const EQUIVALENT_WELCOME_TITLES = new Set([
+  CURRENT_WELCOME_TITLE,
+  'Modo Sin Conexión en Segundo Plano',
+  'Sniffing de Herramientas y Calculadoras',
+]);
+
+export const hasSeenCurrentWelcome = (storedTitle, targetTitle = CURRENT_WELCOME_TITLE) => {
+  if (!storedTitle) return false;
+  if (storedTitle === targetTitle) return true;
+  if (EQUIVALENT_WELCOME_TITLES.has(storedTitle) && EQUIVALENT_WELCOME_TITLES.has(targetTitle)) {
+    return true;
+  }
+  return false;
+};
 
 export const isNewerVersion = (current, remote) => {
   if (!current || !remote) return false;

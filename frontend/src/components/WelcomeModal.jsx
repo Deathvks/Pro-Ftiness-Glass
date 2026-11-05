@@ -5,7 +5,7 @@ import {
   ChevronRight, Newspaper, Calculator, Dumbbell, Zap, FileSpreadsheet, WifiOff, Sparkles
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6';
-import { APP_VERSION } from '../config/version';
+import { APP_VERSION, CURRENT_WELCOME_TITLE } from '../config/version';
 import useModalLock from '../hooks/useModalLock';
 import useAppStore from '../store/useAppStore';
 
@@ -18,11 +18,18 @@ const WelcomeModal = ({ onClose }) => {
 
   const effectiveVersion = APP_VERSION;
   const appVersion = `v${effectiveVersion}`;
-  const welcomeTitle = welcomeRemoteData?.welcome?.title || 'Modo Sin Conexión y Smart Sync';
+  const welcomeTitle = welcomeRemoteData?.welcome?.title || CURRENT_WELCOME_TITLE;
   const welcomeSubtitle =
     welcomeRemoteData?.welcome?.subtitle ||
-    'Llega la versión 7.13.0: descarga de ejercicios para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.';
+    'Descarga de ejercicios en segundo plano para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.';
   const remoteFeatures = welcomeRemoteData?.welcome?.features;
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('lastSeenVersion', effectiveVersion);
+      localStorage.setItem('lastSeenWelcomeTitle', welcomeTitle);
+    } catch {}
+  }, [effectiveVersion, welcomeTitle]);
 
   const handleGetStarted = (e) => {
     if (e && e.stopPropagation) e.stopPropagation();
