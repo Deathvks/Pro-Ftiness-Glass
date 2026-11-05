@@ -184,6 +184,7 @@ export const preloadAllPrimaryViews = () => {
   if (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData) return;
   const primaryNavViews = [
     'dashboard', 'routines', 'nutrition', 'social', 'hub',
+    'settings', 'notifications',
     'calculadora1rm', 'calculadoraMacros', 'ejercicios',
     'noticias', 'noticiaDetalle', 'publicProfile', 'profile'
   ];
@@ -595,14 +596,15 @@ export default function App() {
         'nutrition',
         'social',
         'hub',
+        'settings',
+        'notifications',
         'noticias',
         'ejercicios',
         'calculadora1rm',
         'calculadoraMacros',
         'workout',
         'progress',
-        'profile',
-        'settings'
+        'profile'
       ];
 
       idleViews.forEach((v, idx) => {

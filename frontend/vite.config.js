@@ -120,7 +120,8 @@ export default defineConfig({
           'assets/Progress-*.js',
           'assets/Social-*.js',
           'assets/Hub-*.js',
-          'assets/SettingsScreen-*.js'
+          'assets/SettingsScreen-*.js',
+          'assets/NotificationsScreen-*.js'
         ],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       },
