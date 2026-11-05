@@ -8,7 +8,7 @@ import {
   Droplet, Beef, Zap, CheckCircle, XCircle,
   ArrowUp, ArrowDown, Minus, ChevronRight, Trophy as TrophyLucide, Check, Crown,
   LayoutGrid, IceCream, TriangleAlert, Info, Share2, X, Loader2, Lock, List, Copy, ListFilter,
-  MapPin, Trash2
+  MapPin, Trash2, ShieldCheck
 } from 'lucide-react';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { FaChartPie, FaTrophy, FaInstagram } from 'react-icons/fa';
@@ -368,22 +368,29 @@ const Dashboard = ({ setView }) => {
   const showStreakTimeRemaining = (event) => {
     event.stopPropagation();
 
-    if (!levelData.streak && !weeklyConsistency.streakWeeks) {
-      addToast(t('Completa un entrenamiento para iniciar tu racha.', { defaultValue: 'Completa un entrenamiento para iniciar tu racha.' }), 'info');
+    if (!levelData.streak && !weeklyConsistency.streakWeeks && !weeklyConsistency.daysThisWeek) {
+      addToast(t('Completa 3 entrenamientos por semana para activar tu Escudo de Racha Semanal.', { defaultValue: 'Completa 3 entrenamientos por semana para activar tu Escudo de Racha Semanal.' }), 'info');
       return;
     }
 
+    if (weeklyConsistency.shieldActive) {
+      addToast(
+        `🛡️ ¡Escudo de Racha Semanal activado (${weeklyConsistency.daysThisWeek}/${weeklyConsistency.targetDays} días esta semana)! Tu racha de ${levelData.streak} ${levelData.streak === 1 ? 'día' : 'días'} está 100% blindada el resto de la semana aunque descanses.`,
+        'success'
+      );
+      return;
+    }
+
+    const remainingForShield = Math.max(0, weeklyConsistency.targetDays - weeklyConsistency.daysThisWeek);
     const time = streakCountdown && !streakCountdown.expired
       ? `${streakCountdown.days ? `${streakCountdown.days} d ` : ''}${streakCountdown.hours} h ${streakCountdown.minutes} min`
       : null;
 
-    const streakHeader = weeklyConsistency.streakWeeks > 1
-      ? `🔥 Racha Semanal: Semana ${weeklyConsistency.streakWeeks} cumpliendo tu objetivo (${weeklyConsistency.daysThisWeek}/4 días esta semana).`
-      : `🔥 Racha actual: ${levelData.streak} ${levelData.streak === 1 ? 'día' : 'días'}.`;
+    const streakHeader = `🔥 Meta Semanal: ${weeklyConsistency.daysThisWeek}/${weeklyConsistency.targetDays} días entrenados esta semana (te ${remainingForShield === 1 ? 'falta 1 día' : `faltan ${remainingForShield} días`} para activar el Escudo de Racha).`;
 
     const bufferMsg = time
-      ? ` Plazo disponible: ${time}. Los descansos biológicos y fines de semana están protegidos.`
-      : ' ¡Los descansos biológicos y fines de semana no rompen tu racha!';
+      ? ` Plazo hasta próximo entreno: ${time}. Fines de semana y descansos biológicos protegidos.`
+      : ' Cumplir 3 días a la semana blinda tu racha aunque descanses el resto de días.';
 
     addToast(streakHeader + bufferMsg, 'info');
   };
@@ -498,7 +505,7 @@ const Dashboard = ({ setView }) => {
   const weeklyConsistency = useMemo(() => {
     try {
       const logs = Array.isArray(workoutLog) ? workoutLog : [];
-      if (logs.length === 0) return { streakWeeks: 0, targetDays: 4, daysThisWeek: 0 };
+      if (logs.length === 0) return { streakWeeks: 0, targetDays: 3, daysThisWeek: 0, shieldActive: false };
 
       const now = new Date();
       const startOfCurrentWeek = new Date(now);
@@ -533,9 +540,9 @@ const Dashboard = ({ setView }) => {
         }
       }
 
-      return { streakWeeks, targetDays: 4, daysThisWeek };
+      return { streakWeeks, targetDays: 3, daysThisWeek, shieldActive: daysThisWeek >= 3 };
     } catch {
-      return { streakWeeks: 0, targetDays: 4, daysThisWeek: 0 };
+      return { streakWeeks: 0, targetDays: 3, daysThisWeek: 0, shieldActive: false };
     }
   }, [workoutLog]);
 
@@ -876,13 +883,23 @@ const Dashboard = ({ setView }) => {
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center pl-6 border-l border-glass-border flex-shrink-0">
-            <div className={`transition-all duration-500 mb-1 ${levelData.streak > 0 ? 'text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.6)]' : 'text-text-muted opacity-30'}`}>
-              <FaFireFlameCurved size={24} />
+          <div className="flex flex-col items-center justify-center pl-5 sm:pl-6 border-l border-glass-border flex-shrink-0">
+            <div className="relative flex items-center justify-center mb-1">
+              <div className={`transition-all duration-500 ${levelData.streak > 0 || weeklyConsistency.daysThisWeek > 0 ? 'text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.6)]' : 'text-text-muted opacity-30'}`}>
+                <FaFireFlameCurved size={24} />
+              </div>
+              {weeklyConsistency.shieldActive && (
+                <span
+                  className="absolute -right-2 -bottom-1 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm"
+                  title="Escudo de Racha Semanal Activo"
+                >
+                  <ShieldCheck size={11} strokeWidth={3} />
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary">
-                {weeklyConsistency.streakWeeks > 1 ? `${weeklyConsistency.streakWeeks} ${t('SEM', { defaultValue: 'SEM' })}` : `${levelData.streak} ${t('DÍAS', { defaultValue: 'DÍAS' })}`}
+              <span className="text-[10px] font-black uppercase tracking-wider text-text-primary">
+                {`${weeklyConsistency.daysThisWeek}/${weeklyConsistency.targetDays} ${t('SEM', { defaultValue: 'SEM' })}`}
               </span>
               <button
                 type="button"
@@ -893,6 +910,11 @@ const Dashboard = ({ setView }) => {
                 <Info size={12} />
               </button>
             </div>
+            <span className={`text-[9px] font-bold leading-none mt-0.5 ${weeklyConsistency.shieldActive ? 'text-emerald-500' : 'text-text-muted'}`}>
+              {weeklyConsistency.shieldActive
+                ? t('🛡️ Blindada', { defaultValue: '🛡️ Blindada' })
+                : `${levelData.streak} ${levelData.streak === 1 ? t('día', { defaultValue: 'día' }) : t('días', { defaultValue: 'días' })}`}
+            </span>
           </div>
         </GlassCard>
       </div>
@@ -1008,15 +1030,36 @@ const Dashboard = ({ setView }) => {
       </div>
 
       <div id="tour-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <GlassCard className="glass p-5 flex flex-col justify-between h-full min-h-[160px] rounded-[28px] relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-3 rounded-[20px] transition-transform duration-300 group-hover:scale-110 text-accent bg-black/5 dark:bg-white/5">
-              <FaDumbbell size={22} />
+        <GlassCard
+          onClick={showStreakTimeRemaining}
+          className="glass p-5 flex flex-col justify-between h-full min-h-[160px] rounded-[28px] relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer"
+        >
+          <div className="flex justify-between items-start gap-2 mb-2">
+            <div className={`p-3 rounded-[20px] transition-transform duration-300 group-hover:scale-110 ${weeklyConsistency.shieldActive ? 'text-emerald-500 bg-emerald-500/15' : 'text-accent bg-black/5 dark:bg-white/5'}`}>
+              {weeklyConsistency.shieldActive ? <ShieldCheck size={22} /> : <FaDumbbell size={22} />}
             </div>
-            <span className="text-3xl font-black text-text-primary tracking-tight">{weeklySessions}</span>
+            <div className="text-right">
+              <div className="flex items-baseline justify-end gap-1">
+                <span className="text-3xl font-black text-text-primary tracking-tight">
+                  {weeklyConsistency.daysThisWeek}/{weeklyConsistency.targetDays}
+                </span>
+                <span className="text-xs font-bold text-text-muted">{t('días', { defaultValue: 'días' })}</span>
+              </div>
+              <span
+                className={`inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full mt-0.5 ${
+                  weeklyConsistency.shieldActive
+                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-accent/15 text-accent'
+                }`}
+              >
+                {weeklyConsistency.shieldActive
+                  ? t('🛡️ Escudo Activo', { defaultValue: '🛡️ Escudo Activo' })
+                  : t('Meta Semanal', { defaultValue: 'Meta Semanal' })}
+              </span>
+            </div>
           </div>
 
-          <div className="flex justify-between items-center w-full overflow-x-auto no-scrollbar gap-1">
+          <div className="flex justify-between items-center w-full overflow-x-auto no-scrollbar gap-1 pt-1">
             {weekDays.map((date, i) => {
               const dayLetters = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
               const isToday = isSameDay(date, new Date());
@@ -1028,7 +1071,7 @@ const Dashboard = ({ setView }) => {
               return (
                 <div key={i} className="flex flex-col items-center gap-1.5 flex-1 min-w-[20px]">
                   <span className={`text-[9px] font-bold ${isToday ? 'text-accent' : 'text-text-muted'}`}>{dayLetters[i]}</span>
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${hasWorkout ? 'bg-accent text-accent-contrast' : 'bg-transparent text-transparent border border-glass-border'}`}>
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${hasWorkout ? (weeklyConsistency.shieldActive ? 'bg-emerald-500 text-white' : 'bg-accent text-accent-contrast') : 'bg-transparent text-transparent border border-glass-border'}`}>
                     {hasWorkout && <Check size={10} strokeWidth={4} />}
                   </div>
                 </div>

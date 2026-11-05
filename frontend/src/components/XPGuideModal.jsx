@@ -112,8 +112,8 @@ const XPGuideModal = ({ onClose }) => {
                                 </div>
                                 <p className="text-text-secondary text-sm font-medium leading-relaxed">
                                     Gana XP realizando acciones diarias. <br />
-                                    <span className="bg-accent text-accent-contrast px-2 py-0.5 rounded-md inline-block font-extrabold tracking-widest uppercase text-[10px] mt-2 mb-1 shadow-sm">Nota importante:</span> 
-                                    Para mantener tu racha, basta con realizar <strong>cualquiera</strong> de estas acciones al menos una vez al día.
+                                    <span className="bg-accent text-accent-contrast px-2 py-0.5 rounded-md inline-block font-extrabold tracking-widest uppercase text-[10px] mt-2 mb-1 shadow-sm">🛡️ Escudo de Racha Semanal:</span>{' '}
+                                    Cumple tu meta de <strong>3 días de entrenamiento a la semana</strong> para blindar tu racha el resto de la semana. Además, los fines de semana y hasta 2 días de descanso biológico están protegidos.
                                 </p>
                             </div>
 

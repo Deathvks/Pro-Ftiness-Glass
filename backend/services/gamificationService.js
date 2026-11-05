@@ -2,7 +2,7 @@
 import models from '../models/index.js';
 import { createNotification } from './notificationService.js';
 
-const { User, NutritionLog, XpLog, sequelize } = models;
+const { User, NutritionLog, XpLog, WorkoutLog, Sequelize, sequelize } = models;
 
 export const DAILY_LOGIN_XP = 25;
 export const WEIGHT_UPDATE_XP = 10;
@@ -215,11 +215,20 @@ export const unlockBadge = async (userId, badgeId, opts = {}) => {
  * entre startDateStr (YYYY-MM-DD) y endDateStr (YYYY-MM-DD), sin incluir ni startDate ni endDate.
  * Sábados y domingos se consideran días de descanso protegidos y no cuentan como días perdidos.
  */
-export const countMissedWeekdays = (startDateStr, endDateStr) => {
+export const countMissedWeekdays = (startDateStr, endDateStr, shieldedWeekMondayStr = null) => {
     if (!startDateStr || !endDateStr) return 0;
     const start = new Date(startDateStr + 'T00:00:00');
     const end = new Date(endDateStr + 'T00:00:00');
     if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) return 0;
+
+    let shieldEnd = null;
+    if (shieldedWeekMondayStr) {
+        const monday = new Date(shieldedWeekMondayStr + 'T00:00:00');
+        if (!isNaN(monday.getTime())) {
+            shieldEnd = new Date(monday);
+            shieldEnd.setDate(shieldEnd.getDate() + 7);
+        }
+    }
 
     let missed = 0;
     const cur = new Date(start);
@@ -227,13 +236,56 @@ export const countMissedWeekdays = (startDateStr, endDateStr) => {
 
     while (cur < end) {
         const dayOfWeek = cur.getDay(); // 0 = Domingo, 6 = Sábado
-        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        const isProtectedByWeeklyShield = shieldEnd && cur < shieldEnd;
+        if (dayOfWeek !== 0 && dayOfWeek !== 6 && !isProtectedByWeeklyShield) {
             missed++;
         }
         cur.setDate(cur.getDate() + 1);
     }
 
     return missed;
+};
+
+const getShieldedWeekMondayIfEarned = async (userId, lastActivityStr, transaction = null) => {
+    try {
+        if (!userId || !lastActivityStr || !WorkoutLog) return null;
+        const d = new Date(lastActivityStr + 'T00:00:00');
+        if (isNaN(d.getTime())) return null;
+
+        const dow = d.getDay();
+        const diffToMonday = d.getDate() - dow + (dow === 0 ? -6 : 1);
+        const monday = new Date(d.getFullYear(), d.getMonth(), diffToMonday);
+        monday.setHours(0, 0, 0, 0);
+
+        const nextMonday = new Date(monday);
+        nextMonday.setDate(monday.getDate() + 7);
+
+        const Op = Sequelize.Op;
+        const logs = await WorkoutLog.findAll({
+            where: {
+                user_id: userId,
+                workout_date: {
+                    [Op.gte]: monday,
+                    [Op.lt]: nextMonday
+                }
+            },
+            attributes: ['workout_date'],
+            transaction
+        });
+
+        const uniqueDays = new Set(
+            logs
+                .map((l) => (l.workout_date ? normalizeDate(l.workout_date) : null))
+                .filter(Boolean)
+        );
+
+        if (uniqueDays.size >= 3) {
+            return normalizeDate(monday);
+        }
+        return null;
+    } catch (e) {
+        return null;
+    }
 };
 
 export const checkStreak = async (userId, rawDate, opts = {}) => {
@@ -263,7 +315,13 @@ export const checkStreak = async (userId, rawDate, opts = {}) => {
             }
 
             // Calculamos cuántos días laborables (lunes a viernes) se perdieron entre el último entrenamiento y hoy
-            const missedWeekdays = countMissedWeekdays(lastActivityStr, todayDateStr);
+            let missedWeekdays = countMissedWeekdays(lastActivityStr, todayDateStr);
+            if (missedWeekdays > 2) {
+                const shieldedMonday = await getShieldedWeekMondayIfEarned(user.id, lastActivityStr, transaction);
+                if (shieldedMonday) {
+                    missedWeekdays = countMissedWeekdays(lastActivityStr, todayDateStr, shieldedMonday);
+                }
+            }
 
             if (missedWeekdays <= 2) {
                 // No se perdió ningún día de entrenamiento requerido (fueron días consecutivos o fin de semana de descanso)
@@ -305,7 +363,13 @@ export const syncUserStreak = async (userIdOrUser, rawDate = null, opts = {}) =>
 
         if (lastActiveStr >= todayStr) return user.streak;
 
-        const missedWeekdays = countMissedWeekdays(lastActiveStr, todayStr);
+        let missedWeekdays = countMissedWeekdays(lastActiveStr, todayStr);
+        if (missedWeekdays > 2) {
+            const shieldedMonday = await getShieldedWeekMondayIfEarned(user.id, lastActiveStr, transaction);
+            if (shieldedMonday) {
+                missedWeekdays = countMissedWeekdays(lastActiveStr, todayStr, shieldedMonday);
+            }
+        }
 
         if (missedWeekdays > 2) {
             user.streak = 0;

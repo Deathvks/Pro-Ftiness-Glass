@@ -1,6 +1,6 @@
 {
-  "version": "7.14.5",
-  "releaseNotes": "Actualización v7.14.5: Sistema de Calibración Inicial (1/3, 2/3, 3/3) con marcas base por ejercicio y mapa muscular en el Dashboard.",
+  "version": "7.14.6",
+  "releaseNotes": "Actualización v7.14.6: Escudo de Racha Semanal (Meta de 3 días/semana) en Dashboard y protección automática de descansos.",
   "welcome": {
     "title": "Modo Sin Conexión y Smart Sync",
     "subtitle": "Descarga de ejercicios en segundo plano para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.",
