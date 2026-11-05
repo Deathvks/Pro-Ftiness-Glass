@@ -155,7 +155,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
             return memoryFeedCacheByScope[initialScope];
         }
         try {
-            const raw = sessionStorage.getItem(`pfg_social_feed_cache_${initialScope}`);
+            const raw = sessionStorage.getItem(`pfg_social_feed_cache_v2_${initialScope}`);
             if (raw) {
                 const parsed = JSON.parse(raw);
                 if (Array.isArray(parsed) && parsed.length > 0) {
@@ -250,7 +250,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
             if (!includeOlder && targetGymFilter === 'all') {
                 memoryFeedCacheByScope[targetScope] = posts;
                 try {
-                    sessionStorage.setItem(`pfg_social_feed_cache_${targetScope}`, JSON.stringify(posts.slice(0, 20)));
+                    sessionStorage.setItem(`pfg_social_feed_cache_v2_${targetScope}`, JSON.stringify(posts.slice(0, 20)));
                 } catch {}
             }
         } catch (error) {

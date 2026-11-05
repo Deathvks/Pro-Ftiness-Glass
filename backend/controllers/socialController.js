@@ -712,10 +712,14 @@ export const getFeed = async (req, res) => {
             });
         }
 
-        // Ventana de 7 días hacia atrás para optimizar el rendimiento del muro
+        // Ventana estricta de 7 días por defecto (y tope máximo de 30 días al cargar anteriores)
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         sevenDaysAgo.setHours(0, 0, 0, 0);
+
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        thirtyDaysAgo.setHours(0, 0, 0, 0);
 
         // Reglas estrictas de privacidad del muro:
         // - Global: SOLO entrenamientos en "Todo el mundo" (visibility === 'public')
@@ -760,9 +764,11 @@ export const getFeed = async (req, res) => {
             }
 
             if (isOlderCheck) {
-                clause.workout_date = { [Op.lt]: sevenDaysAgo };
+                clause.workout_date = { [Op.lt]: sevenDaysAgo, [Op.gte]: thirtyDaysAgo };
             } else if (withDateLimit) {
                 clause.workout_date = { [Op.gte]: sevenDaysAgo };
+            } else {
+                clause.workout_date = { [Op.gte]: thirtyDaysAgo };
             }
             return clause;
         };
@@ -843,17 +849,8 @@ export const getFeed = async (req, res) => {
                 ]
             });
 
-        let effectiveIncludeOlder = includeOlder;
-        let logs = await queryLogs(!effectiveIncludeOlder, effectiveIncludeOlder ? 50 : 25);
-
-        // Si no hay entrenos en los últimos 7 días, traemos automáticamente los anteriores para evitar la sala vacía
-        if (logs.length === 0 && !effectiveIncludeOlder && targetUserIds.length > 0) {
-            const fallbackLogs = await queryLogs(false, 25);
-            if (fallbackLogs.length > 0) {
-                logs = fallbackLogs;
-                effectiveIncludeOlder = true;
-            }
-        }
+        const effectiveIncludeOlder = includeOlder;
+        const logs = await queryLogs(!effectiveIncludeOlder, effectiveIncludeOlder ? 50 : 25);
 
         // 3. OPTIMIZACIÓN MASIVA: Obtener SOLO los nombres de ejercicios presentes en ESTOS entrenamientos
         const uniqueExerciseNamesInFeed = new Set();
