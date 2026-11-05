@@ -28,6 +28,7 @@ import DynamicIslandTimer from './components/DynamicIslandTimer';
 import VersionUpdater from './components/VersionUpdater';
 import APKUpdater from './components/APKUpdater';
 import AndroidDownloadPrompt from './components/AndroidDownloadPrompt';
+import OfflineDownloadFloatingBar from './components/OfflineDownloadFloatingBar';
 import SEOHead from './components/SEOHead';
 import PermissionModal from './components/PermissionModal'; 
 import NotFoundPage from './pages/NotFoundPage';
@@ -947,6 +948,7 @@ export default function App() {
       <VersionUpdater />
       <APKUpdater />
       <AndroidDownloadPrompt />
+      <OfflineDownloadFloatingBar navigate={navigateInternal} />
 
       {((isInitialLoad && !isPublicRoute) || isCheckingLaunchUrl) ? (
         <InitialLoadingSkeleton />

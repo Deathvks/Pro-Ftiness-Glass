@@ -195,7 +195,13 @@ export default function SettingsScreen({
 
   useEffect(() => {
     let isMounted = true;
-    import('../services/offlineExerciseService').then(({ getOfflineStorageStats, getAvailableExerciseCatalogStats }) => {
+    let unsubscribeDownload = null;
+
+    import('../services/offlineExerciseService').then(({
+      getOfflineStorageStats,
+      getAvailableExerciseCatalogStats,
+      subscribeToOfflineDownload
+    }) => {
       getOfflineStorageStats().then(stats => {
         if (isMounted && stats) setOfflineStats(stats);
       });
@@ -204,32 +210,35 @@ export default function SettingsScreen({
           if (isMounted && cat) setCatalogStats(cat);
         });
       }
+      if (typeof subscribeToOfflineDownload === 'function') {
+        unsubscribeDownload = subscribeToOfflineDownload((state) => {
+          if (!isMounted) return;
+          setIsDownloadingOffline(state.isDownloading);
+          if (state.progress) {
+            setDownloadProgress(state.progress);
+          }
+        });
+      }
     }).catch(() => {});
-    return () => { isMounted = false; };
+
+    return () => {
+      isMounted = false;
+      if (unsubscribeDownload) unsubscribeDownload();
+    };
   }, [activeTab]);
 
   const handleStartOfflineDownload = async () => {
     if (isDownloadingOffline) return;
     try {
-      setIsDownloadingOffline(true);
-      setDownloadProgress({ current: 0, total: 0, percent: 0, bytesDownloaded: 0 });
-      abortControllerRef.current = new AbortController();
-
-      const { downloadAllExercisesForOffline, getOfflineStorageStats } = await import('../services/offlineExerciseService');
-      
-      const result = await downloadAllExercisesForOffline({
-        signal: abortControllerRef.current.signal,
-        onProgress: (p) => {
-          setDownloadProgress(p);
-        }
-      });
-
-      const updatedStats = await getOfflineStorageStats();
-      setOfflineStats(updatedStats);
-      addToast(`Biblioteca offline lista: ${result.imagesCount} recursos guardados (${result.formattedSize})`, 'success');
+      const { startOfflineDownloadSession, getOfflineStorageStats } = await import('../services/offlineExerciseService');
+      const result = await startOfflineDownloadSession();
+      if (result) {
+        const updatedStats = await getOfflineStorageStats();
+        setOfflineStats(updatedStats);
+        addToast(`Biblioteca offline lista: ${result.imagesCount} recursos guardados (${result.formattedSize})`, 'success');
+      }
     } catch (err) {
       const isAborted =
-        abortControllerRef.current?.signal?.aborted ||
         err?.name === 'AbortError' ||
         (err?.message && (
           err.message.toLowerCase().includes('abort') ||
@@ -243,16 +252,15 @@ export default function SettingsScreen({
         console.error('Error descargando biblioteca offline:', err);
         addToast('Error al descargar ejercicios para modo offline', 'error');
       }
-    } finally {
-      setIsDownloadingOffline(false);
-      abortControllerRef.current = null;
     }
   };
 
-  const handleCancelOfflineDownload = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+  const handleCancelOfflineDownload = async () => {
+    try {
+      const { cancelOfflineDownloadSession } = await import('../services/offlineExerciseService');
+      cancelOfflineDownloadSession();
+      addToast('Descarga cancelada', 'info');
+    } catch {}
   };
 
   const handleDeleteOfflineCache = async () => {
@@ -635,25 +643,25 @@ export default function SettingsScreen({
                   type="button"
                   onClick={handleStartOfflineDownload}
                   disabled={isDownloadingOffline}
-                  className={`flex-1 flex items-center justify-center gap-2.5 py-4 px-6 rounded-[20px] font-extrabold text-sm transition-all duration-300 shadow-lg cursor-pointer
+                  className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 px-3 sm:px-6 rounded-[20px] font-extrabold text-xs sm:text-sm whitespace-nowrap transition-all duration-300 shadow-lg cursor-pointer
                     ${isDownloadingOffline
                       ? 'opacity-60 cursor-not-allowed bg-accent text-accent-contrast'
                       : 'bg-accent text-accent-contrast hover:scale-[1.02] active:scale-95 shadow-accent/20'}`}
                 >
                   {isDownloadingOffline ? (
                     <>
-                      <RefreshCw size={18} className="animate-spin" />
-                      <span>Descargando biblioteca...</span>
+                      <RefreshCw size={18} className="animate-spin shrink-0" />
+                      <span className="truncate">Descargando ({downloadProgress.percent}%)...</span>
                     </>
                   ) : offlineStats.isDownloaded ? (
                     <>
-                      <RefreshCw size={18} />
-                      <span>Actualizar biblioteca offline</span>
+                      <RefreshCw size={18} className="shrink-0" />
+                      <span className="truncate">Actualizar biblioteca</span>
                     </>
                   ) : (
                     <>
-                      <Download size={18} />
-                      <span>Descargar ejercicios para modo offline</span>
+                      <Download size={18} className="shrink-0" />
+                      <span className="truncate">Descargar biblioteca offline</span>
                     </>
                   )}
                 </button>

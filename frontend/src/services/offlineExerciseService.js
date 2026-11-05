@@ -439,6 +439,9 @@ export const downloadAllExercisesForOffline = async ({ onProgress, signal } = {}
       const currentIndex = queueIndex++;
       const url = urlsToDownload[currentIndex];
 
+      // Ceder breve respiro al bucle de eventos para mantener la UI a 60 FPS mientras se usa la app
+      await new Promise((r) => setTimeout(r, 12));
+
       try {
         const response = await fetch(url, {
           mode: 'cors',
@@ -530,3 +533,88 @@ export const downloadAllExercisesForOffline = async ({ onProgress, signal } = {}
     formattedSize: `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`
   };
 };
+
+// --- GESTIÓN DE DESCARGA EN SEGUNDO PLANO (SINGLETON GLOBAL) ---
+let activeDownloadState = {
+  isDownloading: false,
+  progress: { current: 0, total: 0, percent: 0, bytesDownloaded: 0 },
+  error: null,
+  result: null
+};
+
+let activeAbortController = null;
+const downloadListeners = new Set();
+
+const notifyDownloadListeners = () => {
+  const snapshot = { ...activeDownloadState };
+  for (const listener of downloadListeners) {
+    try {
+      listener(snapshot);
+    } catch (err) {
+      console.warn('[OfflineStorage] Error en listener de descarga:', err);
+    }
+  }
+};
+
+export const subscribeToOfflineDownload = (listener) => {
+  if (typeof listener !== 'function') return () => {};
+  downloadListeners.add(listener);
+  listener({ ...activeDownloadState });
+  return () => {
+    downloadListeners.delete(listener);
+  };
+};
+
+export const getActiveOfflineDownloadState = () => ({ ...activeDownloadState });
+
+export const cancelOfflineDownloadSession = () => {
+  if (activeAbortController) {
+    activeAbortController.abort();
+  }
+  activeDownloadState = {
+    isDownloading: false,
+    progress: { current: 0, total: 0, percent: 0, bytesDownloaded: 0 },
+    error: null,
+    result: null
+  };
+  activeAbortController = null;
+  notifyDownloadListeners();
+};
+
+export const startOfflineDownloadSession = async () => {
+  if (activeDownloadState.isDownloading) {
+    return activeDownloadState.result;
+  }
+
+  activeAbortController = new AbortController();
+  activeDownloadState = {
+    isDownloading: true,
+    progress: { current: 0, total: 0, percent: 0, bytesDownloaded: 0 },
+    error: null,
+    result: null
+  };
+  notifyDownloadListeners();
+
+  try {
+    const result = await downloadAllExercisesForOffline({
+      signal: activeAbortController.signal,
+      onProgress: (p) => {
+        activeDownloadState.progress = p;
+        notifyDownloadListeners();
+      }
+    });
+
+    activeDownloadState.isDownloading = false;
+    activeDownloadState.result = result;
+    activeAbortController = null;
+    notifyDownloadListeners();
+    return result;
+  } catch (err) {
+    activeDownloadState.isDownloading = false;
+    activeAbortController = null;
+    activeDownloadState.error = err;
+    notifyDownloadListeners();
+    throw err;
+  }
+};
+
