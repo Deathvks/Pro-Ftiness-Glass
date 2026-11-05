@@ -22,7 +22,8 @@ import {
     FaCheckCircle,
     FaSearch,
     FaShieldAlt,
-    FaTrophy
+    FaTrophy,
+    FaInfoCircle
 } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import GlassCard from './GlassCard';
@@ -136,6 +137,7 @@ const parseProfileGym = (raw) => {
 };
 
 export default function Feed({ setView, visibleStories = [], myStories = [] }) {
+    const [showFeedInfo, setShowFeedInfo] = useState(false);
     const [scope, setScope] = useState(() => {
         try {
             const saved = localStorage.getItem('pfg_social_feed_scope');
@@ -511,6 +513,52 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
 
     const renderScopeSelector = () => (
         <div id="social-feed-scopes" className="mb-5 sm:mb-6 space-y-3">
+            <div className="flex justify-end">
+                <button
+                    type="button"
+                    aria-expanded={showFeedInfo}
+                    aria-controls="social-feed-info"
+                    onClick={() => setShowFeedInfo(value => !value)}
+                    className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold text-text-secondary hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                >
+                    <FaInfoCircle className="text-accent" />
+                    <span>{showFeedInfo ? 'Ocultar información' : '¿Cómo funciona el Muro?'}</span>
+                </button>
+            </div>
+
+            {showFeedInfo && (
+                <section
+                    id="social-feed-info"
+                    aria-label="Cómo funciona cada apartado del Muro"
+                    className="grid grid-cols-1 md:grid-cols-3 gap-3 rounded-[24px] p-3 sm:p-4 bg-accent/5 ring-1 ring-accent/15"
+                >
+                    <div className="rounded-[18px] p-3.5 bg-white/50 dark:bg-black/10">
+                        <h3 className="flex items-center gap-2 text-sm font-extrabold text-text-primary">
+                            <FaFire className="text-orange-500" /> Global
+                        </h3>
+                        <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">
+                            Publicaciones públicas de toda la comunidad. Los entrenamientos en “Solo Amigos” no aparecen aquí.
+                        </p>
+                    </div>
+                    <div className="rounded-[18px] p-3.5 bg-white/50 dark:bg-black/10">
+                        <h3 className="flex items-center gap-2 text-sm font-extrabold text-text-primary">
+                            <FaMapMarkerAlt className="text-emerald-500" /> Mi Gimnasio / Ciudad
+                        </h3>
+                        <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">
+                            Publicaciones públicas de atletas de tu gimnasio o ciudad. También verás las de tus amigos de esa zona aunque las compartan en “Solo Amigos”. Puedes filtrar por gimnasio o ciudad.
+                        </p>
+                    </div>
+                    <div className="rounded-[18px] p-3.5 bg-white/50 dark:bg-black/10">
+                        <h3 className="flex items-center gap-2 text-sm font-extrabold text-text-primary">
+                            <FaUsers className="text-blue-500" /> Amigos
+                        </h3>
+                        <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">
+                            Actividad tuya y de tus amigos que tengas permiso para ver: pública o compartida solo con amigos.
+                        </p>
+                    </div>
+                </section>
+            )}
+
             {/* Selector Rápido Deslizable: Global / Mi Gimnasio / Amigos */}
             <div
                 role="tablist"

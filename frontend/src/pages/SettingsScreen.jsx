@@ -883,9 +883,9 @@ export default function SettingsScreen({
           {activeTab === 'privacy' && (
           <div
             ref={socialPrivacyRef}
-            className={`flex flex-col gap-6 rounded-[32px] transition-all duration-500 ease-in-out ${highlightedSection === 'social_privacy' ? 'ring-2 ring-accent shadow-xl shadow-accent/20 scale-[1.01]' : ''}`}
+            className="flex flex-col gap-6"
           >
-            <GlassCard className={glassCardClass}>
+            <GlassCard className={`${glassCardClass} ${highlightedSection === 'social_privacy' ? 'ring-2 ring-accent shadow-xl shadow-accent/20' : ''}`}>
               <SectionTitle icon={Users} title="Privacidad de tu Perfil Social" />
               <div className="flex flex-col gap-3">
                 <SwitchItem
@@ -923,7 +923,7 @@ export default function SettingsScreen({
               </div>
             </GlassCard>
 
-            <GlassCard className={glassCardClass}>
+            <GlassCard className={`${glassCardClass} ${highlightedSection === 'social_privacy' ? 'ring-2 ring-accent shadow-xl shadow-accent/20' : ''}`}>
               <SectionTitle icon={Globe} title="Muro de Comunidad (Global · Mi Gimnasio · Amigos)" />
               <p className="text-xs sm:text-sm text-text-secondary leading-relaxed -mt-2 mb-4">
                 Elige en qué apartados del Muro se publican tus entrenamientos al finalizarlos y qué filtro quieres ver por defecto al entrar a Comunidad.

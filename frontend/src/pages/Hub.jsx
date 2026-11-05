@@ -31,6 +31,7 @@ const HubButton = ({ id, icon: Icon, title, description, onClick, onPreload, isC
     id={id}
     onClick={onClick}
     onMouseEnter={onPreload}
+    onTouchStart={onPreload}
     disabled={isComingSoon}
     style={{ touchAction: 'manipulation' }}
     className={`w-full flex items-center justify-between p-4 glass rounded-2xl transition-all duration-300 touch-manipulation select-none ${highlight ? 'border-accent ring-2 ring-accent/60 shadow-lg shadow-accent/20' : ''} ${isComingSoon ? 'opacity-60 cursor-not-allowed' : 'active:scale-95 hover:bg-glass-border/30'}`}

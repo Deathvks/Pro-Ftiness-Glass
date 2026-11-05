@@ -1,25 +1,25 @@
 {
-  "version": "7.14.24",
-  "releaseNotes": "Actualización v7.14.24: carga de páginas más estable, recuperación sin bucles y conservación de contenido offline al actualizar.",
+  "version": "7.14.25",
+  "releaseNotes": "Actualización v7.14.25: precarga táctil en el Hub, aviso de carga más claro y nueva ayuda para el Muro de Comunidad.",
   "welcome": {
-    "title": "Carga estable y entrenamiento sin conexión",
-    "subtitle": "Navegación más ligera, recuperación fiable tras una actualización y mejor conservación de tus recursos descargados.",
+    "title": "Hub más ágil en PWA y Muro más claro",
+    "subtitle": "Los accesos del Hub preparan sus pantallas al tocarlos y el Muro explica qué contenido muestra cada apartado.",
     "features": [
       {
-        "title": "Páginas más ágiles",
-        "description": "Las secciones se descargan bajo demanda y las pantallas esenciales se preparan gradualmente cuando la conexión está libre."
+        "title": "Accesos del Hub preparados al tocar",
+        "description": "En móvil, la descarga de cada sección empieza al tocar su acceso para que la navegación arranque antes."
       },
       {
-        "title": "Recuperación sin perder tu pantalla",
-        "description": "Si falla un archivo de una sección, la app reintenta y actualiza esa ruta sin enviarte al dashboard ni borrar tus datos locales."
+        "title": "Aviso de carga más preciso",
+        "description": "La opción de recarga aparece tras una espera mayor y explica que la primera apertura en PWA puede tardar más."
       },
       {
-        "title": "Recursos offline conservados",
-        "description": "Tus ejercicios descargados, imágenes y recursos esenciales se mantienen al actualizar la app. Los entrenamientos pendientes se sincronizan al recuperar conexión."
+        "title": "Ayuda para el Muro de Comunidad",
+        "description": "Consulta qué aparece en Global, Mi Gimnasio o Ciudad y Amigos, y cómo afecta la privacidad de tus entrenamientos."
       },
       {
-        "title": "Precarga cuidadosa",
-        "description": "La app prepara las pantallas de entrenamiento de una en una, en conexiones adecuadas y durante los momentos de inactividad."
+        "title": "Privacidad más fácil de identificar",
+        "description": "El acceso a Privacidad Social resalta cada tarjeta por separado para localizar mejor sus ajustes."
       }
     ]
   }

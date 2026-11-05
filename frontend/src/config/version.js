@@ -1,6 +1,6 @@
-export const APP_VERSION = '7.14.24';
+export const APP_VERSION = '7.14.25';
 
-export const CURRENT_WELCOME_TITLE = 'Carga estable y entrenamiento sin conexión';
+export const CURRENT_WELCOME_TITLE = 'Hub más ágil en PWA y Muro más claro';
 
 const EQUIVALENT_WELCOME_TITLES = new Set([
   CURRENT_WELCOME_TITLE,

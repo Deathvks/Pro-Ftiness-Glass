@@ -82,7 +82,7 @@ const LoadingFallback = ({ onGoHome }) => {
 
     const timer = setTimeout(() => {
       setShowRescue(true);
-    }, 15000); // 4s de margen para respuesta rápida
+    }, 30000);
     return () => {
       clearTimeout(hintTimer);
       clearTimeout(timer);
@@ -152,7 +152,7 @@ const LoadingFallback = ({ onGoHome }) => {
                 ¿La sección está tardando en cargar?
               </p>
               <p className="text-xs text-text-secondary leading-relaxed">
-                Puede haber un conflicto de caché tras la actualización. Puedes forzar una recarga limpia.
+                Esta sección sigue cargando. La primera apertura en la PWA puede tardar más mientras descarga sus archivos. Si se queda bloqueada, puedes recargarla.
               </p>
             </div>
             <div className="flex flex-col gap-2 pt-1">
