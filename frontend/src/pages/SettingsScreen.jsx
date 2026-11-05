@@ -6,7 +6,7 @@ import {
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
   ShieldAlert, MailWarning, Instagram, Share2, Binary, Users, Trophy, Medal, Eye, ChevronLeft,
   Bug, Download, Vibrate, Volume2, Timer, Sliders, Globe, Clock, MapPin, Youtube, Play, LockOpen, Lock,
-  FileSpreadsheet, UploadCloud, Scale, WifiOff, HardDrive, Trash2, CheckCircle2, AlertCircle, RefreshCw
+  FileSpreadsheet, UploadCloud, Scale, WifiOff, HardDrive, Trash2, CheckCircle2, AlertCircle, RefreshCw, Sparkles
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6'; 
 import useAppStore from '../store/useAppStore';
