@@ -101,6 +101,7 @@ const socialService = {
         if (params?.includeOlder) {
             query.append('includeOlder', 'true');
         }
+        query.append('_t', String(Date.now()));
         const qs = query.toString() ? `?${query.toString()}` : '';
         return await apiClient(`/social/feed${qs}`);
     },

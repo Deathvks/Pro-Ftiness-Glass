@@ -208,9 +208,13 @@ const ChallengesScreen = ({ setView }) => {
                                     </div>
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-                                        <UserGroupIcon className="w-6 h-6 text-accent" /> Social
+                                    <h2 className="text-xl font-bold text-text-primary mb-2 flex items-center gap-2">
+                                        <UserGroupIcon className="w-6 h-6 text-accent" /> Social y Muro
                                     </h2>
+                                    <div className="mb-4 p-3.5 rounded-2xl bg-accent/10 border border-accent/20 text-xs text-text-secondary leading-relaxed">
+                                        <strong className="text-accent font-extrabold block mb-0.5">⚡ Interactuar en el Muro suma XP cada día</strong>
+                                        Dar reacciones rápidas (<strong>🔥 Fuego · 💪 Bestia · 🫡 Respeto · 🏆 PR</strong>), comentar entrenos de otros atletas y compartir tus sesiones en <strong>Global, Mi Gimnasio o Amigos</strong> te otorga <strong>+25 XP</strong> por misión completada.
+                                    </div>
                                     <div className="space-y-4">
                                         {dailyChallenges.filter(c => c.id.startsWith('social_')).map(renderChallengeCard)}
                                     </div>

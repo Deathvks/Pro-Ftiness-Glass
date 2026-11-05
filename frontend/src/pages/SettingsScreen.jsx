@@ -157,6 +157,42 @@ export default function SettingsScreen({
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   const [isUpdatingTimezone, setIsUpdatingTimezone] = useState(false);
 
+  const [workoutVisibility, setWorkoutVisibility] = useState(() => localStorage.getItem('globalWorkoutVisibility') || 'friends');
+  const [notifyFriendsOnWorkout, setNotifyFriendsOnWorkout] = useState(() => localStorage.getItem('globalNotifyFriends') !== 'false');
+  const [defaultFeedScope, setDefaultFeedScope] = useState(() => {
+    const saved = localStorage.getItem('pfg_social_feed_scope');
+    return ['global', 'gym', 'friends'].includes(saved) ? saved : 'global';
+  });
+
+  const handleChangeWorkoutVisibility = (newVisibility) => {
+    setWorkoutVisibility(newVisibility);
+    localStorage.setItem('globalWorkoutVisibility', newVisibility);
+    const labels = {
+      public: 'Todo el mundo (Global, Mi Gimnasio y Amigos)',
+      friends: 'Solo Amigos',
+      private: 'Privado (No subir al muro)'
+    };
+    addToast(`Visibilidad de entrenos: ${labels[newVisibility] || newVisibility}`, 'success');
+  };
+
+  const handleToggleNotifyFriendsOnWorkout = () => {
+    const next = !notifyFriendsOnWorkout;
+    setNotifyFriendsOnWorkout(next);
+    localStorage.setItem('globalNotifyFriends', String(next));
+    addToast(next ? 'Aviso a amigos al terminar entreno activado' : 'Aviso a amigos desactivado', 'success');
+  };
+
+  const handleChangeDefaultFeedScope = (newScope) => {
+    setDefaultFeedScope(newScope);
+    localStorage.setItem('pfg_social_feed_scope', newScope);
+    const scopeNames = {
+      global: 'Global (Comunidad)',
+      gym: 'Mi Gimnasio / Ciudad',
+      friends: 'Amigos'
+    };
+    addToast(`Pestaña inicial del Muro: ${scopeNames[newScope] || newScope}`, 'success');
+  };
+
   const [activeTab, setActiveTab] = useState(() => highlight === 'workout' ? 'workout' : 'profile');
   const [highlightedSection, setHighlightedSection] = useState(null);
   const socialPrivacyRef = useRef(null);
@@ -847,15 +883,15 @@ export default function SettingsScreen({
           {activeTab === 'privacy' && (
           <div
             ref={socialPrivacyRef}
-            className={`rounded-[32px] transition-all duration-500 ease-in-out ${highlightedSection === 'social_privacy' ? 'ring-2 ring-accent shadow-xl shadow-accent/20 scale-[1.02]' : ''}`}
+            className={`flex flex-col gap-6 rounded-[32px] transition-all duration-500 ease-in-out ${highlightedSection === 'social_privacy' ? 'ring-2 ring-accent shadow-xl shadow-accent/20 scale-[1.01]' : ''}`}
           >
             <GlassCard className={glassCardClass}>
-              <SectionTitle icon={Users} title="Privacidad Social" />
+              <SectionTitle icon={Users} title="Privacidad de tu Perfil Social" />
               <div className="flex flex-col gap-3">
                 <SwitchItem
                   icon={Eye}
                   title="Perfil Público"
-                  subtitle="Aparecer en búsquedas y ranking"
+                  subtitle="Aparecer en el Muro Global, Mi Gimnasio, Ranking y búsquedas"
                   checked={!!userProfile?.is_public_profile}
                   onChange={() => handleTogglePrivacy('is_public_profile', 'Perfil público')}
                   disabled={isUpdatingPrivacy}
@@ -863,7 +899,7 @@ export default function SettingsScreen({
                 <SwitchItem
                   icon={Trophy}
                   title="Mostrar Nivel y XP"
-                  subtitle="Visible para otros usuarios"
+                  subtitle="Visible en tu perfil y tarjetas del Muro para otros atletas"
                   checked={!!userProfile?.show_level_xp}
                   onChange={() => handleTogglePrivacy('show_level_xp', 'Nivel y XP')}
                   disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
@@ -871,19 +907,149 @@ export default function SettingsScreen({
                 <SwitchItem
                   icon={Medal}
                   title="Mostrar Insignias"
-                  subtitle="Compartir tus logros"
+                  subtitle="Compartir tus logros y medallas desbloqueadas"
                   checked={!!userProfile?.show_badges}
                   onChange={() => handleTogglePrivacy('show_badges', 'Insignias')}
                   disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
                 />
                 <SwitchItem
                   icon={MapPin}
-                  title="Mostrar Gimnasio"
-                  subtitle="Visible en tu perfil público para otros usuarios"
+                  title="Aparecer en Mi Gimnasio y Ciudad"
+                  subtitle="Mostrar tu gimnasio en tu perfil y en el radar de compañeros de tu centro o ciudad"
                   checked={userProfile?.show_gym !== false}
-                  onChange={() => handleTogglePrivacy('show_gym', 'Mostrar gimnasio', true)}
+                  onChange={() => handleTogglePrivacy('show_gym', 'Visibilidad en Mi Gimnasio', true)}
                   disabled={isUpdatingPrivacy || !userProfile?.is_public_profile}
                 />
+              </div>
+            </GlassCard>
+
+            <GlassCard className={glassCardClass}>
+              <SectionTitle icon={Globe} title="Muro de Comunidad (Global · Mi Gimnasio · Amigos)" />
+              <p className="text-xs sm:text-sm text-text-secondary leading-relaxed -mt-2 mb-4">
+                Elige en qué apartados del Muro se publican tus entrenamientos al finalizarlos y qué filtro quieres ver por defecto al entrar a Comunidad.
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <div className="text-xs font-extrabold uppercase tracking-wider text-text-muted px-1">
+                  ¿Quién puede ver tus entrenamientos terminados?
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => handleChangeWorkoutVisibility('public')}
+                    className={`flex flex-col items-start gap-1.5 p-4 rounded-[20px] text-left transition-all cursor-pointer border ${
+                      workoutVisibility === 'public'
+                        ? 'bg-accent/10 border-accent text-text-primary shadow-md shadow-accent/10'
+                        : 'bg-black/5 dark:bg-white/5 border-transparent hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className={`p-2 rounded-xl ${workoutVisibility === 'public' ? 'bg-accent text-accent-contrast' : 'bg-black/5 dark:bg-white/5 text-text-secondary'}`}>
+                        <Globe size={18} />
+                      </span>
+                      {workoutVisibility === 'public' && <CheckCircle2 size={18} className="text-accent shrink-0" />}
+                    </div>
+                    <span className={`text-sm font-extrabold mt-1 ${workoutVisibility === 'public' ? 'text-accent' : 'text-text-primary'}`}>
+                      Todo el mundo
+                    </span>
+                    <span className="text-[11px] text-text-secondary leading-snug">
+                      Aparece en <strong>Global</strong>, <strong>Mi Gimnasio</strong> y <strong>Amigos</strong>.
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleChangeWorkoutVisibility('friends')}
+                    className={`flex flex-col items-start gap-1.5 p-4 rounded-[20px] text-left transition-all cursor-pointer border ${
+                      workoutVisibility === 'friends'
+                        ? 'bg-accent/10 border-accent text-text-primary shadow-md shadow-accent/10'
+                        : 'bg-black/5 dark:bg-white/5 border-transparent hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className={`p-2 rounded-xl ${workoutVisibility === 'friends' ? 'bg-accent text-accent-contrast' : 'bg-black/5 dark:bg-white/5 text-text-secondary'}`}>
+                        <Users size={18} />
+                      </span>
+                      {workoutVisibility === 'friends' && <CheckCircle2 size={18} className="text-accent shrink-0" />}
+                    </div>
+                    <span className={`text-sm font-extrabold mt-1 ${workoutVisibility === 'friends' ? 'text-accent' : 'text-text-primary'}`}>
+                      Solo Amigos
+                    </span>
+                    <span className="text-[11px] text-text-secondary leading-snug">
+                      Solo visible en la pestaña <strong>Amigos</strong> (nunca en Global).
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleChangeWorkoutVisibility('private')}
+                    className={`flex flex-col items-start gap-1.5 p-4 rounded-[20px] text-left transition-all cursor-pointer border ${
+                      workoutVisibility === 'private'
+                        ? 'bg-accent/10 border-accent text-text-primary shadow-md shadow-accent/10'
+                        : 'bg-black/5 dark:bg-white/5 border-transparent hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className={`p-2 rounded-xl ${workoutVisibility === 'private' ? 'bg-accent text-accent-contrast' : 'bg-black/5 dark:bg-white/5 text-text-secondary'}`}>
+                        <Lock size={18} />
+                      </span>
+                      {workoutVisibility === 'private' && <CheckCircle2 size={18} className="text-accent shrink-0" />}
+                    </div>
+                    <span className={`text-sm font-extrabold mt-1 ${workoutVisibility === 'private' ? 'text-accent' : 'text-text-primary'}`}>
+                      No subir (Privado)
+                    </span>
+                    <span className="text-[11px] text-text-secondary leading-snug">
+                      Se guarda en tu diario personal sin publicarse en ningún muro.
+                    </span>
+                  </button>
+                </div>
+
+                {workoutVisibility !== 'private' && (
+                  <div className="mt-1">
+                    <SwitchItem
+                      icon={BellRing}
+                      title="Notificar a mis amigos al terminar"
+                      subtitle="Enviarles un aviso cuando publiques un nuevo entrenamiento en el muro"
+                      checked={notifyFriendsOnWorkout}
+                      onChange={handleToggleNotifyFriendsOnWorkout}
+                    />
+                  </div>
+                )}
+
+                <div className="text-xs font-extrabold uppercase tracking-wider text-text-muted px-1 mt-3">
+                  Apartado inicial al abrir el Muro
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {[
+                    { id: 'global', label: 'Global (Comunidad)', desc: 'Entrenos públicos de toda la app', icon: Globe },
+                    { id: 'gym', label: 'Mi Gimnasio / Ciudad', desc: 'Atletas de tu centro o ciudad', icon: MapPin },
+                    { id: 'friends', label: 'Amigos', desc: 'Actividad de tus amigos', icon: Users }
+                  ].map(opt => {
+                    const IconComp = opt.icon;
+                    const active = defaultFeedScope === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => handleChangeDefaultFeedScope(opt.id)}
+                        className={`flex items-center gap-3 p-3.5 rounded-[18px] text-left transition-all cursor-pointer border ${
+                          active
+                            ? 'bg-accent/10 border-accent text-text-primary shadow-sm'
+                            : 'bg-black/5 dark:bg-white/5 border-transparent hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary'
+                        }`}
+                      >
+                        <div className={`p-2 rounded-xl shrink-0 ${active ? 'bg-accent text-accent-contrast' : 'bg-black/5 dark:bg-white/5 text-text-secondary'}`}>
+                          <IconComp size={16} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className={`text-xs font-extrabold truncate ${active ? 'text-accent' : 'text-text-primary'}`}>{opt.label}</div>
+                          <div className="text-[10px] text-text-secondary truncate mt-0.5">{opt.desc}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </GlassCard>
           </div>

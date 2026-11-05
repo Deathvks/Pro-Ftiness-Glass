@@ -703,7 +703,7 @@ export const getFeed = async (req, res) => {
         }
 
         if (scope === 'gym' && !myGym) {
-            res.set('Cache-Control', 'private, max-age=10, stale-while-revalidate=30');
+            res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
             return res.json({
                 feed: [],
                 hasOlder: false,
@@ -963,7 +963,7 @@ export const getFeed = async (req, res) => {
             hasOlderPosts = !!olderLog;
         }
 
-        res.set('Cache-Control', 'private, max-age=15, stale-while-revalidate=45');
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
         res.json({
             feed: formattedFeed,
             hasOlder: hasOlderPosts,
@@ -984,6 +984,29 @@ const REACTION_META = {
     pr: { label: 'PR / Récord', verb: 'celebró tu PR en' }
 };
 
+const buildWorkoutReactionsSnapshot = async (workoutId, userId) => {
+    const allLikes = await WorkoutLike.findAll({
+        where: { workout_id: workoutId },
+        attributes: ['user_id', 'reaction_type'],
+        raw: true
+    });
+    const reactionsCounts = { fire: 0, beast: 0, respect: 0, pr: 0 };
+    let myReaction = null;
+    for (const like of allLikes) {
+        const rType = ['fire', 'beast', 'respect', 'pr'].includes(like.reaction_type) ? like.reaction_type : 'fire';
+        reactionsCounts[rType] = (reactionsCounts[rType] || 0) + 1;
+        if (Number(like.user_id) === Number(userId)) {
+            myReaction = rType;
+        }
+    }
+    return {
+        likesCount: allLikes.length,
+        hasLiked: !!myReaction,
+        myReaction,
+        reactionsCounts
+    };
+};
+
 export const toggleLike = async (req, res) => {
     try {
         const { workoutId } = req.params;
@@ -1000,7 +1023,8 @@ export const toggleLike = async (req, res) => {
             const currentType = existingLike.reaction_type || 'fire';
             if (currentType === reactionType) {
                 await existingLike.destroy();
-                return res.json({ success: true, liked: false, reactionType: null });
+                const snapshot = await buildWorkoutReactionsSnapshot(workoutId, userId);
+                return res.json({ success: true, liked: false, reactionType: null, ...snapshot });
             } else {
                 existingLike.reaction_type = reactionType;
                 await existingLike.save();
@@ -1010,7 +1034,8 @@ export const toggleLike = async (req, res) => {
                         io.to(workout.user_id.toString()).emit('feed_update');
                     }
                 }
-                return res.json({ success: true, liked: true, reactionType });
+                const snapshot = await buildWorkoutReactionsSnapshot(workoutId, userId);
+                return res.json({ success: true, liked: true, reactionType, ...snapshot });
             }
         } else {
             await WorkoutLike.create({
@@ -1070,7 +1095,8 @@ export const toggleLike = async (req, res) => {
                 await trackChallenge(userId, 'social_like_post', 1);
             } catch (err) {}
 
-            return res.json({ success: true, liked: true, reactionType });
+            const snapshot = await buildWorkoutReactionsSnapshot(workoutId, userId);
+            return res.json({ success: true, liked: true, reactionType, ...snapshot });
         }
     } catch (error) {
         res.status(500).json({ error: error.message });

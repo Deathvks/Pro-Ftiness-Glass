@@ -142,7 +142,7 @@ const GlobalPrivacyModal = ({ onClose }) => {
                 <div className={getIconContainerClasses('friends')}><Users size={20} strokeWidth={2} /></div>
                 <div className="flex-1 pr-8">
                   <span className={getTextClasses('friends')}>Solo Amigos</span>
-                  <span className="text-xs text-text-secondary block mt-0.5">Tus amigos agregados verán tu actividad.</span>
+                  <span className="text-xs text-text-secondary block mt-0.5">Solo tus amigos verán tu sesión en la pestaña Amigos (no sale en Global).</span>
                 </div>
                 {visibility === 'friends' && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-accent"><CheckCircle size={20} /></div>}
               </button>
@@ -151,7 +151,7 @@ const GlobalPrivacyModal = ({ onClose }) => {
                 <div className={getIconContainerClasses('public')}><Globe size={20} strokeWidth={2} /></div>
                 <div className="flex-1 pr-8">
                   <span className={getTextClasses('public')}>Todo el mundo</span>
-                  <span className="text-xs text-text-secondary block mt-0.5">Cualquier usuario podrá ver tus entrenamientos.</span>
+                  <span className="text-xs text-text-secondary block mt-0.5">Aparece en el Muro Global, en Mi Gimnasio y en Amigos.</span>
                 </div>
                 {visibility === 'public' && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-accent"><CheckCircle size={20} /></div>}
               </button>

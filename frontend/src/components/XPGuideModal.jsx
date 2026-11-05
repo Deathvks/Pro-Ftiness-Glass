@@ -269,7 +269,7 @@ const XPGuideModal = ({ onClose }) => {
                                             </div>
                                             <div className="flex flex-col min-w-0">
                                                 <span className="font-extrabold text-sm text-text-primary tracking-tight">Presume tu esfuerzo</span>
-                                                <span className="text-[10px] sm:text-xs font-medium text-text-secondary mt-0.5">Registra un entrenamiento en el mural</span>
+                                                <span className="text-[10px] sm:text-xs font-medium text-text-secondary mt-0.5">Publica un entrenamiento en el Muro (Global, Mi Gimnasio o Amigos)</span>
                                             </div>
                                         </div>
                                         <span className={dailyXpClass}>+25 XP (Reto)</span>
@@ -282,7 +282,7 @@ const XPGuideModal = ({ onClose }) => {
                                             </div>
                                             <div className="flex flex-col min-w-0">
                                                 <span className="font-extrabold text-sm text-text-primary tracking-tight">Conversador</span>
-                                                <span className="text-[10px] sm:text-xs font-medium text-text-secondary mt-0.5">Comenta en publicaciones del mural</span>
+                                                <span className="text-[10px] sm:text-xs font-medium text-text-secondary mt-0.5">Comenta en 2 sesiones del Muro (Global, Mi Gimnasio o Amigos)</span>
                                             </div>
                                         </div>
                                         <span className={dailyXpClass}>+25 XP (Reto)</span>
@@ -294,8 +294,8 @@ const XPGuideModal = ({ onClose }) => {
                                                 <Flame size={20} strokeWidth={2} />
                                             </div>
                                             <div className="flex flex-col min-w-0">
-                                                <span className="font-extrabold text-sm text-text-primary tracking-tight">Buen rollo</span>
-                                                <span className="text-[10px] sm:text-xs font-medium text-text-secondary mt-0.5">Dale like a publicaciones</span>
+                                                <span className="font-extrabold text-sm text-text-primary tracking-tight">Reacciones de Gimnasio</span>
+                                                <span className="text-[10px] sm:text-xs font-medium text-text-secondary mt-0.5">Reacciona con 🔥 Fuego, 💪 Bestia, 🫡 Respeto o 🏆 PR a 2 publicaciones del Muro</span>
                                             </div>
                                         </div>
                                         <span className={dailyXpClass}>+25 XP (Reto)</span>

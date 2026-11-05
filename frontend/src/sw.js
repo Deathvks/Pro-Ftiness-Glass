@@ -206,6 +206,7 @@ registerRoute(
     if (
       url.pathname.startsWith('/api/auth') ||
       url.pathname.startsWith('/api/users') ||
+      url.pathname.startsWith('/api/social') ||
       url.pathname.startsWith('/api/admin') ||
       url.pathname.startsWith('/api/chat') ||
       url.pathname.startsWith('/api/trainer') ||

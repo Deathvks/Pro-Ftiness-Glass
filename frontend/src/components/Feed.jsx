@@ -366,12 +366,20 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
     };
 
     const handleToggleLike = async (workoutId, reactionType = 'fire') => {
-        if (isActionLoading) return;
+        const applyReactionUpdate = (list, serverData = null) =>
+            (Array.isArray(list) ? list : []).map(item => {
+                if (!item || Number(item.id) !== Number(workoutId)) return item;
 
-        // Actualización optimista instantánea (0ms)
-        setFeed(prevFeed =>
-            (Array.isArray(prevFeed) ? prevFeed : []).map(item => {
-                if (!item || item.id !== workoutId) return item;
+                if (serverData && typeof serverData.likesCount === 'number' && serverData.reactionsCounts) {
+                    return {
+                        ...item,
+                        myReaction: serverData.myReaction ?? null,
+                        hasLiked: !!serverData.hasLiked,
+                        likesCount: serverData.likesCount,
+                        reactionsCounts: serverData.reactionsCounts
+                    };
+                }
+
                 const prevMyReaction = item.myReaction || (item.hasLiked ? 'fire' : null);
                 const prevCounts = {
                     fire: 0,
@@ -403,18 +411,39 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                     likesCount: nextLikesCount,
                     reactionsCounts: prevCounts
                 };
-            })
-        );
+            });
 
-        setIsActionLoading(true);
+        // 1. Actualización optimista instantánea (0ms) en estado y cachés locales
+        setFeed(prevFeed => {
+            const updated = applyReactionUpdate(prevFeed);
+            const activeScope = scopeRef.current;
+            if (Array.isArray(memoryFeedCacheByScope[activeScope])) {
+                memoryFeedCacheByScope[activeScope] = applyReactionUpdate(memoryFeedCacheByScope[activeScope]);
+            }
+            try {
+                sessionStorage.setItem(`pfg_social_feed_cache_v3_${activeScope}`, JSON.stringify(updated.slice(0, 20)));
+            } catch {}
+            return updated;
+        });
+
         try {
-            await socialService.toggleLike(workoutId, reactionType);
-            await loadFeed(isShowingOlderRef.current, scopeRef.current, gymFilterRef.current);
+            const res = await socialService.toggleLike(workoutId, reactionType);
+            if (res && typeof res.likesCount === 'number' && res.reactionsCounts) {
+                setFeed(prevFeed => {
+                    const reconciled = applyReactionUpdate(prevFeed, res);
+                    const activeScope = scopeRef.current;
+                    if (Array.isArray(memoryFeedCacheByScope[activeScope])) {
+                        memoryFeedCacheByScope[activeScope] = applyReactionUpdate(memoryFeedCacheByScope[activeScope], res);
+                    }
+                    try {
+                        sessionStorage.setItem(`pfg_social_feed_cache_v3_${activeScope}`, JSON.stringify(reconciled.slice(0, 20)));
+                    } catch {}
+                    return reconciled;
+                });
+            }
         } catch {
             showToast('Error al enviar reacción', 'error');
             await loadFeed(isShowingOlderRef.current, scopeRef.current, gymFilterRef.current);
-        } finally {
-            setIsActionLoading(false);
         }
     };
 
