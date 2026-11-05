@@ -354,7 +354,9 @@ export const createAuthSlice = (set, get) => {
     // Comprueba si se debe mostrar el modal de bienvenida
     checkWelcomeModal: () => {
         const lastSeenVersion = localStorage.getItem('lastSeenVersion');
-        const shouldShow = !lastSeenVersion || isNewerVersion(lastSeenVersion, APP_VERSION);
+        const lastSeenWelcomeTitle = localStorage.getItem('lastSeenWelcomeTitle');
+        const currentWelcomeTitle = 'Modo Sin Conexión y Smart Sync';
+        const shouldShow = !lastSeenVersion || isNewerVersion(lastSeenVersion, APP_VERSION) || (lastSeenWelcomeTitle !== currentWelcomeTitle);
         if (shouldShow) {
             localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
             set({ showWelcomeModal: true });
@@ -385,6 +387,7 @@ export const createAuthSlice = (set, get) => {
             localStorage.setItem('lastSeenVersion', effectiveVersion);
             localStorage.setItem(CACHE_VERSION_KEY, effectiveVersion);
         }
+        localStorage.setItem('lastSeenWelcomeTitle', 'Modo Sin Conexión y Smart Sync');
         set({ showWelcomeModal: false, welcomeRemoteVersion: null, welcomeRemoteData: null });
     },
 
