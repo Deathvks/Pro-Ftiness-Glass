@@ -453,18 +453,55 @@ export default function MainAppLayout({
   const prevViewRef = useRef(view);
   const SWIPE_THRESHOLD = 60; 
 
-  // --- DETECCIÓN DE SCROLL PARA MATCHEAR LA TRANSPARENCIA DEL NOTCH iOS 27 ---
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+  // --- DETECCIÓN DE SCROLL ULTRA-FLUIDA (60/120 FPS SIN RE-RENDERS DE REACT) ---
+  const isScrolledRef = useRef(false);
+  const isHeaderHiddenRef = useRef(false);
+  const isGlobalModalOpenRef = useRef(false);
   const mobileHeaderRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(0);
+
+  const syncMobileHeaderDOM = React.useCallback(() => {
+    const el = mobileHeaderRef.current;
+    if (!el) return;
+    const modalOpen = isGlobalModalOpenRef.current;
+    const hidden = isHeaderHiddenRef.current;
+    const scrolled = isScrolledRef.current;
+
+    if (modalOpen) {
+      el.style.transform = 'translate3d(0, -16px, 0)';
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+    } else if (hidden) {
+      // Solo animamos translate3d en el compositor GPU (sin animar opacity sobre backdrop-filter)
+      el.style.transform = 'translate3d(0, -105%, 0)';
+      el.style.opacity = '1';
+      el.style.pointerEvents = 'none';
+    } else {
+      el.style.transform = 'translate3d(0, 0, 0)';
+      el.style.opacity = '1';
+      el.style.pointerEvents = 'auto';
+    }
+
+    if (scrolled) {
+      el.classList.add('bg-bg-primary/80', 'backdrop-blur-md', 'shadow-sm');
+      el.classList.remove('bg-transparent');
+    } else {
+      el.classList.remove('bg-bg-primary/80', 'backdrop-blur-md', 'shadow-sm');
+      el.classList.add('bg-transparent');
+    }
+  }, []);
+
+  useEffect(() => {
+    isGlobalModalOpenRef.current = isGlobalModalOpen;
+    syncMobileHeaderDOM();
+  }, [isGlobalModalOpen, syncMobileHeaderDOM]);
 
   useEffect(() => {
     const el = mobileHeaderRef.current;
     if (!el) return;
     const updateHeight = () => {
       if (el && el.offsetHeight > 0) {
-        setHeaderHeight(el.offsetHeight);
+        setHeaderHeight(prev => (prev === el.offsetHeight ? prev : el.offsetHeight));
       }
     };
     updateHeight();
@@ -484,50 +521,85 @@ export default function MainAppLayout({
     // Cuando cambiamos de vista, asegúrate de scrollear arriba y a la izquierda de forma instantánea
     node.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     node.scrollLeft = 0;
-    setIsHeaderHidden(false);
+    isHeaderHiddenRef.current = false;
+    isScrolledRef.current = false;
+    syncMobileHeaderDOM();
 
     let lastScrollTop = 0;
     let accumulatedDown = 0;
     let accumulatedUp = 0;
+    let scrollRafId = null;
+    let topCleanTimer = null;
 
-    const handleScroll = () => {
+    const updateOnScroll = () => {
+      scrollRafId = null;
       const currentScrollTop = node.scrollTop;
-      setIsScrolled(currentScrollTop > 4);
+      let needsSync = false;
 
       // Si estamos cerca de la parte superior (<= 50px), el header SIEMPRE es visible
       if (currentScrollTop <= 50) {
-        setIsHeaderHidden(false);
+        if (isHeaderHiddenRef.current) {
+          isHeaderHiddenRef.current = false;
+          needsSync = true;
+        }
         accumulatedDown = 0;
         accumulatedUp = 0;
+
+        // Evitar quitar el backdrop-blur a mitad de la animación de bajada del header
+        if (currentScrollTop <= 4) {
+          if (isScrolledRef.current) {
+            clearTimeout(topCleanTimer);
+            topCleanTimer = setTimeout(() => {
+              if (node.scrollTop <= 4 && isScrolledRef.current) {
+                isScrolledRef.current = false;
+                syncMobileHeaderDOM();
+              }
+            }, 240);
+          }
+        } else if (!isScrolledRef.current) {
+          isScrolledRef.current = true;
+          needsSync = true;
+        }
+
+        if (needsSync) syncMobileHeaderDOM();
         lastScrollTop = Math.max(0, currentScrollTop);
         return;
+      }
+
+      clearTimeout(topCleanTimer);
+      if (!isScrolledRef.current) {
+        isScrolledRef.current = true;
+        needsSync = true;
       }
 
       const delta = currentScrollTop - lastScrollTop;
 
       if (delta > 0) {
-        // Desplazamiento hacia abajo (scroll down): acumular distancia incluso en scrolls muy lentos
         accumulatedDown += delta;
         accumulatedUp = 0;
 
-        // Ocultar header de forma fluida cuando se acumula avance hacia abajo y ya se pasó la zona inicial (> 50px)
-        if (accumulatedDown > 10 && currentScrollTop > 50) {
-          setIsHeaderHidden(true);
+        if (accumulatedDown > 10 && currentScrollTop > 50 && !isHeaderHiddenRef.current) {
+          isHeaderHiddenRef.current = true;
+          needsSync = true;
         }
       } else if (delta < 0) {
-        // Desplazamiento hacia arriba: solo reaparece al llegar arriba (currentScrollTop <= 50)
         accumulatedUp += Math.abs(delta);
         accumulatedDown = 0;
       }
 
+      if (needsSync) syncMobileHeaderDOM();
       lastScrollTop = Math.max(0, currentScrollTop);
     };
 
-    handleScroll();
+    const handleScroll = () => {
+      if (scrollRafId === null) {
+        scrollRafId = requestAnimationFrame(updateOnScroll);
+      }
+    };
+
+    updateOnScroll();
     node.addEventListener('scroll', handleScroll, { passive: true });
 
-    // iOS PWA hack: force WebKit to recalculate env(safe-area-inset-top)
-    // Often it evaluates to 0 on initial PWA launch until a resize or scroll occurs.
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     if (isStandalone) {
       setTimeout(() => {
@@ -539,8 +611,12 @@ export default function MainAppLayout({
       }, 100);
     }
 
-    return () => node.removeEventListener('scroll', handleScroll);
-  }, [mainContentRef, view]);
+    return () => {
+      node.removeEventListener('scroll', handleScroll);
+      if (scrollRafId !== null) cancelAnimationFrame(scrollRafId);
+      clearTimeout(topCleanTimer);
+    };
+  }, [mainContentRef, view, syncMobileHeaderDOM]);
 
   const wasSwipeNavRef = useRef(false);
 
@@ -1317,8 +1393,15 @@ export default function MainAppLayout({
 
         <header 
           ref={mobileHeaderRef}
-          className={`md:hidden absolute top-0 left-0 w-full z-40 transition-all duration-300 ease-out global-header-element ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : isHeaderHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'} ${isScrolled ? 'bg-bg-primary/70 backdrop-blur-xl shadow-sm' : 'bg-transparent'}`}
-          style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
+          className="md:hidden absolute top-0 left-0 w-full z-40 global-header-element bg-transparent"
+          style={{
+            paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
+            transform: 'translate3d(0, 0, 0)',
+            willChange: 'transform',
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            transition: 'transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease, opacity 0.2s ease',
+          }}
         >
           <div className="relative flex justify-between items-center w-full h-14 px-4">
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">

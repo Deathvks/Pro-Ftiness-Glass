@@ -338,7 +338,10 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
     const [isVisible, setIsVisible] = useState(false);
     const [isDocked, setIsDocked] = useState(false);
-    const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+    const isDockedRef = useRef(false);
+    const isHeaderHiddenRef = useRef(false);
+    const landingNavRef = useRef(null);
+    const scrollRafRef = useRef(null);
     const lastScrollY = useRef(0);
     const accumulatedDownRef = useRef(0);
     const accumulatedUpRef = useRef(0);
@@ -388,35 +391,56 @@ const LandingPage = ({ onLogin, onRegister }) => {
         fetchVersionInfo();
     }, []);
 
+    const syncLandingNavDOM = () => {
+        const nav = landingNavRef.current;
+        if (!nav) return;
+        if (isHeaderHiddenRef.current) {
+            nav.style.transform = 'translate3d(0, -105%, 0)';
+            nav.style.pointerEvents = 'none';
+        } else {
+            nav.style.transform = 'translate3d(0, 0, 0)';
+            nav.style.pointerEvents = 'auto';
+        }
+    };
+
     const handleScroll = (e) => {
-        const scrollTop = e.target.scrollTop;
-        const shouldBeDocked = scrollTop > 50;
+        const target = e.currentTarget;
+        if (scrollRafRef.current !== null) return;
+        scrollRafRef.current = requestAnimationFrame(() => {
+            scrollRafRef.current = null;
+            const scrollTop = target.scrollTop;
+            const shouldBeDocked = scrollTop > 50;
 
-        if (isDocked !== shouldBeDocked) {
-            setIsDocked(shouldBeDocked);
-        }
-
-        if (scrollTop <= 50) {
-            setIsHeaderHidden(false);
-            accumulatedDownRef.current = 0;
-            accumulatedUpRef.current = 0;
-            lastScrollY.current = Math.max(0, scrollTop);
-            return;
-        }
-
-        const delta = scrollTop - lastScrollY.current;
-        if (delta > 0) {
-            accumulatedDownRef.current += delta;
-            accumulatedUpRef.current = 0;
-            if (accumulatedDownRef.current > 10 && scrollTop > 80) {
-                setIsHeaderHidden(true);
+            if (isDockedRef.current !== shouldBeDocked) {
+                isDockedRef.current = shouldBeDocked;
+                setIsDocked(shouldBeDocked);
             }
-        } else if (delta < 0) {
-            // Desplazamiento hacia arriba: solo reaparece al llegar arriba (scrollTop <= 50)
-            accumulatedUpRef.current += Math.abs(delta);
-            accumulatedDownRef.current = 0;
-        }
-        lastScrollY.current = Math.max(0, scrollTop);
+
+            if (scrollTop <= 50) {
+                if (isHeaderHiddenRef.current) {
+                    isHeaderHiddenRef.current = false;
+                    syncLandingNavDOM();
+                }
+                accumulatedDownRef.current = 0;
+                accumulatedUpRef.current = 0;
+                lastScrollY.current = Math.max(0, scrollTop);
+                return;
+            }
+
+            const delta = scrollTop - lastScrollY.current;
+            if (delta > 0) {
+                accumulatedDownRef.current += delta;
+                accumulatedUpRef.current = 0;
+                if (accumulatedDownRef.current > 10 && scrollTop > 80 && !isHeaderHiddenRef.current) {
+                    isHeaderHiddenRef.current = true;
+                    syncLandingNavDOM();
+                }
+            } else if (delta < 0) {
+                accumulatedUpRef.current += Math.abs(delta);
+                accumulatedDownRef.current = 0;
+            }
+            lastScrollY.current = Math.max(0, scrollTop);
+        });
     };
 
     return (
@@ -473,9 +497,17 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                     {/* --- NAVBAR --- */}
                     <nav 
-                        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ease-out transform-gpu ${isHeaderHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'} ${isDocked ? 'bg-bg-primary/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10 shadow-sm' : 'bg-transparent border-transparent'}`} 
+                        ref={landingNavRef}
+                        className={`fixed top-0 left-0 w-full z-50 border-b ${isDocked ? 'bg-bg-primary/85 backdrop-blur-md border-black/5 dark:border-white/10 shadow-sm' : 'bg-transparent border-transparent'}`} 
                         aria-label="Navegación principal"
-                        style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
+                        style={{
+                            paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
+                            transform: 'translate3d(0, 0, 0)',
+                            willChange: 'transform',
+                            backfaceVisibility: 'hidden',
+                            WebkitBackfaceVisibility: 'hidden',
+                            transition: 'transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease',
+                        }}
                     >
                         <div className="flex justify-between items-center p-3 sm:p-4 md:px-8 max-w-7xl mx-auto w-full relative z-10 flex-nowrap">
                             <div
