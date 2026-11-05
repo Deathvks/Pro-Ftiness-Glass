@@ -95,113 +95,72 @@ export const getRetentionRescueOverview = async () => {
   const now = new Date();
   const nowMs = now.getTime();
 
-  // 1. Cargar usuarios (excluyendo admins) con métricas agregadas
-  const users = await db.User.findAll({
-    where: {
-      role: { [Op.ne]: 'admin' },
-    },
-    attributes: [
-      'id',
-      'username',
-      'name',
-      'email',
-      'profile_image_url',
-      'role',
-      'timezone',
-      'lastSeen',
-      'last_activity_date',
-      ['created_at', 'createdAt'],
-      [
-        db.sequelize.literal(`(
-          SELECT COUNT(*)
-          FROM routines
-          WHERE routines.user_id = User.id
-        )`),
-        'routineCount',
+  // 1. Consultas agregadas ultrarrápidas con GROUP BY (evita N*8 subconsultas correlacionadas y bloqueos de CPU en MySQL)
+  const [
+    users,
+    routineStats,
+    workoutStats,
+    nutritionStats,
+    pushStats,
+    personalRecords,
+    rescueLogs,
+  ] = await Promise.all([
+    db.User.findAll({
+      where: {
+        role: { [Op.ne]: 'admin' },
+      },
+      attributes: [
+        'id',
+        'username',
+        'name',
+        'email',
+        'profile_image_url',
+        'role',
+        'timezone',
+        'lastSeen',
+        'last_activity_date',
+        ['created_at', 'createdAt'],
       ],
-      [
-        db.sequelize.literal(`(
-          SELECT name
-          FROM routines
-          WHERE routines.user_id = User.id
-          ORDER BY id DESC
-          LIMIT 1
-        )`),
-        'latestRoutineName',
-      ],
-      [
-        db.sequelize.literal(`(
-          SELECT COUNT(*)
-          FROM workout_logs
-          WHERE workout_logs.user_id = User.id
-        )`),
-        'workoutCount',
-      ],
-      [
-        db.sequelize.literal(`(
-          SELECT MAX(workout_date)
-          FROM workout_logs
-          WHERE workout_logs.user_id = User.id
-        )`),
-        'lastWorkoutDate',
-      ],
-      [
-        db.sequelize.literal(`(
-          SELECT routine_name
-          FROM workout_logs
-          WHERE workout_logs.user_id = User.id
-          ORDER BY workout_date DESC, id DESC
-          LIMIT 1
-        )`),
-        'lastWorkoutRoutineName',
-      ],
-      [
-        db.sequelize.literal(`(
-          SELECT COUNT(*)
-          FROM nutrition_logs
-          WHERE nutrition_logs.user_id = User.id
-        )`),
-        'nutritionCount',
-      ],
-      [
-        db.sequelize.literal(`(
-          SELECT MAX(log_date)
-          FROM nutrition_logs
-          WHERE nutrition_logs.user_id = User.id
-        )`),
-        'lastNutritionDate',
-      ],
-      [
-        db.sequelize.literal(`(
-          SELECT COUNT(*)
-          FROM push_subscriptions
-          WHERE push_subscriptions.user_id = User.id
-        )`),
-        'pushSubCount',
-      ],
-    ],
-    order: [['created_at', 'DESC']],
-  });
-
-  // 2. Obtener mejor marca por usuario (PersonalRecords y WorkoutLogDetails)
-  const [personalRecords, bestWorkoutDetails, rescueLogs] = await Promise.all([
-    db.PersonalRecord.findAll({
-      attributes: ['user_id', 'exercise_name', 'weight_kg', 'date'],
-      order: [
-        ['weight_kg', 'DESC'],
-        ['date', 'DESC'],
-      ],
+      order: [['created_at', 'DESC']],
+      raw: true,
     }),
     db.sequelize
       .query(
-        `SELECT wl.user_id, wld.exercise_name, wld.best_set_weight
-         FROM workout_log_details wld
-         INNER JOIN workout_logs wl ON wl.id = wld.workout_log_id
-         WHERE wld.best_set_weight > 0
-         ORDER BY wl.workout_date DESC, wld.best_set_weight DESC`,
+        `SELECT user_id, COUNT(*) AS routineCount, MAX(name) AS latestRoutineName
+         FROM routines
+         GROUP BY user_id`,
         { type: db.sequelize.QueryTypes.SELECT }
       )
       .catch(() => []),
+    db.sequelize
+      .query(
+        `SELECT user_id, COUNT(*) AS workoutCount, MAX(workout_date) AS lastWorkoutDate, MAX(routine_name) AS lastWorkoutRoutineName
+         FROM workout_logs
+         GROUP BY user_id`,
+        { type: db.sequelize.QueryTypes.SELECT }
+      )
+      .catch(() => []),
+    db.sequelize
+      .query(
+        `SELECT user_id, COUNT(*) AS nutritionCount, MAX(log_date) AS lastNutritionDate
+         FROM nutrition_logs
+         GROUP BY user_id`,
+        { type: db.sequelize.QueryTypes.SELECT }
+      )
+      .catch(() => []),
+    db.sequelize
+      .query(
+        `SELECT user_id, COUNT(*) AS pushSubCount
+         FROM push_subscriptions
+         GROUP BY user_id`,
+        { type: db.sequelize.QueryTypes.SELECT }
+      )
+      .catch(() => []),
+    db.PersonalRecord.findAll({
+      attributes: ['user_id', 'exercise_name', 'weight_kg'],
+      where: { weight_kg: { [Op.gt]: 0 } },
+      raw: true,
+    }).catch(() => []),
     db.RetentionRescueLog
       ? db.RetentionRescueLog.findAll({
           include: [
@@ -217,20 +176,18 @@ export const getRetentionRescueOverview = async () => {
       : Promise.resolve([]),
   ]);
 
+  const routineMap = new Map(routineStats.map(r => [Number(r.user_id), r]));
+  const workoutMap = new Map(workoutStats.map(w => [Number(w.user_id), w]));
+  const nutritionMap = new Map(nutritionStats.map(n => [Number(n.user_id), n]));
+  const pushMap = new Map(pushStats.map(p => [Number(p.user_id), parseInt(p.pushSubCount, 10) || 0]));
+
   const bestLiftByUser = new Map();
-  for (const row of bestWorkoutDetails) {
-    if (!bestLiftByUser.has(row.user_id) && row.exercise_name && parseFloat(row.best_set_weight) > 0) {
-      bestLiftByUser.set(row.user_id, {
-        exerciseName: row.exercise_name,
-        weightKg: parseFloat(row.best_set_weight),
-      });
-    }
-  }
   for (const pr of personalRecords) {
-    const existing = bestLiftByUser.get(pr.user_id);
+    const uid = Number(pr.user_id);
+    const existing = bestLiftByUser.get(uid);
     const w = parseFloat(pr.weight_kg);
     if (pr.exercise_name && w > 0 && (!existing || w >= existing.weightKg)) {
-      bestLiftByUser.set(pr.user_id, {
+      bestLiftByUser.set(uid, {
         exerciseName: pr.exercise_name,
         weightKg: w,
       });
@@ -240,8 +197,9 @@ export const getRetentionRescueOverview = async () => {
   // Mapa del último rescate enviado por usuario
   const latestRescueByUser = new Map();
   for (const log of rescueLogs) {
-    if (!latestRescueByUser.has(log.user_id)) {
-      latestRescueByUser.set(log.user_id, log);
+    const uid = Number(log.user_id);
+    if (!latestRescueByUser.has(uid)) {
+      latestRescueByUser.set(uid, log);
     }
   }
 
@@ -249,12 +207,16 @@ export const getRetentionRescueOverview = async () => {
   const upcomingUsers = [];
   const userLastActivityMap = new Map();
 
-  for (const u of users) {
-    const plain = u.get({ plain: true });
+  for (const plain of users) {
+    const uid = Number(plain.id);
+    const rStat = routineMap.get(uid);
+    const wStat = workoutMap.get(uid);
+    const nStat = nutritionMap.get(uid);
+
     const createdAt = plain.createdAt ? new Date(plain.createdAt) : new Date(nowMs - 7 * 86400000);
     const lastSeenDate = plain.lastSeen ? new Date(plain.lastSeen) : null;
-    const lastWorkoutDate = plain.lastWorkoutDate ? new Date(plain.lastWorkoutDate) : null;
-    const lastNutritionDate = plain.lastNutritionDate ? new Date(`${plain.lastNutritionDate}T20:00:00Z`) : null;
+    const lastWorkoutDate = wStat?.lastWorkoutDate ? new Date(wStat.lastWorkoutDate) : null;
+    const lastNutritionDate = nStat?.lastNutritionDate ? new Date(`${nStat.lastNutritionDate}T20:00:00Z`) : null;
 
     // Última actividad registrada de entrenamiento o comida (o fecha de registro si nunca registró)
     const logDates = [lastWorkoutDate, lastNutritionDate].filter(d => d && !Number.isNaN(d.getTime()));
@@ -267,7 +229,7 @@ export const getRetentionRescueOverview = async () => {
       d => d && !Number.isNaN(d.getTime())
     );
     const lastOverallActivityAt = new Date(Math.max(...allActivityDates.map(d => d.getTime())));
-    userLastActivityMap.set(plain.id, lastOverallActivityAt);
+    userLastActivityMap.set(uid, lastOverallActivityAt);
 
     const accountAgeHours = Math.max(0, (nowMs - createdAt.getTime()) / 3600000);
     const accountAgeDays = Math.floor(accountAgeHours / 24);
@@ -283,23 +245,23 @@ export const getRetentionRescueOverview = async () => {
         ? Math.max(hoursSinceOverallActivity, hoursSinceLastLog)
         : hoursSinceOverallActivity;
 
-    const routineCount = parseInt(plain.routineCount, 10) || 0;
-    const workoutCount = parseInt(plain.workoutCount, 10) || 0;
-    const nutritionCount = parseInt(plain.nutritionCount, 10) || 0;
-    const pushSubCount = parseInt(plain.pushSubCount, 10) || 0;
-    const bestLift = bestLiftByUser.get(plain.id) || null;
+    const routineCount = parseInt(rStat?.routineCount, 10) || 0;
+    const workoutCount = parseInt(wStat?.workoutCount, 10) || 0;
+    const nutritionCount = parseInt(nStat?.nutritionCount, 10) || 0;
+    const pushSubCount = pushMap.get(uid) || 0;
+    const bestLift = bestLiftByUser.get(uid) || null;
 
     const rescuePreview = buildPersonalizedRescuePayload({
       routineCount,
-      latestRoutineName: plain.latestRoutineName,
+      latestRoutineName: rStat?.latestRoutineName || null,
       workoutCount,
-      lastWorkoutRoutineName: plain.lastWorkoutRoutineName,
+      lastWorkoutRoutineName: wStat?.lastWorkoutRoutineName || null,
       bestExerciseName: bestLift?.exerciseName || null,
       bestWeightKg: bestLift?.weightKg || null,
       nutritionCount,
     });
 
-    const lastRescue = latestRescueByUser.get(plain.id) || null;
+    const lastRescue = latestRescueByUser.get(uid) || null;
     const lastRescueSentAt = lastRescue?.sent_at ? new Date(lastRescue.sent_at) : null;
     const returnedAfterLastRescue =
       lastRescueSentAt && lastOverallActivityAt.getTime() > lastRescueSentAt.getTime() + 5 * 60 * 1000;
@@ -323,14 +285,14 @@ export const getRetentionRescueOverview = async () => {
       isEarlyCohort,
       lastSeen: lastSeenDate ? lastSeenDate.toISOString() : null,
       lastWorkoutDate: lastWorkoutDate ? lastWorkoutDate.toISOString() : null,
-      lastNutritionDate: plain.lastNutritionDate || null,
+      lastNutritionDate: nStat?.lastNutritionDate || null,
       lastActivityAt: lastOverallActivityAt.toISOString(),
       inactiveHours: Math.round(effectiveInactiveHours),
       inactiveDays: Math.floor(effectiveInactiveHours / 24),
       routineCount,
-      latestRoutineName: plain.latestRoutineName || null,
+      latestRoutineName: rStat?.latestRoutineName || null,
       workoutCount,
-      lastWorkoutRoutineName: plain.lastWorkoutRoutineName || null,
+      lastWorkoutRoutineName: wStat?.lastWorkoutRoutineName || null,
       nutritionCount,
       hasPushSubscription: pushSubCount > 0,
       pushSubCount,

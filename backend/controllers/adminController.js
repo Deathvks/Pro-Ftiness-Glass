@@ -16,79 +16,92 @@ const SystemSettings = db.SystemSettings;
 // Obtener configuración del sistema
 export const getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.findAll({
-      attributes: [
-        'id',
-        'name',
-        'email',
-        'role',
-        'is_verified',
-        'username',
-        'profile_image_url',
-        'lastSeen',
-        'level',
-        'xp',
-        'goal',
-        'height',
-        'age',
-        // NUEVO: Añadimos los IDs sociales para que el frontend sepa el método de inicio de sesión
-        'google_id',
-        'discord_id',
-        'x_id',
-        'github_id',
-        'spotify_id',
-        'facebook_id',
-        // CORRECCIÓN CRÍTICA: Mapeo explícito de la columna de base de datos al atributo
-        ['created_at', 'createdAt'],
-        // NUEVO: Subconsulta para contar las invitaciones
-        [
-          db.sequelize.literal(`(
-            SELECT COUNT(*)
-            FROM users AS referral
-            WHERE referral.referred_by = User.id
-          )`),
-          'referralCount'
+    const [
+      users,
+      referralCounts,
+      sessionDevices,
+      routineCounts,
+      workoutCounts,
+      nutritionCounts,
+    ] = await Promise.all([
+      User.findAll({
+        attributes: [
+          'id',
+          'name',
+          'email',
+          'role',
+          'is_verified',
+          'username',
+          'profile_image_url',
+          'lastSeen',
+          'level',
+          'xp',
+          'goal',
+          'height',
+          'age',
+          'google_id',
+          'discord_id',
+          'x_id',
+          'github_id',
+          'spotify_id',
+          'facebook_id',
+          ['created_at', 'createdAt'],
         ],
-        // NUEVO: Subconsulta para obtener el último dispositivo / plataforma usada
-        [
-          db.sequelize.literal(`(
-            SELECT device_type
-            FROM user_sessions
-            WHERE user_sessions.user_id = User.id
-            ORDER BY last_active DESC
-            LIMIT 1
-          )`),
-          'latest_device'
-        ],
-        [
-          db.sequelize.literal(`(
-            SELECT COUNT(*)
-            FROM routines
-            WHERE routines.user_id = User.id
-          )`),
-          'routineCount'
-        ],
-        [
-          db.sequelize.literal(`(
-            SELECT COUNT(*)
-            FROM workout_logs
-            WHERE workout_logs.user_id = User.id
-          )`),
-          'workoutCount'
-        ],
-        [
-          db.sequelize.literal(`(
-            SELECT COUNT(*)
-            FROM nutrition_logs
-            WHERE nutrition_logs.user_id = User.id
-          )`),
-          'nutritionCount'
-        ]
-      ],
-      // Ordenamos usando el nombre real de la columna en la base de datos
-      order: [['created_at', 'DESC']],
+        order: [['created_at', 'DESC']],
+        raw: true,
+      }),
+      db.sequelize
+        .query(
+          'SELECT referred_by AS user_id, COUNT(*) AS cnt FROM users WHERE referred_by IS NOT NULL GROUP BY referred_by',
+          { type: db.sequelize.QueryTypes.SELECT }
+        )
+        .catch(() => []),
+      db.sequelize
+        .query(
+          'SELECT user_id, device_type FROM user_sessions ORDER BY last_active DESC',
+          { type: db.sequelize.QueryTypes.SELECT }
+        )
+        .catch(() => []),
+      db.sequelize
+        .query('SELECT user_id, COUNT(*) AS cnt FROM routines GROUP BY user_id', {
+          type: db.sequelize.QueryTypes.SELECT,
+        })
+        .catch(() => []),
+      db.sequelize
+        .query('SELECT user_id, COUNT(*) AS cnt FROM workout_logs GROUP BY user_id', {
+          type: db.sequelize.QueryTypes.SELECT,
+        })
+        .catch(() => []),
+      db.sequelize
+        .query('SELECT user_id, COUNT(*) AS cnt FROM nutrition_logs GROUP BY user_id', {
+          type: db.sequelize.QueryTypes.SELECT,
+        })
+        .catch(() => []),
+    ]);
+
+    const refMap = new Map(referralCounts.map(r => [Number(r.user_id), parseInt(r.cnt, 10) || 0]));
+    const devMap = new Map();
+    for (const s of sessionDevices) {
+      const uid = Number(s.user_id);
+      if (!devMap.has(uid) && s.device_type) devMap.set(uid, s.device_type);
+    }
+    const rMap = new Map(routineCounts.map(r => [Number(r.user_id), parseInt(r.cnt, 10) || 0]));
+    const wMap = new Map(workoutCounts.map(w => [Number(w.user_id), parseInt(w.cnt, 10) || 0]));
+    const nMap = new Map(nutritionCounts.map(n => [Number(n.user_id), parseInt(n.cnt, 10) || 0]));
+
+    const enrichedUsers = users.map(u => {
+      const uid = Number(u.id);
+      return {
+        ...u,
+        referralCount: refMap.get(uid) || 0,
+        latest_device: devMap.get(uid) || null,
+        routineCount: rMap.get(uid) || 0,
+        workoutCount: wMap.get(uid) || 0,
+        nutritionCount: nMap.get(uid) || 0,
+      };
     });
-    res.json(users);
+
+    res.json(enrichedUsers);
   } catch (error) {
     next(error);
   }
