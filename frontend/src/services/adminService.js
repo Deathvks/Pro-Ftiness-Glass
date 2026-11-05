@@ -115,3 +115,15 @@ export const getEmailStats = (params = {}) => {
     const qs = new URLSearchParams(params).toString();
     return apiClient('/admin/email-stats?' + qs);
 };
+
+
+export const getRetentionRescueDashboard = () => {
+    return apiClient('/admin/retention-rescue');
+};
+
+export const triggerRetentionRescue = (payload = {}) => {
+    return apiClient('/admin/retention-rescue/send', {
+        method: 'POST',
+        body: payload,
+    });
+};

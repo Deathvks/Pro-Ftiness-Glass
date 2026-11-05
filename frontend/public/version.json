@@ -1,6 +1,6 @@
 {
-  "version": "7.14.17",
-  "releaseNotes": "Actualización v7.14.17: Ajuste de bordes en barra de reacciones del Muro y corrección de recarga instantánea de nuevas versiones en PWA.",
+  "version": "7.14.18",
+  "releaseNotes": "Actualización v7.14.18: Detector automático de abandono (+72h) con rescate personalizado y nuevo panel de Retención 72h en Administración.",
   "welcome": {
     "title": "Modo Sin Conexión y Smart Sync",
     "subtitle": "Descarga de ejercicios en segundo plano para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.",

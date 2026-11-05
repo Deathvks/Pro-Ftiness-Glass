@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Star,
   ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle, Check, Camera,
   Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw, ShieldAlert, Bell, Mail, Cloud,
-  Newspaper
+  Newspaper, Clock
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import Spinner from '../components/Spinner';
@@ -21,6 +21,7 @@ import AdminNotifications from './AdminNotifications';
 import AdminEmails from './AdminEmails';
 import SecurityDashboard from './SecurityDashboard';
 import AdminNewsManager from '../components/Admin/AdminNewsManager';
+import AdminRetentionRescue from '../components/Admin/AdminRetentionRescue';
 
 export const preloadAdminTab = () => {};
 import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getSystemStats, updateTrainerProfileImage, deleteTrainerProfileImage } from '../services/adminService';
@@ -764,6 +765,17 @@ const AdminPanel = ({ onCancel }) => {
         >
           <Users className="w-4 h-4 sm:w-5 sm:h-5" />
           Usuarios
+        </button>
+        <button
+          onClick={() => setActiveTab('retention')}
+          style={{ touchAction: 'manipulation' }}
+          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 touch-manipulation select-none text-sm sm:text-base ${activeTab === 'retention'
+            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
+            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
+            }`}
+        >
+          <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+          Retención 72h
         </button>
         <button
           onClick={() => setActiveTab('reports')}
@@ -1659,7 +1671,9 @@ const AdminPanel = ({ onCancel }) => {
           </>
         ) : (
           <AdminTabErrorBoundary activeTab={activeTab}>
-            {activeTab === 'exercises' ? (
+            {activeTab === 'retention' ? (
+              <AdminRetentionRescue />
+            ) : activeTab === 'exercises' ? (
               <AdminExercises />
             ) : activeTab === 'ratings' ? (
               <AdminRatings />

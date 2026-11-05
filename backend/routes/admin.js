@@ -67,5 +67,9 @@ router.post('/reset-milestones', adminController.resetMilestoneBadges);
 
 router.get('/upload-logs', adminController.getUploadLogs);
 
+// Retención temprana y rescate de inactividad (+72h)
+router.get('/retention-rescue', adminController.getRetentionRescueDashboard);
+router.post('/retention-rescue/send', adminController.triggerRetentionRescue);
+
 export default router;
 

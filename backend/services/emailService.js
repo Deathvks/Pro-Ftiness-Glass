@@ -318,3 +318,46 @@ export const sendBugReportResolvedEmail = async (email, userName, reportSubject)
     console.error('Error enviando correo de reporte resuelto:', error);
   }
 };
+
+
+export const sendRetentionRescueEmail = async (email, userName, { title, message, contextLabel, ctaUrl = '/routines', ctaText = 'Ir a mi entrenamiento' } = {}) => {
+  const baseUrl = process.env.FRONTEND_URL || 'https://pro-fitness-glass.zeabur.app';
+  const targetUrl = ctaUrl.startsWith('http') ? ctaUrl : `${baseUrl}${ctaUrl}`;
+  const safeName = userName || 'Atleta';
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0f172a; color: #f8fafc; border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+      <div style="padding: 32px 28px;">
+        <div style="display: inline-block; padding: 6px 14px; border-radius: 999px; background-color: rgba(34, 197, 94, 0.15); color: #22c55e; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 16px;">
+          PRO FITNESS GLASS · ${contextLabel || 'TU PROGRESO'}
+        </div>
+        <h2 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0 0 14px; line-height: 1.3;">
+          ${title}
+        </h2>
+        <p style="color: #cbd5e1; font-size: 15px; line-height: 1.6; margin: 0 0 12px;">
+          Hola <strong>${safeName}</strong>,
+        </p>
+        <p style="color: #f1f5f9; font-size: 16px; line-height: 1.6; margin: 0 0 28px; background: rgba(255,255,255,0.05); padding: 18px 20px; border-radius: 16px; border-left: 4px solid #22c55e;">
+          ${message}
+        </p>
+        <div style="text-align: center; margin: 28px 0 12px;">
+          <a href="${targetUrl}" style="background-color: #22c55e; color: #0f172a; padding: 14px 28px; text-decoration: none; border-radius: 999px; font-weight: 800; font-size: 15px; display: inline-block;">
+            ${ctaText}
+          </a>
+        </div>
+      </div>
+      <div style="padding: 16px 28px; background-color: rgba(0,0,0,0.25); text-align: center; font-size: 12px; color: #64748b;">
+        Este recordatorio personalizado se envía para ayudarte a mantener la constancia en Pro Fitness Glass.
+      </div>
+    </div>
+  `;
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: `${title} - Pro Fitness Glass`,
+    html
+  };
+
+  return sendMailAndLog(mailOptions);
+};

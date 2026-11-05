@@ -5,6 +5,10 @@ import { createNotification } from '../services/notificationService.js';
 import os from 'os';
 import { processUploadedFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/imageService.js';
+import {
+  getRetentionRescueOverview,
+  runRetentionRescueBatch,
+} from '../services/retentionRescueService.js';
 
 const User = db.User;
 const SystemSettings = db.SystemSettings;
@@ -689,3 +693,36 @@ export const getUploadLogs = async (req, res, next) => {
 
 
 
+
+// --- RETENCIÓN TEMPRANA Y RESCATE +72H ---
+export const getRetentionRescueDashboard = async (req, res, next) => {
+  try {
+    const data = await getRetentionRescueOverview();
+    res.json(data);
+  } catch (error) {
+    console.error('Error en getRetentionRescueDashboard:', error);
+    next(error);
+  }
+};
+
+export const triggerRetentionRescue = async (req, res, next) => {
+  try {
+    const { userId, limit = 15, onlyEarlyCohort = false } = req.body || {};
+    const batchResult = await runRetentionRescueBatch({
+      isManual: true,
+      specificUserId: userId || null,
+      limit: Math.min(50, Math.max(1, parseInt(limit, 10) || 15)),
+      onlyEarlyCohort: Boolean(onlyEarlyCohort),
+    });
+    const updatedOverview = await getRetentionRescueOverview();
+    res.json({
+      success: true,
+      processedCount: batchResult.processedCount,
+      remainingEligibleCount: batchResult.remainingEligibleCount,
+      overview: updatedOverview,
+    });
+  } catch (error) {
+    console.error('Error en triggerRetentionRescue:', error);
+    next(error);
+  }
+};

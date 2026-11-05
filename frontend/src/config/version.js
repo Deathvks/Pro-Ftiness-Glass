@@ -1,4 +1,4 @@
-export const APP_VERSION = '7.14.17';
+export const APP_VERSION = '7.14.18';
 
 export const CURRENT_WELCOME_TITLE = 'Modo Sin Conexión y Smart Sync';
 

@@ -334,13 +334,16 @@ const isProductionDB = process.env.NODE_ENV === 'production' || !!process.env.MY
       console.warn('Verificación defensiva de esquema en users:', schemaErr.message);
     }
 
-    // Verificación defensiva inmediata de tabla de rastreo de noticias
+    // Verificación defensiva inmediata de tabla de rastreo de noticias y retención 72h
     try {
       if (db.NewsVisitLog) {
         await db.NewsVisitLog.sync();
       }
+      if (db.RetentionRescueLog) {
+        await db.RetentionRescueLog.sync();
+      }
     } catch (newsErr) {
-      console.warn('Verificación defensiva de tabla news_visit_logs:', newsErr.message);
+      console.warn('Verificación defensiva de tablas auxiliares:', newsErr.message);
     }
 
     httpServer.listen(PORT, () => {

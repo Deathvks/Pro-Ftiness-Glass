@@ -33,6 +33,7 @@ import Message from './messageModel.js';
 import UploadLog from './uploadLogModel.js';
 import News from './newsModel.js';
 import NewsVisitLog from './newsVisitLogModel.js';
+import RetentionRescueLog from './retentionRescueLogModel.js';
 
 // Nuevos modelos de Squads
 import Squad from './squadModel.js';
@@ -200,6 +201,10 @@ NewsVisitLog.belongsTo(News, { foreignKey: 'news_id', as: 'news' });
 User.hasMany(NewsVisitLog, { foreignKey: 'user_id', as: 'newsVisitLogs' });
 NewsVisitLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+// --- RETENCIÓN Y RESCATE 72H ---
+User.hasMany(RetentionRescueLog, { foreignKey: 'user_id', as: 'RetentionRescueLogs', onDelete: 'CASCADE' });
+RetentionRescueLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 const models = {
   sequelize,
   User,
@@ -242,7 +247,8 @@ const models = {
   IpBlacklist,
   UploadLog,
   News,
-  NewsVisitLog
+  NewsVisitLog,
+  RetentionRescueLog
 };
 
 export default models;

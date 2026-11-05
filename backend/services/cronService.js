@@ -9,6 +9,7 @@ import { cleanOrphanedImages, deleteFile } from './imageService.js';
 import { sendBotReminderEmail } from './emailService.js';
 import { countMissedWeekdays } from './gamificationService.js';
 import { newsAutomationService } from './newsAutomationService.js';
+import { runRetentionRescueBatch } from './retentionRescueService.js';
 
 /**
  * Obtiene la hora y fecha local para una zona horaria dada.
@@ -757,6 +758,7 @@ export const startCronJobs = () => {
   checkStreakWars();
   resetInactiveStreaks();
   checkChatBotReminders(); // <-- Añadido el nuevo vigilante
+  checkInactivityRescue(); // <-- Detector de abandono temprano y rescate +72h
   scheduleDailyNewsAutomation();
   syncStaleLocalFoods();
 
@@ -764,6 +766,26 @@ export const startCronJobs = () => {
   setTimeout(() => {
     autoHealPendingWelcomeMessages().catch(e => console.error('[BOT] Error en auto-heal de inicio:', e));
   }, 3000);
+};
+
+/**
+ * TAREA 8: Detector de abandono temprano / Rescate Día 3 (+72h sin actividad)
+ * Corre en el minuto 25 de cada hora y envía notificaciones Push, In-App y Email
+ * ultra-personalizados según lo que el usuario sí hizo (rutina creada o mejor marca en ejercicio).
+ */
+const checkInactivityRescue = () => {
+  cron.schedule('25 * * * *', async () => {
+    try {
+      const result = await runRetentionRescueBatch({ isManual: false, limit: 15 });
+      if (result.processedCount > 0) {
+        console.log(
+          `[Cron] Rescate 72h: Enviados ${result.processedCount} rescates personalizados (${result.remainingEligibleCount} pendientes en cola).`
+        );
+      }
+    } catch (error) {
+      console.error('[Cron] Error en detector de rescate 72h:', error.message);
+    }
+  });
 };
 
 /**
