@@ -1040,13 +1040,13 @@ const Dashboard = ({ setView }) => {
             </div>
             <div className="text-right">
               <div className="flex items-baseline justify-end gap-1">
-                <span className="text-3xl font-black text-text-primary tracking-tight">
+                <span className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">
                   {weeklyConsistency.daysThisWeek}/{weeklyConsistency.targetDays}
                 </span>
                 <span className="text-xs font-bold text-text-muted">{t('días', { defaultValue: 'días' })}</span>
               </div>
               <span
-                className={`inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full mt-0.5 ${
+                className={`inline-flex items-center gap-1 text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full mt-0.5 whitespace-nowrap ${
                   weeklyConsistency.shieldActive
                     ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                     : 'bg-accent/15 text-accent'

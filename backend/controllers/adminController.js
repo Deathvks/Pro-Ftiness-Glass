@@ -24,6 +24,9 @@ export const getAllUsers = async (req, res, next) => {
         'lastSeen',
         'level',
         'xp',
+        'goal',
+        'height',
+        'age',
         // NUEVO: Añadimos los IDs sociales para que el frontend sepa el método de inicio de sesión
         'google_id',
         'discord_id',
@@ -52,6 +55,30 @@ export const getAllUsers = async (req, res, next) => {
             LIMIT 1
           )`),
           'latest_device'
+        ],
+        [
+          db.sequelize.literal(`(
+            SELECT COUNT(*)
+            FROM routines
+            WHERE routines.user_id = User.id
+          )`),
+          'routineCount'
+        ],
+        [
+          db.sequelize.literal(`(
+            SELECT COUNT(*)
+            FROM workout_logs
+            WHERE workout_logs.user_id = User.id
+          )`),
+          'workoutCount'
+        ],
+        [
+          db.sequelize.literal(`(
+            SELECT COUNT(*)
+            FROM nutrition_logs
+            WHERE nutrition_logs.user_id = User.id
+          )`),
+          'nutritionCount'
         ]
       ],
       // Ordenamos usando el nombre real de la columna en la base de datos

@@ -576,6 +576,24 @@ const AdminPanel = ({ onCancel }) => {
         (u.username || '').toLowerCase().includes(q)
       );
     }
+
+    if (funnelStageFilter !== 'ALL') {
+      const now = Date.now();
+      filtered = filtered.filter(u => {
+        if (u.role === 'admin' || u.role === 'trainer' || u.role === 'entrenador') return false;
+        if (funnelRange !== 'all') {
+          const createdMs = getTime(getUserDate(u));
+          const days = funnelRange === '7d' ? 7 : 30;
+          if (!createdMs || (now - createdMs) > days * 24 * 60 * 60 * 1000) return false;
+        }
+        if (funnelStageFilter === 'STUCK_PROFILE') return !(u.goal && (u.height || u.age));
+        if (funnelStageFilter === 'STUCK_ROUTINE') return Number(u.routineCount || 0) === 0;
+        if (funnelStageFilter === 'STUCK_WORKOUT1') return Number(u.workoutCount || 0) === 0;
+        if (funnelStageFilter === 'STUCK_WORKOUT2') return Number(u.workoutCount || 0) === 1;
+        if (funnelStageFilter === 'STUCK_NUTRITION') return Number(u.nutritionCount || 0) === 0;
+        return true;
+      });
+    }
     
     switch (sortBy) {
       case 'date':
@@ -587,7 +605,7 @@ const AdminPanel = ({ onCancel }) => {
       default:
         return filtered.sort((a, b) => getTime(b.lastSeen) - getTime(a.lastSeen));
     }
-  }, [users, sortBy, searchQuery, roleFilter, platformFilter, levelFilter]);
+  }, [users, sortBy, searchQuery, roleFilter, platformFilter, levelFilter, funnelStageFilter, funnelRange]);
 
   const totalPages = Math.ceil(reports.length / REPORTS_PER_PAGE);
   const currentReports = useMemo(() => {
@@ -598,6 +616,108 @@ const AdminPanel = ({ onCancel }) => {
   const galaxyUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 5).length, [users]);
   const desertUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 8).length, [users]);
   const oceanUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 11).length, [users]);
+
+  const [funnelRange, setFunnelRange] = useState('30d'); // '7d' | '30d' | 'all'
+  const [funnelStageFilter, setFunnelStageFilter] = useState('ALL'); // 'ALL' | 'STUCK_PROFILE' | 'STUCK_ROUTINE' | 'STUCK_WORKOUT1' | 'STUCK_WORKOUT2' | 'STUCK_NUTRITION'
+
+  const retentionFunnel = useMemo(() => {
+    const now = Date.now();
+    const regularUsers = users.filter(u => u.role !== 'admin' && u.role !== 'trainer' && u.role !== 'entrenador');
+
+    const cohort = regularUsers.filter(u => {
+      if (funnelRange === 'all') return true;
+      const createdMs = getTime(getUserDate(u));
+      if (!createdMs) return false;
+      const days = funnelRange === '7d' ? 7 : 30;
+      return (now - createdMs) <= days * 24 * 60 * 60 * 1000;
+    });
+
+    const total = cohort.length;
+    const hasProfile = (u) => Boolean(u.goal && (u.height || u.age));
+    const hasRoutine = (u) => Number(u.routineCount || 0) >= 1;
+    const hasWorkout1 = (u) => Number(u.workoutCount || 0) >= 1;
+    const hasWorkout2 = (u) => Number(u.workoutCount || 0) >= 2;
+    const hasNutrition = (u) => Number(u.nutritionCount || 0) >= 1;
+
+    const profileCount = cohort.filter(hasProfile).length;
+    const routineCount = cohort.filter(hasRoutine).length;
+    const workout1Count = cohort.filter(hasWorkout1).length;
+    const workout2Count = cohort.filter(hasWorkout2).length;
+    const nutritionCount = cohort.filter(hasNutrition).length;
+
+    const pct = (n) => (total > 0 ? Math.round((n / total) * 100) : 0);
+
+    const steps = [
+      {
+        id: 'STUCK_PROFILE',
+        stepNum: 1,
+        label: 'Perfil físico',
+        sublabel: 'Completaron onboarding',
+        count: profileCount,
+        missingCount: Math.max(0, total - profileCount),
+        percent: pct(profileCount),
+        color: 'from-blue-500 to-cyan-400',
+        badgeClass: 'bg-blue-500/15 text-blue-500 ring-blue-500/30'
+      },
+      {
+        id: 'STUCK_ROUTINE',
+        stepNum: 2,
+        label: '1ª Rutina creada',
+        sublabel: 'Tienen al menos 1 rutina',
+        count: routineCount,
+        missingCount: Math.max(0, total - routineCount),
+        percent: pct(routineCount),
+        color: 'from-violet-500 to-purple-400',
+        badgeClass: 'bg-purple-500/15 text-purple-500 ring-purple-500/30'
+      },
+      {
+        id: 'STUCK_WORKOUT1',
+        stepNum: 3,
+        label: '1er Entreno',
+        sublabel: 'Registraron 1ª sesión',
+        count: workout1Count,
+        missingCount: Math.max(0, total - workout1Count),
+        percent: pct(workout1Count),
+        color: 'from-amber-500 to-orange-400',
+        badgeClass: 'bg-amber-500/15 text-amber-500 ring-amber-500/30'
+      },
+      {
+        id: 'STUCK_WORKOUT2',
+        stepNum: 4,
+        label: '2º Entreno',
+        sublabel: 'Volvieron a entrenar',
+        count: workout2Count,
+        missingCount: Math.max(0, total - workout2Count),
+        percent: pct(workout2Count),
+        color: 'from-emerald-500 to-teal-400',
+        badgeClass: 'bg-emerald-500/15 text-emerald-500 ring-emerald-500/30'
+      },
+      {
+        id: 'STUCK_NUTRITION',
+        stepNum: 5,
+        label: '1ª Comida',
+        sublabel: 'Usaron diario nutricional',
+        count: nutritionCount,
+        missingCount: Math.max(0, total - nutritionCount),
+        percent: pct(nutritionCount),
+        color: 'from-pink-500 to-rose-400',
+        badgeClass: 'bg-pink-500/15 text-pink-500 ring-pink-500/30'
+      }
+    ];
+
+    // Detectar el mayor salto de abandono secuencial (Registro -> Perfil -> Rutina -> 1er Entreno -> 2º Entreno)
+    const sequential = [
+      { from: 'Registro', to: 'Perfil físico', lost: total - profileCount },
+      { from: 'Perfil físico', to: 'Crear 1ª rutina', lost: Math.max(0, profileCount - routineCount) },
+      { from: 'Crear 1ª rutina', to: 'Completar 1er entreno', lost: Math.max(0, routineCount - workout1Count) },
+      { from: '1er entreno', to: 'Completar 2º entreno', lost: Math.max(0, workout1Count - workout2Count) }
+    ];
+    const biggestDrop = total > 0
+      ? sequential.reduce((best, cur) => (cur.lost > best.lost ? cur : best), sequential[0])
+      : null;
+
+    return { total, steps, biggestDrop };
+  }, [users, funnelRange]);
 
   return (
     <div id="tutorial-admin-panel" className="w-full max-w-6xl mx-auto p-4 pb-24 md:p-6 lg:p-8 animate-[fade-in_0.5s_ease-out]">
@@ -778,6 +898,130 @@ const AdminPanel = ({ onCancel }) => {
                 </div>
                 <span className="text-xs font-bold text-[#0ea5e9] uppercase tracking-wider mb-1 relative z-10">Océano</span>
                 <span className="text-4xl font-black text-[#0ea5e9] relative z-10">{oceanUsersCount}</span>
+              </div>
+            </div>
+
+            {/* EMBUDO DE RETENCIÓN Y ABANDONO DE NUEVOS USUARIOS */}
+            <div className="mb-8 p-4 sm:p-6 bg-black/5 dark:bg-white/5 rounded-[28px] ring-1 ring-black/5 dark:ring-white/10">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base sm:text-lg font-black text-text-primary tracking-tight">
+                      Embudo de Activación y Abandono
+                    </h3>
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-accent/15 text-accent ring-1 ring-accent/30">
+                      {retentionFunnel.total} {retentionFunnel.total === 1 ? 'usuario evaluado' : 'usuarios evaluados'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Porcentaje de usuarios que superan cada paso clave. Pulsa una tarjeta para filtrar abajo quiénes se atascaron ahí.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-bg-primary p-1 rounded-2xl ring-1 ring-black/5 dark:ring-white/10 self-start sm:self-auto shrink-0">
+                  {[
+                    { id: '7d', label: '7 días' },
+                    { id: '30d', label: '30 días' },
+                    { id: 'all', label: 'Todos' }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setFunnelRange(tab.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                        funnelRange === tab.id
+                          ? 'bg-accent text-accent-contrast shadow-sm'
+                          : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                {retentionFunnel.steps.map((step) => {
+                  const isSelected = funnelStageFilter === step.id;
+                  return (
+                    <button
+                      key={step.id}
+                      type="button"
+                      onClick={() => setFunnelStageFilter(prev => (prev === step.id ? 'ALL' : step.id))}
+                      className={`text-left p-4 rounded-2xl transition-all flex flex-col justify-between gap-3 cursor-pointer ring-1 ${
+                        isSelected
+                          ? 'bg-accent/15 ring-2 ring-accent shadow-md'
+                          : 'bg-bg-primary/80 hover:bg-bg-primary ring-black/5 dark:ring-white/10'
+                      }`}
+                    >
+                      <div className="space-y-1 w-full">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ring-1 ${step.badgeClass}`}>
+                            Paso {step.stepNum}
+                          </span>
+                          <span className="text-xs font-extrabold text-text-secondary">
+                            {step.count}/{retentionFunnel.total}
+                          </span>
+                        </div>
+                        <p className="text-sm font-black text-text-primary pt-1 truncate">
+                          {step.label}
+                        </p>
+                        <p className="text-[11px] font-medium text-text-muted truncate">
+                          {step.sublabel}
+                        </p>
+                      </div>
+
+                      <div className="w-full space-y-1.5">
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-2xl font-black text-text-primary leading-none">
+                            {step.percent}%
+                          </span>
+                          <span className="text-[10px] font-bold text-amber-500">
+                            {step.missingCount > 0
+                              ? step.id === 'STUCK_WORKOUT2'
+                                ? `${ retentionFunnel.steps[2].count - step.count >= 0 ? retentionFunnel.steps[2].count - step.count : 0 } con solo 1 entreno`
+                                : `${step.missingCount} sin completar`
+                              : '100% completado'}
+                          </span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full bg-gradient-to-r ${step.color} transition-all duration-500`}
+                            style={{ width: `${Math.min(100, Math.max(0, step.percent))}%` }}
+                          />
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-black/5 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                {retentionFunnel.biggestDrop && retentionFunnel.biggestDrop.lost > 0 ? (
+                  <div className="flex items-center gap-2 text-text-secondary">
+                    <span className="inline-block w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                    <span>
+                      Mayor fuga detectada entre <strong className="text-text-primary">{retentionFunnel.biggestDrop.from}</strong> y{' '}
+                      <strong className="text-text-primary">{retentionFunnel.biggestDrop.to}</strong> ({retentionFunnel.biggestDrop.lost}{' '}
+                      {retentionFunnel.biggestDrop.lost === 1 ? 'usuario se quedó' : 'usuarios se quedaron'} en ese paso).
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-text-muted font-medium">
+                    Sin fugas destacables en el periodo seleccionado.
+                  </span>
+                )}
+
+                {funnelStageFilter !== 'ALL' && (
+                  <button
+                    type="button"
+                    onClick={() => setFunnelStageFilter('ALL')}
+                    className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/15 text-amber-500 font-extrabold text-xs hover:bg-amber-500/25 transition-all cursor-pointer shrink-0"
+                  >
+                    <X size={13} />
+                    <span>Quitar filtro de embudo ({filteredAndSortedUsers.length} mostrados)</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1033,13 +1277,55 @@ const AdminPanel = ({ onCancel }) => {
                             </div>
                           </td>
 
-                          {/* 3. Actividad (Estado + Registro) */}
+                          {/* 3. Actividad (Estado + Registro + Progreso Embudo) */}
                           <td className="p-4 align-middle">
                             <div className="flex flex-col items-start gap-1">
                               <StatusIndicator lastSeen={user.lastSeen} />
                               <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
                                 Reg: {formatDateSafe(getUserDate(user))}
                               </span>
+                              <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                    user.goal && (Number(user.height) > 0 || Number(user.age) > 0)
+                                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                      : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                                  }`}
+                                  title="Perfil físico completado"
+                                >
+                                  Perfil {user.goal && (Number(user.height) > 0 || Number(user.age) > 0) ? '✓' : '—'}
+                                </span>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                    Number(user.routineCount || 0) >= 1
+                                      ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400'
+                                      : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                                  }`}
+                                  title="Rutinas creadas"
+                                >
+                                  Rut: {Number(user.routineCount || 0)}
+                                </span>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                    Number(user.workoutCount || 0) >= 1
+                                      ? 'bg-violet-500/15 text-violet-600 dark:text-violet-400'
+                                      : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                                  }`}
+                                  title="Entrenos completados"
+                                >
+                                  Ent: {Number(user.workoutCount || 0)}
+                                </span>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                    Number(user.nutritionCount || 0) >= 1
+                                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                      : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                                  }`}
+                                  title="Comidas registradas"
+                                >
+                                  Nut: {Number(user.nutritionCount || 0)}
+                                </span>
+                              </div>
                             </div>
                           </td>
 
@@ -1194,6 +1480,45 @@ const AdminPanel = ({ onCancel }) => {
                               )}
                             </div>
                           </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-1.5 border-t border-black/5 dark:border-white/5 pt-2.5">
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                              user.goal && (Number(user.height) > 0 || Number(user.age) > 0)
+                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                            }`}
+                          >
+                            Perfil {user.goal && (Number(user.height) > 0 || Number(user.age) > 0) ? '✓' : '—'}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                              Number(user.routineCount || 0) >= 1
+                                ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400'
+                                : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                            }`}
+                          >
+                            Rutinas: {Number(user.routineCount || 0)}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                              Number(user.workoutCount || 0) >= 1
+                                ? 'bg-violet-500/15 text-violet-600 dark:text-violet-400'
+                                : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                            }`}
+                          >
+                            Entrenos: {Number(user.workoutCount || 0)}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                              Number(user.nutritionCount || 0) >= 1
+                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                            }`}
+                          >
+                            Comidas: {Number(user.nutritionCount || 0)}
+                          </span>
                         </div>
 
                       </div>

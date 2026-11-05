@@ -1047,7 +1047,7 @@ const DashboardInsights = ({ setView }) => {
               </div>
 
               {/* Barra visual de los 3 pasos de calibración */}
-              <div className="grid grid-cols-3 gap-1.5 pt-0.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 pt-0.5">
                 {[
                   { idx: 1, label: '1. Marcas base' },
                   { idx: 2, label: '2. Mapa muscular' },

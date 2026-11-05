@@ -1,6 +1,6 @@
 {
-  "version": "7.14.6",
-  "releaseNotes": "Actualización v7.14.6: Escudo de Racha Semanal (Meta de 3 días/semana) en Dashboard y protección automática de descansos.",
+  "version": "7.14.7",
+  "releaseNotes": "Actualización v7.14.7: Embudo de Retención y Abandono de Nuevos Usuarios en Panel Admin y mejoras responsive.",
   "welcome": {
     "title": "Modo Sin Conexión y Smart Sync",
     "subtitle": "Descarga de ejercicios en segundo plano para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.",
