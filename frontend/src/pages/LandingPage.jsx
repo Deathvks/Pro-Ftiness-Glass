@@ -395,10 +395,12 @@ const LandingPage = ({ onLogin, onRegister }) => {
         const nav = landingNavRef.current;
         if (!nav) return;
         if (isHeaderHiddenRef.current) {
-            nav.style.transform = 'translate3d(0, -105%, 0)';
+            nav.style.transform = 'translate3d(0, -100%, 0)';
+            nav.style.opacity = '0';
             nav.style.pointerEvents = 'none';
         } else {
             nav.style.transform = 'translate3d(0, 0, 0)';
+            nav.style.opacity = '1';
             nav.style.pointerEvents = 'auto';
         }
     };
@@ -408,7 +410,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
         if (scrollRafRef.current !== null) return;
         scrollRafRef.current = requestAnimationFrame(() => {
             scrollRafRef.current = null;
-            const scrollTop = target.scrollTop;
+            const scrollTop = Math.max(0, target.scrollTop);
             const shouldBeDocked = scrollTop > 50;
 
             if (isDockedRef.current !== shouldBeDocked) {
@@ -416,14 +418,14 @@ const LandingPage = ({ onLogin, onRegister }) => {
                 setIsDocked(shouldBeDocked);
             }
 
-            if (scrollTop <= 50) {
+            if (scrollTop <= 36) {
                 if (isHeaderHiddenRef.current) {
                     isHeaderHiddenRef.current = false;
                     syncLandingNavDOM();
                 }
                 accumulatedDownRef.current = 0;
                 accumulatedUpRef.current = 0;
-                lastScrollY.current = Math.max(0, scrollTop);
+                lastScrollY.current = scrollTop;
                 return;
             }
 
@@ -431,7 +433,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
             if (delta > 0) {
                 accumulatedDownRef.current += delta;
                 accumulatedUpRef.current = 0;
-                if (accumulatedDownRef.current > 10 && scrollTop > 80 && !isHeaderHiddenRef.current) {
+                if (accumulatedDownRef.current > 14 && scrollTop > 52 && !isHeaderHiddenRef.current) {
                     isHeaderHiddenRef.current = true;
                     syncLandingNavDOM();
                 }
@@ -439,7 +441,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                 accumulatedUpRef.current += Math.abs(delta);
                 accumulatedDownRef.current = 0;
             }
-            lastScrollY.current = Math.max(0, scrollTop);
+            lastScrollY.current = scrollTop;
         });
     };
 
@@ -498,15 +500,17 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     {/* --- NAVBAR --- */}
                     <nav 
                         ref={landingNavRef}
-                        className={`fixed top-0 left-0 w-full z-50 border-b ${isDocked ? 'bg-bg-primary/85 backdrop-blur-md border-black/5 dark:border-white/10 shadow-sm' : 'bg-transparent border-transparent'}`} 
+                        className="fixed top-0 left-0 w-full z-50 border-b bg-transparent border-transparent"
                         aria-label="Navegación principal"
                         style={{
                             paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
                             transform: 'translate3d(0, 0, 0)',
-                            willChange: 'transform',
+                            opacity: 1,
+                            willChange: 'transform, opacity',
+                            contain: 'layout style paint',
                             backfaceVisibility: 'hidden',
                             WebkitBackfaceVisibility: 'hidden',
-                            transition: 'transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease',
+                            transition: 'transform 0.52s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.42s cubic-bezier(0.32, 0.72, 0, 1)',
                         }}
                     >
                         <div className="flex justify-between items-center p-3 sm:p-4 md:px-8 max-w-7xl mx-auto w-full relative z-10 flex-nowrap">

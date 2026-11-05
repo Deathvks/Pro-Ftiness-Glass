@@ -28,7 +28,7 @@ const MaintenanceNoticeBanner = ({
       style={computedStyle}
       className={`w-full bg-amber-500/15 dark:bg-amber-400/15 text-amber-950 dark:text-amber-100 ${
         needsSafeArea ? 'pb-1' : 'py-1 sm:py-1.5'
-      } px-2.5 sm:px-4 backdrop-blur-xl transition-all flex items-center justify-center shrink-0 ${
+      } px-2.5 sm:px-4 md:backdrop-blur-xl transition-colors flex items-center justify-center shrink-0 ${
         borderBottom && !isRounded ? 'border-b border-amber-500/30' : ''
       } ${rounded ? 'rounded-2xl border border-amber-500/30 shadow-sm' : ''} ${className}`}
     >
@@ -36,9 +36,9 @@ const MaintenanceNoticeBanner = ({
       {!isMaintenancePage ? (
         <Link
           to="/mantenimiento"
-          className="flex sm:hidden items-center justify-center gap-1.5 w-full text-center leading-none text-[11px] font-semibold text-amber-950 dark:text-amber-100 hover:opacity-90 active:scale-[0.99] transition-all py-0.5"
+          className="flex sm:hidden items-center justify-center gap-1.5 w-full text-center leading-none text-[11px] font-semibold text-amber-950 dark:text-amber-100 hover:opacity-90 active:scale-[0.99] transition-opacity py-0.5"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
           <Wrench size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
           <span className="font-bold whitespace-nowrap">
             {t('maintenance_banner_msg_mobile', { defaultValue: 'Mantenimiento sáb. 7 (24-48h)' })}

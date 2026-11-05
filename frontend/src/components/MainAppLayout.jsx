@@ -458,8 +458,7 @@ export default function MainAppLayout({
   const prevViewRef = useRef(view);
   const SWIPE_THRESHOLD = 60; 
 
-  // --- DETECCIÓN DE SCROLL ULTRA-FLUIDA (60/120 FPS SIN RE-RENDERS DE REACT) ---
-  const isScrolledRef = useRef(false);
+  // --- DETECCIÓN DE SCROLL ULTRA-FLUIDA (60/120 FPS EN COMPOSITOR GPU TIPO APPLE) ---
   const isHeaderHiddenRef = useRef(false);
   const isGlobalModalOpenRef = useRef(false);
   const mobileHeaderRef = useRef(null);
@@ -470,29 +469,20 @@ export default function MainAppLayout({
     if (!el) return;
     const modalOpen = isGlobalModalOpenRef.current;
     const hidden = isHeaderHiddenRef.current;
-    const scrolled = isScrolledRef.current;
 
     if (modalOpen) {
       el.style.transform = 'translate3d(0, -16px, 0)';
       el.style.opacity = '0';
       el.style.pointerEvents = 'none';
     } else if (hidden) {
-      // Solo animamos translate3d en el compositor GPU (sin animar opacity sobre backdrop-filter)
-      el.style.transform = 'translate3d(0, -105%, 0)';
-      el.style.opacity = '1';
+      // Animación pura en el hilo del compositor GPU (transform + opacity sobre textura estática sin backdrop-filter)
+      el.style.transform = 'translate3d(0, -100%, 0)';
+      el.style.opacity = '0';
       el.style.pointerEvents = 'none';
     } else {
       el.style.transform = 'translate3d(0, 0, 0)';
       el.style.opacity = '1';
       el.style.pointerEvents = 'auto';
-    }
-
-    if (scrolled) {
-      el.classList.add('bg-bg-primary/80', 'backdrop-blur-md', 'shadow-sm');
-      el.classList.remove('bg-transparent');
-    } else {
-      el.classList.remove('bg-bg-primary/80', 'backdrop-blur-md', 'shadow-sm');
-      el.classList.add('bg-transparent');
     }
   }, []);
 
@@ -552,54 +542,27 @@ export default function MainAppLayout({
     node.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     node.scrollLeft = 0;
     isHeaderHiddenRef.current = false;
-    isScrolledRef.current = false;
     syncMobileHeaderDOM();
 
     let lastScrollTop = 0;
     let accumulatedDown = 0;
     let accumulatedUp = 0;
     let scrollRafId = null;
-    let topCleanTimer = null;
 
     const updateOnScroll = () => {
       scrollRafId = null;
-      const currentScrollTop = node.scrollTop;
-      let needsSync = false;
+      const currentScrollTop = Math.max(0, node.scrollTop);
 
-      // Si estamos cerca de la parte superior (<= 50px), el header SIEMPRE es visible
-      if (currentScrollTop <= 50) {
+      // Si volvemos a la zona superior (<= 36px), mostramos el header con transición calmada
+      if (currentScrollTop <= 36) {
         if (isHeaderHiddenRef.current) {
           isHeaderHiddenRef.current = false;
-          needsSync = true;
+          syncMobileHeaderDOM();
         }
         accumulatedDown = 0;
         accumulatedUp = 0;
-
-        // Evitar quitar el backdrop-blur a mitad de la animación de bajada del header
-        if (currentScrollTop <= 4) {
-          if (isScrolledRef.current) {
-            clearTimeout(topCleanTimer);
-            topCleanTimer = setTimeout(() => {
-              if (node.scrollTop <= 4 && isScrolledRef.current) {
-                isScrolledRef.current = false;
-                syncMobileHeaderDOM();
-              }
-            }, 240);
-          }
-        } else if (!isScrolledRef.current) {
-          isScrolledRef.current = true;
-          needsSync = true;
-        }
-
-        if (needsSync) syncMobileHeaderDOM();
-        lastScrollTop = Math.max(0, currentScrollTop);
+        lastScrollTop = currentScrollTop;
         return;
-      }
-
-      clearTimeout(topCleanTimer);
-      if (!isScrolledRef.current) {
-        isScrolledRef.current = true;
-        needsSync = true;
       }
 
       const delta = currentScrollTop - lastScrollTop;
@@ -608,17 +571,16 @@ export default function MainAppLayout({
         accumulatedDown += delta;
         accumulatedUp = 0;
 
-        if (accumulatedDown > 10 && currentScrollTop > 50 && !isHeaderHiddenRef.current) {
+        if (accumulatedDown > 14 && currentScrollTop > 52 && !isHeaderHiddenRef.current) {
           isHeaderHiddenRef.current = true;
-          needsSync = true;
+          syncMobileHeaderDOM();
         }
       } else if (delta < 0) {
         accumulatedUp += Math.abs(delta);
         accumulatedDown = 0;
       }
 
-      if (needsSync) syncMobileHeaderDOM();
-      lastScrollTop = Math.max(0, currentScrollTop);
+      lastScrollTop = currentScrollTop;
     };
 
     const handleScroll = () => {
@@ -633,7 +595,6 @@ export default function MainAppLayout({
     return () => {
       node.removeEventListener('scroll', handleScroll);
       if (scrollRafId !== null) cancelAnimationFrame(scrollRafId);
-      clearTimeout(topCleanTimer);
     };
   }, [mainContentRef, view, syncMobileHeaderDOM]);
 
@@ -1416,10 +1377,12 @@ export default function MainAppLayout({
           style={{
             paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
             transform: 'translate3d(0, 0, 0)',
-            willChange: 'transform',
+            opacity: 1,
+            willChange: 'transform, opacity',
+            contain: 'layout style paint',
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
-            transition: 'transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease, opacity 0.2s ease',
+            transition: 'transform 0.52s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.42s cubic-bezier(0.32, 0.72, 0, 1)',
           }}
         >
           <div className="relative flex justify-between items-center w-full h-14 px-4">
@@ -1470,7 +1433,7 @@ export default function MainAppLayout({
               {/* Logo Central (Solo en Dashboard) */}
               {view === 'dashboard' && (
                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
-                  <img src="/logo.webp" alt="Pro Fitness Glass" className="h-8 w-auto object-contain drop-shadow-md rounded-lg" />
+                  <img src="/logo.webp" alt="Pro Fitness Glass" className="h-8 w-auto object-contain rounded-lg" />
                 </div>
               )}
 
@@ -1478,16 +1441,16 @@ export default function MainAppLayout({
               <div className="flex items-center justify-center mr-1 sm:mr-2">
                 <button
                     onClick={() => setShowAIModal(true)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold transition-all outline-none focus:outline-none ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold transition-colors outline-none focus:outline-none ${
                       isAILimitReached 
                         ? 'bg-bg-secondary text-text-muted border border-glass-border opacity-70' 
-                        : 'bg-accent text-accent-contrast shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-105 border border-transparent'
+                        : 'bg-accent text-accent-contrast shadow-sm border border-transparent'
                     }`}
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                     title="Créditos IA"
                   >
-                    <FaBrain className={`w-3.5 h-3.5 ${isAILimitReached ? '' : 'text-accent-contrast drop-shadow-md animate-pulse'}`} />
-                    <span className={isAILimitReached ? '' : 'drop-shadow-md'}>{aiRemaining}/{aiLimit}</span>
+                    <FaBrain className={`w-3.5 h-3.5 ${isAILimitReached ? '' : 'text-accent-contrast'}`} />
+                    <span>{aiRemaining}/{aiLimit}</span>
                   </button>
               </div>
 
