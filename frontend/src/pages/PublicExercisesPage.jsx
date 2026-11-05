@@ -1,7 +1,8 @@
 import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 import PublicPageFooter from '../components/PublicPageFooter';
 /* frontend/src/pages/PublicExercisesPage.jsx */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { trackExercisesPageVisit } from '../utils/newsTracker';
 import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -257,6 +258,10 @@ const POPULAR_SPLITS = [
 export default function PublicExercisesPage({ onBack }) {
   const navigate = useNavigate();
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
+
+  useEffect(() => {
+    trackExercisesPageVisit();
+  }, []);
 
   const [selectedMuscle, setSelectedMuscle] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');

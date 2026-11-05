@@ -362,8 +362,8 @@ export const recordNewsTelemetry = async (req, customData = {}) => {
     }
     if (!country) country = 'ES';
 
-    // 6. Vinculación con Noticia (si aplica)
-    const slug = customData.slug || req.params?.slug || null;
+    // 6. Vinculación con Noticia o Herramienta Pública (calculadoras / ejercicios)
+    const slug = customData.slug || customData.article_slug || req.params?.slug || null;
     let newsId = null;
     let articleTitle = customData.article_title || null;
 
@@ -387,7 +387,18 @@ export const recordNewsTelemetry = async (req, customData = {}) => {
 
     // 7. Crear el registro en news_visit_logs
     const visitorId = customData.visitor_id || `vis_${Math.random().toString(36).substring(2, 12)}`;
-    const pagePath = customData.page_path || (slug ? `/noticias/${slug}` : '/noticias');
+    let pagePath = customData.page_path || (slug ? (slug.startsWith('/') ? slug : `/noticias/${slug}`) : '/noticias');
+
+    // Asignar título descriptivo por defecto si es una herramienta y no viene informado
+    if (!articleTitle) {
+      if (pagePath.includes('calculadora-1rm') || slug === 'calculadora-1rm') {
+        articleTitle = 'Calculadora de 1RM y Porcentajes';
+      } else if (pagePath.includes('calculadora-calorias-macros') || slug === 'calculadora-calorias-macros') {
+        articleTitle = 'Calculadora de Calorías y Macronutrientes';
+      } else if (pagePath.includes('ejercicios') || slug === 'ejercicios') {
+        articleTitle = 'Enciclopedia de Ejercicios y Rutinas';
+      }
+    }
 
     let log = null;
     if (NewsVisitLog) {
@@ -1232,15 +1243,51 @@ export const getNewsAnalytics = async (req, res) => {
       timeWhere.created_at = { [Op.gte]: past30 };
     }
 
+    const TOOL_SLUGS = ['calculadora-1rm', 'calculadora-calorias-macros', 'ejercicios'];
+
     let modeWhere = {};
     if (mode === 'real') {
       modeWhere.is_test = false;
     } else if (mode === 'test') {
       modeWhere.is_test = true;
     } else if (mode === 'articles') {
-      modeWhere.article_slug = { [Op.ne]: null };
+      modeWhere[Op.and] = [
+        { article_slug: { [Op.ne]: null } },
+        { article_slug: { [Op.notIn]: TOOL_SLUGS } },
+        { page_path: { [Op.notLike]: '%calculadora%' } },
+        { page_path: { [Op.notLike]: '%ejercicio%' } }
+      ];
     } else if (mode === 'catalog') {
-      modeWhere.article_slug = null;
+      modeWhere[Op.and] = [
+        { article_slug: null },
+        { page_path: { [Op.like]: '%noticias%' } }
+      ];
+    } else if (mode === 'calculators' || mode === 'calculadora') {
+      modeWhere[Op.or] = [
+        { page_path: { [Op.like]: '%calculadora%' } },
+        { article_slug: ['calculadora-1rm', 'calculadora-calorias-macros'] }
+      ];
+    } else if (mode === 'calculadora-1rm') {
+      modeWhere[Op.or] = [
+        { page_path: { [Op.like]: '%calculadora-1rm%' } },
+        { article_slug: 'calculadora-1rm' }
+      ];
+    } else if (mode === 'calculadora-macros' || mode === 'calculadora-calorias-macros') {
+      modeWhere[Op.or] = [
+        { page_path: { [Op.like]: '%calculadora-calorias-macros%' } },
+        { article_slug: 'calculadora-calorias-macros' }
+      ];
+    } else if (mode === 'exercises' || mode === 'ejercicios') {
+      modeWhere[Op.or] = [
+        { page_path: { [Op.like]: '%ejercicio%' } },
+        { article_slug: 'ejercicios' }
+      ];
+    } else if (mode === 'tools') {
+      modeWhere[Op.or] = [
+        { page_path: { [Op.like]: '%calculadora%' } },
+        { page_path: { [Op.like]: '%ejercicio%' } },
+        { article_slug: TOOL_SLUGS }
+      ];
     }
 
     const where = { ...timeWhere, ...modeWhere };
@@ -1269,6 +1316,9 @@ export const getNewsAnalytics = async (req, res) => {
       todayVisits,
       realVisits,
       testVisits,
+      calc1rmVisits,
+      calcMacrosVisits,
+      exercisesVisits,
       visitResult,
       deviceCounts,
       referrerCounts,
@@ -1288,6 +1338,36 @@ export const getNewsAnalytics = async (req, res) => {
       }),
       NewsVisitLog.count({ where: { is_test: false, ...timeWhere } }),
       NewsVisitLog.count({ where: { is_test: true, ...timeWhere } }),
+      NewsVisitLog.count({
+        where: {
+          ...timeWhere,
+          ...(mode === 'real' ? { is_test: false } : mode === 'test' ? { is_test: true } : {}),
+          [Op.or]: [
+            { page_path: { [Op.like]: '%calculadora-1rm%' } },
+            { article_slug: 'calculadora-1rm' }
+          ]
+        }
+      }),
+      NewsVisitLog.count({
+        where: {
+          ...timeWhere,
+          ...(mode === 'real' ? { is_test: false } : mode === 'test' ? { is_test: true } : {}),
+          [Op.or]: [
+            { page_path: { [Op.like]: '%calculadora-calorias-macros%' } },
+            { article_slug: 'calculadora-calorias-macros' }
+          ]
+        }
+      }),
+      NewsVisitLog.count({
+        where: {
+          ...timeWhere,
+          ...(mode === 'real' ? { is_test: false } : mode === 'test' ? { is_test: true } : {}),
+          [Op.or]: [
+            { page_path: { [Op.like]: '%ejercicio%' } },
+            { article_slug: 'ejercicios' }
+          ]
+        }
+      }),
       NewsVisitLog.findAndCountAll({
         where: visitWhere,
         order,
@@ -1326,16 +1406,20 @@ export const getNewsAnalytics = async (req, res) => {
       NewsVisitLog.findAll({
         where: {
           ...where,
-          article_slug: { [Op.ne]: null }
+          [Op.or]: [
+            { article_slug: { [Op.ne]: null } },
+            { page_path: { [Op.ne]: null } }
+          ]
         },
         attributes: [
           'article_slug',
           'article_title',
+          'page_path',
           [models.sequelize.fn('COUNT', models.sequelize.col('id')), 'count']
         ],
-        group: ['article_slug', 'article_title'],
+        group: ['article_slug', 'article_title', 'page_path'],
         order: [[models.sequelize.literal('count'), 'DESC']],
-        limit: 8
+        limit: 12
       })
     ]);
 
@@ -1361,6 +1445,11 @@ export const getNewsAnalytics = async (req, res) => {
         todayVisits,
         realVisits,
         testVisits,
+        pageStats: {
+          calculadora1rm: calc1rmVisits,
+          calculadoraMacros: calcMacrosVisits,
+          ejercicios: exercisesVisits
+        },
         devices,
         topReferrers: referrerCounts.map(r => ({
           host: r.getDataValue('referrer_host'),
@@ -1369,7 +1458,8 @@ export const getNewsAnalytics = async (req, res) => {
         })),
         topArticles: articleCounts.map(a => ({
           slug: a.getDataValue('article_slug'),
-          title: a.getDataValue('article_title') || a.getDataValue('article_slug'),
+          path: a.getDataValue('page_path'),
+          title: a.getDataValue('article_title') || a.getDataValue('page_path') || a.getDataValue('article_slug'),
           count: parseInt(a.getDataValue('count'), 10) || 0
         }))
       },
@@ -1393,26 +1483,57 @@ export const getNewsAnalytics = async (req, res) => {
  */
 export const sendTestVisitPing = async (req, res) => {
   try {
-    const { slug } = req.body || {};
-    let articleSlug = slug;
-    let articleTitle = 'Prueba de Diagnóstico Tracker';
+    let { slug: articleSlug = null, page_path = null, article_title = null } = req.body || {};
 
-    if (!articleSlug) {
+    if (page_path) {
+      if (page_path.includes('calculadora-1rm')) {
+        articleSlug = articleSlug || 'calculadora-1rm';
+        article_title = article_title || 'Calculadora de 1RM y Fuerza';
+      } else if (page_path.includes('calculadora-calorias-macros')) {
+        articleSlug = articleSlug || 'calculadora-calorias-macros';
+        article_title = article_title || 'Calculadora de Calorías y Macros';
+      } else if (page_path.includes('ejercicios')) {
+        articleSlug = articleSlug || 'ejercicios';
+        article_title = article_title || 'Enciclopedia de Ejercicios y Rutinas';
+      }
+    } else if (articleSlug) {
+      if (articleSlug === 'calculadora-1rm') {
+        page_path = '/calculadora-1rm';
+        article_title = article_title || 'Calculadora de 1RM y Fuerza';
+      } else if (articleSlug === 'calculadora-calorias-macros') {
+        page_path = '/calculadora-calorias-macros';
+        article_title = article_title || 'Calculadora de Calorías y Macros';
+      } else if (articleSlug === 'ejercicios') {
+        page_path = '/ejercicios';
+        article_title = article_title || 'Enciclopedia de Ejercicios y Rutinas';
+      } else {
+        const article = await News.findOne({ where: { slug: articleSlug } });
+        if (article) {
+          article_title = article.title;
+          page_path = `/noticias/${articleSlug}`;
+        }
+      }
+    } else {
       const anyArticle = await News.findOne({
         where: { is_published: true },
         order: [['published_at', 'DESC']]
       });
       if (anyArticle) {
         articleSlug = anyArticle.slug;
-        articleTitle = anyArticle.title;
+        article_title = anyArticle.title;
+        page_path = `/noticias/${articleSlug}`;
+      } else {
+        page_path = '/noticias';
       }
     }
 
+    const finalPath = page_path || (articleSlug ? `/noticias/${articleSlug}` : '/noticias');
+
     const result = await recordNewsTelemetry(req, {
       slug: articleSlug,
-      article_title: articleTitle,
-      page_path: articleSlug ? `/noticias/${articleSlug}` : '/noticias',
-      referrer: req.headers['referer'] || 'https://www.google.com/search?q=pro+fitness+glass+noticias',
+      article_title: article_title,
+      page_path: finalPath,
+      referrer: req.headers['referer'] || 'https://www.google.com/search?q=pro+fitness+glass',
       is_test: true,
       visitor_id: `test_vis_${Math.random().toString(36).substring(2, 9)}`,
       screen_resolution: '1920x1080',

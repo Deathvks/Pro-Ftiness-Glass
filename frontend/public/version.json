@@ -1,17 +1,17 @@
 {
-  "version": "7.13.3",
-  "releaseNotes": "Actualización v7.13.3: Descarga offline en segundo plano con indicador flotante, almacenamiento seguro persistente y optimización de botones.",
+  "version": "7.14.0",
+  "releaseNotes": "Actualización v7.14.0: Sniffing y telemetría avanzada de Calculadoras 1RM, Macros y Ejercicios en el Panel de Administrador.",
   "welcome": {
-    "title": "Modo Sin Conexión en Segundo Plano",
-    "subtitle": "Llega la versión 7.13.3: descarga de ejercicios mientras sigues navegando, barra flotante global y optimización móvil.",
+    "title": "Sniffing de Herramientas y Calculadoras",
+    "subtitle": "Llega la versión 7.14.0: telemetría en tiempo real para las calculadoras de 1RM, macros y enciclopedia de ejercicios en el panel admin.",
     "features": [
       {
-        "title": "Modo Búnker en Segundo Plano",
-        "description": "Descarga toda la biblioteca de ejercicios y animaciones mientras sigues entrenando o usando la app, con indicador de progreso flotante."
+        "title": "Telemetría de Herramientas Públicas",
+        "description": "Rastreo y sniffing en tiempo real de visitas a la Calculadora 1RM, Calculadora de Macros y Enciclopedia de Ejercicios."
       },
       {
-        "title": "Almacenamiento Local Seguro",
-        "description": "Datos multimedia guardados en sandbox aislado (IndexedDB + Cache Storage / Android WebView Storage) sin consumo de datos móviles."
+        "title": "Analítica y Filtros en Panel Admin",
+        "description": "Métricas directas de visitas por herramienta, procedencia de tráfico (Google, redes sociales) y detalles técnicos de dispositivos."
       },
       {
         "title": "Migración desde Hevy y Strong",

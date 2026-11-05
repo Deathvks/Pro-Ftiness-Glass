@@ -166,3 +166,60 @@ export const trackArticleVisit = async (slug, articleTitle = '') => {
     return null;
   }
 };
+
+/**
+ * Rastrea la visita a una página pública / herramienta específica (calculadoras, ejercicios, etc.)
+ */
+export const trackPageVisit = async (pagePath, pageTitle = '', slug = null) => {
+  if (!pagePath) return null;
+  const cacheKey = `page_${pagePath}`;
+  if (recentlyTracked.has(cacheKey)) return;
+  recentlyTracked.add(cacheKey);
+  // Anti-rebote de 3 segundos únicamente para evitar doble disparo de React StrictMode
+  setTimeout(() => recentlyTracked.delete(cacheKey), 3000);
+
+  const payload = buildTrackingPayload({
+    page_path: pagePath,
+    article_slug: slug,
+    article_title: pageTitle
+  });
+
+  try {
+    return await newsService.trackNewsVisit(payload);
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Rastreo específico de la Calculadora de 1RM (/calculadora-1rm)
+ */
+export const trackOneRMCalculatorVisit = () => {
+  return trackPageVisit(
+    '/calculadora-1rm',
+    'Calculadora de 1RM y Porcentajes',
+    'calculadora-1rm'
+  );
+};
+
+/**
+ * Rastreo específico de la Calculadora de Calorías y Macronutrientes (/calculadora-calorias-macros)
+ */
+export const trackMacroCalculatorVisit = () => {
+  return trackPageVisit(
+    '/calculadora-calorias-macros',
+    'Calculadora de Calorías y Macronutrientes',
+    'calculadora-calorias-macros'
+  );
+};
+
+/**
+ * Rastreo específico de la Enciclopedia de Ejercicios y Rutinas (/ejercicios)
+ */
+export const trackExercisesPageVisit = () => {
+  return trackPageVisit(
+    '/ejercicios',
+    'Enciclopedia de Ejercicios y Rutinas',
+    'ejercicios'
+  );
+};

@@ -73,6 +73,50 @@ const getDeviceIcon = (deviceType) => {
   }
 };
 
+// Obtiene información visual y ruta de la página visitada (calculadoras, ejercicios o noticias)
+const getPageDetails = (v) => {
+  const path = v?.page_path || v?.path || '';
+  const slug = v?.article_slug || v?.slug || '';
+  if (path.includes('calculadora-1rm') || slug === 'calculadora-1rm') {
+    return {
+      url: '/calculadora-1rm',
+      title: v?.article_title || v?.title || 'Calculadora de 1RM y Porcentajes',
+      badgeText: '1RM',
+      badgeClass: 'bg-accent/15 text-accent border border-accent/25'
+    };
+  }
+  if (path.includes('calculadora-calorias-macros') || slug === 'calculadora-calorias-macros') {
+    return {
+      url: '/calculadora-calorias-macros',
+      title: v?.article_title || v?.title || 'Calculadora de Calorías y Macronutrientes',
+      badgeText: 'Macros',
+      badgeClass: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+    };
+  }
+  if (path.includes('ejercicios') || slug === 'ejercicios') {
+    return {
+      url: '/ejercicios',
+      title: v?.article_title || v?.title || 'Enciclopedia de Ejercicios y Rutinas',
+      badgeText: 'Ejercicios',
+      badgeClass: 'bg-purple-500/15 text-purple-400 border border-purple-500/25'
+    };
+  }
+  if (slug) {
+    return {
+      url: `/noticias/${slug}`,
+      title: v?.article_title || v?.title || slug,
+      badgeText: 'Noticia',
+      badgeClass: 'bg-sky-500/15 text-sky-400 border border-sky-500/25'
+    };
+  }
+  return {
+    url: '/noticias',
+    title: 'Catálogo General /noticias',
+    badgeText: 'Catálogo',
+    badgeClass: 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
+  };
+};
+
 // Conversión de código de país a emoji de bandera
 const getCountryFlagEmoji = (countryCode) => {
   if (!countryCode || countryCode === 'XX' || countryCode === 'DEV') return '🌐';
@@ -101,6 +145,7 @@ export default function AdminNewsTracker() {
     todayVisits: 0,
     realVisits: 0,
     testVisits: 0,
+    pageStats: { calculadora1rm: 0, calculadoraMacros: 0, ejercicios: 0 },
     devices: { mobile: 0, desktop: 0, tablet: 0 },
     topReferrers: [],
     topArticles: []
@@ -174,10 +219,16 @@ export default function AdminNewsTracker() {
   }, [autoRefresh, loadAnalytics]);
 
   // Acción: Enviar ping de prueba para comprobar que el tracker responde
-  const handleTestPing = async () => {
+  const handleTestPing = async (specificTarget = null) => {
     setIsTestPinging(true);
     try {
-      const res = await newsService.sendTestVisitPing();
+      let target = specificTarget;
+      if (!target && modeFilter) {
+        if (modeFilter === 'calculadora-1rm') target = '/calculadora-1rm';
+        else if (modeFilter === 'calculadora-macros') target = '/calculadora-calorias-macros';
+        else if (modeFilter === 'exercises') target = '/ejercicios';
+      }
+      const res = await newsService.sendTestVisitPing(target);
       if (res?.success) {
         addToast('¡Ping de prueba registrado! Tu visita aparece arriba en la lista.', 'success');
         await loadAnalytics(false);
@@ -378,6 +429,87 @@ export default function AdminNewsTracker() {
         </div>
       </div>
 
+      {/* MÉTRICAS ESPECÍFICAS DE HERRAMIENTAS Y PÁGINAS PÚBLICAS */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <button
+          type="button"
+          onClick={() => { setModeFilter(modeFilter === 'calculadora-1rm' ? 'all' : 'calculadora-1rm'); setPage(1); }}
+          className={`p-3.5 sm:p-4 rounded-[20px] border transition-all text-left active:scale-[0.98] cursor-pointer flex flex-col justify-between ${
+            modeFilter === 'calculadora-1rm'
+              ? 'bg-accent/15 border-accent shadow-sm'
+              : 'bg-black/[0.03] dark:bg-white/[0.03] border-black/10 dark:border-white/10 hover:border-accent/40'
+          }`}
+        >
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="font-bold text-text-secondary">Calculadora 1RM</span>
+            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/20 text-accent">
+              /calculadora-1rm
+            </span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
+              {(stats.pageStats?.calculadora1rm || 0).toLocaleString()}
+            </span>
+            <span className="text-[10px] text-text-tertiary">visitas</span>
+          </div>
+          <p className="text-[10px] text-text-tertiary mt-1">
+            Fuerza máxima y tabla de porcentajes
+          </p>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setModeFilter(modeFilter === 'calculadora-macros' ? 'all' : 'calculadora-macros'); setPage(1); }}
+          className={`p-3.5 sm:p-4 rounded-[20px] border transition-all text-left active:scale-[0.98] cursor-pointer flex flex-col justify-between ${
+            modeFilter === 'calculadora-macros'
+              ? 'bg-emerald-500/15 border-emerald-500 shadow-sm'
+              : 'bg-black/[0.03] dark:bg-white/[0.03] border-black/10 dark:border-white/10 hover:border-emerald-500/40'
+          }`}
+        >
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="font-bold text-text-secondary">Calculadora Macros</span>
+            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
+              /macros
+            </span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
+              {(stats.pageStats?.calculadoraMacros || 0).toLocaleString()}
+            </span>
+            <span className="text-[10px] text-text-tertiary">visitas</span>
+          </div>
+          <p className="text-[10px] text-text-tertiary mt-1">
+            TDEE, calorías, proteínas, grasas y carbohidratos
+          </p>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setModeFilter(modeFilter === 'exercises' ? 'all' : 'exercises'); setPage(1); }}
+          className={`p-3.5 sm:p-4 rounded-[20px] border transition-all text-left active:scale-[0.98] cursor-pointer flex flex-col justify-between ${
+            modeFilter === 'exercises'
+              ? 'bg-purple-500/15 border-purple-500 shadow-sm'
+              : 'bg-black/[0.03] dark:bg-white/[0.03] border-black/10 dark:border-white/10 hover:border-purple-500/40'
+          }`}
+        >
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="font-bold text-text-secondary">Biblioteca Ejercicios</span>
+            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400">
+              /ejercicios
+            </span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
+              {(stats.pageStats?.ejercicios || 0).toLocaleString()}
+            </span>
+            <span className="text-[10px] text-text-tertiary">visitas</span>
+          </div>
+          <p className="text-[10px] text-text-tertiary mt-1">
+            Enciclopedia biomecánica con técnica y errores
+          </p>
+        </button>
+      </div>
+
       {/* TOP FUENTES Y TOP ARTÍCULOS (GRID DOS COLUMNAS) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Top Fuentes / Procedencia */}
@@ -419,7 +551,7 @@ export default function AdminNewsTracker() {
         <div className="p-4 sm:p-5 rounded-[22px] bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 space-y-3">
           <h3 className="text-xs font-black uppercase tracking-wider text-text-secondary flex items-center gap-2">
             <Eye size={14} className="text-sky-500" />
-            <span>Artículos más visitados</span>
+            <span>Páginas y artículos más visitados</span>
           </h3>
           {stats.topArticles.length === 0 ? (
             <div className="py-6 text-center text-xs text-text-tertiary">
@@ -431,7 +563,10 @@ export default function AdminNewsTracker() {
                 <div
                   key={idx}
                   className="flex items-center justify-between gap-2 p-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors group cursor-pointer"
-                  onClick={() => window.open(`/noticias/${a.slug}`, '_blank')}
+                  onClick={() => {
+                    const pageInfo = getPageDetails({ article_slug: a.slug, page_path: a.path, article_title: a.title });
+                    window.open(pageInfo.url, '_blank');
+                  }}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="w-5 h-5 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center text-[10px] font-black text-text-secondary shrink-0">
@@ -442,7 +577,7 @@ export default function AdminNewsTracker() {
                     </span>
                   </div>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-accent/15 text-accent shrink-0">
-                    {a.count} lecturas
+                    {a.count} visitas
                   </span>
                 </div>
               ))}
@@ -498,11 +633,16 @@ export default function AdminNewsTracker() {
               value={modeFilter}
               onChange={(value) => { setModeFilter(value); setPage(1); }}
               options={[
-                { value: 'all', label: 'Todas' },
-                { value: 'real', label: 'Reales' },
-                { value: 'articles', label: 'Artículos' },
-                { value: 'catalog', label: 'Catálogo' },
-                { value: 'test', label: 'Pruebas' },
+                { value: 'all', label: 'Todas las páginas' },
+                { value: 'real', label: 'Reales (sin pruebas)' },
+                { value: 'calculators', label: 'Calculadoras (1RM y Macros)' },
+                { value: 'calculadora-1rm', label: 'Calculadora 1RM' },
+                { value: 'calculadora-macros', label: 'Calculadora Macros' },
+                { value: 'exercises', label: 'Enciclopedia Ejercicios' },
+
+                { value: 'articles', label: 'Artículos Noticias' },
+                { value: 'catalog', label: 'Catálogo /noticias' },
+                { value: 'test', label: 'Visitas de Prueba (Tests)' },
               ]}
               className="w-full z-20"
               triggerClassName="w-full h-10 rounded-xl px-3 text-xs text-text-primary border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5"
@@ -635,21 +775,30 @@ export default function AdminNewsTracker() {
 
                     {/* Noticia / Página */}
                     <div className="mb-3">
-                      {v.article_slug ? (
-                        <a
-                          href={`/noticias/${v.article_slug}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-bold text-sm text-text-primary hover:text-accent flex items-center gap-1.5 transition-colors group"
-                        >
-                          <span className="line-clamp-2">{v.article_title || v.article_slug}</span>
-                          <ExternalLink size={12} className="shrink-0 text-text-tertiary group-hover:text-accent" />
-                        </a>
-                      ) : (
-                        <span className="font-bold text-sm text-text-primary flex items-center gap-1.5">
-                          <span>Catálogo General (/noticias)</span>
-                        </span>
-                      )}
+                      {(() => {
+                        const pageInfo = getPageDetails(v);
+                        return (
+                          <>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shrink-0 ${pageInfo.badgeClass}`}>
+                                {pageInfo.badgeText}
+                              </span>
+                              <span className="text-[10px] font-mono text-text-tertiary truncate">
+                                {pageInfo.url}
+                              </span>
+                            </div>
+                            <a
+                              href={pageInfo.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-bold text-sm text-text-primary hover:text-accent flex items-center gap-1.5 transition-colors group"
+                            >
+                              <span className="line-clamp-2">{pageInfo.title}</span>
+                              <ExternalLink size={12} className="shrink-0 text-text-tertiary group-hover:text-accent" />
+                            </a>
+                          </>
+                        );
+                      })()}
                     </div>
 
                     <div className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-black/5 dark:border-white/5 pt-2.5 text-[11px]">
@@ -782,22 +931,31 @@ export default function AdminNewsTracker() {
                         </td>
 
                         {/* Noticia / Página */}
-                        <td className="py-3 px-4 max-w-[240px]">
-                          {v.article_slug ? (
-                            <a
-                              href={`/noticias/${v.article_slug}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="font-bold text-text-primary hover:text-accent transition-colors block truncate"
-                              title={v.article_title || v.article_slug}
-                            >
-                              {v.article_title || v.article_slug}
-                            </a>
-                          ) : (
-                            <span className="font-bold text-text-secondary text-[11px]">
-                              Catálogo /noticias
-                            </span>
-                          )}
+                        <td className="py-3 px-4 max-w-[260px]">
+                          {(() => {
+                            const pageInfo = getPageDetails(v);
+                            return (
+                              <div className="flex flex-col min-w-0">
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shrink-0 ${pageInfo.badgeClass}`}>
+                                    {pageInfo.badgeText}
+                                  </span>
+                                  <span className="text-[10px] font-mono text-text-tertiary truncate">
+                                    {pageInfo.url}
+                                  </span>
+                                </div>
+                                <a
+                                  href={pageInfo.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="font-bold text-text-primary hover:text-accent transition-colors block truncate"
+                                  title={pageInfo.title}
+                                >
+                                  {pageInfo.title}
+                                </a>
+                              </div>
+                            );
+                          })()}
                         </td>
 
                         {/* Procedencia (Referrer) */}

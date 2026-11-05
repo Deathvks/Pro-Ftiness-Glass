@@ -1,7 +1,8 @@
 import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 import PublicPageFooter from '../components/PublicPageFooter';
 /* frontend/src/pages/OneRMCalculatorPage.jsx */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { trackOneRMCalculatorVisit } from '../utils/newsTracker';
 import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -58,6 +59,10 @@ const EXERCISE_OPTIONS = EXERCISES.map((exercise) => ({
 export default function OneRMCalculatorPage({ onBack }) {
   const navigate = useNavigate();
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
+
+  useEffect(() => {
+    trackOneRMCalculatorVisit();
+  }, []);
 
   const [selectedExercise, setSelectedExercise] = useState(EXERCISES[0].id);
   const [weight, setWeight] = useState(80);

@@ -537,13 +537,17 @@ export const fetchNewsAnalytics = async ({
 /**
  * Enviar ping de diagnóstico / prueba de tracker
  */
-export const sendTestVisitPing = async (slug = null) => {
+export const sendTestVisitPing = async (target = null) => {
+  const payload = typeof target === 'string'
+    ? { slug: target }
+    : (target && typeof target === 'object' ? target : {});
+
   return requestWithRetry(
     `${API_URL}/news/admin/analytics/test-ping`,
     {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ slug })
+      body: JSON.stringify(payload)
     },
     0
   );

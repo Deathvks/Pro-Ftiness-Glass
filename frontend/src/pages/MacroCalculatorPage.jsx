@@ -1,7 +1,8 @@
 import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 import PublicPageFooter from '../components/PublicPageFooter';
 /* frontend/src/pages/MacroCalculatorPage.jsx */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { trackMacroCalculatorVisit } from '../utils/newsTracker';
 import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
@@ -78,6 +79,10 @@ const GOALS = [
 export default function MacroCalculatorPage({ onBack }) {
   const navigate = useNavigate();
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
+
+  useEffect(() => {
+    trackMacroCalculatorVisit();
+  }, []);
 
   const [sex, setSex] = useState('male');
   const [age, setAge] = useState(26);
