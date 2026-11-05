@@ -2,6 +2,8 @@ const RECOVERY_TIMEOUT_MS = 1200;
 const ANTI_LOOP_WINDOW_MS = 45000;
 const MIN_RELOAD_INTERVAL_MS = 8000;
 const MAX_RELOADS_PER_WINDOW = 2;
+const CHUNK_RELOAD_COOLDOWN_MS = 20000;
+let chunkRecoveryPromise = null;
 
 export const clearAppRuntimeCache = async () => {
   const cleanupTasks = [];
@@ -111,7 +113,6 @@ export const reloadAppWithoutStaleCache = async ({ path, force = false } = {}) =
     } catch {
       localStorage.removeItem("pfg_cached_initial_state_v1");
     }
-    // Al auto-recuperar, forzar SIEMPRE el aterrizaje seguro en 'dashboard'
     localStorage.setItem("lastView", "dashboard");
   } catch {}
 
@@ -120,4 +121,40 @@ export const reloadAppWithoutStaleCache = async ({ path, force = false } = {}) =
   freshUrl.searchParams.set("pfg_fresh", String(now));
   window.location.replace(freshUrl.toString());
   return true;
+};
+
+export const recoverFromChunkError = async ({ force = false } = {}) => {
+  if (typeof window === "undefined") return false;
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return false;
+  if (chunkRecoveryPromise) return chunkRecoveryPromise;
+
+  const now = Date.now();
+  let lastChunkReload = 0;
+  try {
+    lastChunkReload = parseInt(sessionStorage.getItem("pfg_last_chunk_autoreload") || "0", 10);
+  } catch {}
+
+  if (!force && now - lastChunkReload < CHUNK_RELOAD_COOLDOWN_MS) return false;
+
+  try {
+    sessionStorage.setItem("pfg_last_chunk_autoreload", String(now));
+    sessionStorage.removeItem("pfg_pending_target_view");
+  } catch {}
+
+  chunkRecoveryPromise = (async () => {
+    try {
+      if ("caches" in window) await caches.delete("vite-hashed-assets");
+    } catch {}
+
+    const freshUrl = new URL(window.location.href);
+    freshUrl.searchParams.set("pfg_fresh", String(now));
+    window.location.replace(freshUrl.toString());
+    return true;
+  })();
+
+  try {
+    return await chunkRecoveryPromise;
+  } finally {
+    chunkRecoveryPromise = null;
+  }
 };

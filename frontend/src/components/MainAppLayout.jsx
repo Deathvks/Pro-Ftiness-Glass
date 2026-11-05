@@ -10,7 +10,7 @@ import { APP_VERSION } from '../config/version';
 import { useToast } from '../hooks/useToast';
 import { useOfflineSync } from '../hooks/useOfflineSync';
 import { useAppTheme } from '../hooks/useAppTheme';
-import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
+import { recoverFromChunkError, reloadAppWithoutStaleCache } from '../utils/appRecovery';
 import { initSocket } from '../services/socket';
 import * as userService from '../services/userService';
 
@@ -215,6 +215,7 @@ class ViewErrorBoundary extends React.Component {
     const errMsg = (error?.message || '').toLowerCase();
     const isChunk =
       error?.name === 'ChunkLoadError' ||
+      error?.name === 'ChunkLoadTimeoutError' ||
       errMsg.includes('failed to fetch dynamically imported module') ||
       errMsg.includes('loading chunk') ||
       errMsg.includes('loading css chunk') ||
@@ -222,12 +223,7 @@ class ViewErrorBoundary extends React.Component {
       errMsg.includes('dynamically imported module');
 
     if (isChunk) {
-      const now = Date.now();
-      const lastReload = parseInt(sessionStorage.getItem('pfg_last_chunk_autoreload') || '0', 10);
-      if (now - lastReload > 6000) {
-        sessionStorage.setItem('pfg_last_chunk_autoreload', String(now));
-        reloadAppWithoutStaleCache({ force: true });
-      }
+      recoverFromChunkError();
     }
   }
 
@@ -242,6 +238,20 @@ class ViewErrorBoundary extends React.Component {
   };
 
   handleReload = () => {
+    const errMsg = (this.state.error?.message || '').toLowerCase();
+    const isChunkError =
+      this.state.error?.name === 'ChunkLoadError' ||
+      this.state.error?.name === 'ChunkLoadTimeoutError' ||
+      errMsg.includes('failed to fetch dynamically imported module') ||
+      errMsg.includes('loading chunk') ||
+      errMsg.includes('loading css chunk') ||
+      errMsg.includes('importing a module script failed') ||
+      errMsg.includes('dynamically imported module');
+    if (isChunkError) {
+      recoverFromChunkError({ force: true });
+      return;
+    }
+
     try {
       localStorage.removeItem('lastView');
     } catch {}
@@ -268,6 +278,7 @@ class ViewErrorBoundary extends React.Component {
       const errMsg = (err?.message || '').toLowerCase();
       const isChunkError =
         err?.name === 'ChunkLoadError' ||
+        err?.name === 'ChunkLoadTimeoutError' ||
         errMsg.includes('failed to fetch dynamically imported module') ||
         errMsg.includes('loading chunk') ||
         errMsg.includes('loading css chunk') ||
@@ -288,7 +299,9 @@ class ViewErrorBoundary extends React.Component {
           </h2>
           <p className="text-sm text-text-secondary max-w-sm mb-6 leading-relaxed">
             {isChunkError
-              ? 'Hay una nueva versión de esta sección disponible. Pulsa en actualizar para cargar los archivos más recientes.'
+              ? (typeof navigator !== 'undefined' && navigator.onLine === false
+                  ? 'No hay conexión para descargar esta sección. Recupera la conexión e inténtalo de nuevo.'
+                  : 'No se pudo descargar esta sección. Pulsa actualizar para volver a intentarlo conservando tu pantalla.')
               : 'Se ha producido un error inesperado al renderizar este apartado. Puedes reintentar, volver al inicio o recargar la app.'}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">

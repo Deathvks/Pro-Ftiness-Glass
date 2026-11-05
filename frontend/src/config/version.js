@@ -1,6 +1,6 @@
-export const APP_VERSION = '7.14.23';
+export const APP_VERSION = '7.14.24';
 
-export const CURRENT_WELCOME_TITLE = 'Modo Sin Conexión y Smart Sync';
+export const CURRENT_WELCOME_TITLE = 'Carga estable y entrenamiento sin conexión';
 
 const EQUIVALENT_WELCOME_TITLES = new Set([
   CURRENT_WELCOME_TITLE,

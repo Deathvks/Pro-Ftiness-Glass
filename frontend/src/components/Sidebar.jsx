@@ -1,12 +1,13 @@
 /* frontend/src/components/Sidebar.jsx */
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { UserIcon } from '@heroicons/react/24/outline';
 import { FaBrain, FaBell, FaChevronLeft, FaChevronRight, FaRightFromBracket } from 'react-icons/fa6';
 import useAppStore from '../store/useAppStore';
 import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 import NetworkIndicatorBadge from './NetworkIndicatorBadge';
+import { lazyWithRetry } from '../utils/lazyWithRetry';
 
-const StoryViewer = lazy(() => import('./StoryViewer'));
+const StoryViewer = lazyWithRetry(() => import('./StoryViewer'), 'storyViewer');
 import AIInfoModal from './AIInfoModal';
 
 const SidebarItem = ({ label, icon, isActive, onClick, onPreload, onIconClick, badgeCount, isRed, shouldTruncate, className = '', isCollapsed, badge, scaleIcon = true, disableTranslate = false }) => (

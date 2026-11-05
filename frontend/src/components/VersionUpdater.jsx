@@ -4,7 +4,6 @@ import { Sparkles, RefreshCw, X } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { APP_VERSION, hasSeenCurrentWelcome, isNewerVersion } from '../config/version';
 import useAppStore from '../store/useAppStore';
-import { reloadAppWithoutStaleCache } from '../utils/appRecovery';
 
 const SWUpdaterCore = () => {
   const [pendingRemoteVersion, setPendingRemoteVersion] = useState(null);
@@ -62,42 +61,7 @@ const SWUpdaterCore = () => {
     } catch {}
   }, []);
 
-  // 3. Auto-recuperación de chunks desfasados (evento oficial vite:preloadError)
-  useEffect(() => {
-    const handlePreloadError = (event) => {
-      if (event && event.preventDefault) event.preventDefault();
-      console.warn('[VersionUpdater] vite:preloadError detectado. Auto-recuperando versión limpia...');
-
-      const now = Date.now();
-      const lastAutoReload = parseInt(sessionStorage.getItem('pfg_last_chunk_autoreload') || '0', 10);
-      if (now - lastAutoReload > 6000) {
-        sessionStorage.setItem('pfg_last_chunk_autoreload', String(now));
-        reloadAppWithoutStaleCache({ force: true });
-      }
-    };
-
-    const handleWindowError = (e) => {
-      const msg = (e?.message || '').toLowerCase();
-      if (
-        msg.includes('failed to fetch dynamically imported module') ||
-        msg.includes('loading chunk') ||
-        msg.includes('loading css chunk') ||
-        msg.includes('importing a module script failed')
-      ) {
-        handlePreloadError(e);
-      }
-    };
-
-    window.addEventListener('vite:preloadError', handlePreloadError);
-    window.addEventListener('error', handleWindowError);
-
-    return () => {
-      window.removeEventListener('vite:preloadError', handlePreloadError);
-      window.removeEventListener('error', handleWindowError);
-    };
-  }, []);
-
-  // 4. Comprobación no agresiva de nuevas versiones en el servidor
+  // 3. Comprobación no agresiva de nuevas versiones en el servidor
   const checkForNewVersion = useCallback(async () => {
     const isLocal =
       import.meta.env.DEV ||

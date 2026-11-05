@@ -74,6 +74,12 @@ try {
 
 // --- SANEAMIENTO HIGIÉNICO EN ACTUALIZACIONES Y AUTOPROTECCIÓN ---
 const APP_VERSION_STORAGE_KEY = 'pfg_app_version';
+const UPDATE_PRESERVED_CACHES = new Set([
+  'exercise-offline-cache',
+  'remote-exercise-images-cache',
+  'vite-hashed-assets',
+]);
+
 try {
   const previousVersion = localStorage.getItem(APP_VERSION_STORAGE_KEY);
   if (previousVersion !== APP_VERSION) {
@@ -104,7 +110,11 @@ try {
     localStorage.setItem('lastView', 'dashboard');
 
     if ('caches' in window) {
-      caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
+      caches.keys().then((keys) => Promise.all(
+        keys
+          .filter((key) => !UPDATE_PRESERVED_CACHES.has(key) && !key.startsWith('workbox-precache'))
+          .map((key) => caches.delete(key))
+      )).catch(() => {});
     }
     try {
       sessionStorage.clear();

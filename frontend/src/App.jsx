@@ -1,5 +1,5 @@
 /* frontend/src/App.jsx */
-import React, { useState, lazy, useMemo, useCallback, useEffect, Suspense, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, Suspense, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { FaHouse, FaUsers, FaUtensils, FaDumbbell, FaCompass } from 'react-icons/fa6';
@@ -41,56 +41,9 @@ import AboutUsPage from './pages/AboutUsPage';
 import FAQPage from './pages/FAQPage';
 import MaintenanceInfoPage from './pages/MaintenanceInfoPage';
 import { reloadAppWithoutStaleCache } from './utils/appRecovery';
+import { lazyWithRetry } from './utils/lazyWithRetry';
 import ViewErrorBoundary from './components/ViewErrorBoundary';
 import { getExerciseList } from './services/exerciseService';
-
-export const lazyWithRetry = (componentImport, name = "chunk") =>
-  lazy(async () => {
-    try {
-      return await componentImport();
-    } catch (firstError) {
-      console.warn(`[lazyWithRetry] Primer intento fallido para "${name}", reintentando en 600ms...`, firstError);
-      await new Promise((r) => setTimeout(r, 600));
-
-      try {
-        return await componentImport();
-      } catch (secondError) {
-        console.warn(`[lazyWithRetry] Error persistente al cargar chunk "${name}":`, secondError);
-        const msg = (secondError?.message || "").toLowerCase();
-        const isChunkError =
-          secondError?.name === 'ChunkLoadError' ||
-          msg.includes("failed to fetch dynamically imported module") ||
-          msg.includes("loading chunk") ||
-          msg.includes("loading css chunk") ||
-          msg.includes("importing a module script failed") ||
-          msg.includes("mime type") ||
-          msg.includes("syntaxerror") ||
-          msg.includes("unexpected token") ||
-          msg.includes("chunk no encontrado") ||
-          msg.includes("is not valid javascript");
-
-        if (isChunkError) {
-          const now = Date.now();
-          const lastAutoReload = parseInt(sessionStorage.getItem('pfg_last_chunk_autoreload') || '0', 10);
-          if (now - lastAutoReload > 20000) {
-            sessionStorage.setItem('pfg_last_chunk_autoreload', String(now));
-            try {
-              sessionStorage.setItem('pfg_pending_target_view', name);
-            } catch (_) {}
-            console.warn(`[lazyWithRetry] Nueva versión detectada en servidor. Recargando versión limpia preservando vista "${name}"...`);
-            if ('caches' in window) {
-              try {
-                await caches.delete('vite-hashed-assets');
-              } catch (_) {}
-            }
-            window.location.reload();
-            return new Promise(() => {});
-          }
-        }
-        throw secondError;
-      }
-    }
-  });
 
 const TwoFactorPromoModal = lazyWithRetry(() => import('./components/TwoFactorPromoModal'), 'twoFactorPromo');
 const StoryViewer = lazyWithRetry(() => import('./components/StoryViewer'), 'storyViewer');
@@ -138,26 +91,28 @@ const VIEW_CHUNK_LOADERS = {
   faq: () => Promise.resolve({ default: FAQPage }),
 };
 
-const preloadedViews = new Set();
+const preloadedViews = new Map();
 export const preloadViewChunk = (viewId) => {
-  if (!viewId || preloadedViews.has(viewId)) return;
+  if (!viewId) return Promise.resolve(false);
+  if (preloadedViews.has(viewId)) return preloadedViews.get(viewId);
   const loader = VIEW_CHUNK_LOADERS[viewId];
-  if (loader) {
-    preloadedViews.add(viewId);
-    try {
-      loader().catch(() => {
-        preloadedViews.delete(viewId);
-      });
-    } catch {
+  if (!loader) return Promise.resolve(false);
+
+  const preloadPromise = Promise.resolve()
+    .then(loader)
+    .then(() => true)
+    .catch(() => {
       preloadedViews.delete(viewId);
-    }
-    if (viewId === 'noticias') {
-      // Importar el servicio silenciosamente sin disparar peticiones de red prematuras
-      try {
-        import('./services/newsService').catch(() => {});
-      } catch {}
-    }
+      return false;
+    });
+  preloadedViews.set(viewId, preloadPromise);
+
+  if (viewId === 'noticias') {
+    // Importar el servicio silenciosamente sin disparar peticiones de red prematuras
+    import('./services/newsService').catch(() => {});
   }
+
+  return preloadPromise;
 };
 
 // Disparo inmediato en tiempo de evaluación del módulo para evitar cascada React -> Router -> Suspense
@@ -194,31 +149,6 @@ if (typeof window !== 'undefined' && window.location) {
     preloadViewChunk('legalNotice');
   }
 }
-
-export const preloadAllPrimaryViews = () => {
-  if (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData) return;
-  const primaryNavViews = [
-    'dashboard', 'routines', 'nutrition', 'social', 'hub',
-    'settings', 'notifications',
-    'calculadora1rm', 'calculadoraMacros', 'ejercicios',
-    'noticias', 'noticiaDetalle', 'publicProfile', 'profile'
-  ];
-  const user = useAppStore.getState().userProfile;
-  if (user?.role === 'admin' || user?.role === 'trainer') {
-    primaryNavViews.push('adminPanel');
-    primaryNavViews.push('trainerPanel');
-    primaryNavViews.push('asesoria');
-  }
-  primaryNavViews.forEach((v, idx) => {
-    setTimeout(() => {
-      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-        window.requestIdleCallback(() => preloadViewChunk(v), { timeout: 4000 });
-      } else {
-        preloadViewChunk(v);
-      }
-    }, 4000 + idx * 1200);
-  });
-};
 
 const Dashboard = lazyWithRetry(VIEW_CHUNK_LOADERS.dashboard, 'dashboard');
 const Progress = lazyWithRetry(VIEW_CHUNK_LOADERS.progress, 'progress');
@@ -596,81 +526,97 @@ export default function App() {
   const fullPageTitle = `${currentTitle} - Pro Fitness Glass`;
   const workoutTimer = view === 'workout' ? timer : 0;
 
-  // Precarga suave, inteligente y diferida en segundo plano:
-  // Se ejecuta únicamente cuando el navegador y la red están en reposo (idle)
-  // para NO competir con la carga del perfil, datos del usuario ni saturar conexiones.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    let isCancelled = false;
-    const runDeferredPreload = () => {
-      if (isCancelled) return;
-      if (typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData) return;
-
-      const idleViews = [
-        'dashboard',
-        'routines',
-        'nutrition',
-        'social',
-        'hub',
-        'settings',
-        'notifications',
-        'noticias',
-        'ejercicios',
-        'calculadora1rm',
-        'calculadoraMacros',
-        'workout',
-        'progress',
-        'profile'
-      ];
-
-      idleViews.forEach((v, idx) => {
-        setTimeout(() => {
-          if (isCancelled) return;
-          if ('requestIdleCallback' in window) {
-            window.requestIdleCallback(() => preloadViewChunk(v), { timeout: 3000 });
-          } else {
-            preloadViewChunk(v);
-          }
-        }, 1800 + idx * 300);
-      });
-    };
-
-    let idleId = null;
-    let timerId = null;
-
-    if ('requestIdleCallback' in window) {
-      idleId = window.requestIdleCallback(runDeferredPreload, { timeout: 3000 });
-    } else {
-      timerId = setTimeout(runDeferredPreload, 2000);
-    }
-
-    return () => {
-      isCancelled = true;
-      if (idleId && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleId);
-      if (timerId) clearTimeout(timerId);
-    };
-  }, [isAuthenticated]);
-
   useEffect(() => {
     if (view) preloadViewChunk(view);
   }, [view]);
 
-  // El panel de entrenador es una sección con varios componentes propios.
-  // Precargar su chunk en cuanto conocemos el rol evita que la primera visita
-  // después de una actualización tenga que esperar a descargarlo al abrirlo.
+  // Calentar de forma gradual las pantallas necesarias para entrenar sin conexión.
+  // Solo se hace en una conexión razonable y cuando el usuario está inactivo.
   useEffect(() => {
-    if (userProfile?.role === 'admin' || userProfile?.role === 'trainer') {
-      preloadViewChunk('trainerPanel');
-    }
-  }, [userProfile?.role]);
+    const offlineCoreViews = ['hub', 'routines', 'workout', 'nutrition'];
+    if (
+      !isAuthenticated || isLoading || isInitialLoad ||
+      !['dashboard', 'hub', 'routines', 'workout', 'nutrition'].includes(view) ||
+      typeof navigator === 'undefined' || navigator.onLine === false
+    ) return;
 
-  // Precargar progresivamente las vistas principales durante tiempo ocioso del navegador
-  useEffect(() => {
-    if (isAuthenticated && !isInitialLoad) {
-      preloadAllPrimaryViews();
-    }
-  }, [isAuthenticated, isInitialLoad]);
+    const connection = navigator.connection;
+    if (
+      connection?.saveData ||
+      ['slow-2g', '2g', '3g'].includes(connection?.effectiveType) ||
+      (typeof connection?.downlink === 'number' && connection.downlink < 1.5)
+    ) return;
+
+    let cancelled = false;
+    let index = 0;
+    let timerId = null;
+    let idleId = null;
+    let isLoadingChunk = false;
+    let pauseUntil = 0;
+
+    const clearScheduledWork = () => {
+      if (timerId !== null) clearTimeout(timerId);
+      if (idleId !== null && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleId);
+      timerId = null;
+      idleId = null;
+    };
+
+    const scheduleNext = (delay = 0) => {
+      clearScheduledWork();
+      if (cancelled || document.visibilityState !== 'visible' || navigator.onLine === false) return;
+
+      timerId = setTimeout(() => {
+        timerId = null;
+        const loadOneChunk = async () => {
+          idleId = null;
+          if (cancelled || document.visibilityState !== 'visible' || navigator.onLine === false) return;
+          const remainingPause = pauseUntil - Date.now();
+          if (remainingPause > 0) {
+            scheduleNext(remainingPause);
+            return;
+          }
+
+          const nextView = offlineCoreViews[index];
+          if (!nextView) return;
+          isLoadingChunk = true;
+          const loaded = await preloadViewChunk(nextView);
+          isLoadingChunk = false;
+          if (loaded) index += 1;
+          if (index < offlineCoreViews.length) {
+            scheduleNext(loaded ? Math.max(2500, pauseUntil - Date.now()) : 15000);
+          }
+        };
+
+        if ('requestIdleCallback' in window) {
+          idleId = window.requestIdleCallback(loadOneChunk, { timeout: 5000 });
+        } else {
+          loadOneChunk();
+        }
+      }, delay);
+    };
+
+    const pauseForUserActivity = () => {
+      pauseUntil = Date.now() + 8000;
+      if (!isLoadingChunk) scheduleNext(8000);
+    };
+    const handleVisibility = () => scheduleNext(document.visibilityState === 'visible' ? 1000 : 0);
+    const handleOnline = () => scheduleNext(3000);
+
+    window.addEventListener('pointerdown', pauseForUserActivity, { passive: true });
+    window.addEventListener('keydown', pauseForUserActivity);
+    window.addEventListener('online', handleOnline);
+    document.addEventListener('visibilitychange', handleVisibility);
+    scheduleNext(12000);
+
+    return () => {
+      cancelled = true;
+      clearScheduledWork();
+      window.removeEventListener('pointerdown', pauseForUserActivity);
+      window.removeEventListener('keydown', pauseForUserActivity);
+      window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [isAuthenticated, isInitialLoad, isLoading, view]);
 
   const currentViewComponent = useMemo(() => {
     switch (view) {

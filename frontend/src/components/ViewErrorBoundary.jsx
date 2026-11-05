@@ -2,6 +2,7 @@
 import React from 'react';
 import { RefreshCw, Home, Users } from 'lucide-react';
 import GlassCard from './GlassCard';
+import { recoverFromChunkError } from '../utils/appRecovery';
 
 class ViewErrorBoundary extends React.Component {
   constructor(props) {
@@ -15,21 +16,34 @@ class ViewErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error(`[ViewErrorBoundary:${this.props.viewName || 'view'}] Error capturado:`, error, errorInfo);
-    try {
-      // Purgar cachés transitorias de la vista
-      sessionStorage.removeItem('pfg_social_feed_cache');
-      sessionStorage.clear();
-      // Asegurar que la próxima recarga o navegación aterrice en el dashboard
-      localStorage.setItem('lastView', 'dashboard');
-    } catch {}
+    const message = (error?.message || '').toLowerCase();
+    if (
+      error?.name === 'ChunkLoadError' ||
+      error?.name === 'ChunkLoadTimeoutError' ||
+      message.includes('failed to fetch dynamically imported module') ||
+      message.includes('loading chunk') ||
+      message.includes('loading css chunk') ||
+      message.includes('importing a module script failed')
+    ) {
+      recoverFromChunkError();
+    }
   }
 
   handleRetry = () => {
-    try {
-      sessionStorage.removeItem('pfg_social_feed_cache');
-      sessionStorage.clear();
-      localStorage.setItem('lastView', 'dashboard');
-    } catch {}
+    if (this.state.error) {
+      const message = (this.state.error?.message || '').toLowerCase();
+      if (
+        this.state.error?.name === 'ChunkLoadError' ||
+        this.state.error?.name === 'ChunkLoadTimeoutError' ||
+        message.includes('failed to fetch dynamically imported module') ||
+        message.includes('loading chunk') ||
+        message.includes('loading css chunk') ||
+        message.includes('importing a module script failed')
+      ) {
+        recoverFromChunkError({ force: true });
+        return;
+      }
+    }
     this.setState({ hasError: false, error: null });
   };
 
@@ -56,7 +70,9 @@ class ViewErrorBoundary extends React.Component {
               {this.props.viewName ? `${this.props.viewName} temporalmente no disponible` : 'Sección temporalmente no disponible'}
             </h3>
             <p className="text-sm font-medium text-text-secondary max-w-md mx-auto mb-6 leading-relaxed">
-              Hemos limpiado la memoria temporal de esta pantalla para resolver cualquier incompatibilidad. Puedes reintentar cargarla o volver directamente a tu panel de inicio.
+              {typeof navigator !== 'undefined' && navigator.onLine === false
+                ? 'No hay conexión para descargar esta sección. Recupera la conexión e inténtalo de nuevo.'
+                : 'No pudimos cargar esta sección. Puedes volver a intentarlo o regresar al inicio.'}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
               <button

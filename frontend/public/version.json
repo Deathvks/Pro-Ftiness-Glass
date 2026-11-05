@@ -1,25 +1,25 @@
 {
-  "version": "7.14.23",
-  "releaseNotes": "Actualización v7.14.18: Detector automático de abandono (+72h) con rescate personalizado y nuevo panel de Retención 72h en Administración.",
+  "version": "7.14.24",
+  "releaseNotes": "Actualización v7.14.24: carga de páginas más estable, recuperación sin bucles y conservación de contenido offline al actualizar.",
   "welcome": {
-    "title": "Modo Sin Conexión y Smart Sync",
-    "subtitle": "Descarga de ejercicios en segundo plano para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.",
+    "title": "Carga estable y entrenamiento sin conexión",
+    "subtitle": "Navegación más ligera, recuperación fiable tras una actualización y mejor conservación de tus recursos descargados.",
     "features": [
       {
-        "title": "Modo Sin Conexión en Segundo Plano",
-        "description": "Descarga en Ajustes toda la biblioteca de ejercicios y animaciones mientras sigues usando la app con barra flotante en vivo."
+        "title": "Páginas más ágiles",
+        "description": "Las secciones se descargan bajo demanda y las pantallas esenciales se preparan gradualmente cuando la conexión está libre."
       },
       {
-        "title": "Smart Sync Nutricional",
-        "description": "Búsqueda y escaneo instantáneo con OpenFoodFacts API v2. Los alimentos se guardan localmente y se actualizan automáticamente cada 30 días."
+        "title": "Recuperación sin perder tu pantalla",
+        "description": "Si falla un archivo de una sección, la app reintenta y actualiza esa ruta sin enviarte al dashboard ni borrar tus datos locales."
       },
       {
-        "title": "Migración desde Hevy y Strong",
-        "description": "Importa todo tu historial de entrenamientos desde Hevy o Strong en un solo clic y exporta tus datos completos a Excel (CSV) cuando quieras."
+        "title": "Recursos offline conservados",
+        "description": "Tus ejercicios descargados, imágenes y recursos esenciales se mantienen al actualizar la app. Los entrenamientos pendientes se sincronizan al recuperar conexión."
       },
       {
-        "title": "Apertura Instantánea (0ms)",
-        "description": "Calculadoras de 1RM, macros, portal de noticias y enciclopedia de ejercicios totalmente optimizados para máxima fluidez en móvil y web."
+        "title": "Precarga cuidadosa",
+        "description": "La app prepara las pantallas de entrenamiento de una en una, en conexiones adecuadas y durante los momentos de inactividad."
       }
     ]
   }
