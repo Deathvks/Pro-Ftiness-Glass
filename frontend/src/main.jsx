@@ -81,15 +81,14 @@ try {
     localStorage.removeItem('pfg_auto_reloaded_version');
     localStorage.removeItem('pfg_crash_loop_count');
     localStorage.removeItem('profitness_insights_expanded');
-    // Preservar de forma segura el perfil del usuario para permitir un arranque instantáneo (0ms)
-    // sin quedarse bloqueado en el skeleton mientras el Service Worker reconecta la red en iOS PWA
+    // Conservar la caché local completa (perfil, rutinas, nutrición de hoy, historial) para que el contenido
+    // prioritario pinte al instante tras actualizar, aunque el backend aún esté reiniciándose.
+    // Solo se descarta si está corrupta; si causara un fallo, CrashGuard la purga en el siguiente arranque.
     try {
       const rawCache = localStorage.getItem('pfg_cached_initial_state_v1');
       if (rawCache) {
         const parsed = JSON.parse(rawCache);
-        if (parsed?.userProfile && typeof parsed.userProfile === 'object' && parsed.userProfile.id) {
-          localStorage.setItem('pfg_cached_initial_state_v1', JSON.stringify({ userProfile: parsed.userProfile }));
-        } else {
+        if (!(parsed?.userProfile && typeof parsed.userProfile === 'object' && parsed.userProfile.id)) {
           localStorage.removeItem('pfg_cached_initial_state_v1');
         }
       }

@@ -2,8 +2,8 @@
 import apiClient from './apiClient';
 import useAppStore from '../store/useAppStore';
 
-export const getMyProfile = () => {
-  return apiClient('/users/me');
+export const getMyProfile = (options = {}) => {
+  return apiClient('/users/me', options);
 };
 
 export const updateUserProfile = (profileData) => {

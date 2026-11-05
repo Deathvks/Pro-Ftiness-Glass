@@ -54,10 +54,10 @@ export const buildPersonalizedRescuePayload = ({
     return {
       segment: 'routine_ready',
       title: `¡Tu rutina ${rName} está lista!`,
-      message: `¡Tu rutina ${rName} está lista! ¿Hacemos hoy aunque sea una versión rápida de 20 min?`,
+      message: `¡Tu rutina ${rName} está lista! ¿La estrenamos hoy para registrar tus primeras marcas? 💪`,
       contextLabel: `Rutina lista: ${rName}`,
       ctaUrl: '/routines',
-      ctaText: 'Empezar versión rápida (20 min)',
+      ctaText: 'Entrenar ahora',
     };
   }
 
@@ -66,21 +66,21 @@ export const buildPersonalizedRescuePayload = ({
     return {
       segment: 'nutrition_only',
       title: '¡Acompaña tu nutrición con tu primer entreno!',
-      message: 'Ya empezaste controlando tu nutrición. ¿Hacemos hoy aunque sea una sesión rápida de 20 min para activar tu progreso?',
+      message: 'Ya empezaste controlando tu comida. ¿Hacemos hoy tu primer entreno para registrar tus series y pesos? 💪',
       contextLabel: `Nutrición activa (${nutritionCount} reg.)`,
       ctaUrl: '/routines',
-      ctaText: 'Crear mi rutina en 1 min',
+      ctaText: 'Ir a entrenar',
     };
   }
 
   // Caso 4: Registrado sin rutina ni entrenamiento todavía
   return {
     segment: 'no_setup',
-    title: '¡Tu plan de entrenamiento te espera!',
-    message: '¿Estrenamos hoy tu progreso? Elige una plantilla en 1 toque y hacemos aunque sea una versión rápida de 20 min 💪.',
+    title: '¡Tu diario de entrenamiento te espera!',
+    message: '¿Empezamos hoy tu progreso? Entra y registra tu primer entrenamiento para apuntar tus marcas de fuerza 💪.',
     contextLabel: 'Pendiente de primera rutina',
     ctaUrl: '/routines',
-    ctaText: 'Elegir rutina rápida',
+    ctaText: 'Empezar a entrenar',
   };
 };
 

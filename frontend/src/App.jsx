@@ -173,7 +173,21 @@ if (typeof window !== 'undefined' && window.location) {
   else if (initialPath === '/privacy') preloadViewChunk('privacyPolicy');
   else if (initialPath === '/terms') preloadViewChunk('terms');
   else if (initialPath === '/aviso-legal' || initialPath === '/legal') preloadViewChunk('legalNotice');
-  else if (initialPath === '/') preloadViewChunk('landingPage');
+  else if (initialPath === '/') {
+    // Con sesión iniciada, `/` abre el Dashboard (o la última vista): empezar a descargarlo ya,
+    // en paralelo al arranque, en lugar de gastar ancho de banda en la landing pública.
+    let hasSession = false;
+    try { hasSession = !!localStorage.getItem('pro_fitness_token'); } catch {}
+    if (hasSession) {
+      preloadViewChunk('dashboard');
+      try {
+        const lastView = localStorage.getItem('lastView');
+        if (lastView && lastView !== 'dashboard' && VIEW_CHUNK_LOADERS[lastView]) preloadViewChunk(lastView);
+      } catch {}
+    } else {
+      preloadViewChunk('landingPage');
+    }
+  }
   else if (initialPath === '/login' || initialPath === '/register' || initialPath === '/forgot-password' || initialPath === '/reset-password') {
     preloadViewChunk('privacyPolicy');
     preloadViewChunk('terms');
@@ -288,6 +302,7 @@ export default function App() {
     isAuthenticated,
     userProfile,
     isLoading,
+    initialDataPending,
     handleLogout: performLogout,
     fetchInitialData,
     isResting,
@@ -304,6 +319,7 @@ export default function App() {
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
     isLoading: state.isLoading,
+    initialDataPending: state.initialDataPending,
     handleLogout: state.handleLogout,
     fetchInitialData: state.fetchInitialData,
     isResting: state.isResting,
@@ -776,7 +792,7 @@ export default function App() {
   const AuthenticatedAppContent = useMemo(() => {
     // Si el perfil no tiene la propiedad 'role', mostramos skeleton mientras se completa la carga
     if (!userProfile || !('role' in userProfile) || (isLoading && !userProfile.goal)) {
-      if (isLoading || isInitialLoad) {
+      if (isLoading || isInitialLoad || initialDataPending) {
         return <InitialLoadingSkeleton />;
       }
       return (
@@ -894,7 +910,7 @@ export default function App() {
       </>
     );
   }, [
-    userProfile, isLoading, isInitialLoad, view, navParams, navigateInternal,
+    userProfile, isLoading, isInitialLoad, initialDataPending, view, navParams, navigateInternal,
     performLogout, mainContentRef, currentTitle, currentViewComponent,
     navItems, handleLogoutClick, showLogoutConfirm, confirmLogout, handleShowPolicy,
     fetchInitialData, verificationProps, handleHeaderAvatarClick, myStories,

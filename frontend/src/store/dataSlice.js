@@ -14,6 +14,31 @@ import { APP_VERSION } from '../config/version';
 
 let initialFetchInFlight = null;
 let initialFetchRetryCount = 0;
+let initialFetchRetryTimer = null;
+let initialFetchWakeListenersBound = false;
+
+// Reintentos con espera creciente (~95s en total). Cubren el reinicio del backend tras cada despliegue,
+// que es justo cuando aparece el aviso de "Nueva versión" y el usuario pulsa Actualizar.
+const INITIAL_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000, 12000, 15000, 20000, 30000];
+
+// Errores transitorios (red, timeout, backend reiniciando o en mantenimiento) que merecen reintento automático.
+const isTransientInitialError = (error) => {
+  if (!error) return false;
+  if (error.isMaintenance) return true;
+  const status = Number(error.status) || 0;
+  if (status >= 500 || status === 408 || status === 429) return true;
+  if (status) return false;
+  const msg = String(error.message || '').toLowerCase();
+  return (
+    error.name === 'TypeError' ||
+    msg.includes('fetch') ||
+    msg.includes('network') ||
+    msg.includes('conexión') ||
+    msg.includes('conectar') ||
+    msg.includes('lenta') ||
+    msg.includes('timeout')
+  );
+};
 
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
@@ -24,8 +49,8 @@ let lastDateFetchInfo = { date: null, timestamp: 0 };
 const readInitialCache = () => {
   try {
     if (typeof window === 'undefined' || !localStorage.getItem('pro_fitness_token')) return null;
-    const cachedVer = localStorage.getItem(CACHE_VERSION_KEY);
-    if (cachedVer !== APP_VERSION) return null;
+    // La caché sobrevive a las actualizaciones de versión para que el Dashboard pinte al instante tras recargar.
+    // Si cambia su formato, se renombra INITIAL_CACHE_KEY (sufijo _vN); ante un fallo, CrashGuard la purga.
     const raw = localStorage.getItem(INITIAL_CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
@@ -78,6 +103,7 @@ const initialState = {
   creatineStats: cachedData?.creatineStats || null,
   allExercises: [],
   personalRecords: Array.isArray(cachedData?.personalRecords) ? cachedData.personalRecords : [], // Estado inicial array vacío
+  initialDataPending: false,
 };
 
 export const createDataSlice = (set, get) => ({
@@ -130,6 +156,26 @@ export const createDataSlice = (set, get) => ({
       return initialFetchInFlight;
     }
 
+    // Una llamada manual (botón Reintentar, foco, volver online) adelanta el reintento programado.
+    if (initialFetchRetryTimer) {
+      clearTimeout(initialFetchRetryTimer);
+      initialFetchRetryTimer = null;
+    }
+
+    // Reintentar en cuanto vuelva la red o el usuario regrese a la app mientras sigamos sin datos frescos.
+    if (!initialFetchWakeListenersBound && typeof window !== 'undefined') {
+      initialFetchWakeListenersBound = true;
+      const wake = () => {
+        if (get().initialDataPending && get().token && !initialFetchInFlight) {
+          get().fetchInitialData().catch(() => {});
+        }
+      };
+      window.addEventListener('online', wake);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') wake();
+      });
+    }
+
     const todayAtStart = get().selectedDate || getTodayDateString();
     // Reservar fecha desde el inicio para evitar que Dashboard dispare fetchDataForDate duplicado
     lastDateFetchInfo = { date: todayAtStart, timestamp: Date.now() };
@@ -141,8 +187,10 @@ export const createDataSlice = (set, get) => ({
     }
 
     initialFetchInFlight = (async () => {
+      let retryScheduled = false;
       try {
-        const profileData = await userService.getMyProfile();
+        // Timeout corto (8s) con reintentos: mejor que una única espera larga contra un backend reiniciándose.
+        const profileData = await userService.getMyProfile({ timeout: 8000 });
 
         // Actualizar silenciosamente la zona horaria sin bloquear el arranque
         try {
@@ -159,7 +207,7 @@ export const createDataSlice = (set, get) => ({
 
         // Desbloqueamos inmediatamente la interfaz con el perfil cargado
         initialFetchRetryCount = 0;
-        set({ userProfile: profileData, isAuthenticated: true, isLoading: false });
+        set({ userProfile: profileData, isAuthenticated: true, isLoading: false, initialDataPending: false });
         writeInitialCache({ userProfile: profileData });
         if (get().syncToursForUser) {
           get().syncToursForUser(profileData);
@@ -277,20 +325,24 @@ export const createDataSlice = (set, get) => ({
         ) {
           console.warn('[fetchInitialData] Sesión inválida o usuario no encontrado en el backend. Cerrando sesión limpia...');
           get().handleLogout();
-        } else if (
-          (error?.message?.includes('fetch') || error?.message?.includes('network') || error?.name === 'TypeError' || error?.isMaintenance) &&
-          initialFetchRetryCount < 2
-        ) {
+        } else if (isTransientInitialError(error) && initialFetchRetryCount < INITIAL_RETRY_DELAYS_MS.length) {
+          const delay = INITIAL_RETRY_DELAYS_MS[initialFetchRetryCount];
           initialFetchRetryCount++;
-          console.log('[fetchInitialData] Error de red detectado, reintentando en 2s...');
-          setTimeout(() => { get().fetchInitialData(); }, 2000);
+          retryScheduled = true;
+          console.log(`[fetchInitialData] Error transitorio (intento ${initialFetchRetryCount}), reintentando en ${delay / 1000}s...`);
+          initialFetchRetryTimer = setTimeout(() => {
+            initialFetchRetryTimer = null;
+            get().fetchInitialData().catch(() => {});
+          }, delay);
         } else {
           initialFetchRetryCount = 0;
           console.error('[fetchInitialData] Error de API o límite de reintentos alcanzado; se detienen reintentos automáticos.');
         }
       } finally {
         initialFetchInFlight = null;
-        set({ isLoading: false });
+        // Mientras haya un reintento programado, la interfaz se mantiene en carga (o con los datos en caché)
+        // en lugar de mostrar la pantalla de error de conexión.
+        set({ isLoading: false, initialDataPending: retryScheduled });
       }
     })();
 

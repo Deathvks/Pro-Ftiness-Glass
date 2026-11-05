@@ -798,12 +798,31 @@
           });
         }
 
-        // 1. Watchdog: si tras 25 segundos React no ha montado, auto-recuperar
-        setTimeout(function () {
-          if (!window.__pfg_mounted) {
-            performEmergencyRescue('Watchdog: react no montado tras 25s');
+        // 1. Watchdog: si tras 25 segundos React no ha montado, auto-recuperar.
+        // En redes lentas NO recargamos mientras el bundle principal siga descargándose: recargar abortaría
+        // la descarga a medias (no se guarda en caché) y obligaría a empezar de cero en cada intento.
+        var watchdogStartedAt = Date.now();
+        function isEntryBundleStillDownloading() {
+          try {
+            var entryScripts = document.querySelectorAll('script[type="module"][src*="/assets/"]');
+            if (!entryScripts.length || !window.performance || !performance.getEntriesByType) return false;
+            var finished = performance.getEntriesByType('resource').map(function (e) { return e.name; });
+            for (var i = 0; i < entryScripts.length; i++) {
+              if (finished.indexOf(entryScripts[i].src) === -1) return true;
+            }
+          } catch (e) {}
+          return false;
+        }
+        function watchdogTick() {
+          if (window.__pfg_mounted) return;
+          var stillDownloading = navigator.onLine !== false && isEntryBundleStillDownloading();
+          if (stillDownloading && Date.now() - watchdogStartedAt < 75000) {
+            setTimeout(watchdogTick, 5000);
+            return;
           }
-        }, 25000);
+          performEmergencyRescue('Watchdog: react no montado tras ' + Math.round((Date.now() - watchdogStartedAt) / 1000) + 's');
+        }
+        setTimeout(watchdogTick, 25000);
 
         // 2. Errores de carga de scripts y tags críticos (excluir iconos, preconnects y modulepreloads)
         window.addEventListener('error', function (ev) {

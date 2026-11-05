@@ -416,6 +416,15 @@ export default function AdminRetentionRescue() {
         </div>
       </div>
 
+      {/* Banner Informativo sobre la programación de envíos */}
+      <div className="p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 flex items-start gap-3 text-xs text-text-secondary leading-relaxed">
+        <Clock size={16} className="text-accent shrink-0 mt-0.5" />
+        <div>
+          <span className="font-bold text-text-primary block mb-0.5">¿Cuándo se envían los usuarios pendientes?</span>
+          El cron automático se ejecuta en el <strong>minuto :25 de cada hora</strong>. Para no molestar a los atletas de madrugada, envía únicamente en su <strong>horario diurno (de 11:00 a 20:00 según su zona horaria)</strong> en lotes de hasta 15 usuarios. También puedes forzar el envío inmediato en cualquier momento pulsando el botón <em>"Enviar Lote Pendiente"</em> superior o de forma individual en cada tarjeta con <em>"Enviar rescate ahora"</em>.
+        </div>
+      </div>
+
       {/* Selector de Sub-pestañas Deslizable + Buscador */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-black/5 dark:bg-white/5 p-3 sm:p-4 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10">
         <div className="flex overflow-x-auto no-scrollbar items-center gap-2 py-0.5 -mx-1 px-1">

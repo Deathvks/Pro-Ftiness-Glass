@@ -1,5 +1,5 @@
 {
-  "version": "7.14.21",
+  "version": "7.14.22",
   "releaseNotes": "Actualización v7.14.18: Detector automático de abandono (+72h) con rescate personalizado y nuevo panel de Retención 72h en Administración.",
   "welcome": {
     "title": "Modo Sin Conexión y Smart Sync",
