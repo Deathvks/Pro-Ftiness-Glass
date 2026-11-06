@@ -2,6 +2,7 @@
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import db from '../models/index.js';
+import { createEmailUnsubscribeToken } from '../utils/emailUnsubscribeToken.js';
 
 // Configurar transporter - Usar createTransport (sin 'er' al final)
 const transporter = nodemailer.createTransport({
@@ -34,6 +35,41 @@ const sendMailAndLog = async (mailOptions) => {
     }
     throw err;
   }
+};
+
+const sendOptionalMailAndLog = async (mailOptions, { marketing = false } = {}) => {
+  const recipientEmail = Array.isArray(mailOptions.to) ? mailOptions.to[0]?.address : mailOptions.to;
+  const user = recipientEmail
+    ? await db.User.findOne({
+        where: { email: recipientEmail },
+        attributes: ['id', 'email', 'email_activity_notifications', 'email_marketing_consent']
+      })
+    : null;
+
+  // Los avisos de actividad conservan su preferencia actual; los promocionales requieren consentimiento expreso.
+  if (!user || (marketing ? !user.email_marketing_consent : !user.email_activity_notifications)) {
+    return { success: true, skipped: true };
+  }
+
+  const token = createEmailUnsubscribeToken({ userId: user.id, email: user.email });
+  const baseUrl = (process.env.FRONTEND_URL || 'https://pro-fitness-glass.zeabur.app').replace(/\/+$/, '');
+  const unsubscribeUrl = `${baseUrl}/api/email-preferences/unsubscribe?token=${encodeURIComponent(token)}`;
+  const footer = `
+    <div style="max-width:600px;margin:24px auto 0;padding:16px 20px;border-top:1px solid #e5e7eb;text-align:center;font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#6b7280;">
+      Recibes este correo según tus preferencias de correo de Pro Fitness Glass.
+      <a href="${unsubscribeUrl}" style="color:#4f46e5;text-decoration:underline;font-weight:bold;">Darse de baja</a>
+    </div>
+  `;
+
+  return sendMailAndLog({
+    ...mailOptions,
+    html: `${mailOptions.html || ''}${footer}`,
+    headers: {
+      ...(mailOptions.headers || {}),
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+    }
+  });
 };
 
 // Generar código de verificación
@@ -183,8 +219,8 @@ export const sendChatReplyEmail = async (email, senderName) => {
   };
 
   try {
-    await sendMailAndLog(mailOptions);
-    console.log('Correo de respuesta de chat enviado a:', email);
+    const result = await sendOptionalMailAndLog(mailOptions);
+    if (!result?.skipped) console.log('Correo de respuesta de chat enviado a:', email);
   } catch (error) {
     console.error('Error al enviar correo de respuesta de chat:', error);
     throw error;
@@ -215,8 +251,8 @@ export const sendNewClientMessageEmail = async (email, clientName) => {
   };
 
   try {
-    await sendMailAndLog(mailOptions);
-    console.log('Correo de nuevo mensaje de cliente enviado a:', email);
+    const result = await sendOptionalMailAndLog(mailOptions);
+    if (!result?.skipped) console.log('Correo de nuevo mensaje de cliente enviado a:', email);
   } catch (error) {
     console.error('Error enviando correo de nuevo mensaje de cliente:', error);
   }
@@ -246,8 +282,8 @@ export const sendCoachingLinkedEmail = async (email, trainerName) => {
   };
 
   try {
-    await sendMailAndLog(mailOptions);
-    console.log('Correo de asesoría vinculada enviado a:', email);
+    const result = await sendOptionalMailAndLog(mailOptions);
+    if (!result?.skipped) console.log('Correo de asesoría vinculada enviado a:', email);
   } catch (error) {
     console.error('Error enviando correo de asesoría vinculada:', error);
   }
@@ -284,7 +320,7 @@ export const sendBotReminderEmail = async (email, userName, level) => {
     subject: 'Aviso de asesoría: ' + titles[level],
     html: html
   };
-  return sendMailAndLog(mailOptions);
+  return sendOptionalMailAndLog(mailOptions, { marketing: true });
 };
 
 
@@ -359,5 +395,5 @@ export const sendRetentionRescueEmail = async (email, userName, { title, message
     html
   };
 
-  return sendMailAndLog(mailOptions);
+  return sendOptionalMailAndLog(mailOptions, { marketing: true });
 };

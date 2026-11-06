@@ -58,6 +58,8 @@ router.put(
         body('show_level_xp').optional().isBoolean(),
         body('show_badges').optional().isBoolean(),
         body('show_gym').optional().isBoolean(),
+        body('email_activity_notifications').optional().isBoolean(),
+        body('email_marketing_consent').optional().isBoolean(),
         body('gym_data').optional()
     ],
     handleValidationErrors,

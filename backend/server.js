@@ -45,6 +45,7 @@ import trainerRoutes from './routes/trainerRoutes.js';
 import chatRoutes from './routes/chat.js';
 import securityRoutes from './routes/securityRoutes.js';
 import newsRoutes from './routes/news.js';
+import emailPreferencesRoutes from './routes/emailPreferences.js';
 import { seedInitialNewsIfEmpty, getSitemapNews, getRSSNews } from './controllers/newsController.js';
 import { checkBlacklist, sniffingDetector } from './middleware/securityMonitor.js';
 import { startCronJobs } from './services/cronService.js';
@@ -182,6 +183,7 @@ app.use(express.static(staticPath, {
 
 // --- Rutas API ---
 app.use('/api/auth', authRoutes);
+app.use('/api/email-preferences', emailPreferencesRoutes);
 app.use('/api/bodyweight', bodyweightRoutes);
 app.use('/api/measurements', bodyMeasurementRoutes);
 app.use('/api/creatina', creatinaRoutes);

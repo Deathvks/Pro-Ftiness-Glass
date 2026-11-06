@@ -78,6 +78,19 @@ const formatExactDateTime = (iso) => {
   }
 };
 
+const formatDateTimeInTimezone = (iso, timezone) => {
+  if (!iso) return 'pendiente de la siguiente ventana diurna';
+  try {
+    return new Intl.DateTimeFormat('es-ES', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+      timeZone: timezone || 'Europe/Madrid',
+    }).format(new Date(iso));
+  } catch {
+    return formatExactDateTime(iso);
+  }
+};
+
 const formatRelative = (iso) => {
   if (!iso) return '';
   try {
@@ -420,8 +433,8 @@ export default function AdminRetentionRescue() {
       <div className="p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 flex items-start gap-3 text-xs text-text-secondary leading-relaxed">
         <Clock size={16} className="text-accent shrink-0 mt-0.5" />
         <div>
-          <span className="font-bold text-text-primary block mb-0.5">¿Cuándo se envían los usuarios pendientes?</span>
-          El cron automático se ejecuta en el <strong>minuto :25 de cada hora</strong>. Para no molestar a los atletas de madrugada, envía únicamente en su <strong>horario diurno (de 11:00 a 20:00 según su zona horaria)</strong> en lotes de hasta 15 usuarios. También puedes forzar el envío inmediato en cualquier momento pulsando el botón <em>"Enviar Lote Pendiente"</em> superior o de forma individual en cada tarjeta con <em>"Enviar rescate ahora"</em>.
+          <span className="font-bold text-text-primary block mb-0.5">¿Cuándo se envían los avisos y los correos?</span>
+          Al cumplir 72 horas, el sistema intenta el siguiente pase automático del cron: <strong>cada hora en el minuto :25</strong>, solo en los pases de <strong>11:25 a 20:25 según la zona horaria de cada usuario</strong>, con un máximo de 15 usuarios por pase. La fecha de cada persona aparece en su ficha como estimación de la siguiente ventana; si hay más de 15 pendientes, puede retrasarse a pases posteriores. El correo de retención solo se manda si esa persona activó <strong>Recordatorios y novedades por correo</strong>. Si no, se omite el correo y pueden seguir enviándose el aviso dentro de la app y el Push. Los botones de envío manual adelantan el rescate inmediatamente.
         </div>
       </div>
 
@@ -635,6 +648,15 @@ export default function AdminRetentionRescue() {
                         Última actividad: {formatExactDateTime(u.lastActivityAt)}
                       </span>
 
+                      {!u.alreadyRescuedInCurrentCycle && (
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-xl bg-bg-primary text-text-secondary ring-1 ring-black/5 dark:ring-white/10">
+                          <Mail size={12} />
+                          {u.emailMarketingConsent
+                            ? `Correo previsto: ${formatDateTimeInTimezone(u.estimatedAutoSendAt, u.timezone)} (${u.timezone || 'Europe/Madrid'})`
+                            : 'Correo omitido: no aceptó recordatorios por email'}
+                        </span>
+                      )}
+
                       <span
                         className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${
                           u.hasPushSubscription
@@ -812,8 +834,14 @@ export default function AdminRetentionRescue() {
                           <span>Cumple 72h en {u.hoursRemaining}h (lleva {u.inactiveHours}h)</span>
                         </span>
                         <span className="text-[11px] font-semibold text-text-muted mt-1">
-                          Programado para: {formatExactDateTime(u.eligibleAt)}
+                          {u.emailMarketingConsent ? 'Correo previsto desde: ' : 'Siguiente aviso automático: '}
+                          {formatDateTimeInTimezone(u.estimatedAutoSendAt, u.timezone)} ({u.timezone || 'Europe/Madrid'})
                         </span>
+                        {!u.emailMarketingConsent && (
+                          <span className="text-[11px] font-semibold text-amber-500 mt-1 block">
+                            Correo omitido sin consentimiento; el aviso In-App/Push sí puede enviarse.
+                          </span>
+                        )}
                       </div>
                     </div>
 

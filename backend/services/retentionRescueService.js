@@ -10,6 +10,37 @@ const formatWeightKg = (val) => {
   return Number.isInteger(num) ? String(num) : String(Math.round(num * 10) / 10);
 };
 
+// El cron corre cada hora en el minuto :25. El rescate automático solo se
+// procesa en los pases de :25 cuya hora local está entre las 11 y las 20.
+const getNextAutomaticSendAt = (eligibleAt, timezone = 'Europe/Madrid') => {
+  const candidate = new Date(eligibleAt);
+  if (Number.isNaN(candidate.getTime())) return null;
+  candidate.setSeconds(0, 0);
+  if (candidate.getMinutes() < 25) {
+    candidate.setMinutes(25);
+  } else {
+    candidate.setHours(candidate.getHours() + 1, 25, 0, 0);
+  }
+
+  // Busca el siguiente :25 dentro de la franja local permitida. El límite
+  // evita un bucle infinito ante una zona horaria inválida.
+  for (let i = 0; i < 48; i += 1) {
+    try {
+      const localHour = Number(new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone || 'Europe/Madrid',
+        hour: 'numeric',
+        hour12: false,
+      }).format(candidate));
+      if (localHour >= 11 && localHour <= 20) return candidate.toISOString();
+    } catch {
+      timezone = 'Europe/Madrid';
+    }
+    candidate.setHours(candidate.getHours() + 1, 25, 0, 0);
+  }
+
+  return null;
+};
+
 /**
  * Construye el mensaje ultra-personalizado de rescate según lo que el usuario sí hizo.
  */
@@ -117,6 +148,7 @@ export const getRetentionRescueOverview = async () => {
         'profile_image_url',
         'role',
         'timezone',
+        'email_marketing_consent',
         'lastSeen',
         'last_activity_date',
         ['created_at', 'createdAt'],
@@ -278,6 +310,7 @@ export const getRetentionRescueOverview = async () => {
       username: plain.username || plain.name || 'Atleta',
       name: plain.name || plain.username || 'Atleta',
       email: plain.email,
+      emailMarketingConsent: [true, 1, '1'].includes(plain.email_marketing_consent),
       profile_image_url: plain.profile_image_url,
       timezone: plain.timezone || 'Europe/Madrid',
       createdAt: createdAt.toISOString(),
@@ -312,15 +345,19 @@ export const getRetentionRescueOverview = async () => {
     };
 
     if (effectiveInactiveHours >= 72) {
-      eligibleInactiveUsers.push(userItem);
+      eligibleInactiveUsers.push({
+        ...userItem,
+        estimatedAutoSendAt: getNextAutomaticSendAt(now, userItem.timezone),
+      });
     } else if (effectiveInactiveHours >= 12 && effectiveInactiveHours < 72 && !alreadyRescuedInCurrentCycle) {
       const hoursRemaining = Math.max(1, Math.ceil(72 - effectiveInactiveHours));
-      const eligibleAtDate = new Date(nowMs + hoursRemaining * 3600000);
+      const eligibleAtDate = new Date(nowMs + Math.max(0, 72 - effectiveInactiveHours) * 3600000);
       upcomingUsers.push({
         ...userItem,
         hoursRemaining,
         progressPercent: Math.min(99, Math.max(5, Math.round((effectiveInactiveHours / 72) * 100))),
         eligibleAt: eligibleAtDate.toISOString(),
+        estimatedAutoSendAt: getNextAutomaticSendAt(eligibleAtDate, userItem.timezone),
       });
     }
   }
@@ -436,14 +473,14 @@ export const dispatchRetentionRescueForUser = async (userItem, { triggerType = '
   // 2. Enviar Correo Personalizado
   if (userItem.email) {
     try {
-      await sendRetentionRescueEmail(userItem.email, userItem.username, {
+      const emailResult = await sendRetentionRescueEmail(userItem.email, userItem.username, {
         title: userItem.previewTitle,
         message: userItem.previewMessage,
         contextLabel: userItem.contextLabel,
         ctaUrl: userItem.ctaUrl || '/routines',
         ctaText: userItem.ctaText || 'Ir a mi entrenamiento',
       });
-      emailStatus = 'success';
+      emailStatus = emailResult?.skipped ? 'skipped' : 'success';
     } catch (err) {
       emailStatus = 'error';
       emailError = err.message || 'Error SMTP al enviar correo de rescate';

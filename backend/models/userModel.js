@@ -195,6 +195,23 @@ User.init({
     defaultValue: true,
     allowNull: false
   },
+  email_activity_notifications: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    allowNull: false,
+    comment: 'Preferencia para recibir notificaciones de actividad por correo'
+  },
+  email_marketing_consent: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false,
+    comment: 'Consentimiento expreso para recordatorios promocionales por correo'
+  },
+  email_preferences_updated_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Fecha de la última actualización de preferencias de correo'
+  },
 
   // --- GAMIFICACIÓN ---
   xp: {

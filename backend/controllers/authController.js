@@ -1308,7 +1308,7 @@ export const register = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  let { username, email, password, referralCode } = req.body;
+  let { username, email, password, referralCode, marketingEmailConsent = false } = req.body;
   email = email.toLowerCase().trim();
 
   try {
@@ -1328,6 +1328,10 @@ export const register = async (req, res, next) => {
     if (!emailResult.success) return res.status(500).json({ error: 'Error enviando código de verificación' });
 
     const referred_by = await resolveReferral(referralCode);
+    const emailPreferenceUpdate = {
+      email_marketing_consent: marketingEmailConsent === true,
+      email_preferences_updated_at: new Date()
+    };
 
     if (userToProcess) {
       await userToProcess.update({
@@ -1338,6 +1342,7 @@ export const register = async (req, res, next) => {
         verification_code: verificationCode,
         verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000),
         is_verified: false,
+        ...emailPreferenceUpdate,
         referred_by: userToProcess.referred_by || referred_by // Actualizar solo si no tiene referidor
       });
     } else {
@@ -1349,6 +1354,7 @@ export const register = async (req, res, next) => {
         verification_code: verificationCode,
         verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000),
         is_verified: false,
+        ...emailPreferenceUpdate,
         referred_by
       });
     }

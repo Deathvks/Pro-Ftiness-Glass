@@ -111,6 +111,15 @@ const PrivacyPolicy = ({ onBack }) => {
                     </div>
                   </div>
 
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Correos promocionales opcionales
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      Solo si das tu consentimiento separado, podremos enviarte recordatorios personalizados basados en tu actividad y marcas de entrenamiento, además de novedades de Pro Fitness Glass. Puedes retirarlo en Ajustes o mediante el enlace de baja incluido en cada correo, sin afectar a tu cuenta ni a los avisos necesarios para su seguridad.
+                    </div>
+                  </div>
+
                   {/* Legitimación / Bases Jurídicas */}
                   <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
                     <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
@@ -125,6 +134,9 @@ const PrivacyPolicy = ({ onBack }) => {
                       </p>
                       <p>
                         <strong className="text-text-primary">3. Interés legítimo (Art. 6.1.f RGPD):</strong> Mantenimiento de la seguridad de la plataforma, prevención de fraude y registro de auditoría de sesiones.
+                      </p>
+                      <p>
+                        <strong className="text-text-primary">4. Consentimiento opcional (Art. 6.1.a y, cuando corresponda, Art. 9.2.a RGPD):</strong> Envío de recordatorios personalizados y novedades por correo. Puedes retirarlo en cualquier momento desde Ajustes o el enlace de baja; no es necesario para usar el servicio.
                       </p>
                     </div>
                   </div>

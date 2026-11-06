@@ -1,6 +1,6 @@
-export const APP_VERSION = '7.14.25';
+export const APP_VERSION = '7.14.26';
 
-export const CURRENT_WELCOME_TITLE = 'Hub más ágil en PWA y Muro más claro';
+export const CURRENT_WELCOME_TITLE = 'Preferencias y horario de correos';
 
 const EQUIVALENT_WELCOME_TITLES = new Set([
   CURRENT_WELCOME_TITLE,

@@ -308,6 +308,7 @@ export const updateMyProfile = async (req, res, next) => {
     const { userId } = req.user;
     const {
       gender, age, height, activityLevel, goal, weight, login_email_notifications,
+      email_activity_notifications, email_marketing_consent,
       is_public_profile, show_level_xp, show_badges, show_gym, gym_data, timezone
     } = req.body;
 
@@ -318,8 +319,19 @@ export const updateMyProfile = async (req, res, next) => {
     }
 
     const updateData = {
-      gender, age, height, activity_level: activityLevel, goal: goal ? sanitizePlainText(goal) : goal, login_email_notifications
+      gender, age, height, activity_level: activityLevel, goal: goal ? sanitizePlainText(goal) : goal,
+      login_email_notifications
     };
+
+    if (typeof email_activity_notifications === 'boolean') {
+      updateData.email_activity_notifications = email_activity_notifications;
+    }
+    if (typeof email_marketing_consent === 'boolean') {
+      updateData.email_marketing_consent = email_marketing_consent;
+    }
+    if (typeof email_activity_notifications === 'boolean' || typeof email_marketing_consent === 'boolean') {
+      updateData.email_preferences_updated_at = new Date();
+    }
 
     if (timezone) updateData.timezone = timezone;
     if (typeof is_public_profile !== 'undefined') updateData.is_public_profile = is_public_profile;

@@ -777,6 +777,24 @@ export default function SettingsScreen({
                 onChange={handleToggleLoginEmail}
                 disabled={!userProfile?.two_factor_enabled || isUpdatingEmailPref}
               />
+
+              <SwitchItem
+                icon={Mail}
+                title="Avisos de actividad por correo"
+                subtitle="Avisos de nuevos mensajes y cambios de asesoría. Puedes desactivarlos aquí o desde cualquier correo."
+                checked={userProfile?.email_activity_notifications !== false}
+                onChange={() => handleTogglePrivacy('email_activity_notifications', 'Avisos de actividad por correo', true)}
+                disabled={isUpdatingPrivacy}
+              />
+
+              <SwitchItem
+                icon={Mail}
+                title="Recordatorios y novedades por correo"
+                subtitle="Acepto recibir recordatorios personalizados según mi actividad y marcas, y novedades de Pro Fitness Glass. Puedes retirar el consentimiento aquí o desde cualquier correo."
+                checked={!!userProfile?.email_marketing_consent}
+                onChange={() => handleTogglePrivacy('email_marketing_consent', 'Recordatorios y novedades por correo')}
+                disabled={isUpdatingPrivacy}
+              />
             </div>
           </GlassCard>
           )}

@@ -184,6 +184,7 @@ const RegisterScreen = ({ showLogin }) => {
     const [showPolicy, setShowPolicy] = useState(false);
     const [hasConsented, setHasConsented] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
+    const [marketingEmailConsent, setMarketingEmailConsent] = useState(false);
 
     useEffect(() => {
         initGoogleAuth();
@@ -617,6 +618,7 @@ const RegisterScreen = ({ showLogin }) => {
                 social_privacy: 'private',
                 consentAccepted: true,
                 consentTimestamp: new Date().toISOString(),
+                marketingEmailConsent,
                 referralCode: currentRef
             });
 
@@ -857,6 +859,20 @@ const RegisterScreen = ({ showLogin }) => {
                                     {errors.acceptedTerms}
                                 </p>
                             )}
+                        </div>
+
+                        <div className="text-left">
+                            <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={marketingEmailConsent}
+                                    onChange={(e) => setMarketingEmailConsent(e.target.checked)}
+                                    className="mt-0.5 h-4 w-4 text-accent rounded border-glass-border bg-black/10 dark:bg-white/10 focus:ring-accent focus:ring-offset-bg-primary transition-all cursor-pointer shrink-0"
+                                />
+                                <span className="text-[11px] sm:text-xs font-medium text-text-secondary group-hover:text-text-primary transition-colors leading-relaxed">
+                                    Acepto recibir por correo recordatorios personalizados con base en mi actividad y marcas de entrenamiento, y novedades de Pro Fitness Glass. Es opcional; puedo retirar el consentimiento en Ajustes o desde cualquier correo.
+                                </span>
+                            </label>
                         </div>
 
                         <button

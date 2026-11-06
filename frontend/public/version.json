@@ -1,25 +1,21 @@
 {
-  "version": "7.14.25",
-  "releaseNotes": "Actualización v7.14.25: precarga táctil en el Hub, aviso de carga más claro y nueva ayuda para el Muro de Comunidad.",
+  "version": "7.14.26",
+  "releaseNotes": "Actualización v7.14.26: preferencias de correo y horario estimado de los avisos de retención.",
   "welcome": {
-    "title": "Hub más ágil en PWA y Muro más claro",
-    "subtitle": "Los accesos del Hub preparan sus pantallas al tocarlos y el Muro explica qué contenido muestra cada apartado.",
+    "title": "Preferencias y horario de correos",
+    "subtitle": "Controla los correos opcionales y consulta cuándo se intentará enviar el aviso de retención.",
     "features": [
       {
-        "title": "Accesos del Hub preparados al tocar",
-        "description": "En móvil, la descarga de cada sección empieza al tocar su acceso para que la navegación arranque antes."
+        "title": "Preferencias de correo",
+        "description": "Los recordatorios y novedades solo se envían si activas esa opción; puedes darte de baja desde los correos."
       },
       {
-        "title": "Aviso de carga más preciso",
-        "description": "La opción de recarga aparece tras una espera mayor y explica que la primera apertura en PWA puede tardar más."
+        "title": "Horario de retención visible",
+        "description": "El panel de administración muestra la siguiente ventana estimada de envío según la zona horaria de cada persona."
       },
       {
-        "title": "Ayuda para el Muro de Comunidad",
-        "description": "Consulta qué aparece en Global, Mi Gimnasio o Ciudad y Amigos, y cómo afecta la privacidad de tus entrenamientos."
-      },
-      {
-        "title": "Privacidad más fácil de identificar",
-        "description": "El acceso a Privacidad Social resalta cada tarjeta por separado para localizar mejor sus ajustes."
+        "title": "Consentimiento respetado",
+        "description": "Si una persona no aceptó los correos de recordatorio, se omite el email y se mantienen disponibles los avisos In-App y Push."
       }
     ]
   }
