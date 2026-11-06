@@ -80,7 +80,7 @@ export const APP_TUTORIALS = [
     id: 'settings', title: 'Ajustes, seguridad y privacidad', category: 'Personalización', icon: 'settings', view: 'settings',
     description: 'Administra tus datos de cuenta, notificaciones, seguridad y visibilidad social.',
     steps: [
-      { title: 'Ajustes', element: null, description: 'Las opciones se agrupan en pestañas para que puedas encontrar cada preferencia.' },
+      { title: 'Ajustes', element: null, description: 'Las opciones se agrupan por apartados. En móvil, toca uno para abrirlo y usa la flecha Atrás para volver a la lista.' },
       { title: 'Categorías', element: '#tutorial-settings-tabs', description: 'Entra en Perfil, Notificaciones, Seguridad, Privacidad Social o Sesión.' },
       { title: 'Opciones de la categoría', element: '#tutorial-settings-content', description: 'Activa avisos, configura la privacidad, exporta tus datos y administra la cuenta desde el panel seleccionado.' }
     ]
@@ -135,7 +135,7 @@ export const APP_TUTORIALS = [
     description: 'Accede a la gestión de usuarios, reportes, ejercicios y herramientas de administración.',
     steps: [
       { title: 'Panel de administración', element: '#tutorial-admin-panel', description: 'Esta zona está reservada a administradores y reúne herramientas de mantenimiento de la plataforma.' },
-      { title: 'Áreas de gestión', element: '#tutorial-admin-tabs', description: 'Cambia entre las pestañas para administrar usuarios, reportes, ejercicios, valoraciones, notificaciones y otras áreas.' }
+      { title: 'Áreas de gestión', element: '#tutorial-admin-tabs', description: 'Abre un apartado para administrar usuarios, reportes, ejercicios, valoraciones, notificaciones y otras áreas.' }
     ]
   },
   {

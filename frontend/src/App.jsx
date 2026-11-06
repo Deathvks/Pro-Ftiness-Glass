@@ -653,8 +653,9 @@ export default function App() {
             setAccent={setAccent}
             setView={navigateInternal}
             onLogoutClick={handleLogoutClick}
-            highlight={navParams?.highlight}
             returnView={navParams?.returnView}
+            returnParams={navParams?.returnParams}
+            scrollRef={mainContentRef}
           />
         );
       case 'appearance': return <AppearanceScreen setView={navigateInternal} />;
@@ -663,7 +664,7 @@ export default function App() {
       case 'challenges': return <ChallengesScreen setView={navigateInternal} />;
       case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigateInternal('settings')} />;
       case 'profile': return <Profile onCancel={handleCancelProfile} navigate={navigateInternal} />;
-      case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigateInternal('hub')} navigate={navigateInternal} /> : <Dashboard setView={navigateInternal} />;
+      case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigateInternal('hub')} navigate={navigateInternal} scrollRef={mainContentRef} /> : <Dashboard setView={navigateInternal} />;
       case 'adminNotifications': return userProfile?.role === 'admin' ? <AdminNotifications /> : <Dashboard setView={navigateInternal} />;
       case 'securityDashboard': return userProfile?.role === 'admin' ? <SecurityDashboard onBack={() => navigateInternal('adminPanel')} /> : <Dashboard setView={navigateInternal} />;
       case 'trainerPanel': return (userProfile?.role === 'admin' || userProfile?.role === 'trainer') ? <TrainerPanel setView={navigateInternal} /> : <Dashboard setView={navigateInternal} />;

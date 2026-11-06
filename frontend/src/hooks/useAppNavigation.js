@@ -42,6 +42,7 @@ export const useAppNavigation = (navigateRouter) => {
     if (path === '/progress') return 'progress';
     if (path === '/hub') return 'hub';
     if (path === '/settings') return 'settings';
+    if (path === '/adminPanel') return 'adminPanel';
     if (path === '/notifications') return 'notifications';
     if (path === '/active-cardio') return 'active-cardio';
     if (path === '/asesoria') return 'asesoria';
@@ -81,10 +82,7 @@ export const useAppNavigation = (navigateRouter) => {
       return { userId: profileMatch[1] };
     }
 
-    if (window.history.state && window.history.state.params) {
-      return window.history.state.params;
-    }
-    return {};
+    return window.history.state?.usr?.params ?? window.history.state?.params ?? {};
   });
 
   const [previousView, setPreviousView] = useState(null);
@@ -183,16 +181,21 @@ export const useAppNavigation = (navigateRouter) => {
       default: newPath = `/${viewName}`; break;
     }
 
+    const sectionView = viewName === 'settings' || viewName === 'adminPanel';
+    if (viewName === 'settings' && options.highlight) newPath += `?highlight=${encodeURIComponent(options.highlight)}`;
+    if (viewName === 'adminPanel' && options.section) newPath += `?section=${encodeURIComponent(options.section)}`;
+    const currentPath = window.location.pathname + (sectionView ? window.location.search : '');
+
     const needsNavigation =
       view !== viewName ||
       (viewName === 'publicProfile' && options.userId !== navParams.userId) ||
-      window.location.pathname !== newPath;
+      currentPath !== newPath;
 
     if (needsNavigation) {
       setPreviousView(view);
       setView(viewName);
 
-      if (window.location.pathname !== newPath) {
+      if (currentPath !== newPath) {
         if (navigateRouter && typeof navigateRouter === 'function') {
           navigateRouter(newPath, { state: { view: viewName, params: options } });
         } else {
@@ -239,8 +242,9 @@ export const useAppNavigation = (navigateRouter) => {
       const path = window.location.pathname;
       const profileMatch = path.match(/^\/profile\/(\d+)$/);
 
-      if (event.state && event.state.params) {
-        setNavParams(event.state.params);
+      const params = event.state?.usr?.params ?? event.state?.params;
+      if (params || path === '/settings' || path === '/adminPanel') {
+        setNavParams(params ?? {});
       }
 
       if (profileMatch) {

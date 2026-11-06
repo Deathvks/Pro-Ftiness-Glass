@@ -1,6 +1,6 @@
 {
-  "version": "7.16.0",
-  "releaseNotes": "Actualización v7.16.0: preferencias independientes para correo y push, y avisos con más privacidad.",
+  "version": "7.16.1",
+  "releaseNotes": "Actualización v7.16.1: navegación por apartados en móvil y preferencias de push y correo agrupadas en Ajustes.",
   "welcome": {
     "title": "Tú eliges tus notificaciones",
     "subtitle": "Configura por separado los correos y los avisos push en Ajustes → Notificaciones.",

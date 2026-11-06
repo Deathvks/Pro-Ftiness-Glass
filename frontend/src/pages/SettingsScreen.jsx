@@ -14,6 +14,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { APP_VERSION } from '../config/version';
 import { EMAIL_CONSENT_VERSION, EMAIL_CONSENT_TEXT } from '../config/emailConsent';
 import { usePushNotifications } from '../hooks/usePushNotifications';
+import { useSectionNavigation } from '../hooks/useSectionNavigation';
 import { PUSH_CONSENT_VERSION, PUSH_OPTIONS } from '../config/pushConsent';
 import { getPushPreferences, updatePushPreferences } from '../services/notificationService';
 import Spinner from '../components/Spinner';
@@ -24,6 +25,7 @@ import BugReportModal from '../components/BugReportModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import CustomSelect from '../components/CustomSelect';
 import GlassCard from '../components/GlassCard';
+import MobileSectionList from '../components/MobileSectionList';
 import WorkoutDataTransferModal from '../components/WorkoutDataTransferModal';
 import { useAppTheme } from '../hooks/useAppTheme';
 
@@ -126,11 +128,22 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, 
   </button>
 );
 
+const SETTINGS_TABS = [
+  { id: 'workout', label: 'Entrenamiento', icon: Timer },
+  { id: 'offline', label: 'Modo sin conexión', icon: WifiOff },
+  { id: 'profile', label: 'Perfil', icon: User },
+  { id: 'notifications', label: 'Notificaciones', icon: BellRing },
+  { id: 'security', label: 'Seguridad', icon: Shield },
+  { id: 'privacy', label: 'Privacidad Social', icon: Users },
+  { id: 'session', label: 'Sesión', icon: LogOut, danger: true },
+];
+
 export default function SettingsScreen({
   setView,
   onLogoutClick,
-  highlight,
-  returnView
+  returnView,
+  returnParams,
+  scrollRef
 }) {
 
   const {
@@ -196,7 +209,7 @@ export default function SettingsScreen({
     addToast(`Pestaña inicial del Muro: ${scopeNames[newScope] || newScope}`, 'success');
   };
 
-  const [activeTab, setActiveTab] = useState(() => ['workout', 'notifications'].includes(highlight) ? highlight : 'profile');
+  const { activeTab, isMobile, highlight, setActiveTab } = useSectionNavigation(SETTINGS_TABS, 'profile', scrollRef);
   const [pushPreferences, setPushPreferences] = useState(null);
   const [pushPreferencesError, setPushPreferencesError] = useState(false);
   const [updatingPushPurpose, setUpdatingPushPurpose] = useState(null);
@@ -228,17 +241,6 @@ export default function SettingsScreen({
   const [highlightedSection, setHighlightedSection] = useState(null);
   const socialPrivacyRef = useRef(null);
 
-  const SETTINGS_TABS = [
-    { id: 'workout', label: 'Entrenamiento', icon: Timer },
-    { id: 'offline', label: 'Modo sin conexión', icon: WifiOff },
-    { id: 'profile', label: 'Perfil', icon: User },
-    { id: 'notifications', label: 'Notificaciones', icon: BellRing },
-    { id: 'security', label: 'Seguridad', icon: Shield },
-    
-    { id: 'privacy', label: 'Privacidad Social', icon: Users },
-    { id: 'session', label: 'Sesión', icon: LogOut, danger: true },
-  ];
-
   const [offlineStats, setOfflineStats] = useState({
     isDownloaded: false,
     imageCount: 0,
@@ -261,6 +263,7 @@ export default function SettingsScreen({
   const isNativeAndroid = typeof window !== 'undefined' && !!window.Capacitor?.isNativePlatform?.();
 
   useEffect(() => {
+    if (activeTab !== 'offline') return;
     let isMounted = true;
     let unsubscribeDownload = null;
 
@@ -358,20 +361,13 @@ export default function SettingsScreen({
     isLoading: isPushLoading,
     isSupported: isPushSupported,
     permission: pushPermission
-  } = usePushNotifications();
+  } = usePushNotifications(activeTab === 'notifications');
 
 
   useEffect(() => {
-    const effectiveHighlight = highlight || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('highlight') : null);
-    if (effectiveHighlight === 'workout' || effectiveHighlight === 'notifications') {
-      setActiveTab(effectiveHighlight);
-    } else if (effectiveHighlight === 'social_privacy') {
-      setActiveTab('privacy'); // Cambiar a la pestaña correcta
-      
-      setTimeout(() => {
-        if (socialPrivacyRef.current) {
-          socialPrivacyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+    if (highlight === 'social_privacy') {
+      const scrollTimer = setTimeout(() => {
+        socialPrivacyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 100);
 
       setHighlightedSection('social_privacy');
@@ -380,7 +376,11 @@ export default function SettingsScreen({
         setHighlightedSection(null);
       }, 2500);
 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(scrollTimer);
+        clearTimeout(timer);
+        setHighlightedSection(null);
+      };
     }
   }, [highlight]);
 
@@ -461,7 +461,7 @@ export default function SettingsScreen({
 
       <div className="hidden md:flex items-center justify-between mb-6 mt-2">
         <button
-          onClick={() => setView && setView(returnView || 'hub')}
+          onClick={() => setView?.(returnView || 'hub', returnParams)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95 shadow-sm shrink-0"
         >
           <ChevronLeft size={20} />
@@ -474,11 +474,13 @@ export default function SettingsScreen({
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
-        {/* --- TABS LATERALES / HORIZONTALES --- */}
-        <div id="tutorial-settings-tabs" className="w-full md:w-64 shrink-0 flex md:flex-col gap-3 md:gap-2 overflow-x-auto md:overflow-visible py-3 md:py-1 px-2 md:px-1 hide-scrollbar md:sticky md:top-4 md:z-20 mb-6 md:mb-0">
+        {isMobile && !activeTab && <MobileSectionList id="tutorial-settings-tabs" label="Apartados de Ajustes" sections={SETTINGS_TABS} onSelect={setActiveTab} />}
+        {!isMobile && <div id="tutorial-settings-tabs" className="hidden w-64 shrink-0 flex-col gap-2 py-1 px-1 md:sticky md:top-4 md:z-20 md:flex">
           {SETTINGS_TABS.map(tab => (
             <button
               key={tab.id}
+              type="button"
+              aria-current={activeTab === tab.id ? 'page' : undefined}
               data-tutorial={`settings-tab-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2.5 px-5 py-3 md:p-4 rounded-[20px] transition-all duration-300 font-bold whitespace-nowrap outline-none shrink-0
@@ -494,10 +496,11 @@ export default function SettingsScreen({
               <span className="text-sm md:text-base">{tab.label}</span>
             </button>
           ))}
-        </div>
+        </div>}
 
         {/* --- CONTENIDO --- */}
-        <div id="tutorial-settings-content" className="flex-1 w-full flex flex-col gap-6 lg:gap-8">
+        {activeTab && <div id="tutorial-settings-content" className="flex-1 min-w-0 w-full flex flex-col gap-6 lg:gap-8">
+          <h2 className="text-xl font-extrabold text-text-primary md:hidden">{SETTINGS_TABS.find(tab => tab.id === activeTab)?.label}</h2>
 
           {activeTab === 'workout' && (
           <>
@@ -789,71 +792,78 @@ export default function SettingsScreen({
           )}
 
           {activeTab === 'notifications' && (
-          <GlassCard className={glassCardClass}>
-            <SectionTitle icon={BellRing} title="Notificaciones" />
-            <div className="flex flex-col gap-3">
-              <SwitchItem
-                icon={BellRing}
-                title="Notificaciones push en este dispositivo"
-                subtitle={`${getPushSubtitle()}. Permite recibir avisos de cuenta, actividad y asesoría fuera de la app. Los detalles se consultan dentro.`}
-                checked={isSubscribed}
-                onChange={() => (isSubscribed ? unsubscribe() : subscribe())}
-                disabled={!isPushSupported || (!isSubscribed && pushPermission === 'denied')}
-                loading={isPushLoading}
-              />
-
-              <p className="px-4 text-xs text-text-secondary">Los avisos opcionales se eligen por separado para tu cuenta. Puedes retirarlos aquí en cualquier momento.</p>
-              {PUSH_OPTIONS.map(({ purpose, title, description }) => (
+          <>
+            <GlassCard className={glassCardClass}>
+              <SectionTitle icon={BellRing} title="Notificaciones push" />
+              <div className="flex flex-col gap-3">
                 <SwitchItem
-                  key={purpose}
                   icon={BellRing}
-                  title={title}
-                  subtitle={description}
-                  checked={pushPreferences?.[purpose] === true}
-                  onChange={() => togglePushPreference(purpose)}
-                  disabled={!pushPreferences || !!updatingPushPurpose}
-                  loading={updatingPushPurpose === purpose}
+                  title="Notificaciones push en este dispositivo"
+                  subtitle={`${getPushSubtitle()}. Permite recibir avisos de cuenta, actividad y asesoría fuera de la app. Los detalles se consultan dentro.`}
+                  checked={isSubscribed}
+                  onChange={() => (isSubscribed ? unsubscribe() : subscribe())}
+                  disabled={!isPushSupported || (!isSubscribed && pushPermission === 'denied')}
+                  loading={isPushLoading}
                 />
-              ))}
-              {pushPreferencesError && <p role="alert" className="px-4 text-xs text-text-secondary">No se pudieron cargar las preferencias push. Vuelve a abrir Notificaciones para reintentar.</p>}
 
-              <SwitchItem
-                icon={userProfile?.two_factor_enabled ? ShieldAlert : MailWarning}
-                title="Alertas de Inicio"
-                subtitle={userProfile?.two_factor_enabled ? 'Email al iniciar sesión' : 'Requiere 2FA'}
-                checked={!!userProfile?.login_email_notifications}
-                onChange={handleToggleLoginEmail}
-                disabled={!userProfile?.two_factor_enabled || isUpdatingEmailPref}
-              />
+                <p className="px-4 text-xs text-text-secondary">Los avisos opcionales se eligen por separado para tu cuenta. Puedes retirarlos aquí en cualquier momento.</p>
+                {PUSH_OPTIONS.map(({ purpose, title, description }) => (
+                  <SwitchItem
+                    key={purpose}
+                    icon={BellRing}
+                    title={title}
+                    subtitle={description}
+                    checked={pushPreferences?.[purpose] === true}
+                    onChange={() => togglePushPreference(purpose)}
+                    disabled={!pushPreferences || !!updatingPushPurpose}
+                    loading={updatingPushPurpose === purpose}
+                  />
+                ))}
+                {pushPreferencesError && <p role="alert" className="px-4 text-xs text-text-secondary">No se pudieron cargar las preferencias push. Vuelve a abrir Notificaciones para reintentar.</p>}
+              </div>
+            </GlassCard>
 
-              <SwitchItem
-                icon={Mail}
-                title="Avisos de actividad por correo"
-                subtitle="Avisos de nuevos mensajes y cambios de asesoría. Puedes desactivarlos aquí o desde el enlace de baja de esos avisos."
-                checked={userProfile?.email_activity_notifications !== false}
-                onChange={() => handleTogglePrivacy('email_activity_notifications', 'Avisos de actividad por correo', true)}
-                disabled={isUpdatingPrivacy}
-              />
+            <GlassCard className={glassCardClass}>
+              <SectionTitle icon={Mail} title="Notificaciones por correo" />
+              <div className="flex flex-col gap-3">
+                <SwitchItem
+                  icon={userProfile?.two_factor_enabled ? ShieldAlert : MailWarning}
+                  title="Alertas de inicio de sesión"
+                  subtitle={userProfile?.two_factor_enabled ? 'Email al iniciar sesión' : 'Requiere 2FA'}
+                  checked={!!userProfile?.login_email_notifications}
+                  onChange={handleToggleLoginEmail}
+                  disabled={!userProfile?.two_factor_enabled || isUpdatingEmailPref}
+                />
 
-              <SwitchItem
-                icon={Mail}
-                title="Recordatorios de entrenamiento por correo"
-                subtitle={EMAIL_CONSENT_TEXT.training}
-                checked={!!userProfile?.email_marketing_consent}
-                onChange={() => handleTogglePrivacy('email_marketing_consent', 'Recordatorios de entrenamiento', false, EMAIL_CONSENT_VERSION)}
-                disabled={isUpdatingPrivacy}
-              />
+                <SwitchItem
+                  icon={Mail}
+                  title="Avisos de actividad por correo"
+                  subtitle="Avisos de nuevos mensajes y cambios de asesoría. Puedes desactivarlos aquí o desde el enlace de baja de esos avisos."
+                  checked={userProfile?.email_activity_notifications !== false}
+                  onChange={() => handleTogglePrivacy('email_activity_notifications', 'Avisos de actividad por correo', true)}
+                  disabled={isUpdatingPrivacy}
+                />
 
-              <SwitchItem
-                icon={Mail}
-                title="Recordatorios de asesoría por correo"
-                subtitle={EMAIL_CONSENT_TEXT.coaching}
-                checked={!!userProfile?.email_coaching_consent}
-                onChange={() => handleTogglePrivacy('email_coaching_consent', 'Recordatorios de asesoría', false, EMAIL_CONSENT_VERSION)}
-                disabled={isUpdatingPrivacy}
-              />
-            </div>
-          </GlassCard>
+                <SwitchItem
+                  icon={Mail}
+                  title="Recordatorios de entrenamiento por correo"
+                  subtitle={EMAIL_CONSENT_TEXT.training}
+                  checked={!!userProfile?.email_marketing_consent}
+                  onChange={() => handleTogglePrivacy('email_marketing_consent', 'Recordatorios de entrenamiento', false, EMAIL_CONSENT_VERSION)}
+                  disabled={isUpdatingPrivacy}
+                />
+
+                <SwitchItem
+                  icon={Mail}
+                  title="Recordatorios de asesoría por correo"
+                  subtitle={EMAIL_CONSENT_TEXT.coaching}
+                  checked={!!userProfile?.email_coaching_consent}
+                  onChange={() => handleTogglePrivacy('email_coaching_consent', 'Recordatorios de asesoría', false, EMAIL_CONSENT_VERSION)}
+                  disabled={isUpdatingPrivacy}
+                />
+              </div>
+            </GlassCard>
+          </>
           )}
 
           {activeTab === 'security' && (
@@ -1147,7 +1157,7 @@ export default function SettingsScreen({
             />
           </GlassCard>
           )}
-      </div>
+      </div>}
       </div>
 
       <WorkoutDataTransferModal

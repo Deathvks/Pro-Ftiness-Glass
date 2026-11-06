@@ -26,7 +26,7 @@ function urlBase64ToUint8Array(base64String) {
  * Hook para gestionar la suscripción a notificaciones Push.
  * @returns {object} - { isSubscribed, subscribe, unsubscribe, isLoading, error, isSupported }
  */
-export const usePushNotifications = () => {
+export const usePushNotifications = (enabled = true) => {
   const { addToast } = useToast();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscription, setSubscription] = useState(null);
@@ -58,6 +58,7 @@ export const usePushNotifications = () => {
    * Comprueba el estado de la suscripción al cargar el hook.
    */
   useEffect(() => {
+    if (!enabled) return;
     let isMounted = true;
 
     if (!isSupported || !userId) {
@@ -154,7 +155,7 @@ export const usePushNotifications = () => {
       if (registrationListener) registrationListener.remove();
       if (errorListener) errorListener.remove();
     };
-  }, [isSupported, getServiceWorkerRegistration, isNative, addToast, userId]);
+  }, [enabled, isSupported, getServiceWorkerRegistration, isNative, addToast, userId]);
 
   /**
    * Proceso de Suscripción

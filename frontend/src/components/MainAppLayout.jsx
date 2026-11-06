@@ -10,6 +10,7 @@ import { APP_VERSION } from '../config/version';
 import { useToast } from '../hooks/useToast';
 import { useOfflineSync } from '../hooks/useOfflineSync';
 import { useAppTheme } from '../hooks/useAppTheme';
+import { useSectionRoute } from '../hooks/useSectionNavigation';
 import { recoverFromChunkError, reloadAppWithoutStaleCache } from '../utils/appRecovery';
 import { initSocket } from '../services/socket';
 import * as userService from '../services/userService';
@@ -365,6 +366,8 @@ export default function MainAppLayout({
   profileImgSrc,
 }) {
   const { addToast } = useToast();
+  const { section, closeSection } = useSectionRoute();
+  const inSection = !!section && ['settings', 'adminPanel'].includes(view);
   useOfflineSync();
   const { activeTheme, accent } = useAppTheme();
   const isLevel20Accent = ['supernova', 'plasma', 'eternal-flame', 'abyssal-vortex', 'cosmic-gold'].includes(accent);
@@ -1415,9 +1418,15 @@ export default function MainAppLayout({
         >
           <div className="relative flex justify-between items-center w-full h-14 px-4">
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
-              {['settings', 'progress', 'appearance', 'support', 'socialLinks', 'challenges'].includes(view) ? (
+              {['settings', 'adminPanel', 'progress', 'appearance', 'support', 'socialLinks', 'challenges'].includes(view) ? (
                 <button
-                  onClick={() => navigate(view === 'settings' && navParams?.returnView ? navParams.returnView : 'hub')}
+                  type="button"
+                  aria-label={inSection ? 'Volver a los apartados' : 'Volver'}
+                  onClick={() => {
+                    if (inSection) closeSection();
+                    else if (view === 'settings' && navParams?.returnView) navigate(navParams.returnView, navParams.returnParams);
+                    else navigate('hub');
+                  }}
                   className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >

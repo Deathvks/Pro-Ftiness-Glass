@@ -6,6 +6,9 @@ import { Star,
   Newspaper, Clock, ClipboardCheck
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
+import MobileSectionList from '../components/MobileSectionList';
+import { useSectionNavigation } from '../hooks/useSectionNavigation';
+import { lazyWithRetry } from '../utils/lazyWithRetry';
 import Spinner from '../components/Spinner';
 import ConfirmationModal from '../components/ConfirmationModal';
 import UserEditModal from './UserEditModal';
@@ -14,17 +17,6 @@ import UserAvatar from '../components/UserAvatar';
 import CustomSelect from '../components/CustomSelect';
 import ImageCropModal, { getCroppedImg } from '../components/ImageCropModal';
 
-import AdminRatings from '../components/AdminRatings';
-import AdminUploads from '../components/AdminUploads';
-import AdminExercises from './AdminExercises';
-import AdminNotifications from './AdminNotifications';
-import AdminEmails from './AdminEmails';
-import AdminNotificationTests from './AdminNotificationTests';
-import SecurityDashboard from './SecurityDashboard';
-import AdminNewsManager from '../components/Admin/AdminNewsManager';
-import AdminRetentionRescue from '../components/Admin/AdminRetentionRescue';
-
-export const preloadAdminTab = () => {};
 import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getSystemStats, updateTrainerProfileImage, deleteTrainerProfileImage } from '../services/adminService';
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
@@ -37,6 +29,30 @@ import { es } from 'date-fns/locale';
 // Umbral para considerar a un usuario "online" (5 minutos)
 const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
 const REPORTS_PER_PAGE = 5;
+
+const AdminRatings = lazyWithRetry(() => import('../components/AdminRatings'), 'adminRatings');
+const AdminUploads = lazyWithRetry(() => import('../components/AdminUploads'), 'adminUploads');
+const AdminExercises = lazyWithRetry(() => import('./AdminExercises'), 'adminExercises');
+const AdminNotifications = lazyWithRetry(() => import('./AdminNotifications'), 'adminNotifications');
+const AdminEmails = lazyWithRetry(() => import('./AdminEmails'), 'adminEmails');
+const AdminNotificationTests = lazyWithRetry(() => import('./AdminNotificationTests'), 'adminNotificationTests');
+const SecurityDashboard = lazyWithRetry(() => import('./SecurityDashboard'), 'adminSecurity');
+const AdminNewsManager = lazyWithRetry(() => import('../components/Admin/AdminNewsManager'), 'adminNews');
+const AdminRetentionRescue = lazyWithRetry(() => import('../components/Admin/AdminRetentionRescue'), 'adminRetention');
+
+const ADMIN_TABS = [
+  { id: 'users', label: 'Usuarios', icon: Users },
+  { id: 'retention', label: 'Retención 72h', icon: Clock },
+  { id: 'reports', label: 'Reportes', icon: Bug },
+  { id: 'exercises', label: 'Ejercicios', icon: Monitor },
+  { id: 'ratings', label: 'Valoraciones', icon: Star },
+  { id: 'notifications', label: 'Notificaciones', icon: Bell },
+  { id: 'emails', label: 'Correos', icon: Mail },
+  { id: 'notificationTests', label: 'Pruebas de correo y push', icon: ClipboardCheck },
+  { id: 'uploads', label: 'Subidas', icon: Cloud },
+  { id: 'news', label: 'Noticias', icon: Newspaper },
+  { id: 'security', label: 'Ciberseguridad', icon: ShieldAlert, danger: true },
+];
 
 const REPORT_CATEGORY_LABELS = {
   bug: 'Bug',
@@ -214,7 +230,7 @@ const StatusIndicator = ({ lastSeen }) => {
   );
 };
 
-const AdminPanel = ({ onCancel, navigate }) => {
+const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
   const { showToast: addToast } = useToast();
   const { userProfile, setUserProfile, setGamificationData } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
@@ -222,8 +238,8 @@ const AdminPanel = ({ onCancel, navigate }) => {
     setGamificationData: state.setGamificationData
   })));
 
-  // Recuperar la pestaña activa de localStorage o usar default 'users'
-  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('admin_active_tab') || 'users');
+  const { activeTab, isMobile, setActiveTab, closeSection } = useSectionNavigation(ADMIN_TABS, 'users', scrollRef, 'admin_active_tab');
+  const showSystemControls = !isMobile || activeTab === 'users';
 
   const [reportPage, setReportPage] = useState(1);
   const REPORTS_PER_PAGE = 20;
@@ -359,10 +375,6 @@ const AdminPanel = ({ onCancel, navigate }) => {
   const SERVER_URL = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : API_URL.replace('/api', '');
 
   useEffect(() => {
-    localStorage.setItem('admin_active_tab', activeTab);
-  }, [activeTab]);
-
-  useEffect(() => {
     localStorage.setItem('admin_users_sort', sortBy);
   }, [sortBy]);
 
@@ -378,10 +390,11 @@ const AdminPanel = ({ onCancel, navigate }) => {
   }, []);
 
   useEffect(() => {
+    if (!showSystemControls) return;
     fetchSystemStats();
     const interval = setInterval(fetchSystemStats, 15000);
     return () => clearInterval(interval);
-  }, [fetchSystemStats]);
+  }, [fetchSystemStats, showSystemControls]);
 
   const fetchUsers = useCallback(async (isInitialLoad = false) => {
     if (isInitialLoad) {
@@ -722,8 +735,9 @@ const AdminPanel = ({ onCancel, navigate }) => {
 
   return (
     <div id="tutorial-admin-panel" className="w-full max-w-6xl mx-auto p-4 pb-24 md:p-6 lg:p-8 animate-[fade-in_0.5s_ease-out]">
-      <div className="flex items-center justify-between gap-2 md:gap-6 mb-6 sm:mb-8">
-        <div className="flex items-center gap-4">
+      {isMobile && activeTab && <h2 className="mb-4 text-xl font-extrabold text-text-primary md:hidden">{ADMIN_TABS.find(tab => tab.id === activeTab)?.label}</h2>}
+      {showSystemControls && <div className="flex items-center justify-end gap-2 mb-6 sm:mb-8 md:justify-between md:gap-6">
+        <div className="hidden items-center gap-4 md:flex">
           <button 
             onClick={onCancel} 
             className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors w-fit shrink-0"
@@ -754,141 +768,41 @@ const AdminPanel = ({ onCancel, navigate }) => {
               <span>Liberar RAM</span>
           </button>
         </div>
-      </div>
+      </div>}
 
-      <div id="tutorial-admin-tabs" className="flex overflow-x-auto sm:flex-wrap hide-scrollbar gap-2 sm:gap-3 mb-6 sm:mb-8 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-1">
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'users'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-          Usuarios
-        </button>
-        <button
-          onClick={() => setActiveTab('retention')}
-          style={{ touchAction: 'manipulation' }}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 touch-manipulation select-none text-sm sm:text-base ${activeTab === 'retention'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
-          Retención 72h
-        </button>
-        <button
-          onClick={() => setActiveTab('reports')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'reports'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <Bug className="w-4 h-4 sm:w-5 sm:h-5" />
-          Reportes
-          {reports.length > 0 && (
-              <span className={`min-w-[20px] h-[20px] px-1.5 flex items-center justify-center text-[11px] font-black rounded-full ml-0.5 ${
-                activeTab === 'reports' ? 'bg-black/20 dark:bg-white/20 text-inherit' : 'bg-red text-white shadow-sm'
-              }`}>
-                {reports.length > 99 ? '99+' : reports.length}
-              </span>
-            )}
-        </button>
-        <button
-          onClick={() => setActiveTab('exercises')}
-          onMouseEnter={() => preloadAdminTab('exercises')}
-          onTouchStart={() => preloadAdminTab('exercises')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'exercises'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <Monitor className="w-4 h-4 sm:w-5 sm:h-5" />
-          Ejercicios
-        </button>
-                            <button
-            onClick={() => setActiveTab('ratings')}
-            className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'ratings'
-              ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-              : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-              }`}
-          >
-            <Star className="w-4 h-4 sm:w-5 sm:h-5" />
-            Valoraciones
-          </button>
-          <button
-            onClick={() => setActiveTab('notifications')}
-            onMouseEnter={() => preloadAdminTab('notifications')}
-            style={{ touchAction: 'manipulation' }}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 touch-manipulation select-none text-sm sm:text-base ${activeTab === 'notifications'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-          Notificaciones
-        </button>
-        <button
-          onClick={() => setActiveTab('emails')}
-          onMouseEnter={() => preloadAdminTab('emails')}
-          style={{ touchAction: 'manipulation' }}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 touch-manipulation select-none text-sm sm:text-base ${activeTab === 'emails'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <Mail className="w-4 h-4 sm:w-5 sm:h-5" />
-          Correos
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('notificationTests')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'notificationTests'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <ClipboardCheck className="w-4 h-4 sm:w-5 sm:h-5" />
-          Pruebas de correo y push
-        </button>
-        <button
-          onClick={() => setActiveTab('uploads')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'uploads'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <Cloud className="w-4 h-4 sm:w-5 sm:h-5" />
-          Subidas
-        </button>
-        <button
-          onClick={() => setActiveTab('news')}
-          onMouseEnter={() => preloadAdminTab('news')}
-          style={{ touchAction: 'manipulation' }}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 touch-manipulation select-none text-sm sm:text-base ${activeTab === 'news'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <Newspaper className="w-4 h-4 sm:w-5 sm:h-5" />
-          Noticias
-        </button>
-        <button
-          onClick={() => setActiveTab('security')}
-          onMouseEnter={() => preloadAdminTab('security')}
-          style={{ touchAction: 'manipulation' }}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 touch-manipulation select-none text-sm sm:text-base ${activeTab === 'security'
-            ? 'bg-red text-white shadow-lg shadow-red/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5" />
-          Ciberseguridad
-        </button>
-      </div>
+      {isMobile && !activeTab && (
+        <MobileSectionList
+          id="tutorial-admin-tabs"
+          label="Apartados del panel Admin"
+          sections={ADMIN_TABS.map(tab => tab.id === 'reports' ? { ...tab, count: reports.length } : tab)}
+          onSelect={setActiveTab}
+        />
+      )}
+      {!isMobile && (
+        <nav id="tutorial-admin-tabs" aria-label="Apartados del panel Admin" className="hidden flex-wrap gap-3 mb-8 px-1 pt-2 pb-4 md:flex">
+          {ADMIN_TABS.map(({ id, label, icon: Icon, danger }) => (
+            <button
+              key={id}
+              type="button"
+              aria-current={activeTab === id ? 'page' : undefined}
+              onClick={() => setActiveTab(id)}
+              className={`flex items-center gap-2 px-6 py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 ${activeTab === id
+                ? danger ? 'bg-red text-white shadow-lg shadow-red/20' : 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
+                : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'}`}
+            >
+              <Icon className="h-5 w-5" aria-hidden="true" />
+              {label}
+              {id === 'reports' && reports.length > 0 && (
+                <span className={`min-w-5 h-5 px-1.5 flex items-center justify-center text-[11px] font-black rounded-full ml-0.5 ${activeTab === id ? 'bg-black/20 dark:bg-white/20 text-inherit' : 'bg-red text-white shadow-sm'}`}>
+                  {reports.length > 99 ? '99+' : reports.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+      )}
 
-      <GlassCard className="glass p-3.5 sm:p-6 md:p-8 shadow-xl border-none ring-1 ring-black/5 dark:ring-white/10 rounded-2xl sm:rounded-[32px]">
+      {activeTab && <GlassCard className="glass p-3.5 sm:p-6 md:p-8 shadow-xl border-none ring-1 ring-black/5 dark:ring-white/10 rounded-2xl sm:rounded-[32px]">
         {activeTab === 'users' ? (
           /* --- CONTENIDO PESTAÑA USUARIOS --- */
           <>
@@ -1683,6 +1597,7 @@ const AdminPanel = ({ onCancel, navigate }) => {
           </>
         ) : (
           <AdminTabErrorBoundary activeTab={activeTab}>
+            <React.Suspense fallback={<div className="flex justify-center p-8"><Spinner size={32} /></div>}>
             {activeTab === 'retention' ? (
               <AdminRetentionRescue />
             ) : activeTab === 'exercises' ? (
@@ -1694,17 +1609,18 @@ const AdminPanel = ({ onCancel, navigate }) => {
             ) : activeTab === 'emails' ? (
               <AdminEmails />
             ) : activeTab === 'notificationTests' ? (
-              <AdminNotificationTests onOpenSettings={() => navigate('settings', { highlight: 'notifications', returnView: 'adminPanel' })} />
+              <AdminNotificationTests onOpenSettings={() => navigate('settings', { highlight: 'notifications', returnView: 'adminPanel', returnParams: { section: 'notificationTests' } })} />
             ) : activeTab === 'uploads' ? (
               <AdminUploads />
             ) : activeTab === 'news' ? (
               <AdminNewsManager />
             ) : activeTab === 'security' ? (
-              <SecurityDashboard onBack={() => setActiveTab('users')} />
+              <SecurityDashboard onBack={() => isMobile ? closeSection() : setActiveTab('users')} />
             ) : null}
+            </React.Suspense>
           </AdminTabErrorBoundary>
         )}
-      </GlassCard>
+      </GlassCard>}
 
       {/* Lightbox y Modales */}
       {selectedImageForLightbox && (
