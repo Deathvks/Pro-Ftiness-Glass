@@ -1,8 +1,8 @@
 {
-  "version": "7.15.0",
-  "releaseNotes": "Actualización v7.15.0: nuevos correos de Pro Fitness Glass, preferencias y bajas por categoría, y pruebas de envío en el panel de administración.",
+  "version": "7.15.1",
+  "releaseNotes": "Actualización v7.15.1: conoce las nuevas direcciones de Pro Fitness Glass y elige qué correos quieres recibir.",
   "welcome": {
-    "title": "Tus correos en Pro Fitness Glass",
+    "title": "Nuevos correos y preferencias",
     "subtitle": "Los mensajes de tu cuenta llegan desde nuestro propio dominio y puedes elegir qué avisos y recordatorios quieres recibir.",
     "features": [
       {

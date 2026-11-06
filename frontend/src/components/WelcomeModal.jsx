@@ -5,7 +5,7 @@ import {
   Bell, ChevronRight, Mail, ShieldCheck, SlidersHorizontal
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6';
-import { APP_VERSION, CURRENT_WELCOME_TITLE, RELEASE_WELCOME } from '../config/version';
+import { APP_VERSION, RELEASE_WELCOME } from '../config/version';
 import useModalLock from '../hooks/useModalLock';
 import useAppStore from '../store/useAppStore';
 
@@ -13,7 +13,6 @@ const WelcomeModal = ({ onClose }) => {
   // --- Bloquear scroll del fondo y swipe entre páginas ---
   useModalLock();
 
-  const userProfile = useAppStore((state) => state.userProfile);
   const welcomeRemoteData = useAppStore((state) => state.welcomeRemoteData);
 
   const effectiveVersion = APP_VERSION;
@@ -434,12 +433,6 @@ const WelcomeModal = ({ onClose }) => {
                   </div>
                   <span className="wm-num" style={{ color: '#f97316' }}>04</span>
                 </div>}
-
-                {userProfile?.role === 'admin' && welcomeTitle === CURRENT_WELCOME_TITLE && (
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0', lineHeight: 1.55 }}>
-                    En Admin → Correos puedes probar el envío a los tres buzones, verificar la baja desde tu cuenta y abrir Ajustes de notificaciones. En Retención puedes consultar la próxima ventana estimada de envío.
-                  </p>
-                )}
 
               </div>
 
