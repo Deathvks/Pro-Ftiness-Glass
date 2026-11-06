@@ -10,6 +10,7 @@ import { sendBotReminderEmail } from './emailService.js';
 import { countMissedWeekdays } from './gamificationService.js';
 import { newsAutomationService } from './newsAutomationService.js';
 import { runRetentionRescueBatch } from './retentionRescueService.js';
+import { supportContact } from '../config/mailContacts.js';
 
 /**
  * Obtiene la hora y fecha local para una zona horaria dada.
@@ -821,7 +822,7 @@ const syncStaleLocalFoods = () => {
           const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${food.barcode}.json?fields=product_name,product_name_es,generic_name,brands,nutriments,serving_quantity`;
           const response = await axios.get(apiUrl, {
             timeout: 8000,
-            headers: { 'User-Agent': 'ProFitnessGlass - Android - Version 7.12.0 - https://pro-fitness-glass.zeabur.app - profitnessglass@gmail.com' }
+            headers: { 'User-Agent': `ProFitnessGlass - Android - Version 7.12.0 - https://pro-fitness-glass.zeabur.app - ${supportContact}` }
           });
 
           if (response.data && response.data.status === 1 && response.data.product) {

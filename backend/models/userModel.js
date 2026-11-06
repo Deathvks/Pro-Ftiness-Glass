@@ -207,6 +207,11 @@ User.init({
     allowNull: false,
     comment: 'Consentimiento expreso para recordatorios promocionales por correo'
   },
+  email_coaching_consent: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false
+  },
   email_preferences_updated_at: {
     type: DataTypes.DATE,
     allowNull: true,

@@ -18,6 +18,7 @@ import SEOHead from '../components/SEOHead';
 import { Capacitor } from '@capacitor/core';
 import { useLocation, Link } from 'react-router-dom';
 import { preloadViewChunk } from '../App';
+import { EMAIL_CONSENT_VERSION, EMAIL_CONSENT_TEXT } from '../config/emailConsent';
 
 const SplitLayout = ({ children, onShowPolicy }) => (
     <div className="auth-container flex flex-col lg:flex-row w-full flex-1 h-full min-h-0 bg-bg-primary overflow-hidden">
@@ -185,6 +186,7 @@ const RegisterScreen = ({ showLogin }) => {
     const [hasConsented, setHasConsented] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [marketingEmailConsent, setMarketingEmailConsent] = useState(false);
+    const [coachingEmailConsent, setCoachingEmailConsent] = useState(false);
 
     useEffect(() => {
         initGoogleAuth();
@@ -619,6 +621,8 @@ const RegisterScreen = ({ showLogin }) => {
                 consentAccepted: true,
                 consentTimestamp: new Date().toISOString(),
                 marketingEmailConsent,
+                coachingEmailConsent,
+                emailConsentVersion: EMAIL_CONSENT_VERSION,
                 referralCode: currentRef
             });
 
@@ -861,18 +865,23 @@ const RegisterScreen = ({ showLogin }) => {
                             )}
                         </div>
 
-                        <div className="text-left">
-                            <label className="flex items-start gap-2.5 cursor-pointer group select-none">
-                                <input
-                                    type="checkbox"
-                                    checked={marketingEmailConsent}
-                                    onChange={(e) => setMarketingEmailConsent(e.target.checked)}
-                                    className="mt-0.5 h-4 w-4 text-accent rounded border-glass-border bg-black/10 dark:bg-white/10 focus:ring-accent focus:ring-offset-bg-primary transition-all cursor-pointer shrink-0"
-                                />
-                                <span className="text-[11px] sm:text-xs font-medium text-text-secondary group-hover:text-text-primary transition-colors leading-relaxed">
-                                    Acepto recibir por correo recordatorios personalizados con base en mi actividad y marcas de entrenamiento, y novedades de Pro Fitness Glass. Es opcional; puedo retirar el consentimiento en Ajustes o desde cualquier correo.
-                                </span>
-                            </label>
+                        <div className="space-y-2 text-left">
+                            {[
+                                { purpose: 'training', checked: marketingEmailConsent, setChecked: setMarketingEmailConsent },
+                                { purpose: 'coaching', checked: coachingEmailConsent, setChecked: setCoachingEmailConsent }
+                            ].map(({ purpose, checked, setChecked }) => (
+                                <label key={purpose} className="flex items-start gap-2.5 cursor-pointer group select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={(e) => setChecked(e.target.checked)}
+                                        className="mt-0.5 h-4 w-4 text-accent rounded border-glass-border bg-black/10 dark:bg-white/10 focus:ring-accent focus:ring-offset-bg-primary transition-all cursor-pointer shrink-0"
+                                    />
+                                    <span className="text-[11px] sm:text-xs font-medium text-text-secondary group-hover:text-text-primary transition-colors leading-relaxed">
+                                        {EMAIL_CONSENT_TEXT[purpose]}
+                                    </span>
+                                </label>
+                            ))}
                         </div>
 
                         <button

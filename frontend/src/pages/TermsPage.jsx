@@ -8,6 +8,7 @@ import {
 import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 import GlassCard from '../components/GlassCard';
 import SEOHead from '../components/SEOHead';
+import { supportEmail } from '../config/mailContacts';
 
 const TermsPage = ({ onBack }) => {
   const navigate = useNavigate();
@@ -115,7 +116,7 @@ const TermsPage = ({ onBack }) => {
               <ul className="list-disc list-inside space-y-1 text-sm sm:text-base font-medium text-text-secondary pl-2">
                 <li><strong className="text-text-primary">Titular responsable:</strong> Dylan Jesús Suárez Falcón.</li>
                 <li><strong className="text-text-primary">Denominación del servicio:</strong> Pro Fitness Glass.</li>
-                <li><strong className="text-text-primary">Correo electrónico de contacto y soporte:</strong> <a href="mailto:profitnessglass@gmail.com" className="text-accent underline font-bold">profitnessglass@gmail.com</a></li>
+                <li><strong className="text-text-primary">Correo electrónico de contacto y soporte:</strong> <a href={`mailto:${supportEmail}`} className="text-accent underline font-bold">{supportEmail}</a></li>
                 <li><strong className="text-text-primary">Actividad principal:</strong> Aplicación informática para la gestión de rutinas, seguimiento deportivo de hipertrofia y fuerza, calculadora de marcas (1RM) y diario nutricional.</li>
               </ul>
               <p className="text-xs sm:text-sm font-medium text-text-tertiary pt-1">

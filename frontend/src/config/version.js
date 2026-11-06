@@ -1,4 +1,4 @@
-export const APP_VERSION = '7.14.26';
+export const APP_VERSION = '7.14.27';
 
 export const CURRENT_WELCOME_TITLE = 'Preferencias y horario de correos';
 

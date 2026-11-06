@@ -8,6 +8,7 @@ import { processUploadedFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/imageService.js';
 import { addXp, syncUserStreak, WEIGHT_UPDATE_XP } from '../services/gamificationService.js';
 import { sanitizePlainText } from '../utils/sanitizer.js';
+import { EMAIL_CONSENT_VERSION, updateEmailConsents } from '../services/emailConsentService.js';
 
 const {
   User,
@@ -308,11 +309,17 @@ export const updateMyProfile = async (req, res, next) => {
     const { userId } = req.user;
     const {
       gender, age, height, activityLevel, goal, weight, login_email_notifications,
-      email_activity_notifications, email_marketing_consent,
+      email_activity_notifications, email_marketing_consent, email_coaching_consent, emailConsentVersion,
       is_public_profile, show_level_xp, show_badges, show_gym, gym_data, timezone
     } = req.body;
 
-    const user = await User.findByPk(userId);
+    if ((email_marketing_consent === true || email_coaching_consent === true) &&
+        emailConsentVersion !== EMAIL_CONSENT_VERSION) {
+      await t.rollback();
+      return res.status(409).json({ error: 'Actualiza la aplicación para consultar el consentimiento vigente.' });
+    }
+
+    const user = await User.findByPk(userId, { transaction: t, lock: t.LOCK.UPDATE });
     if (!user) {
       await t.rollback();
       return res.status(404).json({ error: 'Usuario no encontrado.' });
@@ -325,11 +332,6 @@ export const updateMyProfile = async (req, res, next) => {
 
     if (typeof email_activity_notifications === 'boolean') {
       updateData.email_activity_notifications = email_activity_notifications;
-    }
-    if (typeof email_marketing_consent === 'boolean') {
-      updateData.email_marketing_consent = email_marketing_consent;
-    }
-    if (typeof email_activity_notifications === 'boolean' || typeof email_marketing_consent === 'boolean') {
       updateData.email_preferences_updated_at = new Date();
     }
 
@@ -351,6 +353,7 @@ export const updateMyProfile = async (req, res, next) => {
     }
 
     await user.update(updateData, { transaction: t });
+    await updateEmailConsents(user, { email_marketing_consent, email_coaching_consent }, 'settings', t);
 
     let weightUpdated = false;
     if (weight) {

@@ -8,12 +8,16 @@ import { OAuth2Client } from 'google-auth-library';
 import { UAParser } from 'ua-parser-js';
 import models from '../models/index.js';
 import { generateVerificationCode, sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService.js';
+import { EMAIL_CONSENT_VERSION, updateEmailConsents } from '../services/emailConsentService.js';
 import { createNotification } from '../services/notificationService.js';
 import { syncUserStreak, unlockBadge, addXp, DAILY_LOGIN_XP } from '../services/gamificationService.js';
 
 import { setAuthCookie, clearAuthCookie } from '../utils/authCookies.js';
 
 const { User, UserSession } = models;
+
+const bindVerificationCodeToEmail = (email, code) =>
+  crypto.createHmac('sha256', process.env.JWT_SECRET).update(JSON.stringify([email, code])).digest('hex');
 
 // Inicializar cliente de Google
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -1308,7 +1312,7 @@ export const register = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  let { username, email, password, referralCode, marketingEmailConsent = false } = req.body;
+  let { username, email, password, referralCode, marketingEmailConsent, coachingEmailConsent, emailConsentVersion } = req.body;
   email = email.toLowerCase().trim();
 
   try {
@@ -1328,36 +1332,38 @@ export const register = async (req, res, next) => {
     if (!emailResult.success) return res.status(500).json({ error: 'Error enviando código de verificación' });
 
     const referred_by = await resolveReferral(referralCode);
-    const emailPreferenceUpdate = {
-      email_marketing_consent: marketingEmailConsent === true,
-      email_preferences_updated_at: new Date()
-    };
-
-    if (userToProcess) {
-      await userToProcess.update({
+    const consentNoticeMatches = emailConsentVersion === EMAIL_CONSENT_VERSION;
+    const registered = await models.sequelize.transaction(async transaction => {
+      const account = {
         name: username,
-        username: username,
-        email: email,
-        password_hash: password,
-        verification_code: verificationCode,
-        verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000),
-        is_verified: false,
-        ...emailPreferenceUpdate,
-        referred_by: userToProcess.referred_by || referred_by // Actualizar solo si no tiene referidor
-      });
-    } else {
-      await User.create({
-        name: username,
-        username: username,
+        username,
         email,
         password_hash: password,
         verification_code: verificationCode,
         verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000),
-        is_verified: false,
-        ...emailPreferenceUpdate,
-        referred_by
-      });
-    }
+        is_verified: false
+      };
+      let user = userToProcess;
+      if (user) {
+        await user.reload({ transaction, lock: transaction.LOCK.UPDATE });
+        if (user.is_verified) return false;
+        if (user.email !== email) {
+          await updateEmailConsents(user, {
+            email_marketing_consent: false,
+            email_coaching_consent: false
+          }, 'registration', transaction);
+        }
+        await user.update({ ...account, referred_by: user.referred_by || referred_by }, { transaction });
+      } else {
+        user = await User.create({ ...account, referred_by }, { transaction });
+      }
+      await updateEmailConsents(user, {
+        email_marketing_consent: consentNoticeMatches && marketingEmailConsent === true,
+        email_coaching_consent: consentNoticeMatches && coachingEmailConsent === true
+      }, 'registration', transaction);
+      return true;
+    });
+    if (!registered) return res.status(409).json({ error: 'La cuenta ya está verificada.' });
 
     res.status(200).json({ message: 'Código de verificación enviado al email', email });
 
@@ -1401,32 +1407,28 @@ export const verifyEmail = async (req, res, next) => {
     if (!user) return res.status(400).json({ error: 'Usuario no encontrado' });
 
     if (user.is_verified && !isPendingUpdate) {
-      const platform = req.headers['x-app-platform'] || 'web';
-      const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
-
-      const payload = { userId: user.id, role: user.role };
-      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn });
-
-      await createUserSession(user.id, token, req);
-      return res.status(200).json({
-        message: 'Email ya verificado.',
-        token,
-        user: { id: user.id, name: user.name, username: user.username, email: user.email, is_verified: user.is_verified }
-      });
+      return res.status(400).json({ error: 'Tu correo ya está verificado. Inicia sesión para continuar.' });
     }
 
     if (!user.verification_code) return res.status(400).json({ error: 'Código no encontrado o expirado' });
     if (new Date() > user.verification_code_expires_at) {
-      await user.update({ verification_code: null, verification_code_expires_at: null });
       return res.status(400).json({ error: 'Código expirado' });
     }
-    if (user.verification_code !== code) return res.status(400).json({ error: 'Código incorrecto' });
+    const expectedCode = isPendingUpdate ? bindVerificationCodeToEmail(email, code) : code;
+    if (user.verification_code !== expectedCode) return res.status(400).json({ error: 'Código incorrecto' });
 
-    if (isPendingUpdate) {
-      await user.update({ email: email, is_verified: true, verification_code: null, verification_code_expires_at: null });
-    } else {
-      await user.update({ is_verified: true, verification_code: null, verification_code_expires_at: null });
-    }
+    const verified = { email, is_verified: true, verification_code: null, verification_code_expires_at: null };
+    const [affected] = await User.update(verified, {
+      where: {
+        id: user.id,
+        email: user.email,
+        is_verified: user.is_verified,
+        verification_code: expectedCode,
+        verification_code_expires_at: { [Op.gt]: new Date() }
+      }
+    });
+    if (!affected) return res.status(400).json({ error: 'Código no encontrado o expirado' });
+    user.set(verified, { raw: true });
 
     const platform = req.headers['x-app-platform'] || 'web';
     const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
@@ -1520,7 +1522,7 @@ export const resendVerificationEmail = async (req, res, next) => {
     if (!emailResult.success) return res.status(500).json({ error: 'Error enviando código de verificación' });
 
     await user.update({
-      verification_code: verificationCode,
+      verification_code: isPendingUpdate ? bindVerificationCodeToEmail(email, verificationCode) : verificationCode,
       verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
     });
 
@@ -1547,10 +1549,13 @@ export const updateEmailForVerification = async (req, res, next) => {
     if (existingUser && existingUser.id !== userId) return res.status(409).json({ error: 'El email ya está en uso por otra cuenta.' });
 
     const verificationCode = generateVerificationCode();
-    await sendVerificationEmail(newEmail, verificationCode);
+    const emailResult = await sendVerificationEmail(newEmail, verificationCode);
+    if (!emailResult.success) return res.status(500).json({ error: 'Error enviando código de verificación' });
 
     await user.update({
-      verification_code: verificationCode,
+      verification_code: user.email.endsWith('@x-auth.local')
+        ? bindVerificationCodeToEmail(newEmail, verificationCode)
+        : verificationCode,
       verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
     });
 

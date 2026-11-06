@@ -12,6 +12,7 @@ import { FaMeteor } from 'react-icons/fa6';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { APP_VERSION } from '../config/version';
+import { EMAIL_CONSENT_VERSION, EMAIL_CONSENT_TEXT } from '../config/emailConsent';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import Spinner from '../components/Spinner';
 import * as userService from '../services/userService';
@@ -390,7 +391,7 @@ export default function SettingsScreen({
     }
   };
 
-  const handleTogglePrivacy = async (key, label, defaultValue = false) => {
+  const handleTogglePrivacy = async (key, label, defaultValue = false, consentVersion) => {
     if (isUpdatingPrivacy) return;
     setIsUpdatingPrivacy(true);
     const currentVal = userProfile?.[key] !== undefined ? !!userProfile[key] : defaultValue;
@@ -400,7 +401,9 @@ export default function SettingsScreen({
     setUserProfile({ ...userProfile, [key]: newValue });
 
     try {
-      await userService.updateUserProfile({ [key]: newValue });
+      const update = { [key]: newValue };
+      if (newValue && consentVersion) update.emailConsentVersion = consentVersion;
+      await userService.updateUserProfile(update);
       addToast(`${label} ${newValue ? 'activado' : 'desactivado'}`, 'success');
     } catch (error) {
       setUserProfile({ ...userProfile, [key]: prevValue });
@@ -781,7 +784,7 @@ export default function SettingsScreen({
               <SwitchItem
                 icon={Mail}
                 title="Avisos de actividad por correo"
-                subtitle="Avisos de nuevos mensajes y cambios de asesoría. Puedes desactivarlos aquí o desde cualquier correo."
+                subtitle="Avisos de nuevos mensajes y cambios de asesoría. Puedes desactivarlos aquí o desde el enlace de baja de esos avisos."
                 checked={userProfile?.email_activity_notifications !== false}
                 onChange={() => handleTogglePrivacy('email_activity_notifications', 'Avisos de actividad por correo', true)}
                 disabled={isUpdatingPrivacy}
@@ -789,10 +792,19 @@ export default function SettingsScreen({
 
               <SwitchItem
                 icon={Mail}
-                title="Recordatorios y novedades por correo"
-                subtitle="Acepto recibir recordatorios personalizados según mi actividad y marcas, y novedades de Pro Fitness Glass. Puedes retirar el consentimiento aquí o desde cualquier correo."
+                title="Recordatorios de entrenamiento por correo"
+                subtitle={EMAIL_CONSENT_TEXT.training}
                 checked={!!userProfile?.email_marketing_consent}
-                onChange={() => handleTogglePrivacy('email_marketing_consent', 'Recordatorios y novedades por correo')}
+                onChange={() => handleTogglePrivacy('email_marketing_consent', 'Recordatorios de entrenamiento', false, EMAIL_CONSENT_VERSION)}
+                disabled={isUpdatingPrivacy}
+              />
+
+              <SwitchItem
+                icon={Mail}
+                title="Recordatorios de asesoría por correo"
+                subtitle={EMAIL_CONSENT_TEXT.coaching}
+                checked={!!userProfile?.email_coaching_consent}
+                onChange={() => handleTogglePrivacy('email_coaching_consent', 'Recordatorios de asesoría', false, EMAIL_CONSENT_VERSION)}
                 disabled={isUpdatingPrivacy}
               />
             </div>

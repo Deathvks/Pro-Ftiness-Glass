@@ -5,6 +5,9 @@ import { createNotification } from '../services/notificationService.js';
 import os from 'os';
 import { processUploadedFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/imageService.js';
+import { canSendPromotionalEmail } from '../services/emailConsentService.js';
+import { sendDomainMailboxTest, sendRetentionRescueEmail } from '../services/emailService.js';
+import { usesDomainMailbox } from '../config/mailContacts.js';
 import {
   getRetentionRescueOverview,
   runRetentionRescueBatch,
@@ -354,6 +357,79 @@ export const updateSetting = async (req, res, next) => {
 };
 
 // Obtener logs de notificaciones push
+const getEmailTestAccount = userId => User.findOne({
+  where: { id: userId, role: 'admin' },
+  attributes: ['id', 'email', 'is_verified', 'email_activity_notifications', 'email_marketing_consent', 'email_coaching_consent']
+});
+
+export const getEmailUnsubscribeTestStatus = async (req, res, next) => {
+  try {
+    const user = await getEmailTestAccount(req.user.userId);
+    if (!user) return res.status(403).json({ error: 'Se requiere una cuenta de administrador activa.' });
+
+    const verified = Boolean(user.is_verified && user.email && !user.email.endsWith('@x-auth.local'));
+    return res.set('Cache-Control', 'no-store').json({
+      email: user.email,
+      verified,
+      training: verified && await canSendPromotionalEmail(user, 'training'),
+      activity: user.email_activity_notifications,
+      coaching: user.email_coaching_consent
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendEmailUnsubscribeTest = async (req, res, next) => {
+  if (!req.is('application/json')) {
+    return res.status(415).json({ error: 'La solicitud debe enviarse desde el panel de administración.' });
+  }
+
+  try {
+    const user = await getEmailTestAccount(req.user.userId);
+    if (!user) return res.status(403).json({ error: 'Se requiere una cuenta de administrador activa.' });
+    if (!user.is_verified || !user.email || user.email.endsWith('@x-auth.local')) {
+      return res.status(409).json({ error: 'Necesitas una dirección de correo verificada en tu cuenta.' });
+    }
+
+    const result = await sendRetentionRescueEmail({
+      userId: user.id,
+      email: user.email,
+      userName: 'administrador',
+      loadPayload: async () => ({
+        title: 'Prueba de baja de correos de entrenamiento',
+        message: 'Has solicitado esta prueba desde el panel de administración. Usa el enlace de baja al pie de este correo para desactivar los recordatorios de entrenamiento de tu cuenta.',
+        contextLabel: 'Prueba solicitada desde el panel'
+      })
+    });
+    if (result?.skipped) {
+      return res.status(409).json({ error: 'Activa los recordatorios de entrenamiento en Ajustes → Notificaciones antes de enviar la prueba.' });
+    }
+    if (!result?.accepted?.length) {
+      return res.status(502).json({ error: 'El servidor de correo no confirmó la aceptación del mensaje.' });
+    }
+
+    return res.json({ email: user.email });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendEmailMailboxTest = async (req, res, next) => {
+  if (!req.is('application/json')) {
+    return res.status(415).json({ error: 'La solicitud debe enviarse desde el panel de administración.' });
+  }
+  if (!usesDomainMailbox || !process.env.EMAIL_PASS) {
+    return res.status(409).json({ error: 'Configura el SMTP de notificaciones@profitnessglass.es en el backend antes de enviar la prueba.' });
+  }
+
+  try {
+    return res.json({ results: await sendDomainMailboxTest() });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getEmailLogs = async (req, res, next) => {
   try {
     const { status, page = 1, limit = 50, range = 30 } = req.query;

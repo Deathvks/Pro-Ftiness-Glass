@@ -10,6 +10,8 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import { BackgroundSyncPlugin } from 'workbox-background-sync';
 import { clientsClaim } from 'workbox-core';
 
+const emailUnsubscribePath = '/api/email-preferences/unsubscribe';
+
 // 1. El nuevo Service Worker toma el control en cuanto se activa
 clientsClaim();
 
@@ -47,7 +49,11 @@ self.addEventListener('message', (event) => {
 // 2. Navegación HTML: SIEMPRE intentar red primero (y forzar no-store cuando se pide actualizar versión),
 // usando matchPrecache('/index.html') únicamente si el dispositivo está sin conexión.
 registerRoute(
-  ({ request, url }) => request.mode === 'navigate' && !url.pathname.startsWith('/sitemap.xml') && !url.pathname.startsWith('/robots.txt'),
+  ({ request, url }) =>
+    request.mode === 'navigate' &&
+    url.pathname !== emailUnsubscribePath &&
+    !url.pathname.startsWith('/sitemap.xml') &&
+    !url.pathname.startsWith('/robots.txt'),
   async ({ request, url }) => {
     const isExplicitBust = url.searchParams.has('rescue') || url.searchParams.has('updated') || url.searchParams.has('reset') || url.searchParams.has('clean') || url.searchParams.has('pfg_fresh');
     try {
@@ -202,7 +208,7 @@ registerRoute(
 registerRoute(
   ({ url, request }) => {
     if (request.method !== 'GET') return false;
-    if (!url.pathname.startsWith('/api/')) return false;
+    if (!url.pathname.startsWith('/api/') || url.pathname === emailUnsubscribePath) return false;
     if (
       url.pathname.startsWith('/api/auth') ||
       url.pathname.startsWith('/api/users') ||
@@ -240,7 +246,10 @@ registerRoute(
 
 // D. API - Escritura (POST, PUT, DELETE) -> Background Sync
 registerRoute(
-  ({ url, request }) => url.pathname.startsWith('/api/') && request.method !== 'GET',
+  ({ url, request }) =>
+    url.pathname.startsWith('/api/') &&
+    url.pathname !== emailUnsubscribePath &&
+    request.method !== 'GET',
   new NetworkOnly({
     plugins: [
       new BackgroundSyncPlugin('api-mutation-queue', {

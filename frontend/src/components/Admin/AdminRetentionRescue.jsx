@@ -652,7 +652,7 @@ export default function AdminRetentionRescue() {
                         <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-xl bg-bg-primary text-text-secondary ring-1 ring-black/5 dark:ring-white/10">
                           <Mail size={12} />
                           {u.emailMarketingConsent
-                            ? `Correo previsto: ${formatDateTimeInTimezone(u.estimatedAutoSendAt, u.timezone)} (${u.timezone || 'Europe/Madrid'})`
+                            ? `Correo sujeto a validación: ${formatDateTimeInTimezone(u.estimatedAutoSendAt, u.timezone)} (${u.timezone || 'Europe/Madrid'})`
                             : 'Correo omitido: no aceptó recordatorios por email'}
                         </span>
                       )}
@@ -664,12 +664,13 @@ export default function AdminRetentionRescue() {
                             : 'bg-black/5 dark:bg-white/5 text-text-muted'
                         }`}
                       >
-                        {u.hasPushSubscription ? `Push activo (${u.pushSubCount})` : 'Solo Email + In-App'}
+                        {u.hasPushSubscription ? `Push activo (${u.pushSubCount})` : 'Sin suscripción push'}
                       </span>
                     </div>
 
-                    {/* Vista Previa del Mensaje Personalizado */}
+                    {/* Vista previa de la notificación In-App y Push */}
                     <div className="p-3 sm:p-3.5 rounded-2xl bg-bg-primary/90 ring-1 ring-black/5 dark:ring-white/10 space-y-1">
+                      <p className="text-[11px] font-semibold text-text-muted">Vista previa In-App / Push</p>
                       <p className="text-xs font-extrabold text-accent">{u.previewTitle}</p>
                       <p className="text-xs sm:text-sm font-medium text-text-primary leading-relaxed">
                         “{u.previewMessage}”
@@ -737,8 +738,9 @@ export default function AdminRetentionRescue() {
                     </div>
                   </div>
 
-                  {/* Mensaje exacto que se envió */}
+                  {/* Contenido registrado para In-App y Push */}
                   <div className="p-3 sm:p-3.5 rounded-2xl bg-bg-primary/90 ring-1 ring-black/5 dark:ring-white/10 space-y-1">
+                    <p className="text-[11px] font-semibold text-text-muted">Mensaje In-App / Push</p>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs font-extrabold text-accent">{log.title}</p>
                       {log.context_label && (
@@ -834,7 +836,7 @@ export default function AdminRetentionRescue() {
                           <span>Cumple 72h en {u.hoursRemaining}h (lleva {u.inactiveHours}h)</span>
                         </span>
                         <span className="text-[11px] font-semibold text-text-muted mt-1">
-                          {u.emailMarketingConsent ? 'Correo previsto desde: ' : 'Siguiente aviso automático: '}
+                          Siguiente aviso automático: {' '}
                           {formatDateTimeInTimezone(u.estimatedAutoSendAt, u.timezone)} ({u.timezone || 'Europe/Madrid'})
                         </span>
                         {!u.emailMarketingConsent && (
@@ -863,7 +865,7 @@ export default function AdminRetentionRescue() {
                     <div className="p-3 rounded-2xl bg-bg-primary/90 ring-1 ring-black/5 dark:ring-white/10 space-y-1">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="text-xs font-extrabold text-accent">
-                          Mensaje preparado: {u.previewTitle}
+                          Vista previa In-App / Push: {u.previewTitle}
                         </p>
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold border ${seg.badgeClass}`}

@@ -24,6 +24,7 @@ import PushSubscription from './pushSubscriptionModel.js';
 import Notification from './notificationModel.js';
 import PushDeliveryLog from './pushDeliveryLogModel.js';
 import EmailDeliveryLog from './emailDeliveryLogModel.js';
+import './emailConsentEventModel.js';
 import UserSession from './userSessionModel.js';
 import Friendship from './friendshipModel.js';
 import BugReport from './bugReportModel.js';

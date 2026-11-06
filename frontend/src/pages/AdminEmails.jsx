@@ -1,14 +1,162 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Mail, History, CheckCircle2, XCircle, Search, Users, ChevronLeft, ChevronRight, Activity, Calendar
 } from 'lucide-react';
-import { getEmailLogs, getEmailStats } from '../services/adminService';
+import {
+  getEmailLogs, getEmailStats, getEmailUnsubscribeTestStatus, sendEmailMailboxTest, sendEmailUnsubscribeTest
+} from '../services/adminService';
 import { useToast } from '../hooks/useToast';
 import CustomSelect from '../components/CustomSelect';
 
 let cachedEmailLogs = null;
 let cachedEmailStats = null;
 let cachedEmailTotalPages = 1;
+
+const EmailMailboxTest = ({ onSendAttempt }) => {
+  const [busy, setBusy] = useState(false);
+  const [results, setResults] = useState([]);
+  const [error, setError] = useState(null);
+
+  const sendTest = async () => {
+    setBusy(true);
+    setResults([]);
+    setError(null);
+    try {
+      const response = await sendEmailMailboxTest();
+      setResults(response.results);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+      onSendAttempt();
+    }
+  };
+
+  return (
+    <section className="mb-6 space-y-4 rounded-2xl border border-glass-border bg-black/5 p-4 dark:bg-white/5 sm:p-5">
+      <h2 className="flex items-center gap-2 text-base font-black text-text-primary">
+        <Mail size={20} className="shrink-0 text-accent" aria-hidden="true" />
+        Prueba SMTP de los tres buzones
+      </h2>
+      <p className="text-sm text-text-secondary">
+        Envía un mensaje a cada buzón de profitnessglass.es: notificaciones, soporte y privacidad.
+      </p>
+      <button
+        type="button"
+        onClick={sendTest}
+        disabled={busy}
+        className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-contrast disabled:opacity-50"
+      >
+        {busy ? 'Enviando pruebas…' : 'Enviar prueba a los tres buzones'}
+      </button>
+      {results.length > 0 && (
+        <div role="status" className="space-y-2 text-sm text-text-secondary">
+          <ul className="space-y-1">
+            {results.map(({ email, accepted }) => (
+              <li key={email}>
+                <strong className="break-all text-text-primary">{email}</strong> · {accepted ? 'Aceptado por SMTP' : 'Envío fallido'}
+              </li>
+            ))}
+          </ul>
+          <p>Abre los buzones en DonDominio para comprobar la recepción.</p>
+        </div>
+      )}
+      {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
+    </section>
+  );
+};
+
+const EmailUnsubscribeTest = ({ onSendAttempt }) => {
+  const [status, setStatus] = useState(null);
+  const [busy, setBusy] = useState(true);
+  const [sentTo, setSentTo] = useState(null);
+  const [error, setError] = useState(null);
+
+  const refreshStatus = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      setStatus(await getEmailUnsubscribeTestStatus());
+    } catch (err) {
+      setStatus(null);
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshStatus();
+  }, [refreshStatus]);
+
+  const sendTest = async () => {
+    setBusy(true);
+    setError(null);
+    setSentTo(null);
+    try {
+      const result = await sendEmailUnsubscribeTest();
+      setSentTo(result.email);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+      onSendAttempt();
+    }
+  };
+
+  return (
+    <section className="mb-6 space-y-4 rounded-2xl border border-glass-border bg-black/5 p-4 dark:bg-white/5 sm:p-5">
+      <h2 className="flex items-center gap-2 text-base font-black text-text-primary">
+        <Mail size={20} className="shrink-0 text-accent" aria-hidden="true" />
+        Prueba de baja de correo
+      </h2>
+      <p className="text-sm text-text-secondary">
+        Envía un correo real a tu dirección de administrador. Al confirmar la baja de entrenamiento desde el mensaje, se desactiva esa preferencia en tu cuenta.
+      </p>
+      {status && (
+        <div className="space-y-2 text-sm text-text-secondary">
+          <p>Destinatario <strong className="break-all text-text-primary">{status.email}</strong></p>
+          <dl className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+            <div><dt className="inline">Entrenamiento </dt><dd className="inline font-bold">{status.training ? 'Activo' : 'Inactivo'}</dd></div>
+            <div><dt className="inline">Actividad </dt><dd className="inline font-bold">{status.activity ? 'Activa' : 'Inactiva'}</dd></div>
+            <div><dt className="inline">Asesoría </dt><dd className="inline font-bold">{status.coaching ? 'Activa' : 'Inactiva'}</dd></div>
+          </dl>
+          {!status.verified ? (
+            <p>Verifica el correo de tu cuenta antes de hacer la prueba.</p>
+          ) : !status.training && !sentTo && (
+            <p>Para empezar, activa los recordatorios de entrenamiento en Ajustes → Notificaciones y comprueba las preferencias aquí.</p>
+          )}
+        </div>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={sendTest}
+          disabled={busy || !status?.training}
+          className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-contrast disabled:opacity-50"
+        >
+          Enviar correo de prueba
+        </button>
+        <button
+          type="button"
+          onClick={refreshStatus}
+          disabled={busy}
+          className="rounded-xl border border-glass-border px-4 py-2 text-sm font-bold text-text-primary disabled:opacity-50"
+        >
+          Comprobar preferencias
+        </button>
+      </div>
+      {sentTo && (
+        <p role="status" className="text-sm text-text-secondary">
+          El servidor de correo aceptó el mensaje para <strong className="break-all text-text-primary">{sentTo}</strong>.
+          Abre el mensaje en tu buzón, pulsa «Darse de baja de estos correos» y confirma la baja.
+          Vuelve aquí y pulsa «Comprobar preferencias» para ver Entrenamiento inactivo.
+        </p>
+      )}
+      {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
+    </section>
+  );
+};
 
 const AdminEmails = () => {
   const [logs, setLogs] = useState(() => cachedEmailLogs || []);
@@ -63,6 +211,8 @@ const AdminEmails = () => {
 
   return (
     <div className="animate-[fade-in_0.3s_ease-out]">
+      <EmailMailboxTest onSendAttempt={fetchLogs} />
+      <EmailUnsubscribeTest onSendAttempt={fetchLogs} />
       <div className="flex flex-col">
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

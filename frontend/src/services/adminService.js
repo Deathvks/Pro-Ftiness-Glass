@@ -116,6 +116,22 @@ export const getEmailStats = (params = {}) => {
     return apiClient('/admin/email-stats?' + qs);
 };
 
+export const getEmailUnsubscribeTestStatus = () => apiClient('/admin/email-unsubscribe-test', { cache: 'no-store' });
+
+export const sendEmailUnsubscribeTest = () => apiClient('/admin/email-unsubscribe-test', {
+    method: 'POST',
+    body: {},
+    queueWhenOffline: false,
+    timeout: 30000
+});
+
+export const sendEmailMailboxTest = () => apiClient('/admin/email-mailbox-test', {
+    method: 'POST',
+    body: {},
+    queueWhenOffline: false,
+    timeout: 30000
+});
+
 
 export const getRetentionRescueDashboard = () => {
     return apiClient('/admin/retention-rescue');

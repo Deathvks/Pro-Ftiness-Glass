@@ -7,6 +7,7 @@ import {
   Mail, Clock, Users, HeartHandshake, MapPin, ShieldCheck, ExternalLink 
 } from 'lucide-react';
 import SEOHead from '../components/SEOHead';
+import { mailProvider, privacyEmail } from '../config/mailContacts';
 
 const PrivacyPolicy = ({ onBack }) => {
   // Permitimos usar la prop onBack si se pasa (para el bypass en App.jsx) o useNavigate por defecto
@@ -97,7 +98,7 @@ const PrivacyPolicy = ({ onBack }) => {
                     <div className="text-text-secondary font-medium leading-relaxed">
                       <strong className="text-text-primary">Dylan Jesús Suárez Falcón</strong> (Titular de Pro Fitness Glass).
                       <br />
-                      Correo de contacto y ejercicio de derechos: <a href="mailto:profitnessglass@gmail.com" className="text-accent underline font-bold">profitnessglass@gmail.com</a>
+                      Correo de contacto y ejercicio de derechos: <a href={`mailto:${privacyEmail}`} className="text-accent underline font-bold">{privacyEmail}</a>
                     </div>
                   </div>
 
@@ -113,10 +114,19 @@ const PrivacyPolicy = ({ onBack }) => {
 
                   <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
                     <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Avisos de actividad por correo
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      Te avisamos cuando hay nuevos mensajes en el chat de asesoría o se te asigna una asesoría. Estos avisos están activados por defecto. El correo puede indicar el nombre de la otra persona. El contenido del chat se consulta dentro de la aplicación. Puedes desactivar estos avisos en Ajustes, en la sección Notificaciones, o mediante su enlace de baja.
+                    </div>
+                  </div>
+
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
                       Correos promocionales opcionales
                     </span>
                     <div className="text-text-secondary font-medium leading-relaxed">
-                      Solo si das tu consentimiento separado, podremos enviarte recordatorios personalizados basados en tu actividad y marcas de entrenamiento, además de novedades de Pro Fitness Glass. Puedes retirarlo en Ajustes o mediante el enlace de baja incluido en cada correo, sin afectar a tu cuenta ni a los avisos necesarios para su seguridad.
+                      Puedes autorizar por separado los recordatorios personalizados de entrenamiento y los recordatorios promocionales sobre asesorías que hayas consultado en el chat. Guardamos cuándo y desde dónde das o retiras el permiso, junto con el aviso que aceptaste. Puedes retirarlo en Ajustes o mediante el enlace de baja incluido en cada correo, sin afectar a tu cuenta ni a los avisos necesarios para su seguridad.
                     </div>
                   </div>
 
@@ -136,7 +146,10 @@ const PrivacyPolicy = ({ onBack }) => {
                         <strong className="text-text-primary">3. Interés legítimo (Art. 6.1.f RGPD):</strong> Mantenimiento de la seguridad de la plataforma, prevención de fraude y registro de auditoría de sesiones.
                       </p>
                       <p>
-                        <strong className="text-text-primary">4. Consentimiento opcional (Art. 6.1.a y, cuando corresponda, Art. 9.2.a RGPD):</strong> Envío de recordatorios personalizados y novedades por correo. Puedes retirarlo en cualquier momento desde Ajustes o el enlace de baja; no es necesario para usar el servicio.
+                        <strong className="text-text-primary">4. Consentimiento opcional (Art. 6.1.a y, cuando corresponda, Art. 9.2.a RGPD):</strong> Envío de recordatorios de entrenamiento y de asesoría por correo, cada uno con su propio permiso. Puedes retirarlos en cualquier momento desde Ajustes o desde el enlace de baja. Tu decisión no afecta al uso del servicio.
+                      </p>
+                      <p>
+                        <strong className="text-text-primary">5. Interés legítimo para los avisos de actividad (art. 6.1.f RGPD).</strong> El interés de Pro Fitness Glass es facilitar el seguimiento de las conversaciones y asignaciones de asesoría que ya forman parte de tu actividad en el servicio. Puedes oponerte y desactivar estos avisos en cualquier momento.
                       </p>
                     </div>
                   </div>
@@ -146,8 +159,9 @@ const PrivacyPolicy = ({ onBack }) => {
                     <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
                       Destinatarios
                     </span>
-                    <div className="text-text-secondary font-medium leading-relaxed">
-                      No se ceden ni venden datos a terceros para fines publicitarios, de marketing ni comerciales. Los datos son tratados exclusivamente por proveedores tecnológicos indispensables para el servicio (infraestructura segura de servidores e inicio de sesión de Google) bajo acuerdos vinculantes de confidencialidad y encargo de tratamiento según el RGPD.
+                    <div className="text-text-secondary font-medium leading-relaxed space-y-1.5">
+                      <p>No vendemos tus datos ni los compartimos para que terceros hagan su propia publicidad. Para prestar el servicio utilizamos proveedores tecnológicos, entre ellos los de alojamiento e inicio de sesión.</p>
+                      <p>Usamos el servicio SMTP de {mailProvider} para enviar los correos de Pro Fitness Glass. El proveedor recibe la dirección de destino, el asunto, el contenido del mensaje y los datos técnicos necesarios para tramitar la entrega.</p>
                     </div>
                   </div>
 
@@ -167,7 +181,7 @@ const PrivacyPolicy = ({ onBack }) => {
                       Tus Derechos
                     </span>
                     <div className="text-text-secondary font-medium leading-relaxed">
-                      Derecho de acceso, rectificación, supresión (derecho al olvido), limitación del tratamiento, oposición y portabilidad de datos (exportación completa en formatos abiertos JSON, CSV y Excel). Puedes ejercerlos al instante desde los Ajustes de tu cuenta o escribiendo a <a href="mailto:profitnessglass@gmail.com" className="text-accent underline font-bold">profitnessglass@gmail.com</a>.
+                      Derecho de acceso, rectificación, supresión (derecho al olvido), limitación del tratamiento, oposición y portabilidad de datos (exportación completa en formatos abiertos JSON, CSV y Excel). Puedes ejercerlos al instante desde los Ajustes de tu cuenta o escribiendo a <a href={`mailto:${privacyEmail}`} className="text-accent underline font-bold">{privacyEmail}</a>.
                     </div>
                   </div>
 
@@ -396,7 +410,7 @@ const PrivacyPolicy = ({ onBack }) => {
                             <ul className="text-sm font-bold text-text-secondary space-y-2.5 ml-2 list-none mb-4">
                                 <li className="flex items-start gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
-                                    <span>Envía un correo a <a href="mailto:profitnessglass@gmail.com" className="text-accent hover:underline">profitnessglass@gmail.com</a></span>
+                                    <span>Envía un correo a <a href={`mailto:${privacyEmail}`} className="text-accent hover:underline">{privacyEmail}</a></span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
@@ -435,8 +449,8 @@ const PrivacyPolicy = ({ onBack }) => {
               </div>
               <h2 className="text-2xl font-extrabold text-text-primary mb-2 tracking-tight">¿Tienes dudas?</h2>
               <p className="text-sm font-medium text-text-secondary mb-6 max-w-sm">Estamos aquí para ayudarte en lo que necesites. Escríbenos en cualquier momento.</p>
-              <a href="mailto:profitnessglass@gmail.com" className="px-6 py-3 bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-full text-accent font-extrabold text-lg sm:text-xl shadow-sm hover:scale-105 active:scale-95 transition-all">
-                profitnessglass@gmail.com
+              <a href={`mailto:${privacyEmail}`} className="px-6 py-3 bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-full text-accent font-extrabold text-lg sm:text-xl shadow-sm hover:scale-105 active:scale-95 transition-all">
+                {privacyEmail}
               </a>
             </div>
 

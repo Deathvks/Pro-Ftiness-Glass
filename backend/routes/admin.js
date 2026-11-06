@@ -1,6 +1,7 @@
 /* backend/routes/admin.js */
 import express from 'express';
 import { body } from 'express-validator';
+import rateLimit from 'express-rate-limit';
 import * as adminController from '../controllers/adminController.js';
 import * as reportController from '../controllers/reportController.js';
 import * as ratingController from '../controllers/ratingController.js';
@@ -9,6 +10,15 @@ import authorizeAdmin from '../middleware/authorizeAdmin.js';
 import { uploadProfileImage } from '../services/uploadService.js';
 
 const router = express.Router();
+
+const emailTestLimiter = rateLimit({
+    windowMs: 60_000,
+    max: 3,
+    keyGenerator: req => String(req.user.userId),
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Has alcanzado el límite de pruebas. Espera un minuto antes de repetir.' }
+});
 
 // Todas las rutas en este fichero requieren que el usuario esté autenticado Y sea admin
 router.use(authenticateToken, authorizeAdmin);
@@ -54,6 +64,9 @@ router.post('/push-send', adminController.sendCustomPush);
 // Rutas de Notificaciones Email
 router.get('/email-logs', adminController.getEmailLogs);
 router.get('/email-stats', adminController.getEmailStats);
+router.get('/email-unsubscribe-test', adminController.getEmailUnsubscribeTestStatus);
+router.post('/email-unsubscribe-test', emailTestLimiter, adminController.sendEmailUnsubscribeTest);
+router.post('/email-mailbox-test', emailTestLimiter, adminController.sendEmailMailboxTest);
 
 router.get('/cron-jobs', adminController.getCronJobs);
 router.post('/cron-jobs/test/:id', adminController.testCronJob);

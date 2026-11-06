@@ -115,6 +115,54 @@ export const buildPersonalizedRescuePayload = ({
   };
 };
 
+// Solo se invoca después de verificar el consentimiento para personalizar el correo.
+const loadEmailRescuePayload = async (userId) => {
+  const workout = await db.WorkoutLog.findOne({
+    attributes: ['routine_name'],
+    where: { user_id: userId },
+    order: [['workout_date', 'DESC'], ['id', 'DESC']],
+    raw: true
+  });
+  if (workout) {
+    const bestLift = await db.PersonalRecord.findOne({
+      attributes: ['exercise_name', 'weight_kg'],
+      where: { user_id: userId, weight_kg: { [Op.gt]: 0 }, exercise_name: { [Op.ne]: '' } },
+      order: [['weight_kg', 'DESC'], ['id', 'DESC']],
+      raw: true
+    });
+    return buildPersonalizedRescuePayload({
+      workoutCount: 1,
+      lastWorkoutRoutineName: workout.routine_name,
+      bestExerciseName: bestLift?.exercise_name,
+      bestWeightKg: bestLift?.weight_kg
+    });
+  }
+
+  const routine = await db.Routine.findOne({
+    attributes: ['name'],
+    where: { user_id: userId },
+    order: [['created_at', 'DESC'], ['id', 'DESC']],
+    raw: true
+  });
+  if (routine) {
+    return buildPersonalizedRescuePayload({ routineCount: 1, latestRoutineName: routine.name });
+  }
+
+  const nutritionLog = await db.NutritionLog.findOne({
+    attributes: ['id'],
+    where: { user_id: userId },
+    raw: true
+  });
+  if (nutritionLog) {
+    return {
+      ...buildPersonalizedRescuePayload({ nutritionCount: 1 }),
+      contextLabel: 'Nutrición registrada'
+    };
+  }
+
+  return buildPersonalizedRescuePayload({});
+};
+
 /**
  * Analiza todos los usuarios y devuelve:
  * - eligibleInactiveUsers: usuarios con >= 72h de inactividad (tanto nuevos <14d como veteranos >72h)
@@ -473,12 +521,11 @@ export const dispatchRetentionRescueForUser = async (userItem, { triggerType = '
   // 2. Enviar Correo Personalizado
   if (userItem.email) {
     try {
-      const emailResult = await sendRetentionRescueEmail(userItem.email, userItem.username, {
-        title: userItem.previewTitle,
-        message: userItem.previewMessage,
-        contextLabel: userItem.contextLabel,
-        ctaUrl: userItem.ctaUrl || '/routines',
-        ctaText: userItem.ctaText || 'Ir a mi entrenamiento',
+      const emailResult = await sendRetentionRescueEmail({
+        userId: userItem.id,
+        email: userItem.email,
+        userName: userItem.username,
+        loadPayload: loadEmailRescuePayload
       });
       emailStatus = emailResult?.skipped ? 'skipped' : 'success';
     } catch (err) {

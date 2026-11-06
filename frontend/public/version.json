@@ -1,6 +1,6 @@
 {
-  "version": "7.14.26",
-  "releaseNotes": "Actualización v7.14.26: preferencias de correo y horario estimado de los avisos de retención.",
+  "version": "7.14.27",
+  "releaseNotes": "Actualización v7.14.27: mejoras en las preferencias, las bajas y el envío de correos.",
   "welcome": {
     "title": "Preferencias y horario de correos",
     "subtitle": "Controla los correos opcionales y consulta cuándo se intentará enviar el aviso de retención.",

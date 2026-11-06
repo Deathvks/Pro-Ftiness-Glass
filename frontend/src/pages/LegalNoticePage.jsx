@@ -9,6 +9,7 @@ import {
 import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 import GlassCard from '../components/GlassCard';
 import SEOHead from '../components/SEOHead';
+import { supportEmail } from '../config/mailContacts';
 
 const LegalNoticePage = ({ onBack }) => {
   const navigate = useNavigate();
@@ -107,8 +108,8 @@ const LegalNoticePage = ({ onBack }) => {
                 </div>
                 <div className="p-4 rounded-xl bg-bg-primary/60 backdrop-blur-sm border border-black/5 dark:border-white/10 space-y-1">
                   <span className="font-bold text-text-primary block">Correo electrónico de contacto y soporte:</span>
-                  <a href="mailto:profitnessglass@gmail.com" className="text-accent underline font-bold block">
-                    profitnessglass@gmail.com
+                  <a href={`mailto:${supportEmail}`} className="text-accent underline font-bold block">
+                    {supportEmail}
                   </a>
                 </div>
               </div>

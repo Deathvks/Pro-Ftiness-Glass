@@ -10,7 +10,7 @@ if (!API_BASE_URL) {
 
 const apiClient = async (endpoint, options = {}) => {
     const token = useAppStore.getState().token;
-    const { body, ...customConfig } = options;
+    const { body, queueWhenOffline = true, ...customConfig } = options;
 
     // Headers por defecto.
     const headers = { ...customConfig.headers };
@@ -162,7 +162,7 @@ const apiClient = async (endpoint, options = {}) => {
             errMessage.includes('network request failed');
 
         // Interceptamos fallos de red (Offline o Timeout por red lentísima) para peticiones de escritura (POST, PUT, DELETE, etc.)
-        if (isNetworkFailure && config.method !== 'GET') {
+        if (isNetworkFailure && config.method !== 'GET' && queueWhenOffline) {
             // No guardamos FormData en la cola por complejidad de serialización (imágenes, etc.)
             const isFormData = body instanceof FormData;
 

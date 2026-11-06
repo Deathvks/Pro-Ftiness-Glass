@@ -40,6 +40,13 @@
         }
     }
 
+    # Mantiene válidos los enlaces de baja de correos ya enviados.
+    handle /api/email-preferences/unsubscribe {
+        reverse_proxy https://pro-fitness-glass-api.zeabur.app {
+            header_up Host pro-fitness-glass-api.zeabur.app
+        }
+    }
+
     handle /uploads/* {
         reverse_proxy https://pro-fitness-glass-api.zeabur.app {
             header_up Host pro-fitness-glass-api.zeabur.app

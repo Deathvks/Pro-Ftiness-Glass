@@ -4,6 +4,7 @@ import {
   Info, ChevronRight, Play, Smartphone, Download, Bug, Mail, Binary, ChevronLeft
 } from 'lucide-react';
 import { APP_VERSION } from '../config/version';
+import { supportEmail } from '../config/mailContacts';
 import GlassCard from '../components/GlassCard';
 import BugReportModal from '../components/BugReportModal';
 
@@ -130,8 +131,8 @@ export default function SupportScreen({ setView }) {
               action={<ChevronRight size={18} className="text-text-muted" />}
             />
 
-            <a href="mailto:profitnessglass@gmail.com" className="no-underline">
-              <SettingsItem icon={Mail} title="Contactar Soporte" subtitle="profitnessglass@gmail.com" />
+            <a href={`mailto:${supportEmail}`} className="no-underline">
+              <SettingsItem icon={Mail} title="Contactar Soporte" subtitle={supportEmail} />
             </a>
 
             <div className="my-4" />

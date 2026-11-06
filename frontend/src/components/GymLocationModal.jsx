@@ -9,6 +9,7 @@ import { enrichGymWithMedia } from '../utils/gymMedia';
 import { SpainTerritoryBadge } from './Flags';
 import { useToast } from '../hooks/useToast';
 import { searchLocalGyms, cleanSearchTokens, normalizeGymText } from '../utils/spainGymsData';
+import { supportEmail } from '../config/mailContacts';
 
 const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => {
   useModalLock(isOpen);
@@ -144,7 +145,7 @@ const GymLocationModal = ({ isOpen, onClose, currentGym, onSave, onRemove }) => 
         fetch(nomUrl, {
           headers: {
             'Accept-Language': 'es,ca,gl,eu,en',
-            'User-Agent': 'ProFitnessGlass/7.10.10 (support@profitnessglass.com)'
+            'User-Agent': `ProFitnessGlass/7.10.10 (${supportEmail})`
           }
         })
           .then(res => (res.ok ? res.json() : null))

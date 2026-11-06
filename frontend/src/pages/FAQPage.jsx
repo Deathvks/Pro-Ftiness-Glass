@@ -12,6 +12,7 @@ import {
 import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 import PublicPageFooter from '../components/PublicPageFooter';
 import useAppStore from '../store/useAppStore';
+import { supportEmail } from '../config/mailContacts';
 
 const FAQ_DATA = [
   {
@@ -102,7 +103,7 @@ const FAQ_DATA = [
     category: 'general',
     categoryLabel: 'General y Gratuidad',
     question: '¿Quién ha desarrollado Pro Fitness Glass y cuál es el contacto oficial?',
-    answer: 'Pro Fitness Glass ha sido creada y desarrollada de forma independiente por Dylan Jesús Suárez Falcón, con la misión de democratizar la salud deportiva. Puedes contactar con nosotros a través de nuestro soporte técnico en la plataforma o mediante los canales oficiales.'
+    answer: `Pro Fitness Glass ha sido creada y desarrollada de forma independiente por Dylan Jesús Suárez Falcón, con la misión de democratizar la salud deportiva. Puedes contactar con soporte desde la plataforma o por correo en ${supportEmail}.`
   }
 ];
 
