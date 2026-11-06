@@ -31,7 +31,7 @@ export default function AdminUploads() {
 
   return (
     <div>
-      <h2 className="text-2xl font-extrabold text-text-primary mb-2">Historial de Subidas</h2>
+      <h2 className="hidden text-2xl font-extrabold text-text-primary mb-2 md:block">Historial de Subidas</h2>
       <p className="text-text-secondary font-medium text-sm mb-6">Registro de archivos y vídeos enviados al chat.</p>
       {loading ? (
         <p>Cargando...</p>

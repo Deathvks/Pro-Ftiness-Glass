@@ -207,7 +207,7 @@ const AdminNotifications = () => {
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-black text-text-primary flex items-center gap-2">
+                  <h2 className="hidden items-center gap-2 text-xl font-black text-text-primary md:flex">
                     <History size={24} className="text-accent shrink-0" />
                     Historial Push
                   </h2>
@@ -337,12 +337,12 @@ const AdminNotifications = () => {
       {/* ENVIAR NUEVA TAB */}
       {activeTab === 'send' && (
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-xl font-black text-text-primary flex items-center gap-2">
+          <h2 className="hidden items-center gap-2 text-xl font-black text-text-primary md:flex">
             <Send size={24} className="text-accent" />
             Redactar Notificación Push
           </h2>
           
-          <form onSubmit={handleSendPush} className="flex flex-col gap-5 mt-6">
+          <form onSubmit={handleSendPush} className="flex flex-col gap-5 md:mt-6">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-bold text-text-secondary flex items-center gap-2">
                 <Users size={16} /> Destinatario
@@ -430,11 +430,11 @@ const AdminNotifications = () => {
       {/* CRON JOBS TAB */}
       {activeTab === 'cron' && (
         <div>
-          <h2 className="text-xl font-black text-text-primary flex items-center gap-2">
+          <h2 className="hidden items-center gap-2 text-xl font-black text-text-primary md:flex">
             <Clock size={24} className="text-accent" />
             Notificaciones Programadas
           </h2>
-          <p className="text-sm text-text-secondary mb-6 mt-2 ml-1">
+          <p className="text-sm text-text-secondary mb-6 ml-1 md:mt-2">
             Estas notificaciones se generan automáticamente en el servidor (Cron Jobs) a las horas indicadas para la zona horaria de cada usuario.
           </p>
 

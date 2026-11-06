@@ -285,7 +285,7 @@ export default function AdminNewsManager() {
       <div className="flex flex-col gap-3 pb-4 border-b border-black/5 dark:border-white/10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <div className="min-w-0">
-            <h2 className="text-xl sm:text-2xl font-black text-text-primary flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-black text-text-primary hidden items-center gap-2 md:flex">
               <Newspaper className="text-accent shrink-0" size={24} />
               <span className="truncate">Gestión de Noticias y Blog</span>
             </h2>

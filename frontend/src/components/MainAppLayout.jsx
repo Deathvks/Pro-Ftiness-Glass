@@ -12,6 +12,7 @@ import { useOfflineSync } from '../hooks/useOfflineSync';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { useSectionRoute } from '../hooks/useSectionNavigation';
 import { SETTINGS_SECTIONS } from '../config/settingsSections';
+import { ADMIN_SECTIONS } from '../config/adminSections';
 import { recoverFromChunkError, reloadAppWithoutStaleCache } from '../utils/appRecovery';
 import { initSocket } from '../services/socket';
 import * as userService from '../services/userService';
@@ -368,10 +369,9 @@ export default function MainAppLayout({
 }) {
   const { addToast } = useToast();
   const { section, closeSection } = useSectionRoute();
-  const inSection = !!section && ['settings', 'adminPanel'].includes(view);
-  const mobileTitle = view === 'settings'
-    ? SETTINGS_SECTIONS.find(item => item.id === section)?.label ?? currentTitle
-    : currentTitle;
+  const sections = view === 'adminPanel' ? ADMIN_SECTIONS : view === 'settings' ? SETTINGS_SECTIONS : null;
+  const activeSection = sections?.find(item => item.id === section);
+  const mobileTitle = activeSection?.label ?? currentTitle;
   useOfflineSync();
   const { activeTheme, accent } = useAppTheme();
   const isLevel20Accent = ['supernova', 'plasma', 'eternal-flame', 'abyssal-vortex', 'cosmic-gold'].includes(accent);
@@ -1425,9 +1425,9 @@ export default function MainAppLayout({
               {['settings', 'adminPanel', 'progress', 'appearance', 'support', 'socialLinks', 'challenges'].includes(view) ? (
                 <button
                   type="button"
-                  aria-label={inSection ? 'Volver a los apartados' : 'Volver'}
+                  aria-label={activeSection ? 'Volver a los apartados' : 'Volver'}
                   onClick={() => {
-                    if (inSection) closeSection();
+                    if (activeSection) closeSection();
                     else if (view === 'settings' && navParams?.returnView) navigate(navParams.returnView, navParams.returnParams);
                     else navigate('hub');
                   }}
@@ -1464,7 +1464,7 @@ export default function MainAppLayout({
                 {view !== 'dashboard' && (
                   <span
                     key={mobileTitle}
-                    className="text-2xl sm:text-3xl font-extrabold truncate text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary ml-1"
+                    className={`font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary ml-1 ${view === 'adminPanel' && activeSection ? 'text-xl leading-tight line-clamp-2' : 'text-2xl sm:text-3xl truncate'}`}
                   >
                     {mobileTitle}
                   </span>

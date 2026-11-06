@@ -465,7 +465,7 @@ export default function SettingsScreen({
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
-        {isMobile && !activeTab && <MobileSectionList id="tutorial-settings-tabs" label="Apartados de Ajustes" sections={SETTINGS_SECTIONS} onSelect={setActiveTab} compact />}
+        {isMobile && !activeTab && <MobileSectionList id="tutorial-settings-tabs" label="Apartados de Ajustes" sections={SETTINGS_SECTIONS} onSelect={setActiveTab} />}
         {!isMobile && <div id="tutorial-settings-tabs" className="hidden w-64 shrink-0 flex-col gap-2 py-1 px-1 md:sticky md:top-4 md:z-20 md:flex">
           {SETTINGS_SECTIONS.map(tab => (
             <button

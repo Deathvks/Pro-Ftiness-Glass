@@ -1,12 +1,12 @@
 /* frontend/src/pages/AdminPanel.jsx */
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Star,
+import {
   ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle, Check, Camera,
-  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw, ShieldAlert, Bell, Mail, Cloud,
-  Newspaper, Clock, ClipboardCheck
+  Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import MobileSectionList from '../components/MobileSectionList';
+import { ADMIN_SECTIONS } from '../config/adminSections';
 import { useSectionNavigation } from '../hooks/useSectionNavigation';
 import { lazyWithRetry } from '../utils/lazyWithRetry';
 import Spinner from '../components/Spinner';
@@ -39,20 +39,6 @@ const AdminNotificationTests = lazyWithRetry(() => import('./AdminNotificationTe
 const SecurityDashboard = lazyWithRetry(() => import('./SecurityDashboard'), 'adminSecurity');
 const AdminNewsManager = lazyWithRetry(() => import('../components/Admin/AdminNewsManager'), 'adminNews');
 const AdminRetentionRescue = lazyWithRetry(() => import('../components/Admin/AdminRetentionRescue'), 'adminRetention');
-
-const ADMIN_TABS = [
-  { id: 'users', label: 'Usuarios', icon: Users },
-  { id: 'retention', label: 'Retención 72h', icon: Clock },
-  { id: 'reports', label: 'Reportes', icon: Bug },
-  { id: 'exercises', label: 'Ejercicios', icon: Monitor },
-  { id: 'ratings', label: 'Valoraciones', icon: Star },
-  { id: 'notifications', label: 'Notificaciones', icon: Bell },
-  { id: 'emails', label: 'Correos', icon: Mail },
-  { id: 'notificationTests', label: 'Pruebas de correo y push', icon: ClipboardCheck },
-  { id: 'uploads', label: 'Subidas', icon: Cloud },
-  { id: 'news', label: 'Noticias', icon: Newspaper },
-  { id: 'security', label: 'Ciberseguridad', icon: ShieldAlert, danger: true },
-];
 
 const REPORT_CATEGORY_LABELS = {
   bug: 'Bug',
@@ -238,7 +224,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
     setGamificationData: state.setGamificationData
   })));
 
-  const { activeTab, isMobile, setActiveTab, closeSection } = useSectionNavigation(ADMIN_TABS, 'users', scrollRef, 'admin_active_tab');
+  const { activeTab, isMobile, setActiveTab, closeSection } = useSectionNavigation(ADMIN_SECTIONS, 'users', scrollRef, 'admin_active_tab');
   const showSystemControls = !isMobile || activeTab === 'users';
 
   const [reportPage, setReportPage] = useState(1);
@@ -734,8 +720,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
   }, [users, funnelRange]);
 
   return (
-    <div id="tutorial-admin-panel" className="w-full max-w-6xl mx-auto p-4 pb-24 md:p-6 lg:p-8 animate-[fade-in_0.5s_ease-out]">
-      {isMobile && activeTab && <h2 className="mb-4 text-xl font-extrabold text-text-primary md:hidden">{ADMIN_TABS.find(tab => tab.id === activeTab)?.label}</h2>}
+    <div id="tutorial-admin-panel" className="w-full max-w-6xl mx-auto px-4 py-2 md:p-6 lg:p-8 animate-[fade-in_0.5s_ease-out]">
       {showSystemControls && <div className="flex items-center justify-end gap-2 mb-6 sm:mb-8 md:justify-between md:gap-6">
         <div className="hidden items-center gap-4 md:flex">
           <button 
@@ -774,13 +759,13 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
         <MobileSectionList
           id="tutorial-admin-tabs"
           label="Apartados del panel Admin"
-          sections={ADMIN_TABS.map(tab => tab.id === 'reports' ? { ...tab, count: reports.length } : tab)}
+          sections={ADMIN_SECTIONS.map(tab => tab.id === 'reports' ? { ...tab, count: reports.length } : tab)}
           onSelect={setActiveTab}
         />
       )}
       {!isMobile && (
         <nav id="tutorial-admin-tabs" aria-label="Apartados del panel Admin" className="hidden flex-wrap gap-3 mb-8 px-1 pt-2 pb-4 md:flex">
-          {ADMIN_TABS.map(({ id, label, icon: Icon, danger }) => (
+          {ADMIN_SECTIONS.map(({ id, label, icon: Icon, danger }) => (
             <button
               key={id}
               type="button"
@@ -1491,7 +1476,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
           /* --- CONTENIDO PESTAÑA REPORTES --- */
           <>
             <div className="mb-8 text-left">
-              <h2 className="text-2xl font-extrabold text-text-primary mb-2">Reportes de Problemas</h2>
+              <h2 className="hidden text-2xl font-extrabold text-text-primary mb-2 md:block">Reportes de Problemas</h2>
               <p className="text-text-secondary font-medium text-sm">Feedback técnico enviado por los usuarios.</p>
             </div>
 
@@ -1615,7 +1600,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
             ) : activeTab === 'news' ? (
               <AdminNewsManager />
             ) : activeTab === 'security' ? (
-              <SecurityDashboard onBack={() => isMobile ? closeSection() : setActiveTab('users')} />
+              <SecurityDashboard hideMobileTitle onBack={() => isMobile ? closeSection() : setActiveTab('users')} />
             ) : null}
             </React.Suspense>
           </AdminTabErrorBoundary>

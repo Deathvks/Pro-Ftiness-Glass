@@ -24,7 +24,7 @@ const isValidIpAddress = (value) => {
   }
 };
 
-const SecurityDashboard = ({ onBack }) => {
+const SecurityDashboard = ({ onBack, hideMobileTitle = false }) => {
   const { addToast } = useToast();
   const [stats, setStats] = useState(() => cachedSecurityStats || { 
     totalLogs: 0, 
@@ -160,7 +160,7 @@ const SecurityDashboard = ({ onBack }) => {
     <div className="w-full animate-[fade-in_0.3s_ease-out]">
       <div className="flex flex-col gap-4 mb-6 w-full min-w-0">
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl md:text-2xl font-bold flex whitespace-nowrap tracking-tight items-center gap-2.5 text-text-primary">
+          <h2 className={`text-xl md:text-2xl font-bold whitespace-nowrap tracking-tight items-center gap-2.5 text-text-primary ${hideMobileTitle ? 'hidden md:flex' : 'flex'}`}>
             <i className="fa-solid fa-shield-halved text-accent text-2xl"></i>
             Ciberseguridad Avanzada
           </h2>

@@ -46,7 +46,7 @@ export default function AdminRatings() {
     return (
         <div className="w-full text-left">
             <div className="mb-6">
-                <h2 className="text-2xl font-extrabold text-text-primary mb-2">Valoraciones de la App</h2>
+                <h2 className="hidden text-2xl font-extrabold text-text-primary mb-2 md:block">Valoraciones de la App</h2>
                 <p className="text-text-secondary font-medium text-sm">Feedback general de los usuarios.</p>
             </div>
 

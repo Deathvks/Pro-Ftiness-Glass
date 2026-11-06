@@ -287,10 +287,10 @@ export default function AdminRetentionRescue() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 sm:p-6 rounded-[28px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
         <div className="space-y-1.5 min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="p-2.5 rounded-2xl bg-accent/15 text-accent ring-1 ring-accent/30 shrink-0">
+            <div className="hidden p-2.5 rounded-2xl bg-accent/15 text-accent ring-1 ring-accent/30 shrink-0 md:block">
               <Bell size={20} />
             </div>
-            <h2 className="text-lg sm:text-2xl font-black text-text-primary tracking-tight">
+            <h2 className="hidden text-lg sm:text-2xl font-black text-text-primary tracking-tight md:block">
               Rescate de Inactividad (Día 3 · +72h)
             </h2>
             <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
