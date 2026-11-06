@@ -1,6 +1,6 @@
 {
-  "version": "7.16.4",
-  "releaseNotes": "Actualización v7.16.4: ajustes de interfaz en el selector de categorías push.",
+  "version": "7.16.5",
+  "releaseNotes": "Actualización v7.16.5: selector de categorías unificado en las pruebas de correo y push.",
   "welcome": {
     "title": "Tú eliges tus notificaciones",
     "subtitle": "Configura por separado los correos y los avisos push en Ajustes → Notificaciones.",

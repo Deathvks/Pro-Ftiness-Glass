@@ -8,6 +8,9 @@ import { getCurrentPushEndpoint, getPushPreferences, getPushSubscriptionStatus }
 import { PUSH_OPTIONS } from '../config/pushConsent';
 import CustomSelect from '../components/CustomSelect';
 
+const EMAIL_TEST_CATEGORIES = { training: 'Entrenamiento', activity: 'Actividad', coaching: 'Asesoría' };
+const EMAIL_TEST_OPTIONS = Object.entries(EMAIL_TEST_CATEGORIES).map(([value, label]) => ({ value, label }));
+
 const PUSH_TEST_OPTIONS = [
   { value: 'service', label: 'Aviso de servicio' },
   ...PUSH_OPTIONS.map(({ purpose, title }) => ({ value: purpose, label: title })),
@@ -67,7 +70,6 @@ const EmailMailboxTest = () => {
 };
 
 const EmailUnsubscribeTest = ({ onOpenSettings }) => {
-  const categories = { training: 'Entrenamiento', activity: 'Actividad', coaching: 'Asesoría' };
   const [category, setCategory] = useState('training');
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(true);
@@ -102,7 +104,7 @@ const EmailUnsubscribeTest = ({ onOpenSettings }) => {
     try {
       const result = await sendEmailUnsubscribeTest(category, !status?.[category]);
       if (result.skipped) {
-        setRefreshMessage(`Bloqueo comprobado para ${categories[category].toLowerCase()}. No se envió ningún correo.`);
+        setRefreshMessage(`Bloqueo comprobado para ${EMAIL_TEST_CATEGORIES[category].toLowerCase()}. No se envió ningún correo.`);
       } else if (result.checkedOnly) {
         setRefreshMessage('La categoría está activa. Actualiza las preferencias y confirma la baja antes de repetir la comprobación.');
       } else {
@@ -139,17 +141,21 @@ const EmailUnsubscribeTest = ({ onOpenSettings }) => {
           )}
         </div>
       )}
-      <label className="block text-sm font-semibold text-text-primary">
-        Categoría
-        <select value={category} disabled={busy} onChange={event => {
-          setCategory(event.target.value);
-          setSentTo(null);
-          setRefreshMessage('');
-          setError(null);
-        }} className="mt-1 block w-full max-w-xs rounded-xl border border-glass-border bg-bg-secondary p-2 text-sm">
-          {Object.entries(categories).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-        </select>
-      </label>
+      <div className="w-full max-w-xs space-y-1">
+        <label htmlFor="email-unsubscribe-test-category" className="block text-sm font-semibold text-text-primary">Categoría</label>
+        <CustomSelect
+          id="email-unsubscribe-test-category"
+          value={category}
+          options={EMAIL_TEST_OPTIONS}
+          onChange={value => {
+            setCategory(value);
+            setSentTo(null);
+            setRefreshMessage('');
+            setError(null);
+          }}
+          disabled={busy}
+        />
+      </div>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
