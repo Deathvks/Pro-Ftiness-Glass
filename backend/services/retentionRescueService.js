@@ -476,12 +476,11 @@ export const dispatchRetentionRescueForUser = async (userItem, { triggerType = '
   let emailStatus = userItem.email ? 'error' : 'skipped';
   let emailError = null;
 
-  const sentStartTime = new Date();
-
   // 1. Enviar Notificación In-App + Push
   try {
-    await createNotification(userItem.id, {
+    const delivery = await createNotification(userItem.id, {
       type: 'retention_rescue_72h',
+      pushPurpose: 'training',
       title: userItem.previewTitle,
       message: userItem.previewMessage,
       data: {
@@ -489,30 +488,9 @@ export const dispatchRetentionRescueForUser = async (userItem, { triggerType = '
         segment: userItem.segment,
       },
     });
-    inAppStatus = 'success';
-
-    if (userItem.hasPushSubscription && db.PushDeliveryLog) {
-      const recentPushLogs = await db.PushDeliveryLog.findAll({
-        where: {
-          user_id: userItem.id,
-          title: userItem.previewTitle,
-          created_at: { [Op.gte]: new Date(sentStartTime.getTime() - 15000) },
-        },
-        order: [['created_at', 'DESC']],
-      });
-
-      const anySuccess = recentPushLogs.some(l => l.status === 'success');
-      const failedLog = recentPushLogs.find(l => l.status === 'error');
-
-      if (anySuccess) {
-        pushStatus = 'success';
-      } else if (failedLog) {
-        pushStatus = 'error';
-        pushError = failedLog.error_message || 'Error entregando notificación push';
-      } else {
-        pushStatus = 'no_subscription';
-      }
-    }
+    inAppStatus = delivery.inAppSaved ? 'success' : 'error';
+    pushStatus = delivery.pushStatus;
+    if (pushStatus === 'error') pushError = 'Error en el servicio de notificaciones';
   } catch (err) {
     pushStatus = 'error';
     pushError = err.message || 'Error en servicio de notificaciones';

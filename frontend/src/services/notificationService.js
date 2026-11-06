@@ -1,5 +1,7 @@
 /* frontend/src/services/notificationService.js */
 import apiClient from './apiClient';
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
 
 /* =========================================
    SECCIÓN 1: PUSH NOTIFICATIONS (VAPID)
@@ -21,6 +23,7 @@ export const subscribeToPush = (subscription) => {
   return apiClient('/notifications/subscribe', {
     method: 'POST',
     body: subscription,
+    queueWhenOffline: false,
   });
 };
 
@@ -32,8 +35,47 @@ export const unsubscribeFromPush = (endpoint) => {
   return apiClient('/notifications/unsubscribe', {
     method: 'POST',
     body: { endpoint },
+    queueWhenOffline: false,
   });
 };
+
+export const clearDevicePush = async () => {
+  if (Capacitor.isNativePlatform()) {
+    if (!localStorage.getItem('native_push_token')) return;
+    await PushNotifications.unregister();
+    localStorage.removeItem('native_push_subscribed');
+    localStorage.removeItem('native_push_token');
+  } else if ('serviceWorker' in navigator) {
+    const registration = await navigator.serviceWorker.getRegistration();
+    const subscription = await registration?.pushManager?.getSubscription();
+    await subscription?.unsubscribe();
+  }
+};
+
+export const getCurrentPushEndpoint = async () => {
+  if (Capacitor.isNativePlatform()) {
+    const token = localStorage.getItem('native_push_token');
+    const permission = await PushNotifications.checkPermissions();
+    return token && permission.receive === 'granted' ? `fcm://${token}` : null;
+  }
+  if (!('serviceWorker' in navigator) || !('Notification' in window) || Notification.permission !== 'granted') return null;
+  const registration = await navigator.serviceWorker.getRegistration();
+  return (await registration?.pushManager?.getSubscription())?.endpoint ?? null;
+};
+
+export const getPushPreferences = () => apiClient('/notifications/push-preferences', { cache: 'no-store' });
+
+export const getPushSubscriptionStatus = endpoint => apiClient('/notifications/subscription-status', {
+  method: 'POST',
+  body: { endpoint },
+  queueWhenOffline: false
+});
+
+export const updatePushPreferences = (purpose, granted, version) => apiClient('/notifications/push-preferences', {
+  method: 'PUT',
+  body: { purpose, granted, version },
+  queueWhenOffline: false
+});
 
 /* =========================================
    SECCIÓN 2: NOTIFICACIONES INTERNAS (App)

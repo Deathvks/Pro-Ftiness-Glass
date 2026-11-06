@@ -11,14 +11,13 @@ import {
   Filter, ChevronDown, ChevronRight, Loader2, Smartphone, Globe, Clock, Shield, ChevronLeft,
   UserPlus, Users, Zap, Award, Settings, MessageCircle
 } from 'lucide-react';
-import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import GlassCard from '../components/GlassCard';
 
 // --- Imports de Modales Separados ---
 import DeleteNotificationModal from '../components/DeleteNotificationModal';
 import DeleteAllNotificationsModal from '../components/DeleteAllNotificationsModal';
-import { useLocalNotifications } from '../hooks/useLocalNotifications';
+import { cancelLocalReminders, localReminderKey, useLocalNotifications } from '../hooks/useLocalNotifications';
 
 // --- Utilidad para fechas Robustecida ---
 const parseDateSafe = (dateStr) => {
@@ -102,33 +101,27 @@ const ToggleSwitch = ({ checked, onChange, label, description }) => (
 );
 
 // --- Sub-componente: Modal de Configuración ---
-const NotificationSettingsModal = ({ onClose, scheduleEngagement, scheduleDaily }) => {
-  const [engagement, setEngagement] = useState(() => localStorage.getItem('notif_engagement') !== 'false');
-  const [daily, setDaily] = useState(() => localStorage.getItem('notif_daily') !== 'false');
+const NotificationSettingsModal = ({ onClose, userId }) => {
+  const { requestPermissions, scheduleEngagementNotifications, scheduleDailyReminders } = useLocalNotifications();
+  const { addToast } = useToast();
+  const [engagement, setEngagement] = useState(() => localStorage.getItem(localReminderKey(userId, 'engagement')) === 'true');
+  const [daily, setDaily] = useState(() => localStorage.getItem(localReminderKey(userId, 'daily')) === 'true');
 
-  const handleEngagementChange = async (val) => {
-    setEngagement(val);
-    localStorage.setItem('notif_engagement', val);
-    if (Capacitor.isNativePlatform()) {
-      if (val) {
-        await scheduleEngagement();
-      } else {
-        const pending = await LocalNotifications.getPending();
-        const ids = pending.notifications.filter(n => n.id >= 2000 && n.id < 2100).map(n => ({ id: n.id }));
-        if (ids.length) await LocalNotifications.cancel({ notifications: ids });
-      }
+  const changeReminder = async (category, enabled) => {
+    if (enabled && !(await requestPermissions())) {
+      addToast('El dispositivo no ha concedido el permiso de notificaciones.', 'warning');
+      return;
     }
-  };
+    localStorage.setItem(localReminderKey(userId, category), String(enabled));
+    if (category === 'engagement') setEngagement(enabled);
+    else setDaily(enabled);
 
-  const handleDailyChange = async (val) => {
-    setDaily(val);
-    localStorage.setItem('notif_daily', val);
-    if (Capacitor.isNativePlatform()) {
-      if (val) {
-        await scheduleDaily();
-      } else {
-        await LocalNotifications.cancel({ notifications: [{ id: 1001 }, { id: 1002 }] });
-      }
+    if (!enabled) {
+      await cancelLocalReminders({ engagement: category === 'engagement', daily: category === 'daily' });
+    } else if (category === 'engagement') {
+      await scheduleEngagementNotifications();
+    } else {
+      await scheduleDailyReminders();
     }
   };
 
@@ -146,13 +139,13 @@ const NotificationSettingsModal = ({ onClose, scheduleEngagement, scheduleDaily 
         <div className="bg-black/5 dark:bg-white/5 rounded-[24px] p-5 space-y-1">
           <ToggleSwitch 
             checked={engagement} 
-            onChange={handleEngagementChange} 
+            onChange={enabled => changeReminder('engagement', enabled)}
             label="Motivación Diaria" 
             description="Frases, consejos y recordatorios de hidratación."
           />
           <ToggleSwitch 
             checked={daily} 
-            onChange={handleDailyChange} 
+            onChange={enabled => changeReminder('daily', enabled)}
             label="Recordatorios Rutinarios" 
             description="Avisos para registrar comidas y login diario."
           />
@@ -279,8 +272,6 @@ const NotificationsScreen = ({ setView }) => {
      clearAllNotifications: state.clearAllNotifications,
      userProfile: state.userProfile
    })));
-
-  const { scheduleEngagementNotifications, scheduleDailyReminders } = useLocalNotifications();
 
   const { addToast } = useToast();
   const [activeFilter, setActiveFilter] = useState('all');
@@ -458,11 +449,10 @@ const NotificationsScreen = ({ setView }) => {
         />
       )}
 
-      {showSettings && (
+      {showSettings && userProfile?.id && (
         <NotificationSettingsModal 
           onClose={() => setShowSettings(false)}
-          scheduleEngagement={scheduleEngagementNotifications}
-          scheduleDaily={scheduleDailyReminders}
+          userId={userProfile.id}
         />
       )}
 
@@ -536,6 +526,10 @@ const NotificationsScreen = ({ setView }) => {
           </div>
         )}
       </div>
+
+      <button type="button" onClick={() => setView?.('settings', { highlight: 'notifications', returnView: 'notifications' })} className="mb-4 text-xs font-semibold text-accent hover:underline">
+        Gestionar notificaciones push
+      </button>
 
       {/* Filtros Píldoras Flotantes sin bordes */}
       {hasNotifications && (

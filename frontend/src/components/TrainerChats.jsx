@@ -309,6 +309,12 @@ export default function TrainerChats({ onClose }) {
     try {
       const { client, level, type } = resendConfirmData;
       const res = await apiClient('/chat/trainer/bot-reminder-resend/' + client.id + '/' + level + '?type=' + type, { method: 'POST' });
+      const deliveryStatus = res.status?.[type];
+      if (deliveryStatus !== 'ok') {
+        addToast(deliveryStatus === 'skipped' ? 'Omitido por las preferencias del destinatario.' : deliveryStatus === 'no_subscription' ? 'El destinatario no tiene push activo.' : 'No se pudo entregar el aviso.', 'warning');
+        setResendConfirmData(null);
+        return;
+      }
       
       // Update local state so it immediately says "Enviado Manualmente"
       setClients(prev => prev.map(c => {
@@ -359,9 +365,9 @@ export default function TrainerChats({ onClose }) {
       const statuses = response.status;
       
       addToast(
-        'Push: ' + (statuses.push === 'ok' ? 'OK' : 'Error') + ' | ' +
+        'Push: ' + (statuses.push === 'ok' ? 'OK' : statuses.push === 'skipped' ? 'Omitido' : statuses.push === 'no_subscription' ? 'Sin suscripción' : 'Error') + ' | ' +
         'App: ' + (statuses.notification === 'ok' ? 'OK' : 'Error') + ' | ' +
-        'Email: ' + (statuses.email === 'ok' ? 'OK' : 'Error'),
+        'Email: ' + (statuses.email === 'ok' ? 'OK' : statuses.email === 'skipped' ? 'Omitido' : 'Error'),
         'success'
       );
 
@@ -1234,7 +1240,7 @@ export default function TrainerChats({ onClose }) {
           title={!isPushOk ? "Toca para reenviar solo el Push" : (pushStatus === 'manual_ok' ? "Push reenviado manualmente" : "Push enviado correctamente")}
         >
           {!isPushOk ? (
-            <><BellAlertIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Push Error ✕</span></>
+            <><BellAlertIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">{pushStatus === 'skipped' ? 'Push omitido' : pushStatus === 'no_subscription' ? 'Sin push activo' : 'Push Error ✕'}</span></>
           ) : (
             <><BellAlertIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">{pushStatus === 'manual_ok' ? 'Push Manual ✓' : 'Push ✓'}</span></>
           )}
@@ -1249,7 +1255,7 @@ export default function TrainerChats({ onClose }) {
           title={!isEmailOk ? "Toca para reenviar solo el Correo" : (emailStatus === 'manual_ok' ? "Correo reenviado manualmente" : "Correo enviado correctamente")}
         >
           {!isEmailOk ? (
-            <><EnvelopeIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Email Error ✕</span></>
+            <><EnvelopeIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">{emailStatus === 'skipped' ? 'Correo omitido' : 'Email Error ✕'}</span></>
           ) : (
             <><EnvelopeIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">{emailStatus === 'manual_ok' ? 'Email Manual ✓' : 'Email ✓'}</span></>
           )}

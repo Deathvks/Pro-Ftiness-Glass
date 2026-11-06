@@ -72,15 +72,15 @@ const runBot = async () => {
               let emailStat = 'error';
   
               try {
-                await createNotification(prospect.id, {
-                  type: 'chat_message', title: title, message: text, action_url: '/social'
+                const delivery = await createNotification(prospect.id, {
+                  type: 'chat_message', title: title, message: text, data: { url: '/asesoria' }, pushPurpose: 'coaching'
                 });
-                pushStat = 'ok';
+                pushStat = delivery.pushStatus === 'success' ? 'ok' : delivery.pushStatus;
               } catch(e) {}
   
               try {
-                await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, nextLevel);
-                emailStat = 'ok';
+                const delivery = await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, nextLevel);
+                emailStat = delivery?.skipped ? 'skipped' : 'ok';
               } catch(e) { console.error('[Script] Error email bot', e); }
   
               newMsg.bot_push_status = pushStat;

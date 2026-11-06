@@ -117,7 +117,7 @@ const PrivacyPolicy = ({ onBack }) => {
                       Avisos de actividad por correo
                     </span>
                     <div className="text-text-secondary font-medium leading-relaxed">
-                      Te avisamos cuando hay nuevos mensajes en el chat de asesoría o se te asigna una asesoría. Estos avisos están activados por defecto. El correo puede indicar el nombre de la otra persona. El contenido del chat se consulta dentro de la aplicación. Puedes desactivar estos avisos en Ajustes, en la sección Notificaciones, o mediante su enlace de baja.
+                      Si has verificado tu dirección, te avisamos cuando hay nuevos mensajes en el chat de asesoría o se te asigna una asesoría. Estos avisos están activados por defecto. El contenido del chat y los nombres se consultan dentro de la aplicación. Puedes desactivar estos avisos en Ajustes, en la sección Notificaciones, o mediante su enlace de baja.
                     </div>
                   </div>
 
@@ -328,9 +328,12 @@ const PrivacyPolicy = ({ onBack }) => {
                 </div>
                 <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">Notificaciones</h2>
               </div>
-              <p className="text-text-secondary font-medium text-sm leading-relaxed mb-5">
-                Solo te avisaremos para ayudarte a cumplir tus metas. Puedes desactivarlas cuando quieras desde los ajustes.
-              </p>
+              <div className="space-y-3 text-text-secondary font-medium text-sm leading-relaxed mb-5">
+                <p>En Ajustes → Notificaciones puedes activar los avisos push en cada dispositivo para recibir avisos de cuenta, seguridad y actividad de la app. Tratamos la suscripción para ofrecer el canal que eliges. Puedes desactivar el dispositivo desde Ajustes o retirar el permiso en el navegador o sistema operativo.</p>
+                <p>Los recordatorios de entrenamiento, el seguimiento promocional de asesoría y las novedades por push se basan en tu consentimiento. Puedes elegir cada categoría por separado. Inicialmente están desactivadas. Guardamos la categoría, la versión del aviso y la fecha de tu elección para acreditarla. Puedes retirar cada permiso desde Ajustes → Notificaciones. El correo tiene sus propias preferencias.</p>
+                <p>Para entregar el aviso usamos un identificador de suscripción o token y, en la web, claves de cifrado. En Android el envío remoto se realiza con Firebase Cloud Messaging (Google). En la web interviene el servicio de notificaciones del navegador, como los de Google, Mozilla, Apple o Microsoft. El aviso del dispositivo muestra un texto genérico. Los detalles del chat o de seguridad se consultan dentro de la app.</p>
+                <p>Una tarea diaria borra los registros técnicos de entrega con más de 30 días. Al desactivar el push desde la app eliminamos la suscripción de ese dispositivo. También retiramos las suscripciones que el proveedor confirma que han caducado. Los recordatorios locales de Android se programan en el propio dispositivo cuando los activas.</p>
+              </div>
               <div className="flex flex-wrap gap-2.5">
                 <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-[10px] text-text-secondary ring-1 ring-black/5 dark:ring-white/10 shadow-sm">Recordatorios</span>
                 <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-[10px] text-text-secondary ring-1 ring-black/5 dark:ring-white/10 shadow-sm">Temporizador</span>

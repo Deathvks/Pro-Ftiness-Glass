@@ -118,11 +118,23 @@ export const getEmailStats = (params = {}) => {
 
 export const getEmailUnsubscribeTestStatus = () => apiClient('/admin/email-unsubscribe-test', { cache: 'no-store' });
 
-export const sendEmailUnsubscribeTest = () => apiClient('/admin/email-unsubscribe-test', {
+export const sendEmailUnsubscribeTest = (category, checkOnly) => apiClient('/admin/email-unsubscribe-test', {
     method: 'POST',
-    body: {},
+    body: { category, checkOnly },
     queueWhenOffline: false,
     timeout: 30000
+});
+
+export const getNotificationTestStatus = () => apiClient('/admin/notification-tests/status', { cache: 'no-store' });
+
+export const getNotificationReview = () => apiClient('/admin/notification-tests/review', { cache: 'no-store' });
+
+export const updateNotificationReview = (check, reviewed) => apiClient('/admin/notification-tests/review', {
+    method: 'PUT', body: { check, reviewed }, queueWhenOffline: false
+});
+
+export const sendPushDeviceTest = (endpoint, purpose) => apiClient('/admin/notification-tests/push', {
+    method: 'POST', body: { endpoint, purpose }, queueWhenOffline: false, timeout: 30000
 });
 
 export const sendEmailMailboxTest = () => apiClient('/admin/email-mailbox-test', {

@@ -1,6 +1,7 @@
 /* frontend/src/store/authSlice.js */
 import * as authService from '../services/authService';
 import * as userService from '../services/userService';
+import { clearDevicePush } from '../services/notificationService';
 import { APP_VERSION, CURRENT_WELCOME_TITLE, hasSeenCurrentWelcome, isNewerVersion } from '../config/version';
 
 const CACHE_VERSION_KEY = 'pfg_cache_version';
@@ -302,6 +303,7 @@ export const createAuthSlice = (set, get) => {
 
     // Cierra sesión (LOGOUT MANUAL)
     handleLogout: () => {
+        if (get().isAuthenticated) void clearDevicePush().catch(() => console.warn('No se pudo desvincular el dispositivo push.'));
         clearAuthStorage();
         // MODIFICACIÓN: No limpiamos el estado del workout para que persista
         // get().clearWorkoutState(); 

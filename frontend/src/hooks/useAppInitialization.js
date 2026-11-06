@@ -1,8 +1,7 @@
 /* frontend/src/hooks/useAppInitialization.js */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
-import { LocalNotifications } from '@capacitor/local-notifications';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -39,7 +38,7 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
 
   // --- NUEVO: Estados para el modal global de permisos ---
   const [showGlobalPermissionModal, setShowGlobalPermissionModal] = useState(false);
-  const [missingPermissionName, setMissingPermissionName] = useState('');
+  const [missingPermissionName] = useState('');
 
   const {
     isAuthenticated,
@@ -62,32 +61,6 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
   useEffect(() => {
     checkCookieConsent();
   }, [checkCookieConsent]);
-
-  // --- LÓGICA DE PERMISOS NO INTRUSIVA ---
-  const checkAndRequestPermissions = useCallback(async () => {
-    if (!isAuthenticated || Capacitor.getPlatform() !== 'android') return;
-
-    // Solo pedimos las notificaciones nativas si el estado es 'prompt' (nunca preguntado).
-    // Si el usuario las denegó, simplemente lo respetamos y NO bloqueamos la app.
-    try {
-      let notifStatus = await LocalNotifications.checkPermissions();
-      if (notifStatus.display === 'prompt') {
-        await LocalNotifications.requestPermissions();
-      }
-    } catch (e) { 
-      console.warn("Error Notificaciones:", e); 
-    }
-
-    // Aseguramos que el modal bloqueante nunca atrape al usuario al inicio.
-    // La cámara y el GPS deben pedirse de forma individual cuando vayan a usarse en su sección.
-    setShowGlobalPermissionModal(false);
-    setMissingPermissionName('');
-  }, [isAuthenticated]);
-
-  // Ejecutamos la comprobación al cargar si está autenticado
-  useEffect(() => {
-    checkAndRequestPermissions();
-  }, [checkAndRequestPermissions]);
 
   useEffect(() => {
     const resolveTargetView = (profile, activeWorkout) => {
@@ -265,9 +238,7 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
         // Al volver a la app, limpiamos la notificación
         if (NativeTimer) NativeTimer.stopTimer().catch(() => {});
         
-        // Volvemos a comprobar los permisos (silenciosamente) por si los activó en ajustes
         if (isAuthenticated) {
-            checkAndRequestPermissions();
             // Refetch unread counts just in case we received messages while in the background
             const state = useAppStore.getState();
             if (state.fetchUnreadChats) {
@@ -282,7 +253,7 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
     return () => {
       listener.then(l => l.remove());
     };
-  }, [isAuthenticated, checkAndRequestPermissions]);
+  }, [isAuthenticated]);
 
   return {
     isInitialLoad,

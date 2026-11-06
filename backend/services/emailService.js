@@ -74,15 +74,16 @@ const findOptionalEmailRecipient = (email, userId) => db.User.findOne({
   attributes: ['id', 'email', 'is_verified', 'email_activity_notifications', 'email_marketing_consent', 'email_coaching_consent']
 });
 
+export const canSendOptionalEmail = async (user, category) => {
+  if (!user?.is_verified || !user.email || /@(?:x-auth\.local|profitnessglass\.internal)$/i.test(user.email)) return false;
+  return category === 'activity' ? !!user.email_activity_notifications : canSendPromotionalEmail(user, category);
+};
+
 const sendOptionalMailAndLog = async (mailOptions, purpose, userId) => {
   const recipientEmail = Array.isArray(mailOptions.to) ? mailOptions.to[0]?.address : mailOptions.to;
   const user = recipientEmail ? await findOptionalEmailRecipient(recipientEmail, userId) : null;
 
-  if (!user) return { success: true, skipped: true };
-
-  const allowed = purpose
-    ? await canSendPromotionalEmail(user, purpose)
-    : user.email_activity_notifications;
+  const allowed = await canSendOptionalEmail(user, purpose ?? 'activity');
   if (!allowed) return { success: true, skipped: true };
 
   const token = createEmailUnsubscribeToken({ userId: user.id, email: user.email, category: purpose ?? 'activity' });
@@ -119,6 +120,13 @@ const sendOptionalMailAndLog = async (mailOptions, purpose, userId) => {
     }
   });
 };
+
+export const sendEmailPreferenceTest = ({ userId, email, category, label }) => sendOptionalMailAndLog({
+  from: process.env.EMAIL_USER,
+  to: email,
+  subject: `Prueba de baja de correo · ${label}`,
+  html: `<p>Has pedido esta prueba desde el panel de administración. Usa el enlace al pie del correo para desactivar los avisos de ${label} en tu cuenta.</p>`
+}, category === 'activity' ? null : category, userId);
 
 // Generar código de verificación
 export const generateVerificationCode = () => {
@@ -243,18 +251,18 @@ export const sendLoginAlertEmail = async (email, { ip, userAgent, token }) => {
     return { success: false, message: 'Error al enviar alerta.' };
   }
 };
-export const sendChatReplyEmail = async (email, senderName) => {
+export const sendChatReplyEmail = async email => {
   const loginUrl = `${process.env.FRONTEND_URL}/login`;
   
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
-    subject: `Nuevo mensaje de ${senderName} en Pro Fitness Glass`,
+    subject: 'Tienes un nuevo mensaje en Pro Fitness Glass',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
         <h2 style="color: #4F46E5;">¡Tienes una nueva respuesta!</h2>
         <p>Hola,</p>
-        <p>Tu entrenador (<strong>${senderName}</strong>) te ha enviado un nuevo mensaje en el chat de asesoría.</p>
+        <p>Tienes un nuevo mensaje en el chat de asesoría.</p>
         <p>Por motivos de privacidad, entra en la aplicación para leerlo y responder.</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${loginUrl}" style="background: #4F46E5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
@@ -275,18 +283,18 @@ export const sendChatReplyEmail = async (email, senderName) => {
   }
 };
 
-export const sendNewClientMessageEmail = async (email, clientName) => {
+export const sendNewClientMessageEmail = async email => {
   const loginUrl = `${process.env.FRONTEND_URL}/login`;
   
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
-    subject: `Nuevo mensaje de ${clientName} en Pro Fitness Glass`,
+    subject: 'Tienes un nuevo mensaje en Pro Fitness Glass',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
         <h2 style="color: #4F46E5;">Nuevo mensaje de asesoría</h2>
         <p>Hola,</p>
-        <p>El cliente <strong>${clientName}</strong> te ha enviado un nuevo mensaje.</p>
+        <p>Tienes un nuevo mensaje de asesoría.</p>
         <p>Entra en el panel de administración o entrenador para leerlo y responder.</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${loginUrl}" style="background: #4F46E5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
@@ -306,18 +314,18 @@ export const sendNewClientMessageEmail = async (email, clientName) => {
   }
 };
 
-export const sendCoachingLinkedEmail = async (email, trainerName) => {
+export const sendCoachingLinkedEmail = async email => {
   const loginUrl = `${process.env.FRONTEND_URL}/login`;
   
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
-    subject: `¡Has sido añadido a una asesoría en Pro Fitness Glass!`,
+    subject: 'Tienes una actualización en Pro Fitness Glass',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
         <h2 style="color: #4F46E5;">Nueva Asesoría Asignada</h2>
         <p>Hola,</p>
-        <p>El entrenador <strong>${trainerName}</strong> te ha añadido a su programa de asesoría en Pro Fitness Glass.</p>
+        <p>Se te ha asignado una asesoría en Pro Fitness Glass.</p>
         <p>A partir de ahora podrás ver tus rutinas, dietas y hablar con tu entrenador directamente en la app.</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${loginUrl}" style="background: #4F46E5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
@@ -406,7 +414,7 @@ export const sendBugReportResolvedEmail = async (email, userName, reportSubject)
 
 export const sendRetentionRescueEmail = async ({ userId, email, userName, loadPayload }) => {
   const recipient = await findOptionalEmailRecipient(email, userId);
-  if (!recipient || !(await canSendPromotionalEmail(recipient, 'training'))) {
+  if (!(await canSendOptionalEmail(recipient, 'training'))) {
     return { success: true, skipped: true };
   }
 

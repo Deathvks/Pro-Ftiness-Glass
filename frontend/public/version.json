@@ -1,21 +1,21 @@
 {
-  "version": "7.15.1",
-  "releaseNotes": "Actualización v7.15.1: conoce las nuevas direcciones de Pro Fitness Glass y elige qué correos quieres recibir.",
+  "version": "7.16.0",
+  "releaseNotes": "Actualización v7.16.0: preferencias independientes para correo y push, y avisos con más privacidad.",
   "welcome": {
-    "title": "Nuevos correos y preferencias",
-    "subtitle": "Los mensajes de tu cuenta llegan desde nuestro propio dominio y puedes elegir qué avisos y recordatorios quieres recibir.",
+    "title": "Tú eliges tus notificaciones",
+    "subtitle": "Configura por separado los correos y los avisos push en Ajustes → Notificaciones.",
     "features": [
       {
-        "title": "Registro y seguridad de tu cuenta",
-        "description": "Recibirás los códigos de verificación, los enlaces para recuperar tu contraseña y las alertas de seguridad aunque dejes desactivados los correos opcionales."
+        "title": "Avisos de servicio",
+        "description": "El push de cada dispositivo te avisa de novedades en tu cuenta o asesoría. Los detalles del chat y de seguridad se consultan dentro de la app."
       },
       {
-        "title": "Recordatorios a tu elección",
-        "description": "Puedes activar por separado los recordatorios de entrenamiento y asesoría al registrarte o más adelante en Ajustes → Notificaciones."
+        "title": "Elige qué push recibir",
+        "description": "Puedes activar por separado los recordatorios de entrenamiento, el seguimiento de asesoría y las novedades. También puedes retirar cada permiso en Ajustes."
       },
       {
-        "title": "Avisos de actividad y bajas",
-        "description": "Puedes desactivar los correos sobre mensajes y cambios de asesoría en Ajustes → Notificaciones. Cada correo opcional incluye un enlace para darte de baja de su categoría."
+        "title": "Recordatorios por correo",
+        "description": "En el resumen de tu primer entrenamiento o al iniciar una consulta de asesoría puedes ver la opción de activar el seguimiento por correo. Ajustes reúne todas las preferencias."
       },
       {
         "title": "Nuevas direcciones de correo",

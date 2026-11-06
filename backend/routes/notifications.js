@@ -4,6 +4,7 @@ import express from 'express';
 import { param } from 'express-validator';
 import notificationController from '../controllers/notificationController.js';
 import authenticateToken from '../middleware/authenticateToken.js';
+import authorizeAdmin from '../middleware/authorizeAdmin.js';
 
 const router = express.Router();
 
@@ -20,6 +21,10 @@ router.get(
   '/vapid-key',
   notificationController.getVapidKey
 );
+
+router.get('/push-preferences', authenticateToken, notificationController.getPushPreferences);
+router.put('/push-preferences', authenticateToken, notificationController.updatePushPreferences);
+router.post('/subscription-status', authenticateToken, notificationController.subscriptionStatus);
 
 /**
  * @route   POST /api/notifications/subscribe
@@ -60,6 +65,7 @@ const validateId = [
 router.post(
   '/',
   authenticateToken,
+  authorizeAdmin,
   notificationController.create
 );
 

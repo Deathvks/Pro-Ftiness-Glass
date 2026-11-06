@@ -305,6 +305,8 @@ const Workout = ({ timer, setView, navParams }) => {
 
     const handleReviewConfirm = async () => {
         setIsSaving(true);
+        const isFirstWorkout = workoutLog.length === 0 &&
+            !useAppStore.getState().gamification.unlockedBadges?.includes('first_workout');
         
         const workoutData = {
             routineId: activeWorkout.routineId,
@@ -367,6 +369,7 @@ const Workout = ({ timer, setView, navParams }) => {
             setShowReviewModal(false);
             setCompletedWorkoutData({
                 ...workoutData,
+                isFirstWorkout,
                 newPRs: result.newPRs || []
             });
             setShowWorkoutSummaryModal(true);
@@ -553,6 +556,7 @@ const Workout = ({ timer, setView, navParams }) => {
             {showWorkoutSummaryModal && completedWorkoutData && (
                 <WorkoutSummaryModal
                     workoutData={completedWorkoutData}
+                    showReminderOffer={completedWorkoutData.isFirstWorkout}
                     onClose={async () => {
                         setShowWorkoutSummaryModal(false);
                         setCompletedWorkoutData(null);

@@ -3,7 +3,6 @@ import cron from 'node-cron';
 import { Op } from 'sequelize';
 import axios from 'axios';
 import db from '../models/index.js';
-import pushService from './pushService.js';
 import { createNotification } from './notificationService.js';
 import { cleanOrphanedImages, deleteFile } from './imageService.js';
 import { sendBotReminderEmail } from './emailService.js';
@@ -45,7 +44,8 @@ const notifyUser = async (userId, payload) => {
       type: 'info',
       title: payload.title,
       message: payload.body,
-      data: { url: payload.url }
+      data: { url: payload.url },
+      pushPurpose: payload.pushPurpose ?? null
     });
   } catch (error) {
     console.error(`[Cron] Error notificando a ${userId}:`, error.message);
@@ -97,7 +97,8 @@ const checkNewUserRatingPrompt = () => {
           type: 'app_rating_prompt',
           title: '¿Qué te parece Pro Fitness Glass?',
           message: 'Ya llevas 24 horas con la app. Cuando vuelvas, cuéntanos qué te parece.',
-          data: { url: '/', action: 'open_rating_prompt' }
+          data: { url: '/', action: 'open_rating_prompt' },
+          pushPurpose: null
         });
       }
     } catch (error) {
@@ -240,6 +241,7 @@ const checkTrainingReminder = () => {
             title: '¡Es hora de moverse!',
             body: '¿Listo para tu entrenamiento de hoy? ¡Vamos a por ello!',
             url: '/routines',
+            pushPurpose: 'training'
           })
         ));
       }
@@ -366,7 +368,8 @@ const checkStreakWars = () => {
         await notifyUser(dangerUser.id, {
           title: '🔥 ¡Tu racha está en peligro!',
           body: `Llevas una racha de ${dangerUser.streak} ${dangerUser.streak === 1 ? 'día' : 'días'} y aún no has entrenado hoy. ¡Completa tu entrenamiento antes de que acabe el día para no perderla!`,
-          url: '/routines'
+          url: '/routines',
+          pushPurpose: 'training'
         });
 
         const [friendships, squadMemberships] = await Promise.all([
@@ -455,7 +458,8 @@ const resetInactiveStreaks = () => {
           notifyUser(user.id, {
             title: '💔 Racha perdida',
             body: `Has perdido tu racha de ${oldStreak} ${oldStreak === 1 ? 'día' : 'días'} por no haber entrenado. ¡Hoy es un buen día para empezar de nuevo!`,
-            url: '/routines'
+            url: '/routines',
+            pushPurpose: 'training'
           }).catch(err => console.error(`[Cron] Error notificando pérdida de racha a ${user.id}:`, err.message));
         }
       }));
@@ -507,7 +511,7 @@ const checkChatBotReminders = () => {
         // Esto define el inicio del ciclo actual de inactividad.
         const lastNonBotMsg = await Message.findOne({
           where: {
-            ...threadWhere,
+            [Op.and]: [threadWhere],
             is_closed: { [Op.not]: true },
             [Op.or]: [
               { attachment_type: null },
@@ -615,15 +619,15 @@ const checkChatBotReminders = () => {
           let emailStat = 'error';
 
           try {
-            await createNotification(prospect.id, {
-              type: 'chat_message', title: title, message: text, action_url: '/social'
+            const delivery = await createNotification(prospect.id, {
+              type: 'chat_message', title: title, message: text, data: { url: '/asesoria' }, pushPurpose: 'coaching'
             });
-            pushStat = 'ok';
+            pushStat = delivery.pushStatus === 'success' ? 'ok' : delivery.pushStatus;
           } catch(e) {}
 
           try {
-            await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, nextLevel);
-            emailStat = 'ok';
+            const delivery = await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, nextLevel);
+            emailStat = delivery?.skipped ? 'skipped' : 'ok';
           } catch(e) { console.error('[Cron] Error email bot', e); }
 
           newMsg.bot_push_status = pushStat;
@@ -762,6 +766,14 @@ export const startCronJobs = () => {
   checkInactivityRescue(); // <-- Detector de abandono temprano y rescate +72h
   scheduleDailyNewsAutomation();
   syncStaleLocalFoods();
+  cron.schedule('40 3 * * *', async () => {
+    try {
+      const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      await db.PushDeliveryLog.destroy({ where: { created_at: { [Op.lt]: cutoff } } });
+    } catch (error) {
+      console.error('[Push] Error limpiando los registros de entrega:', error.name);
+    }
+  });
 
   // Ejecución inmediata en arranque tras 3 segundos para reparar chats pendientes
   setTimeout(() => {

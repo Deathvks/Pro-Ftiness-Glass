@@ -5,8 +5,8 @@ import apiClient from '../services/apiClient';
 import { useToast } from '../hooks/useToast';
 import { initSocket } from '../services/socket';
 import useAppStore from '../store/useAppStore';
-import { usePushNotifications } from '../hooks/usePushNotifications';
 import TrainerProfileModal from '../components/TrainerProfileModal';
+import EmailReminderOffer from '../components/EmailReminderOffer';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'; 
 const SERVER_URL = API_URL.replace('/api', '');
@@ -30,8 +30,7 @@ try {
   if (savedMsgs) cachedChatMessages = JSON.parse(savedMsgs);
 } catch (_) {}
 
-export default function AsesoriaScreen({ onBack }) {
-  const { subscribe, isSubscribed } = usePushNotifications();
+export default function AsesoriaScreen({ onBack, onOpenNotificationSettings }) {
   const [trainer, setTrainer] = useState(() => cachedTrainerInfo || null);
   const [messages, setMessages] = useState(() => cachedChatMessages || []);
   const [showTrainerProfile, setShowTrainerProfile] = useState(false);
@@ -92,15 +91,6 @@ export default function AsesoriaScreen({ onBack }) {
     ));
   };
 
-  const handleRequestPushPermission = async (e) => {
-    e.preventDefault();
-    if (isSubscribed) {
-      addToast('Ya tienes las notificaciones activadas.', 'success');
-      return;
-    }
-    await subscribe();
-  };
-
   const renderMessageContent = (msg) => {
     if (msg.attachment_type === 'bot_reply') {
       const parts = msg.content.split('[notificaciones push]');
@@ -108,12 +98,13 @@ export default function AsesoriaScreen({ onBack }) {
         return (
           <p className="text-[13px] sm:text-sm font-medium whitespace-pre-wrap">
             {parts[0]}
-            <span 
-              onClick={handleRequestPushPermission}
+            <button
+              type="button"
+              onClick={onOpenNotificationSettings}
               className="text-accent underline cursor-pointer font-bold"
             >
               notificaciones push
-            </span>
+            </button>
             {parts[1]}
           </p>
         );
@@ -290,6 +281,9 @@ export default function AsesoriaScreen({ onBack }) {
 
   const userProfile = useAppStore(state => state.userProfile);
   const isTrainee = userProfile?.role === 'trainee' || userProfile?.role === 'trainer' || userProfile?.role === 'admin';
+  const reminderOfferIndex = userProfile?.role === 'user'
+    ? messages.findIndex(msg => msg.id && !msg.temp && !msg.is_closed && String(msg.sender_id) === String(userId))
+    : -1;
   
   let isChatBlocked = false;
   let showPromo = false;
@@ -520,6 +514,7 @@ export default function AsesoriaScreen({ onBack }) {
                       </div>
                     </div>
                   </div>
+                {index === reminderOfferIndex && <EmailReminderOffer purpose="coaching" />}
               </React.Fragment>
             );
           })

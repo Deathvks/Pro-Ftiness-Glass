@@ -5,6 +5,10 @@ import chatController from '../controllers/chatController.js';
 import { uploadMemory } from '../services/uploadService.js';
 
 const router = express.Router();
+const requireCoachingStaff = (req, res, next) => {
+  if (!['admin', 'trainer'].includes(req.user?.role)) return res.sendStatus(403);
+  next();
+};
 
 router.get('/trainer-info', authenticateToken, chatController.getTrainerInfo);
 router.get('/history/:otherUserId', authenticateToken, chatController.getChatHistory);
@@ -14,8 +18,8 @@ router.post('/mark-read/:otherUserId', authenticateToken, chatController.markMes
 router.post('/upload', authenticateToken, uploadMemory.single('file'), chatController.uploadAttachment);
 router.get('/unread-count', authenticateToken, chatController.getUnreadCount);
 router.put('/message/:messageId', authenticateToken, chatController.editMessage);
-router.post('/trainer/bot-reminder/:prospectId/:level', authenticateToken, chatController.sendManualBotReminder);
-router.post('/trainer/bot-reminder-resend/:prospectId/:level', authenticateToken, chatController.resendBotReminder);
+router.post('/trainer/bot-reminder/:prospectId/:level', authenticateToken, requireCoachingStaff, chatController.sendManualBotReminder);
+router.post('/trainer/bot-reminder-resend/:prospectId/:level', authenticateToken, requireCoachingStaff, chatController.resendBotReminder);
 
 export default router;
 

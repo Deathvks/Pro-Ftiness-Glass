@@ -287,7 +287,7 @@ export const linkClient = async (req, res) => {
 
         // 2. Enviar email (si tiene correo real)
         if (user.email && !user.email.endsWith('@profitnessglass.internal')) {
-            await sendCoachingLinkedEmail(user.email, trainerName);
+            await sendCoachingLinkedEmail(user.email);
         }
 
         return res.json({ message: 'Usuario vinculado exitosamente.' });

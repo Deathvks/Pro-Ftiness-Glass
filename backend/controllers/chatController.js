@@ -9,7 +9,7 @@ import { sanitizePlainText } from '../utils/sanitizer.js';
 
 const { User, Message, UploadLog } = models;
 
-const notifyUserIfNeeded = async (senderId, receiverId, content) => {
+const notifyUserIfNeeded = async (senderId, receiverId, content, { sendEmail = true } = {}) => {
   try {
     const sender = await User.findByPk(senderId);
     const receiver = await User.findByPk(receiverId);
@@ -18,7 +18,9 @@ const notifyUserIfNeeded = async (senderId, receiverId, content) => {
 
     if (sender.role === 'trainer' || sender.role === 'admin') {
       // Enviar correo de notificación de respuesta (sin el contenido del mensaje)
-      sendChatReplyEmail(receiver.email, sender.name || sender.username).catch(e => console.error('Error enviando email:', e));
+      if (sendEmail) {
+        sendChatReplyEmail(receiver.email).catch(e => console.error('Error enviando email:', e));
+      }
 
       // Enviar notificación push (CON el contenido del mensaje)
       createNotification(receiver.id, {
@@ -29,7 +31,9 @@ const notifyUserIfNeeded = async (senderId, receiverId, content) => {
       }).catch(e => console.error('Error enviando push:', e));
     } else {
       // Es un cliente escribiendo al entrenador o admin
-      sendNewClientMessageEmail(receiver.email, sender.name || sender.username).catch(e => console.error('Error enviando email:', e));
+      if (sendEmail) {
+        sendNewClientMessageEmail(receiver.email).catch(e => console.error('Error enviando email:', e));
+      }
       
       createNotification(receiver.id, {
         type: 'chat_message',
@@ -42,10 +46,9 @@ const notifyUserIfNeeded = async (senderId, receiverId, content) => {
       const admins = await User.findAll({ where: { role: 'admin' } });
       admins.forEach(admin => {
         if (admin.id.toString() !== receiver.id.toString()) { // Si el receptor no es ya este admin
-          sendNewClientMessageEmail(admin.email, sender.name || sender.username).catch(e => console.error('Error enviando email a admin:', e));
-          
           createNotification(admin.id, {
             type: 'chat_message',
+            pushPurpose: null,
             title: `Mensaje de cliente: ${sender.name || sender.username}`,
             message: content,
             data: { url: '/trainerPanel' }
@@ -357,8 +360,8 @@ export const sendMessage = async (req, res, next) => {
           });
         }
 
-        // Notificar al usuario (Push, Email, In-app) - como si fuera mensaje del trainer
-        notifyUserIfNeeded(receiverId, userId, "Hola, tus mensajes son totalmente privados. Recibirás respuesta...");
+        // El acuse automático solo genera avisos dentro de la app y push.
+        notifyUserIfNeeded(receiverId, userId, "Hola, tus mensajes son totalmente privados. Recibirás respuesta...", { sendEmail: false });
       }
     }
 
@@ -805,11 +808,17 @@ export const getUnreadCount = async (req, res, next) => {
 export const resendBotReminder = async (req, res) => {
   try {
     const { prospectId, level } = req.params;
-    const parsedLevel = parseInt(level, 10);
+    const parsedLevel = Number(level);
+    if (![1, 2, 3].includes(parsedLevel)) return res.status(400).json({ error: 'Nivel inválido' });
     const models = (await import('../models/index.js')).default;
     const { User } = models;
     const prospect = await User.findByPk(prospectId);
     if (!prospect) return res.status(404).json({ error: 'Cliente no encontrado' });
+    const lastMsg = await models.Message.findOne({
+      where: { receiver_id: prospect.id, bot_reminder_level: parsedLevel, is_closed: { [Op.not]: true } },
+      order: [['created_at', 'DESC']]
+    });
+    if (prospect.role !== 'user' || !lastMsg) return res.status(409).json({ error: 'No hay un aviso de seguimiento abierto para reenviar.' });
 
     let title = '';
     let text = '';
@@ -832,14 +841,15 @@ export const resendBotReminder = async (req, res) => {
     if (type === 'push' || type === 'all') {
       try {
         const { createNotification } = await import('../services/notificationService.js');
-        await createNotification(prospect.id, {
+        const delivery = await createNotification(prospect.id, {
           type: 'chat_message',
           title: title,
           message: text,
-          data: { url: '/social' }
+          data: { url: '/asesoria' },
+          pushPurpose: 'coaching'
         });
-        status.notification = 'ok';
-        status.push = 'ok';
+        status.notification = delivery.inAppSaved ? 'ok' : 'error';
+        status.push = delivery.pushStatus === 'success' ? 'ok' : delivery.pushStatus;
       } catch (e) {
         console.error('Error push/notif:', e);
         status.push = 'error';
@@ -850,20 +860,17 @@ export const resendBotReminder = async (req, res) => {
     if (type === 'email' || type === 'all') {
       try {
         const { sendBotReminderEmail } = await import('../services/emailService.js');
-        await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, parsedLevel);
-        status.email = 'ok';
+        const delivery = await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, parsedLevel);
+        status.email = delivery?.skipped ? 'skipped' : 'ok';
       } catch (e) {
         console.error('Error email:', e);
         status.email = 'error';
       }
     }
 
-    const lastMsg = await models.Message.findOne({ where: { receiver_id: prospect.id, bot_reminder_level: parsedLevel }, order: [['created_at', 'DESC']] });
-    if (lastMsg) {
-      if (type === 'push' || type === 'all') lastMsg.bot_push_status = status.push === 'ok' ? 'manual_ok' : 'error';
-      if (type === 'email' || type === 'all') lastMsg.bot_email_status = status.email === 'ok' ? 'manual_ok' : 'error';
-      await lastMsg.save();
-    }
+    if (type === 'push' || type === 'all') lastMsg.bot_push_status = status.push === 'ok' ? 'manual_ok' : status.push;
+    if (type === 'email' || type === 'all') lastMsg.bot_email_status = status.email === 'ok' ? 'manual_ok' : status.email;
+    await lastMsg.save();
 
     res.json({ message: 'Recordatorio reenviado', status });
   } catch (err) {
@@ -876,7 +883,8 @@ export const sendManualBotReminder = async (req, res) => {
   try {
     const { prospectId, level } = req.params;
     const trainerId = req.user.userId;
-    const parsedLevel = parseInt(level, 10);
+    const parsedLevel = Number(level);
+    if (![1, 2, 3].includes(parsedLevel)) return res.status(400).json({ error: 'Nivel inválido' });
 
     const { User, Message, Sequelize } = models;
     const prospect = await User.findByPk(prospectId);
@@ -903,13 +911,13 @@ export const sendManualBotReminder = async (req, res) => {
       order: [['created_at', 'DESC'], ['id', 'DESC']]
     });
 
-    if (lastMsg && lastMsg.is_closed) {
-      return res.status(400).json({ error: 'El chat ya está cerrado.' });
+    if (prospect.role !== 'user' || !lastMsg || lastMsg.is_closed) {
+      return res.status(409).json({ error: 'No hay una consulta de asesoría abierta.' });
     }
 
     const lastNonBotMsg = await Message.findOne({
       where: {
-        ...threadWhere,
+        [Op.and]: [threadWhere],
         is_closed: { [Op.not]: true },
         [Op.or]: [
           { attachment_type: null },
@@ -961,28 +969,29 @@ export const sendManualBotReminder = async (req, res) => {
 
     try {
       // In-app notification and push
-      await createNotification(prospect.id, {
+      const delivery = await createNotification(prospect.id, {
         type: 'chat_message',
         title: title,
         message: text,
-        data: { url: '/social' } // Adjust URL if needed
+        data: { url: '/asesoria' },
+        pushPurpose: 'coaching'
       });
-      status.notification = 'ok';
-      status.push = 'ok';
+      status.notification = delivery.inAppSaved ? 'ok' : 'error';
+      status.push = delivery.pushStatus === 'success' ? 'ok' : delivery.pushStatus;
     } catch (e) {
       console.error('Error push/notif:', e);
     }
 
     try {
       const { sendBotReminderEmail } = await import('../services/emailService.js');
-      await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, parsedLevel);
-      status.email = 'ok';
+      const delivery = await sendBotReminderEmail(prospect.email, prospect.name || prospect.username, parsedLevel);
+      status.email = delivery?.skipped ? 'skipped' : 'ok';
     } catch (e) {
       console.error('Error email:', e);
     }
 
-    newMessage.bot_push_status = status.push === 'ok' ? 'manual_ok' : 'error';
-    newMessage.bot_email_status = status.email === 'ok' ? 'manual_ok' : 'error';
+    newMessage.bot_push_status = status.push === 'ok' ? 'manual_ok' : status.push;
+    newMessage.bot_email_status = status.email === 'ok' ? 'manual_ok' : status.email;
     await newMessage.save();
 
     if (io) {
@@ -1037,8 +1046,7 @@ export const runRetroactiveBotReplies = async () => {
           ]
         });
 
-        // Notificar
-        await notifyUserIfNeeded(receiverId, senderId, "Hola, tus mensajes son totalmente privados. Recibirás respuesta...");
+        await notifyUserIfNeeded(receiverId, senderId, "Hola, tus mensajes son totalmente privados. Recibirás respuesta...", { sendEmail: false });
         
         if (io) {
           io.to(senderId.toString()).emit('chat_message', populatedBotMessage);

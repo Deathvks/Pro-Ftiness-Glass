@@ -26,6 +26,7 @@ import Spinner from './Spinner';
 import useModalLock from '../hooks/useModalLock';
 import ExerciseMedia from './ExerciseMedia';
 import ModalPortal from './ModalPortal';
+import EmailReminderOffer from './EmailReminderOffer';
 
 // Helper para formatear el tiempo
 const formatTime = (timeInSeconds) => {
@@ -43,7 +44,7 @@ const formatDisplayTime = (timeInSeconds) => {
   return `${m}m`;
 };
 
-const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
+const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false, showReminderOffer = false }) => {
   useModalLock();
 
   const { t } = useTranslation(['exercise_names']);
@@ -827,6 +828,8 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false }) => {
                   </div>
                 )}
               </div>
+
+              {showReminderOffer && <EmailReminderOffer purpose="training" />}
             </div>
 
             {/* Pie Fijo de Botones */}

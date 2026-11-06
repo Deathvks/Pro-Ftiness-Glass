@@ -1,13 +1,15 @@
 /* backend/controllers/adminController.js */
 import { Op } from 'sequelize';
+import { Resolver } from 'node:dns/promises';
 import db from '../models/index.js';
-import { createNotification } from '../services/notificationService.js';
+import { createNotification, hasFirebasePush } from '../services/notificationService.js';
 import os from 'os';
 import { processUploadedFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/imageService.js';
-import { canSendPromotionalEmail } from '../services/emailConsentService.js';
-import { sendDomainMailboxTest, sendRetentionRescueEmail } from '../services/emailService.js';
+import { canSendOptionalEmail, sendDomainMailboxTest, sendEmailPreferenceTest } from '../services/emailService.js';
 import { usesDomainMailbox } from '../config/mailContacts.js';
+import { PUSH_PURPOSES } from '../config/pushConsent.js';
+import { isSupportedPushEndpoint } from '../services/pushService.js';
 import {
   getRetentionRescueOverview,
   runRetentionRescueBatch,
@@ -356,7 +358,61 @@ export const updateSetting = async (req, res, next) => {
   }
 };
 
-// Obtener logs de notificaciones push
+const emailTestLabels = { training: 'entrenamiento', activity: 'actividad', coaching: 'asesoría' };
+const notificationReviewChecks = ['registration', 'recovery', 'twoFactor', 'inboxes', 'emailOptOut', 'browser', 'android', 'donDominio', 'firebase', 'activityBasis', 'emailRetention'];
+
+export const getNotificationTestStatus = async (req, res, next) => {
+  const resolver = new Resolver({ timeout: 2000, tries: 1 });
+  const domain = 'profitnessglass.es';
+  const checkDns = async (query, matches) => {
+    try { return matches(await query); }
+    catch (error) { return ['ENODATA', 'ENOTFOUND'].includes(error.code) ? false : null; }
+  };
+  try {
+    const [mx, spf, dkim, dmarc] = await Promise.all([
+      checkDns(resolver.resolveMx(domain), rows => rows.some(row => row.exchange.toLowerCase().replace(/\.$/, '') === 'mx01.dondominio.com')),
+      checkDns(resolver.resolveTxt(domain), rows => rows.some(row => /^v=spf1\s.*include:spf\.dondominio\.com(?:\s|$)/i.test(row.join('')))),
+      checkDns(resolver.resolveTxt(`dddk._domainkey.${domain}`), rows => rows.some(row => /^v=DKIM1;.*\bp=[^;\s]+/i.test(row.join('')))),
+      checkDns(resolver.resolveTxt(`_dmarc.${domain}`), rows => rows.some(row => /^v=DMARC1;/i.test(row.join(''))))
+    ]);
+    return res.set('Cache-Control', 'no-store').json({
+      mx, spf, dkim, dmarc,
+      smtp: usesDomainMailbox && !!process.env.EMAIL_PASS && Number(process.env.EMAIL_PORT || 587) === 587,
+      frontendUrl: process.env.FRONTEND_URL?.replace(/\/+$/, '') === 'https://pro-fitness-glass.zeabur.app',
+      webPush: !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT),
+      androidPush: hasFirebasePush()
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getNotificationReview = async (req, res, next) => {
+  try {
+    const keys = notificationReviewChecks.map(check => `notification_review_${check}`);
+    const rows = await SystemSettings.findAll({ where: { key: { [Op.in]: keys } } });
+    return res.set('Cache-Control', 'no-store').json(Object.fromEntries(rows.filter(row => row.value).map(row => [
+      row.key.replace('notification_review_', ''), JSON.parse(row.value)
+    ])));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateNotificationReview = async (req, res, next) => {
+  const { check, reviewed } = req.body ?? {};
+  if (!notificationReviewChecks.includes(check) || typeof reviewed !== 'boolean') {
+    return res.status(400).json({ error: 'Comprobación no válida.' });
+  }
+  try {
+    const entry = reviewed ? { reviewedAt: new Date().toISOString(), reviewerId: req.user.userId } : null;
+    await SystemSettings.upsert({ key: `notification_review_${check}`, value: entry ? JSON.stringify(entry) : null });
+    return res.json({ check, entry });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getEmailTestAccount = userId => User.findOne({
   where: { id: userId, role: 'admin' },
   attributes: ['id', 'email', 'is_verified', 'email_activity_notifications', 'email_marketing_consent', 'email_coaching_consent']
@@ -367,13 +423,14 @@ export const getEmailUnsubscribeTestStatus = async (req, res, next) => {
     const user = await getEmailTestAccount(req.user.userId);
     if (!user) return res.status(403).json({ error: 'Se requiere una cuenta de administrador activa.' });
 
-    const verified = Boolean(user.is_verified && user.email && !user.email.endsWith('@x-auth.local'));
+    const verified = Boolean(user.is_verified && user.email && !/@(?:x-auth\.local|profitnessglass\.internal)$/i.test(user.email));
+    const [training, activity, coaching] = await Promise.all(
+      ['training', 'activity', 'coaching'].map(category => canSendOptionalEmail(user, category))
+    );
     return res.set('Cache-Control', 'no-store').json({
       email: user.email,
       verified,
-      training: verified && await canSendPromotionalEmail(user, 'training'),
-      activity: user.email_activity_notifications,
-      coaching: user.email_coaching_consent
+      training, activity, coaching
     });
   } catch (error) {
     next(error);
@@ -385,31 +442,53 @@ export const sendEmailUnsubscribeTest = async (req, res, next) => {
     return res.status(415).json({ error: 'La solicitud debe enviarse desde el panel de administración.' });
   }
 
+  const { category = 'training', checkOnly = false } = req.body ?? {};
+  if (typeof category !== 'string' || !Object.hasOwn(emailTestLabels, category) || typeof checkOnly !== 'boolean') {
+    return res.status(400).json({ error: 'Categoría o modo de prueba de correo no válidos.' });
+  }
   try {
     const user = await getEmailTestAccount(req.user.userId);
     if (!user) return res.status(403).json({ error: 'Se requiere una cuenta de administrador activa.' });
-    if (!user.is_verified || !user.email || user.email.endsWith('@x-auth.local')) {
+    if (!user.is_verified || !user.email || /@(?:x-auth\.local|profitnessglass\.internal)$/i.test(user.email)) {
       return res.status(409).json({ error: 'Necesitas una dirección de correo verificada en tu cuenta.' });
     }
 
-    const result = await sendRetentionRescueEmail({
-      userId: user.id,
-      email: user.email,
-      userName: 'administrador',
-      loadPayload: async () => ({
-        title: 'Prueba de baja de correos de entrenamiento',
-        message: 'Has solicitado esta prueba desde el panel de administración. Usa el enlace de baja al pie de este correo para desactivar los recordatorios de entrenamiento de tu cuenta.',
-        contextLabel: 'Prueba solicitada desde el panel'
-      })
-    });
+    if (checkOnly === true) {
+      return res.json({ email: user.email, checkedOnly: true, skipped: !(await canSendOptionalEmail(user, category)) });
+    }
+
+    const result = await sendEmailPreferenceTest({ userId: user.id, email: user.email, category, label: emailTestLabels[category] });
     if (result?.skipped) {
-      return res.status(409).json({ error: 'Activa los recordatorios de entrenamiento en Ajustes → Notificaciones antes de enviar la prueba.' });
+      return res.json({ email: user.email, skipped: true });
     }
     if (!result?.accepted?.length) {
       return res.status(502).json({ error: 'El servidor de correo no confirmó la aceptación del mensaje.' });
     }
 
     return res.json({ email: user.email });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendPushDeviceTest = async (req, res, next) => {
+  const { endpoint, purpose = 'service' } = req.body ?? {};
+  if (!req.is('application/json') || !isSupportedPushEndpoint(endpoint) || !['service', ...PUSH_PURPOSES].includes(purpose)) {
+    return res.status(400).json({ error: 'Dispositivo o categoría de prueba no válidos.' });
+  }
+  try {
+    const user = await getEmailTestAccount(req.user.userId);
+    if (!user) return res.sendStatus(403);
+    const device = await db.PushSubscription.findOne({ where: { user_id: user.id, endpoint }, attributes: ['id'] });
+    if (!device) return res.json({ inAppSaved: false, pushStatus: 'no_subscription' });
+
+    const result = await createNotification(user.id, {
+      type: 'notification_test',
+      title: 'Prueba de notificaciones push',
+      message: 'Prueba solicitada desde el panel de administración para este dispositivo.',
+      pushPurpose: purpose
+    }, { endpoint });
+    return res.json(result);
   } catch (error) {
     next(error);
   }
@@ -530,14 +609,14 @@ export const sendCustomPush = async (req, res, next) => {
     if (target_user_id === 'ALL') {
       const users = await db.User.findAll({ attributes: ['id'] });
       // Responder inmediatamente para no bloquear
-      res.json({ message: `Enviando notificación a ${users.length} usuarios.` });
+      res.json({ message: `Publicando el aviso para ${users.length} usuarios. El push se enviará a quienes hayan activado las novedades.` });
       
       for (const user of users) {
-        await createNotification(user.id, { type: 'info', title, message, data: { url: url || '/' } });
+        await createNotification(user.id, { type: 'info', title, message, data: { url: url || '/' }, pushPurpose: 'news' });
       }
     } else {
-      await createNotification(target_user_id, { type: 'info', title, message, data: { url: url || '/' } });
-      res.json({ message: 'Notificación enviada al usuario exitosamente.' });
+      await createNotification(target_user_id, { type: 'info', title, message, data: { url: url || '/' }, pushPurpose: 'news' });
+      res.json({ message: 'Aviso publicado. El push requiere que el usuario haya activado las novedades.' });
     }
   } catch (error) {
     next(error);

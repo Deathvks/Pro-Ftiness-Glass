@@ -16,7 +16,8 @@ import { useAppNavigation } from './hooks/useAppNavigation';
 import { useAppTheme } from './hooks/useAppTheme';
 import { useWorkoutTimer } from './hooks/useWorkoutTimer';
 import { useAppInitialization } from './hooks/useAppInitialization';
-import { useLocalNotifications } from './hooks/useLocalNotifications';
+import { cancelLocalReminders, localReminderKey, useLocalNotifications } from './hooks/useLocalNotifications';
+import { PushNotifications } from '@capacitor/push-notifications';
 
 import AuthScreens from './components/AuthScreens';
 import MainAppLayout from './components/MainAppLayout';
@@ -211,7 +212,6 @@ export default function App() {
   const { t } = useTranslation('translation');
 
   const { 
-    requestPermissions: requestNotificationPermissions, 
     scheduleEngagementNotifications, 
     scheduleDailyReminders 
   } = useLocalNotifications();
@@ -419,17 +419,25 @@ export default function App() {
   }, [themeColor, headerColor, resolvedTheme]);
 
   useEffect(() => {
-    if (isAuthenticated && !isLoading && Capacitor.isNativePlatform()) {
-      const initNotifications = async () => {
-        const granted = await requestNotificationPermissions();
-        if (granted) {
-          await scheduleEngagementNotifications();
-          await scheduleDailyReminders(false, false);
-        }
-      };
-      initNotifications();
-    }
-  }, [isAuthenticated, isLoading, requestNotificationPermissions, scheduleEngagementNotifications, scheduleDailyReminders]);
+    if (isLoading || !Capacitor.isNativePlatform()) return;
+    const userId = isAuthenticated ? userProfile?.id : null;
+    const engagement = !!userId && localStorage.getItem(localReminderKey(userId, 'engagement')) === 'true';
+    const daily = !!userId && localStorage.getItem(localReminderKey(userId, 'daily')) === 'true';
+    void cancelLocalReminders({ engagement: !engagement, daily: !daily });
+    if (engagement) void scheduleEngagementNotifications();
+    if (daily) void scheduleDailyReminders();
+  }, [isAuthenticated, isLoading, userProfile?.id, scheduleEngagementNotifications, scheduleDailyReminders]);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const routes = new Set(['/asesoria', '/trainerPanel', '/routines', '/social']);
+    const listener = PushNotifications.addListener('pushNotificationActionPerformed', ({ notification }) => {
+      if (!useAppStore.getState().isAuthenticated) return;
+      const path = notification.data?.url;
+      navigateInternal(routes.has(path) ? path.slice(1) : 'notifications');
+    });
+    return () => { void listener.then(handle => handle.remove()).catch(() => {}); };
+  }, [navigateInternal]);
 
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
@@ -695,7 +703,7 @@ export default function App() {
             navigateInternal('hub');
           }
         };
-        return <AsesoriaScreen onBack={handleBackFromAsesoria} />;
+        return <AsesoriaScreen onBack={handleBackFromAsesoria} onOpenNotificationSettings={() => navigateInternal('settings', { highlight: 'notifications', returnView: 'asesoria' })} />;
       }
       case 'not-found': return <NotFoundPage navigate={navigateInternal} />;
       default: return <Dashboard setView={navigateInternal} />;

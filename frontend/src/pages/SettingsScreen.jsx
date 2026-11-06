@@ -14,6 +14,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { APP_VERSION } from '../config/version';
 import { EMAIL_CONSENT_VERSION, EMAIL_CONSENT_TEXT } from '../config/emailConsent';
 import { usePushNotifications } from '../hooks/usePushNotifications';
+import { PUSH_CONSENT_VERSION, PUSH_OPTIONS } from '../config/pushConsent';
+import { getPushPreferences, updatePushPreferences } from '../services/notificationService';
 import Spinner from '../components/Spinner';
 import * as userService from '../services/userService';
 import { useToast } from '../hooks/useToast';
@@ -195,6 +197,34 @@ export default function SettingsScreen({
   };
 
   const [activeTab, setActiveTab] = useState(() => ['workout', 'notifications'].includes(highlight) ? highlight : 'profile');
+  const [pushPreferences, setPushPreferences] = useState(null);
+  const [pushPreferencesError, setPushPreferencesError] = useState(false);
+  const [updatingPushPurpose, setUpdatingPushPurpose] = useState(null);
+
+  useEffect(() => {
+    if (activeTab !== 'notifications' || !userProfile?.id) return;
+    let active = true;
+    setPushPreferences(null);
+    setPushPreferencesError(false);
+    getPushPreferences().then(preferences => {
+      if (active) setPushPreferences(preferences);
+    }).catch(() => {
+      if (active) setPushPreferencesError(true);
+    });
+    return () => { active = false; };
+  }, [activeTab, userProfile?.id]);
+
+  const togglePushPreference = async purpose => {
+    if (!pushPreferences || updatingPushPurpose) return;
+    setUpdatingPushPurpose(purpose);
+    try {
+      setPushPreferences(await updatePushPreferences(purpose, !pushPreferences[purpose], PUSH_CONSENT_VERSION));
+    } catch (error) {
+      addToast(error.message || 'No se pudo guardar la preferencia push.', 'error');
+    } finally {
+      setUpdatingPushPurpose(null);
+    }
+  };
   const [highlightedSection, setHighlightedSection] = useState(null);
   const socialPrivacyRef = useRef(null);
 
@@ -764,13 +794,28 @@ export default function SettingsScreen({
             <div className="flex flex-col gap-3">
               <SwitchItem
                 icon={BellRing}
-                title="Push Notifications"
-                subtitle={getPushSubtitle()}
+                title="Notificaciones push en este dispositivo"
+                subtitle={`${getPushSubtitle()}. Permite recibir avisos de cuenta, actividad y asesoría fuera de la app. Los detalles se consultan dentro.`}
                 checked={isSubscribed}
                 onChange={() => (isSubscribed ? unsubscribe() : subscribe())}
-                disabled={!isPushSupported || pushPermission === 'denied'}
+                disabled={!isPushSupported || (!isSubscribed && pushPermission === 'denied')}
                 loading={isPushLoading}
               />
+
+              <p className="px-4 text-xs text-text-secondary">Los avisos opcionales se eligen por separado para tu cuenta. Puedes retirarlos aquí en cualquier momento.</p>
+              {PUSH_OPTIONS.map(({ purpose, title, description }) => (
+                <SwitchItem
+                  key={purpose}
+                  icon={BellRing}
+                  title={title}
+                  subtitle={description}
+                  checked={pushPreferences?.[purpose] === true}
+                  onChange={() => togglePushPreference(purpose)}
+                  disabled={!pushPreferences || !!updatingPushPurpose}
+                  loading={updatingPushPurpose === purpose}
+                />
+              ))}
+              {pushPreferencesError && <p role="alert" className="px-4 text-xs text-text-secondary">No se pudieron cargar las preferencias push. Vuelve a abrir Notificaciones para reintentar.</p>}
 
               <SwitchItem
                 icon={userProfile?.two_factor_enabled ? ShieldAlert : MailWarning}

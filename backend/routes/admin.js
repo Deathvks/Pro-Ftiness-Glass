@@ -11,9 +11,9 @@ import { uploadProfileImage } from '../services/uploadService.js';
 
 const router = express.Router();
 
-const emailTestLimiter = rateLimit({
+const notificationTestLimiter = rateLimit({
     windowMs: 60_000,
-    max: 3,
+    max: 6,
     keyGenerator: req => String(req.user.userId),
     standardHeaders: true,
     legacyHeaders: false,
@@ -65,8 +65,12 @@ router.post('/push-send', adminController.sendCustomPush);
 router.get('/email-logs', adminController.getEmailLogs);
 router.get('/email-stats', adminController.getEmailStats);
 router.get('/email-unsubscribe-test', adminController.getEmailUnsubscribeTestStatus);
-router.post('/email-unsubscribe-test', emailTestLimiter, adminController.sendEmailUnsubscribeTest);
-router.post('/email-mailbox-test', emailTestLimiter, adminController.sendEmailMailboxTest);
+router.post('/email-unsubscribe-test', notificationTestLimiter, adminController.sendEmailUnsubscribeTest);
+router.post('/email-mailbox-test', notificationTestLimiter, adminController.sendEmailMailboxTest);
+router.get('/notification-tests/status', notificationTestLimiter, adminController.getNotificationTestStatus);
+router.post('/notification-tests/push', notificationTestLimiter, adminController.sendPushDeviceTest);
+router.get('/notification-tests/review', adminController.getNotificationReview);
+router.put('/notification-tests/review', adminController.updateNotificationReview);
 
 router.get('/cron-jobs', adminController.getCronJobs);
 router.post('/cron-jobs/test/:id', adminController.testCronJob);

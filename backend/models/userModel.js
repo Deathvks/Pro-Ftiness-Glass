@@ -212,6 +212,10 @@ User.init({
     defaultValue: false,
     allowNull: false
   },
+  push_consents: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
   email_preferences_updated_at: {
     type: DataTypes.DATE,
     allowNull: true,

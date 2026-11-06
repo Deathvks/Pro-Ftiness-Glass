@@ -261,6 +261,14 @@ registerRoute(
 
 // --- 4. LÓGICA DE PUSH NOTIFICATIONS ---
 
+const getPushDestination = path => {
+  try {
+    const url = new URL(path || '/notifications', self.location.origin);
+    if (url.origin === self.location.origin) return url.href;
+  } catch { /* Volver a la bandeja si el enlace no es válido. */ }
+  return new URL('/notifications', self.location.origin).href;
+};
+
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
@@ -278,8 +286,9 @@ self.addEventListener('push', (event) => {
     badge: payload.badge || '/pwa-192x192.png',
     tag: payload.tag || `notif-${Date.now()}`,
     vibrate: payload.vibrate || [100, 50, 100],
+    actions: payload.data?.manage ? [{ action: 'push-settings', title: 'Gestionar avisos' }] : [],
     data: {
-      url: (payload.data && payload.data.url) ? payload.data.url : '/',
+      url: getPushDestination(payload.data?.url),
     },
   };
 
@@ -290,7 +299,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const urlToOpen = new URL(event.notification.data.url || '/', self.location.origin).href;
+  const urlToOpen = getPushDestination(event.action === 'push-settings' ? '/settings?highlight=notifications' : event.notification.data?.url);
 
   event.waitUntil(
     self.clients.matchAll({
