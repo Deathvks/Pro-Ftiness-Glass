@@ -194,7 +194,7 @@ export default function SettingsScreen({
     addToast(`Pestaña inicial del Muro: ${scopeNames[newScope] || newScope}`, 'success');
   };
 
-  const [activeTab, setActiveTab] = useState(() => highlight === 'workout' ? 'workout' : 'profile');
+  const [activeTab, setActiveTab] = useState(() => ['workout', 'notifications'].includes(highlight) ? highlight : 'profile');
   const [highlightedSection, setHighlightedSection] = useState(null);
   const socialPrivacyRef = useRef(null);
 
@@ -333,8 +333,8 @@ export default function SettingsScreen({
 
   useEffect(() => {
     const effectiveHighlight = highlight || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('highlight') : null);
-    if (effectiveHighlight === 'workout') {
-      setActiveTab('workout');
+    if (effectiveHighlight === 'workout' || effectiveHighlight === 'notifications') {
+      setActiveTab(effectiveHighlight);
     } else if (effectiveHighlight === 'social_privacy') {
       setActiveTab('privacy'); // Cambiar a la pestaña correcta
       

@@ -213,7 +213,7 @@ const StatusIndicator = ({ lastSeen }) => {
   );
 };
 
-const AdminPanel = ({ onCancel }) => {
+const AdminPanel = ({ onCancel, navigate }) => {
   const { showToast: addToast } = useToast();
   const { userProfile, setUserProfile, setGamificationData } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
@@ -1680,7 +1680,7 @@ const AdminPanel = ({ onCancel }) => {
             ) : activeTab === 'notifications' ? (
               <AdminNotifications />
             ) : activeTab === 'emails' ? (
-              <AdminEmails />
+              <AdminEmails onOpenSettings={() => navigate('settings', { highlight: 'notifications', returnView: 'adminPanel' })} />
             ) : activeTab === 'uploads' ? (
               <AdminUploads />
             ) : activeTab === 'news' ? (

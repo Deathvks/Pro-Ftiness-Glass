@@ -91,7 +91,7 @@ const ForgotPasswordScreen = ({ showLogin }) => {
                             </div>
                             <h2 className="text-2xl font-extrabold text-text-primary tracking-tight mb-3">Revisa tu correo</h2>
                             <p className="text-text-secondary font-medium leading-relaxed">
-                                Si existe una cuenta con <strong>{email}</strong>, hemos enviado un enlace para restablecer tu contraseña.
+                                Busca el enlace para restablecer tu contraseña en <strong>{email}</strong> y revisa también el correo no deseado.
                             </p>
                         </GlassCard>
                     )}

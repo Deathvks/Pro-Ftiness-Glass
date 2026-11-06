@@ -2,10 +2,10 @@
 import React from 'react';
 import ModalPortal from './ModalPortal';
 import {
-  ChevronRight, Newspaper, Calculator, Dumbbell, Zap, FileSpreadsheet, WifiOff, Sparkles
+  Bell, ChevronRight, Mail, ShieldCheck, SlidersHorizontal
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6';
-import { APP_VERSION, CURRENT_WELCOME_TITLE } from '../config/version';
+import { APP_VERSION, CURRENT_WELCOME_TITLE, RELEASE_WELCOME } from '../config/version';
 import useModalLock from '../hooks/useModalLock';
 import useAppStore from '../store/useAppStore';
 
@@ -18,11 +18,8 @@ const WelcomeModal = ({ onClose }) => {
 
   const effectiveVersion = APP_VERSION;
   const appVersion = `v${effectiveVersion}`;
-  const welcomeTitle = welcomeRemoteData?.welcome?.title || CURRENT_WELCOME_TITLE;
-  const welcomeSubtitle =
-    welcomeRemoteData?.welcome?.subtitle ||
-    'Descarga de ejercicios en segundo plano para entrenar sin cobertura y sincronización nutricional ultrarrápida con caché local.';
-  const remoteFeatures = welcomeRemoteData?.welcome?.features;
+  const releaseVersion = welcomeRemoteData?.version || APP_VERSION;
+  const { title: welcomeTitle, subtitle: welcomeSubtitle, features } = welcomeRemoteData?.welcome || RELEASE_WELCOME;
 
   React.useEffect(() => {
     try {
@@ -330,7 +327,7 @@ const WelcomeModal = ({ onClose }) => {
                       borderRadius: '99px',
                       boxShadow: '0 4px 16px -2px color-mix(in srgb, var(--color-accent) 60%, transparent)',
                       whiteSpace: 'nowrap'
-                    }}>NOVEDADES V{effectiveVersion}</div>
+                    }}>NOVEDADES V{releaseVersion}</div>
                 </div>
 
                 {/* Title */}
@@ -361,7 +358,7 @@ const WelcomeModal = ({ onClose }) => {
               {/*  Feature Cards  */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
 
-                {/* 01: Modo Sin Conexión */}
+                {/* 01: Registro y seguridad */}
                 <div className="wm-feature-card wm-feature-1" style={{
                     background: 'linear-gradient(135deg, #080814 0%, #121226 100%)',
                     border: '1px solid rgba(16,185,129,0.35)',
@@ -382,61 +379,67 @@ const WelcomeModal = ({ onClose }) => {
                     }}></div>
                   <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #10b981, #06b6d4)' }} />
                   <div className="wm-icon-wrap" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)' }}>
-                    <WifiOff size={18} style={{ color: '#10b981' }} />
+                    <ShieldCheck size={18} style={{ color: '#10b981' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#10b981', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[0]?.title || 'Modo Sin Conexión y Búnker'}</p>
+                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#10b981', margin: '0 0 4px', textTransform: 'uppercase' }}>{features?.[0]?.title}</p>
                     <p style={{ fontSize: '13px', color: 'rgba(203,213,225,0.9)', margin: 0, lineHeight: 1.55 }}>
-                      {remoteFeatures?.[0]?.description || 'Descarga en Ajustes toda la biblioteca de ejercicios y animaciones en tu móvil. Entrena en sótanos o zonas sin cobertura con 0 ms de espera.'}
+                      {features?.[0]?.description}
                     </p>
                   </div>
                   <span className="wm-num" style={{ color: '#10b981' }}>01</span>
                 </div>
 
-                {/* 02: Smart Sync Nutricional */}
+                {/* 02: Recordatorios */}
                 <div className="wm-feature-card wm-feature-2" style={{ border: '1px solid var(--glass-border)' }}>
                   <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #3b82f6, #06b6d4)' }} />
                   <div className="wm-icon-wrap" style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)' }}>
-                    <Zap size={18} style={{ color: '#3b82f6' }} />
+                    <SlidersHorizontal size={18} style={{ color: '#3b82f6' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[1]?.title || 'Smart Sync Nutricional'}</p>
+                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>{features?.[1]?.title}</p>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                      {remoteFeatures?.[1]?.description || 'Búsqueda y escaneo instantáneo con OpenFoodFacts API v2. Los alimentos se guardan localmente y se actualizan automáticamente cada 30 días.'}
+                      {features?.[1]?.description}
                     </p>
                   </div>
                   <span className="wm-num" style={{ color: '#3b82f6' }}>02</span>
                 </div>
 
-                {/* 03: Migración desde Hevy y Strong */}
+                {/* 03: Actividad y bajas */}
                 <div className="wm-feature-card wm-feature-3" style={{ border: '1px solid var(--glass-border)' }}>
                   <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #a855f7, #6366f1)' }} />
                   <div className="wm-icon-wrap" style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.25)' }}>
-                    <FileSpreadsheet size={18} style={{ color: '#a855f7' }} />
+                    <Bell size={18} style={{ color: '#a855f7' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[2]?.title || 'Migración desde Hevy y Strong'}</p>
+                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>{features?.[2]?.title}</p>
                     <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                      {remoteFeatures?.[2]?.description || 'Importa todo tu historial de entrenamientos desde Hevy o Strong en un solo clic y exporta tus datos completos a Excel (CSV) cuando quieras.'}
+                      {features?.[2]?.description}
                     </p>
                   </div>
                   <span className="wm-num" style={{ color: '#a855f7' }}>03</span>
                 </div>
 
-                {/* 04: Velocidad Instantánea */}
-                <div className="wm-feature-card wm-feature-4" style={{ border: '1px solid var(--glass-border)' }}>
+                {/* 04: Direcciones de correo */}
+                {features?.[3] && <div className="wm-feature-card wm-feature-4" style={{ border: '1px solid var(--glass-border)' }}>
                   <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #f97316, #eab308)' }} />
                   <div className="wm-icon-wrap" style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)' }}>
-                    <Sparkles size={18} style={{ color: '#f97316' }} />
+                    <Mail size={18} style={{ color: '#f97316' }} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f97316', margin: '0 0 4px', textTransform: 'uppercase' }}>{remoteFeatures?.[3]?.title || 'Apertura Instantánea (0ms)'}</p>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                      {remoteFeatures?.[3]?.description || 'Calculadoras de 1RM, macros, portal de noticias y enciclopedia de ejercicios totalmente optimizados para máxima fluidez en móvil y web.'}
+                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f97316', margin: '0 0 4px', textTransform: 'uppercase' }}>{features[3].title}</p>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55, overflowWrap: 'anywhere' }}>
+                      {features[3].description}
                     </p>
                   </div>
                   <span className="wm-num" style={{ color: '#f97316' }}>04</span>
-                </div>
+                </div>}
+
+                {userProfile?.role === 'admin' && welcomeTitle === CURRENT_WELCOME_TITLE && (
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0', lineHeight: 1.55 }}>
+                    En Admin → Correos puedes probar el envío a los tres buzones, verificar la baja desde tu cuenta y abrir Ajustes de notificaciones. En Retención puedes consultar la próxima ventana estimada de envío.
+                  </p>
+                )}
 
               </div>
 
@@ -447,7 +450,7 @@ const WelcomeModal = ({ onClose }) => {
                   onClick={handleGetStarted}
                 >
                   <span style={{ position: 'relative', zIndex: 1 }}>
-                    DESCUBRIR NOVEDADES
+                    ENTENDIDO
                   </span>
                   <ChevronRight size={18} strokeWidth={2.5} style={{ position: 'relative', zIndex: 1 }} />
                 </button>

@@ -40,10 +40,11 @@ const SWUpdaterCore = () => {
     } catch {}
 
     try {
-      fetch(`/version.json?t=${Date.now()}`)
+      fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' })
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          const remoteTitle = data?.welcome?.title;
+          if (!data?.version || isNewerVersion(data.version, APP_VERSION)) return;
+          const remoteTitle = data.welcome?.title;
           // Solo mostrar el modal si el título de las novedades es genuinamente nuevo y no ha sido visto ya
           const currentSeenTitle = localStorage.getItem('lastSeenWelcomeTitle');
           if (remoteTitle && !hasSeenCurrentWelcome(currentSeenTitle, remoteTitle)) {

@@ -1,21 +1,25 @@
 {
-  "version": "7.14.27",
-  "releaseNotes": "Actualización v7.14.27: mejoras en las preferencias, las bajas y el envío de correos.",
+  "version": "7.15.0",
+  "releaseNotes": "Actualización v7.15.0: nuevos correos de Pro Fitness Glass, preferencias y bajas por categoría, y pruebas de envío en el panel de administración.",
   "welcome": {
-    "title": "Preferencias y horario de correos",
-    "subtitle": "Controla los correos opcionales y consulta cuándo se intentará enviar el aviso de retención.",
+    "title": "Tus correos en Pro Fitness Glass",
+    "subtitle": "Los mensajes de tu cuenta llegan desde nuestro propio dominio y puedes elegir qué avisos y recordatorios quieres recibir.",
     "features": [
       {
-        "title": "Preferencias de correo",
-        "description": "Los recordatorios y novedades solo se envían si activas esa opción; puedes darte de baja desde los correos."
+        "title": "Registro y seguridad de tu cuenta",
+        "description": "Recibirás los códigos de verificación, los enlaces para recuperar tu contraseña y las alertas de seguridad aunque dejes desactivados los correos opcionales."
       },
       {
-        "title": "Horario de retención visible",
-        "description": "El panel de administración muestra la siguiente ventana estimada de envío según la zona horaria de cada persona."
+        "title": "Recordatorios a tu elección",
+        "description": "Puedes activar por separado los recordatorios de entrenamiento y asesoría al registrarte o más adelante en Ajustes → Notificaciones."
       },
       {
-        "title": "Consentimiento respetado",
-        "description": "Si una persona no aceptó los correos de recordatorio, se omite el email y se mantienen disponibles los avisos In-App y Push."
+        "title": "Avisos de actividad y bajas",
+        "description": "Puedes desactivar los correos sobre mensajes y cambios de asesoría en Ajustes → Notificaciones. Cada correo opcional incluye un enlace para darte de baja de su categoría."
+      },
+      {
+        "title": "Nuevas direcciones de correo",
+        "description": "Los envíos salen de notificaciones@profitnessglass.es. Escríbenos a soporte@profitnessglass.es para pedir ayuda o a privacidad@profitnessglass.es para consultas sobre tus datos."
       }
     ]
   }

@@ -1575,7 +1575,8 @@ export const forgotPassword = async (req, res, next) => {
   try {
     const user = await User.findOne({ where: { email } });
 
-    if (!user) return res.json({ message: 'Si existe una cuenta con ese email, se ha enviado un enlace para restablecer tu contraseña.' });
+    const message = 'Solicitud recibida. Revisa tu bandeja de entrada y el correo no deseado.';
+    if (!user) return res.json({ message });
 
     const resetToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
@@ -1586,7 +1587,7 @@ export const forgotPassword = async (req, res, next) => {
 
     await sendPasswordResetEmail(user.email, resetToken);
 
-    res.json({ message: 'Se ha enviado un email para restablecer tu contraseña.' });
+    res.json({ message });
   } catch (error) {
     next(error);
   }

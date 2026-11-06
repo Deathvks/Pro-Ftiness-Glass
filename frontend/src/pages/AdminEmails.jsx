@@ -66,17 +66,20 @@ const EmailMailboxTest = ({ onSendAttempt }) => {
   );
 };
 
-const EmailUnsubscribeTest = ({ onSendAttempt }) => {
+const EmailUnsubscribeTest = ({ onSendAttempt, onOpenSettings }) => {
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(true);
   const [sentTo, setSentTo] = useState(null);
   const [error, setError] = useState(null);
+  const [refreshMessage, setRefreshMessage] = useState('');
 
-  const refreshStatus = useCallback(async () => {
+  const refreshStatus = useCallback(async (announce = false) => {
     setBusy(true);
     setError(null);
+    setRefreshMessage('');
     try {
       setStatus(await getEmailUnsubscribeTestStatus());
+      if (announce) setRefreshMessage('Preferencias actualizadas.');
     } catch (err) {
       setStatus(null);
       setError(err.message);
@@ -93,6 +96,7 @@ const EmailUnsubscribeTest = ({ onSendAttempt }) => {
     setBusy(true);
     setError(null);
     setSentTo(null);
+    setRefreshMessage('');
     try {
       const result = await sendEmailUnsubscribeTest();
       setSentTo(result.email);
@@ -124,7 +128,7 @@ const EmailUnsubscribeTest = ({ onSendAttempt }) => {
           {!status.verified ? (
             <p>Verifica el correo de tu cuenta antes de hacer la prueba.</p>
           ) : !status.training && !sentTo && (
-            <p>Para empezar, activa los recordatorios de entrenamiento en Ajustes → Notificaciones y comprueba las preferencias aquí.</p>
+            <p>Para empezar, activa los recordatorios de entrenamiento en Ajustes → Notificaciones.</p>
           )}
         </div>
       )}
@@ -139,18 +143,26 @@ const EmailUnsubscribeTest = ({ onSendAttempt }) => {
         </button>
         <button
           type="button"
-          onClick={refreshStatus}
+          onClick={() => refreshStatus(true)}
           disabled={busy}
           className="rounded-xl border border-glass-border px-4 py-2 text-sm font-bold text-text-primary disabled:opacity-50"
         >
-          Comprobar preferencias
+          Actualizar estado de preferencias
+        </button>
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          className="rounded-xl border border-glass-border px-4 py-2 text-sm font-bold text-text-primary"
+        >
+          Ir a Ajustes de notificaciones
         </button>
       </div>
+      <p role="status" className="text-sm text-text-secondary empty:sr-only">{refreshMessage}</p>
       {sentTo && (
         <p role="status" className="text-sm text-text-secondary">
           El servidor de correo aceptó el mensaje para <strong className="break-all text-text-primary">{sentTo}</strong>.
           Abre el mensaje en tu buzón, pulsa «Darse de baja de estos correos» y confirma la baja.
-          Vuelve aquí y pulsa «Comprobar preferencias» para ver Entrenamiento inactivo.
+          Vuelve aquí y pulsa «Actualizar estado de preferencias» para ver Entrenamiento inactivo.
         </p>
       )}
       {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
@@ -158,7 +170,7 @@ const EmailUnsubscribeTest = ({ onSendAttempt }) => {
   );
 };
 
-const AdminEmails = () => {
+const AdminEmails = ({ onOpenSettings }) => {
   const [logs, setLogs] = useState(() => cachedEmailLogs || []);
   const [stats, setStats] = useState(() => cachedEmailStats);
   const [loading, setLoading] = useState(() => !cachedEmailLogs);
@@ -212,7 +224,7 @@ const AdminEmails = () => {
   return (
     <div className="animate-[fade-in_0.3s_ease-out]">
       <EmailMailboxTest onSendAttempt={fetchLogs} />
-      <EmailUnsubscribeTest onSendAttempt={fetchLogs} />
+      <EmailUnsubscribeTest onSendAttempt={fetchLogs} onOpenSettings={onOpenSettings} />
       <div className="flex flex-col">
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

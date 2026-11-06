@@ -1,9 +1,11 @@
-export const APP_VERSION = '7.14.27';
+import release from '../../public/version.json' with { type: 'json' };
 
-export const CURRENT_WELCOME_TITLE = 'Preferencias y horario de correos';
+export const APP_VERSION = release.version;
+export const RELEASE_WELCOME = release.welcome;
+export const CURRENT_WELCOME_TITLE = RELEASE_WELCOME.title;
 
 const EQUIVALENT_WELCOME_TITLES = new Set([
-  CURRENT_WELCOME_TITLE,
+  'Preferencias y horario de correos',
   'Modo Sin Conexión en Segundo Plano',
   'Sniffing de Herramientas y Calculadoras',
 ]);
