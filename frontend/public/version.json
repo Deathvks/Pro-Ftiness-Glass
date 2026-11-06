@@ -1,6 +1,6 @@
 {
-  "version": "7.16.3",
-  "releaseNotes": "Actualización v7.16.3: navegación móvil más compacta y encabezados simplificados.",
+  "version": "7.16.4",
+  "releaseNotes": "Actualización v7.16.4: ajustes de interfaz en el selector de categorías push.",
   "welcome": {
     "title": "Tú eliges tus notificaciones",
     "subtitle": "Configura por separado los correos y los avisos push en Ajustes → Notificaciones.",

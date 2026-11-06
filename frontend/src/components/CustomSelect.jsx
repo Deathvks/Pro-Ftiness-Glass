@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
-const CustomSelect = ({ value, onChange, options, placeholder, className = "", triggerClassName = "", textClassName = "", multiple = false, searchable = false }) => {
+const CustomSelect = ({ id, value, onChange, options, placeholder, className = "", triggerClassName = "", textClassName = "", multiple = false, searchable = false, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [position, setPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -11,6 +11,10 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
   const dropdownRef = useRef(null);
 
   useLayoutEffect(() => {
+    if (disabled) {
+      setIsOpen(false);
+      return;
+    }
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
@@ -27,7 +31,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
       });
       setSearchQuery(""); // Reset search on open
     }
-  }, [isOpen]);
+  }, [isOpen, disabled]);
 
   const selectedValues = multiple ? (typeof value === 'string' && value ? value.split(',').map(v => v.trim()) : []) : [];
   const selectedOption = !multiple ? options.find(opt => opt.value === value && !opt.isHeader) : null;
@@ -135,10 +139,11 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
   return (
     <div className={`relative ${className}`} ref={buttonRef}>
       <button
+        id={id}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between gap-2 text-left outline-none transition box-border ${triggerClassName || 'rounded-xl px-4 py-3 text-text-primary border border-transparent dark:border dark:border-white/10 bg-bg-secondary hover:bg-bg-secondary/80'}`}
-        disabled={isOpen && position.top === 0}
+        className={`w-full flex items-center justify-between gap-2 text-left outline-none transition box-border ${disabled ? 'cursor-not-allowed opacity-50' : ''} ${triggerClassName || 'rounded-xl px-4 py-3 text-text-primary border border-transparent dark:border dark:border-white/10 bg-bg-secondary hover:bg-bg-secondary/80'}`}
+        disabled={disabled || (isOpen && position.top === 0)}
       >
         <span className={textClassName || `text-sm font-bold truncate flex-1 ${(!multiple && selectedOption) || (multiple && selectedValues.length > 0) ? 'text-text-primary' : 'text-text-secondary'}`}>
           {multiple 
@@ -154,7 +159,7 @@ const CustomSelect = ({ value, onChange, options, placeholder, className = "", t
         />
       </button>
 
-      {isOpen && <DropdownPortal />}
+      {isOpen && !disabled && <DropdownPortal />}
     </div>
   );
 };

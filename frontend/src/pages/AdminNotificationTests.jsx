@@ -6,6 +6,12 @@ import {
 } from '../services/adminService';
 import { getCurrentPushEndpoint, getPushPreferences, getPushSubscriptionStatus } from '../services/notificationService';
 import { PUSH_OPTIONS } from '../config/pushConsent';
+import CustomSelect from '../components/CustomSelect';
+
+const PUSH_TEST_OPTIONS = [
+  { value: 'service', label: 'Aviso de servicio' },
+  ...PUSH_OPTIONS.map(({ purpose, title }) => ({ value: purpose, label: title })),
+];
 
 const EmailMailboxTest = () => {
   const [busy, setBusy] = useState(false);
@@ -280,13 +286,16 @@ function PushDeviceTest({ onOpenSettings }) {
     <section className={sectionClass}>
       <h2 className="flex items-center gap-2 font-black text-text-primary"><Bell size={20} className="text-accent" /> Prueba push de este dispositivo</h2>
       <p className="text-sm text-text-secondary">Abre este panel en el navegador o Android que quieras probar. Activa el push del dispositivo desde Ajustes. Para probar una baja opcional, retira esa categoría en Ajustes y repite el envío.</p>
-      <label className="block text-sm font-semibold text-text-primary">
-        Categoría
-        <select value={purpose} onChange={event => { setPurpose(event.target.value); setResult(null); }} disabled={busy} className="mt-1 block w-full max-w-xs rounded-xl border border-glass-border bg-bg-secondary p-2 text-sm">
-          <option value="service">Aviso de servicio</option>
-          {PUSH_OPTIONS.map(option => <option key={option.purpose} value={option.purpose}>{option.title}</option>)}
-        </select>
-      </label>
+      <div className="w-full max-w-xs space-y-1">
+        <label htmlFor="push-test-category" className="block text-sm font-semibold text-text-primary">Categoría</label>
+        <CustomSelect
+          id="push-test-category"
+          value={purpose}
+          options={PUSH_TEST_OPTIONS}
+          onChange={value => { setPurpose(value); setResult(null); }}
+          disabled={busy}
+        />
+      </div>
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => run(false)} disabled={busy} className={actionClass}>Comprobar dispositivo</button>
         <button type="button" onClick={() => run(true)} disabled={busy} className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-accent-contrast disabled:opacity-50">{busy ? 'Comprobando…' : 'Ejecutar prueba push'}</button>
