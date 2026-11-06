@@ -1,6 +1,6 @@
 {
-  "version": "7.16.1",
-  "releaseNotes": "Actualización v7.16.1: navegación por apartados en móvil y preferencias de push y correo agrupadas en Ajustes.",
+  "version": "7.16.2",
+  "releaseNotes": "Actualización v7.16.2: Ajustes más compactos en móvil, con efecto cristal y títulos sin repetir.",
   "welcome": {
     "title": "Tú eliges tus notificaciones",
     "subtitle": "Configura por separado los correos y los avisos push en Ajustes → Notificaciones.",

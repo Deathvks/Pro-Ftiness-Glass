@@ -11,6 +11,7 @@ import { useToast } from '../hooks/useToast';
 import { useOfflineSync } from '../hooks/useOfflineSync';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { useSectionRoute } from '../hooks/useSectionNavigation';
+import { SETTINGS_SECTIONS } from '../config/settingsSections';
 import { recoverFromChunkError, reloadAppWithoutStaleCache } from '../utils/appRecovery';
 import { initSocket } from '../services/socket';
 import * as userService from '../services/userService';
@@ -368,6 +369,9 @@ export default function MainAppLayout({
   const { addToast } = useToast();
   const { section, closeSection } = useSectionRoute();
   const inSection = !!section && ['settings', 'adminPanel'].includes(view);
+  const mobileTitle = view === 'settings'
+    ? SETTINGS_SECTIONS.find(item => item.id === section)?.label ?? currentTitle
+    : currentTitle;
   useOfflineSync();
   const { activeTheme, accent } = useAppTheme();
   const isLevel20Accent = ['supernova', 'plasma', 'eternal-flame', 'abyssal-vortex', 'cosmic-gold'].includes(accent);
@@ -1459,10 +1463,10 @@ export default function MainAppLayout({
               )}
                 {view !== 'dashboard' && (
                   <span
-                    key={currentTitle}
+                    key={mobileTitle}
                     className="text-2xl sm:text-3xl font-extrabold truncate text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary ml-1"
                   >
-                    {currentTitle}
+                    {mobileTitle}
                   </span>
                 )}
               </div>

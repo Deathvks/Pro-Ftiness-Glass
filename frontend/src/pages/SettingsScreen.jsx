@@ -12,6 +12,7 @@ import { FaMeteor } from 'react-icons/fa6';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { APP_VERSION } from '../config/version';
+import { SETTINGS_SECTIONS } from '../config/settingsSections';
 import { EMAIL_CONSENT_VERSION, EMAIL_CONSENT_TEXT } from '../config/emailConsent';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { useSectionNavigation } from '../hooks/useSectionNavigation';
@@ -60,10 +61,10 @@ const isAndroidWebOrPWA = () => {
 };
 
 // --- Sub-componentes ---
-const SectionTitle = ({ icon: Icon, title }) => (
-  <div className="flex items-center gap-3 mb-6 relative z-10">
+const SectionTitle = ({ icon: Icon, title, desktopOnly = false }) => (
+  <div className={`${desktopOnly ? 'hidden md:flex' : 'flex'} items-center gap-3 mb-4 md:mb-6 relative z-10`}>
     <div className="p-2.5 rounded-[16px] bg-black/5 dark:bg-white/5 text-accent shrink-0">
-      <Icon size={24} strokeWidth={2.5} />
+      <Icon size={24} strokeWidth={2.5} aria-hidden="true" />
     </div>
     <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">{title}</h2>
   </div>
@@ -74,14 +75,14 @@ const SettingsItem = ({ icon: Icon, title, subtitle, onClick, action, danger }) 
   return (
     <Component
       onClick={onClick}
-      className={`flex items-center gap-3 sm:gap-4 w-full p-4 rounded-[20px] transition-all duration-300 group text-left
+      className={`flex items-center gap-3 sm:gap-4 w-full p-3 md:p-4 rounded-[20px] transition-all duration-300 group text-left
       ${onClick ? 'cursor-pointer hover:-translate-y-1 hover:shadow-md' : ''}
       ${danger
           ? 'bg-red-500/5 hover:bg-red-500/10 text-red-500'
           : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary'}`}
     >
       {Icon && (
-        <div className={`p-2.5 rounded-[14px] shrink-0 transition-transform ${onClick ? 'group-hover:scale-110' : ''} ${danger ? 'bg-red-500/10 text-red-500' : 'bg-black/5 dark:bg-white/5 text-text-secondary group-hover:text-accent'}`}>
+        <div className={`p-2 md:p-2.5 rounded-[14px] shrink-0 transition-transform ${onClick ? 'group-hover:scale-110' : ''} ${danger ? 'bg-red-500/10 text-red-500' : 'bg-black/5 dark:bg-white/5 text-text-secondary group-hover:text-accent'}`}>
           <Icon size={20} />
         </div>
       )}
@@ -127,16 +128,6 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled, 
     )}
   </button>
 );
-
-const SETTINGS_TABS = [
-  { id: 'workout', label: 'Entrenamiento', icon: Timer },
-  { id: 'offline', label: 'Modo sin conexión', icon: WifiOff },
-  { id: 'profile', label: 'Perfil', icon: User },
-  { id: 'notifications', label: 'Notificaciones', icon: BellRing },
-  { id: 'security', label: 'Seguridad', icon: Shield },
-  { id: 'privacy', label: 'Privacidad Social', icon: Users },
-  { id: 'session', label: 'Sesión', icon: LogOut, danger: true },
-];
 
 export default function SettingsScreen({
   setView,
@@ -209,7 +200,7 @@ export default function SettingsScreen({
     addToast(`Pestaña inicial del Muro: ${scopeNames[newScope] || newScope}`, 'success');
   };
 
-  const { activeTab, isMobile, highlight, setActiveTab } = useSectionNavigation(SETTINGS_TABS, 'profile', scrollRef);
+  const { activeTab, isMobile, highlight, setActiveTab } = useSectionNavigation(SETTINGS_SECTIONS, 'profile', scrollRef);
   const [pushPreferences, setPushPreferences] = useState(null);
   const [pushPreferencesError, setPushPreferencesError] = useState(false);
   const [updatingPushPurpose, setUpdatingPushPurpose] = useState(null);
@@ -449,10 +440,10 @@ export default function SettingsScreen({
     if (isSubscribed) return 'Recibiendo alertas';
     return 'Pausadas';
   };
-  const glassCardClass = "glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300";
+  const glassCardClass = "glass p-4 md:p-8 rounded-[24px] md:rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300";
 
   return (
-    <div className="px-4 pt-2 md:pt-6 pb-32 sm:pb-36 md:pb-8 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out] min-h-screen">
+    <div className="px-4 pt-2 pb-2 md:p-8 max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out] md:min-h-screen">
       <Helmet>
         <title>Ajustes - Pro Fitness Glass</title>
       </Helmet>
@@ -474,9 +465,9 @@ export default function SettingsScreen({
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start">
-        {isMobile && !activeTab && <MobileSectionList id="tutorial-settings-tabs" label="Apartados de Ajustes" sections={SETTINGS_TABS} onSelect={setActiveTab} />}
+        {isMobile && !activeTab && <MobileSectionList id="tutorial-settings-tabs" label="Apartados de Ajustes" sections={SETTINGS_SECTIONS} onSelect={setActiveTab} compact />}
         {!isMobile && <div id="tutorial-settings-tabs" className="hidden w-64 shrink-0 flex-col gap-2 py-1 px-1 md:sticky md:top-4 md:z-20 md:flex">
-          {SETTINGS_TABS.map(tab => (
+          {SETTINGS_SECTIONS.map(tab => (
             <button
               key={tab.id}
               type="button"
@@ -499,13 +490,12 @@ export default function SettingsScreen({
         </div>}
 
         {/* --- CONTENIDO --- */}
-        {activeTab && <div id="tutorial-settings-content" className="flex-1 min-w-0 w-full flex flex-col gap-6 lg:gap-8">
-          <h2 className="text-xl font-extrabold text-text-primary md:hidden">{SETTINGS_TABS.find(tab => tab.id === activeTab)?.label}</h2>
+        {activeTab && <div id="tutorial-settings-content" className="flex-1 min-w-0 w-full flex flex-col gap-4 md:gap-6 lg:gap-8">
 
           {activeTab === 'workout' && (
           <>
             <GlassCard className={glassCardClass}>
-              <SectionTitle icon={Timer} title="Entrenamiento y Descanso" />
+              <SectionTitle icon={Timer} title="Temporizador de descanso" />
               <div className="flex flex-col gap-3">
                 <SwitchItem
                   icon={Volume2}
@@ -571,7 +561,7 @@ export default function SettingsScreen({
           {activeTab === 'offline' && (
           <div className="flex flex-col gap-6">
             <GlassCard className={glassCardClass}>
-              <SectionTitle icon={WifiOff} title="Modo sin conexión y Búnker" />
+              <SectionTitle icon={WifiOff} title="Descargas para entrenar" />
               
               <p className="text-sm text-text-secondary leading-relaxed -mt-2 mb-4">
                 Descarga la biblioteca completa de ejercicios y sus animaciones/GIFs en la memoria de tu dispositivo. Ideal para gimnasios en sótanos, zonas sin cobertura o para entrenar sin gastar datos móviles.
@@ -794,11 +784,11 @@ export default function SettingsScreen({
           {activeTab === 'notifications' && (
           <>
             <GlassCard className={glassCardClass}>
-              <SectionTitle icon={BellRing} title="Notificaciones push" />
+              <SectionTitle icon={BellRing} title="Push" />
               <div className="flex flex-col gap-3">
                 <SwitchItem
                   icon={BellRing}
-                  title="Notificaciones push en este dispositivo"
+                  title="Activar en este dispositivo"
                   subtitle={`${getPushSubtitle()}. Permite recibir avisos de cuenta, actividad y asesoría fuera de la app. Los detalles se consultan dentro.`}
                   checked={isSubscribed}
                   onChange={() => (isSubscribed ? unsubscribe() : subscribe())}
@@ -824,7 +814,7 @@ export default function SettingsScreen({
             </GlassCard>
 
             <GlassCard className={glassCardClass}>
-              <SectionTitle icon={Mail} title="Notificaciones por correo" />
+              <SectionTitle icon={Mail} title="Correo electrónico" />
               <div className="flex flex-col gap-3">
                 <SwitchItem
                   icon={userProfile?.two_factor_enabled ? ShieldAlert : MailWarning}
@@ -837,7 +827,7 @@ export default function SettingsScreen({
 
                 <SwitchItem
                   icon={Mail}
-                  title="Avisos de actividad por correo"
+                  title="Avisos de actividad"
                   subtitle="Avisos de nuevos mensajes y cambios de asesoría. Puedes desactivarlos aquí o desde el enlace de baja de esos avisos."
                   checked={userProfile?.email_activity_notifications !== false}
                   onChange={() => handleTogglePrivacy('email_activity_notifications', 'Avisos de actividad por correo', true)}
@@ -846,7 +836,7 @@ export default function SettingsScreen({
 
                 <SwitchItem
                   icon={Mail}
-                  title="Recordatorios de entrenamiento por correo"
+                  title="Recordatorios de entrenamiento"
                   subtitle={EMAIL_CONSENT_TEXT.training}
                   checked={!!userProfile?.email_marketing_consent}
                   onChange={() => handleTogglePrivacy('email_marketing_consent', 'Recordatorios de entrenamiento', false, EMAIL_CONSENT_VERSION)}
@@ -855,7 +845,7 @@ export default function SettingsScreen({
 
                 <SwitchItem
                   icon={Mail}
-                  title="Recordatorios de asesoría por correo"
+                  title="Recordatorios de asesoría"
                   subtitle={EMAIL_CONSENT_TEXT.coaching}
                   checked={!!userProfile?.email_coaching_consent}
                   onChange={() => handleTogglePrivacy('email_coaching_consent', 'Recordatorios de asesoría', false, EMAIL_CONSENT_VERSION)}
@@ -868,7 +858,7 @@ export default function SettingsScreen({
 
           {activeTab === 'security' && (
           <GlassCard className={glassCardClass}>
-            <SectionTitle icon={Shield} title="Seguridad" />
+            <SectionTitle icon={Shield} title="Seguridad" desktopOnly />
             <div className="flex flex-col gap-3">
 
               <SettingsItem
@@ -953,7 +943,7 @@ export default function SettingsScreen({
           )}
           {activeTab === 'profile' && (
           <GlassCard className={glassCardClass}>
-            <SectionTitle icon={User} title="Perfil" />
+            <SectionTitle icon={User} title="Perfil" desktopOnly />
             <div className="flex flex-col gap-3">
               <SettingsItem
                 icon={User}
@@ -971,7 +961,7 @@ export default function SettingsScreen({
             className="flex flex-col gap-6"
           >
             <GlassCard className={`${glassCardClass} ${highlightedSection === 'social_privacy' ? 'ring-2 ring-accent shadow-xl shadow-accent/20' : ''}`}>
-              <SectionTitle icon={Users} title="Privacidad de tu Perfil Social" />
+              <SectionTitle icon={Users} title="Visibilidad de tu perfil" />
               <div className="flex flex-col gap-3">
                 <SwitchItem
                   icon={Eye}
@@ -1148,7 +1138,7 @@ export default function SettingsScreen({
 
           {activeTab === 'session' && (
           <GlassCard className={glassCardClass}>
-            <SectionTitle icon={LogOut} title="Sesión" />
+            <SectionTitle icon={LogOut} title="Sesión" desktopOnly />
             <SettingsItem
               icon={LogOut}
               title="Cerrar Sesión"
