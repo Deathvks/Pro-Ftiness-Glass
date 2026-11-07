@@ -1,6 +1,6 @@
 import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 /* frontend/src/pages/PrivacyPolicy.jsx */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, Cookie, Camera, Shield, Bell, Globe, Trash2, 
@@ -13,6 +13,16 @@ const PrivacyPolicy = ({ onBack }) => {
   // Permitimos usar la prop onBack si se pasa (para el bypass en App.jsx) o useNavigate por defecto
   const navigate = useNavigate();
   const handleBack = onBack || (() => navigate(-1));
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const id = window.location.hash.replace('#', '');
+      const el = document.getElementById(id);
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+      }
+    }
+  }, []);
 
   // Fecha actual formateada en español
   const currentDate = new Date().toLocaleDateString('es-ES', {
@@ -382,7 +392,7 @@ const PrivacyPolicy = ({ onBack }) => {
             </PolicyCard>
 
             {/* --- TARJETA: Eliminación (Full Width) --- */}
-            <div className="md:col-span-2">
+            <div id="eliminacion-datos" className="md:col-span-2 scroll-mt-24">
                 <PolicyCard>
                     <div className="flex items-center gap-4 mb-8">
                         <div className="p-3 bg-red/10 text-red rounded-[16px] ring-1 ring-red/30 shadow-sm shrink-0">

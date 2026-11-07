@@ -128,8 +128,8 @@ if (typeof window !== 'undefined' && window.location) {
   else if (initialPath === '/faq') preloadViewChunk('faq');
   else if (initialPath === '/noticias') preloadViewChunk('noticias');
   else if (initialPath.startsWith('/noticias/')) preloadViewChunk('noticiaDetalle');
-  else if (initialPath === '/privacy') preloadViewChunk('privacyPolicy');
-  else if (initialPath === '/terms') preloadViewChunk('terms');
+  else if (initialPath === '/privacy' || initialPath === '/privacidad' || initialPath === '/politica-de-privacidad' || initialPath === '/politica-privacidad' || initialPath === '/eliminar-cuenta' || initialPath === '/delete-account') preloadViewChunk('privacyPolicy');
+  else if (initialPath === '/terms' || initialPath === '/terminos' || initialPath === '/terminos-y-condiciones') preloadViewChunk('terms');
   else if (initialPath === '/aviso-legal' || initialPath === '/legal') preloadViewChunk('legalNotice');
   else if (initialPath === '/') {
     // Con sesión iniciada, `/` abre el Dashboard (o la última vista): empezar a descargarlo ya,
@@ -975,16 +975,20 @@ export default function App() {
       )}
 
       <Routes>
-        <Route path="/privacy" element={
-            <Suspense fallback={<div className="p-10">Cargando política...</div>}>
-                <PrivacyPolicy onBack={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }} />
-            </Suspense>
-        } />
-        <Route path="/terms" element={
-            <Suspense fallback={<div className="p-10">Cargando términos...</div>}>
-                <TermsPage />
-            </Suspense>
-        } />
+        {['/privacy', '/privacidad', '/politica-de-privacidad', '/politica-privacidad', '/eliminar-cuenta', '/delete-account'].map((path) => (
+          <Route key={path} path={path} element={
+              <Suspense fallback={<div className="p-10">Cargando política...</div>}>
+                  <PrivacyPolicy onBack={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }} />
+              </Suspense>
+          } />
+        ))}
+        {['/terms', '/terminos', '/terminos-y-condiciones'].map((path) => (
+          <Route key={path} path={path} element={
+              <Suspense fallback={<div className="p-10">Cargando términos...</div>}>
+                  <TermsPage />
+              </Suspense>
+          } />
+        ))}
         <Route path="/aviso-legal" element={
             <Suspense fallback={<div className="p-10">Cargando aviso legal...</div>}>
                 <LegalNoticePage />
