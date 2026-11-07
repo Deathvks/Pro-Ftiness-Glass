@@ -183,7 +183,7 @@ const ChallengesScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.challenges, 'challenge
 const AsesoriaScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.asesoria, 'asesoria');
 
 const CANONICAL_BASE_URL = 'https://profitnessglass.es';
-const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
+const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/og-preview.jpg`;
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 

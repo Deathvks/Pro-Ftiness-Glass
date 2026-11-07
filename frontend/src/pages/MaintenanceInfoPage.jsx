@@ -52,7 +52,8 @@ export default function MaintenanceInfoPage() {
         />
         <meta property="og:url" content="https://profitnessglass.es/mantenimiento" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://profitnessglass.es/aver.jpg" />
+        <meta property="og:image" content="https://profitnessglass.es/og-preview.jpg" />
+        <meta name="twitter:image" content="https://profitnessglass.es/og-preview.jpg" />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 

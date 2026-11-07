@@ -338,7 +338,7 @@ async function main() {
   let newsIndexHtml = injectMeta(baseHtml, {
     title: 'Noticias y Guías de Élite de Fitness y Nutrición',
     description: 'Aprende con artículos basados en evidencia científica, optimiza tus comidas y domina tu rendimiento en el gimnasio con Pro Fitness Glass.',
-    image: `${BASE_URL}/entrenamiento.png`,
+    image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/noticias`,
     type: 'website'
   });
@@ -491,7 +491,7 @@ async function main() {
   let calc1rmHtml = injectMeta(baseHtml, {
     title: 'Calculadora de 1RM (Repetición Máxima) para Gimnasio y Pesas',
     description: 'Calcula gratis tu 1RM (Repetición Máxima) en Press de Banca, Sentadilla, Peso Muerto y Press Militar con las fórmulas de Epley, Brzycki y Lander y descubre tus porcentajes de hipertrofia y fuerza.',
-    image: `${BASE_URL}/entrenamiento.png`,
+    image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/calculadora-1rm`,
     type: 'website'
   });
@@ -535,7 +535,7 @@ async function main() {
   let calcMacrosHtml = injectMeta(baseHtml, {
     title: 'Calculadora de Calorías, Macros y Déficit Calórico para Gimnasio',
     description: 'Calcula gratis tus calorías diarias (TDEE), tasa metabólica basal (Mifflin-St Jeor) y reparto exacto de proteínas, carbohidratos y grasas para perder grasa o ganar masa muscular.',
-    image: `${BASE_URL}/nutrici%C3%B3n.png`,
+    image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/calculadora-calorias-macros`,
     type: 'website'
   });
@@ -581,7 +581,7 @@ async function main() {
   let ejerciciosHtml = injectMeta(baseHtml, {
     title: 'Ejercicios de Gimnasio y Rutinas de Hipertrofia (Guía Técnica)',
     description: 'Aprende la técnica correcta de los mejores ejercicios de gimnasio para pecho, espalda, piernas, glúteos, hombros y brazos, junto con las mejores rutinas Push Pull Legs y Torso Pierna.',
-    image: `${BASE_URL}/entrenamiento.png`,
+    image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/ejercicios`,
     type: 'website'
   });
@@ -698,7 +698,7 @@ async function main() {
   let sobreNosotrosHtml = injectMeta(baseHtml, {
     title: '¿Qué es Pro Fitness Glass? — Quiénes Somos, Misión y App de Gimnasio 100% Gratis',
     description: 'Conoce la historia, tecnología y filosofía 100% gratuita detrás de Pro Fitness Glass, la app de entrenamiento de gimnasio, hipertrofia y nutrición con diseño Glassmorphism e IA.',
-    image: `${BASE_URL}/aver.jpg`,
+    image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/sobre-nosotros`,
     type: 'website'
   });
@@ -825,7 +825,7 @@ async function main() {
   let faqHtml = injectMeta(baseHtml, {
     title: 'Preguntas Frecuentes (FAQ) sobre Pro Fitness Glass | Todo lo que Necesitas Saber',
     description: 'Respuestas oficiales a todas las dudas sobre Pro Fitness Glass: gratuidad, rutinas ilimitadas, app Android en Play Store, IA Synapse, cálculo de 1RM y sincronización en la nube.',
-    image: `${BASE_URL}/aver.jpg`,
+    image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/faq`,
     type: 'website'
   });
@@ -894,7 +894,7 @@ async function main() {
   let mantenimientoHtml = injectMeta(baseHtml, {
     title: 'Migración y Mantenimiento Completados con Éxito — Pro Fitness Glass',
     description: 'La migración técnica al dominio oficial profitnessglass.es ha finalizado con éxito. Tus datos están 100% seguros y la plataforma ahora ofrece mayor velocidad y estabilidad.',
-    image: `${BASE_URL}/aver.jpg`,
+    image: `${BASE_URL}/og-preview.jpg`,
     url: `${BASE_URL}/mantenimiento`,
     type: 'website'
   });

@@ -354,7 +354,8 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           <meta property="og:description" content="Guías científicas, suplementación y estrategias de nutrición deportiva contrastadas por la ciencia." />
           <meta property="og:url" content={`${BASE_URL}/noticias`} />
           <meta property="og:type" content="website" />
-          <meta property="og:image" content={`${BASE_URL}/logo.webp`} />
+          <meta property="og:image" content={`${BASE_URL}/og-preview.jpg`} />
+          <meta name="twitter:image" content={`${BASE_URL}/og-preview.jpg`} />
           <script type="application/ld+json">{JSON.stringify(collectionSchema)}</script>
         </Helmet>
 

@@ -1,21 +1,21 @@
 {
-  "version": "7.16.14",
-  "releaseNotes": "Actualización v7.16.14: Selector de categorías de tutoriales en lista (Todos, Empezar...) para móvil con vista detallada de tarjetas como antes.",
+  "version": "7.16.15",
+  "releaseNotes": "Actualización v7.16.15: Banner oficial Open Graph 16:9 de alta resolución para previsualizaciones sociales al compartir la web.",
   "welcome": {
-    "title": "Tutoriales por Categorías en Móvil",
-    "subtitle": "Navegación tipo ajustes en lista con acceso a las tarjetas detalladas de cada sección.",
+    "title": "Previsualización Oficial al Compartir",
+    "subtitle": "Nuevo banner Open Graph 16:9 optimizado para WhatsApp, Twitter/X, Discord y Telegram.",
     "features": [
       {
-        "title": "Categorías en Lista para Móvil",
-        "description": "Elige en móvil cómodamente entre Todos, Empezar, Entrenamiento, Nutrición, etc. desde una lista limpia estilo ajustes."
+        "title": "Banner Oficial al Compartir",
+        "description": "Al compartir cualquier enlace de la app en redes o apps de mensajería se muestra la tarjeta oficial de marca en 16:9 con diseño dark glassmorphism."
       },
       {
-        "title": "Tarjetas Detalladas como Siempre",
-        "description": "Al entrar en cualquier categoría verás las tarjetas con vista real de pasos, numeración y el botón para ver el tutorial en pantalla."
+        "title": "Tutoriales por Categorías en Móvil",
+        "description": "Acceso rápido en lista estilo ajustes (Todos, Empezar, etc.) con tarjetas interactivas de pasos detallados al entrar."
       },
       {
         "title": "Feedback Inmediato en Ajustes",
-        "description": "Notificaciones toast instantáneas cada vez que activas o desactivas cualquier preferencia de avisos o correos."
+        "description": "Confirmaciones toast emergentes al activar o desactivar cada preferencia de avisos o correos."
       },
       {
         "title": "Servidor Oficial de Alta Velocidad",
