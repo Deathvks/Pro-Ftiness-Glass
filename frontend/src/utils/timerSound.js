@@ -89,7 +89,7 @@ export const playRestTimerCompleteSound = () => {
  * 2. Vibración háptica enérgica en el bolsillo (navigator.vibrate)
  * 3. Notificación de sistema si la pestaña está en segundo plano (Web / PWA)
  */
-export const notifyRestTimerComplete = () => {
+export const notifyRestTimerComplete = async () => {
   // 1. Sonido
   playRestTimerCompleteSound();
 
@@ -97,20 +97,29 @@ export const notifyRestTimerComplete = () => {
   triggerHaptic(HapticType.timer);
 
   // 3. Notificación Web si está en segundo plano
-  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-    if (document.visibilityState === 'hidden') {
-      try {
-        const notif = new Notification('¡Descanso terminado! 💪', {
-          body: 'Toca la siguiente serie. ¡A por todas!',
-          icon: '/favicon-32x32.png',
-          tag: 'rest-timer-finished',
-          renotify: true,
-        });
-        notif.onclick = () => {
-          window.focus();
-          notif.close();
-        };
-      } catch (_) {}
+  if (document.visibilityState !== 'hidden' || !('Notification' in window) || Notification.permission !== 'granted') return;
+
+  const title = '¡Descanso terminado! 💪';
+  const options = {
+    body: 'Toca la siguiente serie. ¡A por todas!',
+    icon: '/pwa-192x192.png',
+    tag: 'rest-timer-finished',
+    renotify: true,
+    data: { url: '/workout' },
+  };
+
+  try {
+    const registration = await navigator.serviceWorker?.getRegistration();
+    if (registration?.active) {
+      await registration.showNotification(title, options);
+    } else {
+      const notification = new Notification(title, options);
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
     }
+  } catch (error) {
+    console.warn('No se pudo mostrar el aviso de fin de descanso:', error);
   }
 };

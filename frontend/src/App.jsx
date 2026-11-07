@@ -18,6 +18,7 @@ import { useWorkoutTimer } from './hooks/useWorkoutTimer';
 import { useAppInitialization } from './hooks/useAppInitialization';
 import { cancelLocalReminders, localReminderKey, useLocalNotifications } from './hooks/useLocalNotifications';
 import { PushNotifications } from '@capacitor/push-notifications';
+import { getPushTarget } from './config/pushRoutes';
 
 import AuthScreens from './components/AuthScreens';
 import MainAppLayout from './components/MainAppLayout';
@@ -430,14 +431,16 @@ export default function App() {
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    const routes = new Set(['/asesoria', '/trainerPanel', '/routines', '/social']);
     const listener = PushNotifications.addListener('pushNotificationActionPerformed', ({ notification }) => {
-      if (!useAppStore.getState().isAuthenticated) return;
-      const path = notification.data?.url;
-      navigateInternal(routes.has(path) ? path.slice(1) : 'notifications');
+      const target = getPushTarget(notification.data?.url, window.location.origin);
+      if (!useAppStore.getState().isAuthenticated) {
+        navigate('/login', { state: { from: target?.path ?? '/notifications' } });
+        return;
+      }
+      navigateInternal(target?.view ?? 'notifications', target?.options);
     });
     return () => { void listener.then(handle => handle.remove()).catch(() => {}); };
-  }, [navigateInternal]);
+  }, [navigate, navigateInternal]);
 
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
@@ -1127,7 +1130,7 @@ export default function App() {
           <Route
             key={p}
             path={p}
-            element={isAuthenticated ? AuthenticatedAppContent : <Navigate to="/login" replace />}
+            element={isAuthenticated ? AuthenticatedAppContent : <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />}
           />
         ))}
 

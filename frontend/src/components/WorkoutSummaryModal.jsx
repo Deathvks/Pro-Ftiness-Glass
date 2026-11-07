@@ -26,7 +26,7 @@ import Spinner from './Spinner';
 import useModalLock from '../hooks/useModalLock';
 import ExerciseMedia from './ExerciseMedia';
 import ModalPortal from './ModalPortal';
-import EmailReminderOffer from './EmailReminderOffer';
+import NotificationOffer from './NotificationOffer';
 
 // Helper para formatear el tiempo
 const formatTime = (timeInSeconds) => {
@@ -829,7 +829,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false, showRe
                 )}
               </div>
 
-              {showReminderOffer && <EmailReminderOffer purpose="training" />}
+              {showReminderOffer && <NotificationOffer purpose="training" />}
             </div>
 
             {/* Pie Fijo de Botones */}

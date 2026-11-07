@@ -9,6 +9,7 @@ import { deleteFile } from '../services/imageService.js';
 import { addXp, syncUserStreak, WEIGHT_UPDATE_XP } from '../services/gamificationService.js';
 import { sanitizePlainText } from '../utils/sanitizer.js';
 import { EMAIL_CONSENT_VERSION, updateEmailConsents } from '../services/emailConsentService.js';
+import { getWeeklyTrainingTarget } from '../utils/weeklyTraining.js';
 
 const {
   User,
@@ -79,6 +80,7 @@ export const getMyProfile = async (req, res, next) => {
     const userWithPass = await User.findByPk(req.user.userId, { attributes: ['password_hash'], raw: true });
     
     const userData = user.toJSON();
+    userData.weeklyTrainingTarget = getWeeklyTrainingTarget(user.activity_level);
     userData.hasPassword = !!(userWithPass && userWithPass.password_hash);
     userData.referralCount = referralCount;
     userData.referral_code = user.referral_code;
@@ -206,7 +208,7 @@ export const updateGamificationStats = async (req, res, next) => {
     if (reason === 'Login Diario') {
       const todayStr = new Date().toISOString().split('T')[0];
       const xpResult = await addXp(userId, 25, 'Login Diario', { userInstance: user });
-      await syncUserStreak(user, todayStr);
+      await syncUserStreak(user);
 
       await user.reload({ attributes: ['xp', 'level', 'streak', 'last_activity_date', 'unlocked_badges'] });
 

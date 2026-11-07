@@ -80,6 +80,8 @@ router.get(
   notificationController.getNotifications
 );
 
+router.get('/:id', authenticateToken, validateId, notificationController.getNotification);
+
 /**
  * @route   PUT /api/notifications/read-all
  * @desc    Marca todas las notificaciones como leídas

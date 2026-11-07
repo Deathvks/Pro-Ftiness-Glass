@@ -4,35 +4,30 @@ import crypto from 'crypto';
 import db from '../models/index.js';
 import { createEmailUnsubscribeToken } from '../utils/emailUnsubscribeToken.js';
 import { canSendPromotionalEmail } from './emailConsentService.js';
-import { domainMailboxes, privacyContact, smtpHost, supportReplyTo } from '../config/mailContacts.js';
+import { domainMailboxes, isDomainSmtpConfigured, privacyContact, publicApiOrigin, smtpHost, smtpPort, supportContact } from '../config/mailContacts.js';
 
 const promotionalSender = 'Dylan Jesús Suárez Falcón';
 
-const smtpPort = Number(process.env.EMAIL_PORT?.trim() || 587);
-const automaticEmailNotice = supportReplyTo
-  ? 'Este correo es automático. Si necesitas ayuda técnica, puedes responder para contactar con soporte.'
-  : 'Este es un correo automático, por favor no respondas a este mensaje.';
+const automaticEmailNotice = 'Este correo es automático. Si necesitas ayuda técnica, puedes responder para contactar con soporte.';
 
-if (smtpHost && (!Number.isInteger(smtpPort) || smtpPort < 1 || smtpPort > 65535)) {
-  throw new Error('EMAIL_PORT debe ser un puerto SMTP válido.');
-}
-
-const transporter = nodemailer.createTransport({
-  ...(smtpHost ? {
-    host: smtpHost,
-    port: smtpPort,
-    secure: smtpPort === 465,
-    requireTLS: smtpPort !== 465
-  } : { service: 'gmail' }),
+const transporter = isDomainSmtpConfigured ? nodemailer.createTransport({
+  host: smtpHost,
+  port: smtpPort,
+  secure: smtpPort === 465,
+  requireTLS: smtpPort !== 465,
   auth: {
-    user: process.env.EMAIL_USER,
+    user: domainMailboxes.notifications,
     pass: process.env.EMAIL_PASS
   }
-});
+}) : null;
 
-const sendMailAndLog = async (mailOptions) => {
+const sendMailAndLog = async (mailOptions, promotional = false) => {
   try {
-    const result = await transporter.sendMail({ replyTo: supportReplyTo, ...mailOptions });
+    if (!transporter) throw new Error('Configura el SMTP de notificaciones@profitnessglass.es antes de enviar correo.');
+    const from = promotional
+      ? { name: `${promotionalSender} · Pro Fitness Glass`, address: domainMailboxes.notifications }
+      : domainMailboxes.notifications;
+    const result = await transporter.sendMail({ ...mailOptions, from, replyTo: supportContact });
     if (db && db.EmailDeliveryLog) {
       await db.EmailDeliveryLog.create({
         recipient_email: mailOptions.to,
@@ -57,7 +52,6 @@ const sendMailAndLog = async (mailOptions) => {
 export const sendDomainMailboxTest = async () => {
   const recipients = Object.values(domainMailboxes);
   const results = await Promise.allSettled(recipients.map(email => sendMailAndLog({
-    from: domainMailboxes.notifications,
     to: email,
     subject: 'Prueba de entrega de Pro Fitness Glass',
     text: `Prueba de correo solicitada desde el panel de administración para ${email}. Si has recibido este mensaje, ese buzón admite correo enviado desde la aplicación.`
@@ -88,7 +82,8 @@ const sendOptionalMailAndLog = async (mailOptions, purpose, userId) => {
 
   const token = createEmailUnsubscribeToken({ userId: user.id, email: user.email, category: purpose ?? 'activity' });
   const baseUrl = (process.env.FRONTEND_URL || 'https://pro-fitness-glass.zeabur.app').replace(/\/+$/, '');
-  const unsubscribeUrl = `${baseUrl}/api/email-preferences/unsubscribe?token=${encodeURIComponent(token)}`;
+  const unsubscribeUrl = new URL('/api/email-preferences/unsubscribe', publicApiOrigin);
+  unsubscribeUrl.searchParams.set('token', token);
   const promotionalNotice = purpose ? `
     <div style="max-width:600px;margin:0 auto 16px;padding:12px 16px;box-sizing:border-box;background:#f3f4f6;border-radius:8px;font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#1f2937;">
       <strong>Comunicación promocional de Pro Fitness Glass</strong><br>
@@ -108,21 +103,17 @@ const sendOptionalMailAndLog = async (mailOptions, purpose, userId) => {
 
   return sendMailAndLog({
     ...mailOptions,
-    ...(purpose && {
-      from: { name: `${promotionalSender} · Pro Fitness Glass`, address: mailOptions.from },
-      subject: `[Promocional] ${mailOptions.subject}`
-    }),
+    subject: purpose ? `[Promocional] ${mailOptions.subject}` : mailOptions.subject,
     html: `${promotionalNotice}${mailOptions.html || ''}${footer}`,
     headers: {
       ...(mailOptions.headers || {}),
       'List-Unsubscribe': `<${unsubscribeUrl}>`,
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
     }
-  });
+  }, Boolean(purpose));
 };
 
 export const sendEmailPreferenceTest = ({ userId, email, category, label }) => sendOptionalMailAndLog({
-  from: process.env.EMAIL_USER,
   to: email,
   subject: `Prueba de baja de correo · ${label}`,
   html: `<p>Has pedido esta prueba desde el panel de administración. Usa el enlace al pie del correo para desactivar los avisos de ${label} en tu cuenta.</p>`
@@ -138,7 +129,6 @@ export const sendVerificationEmail = async (email, code) => {
   const resetUrl = `${process.env.FRONTEND_URL}/forgot-password`;
 
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
     subject: 'Código de verificación - Pro Fitness Glass',
     html: `
@@ -177,7 +167,6 @@ export const sendVerificationEmail = async (email, code) => {
 export const sendPasswordResetEmail = async (email, token) => {
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
     subject: 'Restablecimiento de Contraseña - Pro Fitness Glass',
     html: `
@@ -213,7 +202,6 @@ export const sendLoginAlertEmail = async (email, { ip, userAgent, token }) => {
   const changePasswordUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
   
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
     subject: 'Alerta de seguridad: Nuevo inicio de sesión - Pro Fitness Glass',
     html: `
@@ -255,7 +243,6 @@ export const sendChatReplyEmail = async email => {
   const loginUrl = `${process.env.FRONTEND_URL}/login`;
   
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
     subject: 'Tienes un nuevo mensaje en Pro Fitness Glass',
     html: `
@@ -287,7 +274,6 @@ export const sendNewClientMessageEmail = async email => {
   const loginUrl = `${process.env.FRONTEND_URL}/login`;
   
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
     subject: 'Tienes un nuevo mensaje en Pro Fitness Glass',
     html: `
@@ -318,7 +304,6 @@ export const sendCoachingLinkedEmail = async email => {
   const loginUrl = `${process.env.FRONTEND_URL}/login`;
   
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
     subject: 'Tienes una actualización en Pro Fitness Glass',
     html: `
@@ -371,7 +356,6 @@ export const sendBotReminderEmail = async (email, userName, level) => {
   `;
 
     const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
     subject: 'Aviso de asesoría: ' + titles[level],
     html: html
@@ -384,7 +368,6 @@ export const sendBotReminderEmail = async (email, userName, level) => {
 
 export const sendBugReportResolvedEmail = async (email, userName, reportSubject) => {
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
     subject: `Tu reporte ha sido resuelto - Pro Fitness Glass`,
     html: `
@@ -457,7 +440,6 @@ export const sendRetentionRescueEmail = async ({ userId, email, userName, loadPa
   `;
 
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
     subject: `${title} - Pro Fitness Glass`,
     html

@@ -91,6 +91,8 @@ export const getNotifications = (params = {}) => {
   return apiClient(`/notifications?${queryString}`);
 };
 
+export const getNotification = id => apiClient(`/notifications/${encodeURIComponent(id)}`, { cache: 'no-store' });
+
 /**
  * Marca una notificación específica como leída.
  * @param {number} id - ID de la notificación.

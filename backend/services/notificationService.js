@@ -4,7 +4,8 @@ import pushService, { isSupportedPushEndpoint } from './pushService.js';
 import admin from 'firebase-admin';
 import fs from 'fs';
 import path from 'path';
-import { hasPushConsent } from '../config/pushConsent.js';
+import { hasPushConsent, PUSH_PURPOSES } from '../config/pushConsent.js';
+import { getPushContent } from '../config/pushContent.js';
 
 // 1. Inicializar Firebase Admin (Solo una vez)
 try {
@@ -30,12 +31,6 @@ try {
 }
 
 const { Notification, PushSubscription, PushDeliveryLog, User } = models;
-const serviceDestinations = new Set(['/asesoria', '/trainerPanel', '/routines', '/social']);
-const pushBodies = {
-  training: 'Tienes un recordatorio de entrenamiento. Puedes gestionarlo desde Ajustes.',
-  coaching: 'Tienes un recordatorio de asesoría. Puedes gestionarlo desde Ajustes.',
-  news: 'Tienes una novedad. Puedes gestionar estos avisos desde Ajustes.'
-};
 
 export const hasFirebasePush = () => admin.apps.length > 0;
 
@@ -48,7 +43,7 @@ export const createNotification = async (userId, { type = 'info', title, message
     // FIX: Generamos la fecha explícitamente en la app para asegurar UTC y evitar desfases de la BD
     const now = new Date();
 
-    await Notification.create({
+    const notice = await Notification.create({
       user_id: userId,
       type,
       title,
@@ -61,21 +56,22 @@ export const createNotification = async (userId, { type = 'info', title, message
 
     if (!pushPurpose) return { inAppSaved, pushStatus: 'skipped' };
     if (pushPurpose !== 'service') {
-      if (!Object.hasOwn(pushBodies, pushPurpose)) return { inAppSaved, pushStatus: 'skipped' };
+      if (!PUSH_PURPOSES.includes(pushPurpose)) return { inAppSaved, pushStatus: 'skipped' };
       const user = await User.findByPk(userId, { attributes: ['push_consents'] });
       if (!hasPushConsent(user?.push_consents, pushPurpose)) return { inAppSaved, pushStatus: 'skipped' };
     }
 
-    // El aviso en el dispositivo lleva solo un texto genérico y una ruta interna.
+    const content = getPushContent({ id: notice.id, type, title, message, data, purpose: pushPurpose });
+    if (!content) return { inAppSaved, pushStatus: 'skipped' };
+
     if (PushSubscription) {
       const subscriptions = (await PushSubscription.findAll({ where: { user_id: userId, ...(endpoint ? { endpoint } : {}) } }))
         .filter(sub => isSupportedPushEndpoint(sub.endpoint));
 
       if (subscriptions.length > 0) {
         const ttl = pushPurpose === 'service' ? 900 : 300;
-        const pushTitle = 'Pro Fitness Glass';
-        const pushBody = pushBodies[pushPurpose] ?? 'Tienes una notificación. Abre la app para ver los detalles.';
-        const pushData = { url: pushPurpose === 'service' && serviceDestinations.has(data?.url) ? data.url : '/notifications' };
+        const { title: pushTitle, body: pushBody, url } = content;
+        const pushData = { url };
         const webPayload = {
           title: pushTitle,
           body: pushBody,

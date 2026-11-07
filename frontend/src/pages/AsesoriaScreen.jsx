@@ -6,7 +6,7 @@ import { useToast } from '../hooks/useToast';
 import { initSocket } from '../services/socket';
 import useAppStore from '../store/useAppStore';
 import TrainerProfileModal from '../components/TrainerProfileModal';
-import EmailReminderOffer from '../components/EmailReminderOffer';
+import NotificationOffer from '../components/NotificationOffer';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'; 
 const SERVER_URL = API_URL.replace('/api', '');
@@ -281,9 +281,10 @@ export default function AsesoriaScreen({ onBack, onOpenNotificationSettings }) {
 
   const userProfile = useAppStore(state => state.userProfile);
   const isTrainee = userProfile?.role === 'trainee' || userProfile?.role === 'trainer' || userProfile?.role === 'admin';
-  const reminderOfferIndex = userProfile?.role === 'user'
-    ? messages.findIndex(msg => msg.id && !msg.temp && !msg.is_closed && String(msg.sender_id) === String(userId))
-    : -1;
+  const firstConsultationIndex = messages.findIndex(msg => msg.id && !msg.temp && !msg.is_closed && String(msg.sender_id) === String(userId));
+  const showNotificationOffer = !loading && !hasError && ['user', 'trainee'].includes(userProfile?.role) && firstConsultationIndex !== -1;
+  const waitingForCoach = showNotificationOffer && !messages.slice(firstConsultationIndex + 1).some(msg =>
+      msg.sender_id && String(msg.sender_id) !== String(userId) && msg.attachment_type !== 'bot_reply');
   
   let isChatBlocked = false;
   let showPromo = false;
@@ -514,7 +515,6 @@ export default function AsesoriaScreen({ onBack, onOpenNotificationSettings }) {
                       </div>
                     </div>
                   </div>
-                {index === reminderOfferIndex && <EmailReminderOffer purpose="coaching" />}
               </React.Fragment>
             );
           })
@@ -522,6 +522,7 @@ export default function AsesoriaScreen({ onBack, onOpenNotificationSettings }) {
         
         {/* Promo View para No-Trainees */}
         {showPromo && renderPromo()}
+        {showNotificationOffer && <NotificationOffer purpose="coaching" offerPush={waitingForCoach} offerEmail={userProfile.role === 'user'} />}
 
         <div ref={messagesEndRef} />
       </div>

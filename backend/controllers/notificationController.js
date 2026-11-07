@@ -235,6 +235,17 @@ const getNotifications = async (req, res, next) => {
 };
 
 // Marcar una notificación como leída
+const getNotification = async (req, res, next) => {
+  if (!validationResult(req).isEmpty()) return res.sendStatus(400);
+  try {
+    const notice = await Notification.findOne({ where: { id: req.params.id, user_id: req.user.userId } });
+    if (!notice) return res.sendStatus(404);
+    return res.set('Cache-Control', 'no-store').json(notice);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const markAsRead = async (req, res, next) => {
   try {
     const { userId } = req.user;
@@ -323,6 +334,7 @@ export default {
   // Internas
   create,
   getNotifications,
+  getNotification,
   markAsRead,
   markAllAsRead,
   deleteNotification,

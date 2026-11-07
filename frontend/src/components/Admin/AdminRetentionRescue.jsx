@@ -298,7 +298,7 @@ export default function AdminRetentionRescue() {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-text-secondary leading-relaxed max-w-3xl">
-            Detecta automáticamente a usuarios que llevan <strong>72 horas o más</strong> sin actividad (tanto recién registrados &lt;14 días como cuentas veteranas que llevan días o meses sin entrar) y les envía un Push, aviso In-App y Correo personalizado con su rutina lista o su mejor marca en kilos.
+            Detecta a usuarios que llevan <strong>72 horas o más</strong> sin actividad. Muestra un aviso dentro de la app y comprueba por separado si el usuario aceptó los recordatorios por push y por correo antes de enviarlos.
           </p>
         </div>
 
@@ -841,7 +841,7 @@ export default function AdminRetentionRescue() {
                         </span>
                         {!u.emailMarketingConsent && (
                           <span className="text-[11px] font-semibold text-amber-500 mt-1 block">
-                            Correo omitido sin consentimiento; el aviso In-App/Push sí puede enviarse.
+                            Correo omitido sin consentimiento. El push requiere su propio permiso y el aviso dentro de la app se registra por separado.
                           </span>
                         )}
                       </div>

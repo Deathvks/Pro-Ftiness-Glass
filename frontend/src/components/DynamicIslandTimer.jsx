@@ -3,7 +3,6 @@ import ModalPortal from './ModalPortal';
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Timer, Pause, Play, Plus } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
-import { notifyRestTimerComplete } from '../utils/timerSound';
 
 const DynamicIslandTimer = () => {
   const {
@@ -50,12 +49,7 @@ const DynamicIslandTimer = () => {
       }
 
       if (diff <= 0) {
-        setTimeLeft((prev) => {
-          if (prev > 0) {
-            notifyRestTimerComplete();
-          }
-          return 0;
-        });
+        setTimeLeft(0);
         setProgress(0);
       } else {
         setTimeLeft(diff);

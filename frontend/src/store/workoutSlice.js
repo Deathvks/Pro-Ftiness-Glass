@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
 // Registramos el plugin nativo aquí
-const NativeTimer = Capacitor.isNativePlatform() ? registerPlugin('NativeTimer') : null;
+const NativeTimer = Capacitor.getPlatform() === 'android' ? registerPlugin('NativeTimer') : null;
 
 const _getAccentColor = () => {
   try {
@@ -25,41 +25,39 @@ const _getAccentColor = () => {
 };
 
 const stopNativeTimer = () => {
-  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android' && NativeTimer) {
-    NativeTimer.stopTimer().catch(console.warn);
-  }
+  NativeTimer?.stopTimer().catch(console.warn);
 };
 
-const startNativeTimer = (endTimeMs, title = 'Descanso entre series') => {
-  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android' && NativeTimer) {
+const startNativeTimer = (endTimeMs, { restSoundEnabled, hapticsEnabled }) => {
+  if (NativeTimer) {
     NativeTimer.startTimer({
-      title,
       endTimeMs,
-      color: _getAccentColor()
+      color: _getAccentColor(),
+      sound: restSoundEnabled ?? true,
+      vibrate: hapticsEnabled ?? true
     }).catch(console.warn);
   }
 };
 
+export const completeNativeRestTimer = endTimeMs => NativeTimer?.completeTimer({ endTimeMs });
+
 export const initNativeTimerSync = (store) => {
-  if (typeof window === 'undefined') return;
-  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android' && NativeTimer) {
-    try {
-      NativeTimer.removeAllListeners?.().catch?.(() => {});
-      NativeTimer.addListener('timerAction', (data) => {
-        if (!data || !data.action) return;
-        const state = store.getState();
-        if (data.action === 'addTime') {
-          state.addRestTime(data.seconds || 30);
-        } else if (data.action === 'skip') {
-          state.stopRestTimer();
-        } else if (data.action === 'complete') {
-          state.stopRestTimer();
-        }
-      });
-    } catch (e) {
-      console.warn('Error inicializando sincronización con NativeTimer:', e);
-    }
-  }
+  if (typeof window === 'undefined' || !NativeTimer) return;
+  NativeTimer.addListener('timerAction', data => {
+    const state = store.getState();
+    if (!state.isResting || state.isRestTimerPaused || state.restTimerEndTime !== data?.endTimeMs) return;
+    if (data.action === 'addTime') state.addRestTime(data.seconds, data.newEndTimeMs);
+    if (data.action === 'skip' || data.action === 'complete') state.stopRestTimer({ notifyNative: false });
+  }).catch(console.warn);
+
+  const deadline = store.getState().restTimerEndTime;
+  if (!deadline) return;
+  NativeTimer.getTimerState().then(({ endTimeMs }) => {
+    const state = store.getState();
+    if (!state.isResting || state.isRestTimerPaused || state.restTimerEndTime !== deadline) return;
+    if (!endTimeMs) state.stopRestTimer({ notifyNative: false });
+    else if (endTimeMs !== deadline) state.addRestTime(Math.round((endTimeMs - deadline) / 1000), endTimeMs);
+  }).catch(console.warn);
 };
 
 // --- HELPER: Detectar si un entrenamiento se inició hoy según la hora local del usuario ---
@@ -740,7 +738,7 @@ export const createWorkoutSlice = (set, get) => ({
     };
     set(newState);
     setRestTimerInStorage(newState);
-    startNativeTimer(endTimeMs);
+    startNativeTimer(endTimeMs, get());
   },
 
   setRestTimerMode: (mode) => {
@@ -760,7 +758,7 @@ export const createWorkoutSlice = (set, get) => ({
         restTimerEndTime: newEndTime,
         restTimerRemaining: null,
       };
-      startNativeTimer(newEndTime);
+      startNativeTimer(newEndTime, get());
     } else {
       const now = Date.now();
       const remaining = restTimerEndTime ? restTimerEndTime - now : 0;
@@ -776,7 +774,7 @@ export const createWorkoutSlice = (set, get) => ({
     setRestTimerInStorage({ ...get(), ...newState });
   },
 
-  addRestTime: (secondsToAdd) => {
+  addRestTime: (secondsToAdd, nativeEndTime) => {
     set((state) => {
       if (state.isRestTimerPaused) {
         const currentRemaining = state.restTimerRemaining || 0;
@@ -791,14 +789,7 @@ export const createWorkoutSlice = (set, get) => ({
       }
 
       if (!state.restTimerEndTime) return {};
-      const now = Date.now();
-      let newEndTime;
-
-      if (state.restTimerEndTime < now) {
-        newEndTime = now + (secondsToAdd * 1000);
-      } else {
-        newEndTime = state.restTimerEndTime + (secondsToAdd * 1000);
-      }
+      const newEndTime = nativeEndTime ?? (Math.max(state.restTimerEndTime, Date.now()) + secondsToAdd * 1000);
 
       const newInitial = (state.restTimerInitialDuration || 0) + secondsToAdd;
 
@@ -807,7 +798,7 @@ export const createWorkoutSlice = (set, get) => ({
         restTimerInitialDuration: Math.max(1, newInitial),
       };
       setRestTimerInStorage({ ...state, ...newState });
-      startNativeTimer(newEndTime);
+      if (nativeEndTime === undefined) startNativeTimer(newEndTime, state);
 
       return newState;
     });
@@ -819,9 +810,9 @@ export const createWorkoutSlice = (set, get) => ({
     set({ restTimerEndTime: null, restTimerInitialDuration: null, isRestTimerPaused: false, restTimerRemaining: null });
   },
 
-  stopRestTimer: () => {
+  stopRestTimer: ({ notifyNative = true } = {}) => {
     clearRestTimerInStorage();
-    stopNativeTimer();
+    if (notifyNative) stopNativeTimer();
     set({
       isResting: false,
       restTimerEndTime: null,

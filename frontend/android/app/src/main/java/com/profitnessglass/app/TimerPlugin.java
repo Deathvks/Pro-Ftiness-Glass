@@ -6,12 +6,15 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
@@ -33,11 +36,16 @@ public class TimerPlugin extends Plugin {
     private static final int ACTIVE_NOTIFICATION_ID = 999;
     private static final int COMPLETE_NOTIFICATION_ID = 1000;
     private static final int COMPLETE_ALARM_REQ_CODE = 888;
+    static final String EXTRA_END_TIME = "endTimeMs";
+    private static final long MAX_ALERT_DELAY_MS = 60_000;
 
     private static TimerPlugin instance;
-    private static Long currentEndTimeMs = null;
-    private static String currentTitle = "Descanso entre series";
-    private static int lastValidColor = Color.parseColor("#22C55E");
+    private static final String DEFAULT_TITLE = "Descanso entre series";
+    private static final int DEFAULT_COLOR = Color.parseColor("#22C55E");
+
+    private static SharedPreferences timerState(Context context) {
+        return context.getSharedPreferences("rest_timer", Context.MODE_PRIVATE);
+    }
 
     @Override
     public void load() {
@@ -48,7 +56,7 @@ public class TimerPlugin extends Plugin {
     @PluginMethod
     public void startTimer(PluginCall call) {
         Long endTimeMs = call.getLong("endTimeMs");
-        String title = call.getString("title", "Descanso entre series");
+        String title = call.getString("title", DEFAULT_TITLE);
         String colorStr = call.getString("color");
 
         if (endTimeMs == null) {
@@ -56,16 +64,15 @@ public class TimerPlugin extends Plugin {
             return;
         }
 
-        currentEndTimeMs = endTimeMs;
-        currentTitle = title;
-
+        int accentColor = DEFAULT_COLOR;
         try {
             if (colorStr != null && colorStr.startsWith("#")) {
-                lastValidColor = Color.parseColor(colorStr);
+                accentColor = Color.parseColor(colorStr);
             }
         } catch (Exception ignored) {}
 
-        startTimerInternal(getContext(), currentTitle, currentEndTimeMs, lastValidColor);
+        startTimerInternal(getContext(), title, endTimeMs, accentColor,
+                call.getBoolean("sound", true), call.getBoolean("vibrate", true));
         call.resolve();
     }
 
@@ -75,8 +82,25 @@ public class TimerPlugin extends Plugin {
         call.resolve();
     }
 
-    public static void startTimerInternal(Context context, String title, long endTimeMs, int accentColor) {
+    @PluginMethod
+    public void completeTimer(PluginCall call) {
+        handleCompleteFromBroadcast(getContext(), call.getLong(EXTRA_END_TIME, 0L));
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void getTimerState(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put(EXTRA_END_TIME, timerState(getContext()).getLong(EXTRA_END_TIME, 0L));
+        call.resolve(result);
+    }
+
+    private static synchronized void startTimerInternal(Context context, String title, long endTimeMs, int accentColor,
+                                                        boolean sound, boolean vibrate) {
         if (context == null) return;
+        timerState(context).edit().putLong(EXTRA_END_TIME, endTimeMs).putString("title", title)
+                .putInt("color", accentColor).putBoolean("sound", sound).putBoolean("vibrate", vibrate).apply();
+
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager == null) return;
 
@@ -95,6 +119,9 @@ public class TimerPlugin extends Plugin {
         int pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) pendingFlags |= PendingIntent.FLAG_IMMUTABLE;
         PendingIntent contentPendingIntent = PendingIntent.getActivity(context, 0, launchIntent, pendingFlags);
+
+        scheduleCompletionAlarm(context, endTimeMs, contentPendingIntent);
+        manager.cancel(COMPLETE_NOTIFICATION_ID);
 
         // Intent para botón "+30s"
         Intent addTimeIntent = new Intent(context, TimerActionReceiver.class);
@@ -138,62 +165,81 @@ public class TimerPlugin extends Plugin {
         } catch (Exception e) {
             android.util.Log.w("NativeTimer", "Error publicando notificación activa: " + e.getMessage());
         }
-
-        // Programar alarma exacta para finalización de descanso
-        scheduleCompletionAlarm(context, endTimeMs);
     }
 
-    public static void stopTimerInternal(Context context) {
+    private static synchronized void stopTimerInternal(Context context) {
         if (context == null) return;
+        timerState(context).edit().clear().apply();
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager != null) {
             manager.cancel(ACTIVE_NOTIFICATION_ID);
         }
         cancelCompletionAlarm(context);
-        currentEndTimeMs = null;
     }
 
-    public static void handleAddTimeFromBroadcast(Context context, int seconds) {
-        long now = System.currentTimeMillis();
-        if (currentEndTimeMs == null || currentEndTimeMs < now) {
-            currentEndTimeMs = now;
-        }
-        currentEndTimeMs += (seconds * 1000L);
+    public static synchronized void handleAddTimeFromBroadcast(Context context, int seconds) {
+        SharedPreferences state = timerState(context);
+        long endTimeMs = state.getLong(EXTRA_END_TIME, 0L);
+        if (endTimeMs == 0) return;
+        long newEndTimeMs = Math.max(endTimeMs, System.currentTimeMillis()) + seconds * 1000L;
 
-        startTimerInternal(context, currentTitle, currentEndTimeMs, lastValidColor);
+        startTimerInternal(context, state.getString("title", DEFAULT_TITLE), newEndTimeMs,
+                state.getInt("color", DEFAULT_COLOR), state.getBoolean("sound", true), state.getBoolean("vibrate", true));
 
         if (instance != null) {
             JSObject ret = new JSObject();
             ret.put("action", "addTime");
             ret.put("seconds", seconds);
-            ret.put("newEndTimeMs", currentEndTimeMs);
+            ret.put(EXTRA_END_TIME, endTimeMs);
+            ret.put("newEndTimeMs", newEndTimeMs);
             instance.notifyListeners("timerAction", ret);
         }
     }
 
-    public static void handleSkipFromBroadcast(Context context) {
+    public static synchronized void handleSkipFromBroadcast(Context context) {
+        long endTimeMs = timerState(context).getLong(EXTRA_END_TIME, 0L);
+        if (endTimeMs == 0) return;
         stopTimerInternal(context);
 
         if (instance != null) {
             JSObject ret = new JSObject();
             ret.put("action", "skip");
+            ret.put(EXTRA_END_TIME, endTimeMs);
             instance.notifyListeners("timerAction", ret);
         }
     }
 
-    public static void handleCompleteFromBroadcast(Context context) {
-        if (context == null) return;
+    public static synchronized void handleCompleteFromBroadcast(Context context, long endTimeMs) {
+        SharedPreferences state = timerState(context);
+        long now = System.currentTimeMillis();
+        if (endTimeMs == 0 || endTimeMs != state.getLong(EXTRA_END_TIME, 0L) || now < endTimeMs) return;
 
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (manager != null) {
-            manager.cancel(ACTIVE_NOTIFICATION_ID);
+        boolean sound = state.getBoolean("sound", true);
+        boolean vibrate = state.getBoolean("vibrate", true);
+        int color = state.getInt("color", DEFAULT_COLOR);
+        stopTimerInternal(context);
+
+        if (now - endTimeMs <= MAX_ALERT_DELAY_MS) {
+            publishCompletion(context, manager, sound, vibrate, color);
         }
-        currentEndTimeMs = null;
+
+        if (instance != null) {
+            JSObject ret = new JSObject();
+            ret.put("action", "complete");
+            ret.put(EXTRA_END_TIME, endTimeMs);
+            instance.notifyListeners("timerAction", ret);
+        }
+    }
+
+    private static void publishCompletion(Context context, NotificationManager manager, boolean sound, boolean vibrate, int color) {
+        boolean customFeedback = !sound || !vibrate || manager == null
+                || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && !manager.areNotificationsEnabled());
 
         // 1. Vibración háptica enérgica de fin de descanso (para notar en bolsillo)
         try {
             Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
-            if (vibrator != null && vibrator.hasVibrator()) {
+            if (customFeedback && vibrate && vibrator != null && vibrator.hasVibrator()) {
                 long[] pattern = new long[]{0, 400, 150, 400, 150, 600};
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
@@ -205,8 +251,11 @@ public class TimerPlugin extends Plugin {
 
         // 2. Doble pitido suave de aviso
         try {
-            ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_NOTIFICATION, 85);
-            toneGen.startTone(ToneGenerator.TONE_PROP_BEEP2, 350);
+            if (customFeedback && sound) {
+                ToneGenerator toneGen = new ToneGenerator(AudioManager.STREAM_NOTIFICATION, 85);
+                toneGen.startTone(ToneGenerator.TONE_PROP_BEEP2, 350);
+                new Handler(Looper.getMainLooper()).postDelayed(toneGen::release, 500);
+            }
         } catch (Exception ignored) {}
 
         // 3. Notificación flotante de fin de descanso (Heads-Up)
@@ -227,12 +276,14 @@ public class TimerPlugin extends Plugin {
 
             NotificationCompat.Builder completeBuilder = new NotificationCompat.Builder(context, COMPLETE_CHANNEL_ID)
                     .setSmallIcon(smallIconId)
-                    .setColor(lastValidColor)
+                    .setColor(color)
                     .setContentTitle("¡Descanso terminado! 💪")
                     .setContentText("Es hora de tu siguiente serie. ¡A por todas!")
                     .setPriority(NotificationCompat.PRIORITY_MAX)
                     .setCategory(NotificationCompat.CATEGORY_ALARM)
+                    .setDefaults(NotificationCompat.DEFAULT_SOUND)
                     .setAutoCancel(true)
+                    .setSilent(customFeedback)
                     .setContentIntent(contentPendingIntent)
                     .setVibrate(new long[]{0, 400, 150, 400, 150, 600});
 
@@ -240,33 +291,29 @@ public class TimerPlugin extends Plugin {
                 manager.notify(COMPLETE_NOTIFICATION_ID, completeBuilder.build());
             } catch (Exception ignored) {}
         }
-
-        // 4. Notificar a la instancia JS de la app si está activa
-        if (instance != null) {
-            JSObject ret = new JSObject();
-            ret.put("action", "complete");
-            instance.notifyListeners("timerAction", ret);
-        }
     }
 
-    private static void scheduleCompletionAlarm(Context context, long triggerAtMillis) {
+    private static void scheduleCompletionAlarm(Context context, long triggerAtMillis, PendingIntent openApp) {
         try {
             AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
             if (alarmManager == null) return;
 
             Intent intent = new Intent(context, TimerCompleteReceiver.class);
+            intent.putExtra(EXTRA_END_TIME, triggerAtMillis);
             int flags = PendingIntent.FLAG_UPDATE_CURRENT;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) flags |= PendingIntent.FLAG_IMMUTABLE;
             PendingIntent pendingIntent = PendingIntent.getBroadcast(context, COMPLETE_ALARM_REQ_CODE, intent, flags);
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (alarmManager.canScheduleExactAlarms()) {
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
-                } else {
-                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()) {
+                try {
+                    alarmManager.setAlarmClock(new AlarmManager.AlarmClockInfo(triggerAtMillis, openApp), pendingIntent);
+                    return;
+                } catch (SecurityException ignored) {
+                    // El permiso puede cambiar entre la comprobación y la llamada.
                 }
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
             } else {
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
             }
@@ -281,11 +328,11 @@ public class TimerPlugin extends Plugin {
             if (alarmManager == null) return;
 
             Intent intent = new Intent(context, TimerCompleteReceiver.class);
-            int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+            int flags = PendingIntent.FLAG_NO_CREATE;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) flags |= PendingIntent.FLAG_IMMUTABLE;
             PendingIntent pendingIntent = PendingIntent.getBroadcast(context, COMPLETE_ALARM_REQ_CODE, intent, flags);
 
-            alarmManager.cancel(pendingIntent);
+            if (pendingIntent != null) alarmManager.cancel(pendingIntent);
         } catch (Exception ignored) {}
     }
 

@@ -73,7 +73,8 @@ const runBot = async () => {
   
               try {
                 const delivery = await createNotification(prospect.id, {
-                  type: 'chat_message', title: title, message: text, data: { url: '/asesoria' }, pushPurpose: 'coaching'
+                  type: 'chat_message', title: title, message: text,
+                  data: { url: '/asesoria', reminderLevel: nextLevel }, pushPurpose: 'coaching'
                 });
                 pushStat = delivery.pushStatus === 'success' ? 'ok' : delivery.pushStatus;
               } catch(e) {}

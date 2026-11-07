@@ -38,6 +38,7 @@ import SugarTargetModal from '../components/SugarTargetModal';
 import GymLocationModal from '../components/GymLocationModal';
 import { enrichGymWithMedia } from '../utils/gymMedia';
 import { isSameDay } from '../utils/helpers';
+import { getTrainingWeek, trainingDateFormatter } from '../utils/weeklyTraining';
 import { isWorkoutDoneToday } from '../store/workoutSlice';
 import useAppStore from '../store/useAppStore';
 import { getLevelProgress } from '../store/gamificationSlice';
@@ -368,14 +369,9 @@ const Dashboard = ({ setView }) => {
   const showStreakTimeRemaining = (event) => {
     event.stopPropagation();
 
-    if (!levelData.streak && !weeklyConsistency.streakWeeks && !weeklyConsistency.daysThisWeek) {
-      addToast(t('Completa 3 entrenamientos por semana para activar tu Escudo de Racha Semanal.', { defaultValue: 'Completa 3 entrenamientos por semana para activar tu Escudo de Racha Semanal.' }), 'info');
-      return;
-    }
-
     if (weeklyConsistency.shieldActive) {
       addToast(
-        `🛡️ ¡Escudo de Racha Semanal activado (${weeklyConsistency.daysThisWeek}/${weeklyConsistency.targetDays} días esta semana)! Tu racha de ${levelData.streak} ${levelData.streak === 1 ? 'día' : 'días'} está 100% blindada el resto de la semana aunque descanses.`,
+        `🛡️ Escudo activo (${weeklyConsistency.daysThisWeek}/${weeklyConsistency.targetDays} días). Puedes descansar el resto de la semana y conservar tu racha.`,
         'success'
       );
       return;
@@ -390,7 +386,7 @@ const Dashboard = ({ setView }) => {
 
     const bufferMsg = time
       ? ` Plazo hasta próximo entreno: ${time}. Fines de semana y descansos biológicos protegidos.`
-      : ' Cumplir 3 días a la semana blinda tu racha aunque descanses el resto de días.';
+      : ' Al alcanzar tu meta se activa la protección hasta el final de la semana.';
 
     addToast(streakHeader + bufferMsg, 'info');
   };
@@ -464,87 +460,26 @@ const Dashboard = ({ setView }) => {
     );
   }, [sortedWeightLog, userProfile?.goal]);
 
-  const { weeklySessions, weeklyTimeDisplay, weeklyCalories, weekDays, weeklyRecapData } = useMemo(() => {
-    try {
-      const today = new Date();
-      const day = today.getDay();
-      const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-      const startOfWeek = new Date(today.getFullYear(), today.getMonth(), diff);
-      startOfWeek.setHours(0, 0, 0, 0);
+  const weekFormatter = useMemo(() => trainingDateFormatter(userProfile?.timezone), [userProfile?.timezone]);
+  const todayKey = weekFormatter.format(new Date());
+  const { days: weekDays, trainedDays, logs: weeklyLogs } = useMemo(
+    () => getTrainingWeek(workoutLog, todayKey, weekFormatter),
+    [workoutLog, todayKey, weekFormatter]
+  );
+  const { weeklySessions, weeklyTimeDisplay, weeklyCalories, weeklyRecapData } = useMemo(() => {
+    const seconds = weeklyLogs.reduce((total, log) => total + (Number(log.duration_seconds) || 0), 0);
+    const volume = weeklyLogs.reduce((total, log) => total + (Number(log.total_volume) || 0), 0);
+    const calories = weeklyLogs.reduce((total, log) => total + (Number(log.calories_burned) || 0), 0);
+    return {
+      weeklySessions: weeklyLogs.length,
+      weeklyCalories: calories,
+      weeklyTimeDisplay: seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${(seconds / 3600).toFixed(1)} h`,
+      weeklyRecapData: { totalVolume: volume, totalWorkouts: weeklyLogs.length, totalDuration: seconds, totalCalories: calories }
+    };
+  }, [weeklyLogs]);
 
-      const days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(startOfWeek);
-        d.setDate(startOfWeek.getDate() + i);
-        return d;
-      });
-
-      const logs = (workoutLog || []).filter(log => log && log.workout_date && new Date(log.workout_date) >= startOfWeek);
-      const seconds = logs.reduce((acc, log) => acc + (Number(log?.duration_seconds) || 0), 0);
-      const volume = logs.reduce((acc, log) => acc + (Number(log?.total_volume) || 0), 0);
-      const calories = logs.reduce((acc, log) => acc + (Number(log?.calories_burned) || 0), 0);
-
-      return {
-        weekDays: days,
-        weeklySessions: logs.length,
-        weeklyCalories: calories,
-        weeklyTimeDisplay: seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${(seconds / 3600).toFixed(1)} h`,
-        weeklyRecapData: { totalVolume: volume, totalWorkouts: logs.length, totalDuration: seconds, totalCalories: calories }
-      };
-    } catch (e) {
-      console.warn('[Dashboard] Error en weeklyRecap calculations:', e);
-      return {
-        weekDays: [],
-        weeklySessions: 0,
-        weeklyCalories: 0,
-        weeklyTimeDisplay: '0 min',
-        weeklyRecapData: { totalVolume: 0, totalWorkouts: 0, totalDuration: 0, totalCalories: 0 }
-      };
-    }
-  }, [workoutLog]);
-
-  const weeklyConsistency = useMemo(() => {
-    try {
-      const logs = Array.isArray(workoutLog) ? workoutLog : [];
-      if (logs.length === 0) return { streakWeeks: 0, targetDays: 3, daysThisWeek: 0, shieldActive: false };
-
-      const now = new Date();
-      const startOfCurrentWeek = new Date(now);
-      const day = startOfCurrentWeek.getDay();
-      const diff = startOfCurrentWeek.getDate() - day + (day === 0 ? -6 : 1);
-      startOfCurrentWeek.setDate(diff);
-      startOfCurrentWeek.setHours(0, 0, 0, 0);
-
-      const thisWeekWorkouts = logs.filter(l => l?.workout_date && new Date(l.workout_date) >= startOfCurrentWeek);
-      const daysThisWeek = new Set(thisWeekWorkouts.map(l => String(l.workout_date).slice(0, 10))).size;
-
-      let streakWeeks = 0;
-      let checkWeekStart = new Date(startOfCurrentWeek);
-
-      for (let i = 0; i < 52; i++) {
-        const weekEnd = new Date(checkWeekStart);
-        weekEnd.setDate(weekEnd.getDate() + 7);
-
-        const weekLogs = logs.filter(l => {
-          if (!l?.workout_date) return false;
-          const d = new Date(l.workout_date);
-          return d >= checkWeekStart && d < weekEnd;
-        });
-
-        if (weekLogs.length > 0) {
-          streakWeeks++;
-          checkWeekStart.setDate(checkWeekStart.getDate() - 7);
-        } else if (i === 0) {
-          checkWeekStart.setDate(checkWeekStart.getDate() - 7);
-        } else {
-          break;
-        }
-      }
-
-      return { streakWeeks, targetDays: 3, daysThisWeek, shieldActive: daysThisWeek >= 3 };
-    } catch {
-      return { streakWeeks: 0, targetDays: 3, daysThisWeek: 0, shieldActive: false };
-    }
-  }, [workoutLog]);
+  const targetDays = userProfile?.weeklyTrainingTarget ?? 3;
+  const weeklyConsistency = { targetDays, daysThisWeek: trainedDays.size, shieldActive: trainedDays.size >= targetDays };
 
   const hasWeeklyData = weeklySessions > 0;
   const isWeeklyRecapUnlocked = timeUntilSunday === null;
@@ -1032,47 +967,37 @@ const Dashboard = ({ setView }) => {
       <div id="tour-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <GlassCard
           onClick={showStreakTimeRemaining}
-          className="glass p-5 flex flex-col justify-between h-full min-h-[160px] rounded-[28px] relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer"
+          className="glass p-3 sm:p-5 flex min-w-0 flex-col h-full min-h-[160px] rounded-[28px] relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer"
         >
-          <div className="flex justify-between items-start gap-2 mb-2">
-            <div className={`p-3 rounded-[20px] transition-transform duration-300 group-hover:scale-110 ${weeklyConsistency.shieldActive ? 'text-emerald-500 bg-emerald-500/15' : 'text-accent bg-black/5 dark:bg-white/5'}`}>
-              {weeklyConsistency.shieldActive ? <ShieldCheck size={22} /> : <FaDumbbell size={22} />}
+          <div className="flex items-center justify-between gap-1.5">
+            <div className={`p-2 sm:p-3 shrink-0 rounded-[16px] sm:rounded-[20px] transition-transform duration-300 group-hover:scale-110 ${weeklyConsistency.shieldActive ? 'text-emerald-500 bg-emerald-500/15' : 'text-accent bg-black/5 dark:bg-white/5'}`}>
+              {weeklyConsistency.shieldActive ? <ShieldCheck className="size-4 sm:size-5" /> : <FaDumbbell className="size-4 sm:size-5" />}
             </div>
-            <div className="text-right">
-              <div className="flex items-baseline justify-end gap-1">
-                <span className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">
-                  {weeklyConsistency.daysThisWeek}/{weeklyConsistency.targetDays}
-                </span>
-                <span className="text-xs font-bold text-text-muted">{t('días', { defaultValue: 'días' })}</span>
-              </div>
-              <span
-                className={`inline-flex items-center gap-1 text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full mt-0.5 whitespace-nowrap ${
-                  weeklyConsistency.shieldActive
-                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                    : 'bg-accent/15 text-accent'
-                }`}
-              >
-                {weeklyConsistency.shieldActive
-                  ? t('🛡️ Escudo Activo', { defaultValue: '🛡️ Escudo Activo' })
-                  : t('Meta Semanal', { defaultValue: 'Meta Semanal' })}
+            <div className="flex min-w-0 flex-wrap items-baseline justify-end gap-x-1 text-right">
+              <span className="text-xl sm:text-3xl font-black text-text-primary tracking-tight whitespace-nowrap">
+                {weeklyConsistency.daysThisWeek}/{weeklyConsistency.targetDays}
               </span>
+              <span className="text-xs font-bold text-text-muted">{t('días', { defaultValue: 'días' })}</span>
             </div>
           </div>
+          <span className={`self-start max-w-full mt-2 px-2 py-1 rounded-full text-[9px] sm:text-[10px] leading-tight font-black uppercase ${
+            weeklyConsistency.shieldActive ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-accent/15 text-accent'
+          }`}>
+            {weeklyConsistency.shieldActive
+              ? t('Escudo activo', { defaultValue: 'Escudo activo' })
+              : t('Meta semanal', { defaultValue: 'Meta semanal' })}
+          </span>
 
-          <div className="flex justify-between items-center w-full overflow-x-auto no-scrollbar gap-1 pt-1">
-            {weekDays.map((date, i) => {
+          <div className="mt-auto grid grid-cols-7 gap-0.5 sm:gap-1 pt-3">
+            {weekDays.map((day, i) => {
               const dayLetters = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-              const isToday = isSameDay(date, new Date());
-              const hasWorkout = workoutLog.some(log => {
-                if (!log?.workout_date) return false;
-                const start = new Date(log.workout_date);
-                return isSameDay(start, date);
-              });
+              const isToday = day === todayKey;
+              const hasWorkout = trainedDays.has(day);
               return (
-                <div key={i} className="flex flex-col items-center gap-1.5 flex-1 min-w-[20px]">
+                <div key={day} className="flex min-w-0 flex-col items-center gap-1.5">
                   <span className={`text-[9px] font-bold ${isToday ? 'text-accent' : 'text-text-muted'}`}>{dayLetters[i]}</span>
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${hasWorkout ? (weeklyConsistency.shieldActive ? 'bg-emerald-500 text-white' : 'bg-accent text-accent-contrast') : 'bg-transparent text-transparent border border-glass-border'}`}>
-                    {hasWorkout && <Check size={10} strokeWidth={4} />}
+                  <div className={`w-full max-w-5 aspect-square rounded-full flex items-center justify-center transition-all ${hasWorkout ? (weeklyConsistency.shieldActive ? 'bg-emerald-500 text-white' : 'bg-accent text-accent-contrast') : 'border border-glass-border'}`}>
+                    {hasWorkout && <Check className="size-2 sm:size-2.5" strokeWidth={4} aria-hidden="true" />}
                   </div>
                 </div>
               );
@@ -1297,7 +1222,7 @@ const Dashboard = ({ setView }) => {
         </div>
       </div>
 
-      {showXPModal && <XPGuideModal onClose={() => setShowXPModal(false)} />}
+      {showXPModal && <XPGuideModal targetDays={targetDays} onClose={() => setShowXPModal(false)} />}
       {showSugarModal && <SugarTargetModal isOpen={showSugarModal} onClose={() => setShowSugarModal(false)} currentSugar={nutritionTotals.sugar} maxSugar={targets.sugar} />}
       {showWeightModal && <BodyWeightModal onClose={() => setShowWeightModal(false)} onSave={todaysWeightLog ? updateTodayBodyWeight : logBodyWeight} existingLog={todaysWeightLog} />}
       {modal.type === 'water' && <WaterLogModal initialQuantity={waterLog?.quantity_ml || 0} onSave={handleSaveWater} onClose={() => setModal({ type: null })} isLoading={modal.type === 'submitting'} />}

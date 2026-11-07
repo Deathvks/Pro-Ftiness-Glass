@@ -1,4 +1,6 @@
 export const smtpHost = process.env.EMAIL_HOST?.trim();
+export const smtpPort = Number(process.env.EMAIL_PORT?.trim() || 587);
+export const publicApiOrigin = new URL(process.env.PUBLIC_API_URL || 'https://pro-fitness-glass-api.zeabur.app').origin;
 
 export const domainMailboxes = {
   notifications: 'notificaciones@profitnessglass.es',
@@ -6,10 +8,10 @@ export const domainMailboxes = {
   privacy: 'privacidad@profitnessglass.es'
 };
 
-export const usesDomainMailbox = smtpHost?.toLowerCase() === 'smtp.dondominio.com'
-  && process.env.EMAIL_USER?.trim().toLowerCase() === domainMailboxes.notifications;
-const currentContact = 'profitnessglass@gmail.com';
+export const isDomainSmtpConfigured = smtpHost?.toLowerCase() === 'smtp.dondominio.com'
+  && process.env.EMAIL_USER?.trim().toLowerCase() === domainMailboxes.notifications
+  && Boolean(process.env.EMAIL_PASS?.trim())
+  && Number.isInteger(smtpPort) && smtpPort >= 1 && smtpPort <= 65535;
 
-export const supportReplyTo = usesDomainMailbox ? domainMailboxes.support : undefined;
-export const supportContact = supportReplyTo ?? currentContact;
-export const privacyContact = usesDomainMailbox ? domainMailboxes.privacy : currentContact;
+export const supportContact = domainMailboxes.support;
+export const privacyContact = domainMailboxes.privacy;

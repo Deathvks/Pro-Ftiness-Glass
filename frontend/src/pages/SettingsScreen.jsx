@@ -1,6 +1,8 @@
 /* frontend/src/pages/SettingsScreen.jsx */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import {
   Check, Palette, Sun, Moon, MonitorCog, User, Shield,
   LogOut, Info, ChevronRight, Cookie, Mail, BellRing, Smartphone,
@@ -436,9 +438,24 @@ export default function SettingsScreen({
 
   const getPushSubtitle = () => {
     if (!isPushSupported) return 'No soportado en este dispositivo/navegador';
-    if (pushPermission === 'denied') return 'Bloqueadas en navegador';
+    if (pushPermission === 'denied') return 'Bloqueadas en los ajustes del dispositivo o navegador';
     if (isSubscribed) return 'Recibiendo alertas';
     return 'Pausadas';
+  };
+
+  const configureRestAlerts = async () => {
+    try {
+      const { display } = await LocalNotifications.checkPermissions();
+      if (display !== 'granted' && (await LocalNotifications.requestPermissions()).display !== 'granted') {
+        addToast('Permite las notificaciones de Pro Fitness Glass en los ajustes de Android.', 'warning');
+        return;
+      }
+      const { exact_alarm: exactAlarm } = await LocalNotifications.checkExactNotificationSetting();
+      if (exactAlarm !== 'granted') await LocalNotifications.changeExactNotificationSetting();
+      else addToast('El permiso para avisos puntuales está activo.', 'success');
+    } catch {
+      addToast('No se pudo abrir la configuración de avisos de descanso.', 'error');
+    }
   };
   const glassCardClass = "glass p-4 md:p-8 rounded-[24px] md:rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300";
 
@@ -500,7 +517,7 @@ export default function SettingsScreen({
                 <SwitchItem
                   icon={Volume2}
                   title="Sonido de Fin de Descanso"
-                  subtitle="Doble pitido suave al terminar la cuenta atrás entre series"
+                  subtitle="Aviso sonoro al terminar la cuenta atrás entre series"
                   checked={restSoundEnabled}
                   onChange={() => {
                     const newValue = !restSoundEnabled;
@@ -520,6 +537,14 @@ export default function SettingsScreen({
                     addToast(newValue ? 'Vibración activada' : 'Vibración desactivada', 'success');
                   }}
                 />
+                {Capacitor.getPlatform() === 'android' && (
+                  <SettingsItem
+                    icon={BellRing}
+                    title="Avisos de descanso en segundo plano"
+                    subtitle="Permite las notificaciones y las alarmas de Android para avisarte al terminar, incluso con la pantalla bloqueada."
+                    onClick={configureRestAlerts}
+                  />
+                )}
               </div>
             </GlassCard>
 

@@ -7,6 +7,8 @@ import android.content.Intent;
 public class TimerCompleteReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        TimerPlugin.handleCompleteFromBroadcast(context);
+        if (intent != null) {
+            TimerPlugin.handleCompleteFromBroadcast(context, intent.getLongExtra(TimerPlugin.EXTRA_END_TIME, 0L));
+        }
     }
 }

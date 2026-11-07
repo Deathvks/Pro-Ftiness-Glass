@@ -32,6 +32,7 @@ export const usePushNotifications = (enabled = true) => {
   const [subscription, setSubscription] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [nativePermission, setNativePermission] = useState('prompt');
   const timeoutRef = useRef(null);
   const registrationOwner = useRef(null);
   const userId = useAppStore(state => state.userProfile?.id);
@@ -75,6 +76,8 @@ export const usePushNotifications = (enabled = true) => {
         if (isNative) {
           // --- LÓGICA NATIVA ---
           const perm = await PushNotifications.checkPermissions();
+          if (!isMounted) return;
+          setNativePermission(perm.receive);
           const isLocallySubscribed = localStorage.getItem('native_push_subscribed') === 'true';
           const localToken = localStorage.getItem('native_push_token');
           
@@ -85,8 +88,8 @@ export const usePushNotifications = (enabled = true) => {
           setSubscription(active ? localToken : null);
         } else {
           // --- LÓGICA WEB ---
-          const registration = await getServiceWorkerRegistration();
-          const currentSubscription = await registration.pushManager.getSubscription();
+          const registration = await navigator.serviceWorker.getRegistration();
+          const currentSubscription = await registration?.pushManager?.getSubscription();
 
           const active = currentSubscription && (await notificationService.getPushSubscriptionStatus(currentSubscription.endpoint)).subscribed;
           if (!isMounted) return;
@@ -180,6 +183,7 @@ export const usePushNotifications = (enabled = true) => {
         // --- SUSCRIPCIÓN NATIVA (Firebase) ---
         console.log('[PUSH NATIVO] Solicitando permisos...');
         const perm = await PushNotifications.requestPermissions();
+        setNativePermission(perm.receive);
         console.log('[PUSH NATIVO] Permisos concedidos:', perm.receive);
         if (perm.receive === 'granted') {
           registrationOwner.current = userId;
@@ -308,6 +312,6 @@ export const usePushNotifications = (enabled = true) => {
     isLoading,
     error,
     isSupported,
-    permission: isSupported && !isNative ? Notification.permission : 'granted'
+    permission: isNative ? nativePermission : isSupported ? Notification.permission : 'denied'
   };
 };

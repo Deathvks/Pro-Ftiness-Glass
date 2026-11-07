@@ -42,6 +42,9 @@
 
     # Mantiene válidos los enlaces de baja de correos ya enviados.
     handle /api/email-preferences/unsubscribe {
+        @unsubscribeBrowser method GET HEAD
+        header @unsubscribeBrowser Referrer-Policy no-referrer
+        redir @unsubscribeBrowser https://pro-fitness-glass-api.zeabur.app{uri} 302
         reverse_proxy https://pro-fitness-glass-api.zeabur.app {
             header_up Host pro-fitness-glass-api.zeabur.app
         }

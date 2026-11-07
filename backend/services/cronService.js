@@ -6,7 +6,7 @@ import db from '../models/index.js';
 import { createNotification } from './notificationService.js';
 import { cleanOrphanedImages, deleteFile } from './imageService.js';
 import { sendBotReminderEmail } from './emailService.js';
-import { countMissedWeekdays } from './gamificationService.js';
+import { getUnprotectedWeekdays } from './gamificationService.js';
 import { newsAutomationService } from './newsAutomationService.js';
 import { runRetentionRescueBatch } from './retentionRescueService.js';
 import { supportContact } from '../config/mailContacts.js';
@@ -343,11 +343,11 @@ const checkStreakWars = () => {
       // 1. Obtener solo usuarios con racha activa
       const users = await db.User.findAll({
         where: { streak: { [Op.gt]: 0 } },
-        attributes: ['id', 'username', 'streak', 'last_activity_date', 'timezone']
+        attributes: ['id', 'username', 'streak', 'last_activity_date', 'timezone', 'activity_level']
       });
 
       // 2. Filtrar a los que se les acaba el día (20:00h) y no han entrenado hoy
-      const targetUsers = users.filter(user => {
+      const targetUsers = (await Promise.all(users.map(async user => {
         const { hour, date: localDate, dayOfWeek } = getLocalTime(user.timezone);
         // Sábados y domingos son días de descanso protegidos: no se envía alerta de peligro en fin de semana
         if (dayOfWeek === 0 || dayOfWeek === 6) return false;
@@ -355,9 +355,9 @@ const checkStreakWars = () => {
 
         // Si el último registro de actividad es anterior a hoy, está en peligro
         const lastActiveDate = new Date(user.last_activity_date).toISOString().split('T')[0];
-        const missed = countMissedWeekdays(lastActiveDate, localDate);
-        return missed >= 2;
-      });
+        const missed = await getUnprotectedWeekdays(user, lastActiveDate, localDate, { threshold: 2 });
+        return missed >= 2 ? user : null;
+      }))).filter(Boolean);
 
       if (!targetUsers.length) return;
       console.log(`[Cron] Streak Wars: ${targetUsers.length} usuarios en peligro de perder racha.`);
@@ -425,7 +425,7 @@ const resetInactiveStreaks = () => {
       // 1. Obtener solo usuarios con racha > 0
       const users = await db.User.findAll({
         where: { streak: { [Op.gt]: 0 } },
-        attributes: ['id', 'streak', 'last_activity_date', 'timezone']
+        attributes: ['id', 'streak', 'last_activity_date', 'timezone', 'activity_level']
       });
 
       let resetCount = 0;
@@ -445,7 +445,7 @@ const resetInactiveStreaks = () => {
 
         // Calculamos cuántos días laborables (lunes a viernes) se han perdido
         // Sábados y domingos son días de descanso protegidos y no cuentan como días perdidos
-        const missedWeekdays = countMissedWeekdays(lastActiveDate, localDate);
+        const missedWeekdays = await getUnprotectedWeekdays(user, lastActiveDate, localDate);
 
         // Si ha transcurrido al menos 1 día laborable requerido sin entrenar, el usuario ha perdido la racha
         if (missedWeekdays > 2) {
@@ -597,7 +597,7 @@ const checkChatBotReminders = () => {
             type: 'chat_closed',
             title: 'Conversación cerrada por inactividad',
             message: 'Tu chat de asesoría ha sido cerrado. Puedes volver a solicitarla cuando quieras.',
-            action_url: '/social'
+            data: { url: '/asesoria' }
           });
 
         } else if (nextLevel !== null) {
@@ -620,7 +620,8 @@ const checkChatBotReminders = () => {
 
           try {
             const delivery = await createNotification(prospect.id, {
-              type: 'chat_message', title: title, message: text, data: { url: '/asesoria' }, pushPurpose: 'coaching'
+              type: 'chat_message', title: title, message: text,
+              data: { url: '/asesoria', reminderLevel: nextLevel }, pushPurpose: 'coaching'
             });
             pushStat = delivery.pushStatus === 'success' ? 'ok' : delivery.pushStatus;
           } catch(e) {}

@@ -845,7 +845,7 @@ export const resendBotReminder = async (req, res) => {
           type: 'chat_message',
           title: title,
           message: text,
-          data: { url: '/asesoria' },
+          data: { url: '/asesoria', reminderLevel: parsedLevel },
           pushPurpose: 'coaching'
         });
         status.notification = delivery.inAppSaved ? 'ok' : 'error';
@@ -973,7 +973,7 @@ export const sendManualBotReminder = async (req, res) => {
         type: 'chat_message',
         title: title,
         message: text,
-        data: { url: '/asesoria' },
+        data: { url: '/asesoria', reminderLevel: parsedLevel },
         pushPurpose: 'coaching'
       });
       status.notification = delivery.inAppSaved ? 'ok' : 'error';

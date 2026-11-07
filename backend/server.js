@@ -49,6 +49,7 @@ import emailPreferencesRoutes from './routes/emailPreferences.js';
 import { seedInitialNewsIfEmpty, getSitemapNews, getRSSNews } from './controllers/newsController.js';
 import { checkBlacklist, sniffingDetector } from './middleware/securityMonitor.js';
 import { startCronJobs } from './services/cronService.js';
+import { publicApiOrigin } from './config/mailContacts.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -75,6 +76,7 @@ const allowedOrigins = [
   'http://localhost',
   'https://pro-fitness-glass.zeabur.app',
   'https://pro-fitness-glass.app',
+  publicApiOrigin,
   process.env.FRONTEND_URL
 ].filter(Boolean);
 

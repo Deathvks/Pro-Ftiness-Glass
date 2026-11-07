@@ -1,7 +1,10 @@
 /* frontend/src/hooks/useAppNavigation.js */
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import { getPushView } from '../config/pushRoutes';
 
 export const useAppNavigation = (navigateRouter) => {
+  const { pathname } = useLocation();
   // 1. Inicialización de estado
   const [view, setView] = useState(() => {
     // PRIORIDAD 0: Recuperar sesión activa de cardio si existe en localStorage
@@ -36,16 +39,11 @@ export const useAppNavigation = (navigateRouter) => {
     // Rutas Deep Linking
     if (path.match(/^\/profile\/\d+$/)) return 'publicProfile';
     if (path === '/dashboard') return 'dashboard';
-    if (path === '/social') return 'social';
-    if (path === '/nutrition') return 'nutrition';
-    if (path === '/routines') return 'routines';
-    if (path === '/progress') return 'progress';
+    const pushView = getPushView(path);
+    if (pushView) return pushView;
     if (path === '/hub') return 'hub';
     if (path === '/settings') return 'settings';
-    if (path === '/adminPanel') return 'adminPanel';
-    if (path === '/notifications') return 'notifications';
     if (path === '/active-cardio') return 'active-cardio';
-    if (path === '/asesoria') return 'asesoria';
     if (path.startsWith('/noticias')) return 'noticias';
     if (path === '/privacy') return 'privacyPolicy';
     if (path === '/terms') return 'terms';
@@ -157,6 +155,11 @@ export const useAppNavigation = (navigateRouter) => {
     }
   }, [view, navParams.userId]);
 
+  useEffect(() => {
+    const target = getPushView(pathname);
+    if (target) setView(target);
+  }, [pathname]);
+
   // Función de navegación principal
   const navigate = useCallback((viewName, options = {}) => {
     isNavigatingRef.current = true;
@@ -184,7 +187,13 @@ export const useAppNavigation = (navigateRouter) => {
     const sectionView = viewName === 'settings' || viewName === 'adminPanel';
     if (viewName === 'settings' && options.highlight) newPath += `?highlight=${encodeURIComponent(options.highlight)}`;
     if (viewName === 'adminPanel' && options.section) newPath += `?section=${encodeURIComponent(options.section)}`;
-    const currentPath = window.location.pathname + (sectionView ? window.location.search : '');
+    if (viewName === 'notifications' && options.notice) newPath += `?notice=${encodeURIComponent(options.notice)}`;
+    if (viewName === 'social' && options.tab) {
+      const params = new URLSearchParams({ tab: options.tab });
+      if (options.highlight) params.set('highlight', options.highlight);
+      newPath += `?${params}`;
+    }
+    const currentPath = window.location.pathname + (sectionView || viewName === 'notifications' || options.tab ? window.location.search : '');
 
     const needsNavigation =
       view !== viewName ||

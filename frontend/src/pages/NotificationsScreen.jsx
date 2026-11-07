@@ -1,6 +1,6 @@
 /* frontend/src/pages/NotificationsScreen.jsx */
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import { useShallow } from 'zustand/react/shallow';
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import GlassCard from '../components/GlassCard';
+import { getNotification, markAsRead } from '../services/notificationService';
 
 // --- Imports de Modales Separados ---
 import DeleteNotificationModal from '../components/DeleteNotificationModal';
@@ -162,20 +163,19 @@ const NotificationSettingsModal = ({ onClose, userId }) => {
   );
 };
 
-// --- Sub-componente: Modal de Detalles de Login ---
-const LoginDetailsModal = ({ notification, onClose, timeZone }) => {
-  if (!notification || !notification.data) return null;
-
-  const { ip, userAgent, date } = notification.data;
+const NotificationDetailsModal = ({ notification, onClose, timeZone }) => {
+  const { ip, userAgent, date } = notification.data ?? {};
+  const hasSessionDetails = Boolean(ip || userAgent);
   const loginDate = date ? parseDateSafe(date) : parseDateSafe(notification.created_at);
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
       <div className="absolute inset-0" onClick={onClose} />
-      <GlassCard className="glass w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10">
+      <GlassCard role="dialog" aria-modal="true" aria-label={notification.title} className="glass w-full max-w-md max-h-[90dvh] overflow-y-auto p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10">
 
         <button
           onClick={onClose}
+          aria-label="Cerrar aviso"
           className="absolute top-5 right-5 text-text-secondary hover:text-text-primary transition-colors p-2 hover:bg-black/10 dark:hover:bg-white/10 rounded-full"
         >
           <X size={20} />
@@ -183,15 +183,15 @@ const LoginDetailsModal = ({ notification, onClose, timeZone }) => {
 
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-16 h-16 rounded-[20px] bg-accent/10 flex items-center justify-center text-accent mb-4 ring-2 ring-accent/30">
-            <Shield size={32} strokeWidth={1.5} />
+            {hasSessionDetails ? <Shield size={32} strokeWidth={1.5} /> : <Bell size={32} strokeWidth={1.5} />}
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-text-primary">Detalles de Inicio</h3>
-          <p className="text-text-secondary text-xs sm:text-sm mt-2">
-            Información del dispositivo registrado
+          <h3 className="break-words text-xl sm:text-2xl font-bold text-text-primary">{notification.title}</h3>
+          <p className="text-text-secondary text-xs sm:text-sm mt-2 whitespace-pre-wrap break-words">
+            {notification.message}
           </p>
         </div>
 
-        <div className="space-y-4 bg-black/5 dark:bg-white/5 rounded-[24px] p-5">
+        {hasSessionDetails && <div className="space-y-4 bg-black/5 dark:bg-white/5 rounded-[24px] p-5">
           {/* Dispositivo */}
           <div className="flex gap-4 items-center">
             <div className="p-2.5 bg-blue-500/10 rounded-[14px] text-blue-500 shrink-0">
@@ -230,7 +230,7 @@ const LoginDetailsModal = ({ notification, onClose, timeZone }) => {
               </p>
             </div>
           </div>
-        </div>
+        </div>}
 
         <button
           onClick={onClose}
@@ -279,6 +279,8 @@ const NotificationsScreen = ({ setView }) => {
 
   // Estados para modales
   const [selectedNotification, setSelectedNotification] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const noticeId = searchParams.get('notice');
   const [deleteAction, setDeleteAction] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -298,6 +300,33 @@ const NotificationsScreen = ({ setView }) => {
   useEffect(() => {
     fetchNotifications(1);
   }, [fetchNotifications]);
+
+  useEffect(() => {
+    if (!noticeId || !/^\d+$/.test(noticeId) || !userProfile?.id) return;
+    let active = true;
+    setSelectedNotification(null);
+    getNotification(noticeId).then(notice => {
+      if (!active) return;
+      setSelectedNotification(notice);
+      if (!notice.is_read) {
+        void markAsRead(notice.id).then(() => {
+          if (active) void fetchNotifications(1);
+        }).catch(() => {});
+      }
+    }).catch(() => {
+      if (active) addToast('No se pudo abrir este aviso. Puedes consultar tus avisos en la lista.', 'warning');
+    });
+    return () => { active = false; };
+  }, [noticeId, userProfile?.id, fetchNotifications, addToast]);
+
+  const closeNotice = () => {
+    setSelectedNotification(null);
+    if (noticeId) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('notice');
+      setSearchParams(next, { replace: true });
+    }
+  };
 
   const handleNotificationClick = (notification) => {
     if (!notification.is_read) markNotificationAsRead(notification.id);
@@ -442,9 +471,9 @@ const NotificationsScreen = ({ setView }) => {
 
       {/* Modales */}
       {selectedNotification && (
-        <LoginDetailsModal
+        <NotificationDetailsModal
           notification={selectedNotification}
-          onClose={() => setSelectedNotification(null)}
+          onClose={closeNotice}
           timeZone={userTimezone}
         />
       )}

@@ -10,7 +10,7 @@ import LevelBadge from './LevelBadge';
 import { getXPHistory } from '../services/gamificationService';
 import useModalLock from '../hooks/useModalLock';
 
-const XPGuideModal = ({ onClose }) => {
+const XPGuideModal = ({ onClose, targetDays }) => {
   const carouselRef = useRef(null);
 
   // --- Bloquear scroll del fondo y swipe entre páginas ---
@@ -113,7 +113,7 @@ const XPGuideModal = ({ onClose }) => {
                                 <p className="text-text-secondary text-sm font-medium leading-relaxed">
                                     Gana XP realizando acciones diarias. <br />
                                     <span className="bg-accent text-accent-contrast px-2 py-0.5 rounded-md inline-block font-extrabold tracking-widest uppercase text-[10px] mt-2 mb-1 shadow-sm">🛡️ Escudo de Racha Semanal:</span>{' '}
-                                    Cumple tu meta de <strong>3 días de entrenamiento a la semana</strong> para blindar tu racha el resto de la semana. Además, los fines de semana y hasta 2 días de descanso biológico están protegidos.
+                                    Cumple tu meta de <strong>{targetDays} {targetDays === 1 ? 'día' : 'días'} de entrenamiento a la semana</strong> para proteger tu racha el resto de la semana. Además, los fines de semana y hasta 2 días laborables de descanso están protegidos.
                                 </p>
                             </div>
 

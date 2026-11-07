@@ -7,7 +7,7 @@ import os from 'os';
 import { processUploadedFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/imageService.js';
 import { canSendOptionalEmail, sendDomainMailboxTest, sendEmailPreferenceTest } from '../services/emailService.js';
-import { usesDomainMailbox } from '../config/mailContacts.js';
+import { isDomainSmtpConfigured } from '../config/mailContacts.js';
 import { PUSH_PURPOSES } from '../config/pushConsent.js';
 import { isSupportedPushEndpoint } from '../services/pushService.js';
 import {
@@ -377,7 +377,7 @@ export const getNotificationTestStatus = async (req, res, next) => {
     ]);
     return res.set('Cache-Control', 'no-store').json({
       mx, spf, dkim, dmarc,
-      smtp: usesDomainMailbox && !!process.env.EMAIL_PASS && Number(process.env.EMAIL_PORT || 587) === 587,
+      smtp: isDomainSmtpConfigured,
       frontendUrl: process.env.FRONTEND_URL?.replace(/\/+$/, '') === 'https://pro-fitness-glass.zeabur.app',
       webPush: !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT),
       androidPush: hasFirebasePush()
@@ -498,7 +498,7 @@ export const sendEmailMailboxTest = async (req, res, next) => {
   if (!req.is('application/json')) {
     return res.status(415).json({ error: 'La solicitud debe enviarse desde el panel de administración.' });
   }
-  if (!usesDomainMailbox || !process.env.EMAIL_PASS) {
+  if (!isDomainSmtpConfigured) {
     return res.status(409).json({ error: 'Configura el SMTP de notificaciones@profitnessglass.es en el backend antes de enviar la prueba.' });
   }
 
@@ -612,10 +612,10 @@ export const sendCustomPush = async (req, res, next) => {
       res.json({ message: `Publicando el aviso para ${users.length} usuarios. El push se enviará a quienes hayan activado las novedades.` });
       
       for (const user of users) {
-        await createNotification(user.id, { type: 'info', title, message, data: { url: url || '/' }, pushPurpose: 'news' });
+        await createNotification(user.id, { type: 'info', title, message, data: url ? { url } : null, pushPurpose: 'news' });
       }
     } else {
-      await createNotification(target_user_id, { type: 'info', title, message, data: { url: url || '/' }, pushPurpose: 'news' });
+      await createNotification(target_user_id, { type: 'info', title, message, data: url ? { url } : null, pushPurpose: 'news' });
       res.json({ message: 'Aviso publicado. El push requiere que el usuario haya activado las novedades.' });
     }
   } catch (error) {

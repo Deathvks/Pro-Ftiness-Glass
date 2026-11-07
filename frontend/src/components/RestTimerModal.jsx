@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { X, ArrowLeft, Plus, Minus, Minimize2, Play, Pause, Sliders } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { triggerHaptic, HapticType } from '../utils/haptics';
-import { notifyRestTimerComplete } from '../utils/timerSound';
 import useModalLock from '../hooks/useModalLock';
 
 const RestTimerModal = ({ onNavigate }) => {
@@ -54,17 +53,10 @@ const RestTimerModal = ({ onNavigate }) => {
       if (isRestTimerPaused && restTimerRemaining !== null) {
         remaining = Math.ceil(restTimerRemaining / 1000);
       } else if (restTimerEndTime) {
-        remaining = Math.round((restTimerEndTime - Date.now()) / 1000);
+        remaining = Math.ceil((restTimerEndTime - Date.now()) / 1000);
       }
 
-      const newTimeLeft = Math.max(0, remaining);
-
-      setTimeLeft((prevTimeLeft) => {
-        if (prevTimeLeft > 0 && newTimeLeft === 0) {
-          notifyRestTimerComplete();
-        }
-        return newTimeLeft;
-      });
+      setTimeLeft(Math.max(0, remaining));
     };
 
     updateTimer();

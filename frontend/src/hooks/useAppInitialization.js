@@ -1,13 +1,14 @@
 /* frontend/src/hooks/useAppInitialization.js */
 import { useState, useEffect } from 'react';
-import { Capacitor, registerPlugin } from '@capacitor/core';
+import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
-
-const NativeTimer = Capacitor.isNativePlatform() ? registerPlugin('NativeTimer') : null;
+import { useRestTimerCompletion } from './useRestTimerCompletion';
+import { getPushView } from '../config/pushRoutes';
 
 export const useAppInitialization = ({ setView, setAuthView, view }) => {
+  useRestTimerCompletion();
   const [isInitialLoad, setIsInitialLoad] = useState(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
@@ -64,6 +65,8 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
 
   useEffect(() => {
     const resolveTargetView = (profile, activeWorkout) => {
+      const explicitView = getPushView(window.location.pathname);
+      if (explicitView) return explicitView;
       if (activeWorkout) return 'workout';
       const lastView = localStorage.getItem('lastView');
       if (profile?.goal) {
@@ -219,33 +222,12 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
     return () => window.removeEventListener('popstate', handleUrlChange);
   }, [isAuthenticated, setAuthView]); 
 
-  // Gestión de notificación en segundo/primer plano
+  // Actualizar el chat al regresar a la app sin interrumpir la alarma de descanso.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    const handleAppStateChange = async ({ isActive }) => {
-      if (!isActive) {
-        const state = useAppStore.getState();
-        if (state.isResting && !state.isRestTimerPaused && state.restTimerEndTime) {
-          if (NativeTimer) {
-            NativeTimer.startTimer({
-              title: 'Descanso en progreso',
-              endTimeMs: state.restTimerEndTime
-            }).catch(() => {});
-          }
-        }
-      } else {
-        // Al volver a la app, limpiamos la notificación
-        if (NativeTimer) NativeTimer.stopTimer().catch(() => {});
-        
-        if (isAuthenticated) {
-            // Refetch unread counts just in case we received messages while in the background
-            const state = useAppStore.getState();
-            if (state.fetchUnreadChats) {
-              state.fetchUnreadChats();
-            }
-        }
-      }
+    const handleAppStateChange = ({ isActive }) => {
+      if (isActive && isAuthenticated) useAppStore.getState().fetchUnreadChats?.();
     };
 
     const listener = CapApp.addListener('appStateChange', handleAppStateChange);

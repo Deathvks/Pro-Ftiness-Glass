@@ -380,6 +380,7 @@ const AdminNotifications = () => {
                 rows={3}
                 className="bg-bg-secondary border border-transparent dark:border-white/10 rounded-xl px-4 py-3 text-text-primary focus:ring-2 focus:ring-accent outline-none resize-none"
               />
+              <p className="text-xs text-text-secondary">Este mensaje puede verse en la pantalla bloqueada. Evita incluir datos privados.</p>
             </div>
 
             <div className="flex flex-col gap-2">
