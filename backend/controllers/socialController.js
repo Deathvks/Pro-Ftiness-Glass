@@ -772,7 +772,8 @@ export const getFeed = async (req, res) => {
                 where: buildWhereClause(withDateLimit),
                 order: [
                     ['workout_date', 'DESC'],
-                    [{ model: WorkoutComment, as: 'Comments' }, 'created_at', 'ASC']
+                    [{ model: WorkoutComment, as: 'Comments' }, 'created_at', 'ASC'],
+                    [{ model: WorkoutLogDetail, as: 'WorkoutLogDetails' }, 'id', 'ASC']
                 ],
                 limit: limitCount,
                 include: [
@@ -802,7 +803,7 @@ export const getFeed = async (req, res) => {
                             {
                                 model: RoutineExercise,
                                 as: 'RoutineExercises',
-                                attributes: ['name', 'image_url_start'],
+                                attributes: ['id', 'name', 'exercise_order', 'image_url_start'],
                                 include: [
                                     {
                                         model: ExerciseList,
@@ -907,6 +908,23 @@ export const getFeed = async (req, res) => {
             }));
 
             if (logData.WorkoutLogDetails) {
+                // Orden canónico de la rutina asociada (si existe)
+                const routineExercises = (logData.routine?.RoutineExercises || []).slice().sort((a, b) => {
+                    const orderA = a.exercise_order !== undefined && a.exercise_order !== null ? Number(a.exercise_order) : 0;
+                    const orderB = b.exercise_order !== undefined && b.exercise_order !== null ? Number(b.exercise_order) : 0;
+                    return orderA - orderB;
+                });
+
+                const routineOrderMap = new Map();
+                routineExercises.forEach((re, idx) => {
+                    if (re.name) {
+                        const norm = re.name.toLowerCase().trim();
+                        if (!routineOrderMap.has(norm)) {
+                            routineOrderMap.set(norm, idx);
+                        }
+                    }
+                });
+
                 logData.WorkoutLogDetails = logData.WorkoutLogDetails.map(detail => {
                     const matchingEx = exerciseDictionary[detail.exercise_name?.toLowerCase()];
 
@@ -923,6 +941,19 @@ export const getFeed = async (req, res) => {
                         video_url: matchingEx ? matchingEx.video_url : null,
                         WorkoutLogSets: validSets
                     };
+                });
+
+                // Ordenar los ejercicios según el orden de la rutina o por orden de ejecución/creación (id)
+                logData.WorkoutLogDetails.sort((a, b) => {
+                    const nameA = (a.exercise_name || '').toLowerCase().trim();
+                    const nameB = (b.exercise_name || '').toLowerCase().trim();
+                    const hasA = routineOrderMap.has(nameA);
+                    const hasB = routineOrderMap.has(nameB);
+
+                    if (hasA && hasB) return routineOrderMap.get(nameA) - routineOrderMap.get(nameB);
+                    if (hasA) return -1;
+                    if (hasB) return 1;
+                    return (a.id || 0) - (b.id || 0);
                 });
             }
 

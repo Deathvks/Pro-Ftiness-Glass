@@ -1,6 +1,6 @@
 {
-  "version": "7.16.22",
-  "releaseNotes": "Actualización v7.16.22: La cabecera móvil solo se despliega al llegar arriba del todo al hacer scroll, evitando aperturas intermedias.",
+  "version": "7.16.23",
+  "releaseNotes": "Actualización v7.16.23: Alineación vertical del banner en Rutinas con el resto de la app y orden riguroso de ejercicios según la rutina en el Muro Social Global.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",

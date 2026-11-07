@@ -1125,9 +1125,34 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                             )}
                                         </div>
 
-                                        {Array.isArray(log.WorkoutLogDetails) && log.WorkoutLogDetails.length > 0 && (
+                                        {Array.isArray(log.WorkoutLogDetails) && log.WorkoutLogDetails.length > 0 && (() => {
+                                            const routineExercises = (log.routine?.RoutineExercises || []).slice().sort((a, b) => {
+                                                const orderA = a.exercise_order !== undefined && a.exercise_order !== null ? Number(a.exercise_order) : 0;
+                                                const orderB = b.exercise_order !== undefined && b.exercise_order !== null ? Number(b.exercise_order) : 0;
+                                                return orderA - orderB;
+                                            });
+                                            const routineOrderMap = new Map();
+                                            routineExercises.forEach((re, idx) => {
+                                                if (re.name) {
+                                                    const norm = re.name.toLowerCase().trim();
+                                                    if (!routineOrderMap.has(norm)) {
+                                                        routineOrderMap.set(norm, idx);
+                                                    }
+                                                }
+                                            });
+                                            const sortedDetails = [...log.WorkoutLogDetails].sort((a, b) => {
+                                                const nameA = (a.exercise_name || '').toLowerCase().trim();
+                                                const nameB = (b.exercise_name || '').toLowerCase().trim();
+                                                const hasA = routineOrderMap.has(nameA);
+                                                const hasB = routineOrderMap.has(nameB);
+                                                if (hasA && hasB) return routineOrderMap.get(nameA) - routineOrderMap.get(nameB);
+                                                if (hasA) return -1;
+                                                if (hasB) return 1;
+                                                return (a.id || 0) - (b.id || 0);
+                                            });
+                                            return (
                                             <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/10 space-y-3.5 sm:space-y-4">
-                                                {log.WorkoutLogDetails.map((detail, idx) => {
+                                                {sortedDetails.map((detail, idx) => {
                                                     if (!detail) return null;
                                                     let imgUrl = detail.image_url;
                                                     if (!imgUrl && exercises && exercises.length > 0) {
@@ -1189,7 +1214,8 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                                                     );
                                                 })}
                                             </div>
-                                        )}
+                                            );
+                                        })()}
                                     </div>
 
                                     {/* Reacciones Rápidas de Gimnasio (1 toque) y Debate */}

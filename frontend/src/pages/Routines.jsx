@@ -943,7 +943,7 @@ const Routines = ({ setView, mainContentRef }) => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 pb-28 md:p-8 md:pb-8 animate-[fade-in_0.5s_ease_out]">
+    <div className="w-full max-w-5xl mx-auto px-4 pt-4 pb-28 md:p-8 md:pb-8 animate-[fade-in_0.5s_ease_out]">
       <RoutineTourGuide />
       <Helmet>
         <title>
@@ -959,19 +959,19 @@ const Routines = ({ setView, mainContentRef }) => {
         />
       </Helmet>
 
-      <PromoBanner type="routines" onClick={() => setView('asesoria')} />
-
-      <div className="hidden md:flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
+      <div className="hidden md:flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
         <div className="flex items-center gap-3.5">
-          <h1 className="text-3xl md:text-4xl font-extrabold mt-10 md:mt-0 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
             Rutinas
           </h1>
         </div>
         {activeTab === 'myRoutines' && <RoutineActionButtons id="routines-actions-desktop" />}
       </div>
 
+      <PromoBanner type="routines" onClick={() => setView('asesoria')} />
+
       {/* Tabs principales con márgenes de seguridad para las sombras */}
-      <div id="routines-tabs" className="flex items-center mb-8 overflow-x-auto py-2 -mx-4 px-2.5 md:mx-0 md:px-0 scrollbar-hide mt-6 md:mt-0">
+      <div id="routines-tabs" className="flex items-center mb-8 overflow-x-auto py-2 -mx-4 px-2.5 md:mx-0 md:px-0 scrollbar-hide">
         <button
           onClick={() => setActiveTab('myRoutines')}
           className={getTabClass('myRoutines')}

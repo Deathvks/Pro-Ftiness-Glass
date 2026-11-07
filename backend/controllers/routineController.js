@@ -781,7 +781,11 @@ export const downloadRoutine = async (req, res, next) => {
       image_url: sourceRoutine.image_url 
     }, { transaction: t });
 
-    const exercisesToCopy = sourceRoutine.RoutineExercises.map(ex => ({
+    const sortedSourceExercises = (sourceRoutine.RoutineExercises || []).slice().sort(
+      (a, b) => (a.exercise_order ?? 0) - (b.exercise_order ?? 0)
+    );
+
+    const exercisesToCopy = sortedSourceExercises.map((ex, idx) => ({
       exercise_list_id: ex.exercise_list_id,
       name: ex.name,
       muscle_group: ex.muscle_group,
@@ -791,7 +795,7 @@ export const downloadRoutine = async (req, res, next) => {
       video_url: ex.video_url,
       image_url_start: ex.image_url_start,
       superset_group_id: ex.superset_group_id,
-      exercise_order: ex.exercise_order,
+      exercise_order: idx,
       is_manual: ex.exercise_list_id === null,
       reminder: null // <-- AÑADIDO: No copiamos las metas de otras personas
     }));
