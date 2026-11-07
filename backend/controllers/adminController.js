@@ -4,6 +4,7 @@ import { Resolver } from 'node:dns/promises';
 import db from '../models/index.js';
 import { createNotification, hasFirebasePush } from '../services/notificationService.js';
 import os from 'os';
+import fs from 'node:fs';
 import { processUploadedFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/imageService.js';
 import { canSendOptionalEmail, sendDomainMailboxTest, sendEmailPreferenceTest } from '../services/emailService.js';
@@ -813,7 +814,7 @@ export const freeMemory = async (req, res, next) => {
         }
       });
     } else {
-      return res.status(400).json({ success: false, message: 'El recolector de basura (GC) no está expuesto en Zeabur.' });
+      return res.status(400).json({ success: false, message: 'El recolector de basura (GC) no está expuesto en Node.js.' });
     }
   } catch (error) {
     next(error);
@@ -844,6 +845,147 @@ export const getSystemStats = async (req, res, next) => {
     next(error);
   }
 };
+
+// Monitor integral de recursos del servidor (CPU, RAM, Swap, Disco, Uptime, MySQL, PM2)
+export const getServerResources = async (req, res, next) => {
+  try {
+    const cpus = os.cpus();
+    const loadAvg = os.loadavg();
+
+    // Muestreo rápido de uso de CPU (100ms)
+    const getCpuTimes = () => {
+      let idle = 0;
+      let total = 0;
+      for (const cpu of os.cpus()) {
+        for (const [type, time] of Object.entries(cpu.times)) {
+          total += time;
+          if (type === 'idle') idle += time;
+        }
+      }
+      return { idle, total };
+    };
+
+    const first = getCpuTimes();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const second = getCpuTimes();
+    const idleDiff = second.idle - first.idle;
+    const totalDiff = second.total - first.total;
+    const cpuUsagePercent = totalDiff > 0
+      ? Math.min(100, Math.max(0, Math.round((1 - idleDiff / totalDiff) * 100)))
+      : 0;
+
+    // Memoria RAM y Swap
+    let memTotal = os.totalmem();
+    let memFree = os.freemem();
+    let memAvailable = memFree;
+    let swapTotal = 0;
+    let swapFree = 0;
+
+    try {
+      if (fs.existsSync('/proc/meminfo')) {
+        const meminfo = fs.readFileSync('/proc/meminfo', 'utf8');
+        const getVal = (key) => {
+          const m = meminfo.match(new RegExp(`^${key}:\\s+(\\d+)`, 'm'));
+          return m ? parseInt(m[1], 10) * 1024 : 0;
+        };
+        memTotal = getVal('MemTotal') || memTotal;
+        memFree = getVal('MemFree') || memFree;
+        memAvailable = getVal('MemAvailable') || memFree;
+        swapTotal = getVal('SwapTotal');
+        swapFree = getVal('SwapFree');
+      }
+    } catch (_) {}
+
+    const memUsed = Math.max(0, memTotal - memAvailable);
+    const memPercent = memTotal > 0 ? Math.round((memUsed / memTotal) * 100) : 0;
+    const swapUsed = Math.max(0, swapTotal - swapFree);
+    const swapPercent = swapTotal > 0 ? Math.round((swapUsed / swapTotal) * 100) : 0;
+
+    // Disco NVMe
+    let diskTotal = 0;
+    let diskFree = 0;
+    let diskUsed = 0;
+    let diskPercent = 0;
+    try {
+      if (typeof fs.statfsSync === 'function') {
+        const stat = fs.statfsSync('/');
+        diskTotal = stat.bsize * stat.blocks;
+        diskFree = stat.bsize * stat.bavail;
+        diskUsed = Math.max(0, diskTotal - diskFree);
+        diskPercent = diskTotal > 0 ? Math.round((diskUsed / diskTotal) * 100) : 0;
+      }
+    } catch (_) {}
+
+    // Proceso Node
+    const procMem = process.memoryUsage();
+
+    // Estado y latencia de MySQL
+    let dbStatus = 'online';
+    let dbLatencyMs = 0;
+    try {
+      const dbStart = Date.now();
+      await db.sequelize.authenticate();
+      dbLatencyMs = Date.now() - dbStart;
+    } catch (_) {
+      dbStatus = 'error';
+      dbLatencyMs = -1;
+    }
+
+    return res.json({
+      success: true,
+      timestamp: Date.now(),
+      server: {
+        hostname: os.hostname(),
+        platform: os.platform(),
+        release: os.release(),
+        arch: os.arch(),
+        uptimeSeconds: Math.round(os.uptime()),
+        loadAvg: loadAvg.map((l) => parseFloat(l.toFixed(2))),
+        cpu: {
+          model: cpus[0]?.model || 'vCPU',
+          cores: cpus.length,
+          usagePercent: cpuUsagePercent,
+        },
+        ram: {
+          totalMB: Math.round(memTotal / 1024 / 1024),
+          usedMB: Math.round(memUsed / 1024 / 1024),
+          freeMB: Math.round(memAvailable / 1024 / 1024),
+          usagePercent: memPercent,
+        },
+        swap: {
+          totalMB: Math.round(swapTotal / 1024 / 1024),
+          usedMB: Math.round(swapUsed / 1024 / 1024),
+          freeMB: Math.round(swapFree / 1024 / 1024),
+          usagePercent: swapPercent,
+        },
+        disk: {
+          totalGB: (diskTotal / (1024 ** 3)).toFixed(1),
+          usedGB: (diskUsed / (1024 ** 3)).toFixed(1),
+          freeGB: (diskFree / (1024 ** 3)).toFixed(1),
+          usagePercent: diskPercent,
+        },
+      },
+      process: {
+        pid: process.pid,
+        uptimeSeconds: Math.round(process.uptime()),
+        nodeVersion: process.version,
+        heapUsedMB: Math.round(procMem.heapUsed / 1024 / 1024),
+        heapTotalMB: Math.round(procMem.heapTotal / 1024 / 1024),
+        rssMB: Math.round(procMem.rss / 1024 / 1024),
+        gcAvailable: typeof global.gc === 'function',
+      },
+      database: {
+        dialect: 'mysql',
+        status: dbStatus,
+        latencyMs: dbLatencyMs,
+        name: db.sequelize?.config?.database || 'pro_fitness_glass',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 
 export const getUploadLogs = async (req, res, next) => {

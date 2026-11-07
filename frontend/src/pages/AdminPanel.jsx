@@ -39,6 +39,7 @@ const AdminNotificationTests = lazyWithRetry(() => import('./AdminNotificationTe
 const SecurityDashboard = lazyWithRetry(() => import('./SecurityDashboard'), 'adminSecurity');
 const AdminNewsManager = lazyWithRetry(() => import('../components/Admin/AdminNewsManager'), 'adminNews');
 const AdminRetentionRescue = lazyWithRetry(() => import('../components/Admin/AdminRetentionRescue'), 'adminRetention');
+const AdminServerResources = lazyWithRetry(() => import('./AdminServerResources'), 'adminServerResources');
 
 const REPORT_CATEGORY_LABELS = {
   bug: 'Bug',
@@ -1583,7 +1584,9 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
         ) : (
           <AdminTabErrorBoundary activeTab={activeTab}>
             <React.Suspense fallback={<div className="flex justify-center p-8"><Spinner size={32} /></div>}>
-            {activeTab === 'retention' ? (
+            {activeTab === 'server' ? (
+              <AdminServerResources onFreeMemorySuccess={fetchSystemStats} />
+            ) : activeTab === 'retention' ? (
               <AdminRetentionRescue />
             ) : activeTab === 'exercises' ? (
               <AdminExercises />

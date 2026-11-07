@@ -1,7 +1,8 @@
-import { Bell, Bug, ClipboardCheck, Clock, Cloud, Mail, Monitor, Newspaper, ShieldAlert, Star, Users } from 'lucide-react';
+import { Bell, Bug, ClipboardCheck, Clock, Cloud, Mail, Monitor, Newspaper, Server, ShieldAlert, Star, Users } from 'lucide-react';
 
 export const ADMIN_SECTIONS = [
   { id: 'users', label: 'Usuarios', icon: Users },
+  { id: 'server', label: 'Servidor', icon: Server },
   { id: 'retention', label: 'Retención 72h', icon: Clock },
   { id: 'reports', label: 'Reportes', icon: Bug },
   { id: 'exercises', label: 'Ejercicios', icon: Monitor },

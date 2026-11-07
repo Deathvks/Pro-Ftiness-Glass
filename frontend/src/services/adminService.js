@@ -155,3 +155,10 @@ export const triggerRetentionRescue = (payload = {}) => {
         body: payload,
     });
 };
+
+/**
+ * Obtiene el estado y métricas detalladas de los recursos del servidor VPS.
+ */
+export const getServerResources = () => {
+    return apiClient('/admin/server-resources');
+};
