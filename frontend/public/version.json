@@ -1,25 +1,25 @@
 {
-  "version": "7.16.7",
-  "releaseNotes": "Actualización v7.16.7: navega por los siete apartados de Tu progreso desde una lista en móvil.",
+  "version": "7.16.8",
+  "releaseNotes": "Actualización v7.16.8: Monitor de recursos del servidor en tiempo real, latencias y optimizaciones de rendimiento.",
   "welcome": {
-    "title": "Tú eliges tus notificaciones",
-    "subtitle": "Configura por separado los correos y los avisos push en Ajustes → Notificaciones.",
+    "title": "Monitor de Servidor y Rendimiento",
+    "subtitle": "Nuevo visualizador en tiempo real de recursos y optimizaciones del servidor VPS.",
     "features": [
       {
-        "title": "Avisos de servicio",
-        "description": "El push de cada dispositivo te avisa de novedades en tu cuenta o asesoría. Los detalles del chat y de seguridad se consultan dentro de la app."
+        "title": "Monitor de Hardware en Vivo",
+        "description": "Visualiza el consumo real de CPU, memoria RAM del VPS (4 GB), espacio de disco NVMe y salud de procesos de forma continua."
       },
       {
-        "title": "Elige qué push recibir",
-        "description": "Puedes activar por separado los recordatorios de entrenamiento, el seguimiento de asesoría y las novedades. También puedes retirar cada permiso en Ajustes."
+        "title": "Explicación Interactiva de Métricas",
+        "description": "Pulsa sobre los iconos informativos para entender cada métrica: tiempo activo, latencia de base de datos MySQL (1 ms) y memoria V8."
       },
       {
-        "title": "Recordatorios por correo",
-        "description": "En el resumen de tu primer entrenamiento o al iniciar una consulta de asesoría puedes ver la opción de activar el seguimiento por correo. Ajustes reúne todas las preferencias."
+        "title": "Notificaciones Legales y Canales Seguros",
+        "description": "Configuración transparente de correos (notificaciones@, soporte@, privacidad@) adaptada a la normativa RGPD."
       },
       {
-        "title": "Nuevas direcciones de correo",
-        "description": "Los envíos salen de notificaciones@profitnessglass.es. Escríbenos a soporte@profitnessglass.es para pedir ayuda o a privacidad@profitnessglass.es para consultas sobre tus datos."
+        "title": "Diseño Responsive",
+        "description": "Adaptación fluida para smartphones, tablets y pantallas de escritorio sin saturación visual."
       }
     ]
   }

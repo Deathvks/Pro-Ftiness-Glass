@@ -3,9 +3,9 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Server, Cpu, Layers, HardDrive, Activity, Database, 
   ShieldCheck, RefreshCw, Clock, Zap, CheckCircle2, 
-  AlertTriangle, Radio, ChevronLeft, Sparkles, Info, X 
+  AlertTriangle, Radio, ChevronLeft, Info, X 
 } from 'lucide-react';
-import { getServerResources, freeServerMemory } from '../services/adminService';
+import { getServerResources } from '../services/adminService';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 
@@ -60,11 +60,10 @@ const METRIC_EXPLANATIONS = {
   }
 };
 
-export default function AdminServerResources({ onFreeMemorySuccess, onBack, isMobile }) {
+export default function AdminServerResources({ onBack }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [freeingMemory, setFreeingMemory] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [activeInfoKey, setActiveInfoKey] = useState(null);
@@ -107,21 +106,6 @@ export default function AdminServerResources({ onFreeMemorySuccess, onBack, isMo
     };
   }, [autoRefresh, fetchResources]);
 
-  const handleFreeMemory = async () => {
-    setFreeingMemory(true);
-    try {
-      const res = await freeServerMemory();
-      addToast(res.message || 'Memoria liberada exitosamente', res.success ? 'success' : 'error');
-      await fetchResources(true);
-      if (onFreeMemorySuccess && res.stats) {
-        onFreeMemorySuccess(res.stats);
-      }
-    } catch (err) {
-      addToast(err.message || 'Error al forzar liberación de RAM', 'error');
-    } finally {
-      setFreeingMemory(false);
-    }
-  };
 
   const formatSeconds = (totalSeconds) => {
     if (!totalSeconds || totalSeconds < 0) return '0m';
@@ -225,7 +209,7 @@ export default function AdminServerResources({ onFreeMemorySuccess, onBack, isMo
         </p>
 
         {/* Barra de Acciones Móvil/Desktop */}
-        <div className="grid grid-cols-3 sm:flex sm:items-center sm:justify-end gap-2 pt-1">
+        <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2 pt-1">
           {/* Toggle Auto-refresco */}
           <button
             type="button"
@@ -251,22 +235,6 @@ export default function AdminServerResources({ onFreeMemorySuccess, onBack, isMo
           >
             <RefreshCw size={12} className={refreshing ? 'animate-spin shrink-0' : 'shrink-0'} />
             <span className="truncate">Refrescar</span>
-          </button>
-
-          {/* Botón Liberar RAM */}
-          <button
-            type="button"
-            onClick={handleFreeMemory}
-            disabled={freeingMemory}
-            className="flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl bg-accent text-accent-contrast text-[11px] sm:text-xs font-extrabold hover:brightness-110 active:scale-95 transition-all shadow-md shadow-accent/20 disabled:opacity-50"
-            title="Forzar al recolector de basura de Node.js (V8) a purgar memoria no utilizada"
-          >
-            {freeingMemory ? (
-              <RefreshCw size={12} className="animate-spin shrink-0" />
-            ) : (
-              <Sparkles size={12} className="shrink-0" />
-            )}
-            <span className="truncate">Liberar RAM</span>
           </button>
         </div>
       </div>
