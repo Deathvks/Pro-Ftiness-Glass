@@ -95,9 +95,11 @@ const sendOptionalMailAndLog = async (mailOptions, purpose, userId) => {
     : 'Recibes este aviso según tus preferencias de actividad en Pro Fitness Glass.';
   const footer = `
     <div style="max-width:600px;margin:24px auto 0;padding:16px 20px;border-top:1px solid #e5e7eb;text-align:center;font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#6b7280;">
-      ${footerMessage}
-      <a href="${unsubscribeUrl}" style="color:#4f46e5;text-decoration:underline;font-weight:bold;">Darse de baja de estos correos</a>
-      ${purpose ? `<br>Contacto <a href="mailto:${privacyContact}" style="color:#4f46e5;">${privacyContact}</a> · <a href="${baseUrl}/privacy" style="color:#4f46e5;">Política de privacidad</a>` : ''}
+      <p style="margin:0 0 8px 0;">${footerMessage}</p>
+      <p style="margin:0 0 8px 0;">
+        <a href="${unsubscribeUrl}" style="color:#4f46e5;text-decoration:underline;font-weight:bold;">Darse de baja de estos correos</a>
+      </p>
+      ${purpose ? `<p style="margin:0;font-size:11px;">Contacto: <a href="mailto:${privacyContact}" style="color:#4f46e5;">${privacyContact}</a> · <a href="${baseUrl}/privacy" style="color:#4f46e5;">Política de privacidad</a></p>` : ''}
     </div>
   `;
 
@@ -105,6 +107,9 @@ const sendOptionalMailAndLog = async (mailOptions, purpose, userId) => {
     ...mailOptions,
     subject: purpose ? `[Promocional] ${mailOptions.subject}` : mailOptions.subject,
     html: `${promotionalNotice}${mailOptions.html || ''}${footer}`,
+    text: mailOptions.text
+      ? `${mailOptions.text}\n\n---\n${footerMessage}\nDarse de baja: ${unsubscribeUrl}`
+      : undefined,
     headers: {
       ...(mailOptions.headers || {}),
       'List-Unsubscribe': `<${unsubscribeUrl}>`,
