@@ -603,14 +603,14 @@ export default function MainAppLayout({
       const currentScrollTop = Math.max(0, node.scrollTop);
       let needsSync = false;
 
-      // Si volvemos al tope absoluto (<= 4px): transparente sin desenfoque ni sombra
-      if (currentScrollTop <= 4) {
-        if (isScrolledRef.current) {
-          isScrolledRef.current = false;
-          needsSync = true;
-        }
+      // Si volvemos a la zona superior (<= 36px), el header vuelve a desplegarse
+      if (currentScrollTop <= 36) {
         if (isHeaderHiddenRef.current) {
           isHeaderHiddenRef.current = false;
+          needsSync = true;
+        }
+        if (currentScrollTop <= 4 && isScrolledRef.current) {
+          isScrolledRef.current = false;
           needsSync = true;
         }
         accumulatedDown = 0;
@@ -620,15 +620,9 @@ export default function MainAppLayout({
         return;
       }
 
-      // Si nos hemos desplazado más de 4px, activar desenfoque glass inmediatamente
+      // Si nos hemos desplazado más allá de 4px, activar desenfoque glass inmediatamente
       if (!isScrolledRef.current) {
         isScrolledRef.current = true;
-        needsSync = true;
-      }
-
-      // Si estamos en la zona superior (<= 36px), re-mostrar el header si estaba oculto
-      if (currentScrollTop <= 36 && isHeaderHiddenRef.current) {
-        isHeaderHiddenRef.current = false;
         needsSync = true;
       }
 
@@ -638,20 +632,15 @@ export default function MainAppLayout({
         accumulatedDown += delta;
         accumulatedUp = 0;
 
-        // Ocultar al deslizar hacia abajo una vez que se ha desenfocado y pasado la zona inicial
+        // Ocultar al deslizar hacia abajo una vez pasado el margen inicial (> 52px)
         if (accumulatedDown > 14 && currentScrollTop > 52 && !isHeaderHiddenRef.current) {
           isHeaderHiddenRef.current = true;
           needsSync = true;
         }
       } else if (delta < 0) {
+        // Al subir en medio de la pantalla, NO se despliega el header hasta llegar arriba del todo (<= 36px)
         accumulatedUp += Math.abs(delta);
         accumulatedDown = 0;
-
-        // Si el usuario hace scroll hacia arriba continuo (> 30px), mostrarlo de nuevo
-        if (accumulatedUp > 30 && isHeaderHiddenRef.current) {
-          isHeaderHiddenRef.current = false;
-          needsSync = true;
-        }
       }
 
       lastScrollTop = currentScrollTop;
