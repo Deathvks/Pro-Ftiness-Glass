@@ -54,7 +54,7 @@ const MaintenanceNoticeBanner = ({
       } ${rounded ? 'rounded-2xl border border-emerald-500/30 shadow-sm' : ''} ${className}`}
     >
       {/* Contenedor: estrictamente en 1 sola línea fluida sin saltos */}
-      <div className="w-full max-w-5xl mx-auto flex items-center justify-between sm:justify-center gap-1.5 sm:gap-2 whitespace-nowrap overflow-hidden">
+      <div className="w-full max-w-5xl mx-auto flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap overflow-hidden">
         {/* Contenido principal en 1 sola línea */}
         <div className="flex items-center gap-1.5 sm:gap-2 text-[10.5px] sm:text-xs leading-none font-semibold sm:font-bold text-emerald-950 dark:text-emerald-100 min-w-0 overflow-hidden">
           {/* Badge de estado con pulso verde */}
@@ -94,7 +94,7 @@ const MaintenanceNoticeBanner = ({
           onClick={handleDismiss}
           aria-label="Cerrar aviso definitivamente"
           title="No volver a mostrar este aviso"
-          className="shrink-0 p-1 -mr-1 rounded-full text-emerald-800/80 hover:text-emerald-950 dark:text-emerald-200/80 dark:hover:text-white hover:bg-emerald-500/20 active:scale-90 transition-all cursor-pointer self-center"
+          className="shrink-0 p-1 ml-0.5 sm:ml-1 rounded-full text-emerald-800/80 hover:text-emerald-950 dark:text-emerald-200/80 dark:hover:text-white hover:bg-emerald-500/20 active:scale-90 transition-all cursor-pointer self-center"
         >
           <X size={13} strokeWidth={2.5} />
         </button>

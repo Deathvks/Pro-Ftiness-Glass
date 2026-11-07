@@ -1,6 +1,6 @@
 {
-  "version": "7.16.24",
-  "releaseNotes": "Actualización v7.16.24: Aviso de migración ultracompacto en una sola línea en móvil con resumen directo.",
+  "version": "7.16.25",
+  "releaseNotes": "Actualización v7.16.25: Aviso de migración completamente centrado y agrupado en móvil con el botón de cierre integrado.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",
