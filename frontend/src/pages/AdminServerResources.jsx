@@ -3,11 +3,12 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Server, Cpu, Layers, HardDrive, Activity, Database, 
   ShieldCheck, RefreshCw, Clock, Zap, CheckCircle2, 
-  AlertTriangle, Radio, ChevronLeft, Info, X 
+  AlertTriangle, Radio, ChevronLeft, Info 
 } from 'lucide-react';
 import { getServerResources } from '../services/adminService';
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
+import ServerMetricInfoModal from '../components/Admin/ServerMetricInfoModal';
 
 const METRIC_EXPLANATIONS = {
   vpsUptime: {
@@ -588,60 +589,11 @@ export default function AdminServerResources({ onBack }) {
         </div>
       </div>
 
-      {/* 5. Modal Explicativo de Métricas (Pop-up con información amigable en español) */}
-      {activeInfo && (
-        <div 
-          className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-[fade-in_0.2s_ease-out]"
-          onClick={() => setActiveInfoKey(null)}
-        >
-          <div 
-            className="w-full max-w-md bg-bg-secondary rounded-[28px] p-6 shadow-2xl border border-glass-border ring-1 ring-black/10 dark:ring-white/10 animate-[scale-in_0.25s_ease-out]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-2xl bg-accent/10 text-accent shrink-0">
-                  {React.createElement(activeInfo.icon, { size: 22 })}
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-text-primary leading-tight">
-                    {activeInfo.title}
-                  </h3>
-                  <span className="text-[11px] font-bold text-accent uppercase tracking-wider">
-                    Glosario de Infraestructura
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveInfoKey(null)}
-                className="p-1.5 rounded-full text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs sm:text-sm text-text-secondary leading-relaxed">
-              <div className="p-3 rounded-xl bg-black/5 dark:bg-white/5 font-semibold text-text-primary">
-                {activeInfo.summary}
-              </div>
-              <p>
-                {activeInfo.detail}
-              </p>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-black/5 dark:border-white/10 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setActiveInfoKey(null)}
-                className="px-5 py-2.5 rounded-full bg-accent text-accent-contrast text-xs font-bold hover:brightness-110 active:scale-95 transition-all shadow-md shadow-accent/20 cursor-pointer"
-              >
-                Entendido
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 5. Modal Explicativo de Métricas (Renderizado con ModalPortal y bloqueo de scroll) */}
+      <ServerMetricInfoModal 
+        metric={activeInfo} 
+        onClose={() => setActiveInfoKey(null)} 
+      />
     </div>
   );
 }
