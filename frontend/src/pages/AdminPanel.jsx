@@ -1585,7 +1585,7 @@ const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
           <AdminTabErrorBoundary activeTab={activeTab}>
             <React.Suspense fallback={<div className="flex justify-center p-8"><Spinner size={32} /></div>}>
             {activeTab === 'server' ? (
-              <AdminServerResources onFreeMemorySuccess={fetchSystemStats} />
+              <AdminServerResources onFreeMemorySuccess={fetchSystemStats} isMobile={isMobile} onBack={() => isMobile ? closeSection() : setActiveTab('users')} />
             ) : activeTab === 'retention' ? (
               <AdminRetentionRescue />
             ) : activeTab === 'exercises' ? (
