@@ -77,7 +77,7 @@ export const getClients = async (req, res) => {
             // El panel solo necesita estos campos; no cargar columnas de
             // credenciales, preferencias y datos de cuenta en cada visita.
             attributes: [
-                'id', 'name', 'username', 'lastSeen', 'createdAt', 'profile_image_url',
+                'id', 'name', 'username', 'lastSeen', ['created_at', 'createdAt'], 'profile_image_url',
                 'height', 'age', 'gender', 'goal', 'activity_level',
                 'anamnesis_data', 'role', 'email'
             ]
