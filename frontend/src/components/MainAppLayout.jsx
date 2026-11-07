@@ -499,6 +499,7 @@ export default function MainAppLayout({
   // --- DETECCIÓN DE SCROLL ULTRA-FLUIDA (60/120 FPS EN COMPOSITOR GPU TIPO APPLE) ---
   const isHeaderHiddenRef = useRef(false);
   const isGlobalModalOpenRef = useRef(false);
+  const isScrolledRef = useRef(false);
   const mobileHeaderRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(0);
 
@@ -507,13 +508,13 @@ export default function MainAppLayout({
     if (!el) return;
     const modalOpen = isGlobalModalOpenRef.current;
     const hidden = isHeaderHiddenRef.current;
+    const scrolled = isScrolledRef.current;
 
     if (modalOpen) {
       el.style.transform = 'translate3d(0, -16px, 0)';
       el.style.opacity = '0';
       el.style.pointerEvents = 'none';
     } else if (hidden) {
-      // Animación pura en el hilo del compositor GPU (transform + opacity sobre textura estática sin backdrop-filter)
       el.style.transform = 'translate3d(0, -100%, 0)';
       el.style.opacity = '0';
       el.style.pointerEvents = 'none';
@@ -521,6 +522,15 @@ export default function MainAppLayout({
       el.style.transform = 'translate3d(0, 0, 0)';
       el.style.opacity = '1';
       el.style.pointerEvents = 'auto';
+    }
+
+    // Efecto de desenfoque glass al hacer scroll hacia abajo (deja de ser transparente antes de desaparecer)
+    if (scrolled) {
+      el.classList.add('bg-bg-primary/85', 'backdrop-blur-md', 'border-b', 'border-glass-border/40', 'shadow-sm');
+      el.classList.remove('bg-transparent');
+    } else {
+      el.classList.remove('bg-bg-primary/85', 'backdrop-blur-md', 'border-b', 'border-glass-border/40', 'shadow-sm');
+      el.classList.add('bg-transparent');
     }
   }, []);
 
@@ -580,6 +590,7 @@ export default function MainAppLayout({
     node.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     node.scrollLeft = 0;
     isHeaderHiddenRef.current = false;
+    isScrolledRef.current = false;
     syncMobileHeaderDOM();
 
     let lastScrollTop = 0;
@@ -590,17 +601,35 @@ export default function MainAppLayout({
     const updateOnScroll = () => {
       scrollRafId = null;
       const currentScrollTop = Math.max(0, node.scrollTop);
+      let needsSync = false;
 
-      // Si volvemos a la zona superior (<= 36px), mostramos el header con transición calmada
-      if (currentScrollTop <= 36) {
+      // Si volvemos al tope absoluto (<= 4px): transparente sin desenfoque ni sombra
+      if (currentScrollTop <= 4) {
+        if (isScrolledRef.current) {
+          isScrolledRef.current = false;
+          needsSync = true;
+        }
         if (isHeaderHiddenRef.current) {
           isHeaderHiddenRef.current = false;
-          syncMobileHeaderDOM();
+          needsSync = true;
         }
         accumulatedDown = 0;
         accumulatedUp = 0;
         lastScrollTop = currentScrollTop;
+        if (needsSync) syncMobileHeaderDOM();
         return;
+      }
+
+      // Si nos hemos desplazado más de 4px, activar desenfoque glass inmediatamente
+      if (!isScrolledRef.current) {
+        isScrolledRef.current = true;
+        needsSync = true;
+      }
+
+      // Si estamos en la zona superior (<= 36px), re-mostrar el header si estaba oculto
+      if (currentScrollTop <= 36 && isHeaderHiddenRef.current) {
+        isHeaderHiddenRef.current = false;
+        needsSync = true;
       }
 
       const delta = currentScrollTop - lastScrollTop;
@@ -609,16 +638,24 @@ export default function MainAppLayout({
         accumulatedDown += delta;
         accumulatedUp = 0;
 
+        // Ocultar al deslizar hacia abajo una vez que se ha desenfocado y pasado la zona inicial
         if (accumulatedDown > 14 && currentScrollTop > 52 && !isHeaderHiddenRef.current) {
           isHeaderHiddenRef.current = true;
-          syncMobileHeaderDOM();
+          needsSync = true;
         }
       } else if (delta < 0) {
         accumulatedUp += Math.abs(delta);
         accumulatedDown = 0;
+
+        // Si el usuario hace scroll hacia arriba continuo (> 30px), mostrarlo de nuevo
+        if (accumulatedUp > 30 && isHeaderHiddenRef.current) {
+          isHeaderHiddenRef.current = false;
+          needsSync = true;
+        }
       }
 
       lastScrollTop = currentScrollTop;
+      if (needsSync) syncMobileHeaderDOM();
     };
 
     const handleScroll = () => {
@@ -1420,7 +1457,7 @@ export default function MainAppLayout({
             contain: 'layout style paint',
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
-            transition: 'transform 0.52s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.42s cubic-bezier(0.32, 0.72, 0, 1)',
+            transition: 'transform 0.42s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.35s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease',
           }}
         >
           <div className="relative flex justify-between items-center w-full h-14 px-4">
