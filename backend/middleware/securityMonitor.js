@@ -134,42 +134,68 @@ export const logSecurityEvent = async ({ eventType, ipAddress, userId, userAgent
   }
 };
 
-// Middleware para detectar y bloquear intentos de acceso a archivos sensibles (Sniffing/Honeypot)
+// Middleware para detectar y bloquear intentos de acceso a archivos sensibles y escaneos (Honeypot Activo)
 export const sniffingDetector = async (req, res, next) => {
+  // Extraer únicamente la ruta del archivo/endpoint, excluyendo la query string para evitar falsos positivos en búsquedas
+  const rawPath = req.originalUrl.split('?')[0];
+  const urlPath = rawPath.toLowerCase();
+
+  // 1. Detección de Path Traversal (Intentos de salto de directorio a archivos del sistema)
+  const isPathTraversal = 
+    urlPath.includes('..') || 
+    urlPath.includes('/etc/passwd') || 
+    urlPath.includes('/etc/shadow') || 
+    urlPath.includes('/proc/self/') || 
+    urlPath.includes('win.ini') || 
+    urlPath.includes('boot.ini');
+
+  // 2. Extensiones de scripts ejecutables ajenos al stack (Node/React nunca usa PHP, ASP, CGI, Shell)
+  const isForeignScript = /\.(php\d?|asp|aspx|jsp|jspx|cgi|pl|py|sh|bash|exe|bat|cmd|vbs)($|\/)/i.test(urlPath);
+
+  // 3. Extensiones de backups, volcados y archivos comprimidos huérfanos
+  const isBackupOrDump = /\.(bak|backup|old|orig|save|swp|sql|dump|tar|tar\.gz|tgz|zip|rar|7z)($|\/)/i.test(urlPath);
+
+  // 4. Claves criptográficas, certificados privados y almacenes de credenciales
+  const isCryptoKey = /\.(pem|key|crt|cer|pfx|p12|kdbx)($|\/)/i.test(urlPath);
+
+  // 5. Catálogo de rutas críticas, archivos de configuración, paneles y herramientas de escaneo
   const sensitivePaths = [
     // Entornos, secretos y configuraciones
     '/.env', '/env.json', '/settings.py', '/configuration.php', '/config.json',
     // Control de versiones y metadatos
     '/.git', '/.svn', '/.hg', '/.ds_store',
-    // CMS, WordPress y paneles de administracion
+    // CMS, WordPress y paneles de administración
     '/wp-config', '/wp-admin', '/wp-login', '/wp-includes', '/xmlrpc.php',
-    '/phpmyadmin', '/pma', '/adminer', '/myadmin',
+    '/phpmyadmin', '/pma', '/adminer', '/myadmin', '/sqladmin', '/dbadmin', '/pgadmin',
     // Credenciales, claves privadas y accesos cloud
-    '/.aws', '/.ssh', 'id_rsa', 'id_ed25519', '/credentials',
-    // Configuracion del servidor y contenedores
+    '/.aws', '/.ssh', 'id_rsa', 'id_ed25519', '/credentials', '/.kube',
+    // Configuración del servidor, paquetes y contenedores
     '/docker-compose', '/dockerfile', '/.htaccess', '/.htpasswd', '/web.config',
-    '/nginx.conf', '/caddyfile', '/package.json', '/package-lock.json',
-    // Volcados de bases de datos y copias de seguridad
-    '/dump.sql', '/backup.sql', '/database.sql', '/db.sql', '/backup.tar', '/backup.zip',
-    // Fugas de informacion y depuradores
-    '/phpinfo', '/info.php', '/server-status', '/actuator'
+    '/nginx.conf', '/caddyfile', '/package.json', '/package-lock.json', '/yarn.lock', '/.npmrc',
+    // Fugas de información, depuradores y actuadores
+    '/phpinfo', '/info.php', '/server-status', '/server-info', '/actuator', '/solr', '/telescope', '/horizon'
   ];
 
-  // Convert to lower case for case-insensitive check
-  const url = req.originalUrl.toLowerCase();
-  
-  const isSensitive = sensitivePaths.some(path => url.includes(path));
+  const matchesSensitivePath = sensitivePaths.some(path => urlPath.includes(path));
+
+  const isSensitive = isPathTraversal || isForeignScript || isBackupOrDump || isCryptoKey || matchesSensitivePath;
 
   if (isSensitive) {
     const ip = getClientIp(req);
     if (!ip) return res.status(403).end();
-    
-    // Auto-ban IP permanently
+
+    let reasonType = 'Intento de Sniffing a archivo sensible';
+    if (isPathTraversal) reasonType = 'Ataque Path Traversal (Salto de directorio)';
+    else if (isForeignScript) reasonType = 'Escaneo de scripts ejecutables (PHP/ASP/CGI)';
+    else if (isBackupOrDump) reasonType = 'Búsqueda de volcados de BD o Backups';
+    else if (isCryptoKey) reasonType = 'Intento de extracción de claves/certificados';
+
+    // Auto-ban IP permanentemente
     try {
       const [blockedIp, wasCreated] = await IpBlacklist.findOrCreate({
         where: { ipAddress: ip },
         defaults: {
-          reason: 'Autobloqueo: Intento de Sniffing a archivo sensible (' + url + ')',
+          reason: `Autobloqueo: ${reasonType} (${rawPath})`,
           expiresAt: null
         }
       });
@@ -183,10 +209,10 @@ export const sniffingDetector = async (req, res, next) => {
         ipAddress: ip,
         userId: null,
         userAgent: req.headers['user-agent'] || 'Unknown',
-        details: 'IP bloqueada automaticamente por intentar acceder a ruta restringida: ' + req.originalUrl
+        details: `IP bloqueada automáticamente por ${reasonType}: ${rawPath}`
       });
-      
-      return res.status(403).json({ error: 'Acceso denegado. IP bloqueada por politicas de ciberseguridad.' });
+
+      return res.status(403).json({ error: 'Acceso denegado. IP bloqueada permanentemente por políticas de ciberseguridad.' });
     } catch (error) {
       console.error('Error in sniffingDetector:', error);
       return res.status(403).end();
