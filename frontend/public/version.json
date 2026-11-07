@@ -1,25 +1,25 @@
 {
-  "version": "7.16.17",
-  "releaseNotes": "Actualización v7.16.17: Scroll automático al inicio al navegar entre categorías de tutoriales y botón de cierre permanente (X) en el aviso oficial de migración.",
+  "version": "7.16.18",
+  "releaseNotes": "Actualización v7.16.18: Rediseño responsive armónico del aviso de migración completada en dispositivos móviles con cabecera integrada y botón de cierre (X).",
   "welcome": {
-    "title": "Navegación Fluida en Tutoriales",
-    "subtitle": "Mejoras de usabilidad con apertura centrada arriba y control de avisos.",
+    "title": "Aviso de Migración Optimizado",
+    "subtitle": "Diseño responsive perfecto en móvil y escritorio con control de visualización.",
     "features": [
       {
-        "title": "Apertura Superior en Tutoriales",
-        "description": "Al seleccionar cualquier apartado o volver atrás, la vista se posiciona automáticamente arriba del todo para ver los primeros pasos de inmediato."
+        "title": "Aviso Móvil Armónico",
+        "description": "La cabecera del aviso de migración en móvil alinea perfectamente el distintivo de estado y el botón de cierre (X), optimizando la lectura del mensaje."
       },
       {
-        "title": "Cierre Permanente del Aviso (X)",
-        "description": "Puedes ocultar el banner de migración completada pulsando su botón X y no volverá a aparecer en tu navegador."
+        "title": "Cierre Permanente (X)",
+        "description": "Puedes ocultar el aviso pulsando su botón X en cualquier momento y no volverá a mostrarse."
+      },
+      {
+        "title": "Apertura Superior en Tutoriales",
+        "description": "Al seleccionar cualquier apartado o volver atrás, la vista se posiciona automáticamente arriba del todo."
       },
       {
         "title": "Sincronización Dinámica en Android",
-        "description": "Las nuevas guías y artículos de noticias se actualizan en tiempo real sin requerir nuevas versiones de la app."
-      },
-      {
-        "title": "Servidor Oficial de Alta Velocidad",
-        "description": "Plataforma 100% activa en profitnessglass.es con latencias mínimas y datos completamente seguros."
+        "description": "Las noticias y tutoriales se actualizan automáticamente en tiempo real."
       }
     ]
   }
