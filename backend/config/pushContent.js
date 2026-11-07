@@ -5,7 +5,7 @@ const destinationPaths = new Set([
 
 function internalDestination(value) {
   if (typeof value !== 'string' || !value.startsWith('/')) return null;
-  const origin = 'https://pro-fitness-glass.zeabur.app';
+  const origin = 'https://profitnessglass.es';
   let url;
   try { url = new URL(value, origin); } catch { return null; }
   if (url.origin !== origin || !destinationPaths.has(url.pathname)) return null;

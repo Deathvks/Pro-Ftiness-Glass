@@ -84,7 +84,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
   const isAndroid = typeof window !== 'undefined' && /android/i.test(navigator.userAgent);
   const targetSlug = article?.slug || slug;
   const appIntentUrl = isAndroid
-    ? `intent://pro-fitness-glass.zeabur.app/noticias/${targetSlug}#Intent;scheme=https;package=com.profitnessglass.app;end`
+    ? `intent://profitnessglass.es/noticias/${targetSlug}#Intent;scheme=https;package=com.profitnessglass.app;end`
     : `profitness://noticias/${targetSlug}`;
   const [fontSize, setFontSize] = useState('normal'); // 'normal' | 'large' | 'xlarge'
   const [hasLiked, setHasLiked] = useState(false);
@@ -203,7 +203,7 @@ export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
     else navigate('/noticias');
   };
 
-  const currentUrl = `https://pro-fitness-glass.zeabur.app/noticias/${article?.slug || slug}`;
+  const currentUrl = `https://profitnessglass.es/noticias/${article?.slug || slug}`;
 
   const handleCopyLink = () => {
     if (navigator.clipboard) {

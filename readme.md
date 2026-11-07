@@ -102,7 +102,7 @@ Es necesario configurar ambas partes del proyecto (backend y frontend) para un f
     EMAIL_PORT=587
     EMAIL_USER=notificaciones@profitnessglass.es
     EMAIL_PASS=tu_contraseña_de_email
-    PUBLIC_API_URL=https://pro-fitness-glass-api.zeabur.app
+    PUBLIC_API_URL=https://api.profitnessglass.es
 
     # Claves OAuth (Google, Github, Discord, Spotify) - Opcionales
     GOOGLE_CLIENT_ID=...

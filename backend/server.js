@@ -74,6 +74,8 @@ const allowedOrigins = [
   'capacitor://localhost',
   'https://localhost',
   'http://localhost',
+  'https://profitnessglass.es',
+  'https://www.profitnessglass.es',
   'https://pro-fitness-glass.zeabur.app',
   'https://pro-fitness-glass.app',
   publicApiOrigin,
@@ -229,7 +231,7 @@ const escapeXml = (unsafe = '') => {
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const newsItems = await getSitemapNews();
-    const baseUrl = 'https://pro-fitness-glass.zeabur.app';
+    const baseUrl = 'https://profitnessglass.es';
     const xml = [
       '<?xml version="1.0" encoding="UTF-8"?>',
       '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
@@ -256,7 +258,7 @@ app.get('/sitemap.xml', async (req, res) => {
 app.get(['/rss.xml', '/feed.xml'], async (req, res) => {
   try {
     const newsItems = await getRSSNews();
-    const baseUrl = 'https://pro-fitness-glass.zeabur.app';
+    const baseUrl = 'https://profitnessglass.es';
     const lastBuildDate = newsItems.length > 0
       ? new Date(newsItems[0].published_at || newsItems[0].updatedAt).toUTCString()
       : new Date().toUTCString();

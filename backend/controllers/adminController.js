@@ -378,7 +378,7 @@ export const getNotificationTestStatus = async (req, res, next) => {
     return res.set('Cache-Control', 'no-store').json({
       mx, spf, dkim, dmarc,
       smtp: isDomainSmtpConfigured,
-      frontendUrl: process.env.FRONTEND_URL?.replace(/\/+$/, '') === 'https://pro-fitness-glass.zeabur.app',
+      frontendUrl: process.env.FRONTEND_URL?.replace(/\/+$/, '') === 'https://profitnessglass.es',
       webPush: !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT),
       androidPush: hasFirebasePush()
     });

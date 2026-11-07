@@ -6,7 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { APP_VERSION } from '../config/version';
 
 // URL de producción donde se aloja el version.json
-const REMOTE_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
+const REMOTE_BASE_URL = 'https://profitnessglass.es';
 
 const APKUpdater = () => {
   const [updateAvailable, setUpdateAvailable] = useState(null);

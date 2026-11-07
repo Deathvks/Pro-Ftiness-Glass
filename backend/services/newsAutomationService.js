@@ -681,9 +681,9 @@ Extensión recomendada: 280 a 400 palabras de máxima retención, ultra concisas
    * Notifica a los motores de búsqueda (Bing, Yandex, etc.) mediante el protocolo IndexNow
    */
   async notifySearchEngines(slug) {
-    const baseUrl = 'https://pro-fitness-glass.zeabur.app';
+    const baseUrl = 'https://profitnessglass.es';
     const articleUrl = `${baseUrl}/noticias/${slug}`;
-    const host = 'pro-fitness-glass.zeabur.app';
+    const host = 'profitnessglass.es';
     const key = 'f478a2e99b0c41d6832fb91e0a8d5c3f';
     const keyLocation = `${baseUrl}/${key}.txt`;
 

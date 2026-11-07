@@ -92,7 +92,7 @@ const ChallengesScreen = ({ setView }) => {
 
     const handleCopyReferral = () => {
         const isCapacitor = !!window.Capacitor?.isNativePlatform?.() || window.location.origin.includes('localhost') && !window.location.port;
-        const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://pro-fitness-glass.zeabur.app') : window.location.origin;
+        const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://profitnessglass.es') : window.location.origin;
         const referralLink = `${baseUrl}/register?ref=${userProfile?.referral_code || ''}`;
         navigator.clipboard.writeText(referralLink);
         addToast('¡Enlace copiado!', 'success');

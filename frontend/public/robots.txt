@@ -57,5 +57,5 @@ Allow: /
 Disallow: /api/
 Disallow: /dashboard
 
-Sitemap: https://pro-fitness-glass.zeabur.app/sitemap.xml
-Sitemap: https://pro-fitness-glass.zeabur.app/rss.xml
+Sitemap: https://profitnessglass.es/sitemap.xml
+Sitemap: https://profitnessglass.es/rss.xml

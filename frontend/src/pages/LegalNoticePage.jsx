@@ -70,7 +70,7 @@ const LegalNoticePage = ({ onBack }) => {
           <div className="space-y-8 text-text-primary">
             <div className="p-5 sm:p-6 rounded-[24px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 shadow-inner">
               <p className="text-sm sm:text-base font-medium text-text-secondary leading-relaxed">
-                El presente <strong className="text-text-primary">Aviso Legal</strong> regula el acceso, navegación y utilización del sitio web y la aplicación móvil y progresiva (PWA) <strong className="text-text-primary">Pro Fitness Glass</strong>, accesible a través de la dirección <strong className="text-accent">https://pro-fitness-glass.zeabur.app</strong> y sus aplicaciones asociadas.
+                El presente <strong className="text-text-primary">Aviso Legal</strong> regula el acceso, navegación y utilización del sitio web y la aplicación móvil y progresiva (PWA) <strong className="text-text-primary">Pro Fitness Glass</strong>, accesible a través de la dirección <strong className="text-accent">https://profitnessglass.es</strong> y sus aplicaciones asociadas.
               </p>
             </div>
 

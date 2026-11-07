@@ -19,7 +19,7 @@ import {
 } from 'react-icons/fa';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-const BACKEND_HOST = (API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL) || 'https://pro-fitness-glass-api.zeabur.app';
+const BACKEND_HOST = (API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL) || 'https://api.profitnessglass.es';
 
 const WeeklyRecapCard = forwardRef(({ weeklyData, userProfile }, ref) => {
     if (!weeklyData) return null;

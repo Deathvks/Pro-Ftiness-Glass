@@ -35,7 +35,7 @@ const sendPage = (res, status, title, content) => res
 
 const settingsHelp = () => `
   <p>Puedes cambiar tus preferencias de correo desde Notificaciones en Ajustes.</p>
-  <a href="${process.env.FRONTEND_URL || 'https://pro-fitness-glass.zeabur.app'}/login" style="color:#a5b4fc">Abrir Pro Fitness Glass</a>
+  <a href="${process.env.FRONTEND_URL || 'https://profitnessglass.es'}/login" style="color:#a5b4fc">Abrir Pro Fitness Glass</a>
 `;
 
 const invalidLink = res => sendPage(res, 400, 'Enlace no válido', settingsHelp());

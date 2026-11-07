@@ -6,7 +6,7 @@ import { FaTrophy, FaCalendarAlt, FaDumbbell, FaUserCircle } from 'react-icons/f
 import { APP_LOGO_BASE64 } from '../assets/logoBase64';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-const BACKEND_HOST = (API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL) || 'https://pro-fitness-glass-api.zeabur.app';
+const BACKEND_HOST = (API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL) || 'https://api.profitnessglass.es';
 
 const PRShareCard = forwardRef(({ prData, userName, userImage, customBgPhoto }, ref) => {
     const { t, i18n } = useTranslation(['translation', 'exercise_names']);
@@ -247,7 +247,7 @@ const PRShareCard = forwardRef(({ prData, userName, userImage, customBgPhoto }, 
                             decoding="sync"
                             onError={(e) => { e.currentTarget.src = '/logo.webp'; }}
                         />
-                        <span className="text-xl font-bold text-white/80">pro-fitness-glass.zeabur.app</span>
+                        <span className="text-xl font-bold text-white/80">profitnessglass.es</span>
                     </div>
                     <span className="text-lg font-black tracking-widest text-yellow-400/80 font-mono">#PRRECORD #STRAVASTYLE</span>
                 </div>

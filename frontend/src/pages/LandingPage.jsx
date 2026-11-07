@@ -453,7 +453,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                     name="description"
                     content="Registra tus entrenamientos de gimnasio, aplica sobrecarga progresiva en tus rutinas de hipertrofia y fuerza, calcula tu 1RM y controla calorías y macros con IA gratis."
                 />
-                <link rel="canonical" href="https://pro-fitness-glass.zeabur.app/" />
+                <link rel="canonical" href="https://profitnessglass.es/" />
             </Helmet>
 
             {/* Fondo de cristal eliminado por optimización de rendimiento */}

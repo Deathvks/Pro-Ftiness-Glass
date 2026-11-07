@@ -564,7 +564,7 @@ const WorkoutShareCard = forwardRef(({
                             decoding="sync"
                         />
                         <span className="text-xl font-extrabold text-white tracking-wide">
-                            pro-fitness-glass.zeabur.app
+                            profitnessglass.es
                         </span>
                     </div>
                     <span className="text-lg font-black tracking-widest uppercase text-white/60 font-mono">

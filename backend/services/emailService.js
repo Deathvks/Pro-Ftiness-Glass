@@ -81,7 +81,7 @@ const sendOptionalMailAndLog = async (mailOptions, purpose, userId) => {
   if (!allowed) return { success: true, skipped: true };
 
   const token = createEmailUnsubscribeToken({ userId: user.id, email: user.email, category: purpose ?? 'activity' });
-  const baseUrl = (process.env.FRONTEND_URL || 'https://pro-fitness-glass.zeabur.app').replace(/\/+$/, '');
+  const baseUrl = (process.env.FRONTEND_URL || 'https://profitnessglass.es').replace(/\/+$/, '');
   const unsubscribeUrl = new URL('/api/email-preferences/unsubscribe', publicApiOrigin);
   unsubscribeUrl.searchParams.set('token', token);
   const promotionalNotice = purpose ? `
@@ -348,7 +348,7 @@ export const sendBotReminderEmail = async (email, userName, level) => {
       <p>Hola ${userName},</p>
       <p>${texts[level]}</p>
       <p style="margin-top: 30px;">
-        <a href="https://pro-fitness-glass.zeabur.app/social" style="background-color: #6366f1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+        <a href="https://profitnessglass.es/social" style="background-color: #6366f1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
           Ir al chat
         </a>
       </p>
@@ -408,7 +408,7 @@ export const sendRetentionRescueEmail = async ({ userId, email, userName, loadPa
     ctaUrl = '/routines',
     ctaText = 'Ir a mi entrenamiento'
   } = await loadPayload(recipient.id);
-  const baseUrl = process.env.FRONTEND_URL || 'https://pro-fitness-glass.zeabur.app';
+  const baseUrl = process.env.FRONTEND_URL || 'https://profitnessglass.es';
   const targetUrl = ctaUrl.startsWith('http') ? ctaUrl : `${baseUrl}${ctaUrl}`;
   const safeName = userName || 'Atleta';
 

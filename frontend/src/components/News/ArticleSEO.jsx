@@ -2,7 +2,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
-const BASE_URL = 'https://pro-fitness-glass.zeabur.app';
+const BASE_URL = 'https://profitnessglass.es';
 
 export default function ArticleSEO({ article }) {
   if (!article) return null;
@@ -109,7 +109,7 @@ export default function ArticleSEO({ article }) {
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
-      <meta name="twitter:domain" content="pro-fitness-glass.zeabur.app" />
+      <meta name="twitter:domain" content="profitnessglass.es" />
 
       {/* Google Structured Data JSON-LD */}
       <script type="application/ld+json">

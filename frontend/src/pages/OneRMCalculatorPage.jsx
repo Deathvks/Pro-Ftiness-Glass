@@ -110,7 +110,7 @@ export default function OneRMCalculatorPage({ onBack }) {
       {
         '@type': 'WebApplication',
         name: 'Calculadora de 1RM (Repetición Máxima) — Pro Fitness Glass',
-        url: 'https://pro-fitness-glass.zeabur.app/calculadora-1rm',
+        url: 'https://profitnessglass.es/calculadora-1rm',
         applicationCategory: 'HealthApplication',
         operatingSystem: 'Web, Android, iOS',
         description:
@@ -170,13 +170,13 @@ export default function OneRMCalculatorPage({ onBack }) {
           name="keywords"
           content="calculadora 1rm, calcular repeticion maxima, 1rm press banca, 1rm sentadilla, 1rm peso muerto, porcentajes 1rm hipertrofia, formula epley brzycki, fuerza gimnasio, sobrecarga progresiva"
         />
-        <link rel="canonical" href="https://pro-fitness-glass.zeabur.app/calculadora-1rm" />
+        <link rel="canonical" href="https://profitnessglass.es/calculadora-1rm" />
         <meta property="og:title" content="Calculadora de 1RM y Porcentajes de Fuerza para Gimnasio — Pro Fitness Glass" />
         <meta
           property="og:description"
           content="Descubre tu fuerza máxima estimada y los kilos exactos para tus series de hipertrofia y fuerza sin riesgo de lesión."
         />
-        <meta property="og:url" content="https://pro-fitness-glass.zeabur.app/calculadora-1rm" />
+        <meta property="og:url" content="https://profitnessglass.es/calculadora-1rm" />
         <meta property="og:type" content="website" />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>

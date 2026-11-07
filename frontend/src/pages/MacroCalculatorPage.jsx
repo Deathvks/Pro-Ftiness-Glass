@@ -139,7 +139,7 @@ export default function MacroCalculatorPage({ onBack }) {
       {
         '@type': 'WebApplication',
         name: 'Calculadora de Calorías, Macros y Déficit Calórico — Pro Fitness Glass',
-        url: 'https://pro-fitness-glass.zeabur.app/calculadora-calorias-macros',
+        url: 'https://profitnessglass.es/calculadora-calorias-macros',
         applicationCategory: 'HealthApplication',
         operatingSystem: 'Web, Android, iOS',
         description:
@@ -191,13 +191,13 @@ export default function MacroCalculatorPage({ onBack }) {
           name="keywords"
           content="calculadora calorias y macros, calculadora deficit calorico, calcular tdee gimnasio, gramos de proteina por kilo, macros para volumen muscular, mifflin st jeor calculadora, dieta hipertrofia"
         />
-        <link rel="canonical" href="https://pro-fitness-glass.zeabur.app/calculadora-calorias-macros" />
+        <link rel="canonical" href="https://profitnessglass.es/calculadora-calorias-macros" />
         <meta property="og:title" content="Calculadora de Calorías, Macros y Déficit Calórico — Pro Fitness Glass" />
         <meta
           property="og:description"
           content="Obtén tus calorías exactas y tu reparto de proteínas, carbohidratos, grasas, agua y creatina para transformar tu físico."
         />
-        <meta property="og:url" content="https://pro-fitness-glass.zeabur.app/calculadora-calorias-macros" />
+        <meta property="og:url" content="https://profitnessglass.es/calculadora-calorias-macros" />
         <meta property="og:type" content="website" />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>

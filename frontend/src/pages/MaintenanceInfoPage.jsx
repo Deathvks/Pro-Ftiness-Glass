@@ -34,7 +34,7 @@ export default function MaintenanceInfoPage() {
     '@type': 'WebPage',
     name: 'Aviso de Mantenimiento y Migración a Servidores Propios — Pro Fitness Glass',
     description: 'Información oficial sobre el mantenimiento programado del sábado 7: traslado seguro a servidores propios dedicados y nuevo dominio oficial profitnessglass.com.',
-    url: 'https://pro-fitness-glass.zeabur.app/mantenimiento',
+    url: 'https://profitnessglass.es/mantenimiento',
     inLanguage: 'es'
   };
 
@@ -46,15 +46,15 @@ export default function MaintenanceInfoPage() {
           name="description"
           content="Información oficial sobre el mantenimiento programado del sábado 7: migración segura a servidores propios dedicados y nuevo dominio oficial profitnessglass.com. Todos tus datos están seguros."
         />
-        <link rel="canonical" href="https://pro-fitness-glass.zeabur.app/mantenimiento" />
+        <link rel="canonical" href="https://profitnessglass.es/mantenimiento" />
         <meta property="og:title" content="Mantenimiento Programado y Nueva Infraestructura — Pro Fitness Glass" />
         <meta
           property="og:description"
           content="Migración a servidores propios y nuevo dominio profitnessglass.com. Tus datos y rutinas están 100% seguros y protegidos."
         />
-        <meta property="og:url" content="https://pro-fitness-glass.zeabur.app/mantenimiento" />
+        <meta property="og:url" content="https://profitnessglass.es/mantenimiento" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://pro-fitness-glass.zeabur.app/aver.jpg" />
+        <meta property="og:image" content="https://profitnessglass.es/aver.jpg" />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 

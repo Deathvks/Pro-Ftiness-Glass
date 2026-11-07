@@ -8,8 +8,8 @@ const __dirname = path.dirname(__filename);
 const distDir = path.resolve(__dirname, '../dist');
 const publicDir = path.resolve(__dirname, '../public');
 const indexPath = path.join(distDir, 'index.html');
-const BASE_URL = 'https://pro-fitness-glass.zeabur.app';
-const API_URL = process.env.VITE_API_BASE_URL || 'https://pro-fitness-glass-api.zeabur.app/api';
+const BASE_URL = 'https://profitnessglass.es';
+const API_URL = process.env.VITE_API_BASE_URL || 'https://api.profitnessglass.es/api';
 
 function escapeHtml(str = '') {
   return String(str)

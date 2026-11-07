@@ -6,7 +6,7 @@ import useAppStore from '../store/useAppStore';
 import NetworkIndicatorBadge from './NetworkIndicatorBadge';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-const BACKEND_HOST = (API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL) || 'https://pro-fitness-glass-api.zeabur.app';
+const BACKEND_HOST = (API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL) || 'https://api.profitnessglass.es';
 
 const SIZE_MAP = {
     6: 'w-6 h-6',
@@ -60,7 +60,7 @@ const UserAvatar = ({
         // 1. Si es ruta relativa (ej: /uploads/foto.jpg o /images/...), añadir el host del backend
         if (!url.startsWith('http') && !url.startsWith('blob:') && !url.startsWith('data:')) {
             const separator = url.startsWith('/') ? '' : '/';
-            const host = BACKEND_HOST || 'https://pro-fitness-glass-api.zeabur.app';
+            const host = BACKEND_HOST || 'https://api.profitnessglass.es';
             url = `${host}${separator}${url}`;
         }
 

@@ -57,7 +57,7 @@ const getCategoryIcon = (cat) => {
   }
 };
 
-const BASE_URL = 'https://pro-fitness-glass.zeabur.app';
+const BASE_URL = 'https://profitnessglass.es';
 
 export default function NewsListPage({ onBack, navigate: customNavigate }) {
   const navigate = useNavigate();
@@ -74,7 +74,7 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   const isMobile = typeof window !== 'undefined' && (/android|iphone|ipad|ipod/i.test(navigator.userAgent) || window.innerWidth < 768);
   const isAndroid = typeof window !== 'undefined' && /android/i.test(navigator.userAgent);
   const appIntentUrl = isAndroid
-    ? 'intent://pro-fitness-glass.zeabur.app/noticias#Intent;scheme=https;package=com.profitnessglass.app;end'
+    ? 'intent://profitnessglass.es/noticias#Intent;scheme=https;package=com.profitnessglass.app;end'
     : 'profitness://noticias';
 
   // Exactamente 6 art�culos por p�gina (2 filas completas de 3 columnas para una cuadr�cula perfecta)

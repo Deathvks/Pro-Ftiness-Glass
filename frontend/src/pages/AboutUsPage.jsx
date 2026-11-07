@@ -40,8 +40,8 @@ export default function AboutUsPage() {
     '@graph': [
       {
         '@type': 'AboutPage',
-        '@id': 'https://pro-fitness-glass.zeabur.app/sobre-nosotros#webpage',
-        url: 'https://pro-fitness-glass.zeabur.app/sobre-nosotros',
+        '@id': 'https://profitnessglass.es/sobre-nosotros#webpage',
+        url: 'https://profitnessglass.es/sobre-nosotros',
         name: '¿Qué es Pro Fitness Glass? — Quiénes Somos, Misión y Plataforma Fitness',
         description: 'Conoce la historia, tecnología y filosofía 100% gratuita detrás de Pro Fitness Glass, la app de entrenamiento de gimnasio, hipertrofia y nutrición con diseño Glassmorphism e IA.',
         inLanguage: 'es'
@@ -61,18 +61,18 @@ export default function AboutUsPage() {
           '@type': 'Person',
           name: 'Dylan Jesús Suárez Falcón',
           jobTitle: 'Fundador y Desarrollador Principal',
-          image: 'https://pro-fitness-glass.zeabur.app/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg'
+          image: 'https://profitnessglass.es/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg'
         }
       },
       {
         '@type': 'Organization',
         name: 'Pro Fitness Glass',
-        url: 'https://pro-fitness-glass.zeabur.app',
-        logo: 'https://pro-fitness-glass.zeabur.app/icons/icon-512.png',
+        url: 'https://profitnessglass.es',
+        logo: 'https://profitnessglass.es/icons/icon-512.png',
         founder: {
           '@type': 'Person',
           name: 'Dylan Jesús Suárez Falcón',
-          image: 'https://pro-fitness-glass.zeabur.app/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg'
+          image: 'https://profitnessglass.es/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg'
         },
         sameAs: [
           'https://play.google.com/store/apps/details?id=com.profitnessglass.app'
@@ -136,15 +136,15 @@ export default function AboutUsPage() {
           name="keywords"
           content="que es pro fitness glass, quienes somos pro fitness glass, app gimnasio gratis, mejor app fitness gratuita, tracker gimnasio sobrecarga progresiva, app pesas sin suscripcion, dylan jesus suarez falcon, synapse ia fitness"
         />
-        <link rel="canonical" href="https://pro-fitness-glass.zeabur.app/sobre-nosotros" />
+        <link rel="canonical" href="https://profitnessglass.es/sobre-nosotros" />
         <meta property="og:title" content="¿Qué es Pro Fitness Glass? — Quiénes Somos y Misión" />
         <meta
           property="og:description"
           content="La plataforma libre definitiva para registrar tus entrenamientos de fuerza, hipertrofia y nutrición deportiva. 100% gratis, sin muros de pago."
         />
-        <meta property="og:url" content="https://pro-fitness-glass.zeabur.app/sobre-nosotros" />
+        <meta property="og:url" content="https://profitnessglass.es/sobre-nosotros" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://pro-fitness-glass.zeabur.app/aver.jpg" />
+        <meta property="og:image" content="https://profitnessglass.es/aver.jpg" />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 

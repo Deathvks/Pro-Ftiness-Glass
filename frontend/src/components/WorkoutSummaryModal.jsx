@@ -333,7 +333,7 @@ const WorkoutSummaryModal = ({ workoutData, onClose, isShareMode = false, showRe
 
       const workoutTitle = workoutData?.routineName || 'Entrenamiento';
       const timeFormatted = formatDisplayTime(workoutData?.duration_seconds || 0);
-      const appUrl = 'https://pro-fitness-glass.zeabur.app';
+      const appUrl = 'https://profitnessglass.es';
       const shareText = `🔥 ¡Entrenamiento completado en Pro Fitness Glass!\n🏋️ ${workoutTitle} • ${timeFormatted}\n💪 Superando límites día a día.\n👉 ${appUrl}`;
 
       // 1. Si estamos en Capacitor Nativo (iOS / Android App)

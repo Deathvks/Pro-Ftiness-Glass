@@ -285,7 +285,7 @@ export default function PublicExercisesPage({ onBack }) {
       {
         '@type': 'CollectionPage',
         name: 'Guía de Ejercicios de Gimnasio y Rutinas de Hipertrofia | Pro Fitness Glass',
-        url: 'https://pro-fitness-glass.zeabur.app/ejercicios',
+        url: 'https://profitnessglass.es/ejercicios',
         description:
           'Enciclopedia gratuita de los mejores ejercicios de gimnasio por grupo muscular (Pecho, Espalda, Pierna, Glúteo, Hombros y Brazos) con técnica biomecánica, series óptimas y rutinas Push Pull Legs y Torso Pierna.',
         inLanguage: 'es-ES'
@@ -319,13 +319,13 @@ export default function PublicExercisesPage({ onBack }) {
           name="keywords"
           content="ejercicios de gimnasio, mejores ejercicios pecho, ejercicios espalda gym, sentadilla bulgara tecnica, press de banca tecnica, rutina push pull legs, rutina torso pierna 4 dias, hipertrofia muscular"
         />
-        <link rel="canonical" href="https://pro-fitness-glass.zeabur.app/ejercicios" />
+        <link rel="canonical" href="https://profitnessglass.es/ejercicios" />
         <meta property="og:title" content="Guía de Ejercicios de Gimnasio y Rutinas de Hipertrofia — Pro Fitness Glass" />
         <meta
           property="og:description"
           content="Domina la biomecánica de los mejores ejercicios de musculación, evita lesiones y descarga tus rutinas gratis en Pro Fitness Glass."
         />
-        <meta property="og:url" content="https://pro-fitness-glass.zeabur.app/ejercicios" />
+        <meta property="og:url" content="https://profitnessglass.es/ejercicios" />
         <meta property="og:type" content="website" />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>

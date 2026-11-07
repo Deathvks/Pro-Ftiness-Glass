@@ -232,13 +232,13 @@ export default function FAQPage() {
           name="keywords"
           content="faq pro fitness glass, preguntas frecuentes gimnasio app, pro fitness glass gratis o pago, como funciona pro fitness glass, descargar pro fitness glass android, tracker fitness gratis"
         />
-        <link rel="canonical" href="https://pro-fitness-glass.zeabur.app/faq" />
+        <link rel="canonical" href="https://profitnessglass.es/faq" />
         <meta property="og:title" content="Preguntas Frecuentes (FAQ) — Pro Fitness Glass" />
         <meta
           property="og:description"
           content="Todo lo que necesitas saber sobre la plataforma libre de gimnasio, nutrición y sobrecarga progresiva Pro Fitness Glass."
         />
-        <meta property="og:url" content="https://pro-fitness-glass.zeabur.app/faq" />
+        <meta property="og:url" content="https://profitnessglass.es/faq" />
         <meta property="og:type" content="website" />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>

@@ -247,7 +247,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
     const structuredData = useMemo(() => {
         if (!profile) return null;
-        const baseUrl = 'https://pro-fitness-glass.zeabur.app';
+        const baseUrl = 'https://profitnessglass.es';
         const profileUrl = `${baseUrl}/profile/${profile.id}`;
         const schema = {
             "@context": "https://schema.org",

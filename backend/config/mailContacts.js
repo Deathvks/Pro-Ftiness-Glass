@@ -1,6 +1,6 @@
 export const smtpHost = process.env.EMAIL_HOST?.trim();
 export const smtpPort = Number(process.env.EMAIL_PORT?.trim() || 587);
-export const publicApiOrigin = new URL(process.env.PUBLIC_API_URL || 'https://pro-fitness-glass-api.zeabur.app').origin;
+export const publicApiOrigin = new URL(process.env.PUBLIC_API_URL || 'https://api.profitnessglass.es').origin;
 
 export const domainMailboxes = {
   notifications: 'notificaciones@profitnessglass.es',

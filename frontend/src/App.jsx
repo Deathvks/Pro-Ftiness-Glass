@@ -27,6 +27,7 @@ import NewsLoadingSkeleton from './components/News/NewsLoadingSkeleton';
 import LandingLoadingSkeleton from './components/LandingLoadingSkeleton';
 import RestTimerModal from './components/RestTimerModal';
 import DynamicIslandTimer from './components/DynamicIslandTimer';
+import DomainMigrationModal from './components/DomainMigrationModal';
 import VersionUpdater from './components/VersionUpdater';
 import APKUpdater from './components/APKUpdater';
 import AndroidDownloadPrompt from './components/AndroidDownloadPrompt';
@@ -181,7 +182,7 @@ const SocialLinksScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.socialLinks, 'socialL
 const ChallengesScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.challenges, 'challenges');
 const AsesoriaScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.asesoria, 'asesoria');
 
-const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
+const CANONICAL_BASE_URL = 'https://profitnessglass.es';
 const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
@@ -919,6 +920,7 @@ export default function App() {
 
   return (
     <>
+      <DomainMigrationModal />
       <VersionUpdater />
       <APKUpdater />
       <AndroidDownloadPrompt />
