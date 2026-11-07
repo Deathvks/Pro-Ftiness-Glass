@@ -137,9 +137,22 @@ export const logSecurityEvent = async ({ eventType, ipAddress, userId, userAgent
 // Middleware para detectar y bloquear intentos de acceso a archivos sensibles (Sniffing/Honeypot)
 export const sniffingDetector = async (req, res, next) => {
   const sensitivePaths = [
-    '/.env', '/.git', '/.git/config', '/wp-config.php', '/wp-admin', 
-    '/config.json', '/docker-compose.yml', '/package.json', 
-    '/.aws/credentials', '/phpinfo.php', '/.htaccess'
+    // Entornos, secretos y configuraciones
+    '/.env', '/env.json', '/settings.py', '/configuration.php', '/config.json',
+    // Control de versiones y metadatos
+    '/.git', '/.svn', '/.hg', '/.ds_store',
+    // CMS, WordPress y paneles de administracion
+    '/wp-config', '/wp-admin', '/wp-login', '/wp-includes', '/xmlrpc.php',
+    '/phpmyadmin', '/pma', '/adminer', '/myadmin',
+    // Credenciales, claves privadas y accesos cloud
+    '/.aws', '/.ssh', 'id_rsa', 'id_ed25519', '/credentials',
+    // Configuracion del servidor y contenedores
+    '/docker-compose', '/dockerfile', '/.htaccess', '/.htpasswd', '/web.config',
+    '/nginx.conf', '/caddyfile', '/package.json', '/package-lock.json',
+    // Volcados de bases de datos y copias de seguridad
+    '/dump.sql', '/backup.sql', '/database.sql', '/db.sql', '/backup.tar', '/backup.zip',
+    // Fugas de informacion y depuradores
+    '/phpinfo', '/info.php', '/server-status', '/actuator'
   ];
 
   // Convert to lower case for case-insensitive check
