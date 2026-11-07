@@ -28,7 +28,7 @@ const MaintenanceNoticeBanner = ({
       style={computedStyle}
       className={`w-full bg-emerald-500/15 dark:bg-emerald-400/15 text-emerald-950 dark:text-emerald-100 ${
         needsSafeArea ? 'pb-1' : 'py-1 sm:py-1.5'
-      } px-2.5 sm:px-4 md:backdrop-blur-xl transition-colors flex items-center justify-center shrink-0 ${
+      } px-2 sm:px-4 md:backdrop-blur-xl transition-colors flex items-center justify-center shrink-0 ${
         borderBottom && !isRounded ? 'border-b border-emerald-500/30' : ''
       } ${rounded ? 'rounded-2xl border border-emerald-500/30 shadow-sm' : ''} ${className}`}
     >
@@ -40,7 +40,7 @@ const MaintenanceNoticeBanner = ({
         >
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
           <CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span className="font-bold whitespace-nowrap">
+          <span className="font-bold truncate max-w-[210px] xs:max-w-none">
             {t('maintenance_banner_msg_mobile', { defaultValue: '¡Migración completada con éxito!' })}
           </span>
           <span className="inline-flex items-center gap-0.5 font-black text-emerald-900 dark:text-emerald-200 underline underline-offset-2 ml-0.5 shrink-0">
@@ -52,7 +52,7 @@ const MaintenanceNoticeBanner = ({
         <div className="flex sm:hidden items-center justify-center gap-1.5 w-full text-center leading-none text-[11px] font-semibold text-emerald-950 dark:text-emerald-100 py-0.5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
           <CheckCircle2 size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span className="font-bold whitespace-nowrap">
+          <span className="font-bold truncate max-w-[240px] xs:max-w-none">
             {t('maintenance_banner_msg_mobile', { defaultValue: '¡Migración completada con éxito!' })}
           </span>
         </div>

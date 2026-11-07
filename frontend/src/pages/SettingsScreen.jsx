@@ -223,8 +223,33 @@ export default function SettingsScreen({
   const togglePushPreference = async purpose => {
     if (!pushPreferences || updatingPushPurpose) return;
     setUpdatingPushPurpose(purpose);
+    const nextValue = !pushPreferences[purpose];
     try {
-      setPushPreferences(await updatePushPreferences(purpose, !pushPreferences[purpose], PUSH_CONSENT_VERSION));
+      const updated = await updatePushPreferences(purpose, nextValue, PUSH_CONSENT_VERSION);
+      setPushPreferences(updated);
+
+      const PUSH_PURPOSE_LABELS = {
+        training: {
+          active: 'Recordatorios de entrenamiento por push activados',
+          inactive: 'Recordatorios de entrenamiento por push desactivados'
+        },
+        coaching: {
+          active: 'Seguimiento de asesoría por push activado',
+          inactive: 'Seguimiento de asesoría por push desactivado'
+        },
+        news: {
+          active: 'Novedades y promociones por push activadas',
+          inactive: 'Novedades y promociones por push desactivadas'
+        }
+      };
+
+      const option = PUSH_OPTIONS.find(o => o.purpose === purpose);
+      const label = option ? option.title : 'Preferencia push';
+      const toastMsg = PUSH_PURPOSE_LABELS[purpose]
+        ? (nextValue ? PUSH_PURPOSE_LABELS[purpose].active : PUSH_PURPOSE_LABELS[purpose].inactive)
+        : (nextValue ? `${label}: activado` : `${label}: desactivado`);
+
+      addToast(toastMsg, 'success');
     } catch (error) {
       addToast(error.message || 'No se pudo guardar la preferencia push.', 'error');
     } finally {
@@ -404,7 +429,7 @@ export default function SettingsScreen({
     try {
       setUserProfile({ ...userProfile, login_email_notifications: newValue });
       await userService.updateUserProfile({ login_email_notifications: newValue });
-      addToast(newValue ? 'Alertas por email activadas' : 'Alertas por email desactivadas', 'success');
+      addToast(newValue ? 'Alertas de inicio de sesión por email activadas' : 'Alertas de inicio de sesión por email desactivadas', 'success');
     } catch (error) {
       setUserProfile({ ...userProfile, login_email_notifications: !newValue });
       addToast('Error al actualizar preferencias', 'error');
@@ -427,7 +452,19 @@ export default function SettingsScreen({
       const update = { [key]: newValue };
       if (newValue && consentVersion) update.emailConsentVersion = consentVersion;
       await userService.updateUserProfile(update);
-      addToast(`${label} ${newValue ? 'activado' : 'desactivado'}`, 'success');
+      const customNotificationToast = {
+        email_activity_notifications: newValue ? 'Avisos de actividad por correo activados' : 'Avisos de actividad por correo desactivados',
+        email_marketing_consent: newValue ? 'Recordatorios de entrenamiento por correo activados' : 'Recordatorios de entrenamiento por correo desactivados',
+        email_coaching_consent: newValue ? 'Recordatorios de asesoría por correo activados' : 'Recordatorios de asesoría por correo desactivados'
+      };
+
+      if (customNotificationToast[key]) {
+        addToast(customNotificationToast[key], 'success');
+      } else {
+        const isPlural = label.toLowerCase().endsWith('s') || label.includes('Recordatorios') || label.includes('Avisos');
+        const state = newValue ? (isPlural ? 'activados' : 'activado') : (isPlural ? 'desactivados' : 'desactivado');
+        addToast(`${label} ${state}`, 'success');
+      }
     } catch (error) {
       setUserProfile({ ...userProfile, [key]: prevValue });
       addToast(`Error al actualizar ${label.toLowerCase()}`, 'error');

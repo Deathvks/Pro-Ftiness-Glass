@@ -81,19 +81,20 @@ export default function MaintenanceInfoPage() {
           </div>
         </nav>
 
-        {/* Cabecera / Hero de presentación */}
-        <header className="text-center mb-10 sm:mb-14">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider mb-5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <FaCircleCheck size={13} />
-            <span>Aviso Oficial · Migración Finalizada con Éxito</span>
+        {/* Cabecera / Hero de presentación 100% responsive en móvil */}
+        <header className="text-center mb-8 sm:mb-14">
+          <div className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold text-[10.5px] xs:text-xs uppercase tracking-wider mb-4 sm:mb-5 max-w-full shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <FaCircleCheck size={12} className="shrink-0" />
+            <span className="hidden sm:inline">Aviso Oficial · </span>
+            <span className="truncate">Migración Finalizada con Éxito</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-text-primary tracking-tight leading-tight mb-5">
+          <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-black text-text-primary tracking-tight leading-tight mb-3 sm:mb-5 px-1 break-words">
             ¡Migración Completada con Éxito!<br className="hidden sm:inline" /> Estrenamos Nuevo Dominio Oficial
           </h1>
 
-          <p className="max-w-2xl mx-auto text-base sm:text-lg text-text-secondary leading-relaxed">
+          <p className="max-w-2xl mx-auto text-sm sm:text-lg text-text-secondary leading-relaxed px-2">
             La actualización técnica planificada ha finalizado satisfactoriamente. Disfruta de una experiencia mucho más rápida, fluida y con la total garantía de que <strong>todos tus datos están 100% seguros</strong> bajo nuestro dominio oficial <strong className="text-accent">profitnessglass.es</strong>.
           </p>
         </header>

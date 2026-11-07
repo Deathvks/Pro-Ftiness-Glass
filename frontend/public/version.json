@@ -1,24 +1,19 @@
 {
-  "version": "7.16.10",
-  "releaseNotes": "Actualización v7.16.10: Migración completada con éxito al dominio oficial profitnessglass.es con mayor velocidad y datos 100% seguros.",
+  "version": "7.16.11",
+  "releaseNotes": "Actualización v7.16.11: Feedback instantáneo en ajustes de notificaciones con confirmaciones toast y diseño ultra-responsive en móvil.",
   "welcome": {
-    "title": "¡Migración Oficial Completada!",
-    "subtitle": "La plataforma ya está 100% operativa en profitnessglass.es con mayor fluidez y tus datos completamente a salvo.",
+    "title": "Feedback de Notificaciones y Mejoras Móviles",
+    "subtitle": "Confirmaciones instantáneas al activar o desactivar cualquier notificación y diseño optimizado.",
     "features": [
       {
-        "title": "Migración Exitosa y Segura",
-        "subtitle": "Todos tus entrenamientos, series, marcas personales y cuentas permanecen intactos y protegidos.",
-        "description": "Todos tus entrenamientos, series, marcas personales y cuentas permanecen intactos y protegidos."
+        "title": "Confirmación Inmediata de Notificaciones",
+        "subtitle": "Cada preferencia push o de correo muestra un aviso toast inmediato de activación o desactivación.",
+        "description": "Cada preferencia push o de correo muestra un aviso toast inmediato de activación o desactivación."
       },
       {
-        "title": "Mayor Velocidad de Respuesta",
-        "subtitle": "Menor tiempo de carga al guardar series y navegar por la app.",
-        "description": "Menor tiempo de carga al guardar series y navegar por la app."
-      },
-      {
-        "title": "Dominio Oficial Unificado",
-        "subtitle": "Consolidación en profitnessglass.es con total transparencia.",
-        "description": "Consolidación en profitnessglass.es con total transparencia."
+        "title": "Diseño Móvil Perfeccionado",
+        "subtitle": "Cabeceras y avisos 100% fluidos adaptados a cualquier pantalla.",
+        "description": "Cabeceras y avisos 100% fluidos adaptados a cualquier pantalla."
       }
     ]
   }
