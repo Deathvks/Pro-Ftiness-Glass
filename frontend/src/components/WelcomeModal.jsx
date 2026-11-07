@@ -2,12 +2,47 @@
 import React from 'react';
 import ModalPortal from './ModalPortal';
 import {
-  Bell, ChevronRight, Mail, ShieldCheck, SlidersHorizontal
+  Bell, ChevronRight, Mail, ShieldCheck, SlidersHorizontal, Sparkles
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6';
 import { APP_VERSION, RELEASE_WELCOME } from '../config/version';
 import useModalLock from '../hooks/useModalLock';
 import useAppStore from '../store/useAppStore';
+
+const FEATURE_STYLES = [
+  {
+    icon: Sparkles,
+    color: '#10b981',
+    accentGrad: 'linear-gradient(to bottom, #10b981, #06b6d4)',
+    bgGrad: 'linear-gradient(135deg, #080814 0%, #121226 100%)',
+    border: '1px solid rgba(16,185,129,0.35)',
+    glow: '0 4px 20px -8px rgba(16,185,129,0.3)',
+    iconBg: 'rgba(16,185,129,0.15)',
+    iconBorder: '1px solid rgba(16,185,129,0.25)',
+    starry: true
+  },
+  {
+    icon: SlidersHorizontal,
+    color: '#3b82f6',
+    accentGrad: 'linear-gradient(to bottom, #3b82f6, #06b6d4)',
+    iconBg: 'rgba(59,130,246,0.12)',
+    iconBorder: '1px solid rgba(59,130,246,0.25)'
+  },
+  {
+    icon: ShieldCheck,
+    color: '#a855f7',
+    accentGrad: 'linear-gradient(to bottom, #a855f7, #6366f1)',
+    iconBg: 'rgba(168,85,247,0.12)',
+    iconBorder: '1px solid rgba(168,85,247,0.25)'
+  },
+  {
+    icon: Bell,
+    color: '#f97316',
+    accentGrad: 'linear-gradient(to bottom, #f97316, #eab308)',
+    iconBg: 'rgba(249,115,22,0.12)',
+    iconBorder: '1px solid rgba(249,115,22,0.25)'
+  }
+];
 
 const WelcomeModal = ({ onClose }) => {
   // --- Bloquear scroll del fondo y swipe entre páginas ---
@@ -356,84 +391,66 @@ const WelcomeModal = ({ onClose }) => {
 
               {/*  Feature Cards  */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
+                {(features || []).filter(Boolean).map((feat, idx) => {
+                  const styleConfig = FEATURE_STYLES[idx % FEATURE_STYLES.length];
+                  const IconComponent = styleConfig.icon;
+                  const numStr = String(idx + 1).padStart(2, '0');
+                  const animClass = `wm-feature-${Math.min(idx + 1, 4)}`;
 
-                {/* 01: Registro y seguridad */}
-                <div className="wm-feature-card wm-feature-1" style={{
-                    background: 'linear-gradient(135deg, #080814 0%, #121226 100%)',
-                    border: '1px solid rgba(16,185,129,0.35)',
-                    boxShadow: '0 4px 20px -8px rgba(16,185,129,0.3)'
-                  }}>
-                  <div style={{
-                      position: 'absolute',
-                      inset: 0,
-                      backgroundImage: `
-                      radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
-                      radial-gradient(1.5px 1.5px at 70px 10px, #ffffff, rgba(0,0,0,0)),
-                      radial-gradient(1px 1px at 140px 50px, #ffffff, rgba(0,0,0,0)),
-                      url('https://www.transparenttextures.com/patterns/stardust.png')
-                    `,
-                      opacity: 0.4,
-                      pointerEvents: 'none',
-                      zIndex: 0
-                    }}></div>
-                  <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #10b981, #06b6d4)' }} />
-                  <div className="wm-icon-wrap" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)' }}>
-                    <ShieldCheck size={18} style={{ color: '#10b981' }} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#10b981', margin: '0 0 4px', textTransform: 'uppercase' }}>{features?.[0]?.title}</p>
-                    <p style={{ fontSize: '13px', color: 'rgba(203,213,225,0.9)', margin: 0, lineHeight: 1.55 }}>
-                      {features?.[0]?.description}
-                    </p>
-                  </div>
-                  <span className="wm-num" style={{ color: '#10b981' }}>01</span>
-                </div>
-
-                {/* 02: Recordatorios */}
-                <div className="wm-feature-card wm-feature-2" style={{ border: '1px solid var(--glass-border)' }}>
-                  <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #3b82f6, #06b6d4)' }} />
-                  <div className="wm-icon-wrap" style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)' }}>
-                    <SlidersHorizontal size={18} style={{ color: '#3b82f6' }} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>{features?.[1]?.title}</p>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                      {features?.[1]?.description}
-                    </p>
-                  </div>
-                  <span className="wm-num" style={{ color: '#3b82f6' }}>02</span>
-                </div>
-
-                {/* 03: Actividad y bajas */}
-                <div className="wm-feature-card wm-feature-3" style={{ border: '1px solid var(--glass-border)' }}>
-                  <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #a855f7, #6366f1)' }} />
-                  <div className="wm-icon-wrap" style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.25)' }}>
-                    <Bell size={18} style={{ color: '#a855f7' }} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>{features?.[2]?.title}</p>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                      {features?.[2]?.description}
-                    </p>
-                  </div>
-                  <span className="wm-num" style={{ color: '#a855f7' }}>03</span>
-                </div>
-
-                {/* 04: Direcciones de correo */}
-                {features?.[3] && <div className="wm-feature-card wm-feature-4" style={{ border: '1px solid var(--glass-border)' }}>
-                  <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #f97316, #eab308)' }} />
-                  <div className="wm-icon-wrap" style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)' }}>
-                    <Mail size={18} style={{ color: '#f97316' }} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f97316', margin: '0 0 4px', textTransform: 'uppercase' }}>{features[3].title}</p>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55, overflowWrap: 'anywhere' }}>
-                      {features[3].description}
-                    </p>
-                  </div>
-                  <span className="wm-num" style={{ color: '#f97316' }}>04</span>
-                </div>}
-
+                  return (
+                    <div
+                      key={idx}
+                      className={`wm-feature-card ${animClass}`}
+                      style={{
+                        background: styleConfig.bgGrad || undefined,
+                        border: styleConfig.border || '1px solid var(--glass-border)',
+                        boxShadow: styleConfig.glow || undefined
+                      }}
+                    >
+                      {styleConfig.starry && (
+                        <div style={{
+                          position: 'absolute',
+                          inset: 0,
+                          backgroundImage: `
+                            radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+                            radial-gradient(1.5px 1.5px at 70px 10px, #ffffff, rgba(0,0,0,0)),
+                            radial-gradient(1px 1px at 140px 50px, #ffffff, rgba(0,0,0,0)),
+                            url('https://www.transparenttextures.com/patterns/stardust.png')
+                          `,
+                          opacity: 0.4,
+                          pointerEvents: 'none',
+                          zIndex: 0
+                        }}></div>
+                      )}
+                      <div className="wm-accent-line" style={{ background: styleConfig.accentGrad }} />
+                      <div className="wm-icon-wrap" style={{ background: styleConfig.iconBg, border: styleConfig.iconBorder }}>
+                        <IconComponent size={18} style={{ color: styleConfig.color }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          letterSpacing: '0.12em',
+                          color: styleConfig.color,
+                          margin: '0 0 4px',
+                          textTransform: 'uppercase'
+                        }}>
+                          {feat.title}
+                        </p>
+                        <p style={{
+                          fontSize: '13px',
+                          color: idx === 0 ? 'rgba(203,213,225,0.9)' : 'var(--text-secondary)',
+                          margin: 0,
+                          lineHeight: 1.55,
+                          overflowWrap: 'anywhere'
+                        }}>
+                          {feat.description || feat.subtitle}
+                        </p>
+                      </div>
+                      <span className="wm-num" style={{ color: styleConfig.color }}>{numStr}</span>
+                    </div>
+                  );
+                })}
               </div>
 
               {/*  Footer  */}
