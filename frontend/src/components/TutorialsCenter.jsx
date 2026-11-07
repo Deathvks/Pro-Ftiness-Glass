@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Activity, Bell, BookOpen, BarChart3, ChevronRight, Dumbbell, Flame, HelpCircle, MessageCircle, Palette, Search, Settings, Trophy, UserRound, Users, X } from 'lucide-react';
 import ModalPortal from './ModalPortal';
+import useModalLock from '../hooks/useModalLock';
 import { APP_TUTORIALS } from '../data/tutorials';
 
 const ICONS = {
@@ -19,6 +20,40 @@ const ICONS = {
   users: Users
 };
 
+/* Elemento en Lista para Móvil (Estilo Configuración / Ajustes) */
+const TutorialListItem = ({ tutorial, onSelect }) => {
+  const Icon = ICONS[tutorial.icon] || BookOpen;
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(tutorial)}
+      className="flex items-center gap-3.5 w-full p-3.5 rounded-[20px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 active:scale-[0.98] transition-all group text-left border border-black/5 dark:border-white/5"
+    >
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-accent/10 text-accent group-hover:scale-105 transition-transform">
+        <Icon size={20} strokeWidth={2} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <h4 className="text-sm font-bold text-text-primary truncate">{tutorial.title}</h4>
+          <span className="shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-accent">
+            {tutorial.category}
+          </span>
+        </div>
+        <p className="mt-0.5 text-xs text-text-secondary line-clamp-1">
+          {tutorial.description}
+        </p>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <span className="rounded-lg bg-black/5 dark:bg-white/5 px-2 py-1 text-[10px] font-bold text-text-muted">
+          {tutorial.steps.length} {tutorial.steps.length === 1 ? 'paso' : 'pasos'}
+        </span>
+        <ChevronRight size={18} className="text-text-muted group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
+      </div>
+    </button>
+  );
+};
+
+/* Tarjeta extendida para Desktop / Pantallas grandes */
 const TutorialCard = ({ tutorial, onSelect }) => {
   const Icon = ICONS[tutorial.icon] || BookOpen;
   return (
@@ -63,6 +98,7 @@ const TutorialCard = ({ tutorial, onSelect }) => {
 };
 
 export default function TutorialsCenter({ userRole, onClose, onStart }) {
+  useModalLock(true);
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [search, setSearch] = useState('');
   const categoriesRef = useRef(null);
@@ -113,31 +149,45 @@ export default function TutorialsCenter({ userRole, onClose, onStart }) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="tutorials-center-title"
-          className="mt-auto mb-0 flex max-h-[calc(100dvh-var(--safe-top)-1rem)] w-[90%] sm:w-full max-w-5xl flex-col overflow-hidden rounded-t-[32px] rounded-b-none border-t border-black/5 bg-bg-primary shadow-2xl animate-[slide-up_0.3s_ease-out] dark:border-white/5 sm:mt-0 sm:max-h-[92vh] sm:rounded-[32px] sm:border sm:animate-[scale-in_0.2s_ease-out]"
+          className="mt-auto mb-0 flex max-h-[calc(100dvh-var(--safe-top)-1rem)] w-full max-w-5xl flex-col overflow-hidden rounded-t-[32px] rounded-b-none border-t border-black/5 bg-bg-primary shadow-2xl animate-[slide-up_0.3s_ease-out] dark:border-white/5 sm:mt-0 sm:max-h-[92vh] sm:rounded-[32px] sm:border sm:animate-[scale-in_0.2s_ease-out]"
           onClick={event => event.stopPropagation()}
         >
-          <header className="shrink-0 border-b border-black/5 bg-bg-primary/95 p-5 backdrop-blur-xl dark:border-white/5 sm:p-7">
-            <div className="mb-4 flex justify-center sm:hidden">
+          <header className="shrink-0 border-b border-black/5 bg-bg-primary/95 p-4 sm:p-7 backdrop-blur-xl dark:border-white/5">
+            <div className="mb-3 flex justify-center sm:hidden">
               <div className="h-1.5 w-12 rounded-full bg-black/15 dark:bg-white/20" />
             </div>
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
-                <div className="rounded-[16px] bg-accent/10 p-3 text-accent"><BookOpen size={23} /></div>
+                <div className="rounded-[16px] bg-accent/10 p-2.5 sm:p-3 text-accent shrink-0">
+                  <BookOpen size={22} />
+                </div>
                 <div>
-                  <h2 id="tutorials-center-title" className="text-xl font-black text-text-primary sm:text-2xl">Tutoriales</h2>
-                  <p className="mt-1 max-w-2xl text-xs leading-relaxed text-text-secondary sm:text-sm">
-                    Aprende cada sección con recorridos que resaltan los controles reales de la pantalla.
+                  <h2 id="tutorials-center-title" className="text-lg sm:text-2xl font-black text-text-primary">
+                    Tutoriales
+                  </h2>
+                  <p className="mt-0.5 sm:mt-1 max-w-2xl text-xs sm:text-sm leading-relaxed text-text-secondary">
+                    Selecciona una sección para ver el recorrido interactivo con los controles reales.
                   </p>
                 </div>
               </div>
-              <button type="button" onClick={onClose} aria-label="Cerrar tutoriales" className="rounded-full p-2 text-text-secondary transition hover:bg-glass-bg hover:text-text-primary">
+              <button 
+                type="button" 
+                onClick={onClose} 
+                aria-label="Cerrar tutoriales" 
+                className="rounded-full p-2 text-text-secondary transition hover:bg-glass-bg hover:text-text-primary shrink-0"
+              >
                 <X size={20} />
               </button>
             </div>
 
-            <label className="mt-5 flex items-center gap-3 rounded-[16px] bg-black/5 px-4 py-3 text-text-secondary ring-1 ring-black/5 dark:bg-white/5 dark:ring-white/5">
-              <Search size={17} className="shrink-0" />
-              <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar tutorial..." className="w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted" />
+            <label className="mt-4 sm:mt-5 flex items-center gap-3 rounded-[16px] bg-black/5 px-4 py-2.5 sm:py-3 text-text-secondary ring-1 ring-black/5 dark:bg-white/5 dark:ring-white/5">
+              <Search size={16} className="shrink-0" />
+              <input 
+                value={search} 
+                onChange={event => setSearch(event.target.value)} 
+                placeholder="Buscar tutorial..." 
+                className="w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted" 
+              />
             </label>
 
             <div
@@ -151,14 +201,14 @@ export default function TutorialsCenter({ userRole, onClose, onStart }) {
                   event.currentTarget.scrollLeft += event.deltaY;
                 }
               }}
-              className="mt-4 flex min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain touch-pan-x py-2 -my-2 no-scrollbar cursor-grab active:cursor-grabbing select-none"
+              className="mt-3.5 sm:mt-4 flex min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain touch-pan-x py-1.5 -my-1.5 no-scrollbar cursor-grab active:cursor-grabbing select-none"
             >
               {categories.map(category => (
                 <button
                   key={category}
                   type="button"
                   onClick={() => handleCategoryClick(category)}
-                  className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-bold transition-colors ${activeCategory === category ? 'bg-accent/15 text-accent' : 'bg-glass-bg text-text-secondary hover:text-text-primary'}`}
+                  className={`shrink-0 rounded-full px-3.5 py-1.5 sm:py-2 text-xs font-bold transition-colors ${activeCategory === category ? 'bg-accent/15 text-accent font-extrabold' : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary'}`}
                 >
                   {category}
                 </button>
@@ -166,13 +216,27 @@ export default function TutorialsCenter({ userRole, onClose, onStart }) {
             </div>
           </header>
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(1.5rem+var(--safe-bottom))] sm:p-6">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(1.5rem+var(--safe-bottom))] sm:p-6 custom-scrollbar">
             {visibleTutorials.length ? (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
-                {visibleTutorials.map(tutorial => <TutorialCard key={tutorial.id} tutorial={tutorial} onSelect={onStart} />)}
-              </div>
+              <>
+                {/* Vista Móvil: Lista compacta estilo configuración para elegir la opción con un toque */}
+                <div className="sm:hidden flex flex-col gap-2">
+                  {visibleTutorials.map(tutorial => (
+                    <TutorialListItem key={tutorial.id} tutorial={tutorial} onSelect={onStart} />
+                  ))}
+                </div>
+
+                {/* Vista Desktop / Tablet: Grid de tarjetas con preview de pasos */}
+                <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
+                  {visibleTutorials.map(tutorial => (
+                    <TutorialCard key={tutorial.id} tutorial={tutorial} onSelect={onStart} />
+                  ))}
+                </div>
+              </>
             ) : (
-              <div className="rounded-[20px] bg-glass-bg p-8 text-center text-sm font-semibold text-text-muted">No hay tutoriales que coincidan con la búsqueda.</div>
+              <div className="rounded-[20px] bg-glass-bg p-8 text-center text-sm font-semibold text-text-muted">
+                No hay tutoriales que coincidan con la búsqueda.
+              </div>
             )}
           </div>
         </section>

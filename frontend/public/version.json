@@ -1,19 +1,14 @@
 {
-  "version": "7.16.11",
-  "releaseNotes": "Actualización v7.16.11: Feedback instantáneo en ajustes de notificaciones con confirmaciones toast y diseño ultra-responsive en móvil.",
+  "version": "7.16.12",
+  "releaseNotes": "Actualización v7.16.12: Centro de tutoriales en lista compacta estilo configuración para móvil.",
   "welcome": {
-    "title": "Feedback de Notificaciones y Mejoras Móviles",
-    "subtitle": "Confirmaciones instantáneas al activar o desactivar cualquier notificación y diseño optimizado.",
+    "title": "Tutoriales en Lista para Móvil",
+    "subtitle": "Acceso directo y fluido a las guías de cada sección con diseño optimizado.",
     "features": [
       {
-        "title": "Confirmación Inmediata de Notificaciones",
-        "subtitle": "Cada preferencia push o de correo muestra un aviso toast inmediato de activación o desactivación.",
-        "description": "Cada preferencia push o de correo muestra un aviso toast inmediato de activación o desactivación."
-      },
-      {
-        "title": "Diseño Móvil Perfeccionado",
-        "subtitle": "Cabeceras y avisos 100% fluidos adaptados a cualquier pantalla.",
-        "description": "Cabeceras y avisos 100% fluidos adaptados a cualquier pantalla."
+        "title": "Lista Rápida de Tutoriales",
+        "subtitle": "En móvil los tutoriales se muestran en formato lista estilo ajustes para elegir la opción con un solo toque.",
+        "description": "En móvil los tutoriales se muestran en formato lista estilo ajustes para elegir la opción con un solo toque."
       }
     ]
   }
