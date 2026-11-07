@@ -847,7 +847,7 @@ async function main() {
     "@context": "https://schema.org",
     "@type": "WebPage",
     "name": "Mantenimiento Programado y Nueva Infraestructura — Pro Fitness Glass",
-    "description": "Información oficial sobre el mantenimiento programado del sábado 7: traslado seguro a servidores propios dedicados y nuevo dominio oficial profitnessglass.com.",
+    "description": "La migración técnica al dominio oficial profitnessglass.es ha finalizado con éxito. Tus datos están 100% seguros y la plataforma ahora ofrece mayor velocidad y estabilidad.",
     "url": "${BASE_URL}/mantenimiento",
     "inLanguage": "es"
   }
@@ -865,17 +865,17 @@ async function main() {
         <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
         <div style="text-align: left;">
           <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
-          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">Aviso Oficial de Infraestructura</span>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #10b981; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">Aviso Oficial · Migración Finalizada con Éxito</span>
         </div>
       </div>
       <br />
-      <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">Evolucionamos a Servidores Propios y Nuevo Dominio Oficial</h1>
-      <p style="font-size: 1.15rem; color: #94a3b8;">Actualización planificada: traslado seguro a servidores propios dedicados y nuevo dominio oficial profitnessglass.com.</p>
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">¡Migración Completada con Éxito!</h1>
+      <p style="font-size: 1.15rem; color: #94a3b8;">La plataforma ya está 100% operativa en su dominio oficial <strong style="color: #34d399;">profitnessglass.es</strong>, con mayor velocidad, estabilidad y todos tus datos 100% seguros.</p>
     </header>
 
     <section style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
-      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #fbbf24;">Horario y Ventana de Mantenimiento</h2>
-      <p style="color: #cbd5e1; margin-bottom: 0;">El próximo sábado 7 la web entrará en una ventana de mantenimiento programado de aproximadamente 24 a 48 horas mientras se realiza la migración completa de los sistemas.</p>
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #34d399;">Plataforma 100% Operativa y Restablecida</h2>
+      <p style="color: #cbd5e1; margin-bottom: 0;">La transición técnica hacia nuestro dominio oficial profitnessglass.es ha finalizado con éxito total. Puedes seguir entrenando y registrando tu progreso con normalidad.</p>
     </section>
 
     <section style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
@@ -892,8 +892,8 @@ async function main() {
   </main>`;
 
   let mantenimientoHtml = injectMeta(baseHtml, {
-    title: 'Mantenimiento Programado y Nueva Infraestructura — Pro Fitness Glass',
-    description: 'Información oficial sobre el mantenimiento programado del sábado 7: traslado seguro a servidores propios dedicados y nuevo dominio oficial profitnessglass.com.',
+    title: 'Migración y Mantenimiento Completados con Éxito — Pro Fitness Glass',
+    description: 'La migración técnica al dominio oficial profitnessglass.es ha finalizado con éxito. Tus datos están 100% seguros y la plataforma ahora ofrece mayor velocidad y estabilidad.',
     image: `${BASE_URL}/aver.jpg`,
     url: `${BASE_URL}/mantenimiento`,
     type: 'website'
