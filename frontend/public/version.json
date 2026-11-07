@@ -1,25 +1,25 @@
 {
-  "version": "7.16.13",
-  "releaseNotes": "Actualización v7.16.13: Experiencia móvil perfeccionada en tutoriales, confirmaciones toast y bienvenida completa.",
+  "version": "7.16.14",
+  "releaseNotes": "Actualización v7.16.14: Selector de categorías de tutoriales en lista (Todos, Empezar...) para móvil con vista detallada de tarjetas como antes.",
   "welcome": {
-    "title": "Novedades y Mejoras del Sistema",
-    "subtitle": "Experiencia móvil perfeccionada, feedback inmediato en ajustes y plataforma a máxima velocidad.",
+    "title": "Tutoriales por Categorías en Móvil",
+    "subtitle": "Navegación tipo ajustes en lista con acceso a las tarjetas detalladas de cada sección.",
     "features": [
       {
-        "title": "Tutoriales en Lista para Móvil",
-        "description": "En pantallas móviles las guías se muestran en un formato lista estilo ajustes con selector directo de opciones y navegación fluida."
+        "title": "Categorías en Lista para Móvil",
+        "description": "Elige en móvil cómodamente entre Todos, Empezar, Entrenamiento, Nutrición, etc. desde una lista limpia estilo ajustes."
       },
       {
-        "title": "Feedback Toast en Notificaciones",
-        "description": "Avisos interactivos inmediatos cada vez que activas o desactivas cualquier preferencia de alertas o correos."
+        "title": "Tarjetas Detalladas como Siempre",
+        "description": "Al entrar en cualquier categoría verás las tarjetas con vista real de pasos, numeración y el botón para ver el tutorial en pantalla."
       },
       {
-        "title": "Migración Oficial y Mayor Velocidad",
-        "description": "Infraestructura unificada en profitnessglass.es con mayor rapidez de carga, sincronización en tiempo real y datos 100% seguros."
+        "title": "Feedback Inmediato en Ajustes",
+        "description": "Notificaciones toast instantáneas cada vez que activas o desactivas cualquier preferencia de avisos o correos."
       },
       {
-        "title": "Rendimiento y Modo Offline",
-        "description": "Navegación ultra fluida sin bloqueos, menor tiempo de respuesta en series y entrenamientos siempre disponibles."
+        "title": "Servidor Oficial de Alta Velocidad",
+        "description": "Plataforma 100% activa en profitnessglass.es con latencias mínimas y datos completamente seguros."
       }
     ]
   }

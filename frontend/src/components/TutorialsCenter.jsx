@@ -1,5 +1,9 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Activity, Bell, BookOpen, BarChart3, ChevronRight, Dumbbell, Flame, HelpCircle, MessageCircle, Palette, Search, Settings, Trophy, UserRound, Users, X } from 'lucide-react';
+import {
+  Activity, Bell, BookOpen, BarChart3, ChevronLeft, ChevronRight,
+  Dumbbell, Flame, HelpCircle, MessageCircle, Palette, Search, Settings,
+  Sparkles, Trophy, UserRound, Users, X
+} from 'lucide-react';
 import ModalPortal from './ModalPortal';
 import useModalLock from '../hooks/useModalLock';
 import { APP_TUTORIALS } from '../data/tutorials';
@@ -20,32 +24,73 @@ const ICONS = {
   users: Users
 };
 
-/* Elemento en Lista para Móvil (Estilo Configuración / Ajustes) */
-const TutorialListItem = ({ tutorial, onSelect }) => {
-  const Icon = ICONS[tutorial.icon] || BookOpen;
+const CATEGORY_META = {
+  Todos: {
+    description: 'Ver todas las guías y recorridos de la app',
+    icon: Sparkles
+  },
+  Empezar: {
+    description: 'Primeros pasos, resumen y navegación básica',
+    icon: Flame
+  },
+  Entrenamiento: {
+    description: 'Rutinas, ejercicios manuales y sesiones',
+    icon: Dumbbell
+  },
+  Nutrición: {
+    description: 'Registro de comidas, calorías, macros y agua',
+    icon: Flame
+  },
+  Seguimiento: {
+    description: 'Estadísticas, RM, peso, medidas y retos',
+    icon: BarChart3
+  },
+  Comunidad: {
+    description: 'Muro global, ranking, amigos y grupos',
+    icon: Users
+  },
+  Personalización: {
+    description: 'Temas, colores de acento y apariencia',
+    icon: Palette
+  },
+  'Más herramientas': {
+    description: 'Calculadoras, escáner y utilidades',
+    icon: Settings
+  },
+  'Herramientas profesionales': {
+    description: 'Asesorías, clientes y gestión avanzada',
+    icon: UserRound
+  }
+};
+
+/* Fila de Categoría para Móvil (Estilo Configuración / Ajustes en Lista) */
+const CategoryListItem = ({ category, count, onSelect }) => {
+  const meta = CATEGORY_META[category] || {
+    description: `${count} ${count === 1 ? 'guía disponible' : 'guías disponibles'}`,
+    icon: BookOpen
+  };
+  const Icon = meta.icon;
+
   return (
     <button
       type="button"
-      onClick={() => onSelect(tutorial)}
-      className="flex items-center gap-3.5 w-full p-3.5 rounded-[20px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 active:scale-[0.98] transition-all group text-left border border-black/5 dark:border-white/5"
+      onClick={() => onSelect(category)}
+      className="flex items-center gap-3.5 w-full p-4 rounded-[22px] bg-bg-secondary hover:bg-black/5 dark:hover:bg-white/5 active:scale-[0.98] transition-all group text-left border border-black/5 dark:border-white/5 shadow-sm"
     >
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-accent/10 text-accent group-hover:scale-105 transition-transform">
-        <Icon size={20} strokeWidth={2} />
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-accent/10 text-accent group-hover:scale-105 transition-transform">
+        <Icon size={22} strokeWidth={2} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <h4 className="text-sm font-bold text-text-primary truncate">{tutorial.title}</h4>
-          <span className="shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-accent">
-            {tutorial.category}
-          </span>
-        </div>
+        <h4 className="text-sm font-extrabold text-text-primary group-hover:text-accent transition-colors">
+          {category}
+        </h4>
         <p className="mt-0.5 text-xs text-text-secondary line-clamp-1">
-          {tutorial.description}
+          {meta.description}
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <span className="rounded-lg bg-black/5 dark:bg-white/5 px-2 py-1 text-[10px] font-bold text-text-muted">
-          {tutorial.steps.length} {tutorial.steps.length === 1 ? 'paso' : 'pasos'}
+        <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-accent">
+          {count} {count === 1 ? 'guía' : 'guías'}
         </span>
         <ChevronRight size={18} className="text-text-muted group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
       </div>
@@ -53,7 +98,7 @@ const TutorialListItem = ({ tutorial, onSelect }) => {
   );
 };
 
-/* Tarjeta extendida para Desktop / Pantallas grandes */
+/* Tarjeta completa de Tutorial (con vista previa y pasos interactivos como antes) */
 const TutorialCard = ({ tutorial, onSelect }) => {
   const Icon = ICONS[tutorial.icon] || BookOpen;
   return (
@@ -100,18 +145,31 @@ const TutorialCard = ({ tutorial, onSelect }) => {
 export default function TutorialsCenter({ userRole, onClose, onStart }) {
   useModalLock(true);
   const [activeCategory, setActiveCategory] = useState('Todos');
+  const [selectedMobileCategory, setSelectedMobileCategory] = useState(null);
   const [search, setSearch] = useState('');
   const categoriesRef = useRef(null);
   const dragRef = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
 
   const availableTutorials = useMemo(() => APP_TUTORIALS.filter(tutorial => !tutorial.roles || tutorial.roles.includes(userRole)), [userRole]);
   const categories = useMemo(() => ['Todos', ...new Set(availableTutorials.map(tutorial => tutorial.category))], [availableTutorials]);
+
+  // En móvil: si hay búsqueda activa se busca en todos; si no, se usa la categoría seleccionada o activeCategory
+  const hasSearch = search.trim().length > 0;
+  const effectiveCategory = hasSearch
+    ? 'Todos'
+    : (selectedMobileCategory !== null ? selectedMobileCategory : activeCategory);
+
   const visibleTutorials = useMemo(() => availableTutorials.filter(tutorial => {
-    const matchesCategory = activeCategory === 'Todos' || tutorial.category === activeCategory;
+    const matchesCategory = effectiveCategory === 'Todos' || tutorial.category === effectiveCategory;
     const query = search.trim().toLocaleLowerCase('es');
     const matchesSearch = !query || `${tutorial.title} ${tutorial.description} ${tutorial.category}`.toLocaleLowerCase('es').includes(query);
     return matchesCategory && matchesSearch;
-  }), [availableTutorials, activeCategory, search]);
+  }), [availableTutorials, effectiveCategory, search]);
+
+  const handleMobileCategorySelect = (category) => {
+    setSelectedMobileCategory(category);
+    setActiveCategory(category);
+  };
 
   const handleCategoryPointerDown = event => {
     if (event.pointerType !== 'mouse' || event.button !== 0) return;
@@ -140,6 +198,7 @@ export default function TutorialsCenter({ userRole, onClose, onStart }) {
       return;
     }
     setActiveCategory(category);
+    setSelectedMobileCategory(category);
   };
 
   return (
@@ -190,6 +249,7 @@ export default function TutorialsCenter({ userRole, onClose, onStart }) {
               />
             </label>
 
+            {/* Píldoras horizontales de categorías para Desktop */}
             <div
               ref={categoriesRef}
               onPointerDown={handleCategoryPointerDown}
@@ -201,7 +261,7 @@ export default function TutorialsCenter({ userRole, onClose, onStart }) {
                   event.currentTarget.scrollLeft += event.deltaY;
                 }
               }}
-              className="mt-3.5 sm:mt-4 flex min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain touch-pan-x py-1.5 -my-1.5 no-scrollbar cursor-grab active:cursor-grabbing select-none"
+              className="hidden sm:flex mt-3.5 sm:mt-4 min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain touch-pan-x py-1.5 -my-1.5 no-scrollbar cursor-grab active:cursor-grabbing select-none"
             >
               {categories.map(category => (
                 <button
@@ -217,27 +277,78 @@ export default function TutorialsCenter({ userRole, onClose, onStart }) {
           </header>
 
           <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(1.5rem+var(--safe-bottom))] sm:p-6 custom-scrollbar">
-            {visibleTutorials.length ? (
-              <>
-                {/* Vista Móvil: Lista compacta estilo configuración para elegir la opción con un toque */}
-                <div className="sm:hidden flex flex-col gap-2">
-                  {visibleTutorials.map(tutorial => (
-                    <TutorialListItem key={tutorial.id} tutorial={tutorial} onSelect={onStart} />
-                  ))}
+            {/* VISTA MÓVIL */}
+            <div className="sm:hidden">
+              {/* CASO 1: Móvil en la lista principal de categorías (Todos, Empezar, etc.) */}
+              {selectedMobileCategory === null && !hasSearch ? (
+                <div className="flex flex-col gap-2.5">
+                  <div className="mb-1 flex items-center justify-between px-1">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-text-muted">
+                      Elige una sección
+                    </span>
+                    <span className="text-[11px] font-bold text-text-muted">
+                      {availableTutorials.length} guías en total
+                    </span>
+                  </div>
+                  {categories.map(category => {
+                    const count = category === 'Todos'
+                      ? availableTutorials.length
+                      : availableTutorials.filter(t => t.category === category).length;
+                    return (
+                      <CategoryListItem
+                        key={category}
+                        category={category}
+                        count={count}
+                        onSelect={handleMobileCategorySelect}
+                      />
+                    );
+                  })}
                 </div>
+              ) : (
+                /* CASO 2: Móvil dentro de una categoría o en búsqueda: tarjetas como antes */
+                <div className="flex flex-col gap-3">
+                  {!hasSearch && (
+                    <div className="flex items-center justify-between pb-1">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMobileCategory(null)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs font-bold text-text-secondary hover:text-text-primary transition-all active:scale-95"
+                      >
+                        <ChevronLeft size={16} /> Volver a categorías
+                      </button>
+                      <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-accent">
+                        {selectedMobileCategory}
+                      </span>
+                    </div>
+                  )}
 
-                {/* Vista Desktop / Tablet: Grid de tarjetas con preview de pasos */}
-                <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
+                  {visibleTutorials.length ? (
+                    visibleTutorials.map(tutorial => (
+                      <TutorialCard key={tutorial.id} tutorial={tutorial} onSelect={onStart} />
+                    ))
+                  ) : (
+                    <div className="rounded-[20px] bg-glass-bg p-8 text-center text-sm font-semibold text-text-muted">
+                      No hay tutoriales que coincidan con la búsqueda.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* VISTA DESKTOP / TABLET (Grid con preview como siempre) */}
+            <div className="hidden sm:block">
+              {visibleTutorials.length ? (
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                   {visibleTutorials.map(tutorial => (
                     <TutorialCard key={tutorial.id} tutorial={tutorial} onSelect={onStart} />
                   ))}
                 </div>
-              </>
-            ) : (
-              <div className="rounded-[20px] bg-glass-bg p-8 text-center text-sm font-semibold text-text-muted">
-                No hay tutoriales que coincidan con la búsqueda.
-              </div>
-            )}
+              ) : (
+                <div className="rounded-[20px] bg-glass-bg p-8 text-center text-sm font-semibold text-text-muted">
+                  No hay tutoriales que coincidan con la búsqueda.
+                </div>
+              )}
+            </div>
           </div>
         </section>
       </div>
