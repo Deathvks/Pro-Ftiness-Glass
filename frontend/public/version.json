@@ -1,6 +1,6 @@
 {
-  "version": "7.16.23",
-  "releaseNotes": "Actualización v7.16.23: Alineación vertical del banner en Rutinas con el resto de la app y orden riguroso de ejercicios según la rutina en el Muro Social Global.",
+  "version": "7.16.24",
+  "releaseNotes": "Actualización v7.16.24: Aviso de migración ultracompacto en una sola línea en móvil con resumen directo.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",
