@@ -1,6 +1,6 @@
 {
-  "version": "7.16.20",
-  "releaseNotes": "Actualización v7.16.20: Efecto de desenfoque glass en cabecera móvil al hacer scroll antes de ocultarse y sincronización total de versiones.",
+  "version": "7.16.21",
+  "releaseNotes": "Actualización v7.16.21: Eliminado el borde inferior de la cabecera móvil en scroll, manteniendo el desenfoque glass limpio y sincronización de versiones.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",

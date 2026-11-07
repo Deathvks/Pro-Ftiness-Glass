@@ -524,10 +524,10 @@ export default function MainAppLayout({
       el.style.pointerEvents = 'auto';
     }
 
-    // Efecto de desenfoque glass al hacer scroll hacia abajo (deja de ser transparente antes de desaparecer)
+    // Efecto de desenfoque glass al hacer scroll hacia abajo (deja de ser transparente antes de desaparecer, sin borde)
     if (scrolled) {
-      el.classList.add('bg-bg-primary/85', 'backdrop-blur-md', 'border-b', 'border-glass-border/40', 'shadow-sm');
-      el.classList.remove('bg-transparent');
+      el.classList.add('bg-bg-primary/85', 'backdrop-blur-md');
+      el.classList.remove('bg-transparent', 'border-b', 'border-glass-border/40', 'shadow-sm');
     } else {
       el.classList.remove('bg-bg-primary/85', 'backdrop-blur-md', 'border-b', 'border-glass-border/40', 'shadow-sm');
       el.classList.add('bg-transparent');
@@ -1457,7 +1457,7 @@ export default function MainAppLayout({
             contain: 'layout style paint',
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
-            transition: 'transform 0.42s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.35s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease',
+            transition: 'transform 0.42s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.35s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.22s ease',
           }}
         >
           <div className="relative flex justify-between items-center w-full h-14 px-4">
