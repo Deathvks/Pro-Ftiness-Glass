@@ -379,7 +379,7 @@ const ReferencePill = ({ viewBox, text, stroke = '#f59e0b', color = '#f59e0b', p
 // ============================================================
 // 1. GRÁFICA DE PESO CORPORAL (APPLE HEALTH STYLE)
 // ============================================================
-export const BodyWeightChart = ({ data, axisColor }) => {
+export const BodyWeightChart = ({ data, axisColor, compactHeading = false }) => {
     const [period, setPeriod] = useState('3M');
 
     const sortedData = useMemo(() => {
@@ -414,7 +414,7 @@ export const BodyWeightChart = ({ data, axisColor }) => {
 
     return (
         <ChartBase
-            title="Evolución de Peso Corporal"
+            title={compactHeading ? 'Evolución en el tiempo' : 'Evolución de Peso Corporal'}
             icon={Activity}
             data={filteredData}
             periods={['7D', '1M', '3M', '6M', '1A', 'Todo']}

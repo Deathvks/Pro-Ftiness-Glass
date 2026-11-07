@@ -13,6 +13,7 @@ import { useAppTheme } from '../hooks/useAppTheme';
 import { useSectionRoute } from '../hooks/useSectionNavigation';
 import { SETTINGS_SECTIONS } from '../config/settingsSections';
 import { ADMIN_SECTIONS } from '../config/adminSections';
+import { PROGRESS_SECTIONS } from '../config/progressSections';
 import { recoverFromChunkError, reloadAppWithoutStaleCache } from '../utils/appRecovery';
 import { initSocket } from '../services/socket';
 import * as userService from '../services/userService';
@@ -369,7 +370,9 @@ export default function MainAppLayout({
 }) {
   const { addToast } = useToast();
   const { section, closeSection } = useSectionRoute();
-  const sections = view === 'adminPanel' ? ADMIN_SECTIONS : view === 'settings' ? SETTINGS_SECTIONS : null;
+  const sections = view === 'adminPanel' ? ADMIN_SECTIONS
+    : view === 'settings' ? SETTINGS_SECTIONS
+    : view === 'progress' ? PROGRESS_SECTIONS : null;
   const activeSection = sections?.find(item => item.id === section);
   const mobileTitle = activeSection?.label ?? currentTitle;
   useOfflineSync();
@@ -1464,7 +1467,7 @@ export default function MainAppLayout({
                 {view !== 'dashboard' && (
                   <span
                     key={mobileTitle}
-                    className={`font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary ml-1 ${view === 'adminPanel' && activeSection ? 'text-xl leading-tight line-clamp-2' : 'text-2xl sm:text-3xl truncate'}`}
+                    className={`font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary ml-1 ${activeSection && ['adminPanel', 'progress'].includes(view) ? 'text-xl leading-tight line-clamp-2' : 'text-2xl sm:text-3xl truncate'}`}
                   >
                     {mobileTitle}
                   </span>

@@ -184,9 +184,9 @@ export const useAppNavigation = (navigateRouter) => {
       default: newPath = `/${viewName}`; break;
     }
 
-    const sectionView = viewName === 'settings' || viewName === 'adminPanel';
+    const sectionView = ['settings', 'adminPanel', 'progress'].includes(viewName);
     if (viewName === 'settings' && options.highlight) newPath += `?highlight=${encodeURIComponent(options.highlight)}`;
-    if (viewName === 'adminPanel' && options.section) newPath += `?section=${encodeURIComponent(options.section)}`;
+    if ((viewName === 'adminPanel' || viewName === 'progress') && options.section) newPath += `?section=${encodeURIComponent(options.section)}`;
     if (viewName === 'notifications' && options.notice) newPath += `?notice=${encodeURIComponent(options.notice)}`;
     if (viewName === 'social' && options.tab) {
       const params = new URLSearchParams({ tab: options.tab });
@@ -252,7 +252,7 @@ export const useAppNavigation = (navigateRouter) => {
       const profileMatch = path.match(/^\/profile\/(\d+)$/);
 
       const params = event.state?.usr?.params ?? event.state?.params;
-      if (params || path === '/settings' || path === '/adminPanel') {
+      if (params || ['/settings', '/adminPanel', '/progress'].includes(path)) {
         setNavParams(params ?? {});
       }
 

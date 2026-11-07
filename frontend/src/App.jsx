@@ -493,7 +493,7 @@ export default function App() {
       dashboard: { key: 'Dashboard', default: 'Dashboard' },
       challenges: { key: 'Retos', default: 'Retos' },
       nutrition: { key: 'Nutrición', default: 'Nutrición' },
-      progress: { key: 'Progreso', default: 'Progreso' },
+      progress: { key: 'Tu progreso', default: 'Tu progreso' },
       routines: { key: 'Rutinas', default: 'Rutinas' },
       settings: { key: 'Ajustes', default: 'Ajustes' },
       appearance: { key: 'Apariencia', default: 'Apariencia' },
@@ -632,7 +632,7 @@ export default function App() {
   const currentViewComponent = useMemo(() => {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigateInternal} />;
-      case 'progress': return <Progress darkMode={resolvedTheme !== 'light'} setView={navigateInternal} />;
+      case 'progress': return <Progress darkMode={resolvedTheme !== 'light'} setView={navigateInternal} scrollRef={mainContentRef} />;
       case 'routines': return <Routines setView={navigateInternal} mainContentRef={mainContentRef} />;
       case 'workout': return <Workout timer={workoutTimer} setView={navigateInternal} navParams={navParams} />;
       case 'nutrition': return <Nutrition setView={navigateInternal} navParams={navParams} />;

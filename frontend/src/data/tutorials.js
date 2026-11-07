@@ -37,9 +37,9 @@ export const APP_TUTORIALS = [
     id: 'progress', title: 'Progreso y estadísticas', category: 'Seguimiento', icon: 'chart', view: 'progress',
     description: 'Explora mapas musculares, ejercicios, nutrición, récords, peso, medidas y calendario.',
     steps: [
-      { title: 'Tu progreso', element: null, description: 'Las pestañas muestran distintas formas de revisar tus entrenamientos y tus cambios físicos.' },
+      { title: 'Tu progreso', element: null, description: 'Los apartados muestran distintas formas de revisar tus entrenamientos y tus cambios físicos. En móvil, usa la flecha de la cabecera para volver a la lista.' },
       { title: 'Elige qué analizar', element: '#tutorial-progress-tabs', description: 'Cambia entre mapa muscular, ejercicios, nutrición, récords, peso, medidas y calendario.' },
-      { title: 'Vista seleccionada', element: '#tutorial-progress-panel', description: 'El contenido de este panel cambia con la pestaña. Puedes volver aquí cuando quieras para comparar tus datos.' },
+      { title: 'Vista seleccionada', element: '#tutorial-progress-panel', description: 'Aquí aparecen los datos del apartado abierto. Puedes volver cuando quieras para comparar tus resultados.' },
       { title: 'Calendario de entrenamientos', element: '[data-tutorial="progress-tab-calendar"]', description: 'Abre el calendario y toca un día con actividad para consultar esa sesión.' }
     ]
   },

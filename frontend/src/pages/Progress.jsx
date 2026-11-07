@@ -5,24 +5,28 @@ import { Lightbulb, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
-import ExerciseHistoryModal from './ExerciseHistoryModal';
-
-const DailyDetailView = React.lazy(() => import('../components/progress/DailyDetailView'));
-import CalendarView from '../components/progress/CalendarView';
-import { BodyWeightChart } from '../components/progress/ProgressCharts';
-import ExerciseView from '../components/progress/ExerciseView';
-import NutritionView from '../components/progress/NutritionView';
-import RecordsView from '../components/progress/RecordsView';
-import MeasurementsView from '../components/progress/MeasurementsView';
-import MuscleHeatmap from '../components/MuscleHeatmap/MuscleHeatmap';
 import GlassCard from '../components/GlassCard';
+import MobileSectionList from '../components/MobileSectionList';
+import Spinner from '../components/Spinner';
+import { PROGRESS_SECTIONS } from '../config/progressSections';
+import { useSectionNavigation } from '../hooks/useSectionNavigation';
+import { lazyWithRetry } from '../utils/lazyWithRetry';
 
 import {
     DB_TO_HEATMAP_MAP,
     guessMuscleFromText,
-    SUGGESTED_EXERCISES,
     MUSCLE_NAMES_ES
 } from '../utils/muscleUtils';
+
+const DailyDetailView = lazyWithRetry(() => import('../components/progress/DailyDetailView'), 'progressDailyDetail');
+const CalendarView = lazyWithRetry(() => import('../components/progress/CalendarView'), 'progressCalendar');
+const BodyWeightChart = lazyWithRetry(() => import('../components/progress/ProgressCharts').then(module => ({ default: module.BodyWeightChart })), 'progressWeight');
+const ExerciseView = lazyWithRetry(() => import('../components/progress/ExerciseView'), 'progressExercise');
+const NutritionView = lazyWithRetry(() => import('../components/progress/NutritionView'), 'progressNutrition');
+const RecordsView = lazyWithRetry(() => import('../components/progress/RecordsView'), 'progressRecords');
+const MeasurementsView = lazyWithRetry(() => import('../components/progress/MeasurementsView'), 'progressMeasurements');
+const MuscleHeatmap = lazyWithRetry(() => import('../components/MuscleHeatmap/MuscleHeatmap'), 'progressHeatmap');
+const ExerciseHistoryModal = lazyWithRetry(() => import('./ExerciseHistoryModal'), 'progressExerciseHistory');
 
 const INTENSITY_LEVELS = [
     { label: 'Bajo', color: '#00f2ff' },
@@ -31,17 +35,7 @@ const INTENSITY_LEVELS = [
     { label: 'Máximo', color: '#ff0055' }
 ];
 
-const TABS = [
-    { id: 'heatmap', label: 'Mapa Muscular' },
-    { id: 'exercise', label: 'Ejercicios' },
-    { id: 'nutrition', label: 'Nutrición' },
-    { id: 'records', label: 'Récords' },
-    { id: 'bodyWeight', label: 'Peso Corporal' },
-    { id: 'measurements', label: 'Medidas' },
-    { id: 'calendar', label: 'Calendario' }
-];
-
-const Progress = ({ darkMode, setView }) => {
+const Progress = ({ darkMode, setView, scrollRef }) => {
     const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_muscles']);
 
     const { workoutLog, bodyWeightLog, exercises, getOrFetchAllExercises } = useAppStore(useShallow(state => ({
@@ -53,21 +47,9 @@ const Progress = ({ darkMode, setView }) => {
 
     const tabsRef = React.useRef(null);
 
-    const [viewType, setViewType] = useState(() => {
-        try {
-            return localStorage.getItem('progressViewType') || 'heatmap';
-        } catch {
-            return 'heatmap';
-        }
-    });
+    const { activeTab: viewType, setActiveTab: setViewType, isMobile } = useSectionNavigation(PROGRESS_SECTIONS, 'heatmap', scrollRef, 'progressViewType');
 
     useEffect(() => {
-        try {
-            localStorage.setItem('progressViewType', viewType);
-        } catch (e) {
-            console.error('Error guardando preferencia de vista', e);
-        }
-
         // Auto-scroll the tabs container so the active tab is visible (strictly horizontal, avoiding window scroll jumps)
         if (tabsRef.current) {
             const activeEl = tabsRef.current.querySelector('.active-tab');
@@ -82,17 +64,22 @@ const Progress = ({ darkMode, setView }) => {
         if (typeof window !== 'undefined' && window.scrollX !== 0) {
             window.scrollTo({ left: 0 });
         }
-        const mainEl = document.querySelector('main');
+        const mainEl = scrollRef?.current;
         if (mainEl && mainEl.scrollLeft !== 0) {
             mainEl.scrollLeft = 0;
         }
-    }, [viewType]);
+    }, [viewType, isMobile, scrollRef]);
 
     const [detailedLog, setDetailedLog] = useState(null);
     const [exerciseForHistory, setExerciseForHistory] = useState('');
     const [showHistoryModal, setShowHistoryModal] = useState(false);
     const [suggestionsPage, setSuggestionsPage] = useState(0);
     const SUGGESTIONS_PER_PAGE = 3;
+
+    useEffect(() => {
+        if (viewType !== 'calendar') setDetailedLog(null);
+        if (viewType !== 'exercise') setShowHistoryModal(false);
+    }, [viewType]);
 
     // Lógica para deslizar entre pestañas (swipe)
     const [touchStartX, setTouchStartX] = useState(null);
@@ -139,15 +126,15 @@ const Progress = ({ darkMode, setView }) => {
         
         // Si el deslizamiento es suficientemente largo
         if (Math.abs(dx) > 50) {
-            const currentIndex = TABS.findIndex(t => t.id === viewType);
-            if (dx > 0 && currentIndex < TABS.length - 1) {
+            const currentIndex = PROGRESS_SECTIONS.findIndex(section => section.id === viewType);
+            if (dx > 0 && currentIndex < PROGRESS_SECTIONS.length - 1) {
                 // Swipe a la izquierda -> Siguiente pestaña
                 setSwipeAnim('swipeSlideLeft');
-                setViewType(TABS[currentIndex + 1].id);
+                setViewType(PROGRESS_SECTIONS[currentIndex + 1].id);
             } else if (dx < 0 && currentIndex > 0) {
                 // Swipe a la derecha -> Pestaña anterior
                 setSwipeAnim('swipeSlideRight');
-                setViewType(TABS[currentIndex - 1].id);
+                setViewType(PROGRESS_SECTIONS[currentIndex - 1].id);
             }
         }
 
@@ -164,10 +151,11 @@ const Progress = ({ darkMode, setView }) => {
     };
 
     useEffect(() => {
-        getOrFetchAllExercises();
-    }, [getOrFetchAllExercises]);
+        if (viewType === 'heatmap' || viewType === 'exercise') void getOrFetchAllExercises();
+    }, [viewType, getOrFetchAllExercises]);
 
     const bodyWeightChartData = useMemo(() => {
+        if (viewType !== 'bodyWeight') return [];
         return bodyWeightLog
             .map(log => {
                 const weight = parseFloat(log.weight_kg);
@@ -180,22 +168,19 @@ const Progress = ({ darkMode, setView }) => {
             })
             .filter(Boolean)
             .sort((a, b) => a.timestamp - b.timestamp);
-    }, [bodyWeightLog]);
-
-    const allExercisesNames = useMemo(() => {
-        return (exercises || []).map(ex => ex.name).sort((a, b) => a.localeCompare(b));
-    }, [exercises]);
+    }, [bodyWeightLog, viewType]);
 
     const executedExercisesList = useMemo(() => {
+        if (viewType !== 'exercise') return [];
         const exerciseSet = new Set(
             workoutLog.flatMap(log => log.WorkoutLogDetails?.map(d => d.exercise_name) || [])
         );
         return Array.from(exerciseSet);
-    }, [workoutLog]);
+    }, [workoutLog, viewType]);
 
     const exerciseProgressData = useMemo(() => {
         const progress = {};
-        if (!workoutLog || workoutLog.length === 0) return progress;
+        if (viewType !== 'exercise' || !workoutLog?.length) return progress;
 
         workoutLog.forEach(log => {
             if (log.WorkoutLogDetails) {
@@ -235,10 +220,10 @@ const Progress = ({ darkMode, setView }) => {
             progress[exerciseName].sort((a, b) => a.date - b.date);
         }
         return progress;
-    }, [workoutLog]);
+    }, [workoutLog, viewType]);
 
     const { muscleHeatmapData, weakPointSuggestions } = useMemo(() => {
-        if (!workoutLog || workoutLog.length === 0) return { muscleHeatmapData: {}, weakPointSuggestions: [] };
+        if (viewType !== 'heatmap' || !workoutLog?.length) return { muscleHeatmapData: {}, weakPointSuggestions: [] };
 
         const scores = {};
         const thirtyDaysAgo = new Date();
@@ -340,7 +325,7 @@ const Progress = ({ darkMode, setView }) => {
         });
 
         return { muscleHeatmapData: normalized, weakPointSuggestions: suggestions };
-    }, [workoutLog, exercises]);
+    }, [workoutLog, exercises, viewType]);
 
     useEffect(() => {
         setSuggestionsPage(0);
@@ -369,11 +354,11 @@ const Progress = ({ darkMode, setView }) => {
 
     return (
         <div 
-            className="w-full max-w-7xl mx-auto px-4 pt-6 pb-28 md:p-6 md:pb-8 lg:p-10 lg:pb-8 animate-[fade-in_0.5s_ease-out] overflow-x-hidden"
-            onTouchStartCapture={handleTouchStartCapture}
-            onTouchMoveCapture={handleTouchMoveCapture}
-            onTouchEndCapture={handleTouchEndCapture}
-            onClickCapture={(e) => {
+            className="w-full max-w-7xl mx-auto px-4 py-2 md:p-6 md:pb-8 lg:p-10 lg:pb-8 animate-[fade-in_0.5s_ease-out] overflow-x-hidden"
+            onTouchStartCapture={isMobile ? undefined : handleTouchStartCapture}
+            onTouchMoveCapture={isMobile ? undefined : handleTouchMoveCapture}
+            onTouchEndCapture={isMobile ? undefined : handleTouchEndCapture}
+            onClickCapture={isMobile ? undefined : (e) => {
                 if (justSwipedRef.current) {
                     e.stopPropagation();
                     e.preventDefault();
@@ -385,6 +370,16 @@ const Progress = ({ darkMode, setView }) => {
                 <title>Tu Progreso - Pro Fitness Glass</title>
                 <meta name="description" content="Visualiza tu progreso muscular, fuerza y estadísticas." />
             </Helmet>
+
+            {isMobile && !viewType && (
+                <MobileSectionList
+                    id="tutorial-progress-tabs"
+                    label="Apartados de Tu progreso"
+                    sections={PROGRESS_SECTIONS}
+                    onSelect={setViewType}
+                    tutorialPrefix="progress-tab"
+                />
+            )}
 
             <style>
                 {`
@@ -415,17 +410,18 @@ const Progress = ({ darkMode, setView }) => {
                 </button>
             </div>
 
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
+            {!isMobile && <div className="hidden md:flex md:items-center md:justify-between gap-6 mb-8">
                 <h1 className="hidden md:block text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
                     Tu Progreso
                 </h1>
 
                 {/* NUEVO CONTENEDOR DE PESTAÑAS (PILLS) */}
                 <div id="tutorial-progress-tabs" ref={tabsRef} className="flex overflow-x-auto pb-4 pt-1 px-1 -mx-1 gap-2.5 no-scrollbar mask-linear-fade items-center no-swipe-tabs scroll-smooth">
-                    {TABS.map(tab => (
+                    {PROGRESS_SECTIONS.map(tab => (
                         <button 
                             key={tab.id}
                             data-tutorial={`progress-tab-${tab.id}`}
+                            aria-current={viewType === tab.id ? 'page' : undefined}
                             onClick={() => {
                                 setSwipeAnim('swipeFadeIn');
                                 setViewType(tab.id);
@@ -440,14 +436,15 @@ const Progress = ({ darkMode, setView }) => {
                         </button>
                     ))}
                 </div>
-            </div>
+            </div>}
 
-            <div
+            {viewType && <div
                 id="tutorial-progress-panel"
                 key={viewType} 
                 ref={contentRef}
                 style={{ animation: `${swipeAnim || 'swipeFadeIn'} 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards` }}
             >
+                <React.Suspense fallback={<div className="flex justify-center py-12" role="status" aria-label="Cargando apartado"><Spinner /></div>}>
                 {viewType === 'heatmap' && (
                 <div className="flex flex-col items-center animate-fade-in py-6 w-full">
                     <div className="w-full max-w-[300px] flex justify-center">
@@ -543,17 +540,18 @@ const Progress = ({ darkMode, setView }) => {
             {viewType === 'exercise' && <ExerciseView allExercises={executedExercisesList} exerciseProgressData={exerciseProgressData} axisColor={axisColor} onShowHistory={handleShowHistory} />}
             {viewType === 'nutrition' && <NutritionView axisColor={axisColor} />}
             {viewType === 'records' && <RecordsView />}
-            {viewType === 'bodyWeight' && <BodyWeightChart data={bodyWeightChartData} axisColor={axisColor} />}
+            {viewType === 'bodyWeight' && <BodyWeightChart data={bodyWeightChartData} axisColor={axisColor} compactHeading={isMobile} />}
             {viewType === 'measurements' && <MeasurementsView axisColor={axisColor} />}
             {viewType === 'calendar' && <CalendarView setDetailedLog={setDetailedLog} />}
-            </div>
+                </React.Suspense>
+            </div>}
 
-            {detailedLog && (
-              <React.Suspense fallback={null}>
+            <React.Suspense fallback={null}>
+              {viewType === 'calendar' && detailedLog && (
                 <DailyDetailView logs={detailedLog} onClose={() => setDetailedLog(null)} />
-              </React.Suspense>
-            )}
-            {showHistoryModal && <ExerciseHistoryModal exerciseName={exerciseForHistory} workoutLog={workoutLog} onClose={() => setShowHistoryModal(false)} />}
+              )}
+              {viewType === 'exercise' && showHistoryModal && <ExerciseHistoryModal exerciseName={exerciseForHistory} workoutLog={workoutLog} onClose={() => setShowHistoryModal(false)} />}
+            </React.Suspense>
         </div>
     );
 };

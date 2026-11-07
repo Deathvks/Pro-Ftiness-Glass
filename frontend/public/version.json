@@ -1,6 +1,6 @@
 {
-  "version": "7.16.6",
-  "releaseNotes": "Actualización v7.16.6: meta semanal según tu nivel de actividad, avisos push más claros y mejoras en el temporizador de descanso y en las preferencias de correo.",
+  "version": "7.16.7",
+  "releaseNotes": "Actualización v7.16.7: navega por los siete apartados de Tu progreso desde una lista en móvil.",
   "welcome": {
     "title": "Tú eliges tus notificaciones",
     "subtitle": "Configura por separado los correos y los avisos push en Ajustes → Notificaciones.",

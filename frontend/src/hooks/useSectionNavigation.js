@@ -40,8 +40,12 @@ export function useSectionNavigation(sections, defaultSection, scrollRef, storag
   const [isMobile, setIsMobile] = useState(() => !window.matchMedia(desktopQuery).matches);
   const isValid = id => sections.some(item => item.id === id);
   const [desktopSection, setDesktopSection] = useState(() => {
-    const stored = storageKey ? localStorage.getItem(storageKey) : null;
-    return isValid(stored) ? stored : defaultSection;
+    try {
+      const stored = storageKey ? localStorage.getItem(storageKey) : null;
+      return isValid(stored) ? stored : defaultSection;
+    } catch {
+      return defaultSection;
+    }
   });
   const linkedSection = isValid(section) ? section : null;
   const activeTab = linkedSection ?? (isMobile ? null : desktopSection);
@@ -57,7 +61,10 @@ export function useSectionNavigation(sections, defaultSection, scrollRef, storag
   }, []);
 
   useEffect(() => {
-    if (storageKey && activeTab) localStorage.setItem(storageKey, activeTab);
+    if (!storageKey || !activeTab) return;
+    try {
+      localStorage.setItem(storageKey, activeTab);
+    } catch { /* La selección sigue disponible durante esta visita. */ }
   }, [activeTab, storageKey]);
 
   useEffect(() => {

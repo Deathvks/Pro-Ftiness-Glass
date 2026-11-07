@@ -99,8 +99,8 @@ const RecordsView = () => {
 
   return (
     <div className="space-y-6 animate-[fade-in_0.4s_ease-out]">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
-        <h3 className="text-xl sm:text-2xl font-extrabold text-text-primary flex items-center gap-3 tracking-tight">
+      <div className={`${exerciseNames.length ? 'flex' : 'hidden md:flex'} flex-col sm:flex-row sm:items-center sm:justify-between gap-5`}>
+        <h3 className="text-xl sm:text-2xl font-extrabold text-text-primary hidden md:flex items-center gap-3 tracking-tight">
           <div className="p-2.5 bg-yellow-500/10 rounded-[16px] text-yellow-500 ring-1 ring-yellow-500/20 shadow-sm">
             <Trophy size={24} strokeWidth={2} />
           </div>

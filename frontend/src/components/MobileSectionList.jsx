@@ -1,6 +1,6 @@
 import { ChevronRight } from 'lucide-react';
 
-export default function MobileSectionList({ id, label, sections, onSelect }) {
+export default function MobileSectionList({ id, label, sections, onSelect, tutorialPrefix = 'settings-tab' }) {
   return (
     <nav id={id} aria-label={label} className="md:hidden w-full">
       <ul className="glass overflow-hidden rounded-2xl divide-y divide-glass-border">
@@ -8,7 +8,7 @@ export default function MobileSectionList({ id, label, sections, onSelect }) {
           <li key={section}>
             <button
               type="button"
-              data-tutorial={`settings-tab-${section}`}
+              data-tutorial={`${tutorialPrefix}-${section}`}
               onClick={() => onSelect(section)}
               className="flex min-h-11 w-full items-center gap-3 px-3 py-1.5 text-left text-text-primary transition-colors hover:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:active:bg-white/10"
             >
