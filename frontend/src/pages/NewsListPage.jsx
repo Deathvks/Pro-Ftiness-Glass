@@ -108,6 +108,8 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
   const [isLoading, setIsLoading] = useState(() => !cachedInitial);
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncFeedback, setSyncFeedback] = useState(null);
   const cachedInitialRef = useRef(cachedInitial);
   const newsRef = useRef(news);
   cachedInitialRef.current = cachedInitial;
@@ -115,6 +117,38 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
 
   const handleRetry = () => {
     setReloadKey((prev) => prev + 1);
+  };
+
+  const handleManualSync = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    setSyncFeedback('Sincronizando...');
+    try {
+      const data = await newsService.fetchPublicNews({
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+        category: currentCategory,
+        search: currentSearch,
+        bypassCache: true
+      });
+      if (data && Array.isArray(data.news)) {
+        setNews(data.news);
+        setTotal(data.total || 0);
+        setTotalPages(data.totalPages || 1);
+        if (data.totalAll) setTotalAll(data.totalAll);
+        if (data.categories && Array.isArray(data.categories)) setApiCategories(data.categories);
+        if (data.categoryCounts) setCategoryCounts(data.categoryCounts);
+        if (data.popularNews && Array.isArray(data.popularNews)) setPopularNews(data.popularNews);
+        setSyncFeedback('¡Al día!');
+      } else {
+        setSyncFeedback('Completado');
+      }
+    } catch {
+      setSyncFeedback('Sin conexión');
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setSyncFeedback(null), 2500);
+    }
   };
 
   // Categorías calculadas dinámicamente: base + cualquier nueva categoría devuelta por la API o categoryCounts
@@ -162,7 +196,8 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
           page: currentPage,
           limit: ITEMS_PER_PAGE,
           category: currentCategory,
-          search: currentSearch
+          search: currentSearch,
+          bypassCache: reloadKey > 0
         });
         if (isMounted && data) {
           setNews(data.news || []);
@@ -473,17 +508,31 @@ export default function NewsListPage({ onBack, navigate: customNavigate }) {
               </Link>
             </nav>
 
-            {/* Buscador de artículos */}
-            <form onSubmit={handleSearchSubmit} className="relative w-full md:w-64 shrink-0">
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Buscar artículos..."
-                className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full pl-9 pr-4 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-              />
-              <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none text-xs" />
-            </form>
+            {/* Buscador de artículos y botón de sincronizar */}
+            <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+              <form onSubmit={handleSearchSubmit} className="relative flex-1 md:w-64">
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Buscar artículos..."
+                  className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full pl-9 pr-4 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+                />
+                <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none text-xs" />
+              </form>
+              <button
+                type="button"
+                onClick={handleManualSync}
+                disabled={isSyncing}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 text-xs font-bold text-text-secondary hover:text-text-primary transition-all shrink-0 cursor-pointer disabled:opacity-60"
+                title="Sincronizar últimas noticias en tiempo real"
+                aria-label="Sincronizar noticias"
+              >
+                <FaArrowsRotate className={`text-xs ${isSyncing ? 'animate-spin text-accent' : ''}`} />
+                <span className="hidden sm:inline">{syncFeedback || 'Sincronizar'}</span>
+                {syncFeedback && <span className="sm:hidden text-[10px] text-accent font-semibold">{syncFeedback}</span>}
+              </button>
+            </div>
           </div>
         </header>
 

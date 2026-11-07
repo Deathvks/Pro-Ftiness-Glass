@@ -21,44 +21,41 @@
         Expires "0"
     }
 
-    # Proxy inverso dinámico hacia el backend para sitemap.xml y feed RSS (actualización en tiempo real desde la BD)
+    # Proxy inverso dinámico hacia el servidor canónico de producción (profitnessglass.es)
     handle /sitemap.xml {
-        reverse_proxy https://pro-fitness-glass-api.zeabur.app {
-            header_up Host pro-fitness-glass-api.zeabur.app
+        reverse_proxy https://profitnessglass.es {
+            header_up Host profitnessglass.es
         }
     }
 
     handle /rss.xml {
-        reverse_proxy https://pro-fitness-glass-api.zeabur.app {
-            header_up Host pro-fitness-glass-api.zeabur.app
+        reverse_proxy https://profitnessglass.es {
+            header_up Host profitnessglass.es
         }
     }
 
     handle /feed.xml {
-        reverse_proxy https://pro-fitness-glass-api.zeabur.app {
-            header_up Host pro-fitness-glass-api.zeabur.app
+        reverse_proxy https://profitnessglass.es {
+            header_up Host profitnessglass.es
         }
     }
 
-    # Mantiene válidos los enlaces de baja de correos ya enviados.
-    handle /api/email-preferences/unsubscribe {
-        @unsubscribeBrowser method GET HEAD
-        header @unsubscribeBrowser Referrer-Policy no-referrer
-        redir @unsubscribeBrowser https://pro-fitness-glass-api.zeabur.app{uri} 302
-        reverse_proxy https://pro-fitness-glass-api.zeabur.app {
-            header_up Host pro-fitness-glass-api.zeabur.app
+    # Proxy inverso transparente para la API (mantiene vivas apps móviles y clientes que apunten a la URL anterior)
+    handle /api/* {
+        reverse_proxy https://profitnessglass.es {
+            header_up Host profitnessglass.es
         }
     }
 
     handle /uploads/* {
-        reverse_proxy https://pro-fitness-glass-api.zeabur.app {
-            header_up Host pro-fitness-glass-api.zeabur.app
+        reverse_proxy https://profitnessglass.es {
+            header_up Host profitnessglass.es
         }
     }
 
     handle /images/* {
-        reverse_proxy https://pro-fitness-glass-api.zeabur.app {
-            header_up Host pro-fitness-glass-api.zeabur.app
+        reverse_proxy https://profitnessglass.es {
+            header_up Host profitnessglass.es
         }
     }
 

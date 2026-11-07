@@ -1,25 +1,25 @@
 {
-  "version": "7.16.15",
-  "releaseNotes": "Actualización v7.16.15: Banner oficial Open Graph 16:9 de alta resolución para previsualizaciones sociales al compartir la web.",
+  "version": "7.16.16",
+  "releaseNotes": "Actualización v7.16.16: Sincronización dinámica de noticias en tiempo real para Android y Web, resolución canónica de API resiliente y botón de sincronización instantánea.",
   "welcome": {
-    "title": "Previsualización Oficial al Compartir",
-    "subtitle": "Nuevo banner Open Graph 16:9 optimizado para WhatsApp, Twitter/X, Discord y Telegram.",
+    "title": "Sincronización Total de Noticias",
+    "subtitle": "Tus noticias y guías científicas se actualizan en tiempo real sin depender de actualizaciones del APK.",
     "features": [
       {
-        "title": "Banner Oficial al Compartir",
-        "description": "Al compartir cualquier enlace de la app en redes o apps de mensajería se muestra la tarjeta oficial de marca en 16:9 con diseño dark glassmorphism."
+        "title": "Sincronización Dinámica en Android",
+        "description": "Las nuevas guías y artículos publicados en la web se descargan al instante en tu app móvil sin necesidad de sacar una nueva versión."
       },
       {
-        "title": "Tutoriales por Categorías en Móvil",
-        "description": "Acceso rápido en lista estilo ajustes (Todos, Empezar, etc.) con tarjetas interactivas de pasos detallados al entrar."
+        "title": "Botón Sincronizar en Cabecera",
+        "description": "Acceso directo con un solo toque para refrescar la lista de noticias al momento con confirmación visual de estado."
       },
       {
-        "title": "Feedback Inmediato en Ajustes",
-        "description": "Confirmaciones toast emergentes al activar o desactivar cada preferencia de avisos o correos."
+        "title": "Conexión Resiliente y Anti-Caché",
+        "description": "Bypass de cachés congeladas en WebView y reconexión automática al servidor canónico ante cualquier microcorte."
       },
       {
-        "title": "Servidor Oficial de Alta Velocidad",
-        "description": "Plataforma 100% activa en profitnessglass.es con latencias mínimas y datos completamente seguros."
+        "title": "Caché Offline Completa (36 Guías)",
+        "description": "Acceso instantáneo a las 36 guías científicas publicadas incluso si te quedas sin cobertura o conexión."
       }
     ]
   }

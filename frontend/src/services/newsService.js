@@ -1,5 +1,6 @@
 /* frontend/src/services/newsService.js */
 import useAppStore from '../store/useAppStore';
+import { Capacitor } from '@capacitor/core';
 import cachedNewsList from '../data/cachedNews.json';
 
 // Caché en memoria para transiciones instantáneas a 0ms
@@ -24,9 +25,10 @@ export const getCachedArticle = (slug) => {
     const raw = localStorage.getItem('pfg_art_' + slug) || sessionStorage.getItem('pfg_art_' + slug);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.article) {
-        articleMemoryCache.set(slug, parsed);
-        return parsed;
+      const artData = parsed?.article ? parsed : (parsed?.data?.article ? parsed.data : null);
+      if (artData) {
+        articleMemoryCache.set(slug, artData);
+        return artData;
       }
     }
   } catch {}
@@ -60,7 +62,26 @@ export const prefetchNewsBySlug = (slug) => {
 };
 
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const CANONICAL_API_URL = 'https://profitnessglass.es/api';
+
+export const getResolvedApiUrl = () => {
+  const envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+  const isLocalDev = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
+    !Capacitor.isNativePlatform();
+
+  if (isLocalDev && envUrl && !envUrl.includes('zeabur')) {
+    return envUrl;
+  }
+
+  if (!envUrl || envUrl.includes('localhost') || envUrl.includes('10.0.2.2') || envUrl.includes('zeabur')) {
+    return CANONICAL_API_URL;
+  }
+
+  return envUrl;
+};
+
+const API_URL = getResolvedApiUrl();
 
 const getAuthHeaders = () => {
   const token = useAppStore.getState().token;
@@ -73,19 +94,38 @@ const getAuthHeaders = () => {
 /**
  * Petición HTTP resiliente con reintento automático y traducción humana de errores de red
  */
-const requestWithRetry = async (url, options = {}, retries = 1, timeoutMs = 4000) => {
+const requestWithRetry = async (url, options = {}, retries = 1, timeoutMs = 7000) => {
   let attempts = 0;
+  let currentUrl = url;
+
   while (attempts <= retries) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const res = await fetch(url, {
+      const res = await fetch(currentUrl, {
         credentials: 'include',
         ...options,
         signal: controller.signal
       });
       clearTimeout(timeoutId);
+
+      // Si el servidor devuelve HTML (ej. fallback SPA por dominio antiguo de Zeabur)
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await res.text().catch(() => '');
+        if (text.trim().startsWith('<') || text.trim().startsWith('<!doctype')) {
+          if (!currentUrl.includes('profitnessglass.es')) {
+            const canonicalUrl = currentUrl.replace(/https?:\/\/[^\/]+\/api/, CANONICAL_API_URL);
+            if (canonicalUrl !== currentUrl) {
+              currentUrl = canonicalUrl;
+              attempts++;
+              continue;
+            }
+          }
+          throw new Error('Respuesta no válida del servidor');
+        }
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -104,6 +144,16 @@ const requestWithRetry = async (url, options = {}, retries = 1, timeoutMs = 4000
     } catch (err) {
       clearTimeout(timeoutId);
 
+      // Si falló y la URL no apuntaba a la canónica, conmutar a profitnessglass.es
+      if (!currentUrl.includes('profitnessglass.es')) {
+        const canonicalUrl = currentUrl.replace(/https?:\/\/[^\/]+\/api/, CANONICAL_API_URL);
+        if (canonicalUrl !== currentUrl) {
+          currentUrl = canonicalUrl;
+          attempts++;
+          continue;
+        }
+      }
+
       const isAbort = err.name === 'AbortError';
       const isNetwork =
         isAbort ||
@@ -111,13 +161,14 @@ const requestWithRetry = async (url, options = {}, retries = 1, timeoutMs = 4000
         (err.message && (
           err.message.toLowerCase().includes('failed to fetch') ||
           err.message.toLowerCase().includes('network') ||
-          err.message.toLowerCase().includes('load failed')
+          err.message.toLowerCase().includes('load failed') ||
+          err.message.toLowerCase().includes('servidor')
         ));
 
-      // Si es fallo de red (conexión inestable o microcorte) y quedan intentos, esperar y reintentar
+      // Si es fallo de red y quedan intentos, esperar brevemente y reintentar
       if (isNetwork && attempts < retries) {
         attempts++;
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 800));
         continue;
       }
 
@@ -125,8 +176,8 @@ const requestWithRetry = async (url, options = {}, retries = 1, timeoutMs = 4000
       if (isNetwork) {
         const friendlyErr = new Error(
           isAbort
-            ? 'El servidor tardó demasiado en responder. Comprueba tu conexión a internet.'
-            : 'No se pudo conectar con el servidor. Revisa tu conexión a internet o inténtalo en unos momentos.'
+            ? 'El servidor tardó en responder. Mostrando contenido en caché.'
+            : 'Sin conexión con el servidor. Mostrando contenido en caché.'
         );
         friendlyErr.isNetwork = true;
         friendlyErr.status = 0;
@@ -153,9 +204,10 @@ export const getCachedPublicNews = ({ page = 1, limit = 6, category = '', search
     const raw = localStorage.getItem(`pfg_news_list_${cacheKey}`) || sessionStorage.getItem(`pfg_news_list_${cacheKey}`);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && Array.isArray(parsed.news) && parsed.news.length > 0) {
-        publicListMemoryCache.set(cacheKey, parsed);
-        return parsed;
+      const actualData = parsed?.news ? parsed : (parsed?.data?.news ? parsed.data : null);
+      if (actualData && Array.isArray(actualData.news) && actualData.news.length > 0) {
+        publicListMemoryCache.set(cacheKey, actualData);
+        return actualData;
       }
     }
   } catch {}
@@ -203,18 +255,21 @@ export const fetchPublicNews = async ({ page = 1, limit = 6, category = '', sear
       if (limit) params.append('limit', limit);
       if (category && category !== 'Todas') params.append('category', category);
       if (search) params.append('search', search);
-      if (bypassCache) params.append('_t', Date.now());
+      // Siempre incluimos timestamp anti-caché de WebView
+      params.append('_t', Date.now());
 
-      const data = await requestWithRetry(`${API_URL}/news?${params.toString()}`, {
+      const currentApiUrl = getResolvedApiUrl();
+      const data = await requestWithRetry(`${currentApiUrl}/news?${params.toString()}`, {
         headers: getAuthHeaders(),
-        cache: bypassCache ? 'no-store' : 'default'
-      }, 0, 2500);
+        cache: 'no-cache'
+      }, 1, 7000);
 
       if (data && Array.isArray(data.news)) {
         publicListMemoryCache.set(cacheKey, data);
         try {
-          localStorage.setItem(`pfg_news_list_${cacheKey}`, JSON.stringify(data));
-          sessionStorage.setItem(`pfg_news_list_${cacheKey}`, JSON.stringify(data));
+          const payload = { data, timestamp: Date.now() };
+          localStorage.setItem(`pfg_news_list_${cacheKey}`, JSON.stringify(payload));
+          sessionStorage.setItem(`pfg_news_list_${cacheKey}`, JSON.stringify(payload));
         } catch {}
 
         // Registrar artículos en articleMemoryCache como parciales para apertura instantánea al pulsar
@@ -285,18 +340,20 @@ export const fetchNewsBySlug = async (slug, { bypassCache = false } = {}) => {
 
   const promise = (async () => {
     try {
+      const currentApiUrl = getResolvedApiUrl();
       const data = await requestWithRetry(
-        `${API_URL}/news/article/${encodeURIComponent(slug)}`,
-        { headers: getAuthHeaders() },
-        0,
-        2500
+        `${currentApiUrl}/news/article/${encodeURIComponent(slug)}?_t=${Date.now()}`,
+        { headers: getAuthHeaders(), cache: 'no-cache' },
+        1,
+        7000
       );
 
       if (data && data.article) {
         articleMemoryCache.set(slug, data);
         try {
-          localStorage.setItem(`pfg_art_${slug}`, JSON.stringify(data));
-          sessionStorage.setItem(`pfg_art_${slug}`, JSON.stringify(data));
+          const payload = { data, timestamp: Date.now() };
+          localStorage.setItem(`pfg_art_${slug}`, JSON.stringify(payload));
+          sessionStorage.setItem(`pfg_art_${slug}`, JSON.stringify(payload));
         } catch {
           // sessionStorage bloqueado o lleno
         }

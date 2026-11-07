@@ -167,6 +167,14 @@ async function fetchArticles() {
 
   const merged = Array.from(combinedMap.values());
   console.log(`[Prerender] Total de artículos únicos a prerenderizar: ${merged.length}`);
+  if (merged.length >= cachedArticles.length && apiArticles.length > 0) {
+    try {
+      fs.writeFileSync(cachePath, JSON.stringify(merged, null, 2), 'utf8');
+      console.log(`[Prerender] Actualizado cachedNews.json con ${merged.length} noticias.`);
+    } catch (e) {
+      console.warn('[Prerender] Error escribiendo cachedNews.json:', e.message);
+    }
+  }
   return merged;
 }
 
