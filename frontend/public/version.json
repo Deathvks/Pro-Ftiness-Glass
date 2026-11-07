@@ -1,25 +1,25 @@
 {
-  "version": "7.16.8",
-  "releaseNotes": "Actualización v7.16.8: Monitor de recursos del servidor en tiempo real, latencias y optimizaciones de rendimiento.",
+  "version": "7.16.9",
+  "releaseNotes": "Actualización v7.16.9: Detección instantánea de nuevas versiones, avisos reactivos y modal de métricas en toda la pantalla.",
   "welcome": {
-    "title": "Monitor de Servidor y Rendimiento",
-    "subtitle": "Nuevo visualizador en tiempo real de recursos y optimizaciones del servidor VPS.",
+    "title": "Actualizaciones Instantáneas y Recursos",
+    "subtitle": "Nuevo sistema reactivo de detección de versiones y visor de métricas del servidor a pantalla completa.",
     "features": [
       {
+        "title": "Detección Inmediata de Versiones",
+        "description": "El aviso de nueva versión ahora salta en pocos segundos tras una publicación gracias al Service Worker reactivo y polling inteligente."
+      },
+      {
+        "title": "Modal de Infraestructura a Pantalla Completa",
+        "description": "Las explicaciones de métricas se abren ahora en un modal flotante completo adaptativo (bottom-sheet en móvil)."
+      },
+      {
         "title": "Monitor de Hardware en Vivo",
-        "description": "Visualiza el consumo real de CPU, memoria RAM del VPS (4 GB), espacio de disco NVMe y salud de procesos de forma continua."
+        "description": "Visualiza el consumo real de CPU, memoria RAM del VPS (4 GB), espacio de disco NVMe y latencia MySQL (1 ms)."
       },
       {
-        "title": "Explicación Interactiva de Métricas",
-        "description": "Pulsa sobre los iconos informativos para entender cada métrica: tiempo activo, latencia de base de datos MySQL (1 ms) y memoria V8."
-      },
-      {
-        "title": "Notificaciones Legales y Canales Seguros",
-        "description": "Configuración transparente de correos (notificaciones@, soporte@, privacidad@) adaptada a la normativa RGPD."
-      },
-      {
-        "title": "Diseño Responsive",
-        "description": "Adaptación fluida para smartphones, tablets y pantallas de escritorio sin saturación visual."
+        "title": "Notificaciones Legales",
+        "description": "Configuración transparente de correos adaptada a la normativa RGPD."
       }
     ]
   }

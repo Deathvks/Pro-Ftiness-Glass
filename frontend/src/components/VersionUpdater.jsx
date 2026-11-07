@@ -13,57 +13,8 @@ const SWUpdaterCore = () => {
   const lastCheckTimeRef = useRef(0);
   const isCheckingRef = useRef(false);
 
-  // 1. Registro del Service Worker nativo (solo Web / PWA, nunca en app nativa)
-  useEffect(() => {
-    if (import.meta.env.DEV) return;
-    if (Capacitor.isNativePlatform()) return;
-    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
-
-    navigator.serviceWorker
-      .register('/sw.js', { scope: '/' })
-      .catch(() => {});
-  }, []);
-
-  // 2. Comprobar si hay un anuncio nuevo de bienvenida para mostrar WelcomeModal y limpiar params de actualización
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined' && window.location.search) {
-        const url = new URL(window.location.href);
-        if (url.searchParams.has('pfg_fresh') || url.searchParams.has('rescue') || url.searchParams.has('updated')) {
-          url.searchParams.delete('pfg_fresh');
-          url.searchParams.delete('rescue');
-          url.searchParams.delete('updated');
-          const cleanUrl = url.pathname + (url.search ? url.search : '') + (url.hash || '');
-          window.history.replaceState({}, document.title, cleanUrl);
-        }
-      }
-    } catch {}
-
-    try {
-      fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' })
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (!data?.version || isNewerVersion(data.version, APP_VERSION)) return;
-          const remoteTitle = data.welcome?.title;
-          // Solo mostrar el modal si el título de las novedades es genuinamente nuevo y no ha sido visto ya
-          const currentSeenTitle = localStorage.getItem('lastSeenWelcomeTitle');
-          if (remoteTitle && !hasSeenCurrentWelcome(currentSeenTitle, remoteTitle)) {
-            useAppStore.setState({
-              showWelcomeModal: true,
-              welcomeRemoteData: data,
-              welcomeRemoteVersion: APP_VERSION
-            });
-          } else {
-            localStorage.setItem('lastSeenVersion', APP_VERSION);
-            if (remoteTitle) localStorage.setItem('lastSeenWelcomeTitle', remoteTitle);
-          }
-        })
-        .catch(() => {});
-    } catch {}
-  }, []);
-
-  // 3. Comprobación no agresiva de nuevas versiones en el servidor
-  const checkForNewVersion = useCallback(async () => {
+  // 1. Comprobación reactiva y ágil de nuevas versiones en el servidor
+  const checkForNewVersion = useCallback(async (force = false) => {
     const isLocal =
       import.meta.env.DEV ||
       Capacitor.isNativePlatform() ||
@@ -74,8 +25,8 @@ const SWUpdaterCore = () => {
     if (isLocal) return;
 
     const now = Date.now();
-    // No comprobar más de una vez cada 60 segundos
-    if (now - lastCheckTimeRef.current < 60000) return;
+    // Throttle ágil: no comprobar más de una vez cada 15 segundos (salvo comprobación forzada)
+    if (!force && now - lastCheckTimeRef.current < 15000) return;
     if (isCheckingRef.current || isUpdating) return;
 
     lastCheckTimeRef.current = now;
@@ -94,29 +45,122 @@ const SWUpdaterCore = () => {
         }
       }
     } catch {
-      // Ignorar fallos de red
+      // Ignorar fallos de red puntuales
     } finally {
       isCheckingRef.current = false;
     }
   }, [isUpdating]);
 
+  // 2. Registro del Service Worker nativo con detección reactiva instantánea
   useEffect(() => {
+    if (import.meta.env.DEV) return;
+    if (Capacitor.isNativePlatform()) return;
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    navigator.serviceWorker
+      .register('/sw.js', { scope: '/' })
+      .then((registration) => {
+        if (!registration) return;
+
+        // Si ya hay un worker en espera de activación:
+        if (registration.waiting) {
+          checkForNewVersion(true);
+        }
+
+        // Si el navegador descubre una nueva compilación de sw.js:
+        registration.addEventListener('updatefound', () => {
+          const installingWorker = registration.installing;
+          if (installingWorker) {
+            installingWorker.addEventListener('statechange', () => {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                checkForNewVersion(true);
+              }
+            });
+          }
+        });
+      })
+      .catch(() => {});
+  }, [checkForNewVersion]);
+
+  // 3. Comprobar al arrancar si hay versión pendiente o WelcomeModal que mostrar
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && window.location.search) {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('pfg_fresh') || url.searchParams.has('rescue') || url.searchParams.has('updated')) {
+          url.searchParams.delete('pfg_fresh');
+          url.searchParams.delete('rescue');
+          url.searchParams.delete('updated');
+          const cleanUrl = url.pathname + (url.search ? url.search : '') + (url.hash || '');
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      }
+    } catch {
+      // Ignorar limpieza de parámetros
+    }
+
+    try {
+      fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (!data?.version) return;
+          const remoteVersion = data.version;
+
+          // Si el servidor tiene una versión más nueva que la app cargada en el navegador:
+          if (isNewerVersion(APP_VERSION, remoteVersion)) {
+            setPendingRemoteVersion(remoteVersion);
+            return;
+          }
+
+          // Si ya estamos en la versión actual o superior, comprobar novedades de bienvenida
+          const remoteTitle = data.welcome?.title;
+          const currentSeenTitle = localStorage.getItem('lastSeenWelcomeTitle');
+          if (remoteTitle && !hasSeenCurrentWelcome(currentSeenTitle, remoteTitle)) {
+            useAppStore.setState({
+              showWelcomeModal: true,
+              welcomeRemoteData: data,
+              welcomeRemoteVersion: APP_VERSION
+            });
+          } else {
+            localStorage.setItem('lastSeenVersion', APP_VERSION);
+            if (remoteTitle) localStorage.setItem('lastSeenWelcomeTitle', remoteTitle);
+          }
+        })
+        .catch(() => {});
+    } catch {
+      // Ignorar errores de carga inicial
+    }
+  }, []);
+
+  // 4. Temporizadores activos y escucha de navegación
+  useEffect(() => {
+    // Comprobación inicial rápida a los 1,5 segundos de arrancar
+    const initialTimer = setTimeout(() => {
+      checkForNewVersion(false);
+    }, 1500);
+
     // Comprobar al recuperar el foco de la ventana o al volver a estar visible
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        checkForNewVersion();
+        checkForNewVersion(true);
       }
     };
 
-    window.addEventListener('focus', checkForNewVersion);
-    document.addEventListener('visibilitychange', handleVisibility);
+    const handleFocus = () => checkForNewVersion(true);
+    const handlePopState = () => checkForNewVersion(false);
 
-    // Intervalo relajado de 5 minutos
-    const interval = setInterval(checkForNewVersion, 5 * 60 * 1000);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('popstate', handlePopState);
+
+    // Intervalo activo cada 30 segundos (en vez de 5 minutos)
+    const interval = setInterval(() => checkForNewVersion(false), 30 * 1000);
 
     return () => {
-      window.removeEventListener('focus', checkForNewVersion);
+      clearTimeout(initialTimer);
+      window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('popstate', handlePopState);
       clearInterval(interval);
     };
   }, [checkForNewVersion]);
@@ -129,7 +173,9 @@ const SWUpdaterCore = () => {
       if (typeof window !== 'undefined' && 'caches' in window) {
         await caches.delete('api-read-cache').catch(() => {});
       }
-    } catch (_) {}
+    } catch {
+      // Ignorar errores de caché
+    }
 
     try {
       sessionStorage.removeItem('pfg_auto_reloaded_version');
@@ -145,7 +191,9 @@ const SWUpdaterCore = () => {
         localStorage.setItem('lastSeenVersion', pendingRemoteVersion);
         localStorage.setItem('pfg_cache_version', pendingRemoteVersion);
       }
-    } catch (_) {}
+    } catch {
+      // Ignorar errores de almacenamiento
+    }
 
     let navigated = false;
     const navigateToFreshApp = () => {
@@ -185,7 +233,9 @@ const SWUpdaterCore = () => {
           }
         }
       }
-    } catch (_) {}
+    } catch {
+      // Ignorar errores del Service Worker
+    }
 
     navigateToFreshApp();
   };
