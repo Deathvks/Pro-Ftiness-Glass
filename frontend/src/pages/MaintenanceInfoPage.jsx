@@ -4,11 +4,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { 
   FaArrowLeft, 
-  FaWrench, 
   FaShieldHalved, 
   FaServer, 
   FaGlobe, 
-  FaClock, 
   FaCircleCheck, 
   FaBolt, 
   FaCircleQuestion,
@@ -32,25 +30,25 @@ export default function MaintenanceInfoPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
-    name: 'Aviso de Mantenimiento y Migración a Servidores Propios — Pro Fitness Glass',
-    description: 'Información oficial sobre el mantenimiento programado del sábado 7: traslado seguro a servidores propios dedicados y nuevo dominio oficial profitnessglass.com.',
+    name: 'Migración Completada con Éxito — Pro Fitness Glass',
+    description: 'La migración técnica y el mantenimiento programado han finalizado satisfactoriamente. Tu información está 100% segura y la plataforma es ahora más rápida y eficiente bajo el nuevo dominio oficial profitnessglass.es.',
     url: 'https://profitnessglass.es/mantenimiento',
     inLanguage: 'es'
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-bg-primary text-text-primary overflow-y-auto overflow-x-hidden custom-scrollbar selection:bg-amber-500/30">
+    <div className="fixed inset-0 z-50 bg-bg-primary text-text-primary overflow-y-auto overflow-x-hidden custom-scrollbar selection:bg-emerald-500/30">
       <Helmet>
-        <title>Mantenimiento Programado y Nueva Infraestructura — Pro Fitness Glass</title>
+        <title>Migración y Mantenimiento Completados con Éxito — Pro Fitness Glass</title>
         <meta
           name="description"
-          content="Información oficial sobre el mantenimiento programado del sábado 7: migración segura a servidores propios dedicados y nuevo dominio oficial profitnessglass.com. Todos tus datos están seguros."
+          content="La migración técnica al dominio oficial profitnessglass.es ha finalizado con éxito. Tus datos están 100% seguros y la plataforma ahora ofrece mayor velocidad y estabilidad."
         />
         <link rel="canonical" href="https://profitnessglass.es/mantenimiento" />
-        <meta property="og:title" content="Mantenimiento Programado y Nueva Infraestructura — Pro Fitness Glass" />
+        <meta property="og:title" content="Migración y Mantenimiento Completados con Éxito — Pro Fitness Glass" />
         <meta
           property="og:description"
-          content="Migración a servidores propios y nuevo dominio profitnessglass.com. Tus datos y rutinas están 100% seguros y protegidos."
+          content="La plataforma está 100% operativa en su nuevo dominio oficial profitnessglass.es. Tus datos, marcas personales y entrenamientos están completamente a salvo."
         />
         <meta property="og:url" content="https://profitnessglass.es/mantenimiento" />
         <meta property="og:type" content="website" />
@@ -85,32 +83,32 @@ export default function MaintenanceInfoPage() {
 
         {/* Cabecera / Hero de presentación */}
         <header className="text-center mb-10 sm:mb-14">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 font-bold text-xs uppercase tracking-wider mb-5">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <FaWrench size={13} />
-            <span>Aviso Oficial · Mantenimiento Programado</span>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider mb-5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <FaCircleCheck size={13} />
+            <span>Aviso Oficial · Migración Finalizada con Éxito</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black text-text-primary tracking-tight leading-tight mb-5">
-            Evolucionamos a Servidores Propios<br className="hidden sm:inline" /> y Nuevo Dominio Oficial
+            ¡Migración Completada con Éxito!<br className="hidden sm:inline" /> Estrenamos Nuevo Dominio Oficial
           </h1>
 
           <p className="max-w-2xl mx-auto text-base sm:text-lg text-text-secondary leading-relaxed">
-            Una actualización planificada para ofrecer mayor velocidad, máxima estabilidad e independencia tecnológica definitiva para <strong>Pro Fitness Glass</strong>.
+            La actualización técnica planificada ha finalizado satisfactoriamente. Disfruta de una experiencia mucho más rápida, fluida y con la total garantía de que <strong>todos tus datos están 100% seguros</strong> bajo nuestro dominio oficial <strong className="text-accent">profitnessglass.es</strong>.
           </p>
         </header>
 
-        {/* Tarjeta Destacada: Horario y Duración */}
-        <div className="mb-10 p-5 sm:p-7 rounded-3xl bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/30 backdrop-blur-xl shadow-lg flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
-          <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-            <FaClock size={28} />
+        {/* Tarjeta Destacada: Estado del Servicio */}
+        <div className="mb-10 p-5 sm:p-7 rounded-3xl bg-emerald-500/10 dark:bg-emerald-400/10 border border-emerald-500/30 backdrop-blur-xl shadow-lg flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <FaCircleCheck size={30} />
           </div>
           <div className="flex-1">
             <h2 className="text-lg sm:text-xl font-extrabold text-text-primary mb-1">
-              Fecha de Inicio: Sábado 7
+              Plataforma 100% Operativa y Restablecida
             </h2>
             <p className="text-sm text-text-secondary leading-relaxed">
-              La plataforma estará fuera de servicio durante una ventana estimada de <strong>24 a 48 horas</strong> mientras se efectúa la migración completa de los sistemas y la propagación de los nuevos servidores.
+              La migración técnica se ha completado de forma transparente y sin pérdidas. Todo el tráfico, cuentas y funciones se encuentran plenamente activos con mejor rendimiento y tiempos de respuesta inmediatos.
             </p>
           </div>
         </div>
@@ -129,10 +127,10 @@ export default function MaintenanceInfoPage() {
                 Tranquilidad Absoluta
               </span>
               <h2 id="seguridad-datos-title" className="text-xl sm:text-2xl font-black text-text-primary mb-3">
-                Tus datos están 100% seguros y protegidos
+                Tus datos están 100% seguros y respaldados
               </h2>
               <p className="text-text-secondary text-sm sm:text-base leading-relaxed mb-4">
-                Queremos darte total tranquilidad: <strong>ningún dato se perderá ni estará en peligro</strong>. Antes de iniciar la desconexión, se realiza una copia de seguridad integral y cifrada de toda la base de datos.
+                Queremos darte total tranquilidad: <strong>no se ha perdido ni un solo dato</strong>. Todas tus rutinas, pesos, series, marcas personales e historial han sido preservados íntegramente:
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-text-secondary">
@@ -146,29 +144,29 @@ export default function MaintenanceInfoPage() {
                 </div>
                 <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-black/5 dark:bg-white/5 border border-glass-border">
                   <FaCircleCheck className="text-emerald-500 shrink-0" size={16} />
-                  <span>Tus mismas credenciales de inicio de sesión</span>
+                  <span>Mismas credenciales de inicio de sesión</span>
                 </div>
                 <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-black/5 dark:bg-white/5 border border-glass-border">
                   <FaCircleCheck className="text-emerald-500 shrink-0" size={16} />
-                  <span>No tendrás que volver a registrarte</span>
+                  <span>No necesitas volver a registrarte</span>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Sección: ¿Por qué este cambio? */}
+        {/* Sección: ¿Qué mejoras trae esta actualización? */}
         <section aria-labelledby="motivo-title" className="mb-10 p-6 sm:p-8 rounded-3xl bg-bg-secondary/40 border border-glass-border backdrop-blur-xl shadow-lg">
           <h2 id="motivo-title" className="text-xl sm:text-2xl font-black text-text-primary mb-4 flex items-center gap-3">
             <FaServer className="text-sky-400" size={22} />
-            <span>¿Por qué realizamos esta migración?</span>
+            <span>¿Qué ventajas aporta esta nueva infraestructura?</span>
           </h2>
           <div className="space-y-4 text-text-secondary text-sm sm:text-base leading-relaxed">
             <p>
-              El proveedor externo de servidores donde actualmente se aloja parte de nuestra plataforma cesará sus operaciones. Ante este escenario, en lugar de trasladarnos a otra solución compartida temporal, decidimos dar el paso definitivo hacia la excelencia técnica: <strong>migrar toda la arquitectura a servidores propios y dedicados</strong>, configurados exclusivamente por y para Pro Fitness Glass.
+              Hemos dado un salto decisivo hacia la excelencia técnica: <strong>trasladamos toda nuestra plataforma a una infraestructura dedicada de alto rendimiento</strong>, configurada y optimizada exclusivamente por y para Pro Fitness Glass.
             </p>
             <p>
-              Aprovechando esta intervención técnica, completamos la transición hacia nuestro dominio oficial definitivo: <strong className="text-accent">profitnessglass.com</strong>, una dirección más directa, profesional y fácil de recordar para toda nuestra comunidad de atletas.
+              Además, consolidamos toda la aplicación bajo nuestro nuevo dominio oficial definitivo: <strong className="text-accent">profitnessglass.es</strong>, una dirección más directa, representativa y profesional para toda nuestra comunidad de atletas.
             </p>
           </div>
         </section>
@@ -176,7 +174,7 @@ export default function MaintenanceInfoPage() {
         {/* Tarjetas de Beneficios */}
         <section aria-labelledby="beneficios-title" className="mb-10">
           <h2 id="beneficios-title" className="text-xl sm:text-2xl font-black text-text-primary mb-6 text-center">
-            Lo que ganarás tras la actualización
+            Lo que ganas desde hoy
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -186,7 +184,7 @@ export default function MaintenanceInfoPage() {
               </div>
               <h3 className="font-extrabold text-text-primary text-base mb-1.5">Mayor Velocidad</h3>
               <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
-                Menores tiempos de respuesta al registrar series, consultar vídeos de técnica y sincronizar tus entrenamientos en tiempo real.
+                Tiempos de carga mínimos al registrar series, consultar vídeos de técnica y sincronizar tus entrenamientos en tiempo real.
               </p>
             </div>
 
@@ -196,7 +194,7 @@ export default function MaintenanceInfoPage() {
               </div>
               <h3 className="font-extrabold text-text-primary text-base mb-1.5">Dominio Oficial</h3>
               <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
-                Unificación bajo <code className="text-accent font-bold">profitnessglass.com</code>, consolidando la presencia oficial de la app.
+                Unificación total bajo <code className="text-accent font-bold">profitnessglass.es</code>, garantizando seguridad y presencia oficial.
               </p>
             </div>
 
@@ -204,9 +202,9 @@ export default function MaintenanceInfoPage() {
               <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center mb-3.5 mx-auto sm:mx-0">
                 <FaLock size={18} />
               </div>
-              <h3 className="font-extrabold text-text-primary text-base mb-1.5">Independencia Total</h3>
+              <h3 className="font-extrabold text-text-primary text-base mb-1.5">Estabilidad Total</h3>
               <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
-                Control absoluto de nuestra infraestructura sin depender de intermediarios de hosting compartido.
+                Control absoluto de la infraestructura con máxima disponibilidad, seguridad reforzada y monitorización continua.
               </p>
             </div>
           </div>
@@ -216,34 +214,34 @@ export default function MaintenanceInfoPage() {
         <section aria-labelledby="faq-rapida-title" className="mb-12 p-6 sm:p-8 rounded-3xl bg-bg-secondary/40 border border-glass-border backdrop-blur-xl shadow-lg">
           <h2 id="faq-rapida-title" className="text-xl sm:text-2xl font-black text-text-primary mb-6 flex items-center gap-3">
             <FaCircleQuestion className="text-accent" size={22} />
-            <span>Preguntas Frecuentes sobre el Mantenimiento</span>
+            <span>Preguntas Frecuentes tras la Migración</span>
           </h2>
 
           <div className="space-y-4 divide-y divide-glass-border/60">
             <div className="pt-2">
               <h3 className="text-base font-bold text-text-primary mb-1">
-                ¿Tengo que hacer alguna copia de seguridad manual?
+                ¿Tengo que hacer alguna copia o volver a registrarme?
               </h3>
               <p className="text-sm text-text-secondary leading-relaxed">
-                No es necesario. Realizamos respaldos automáticos y completos de todas las cuentas y registros antes de iniciar la migración.
+                No. Todos tus datos y cuentas siguen exactamente igual. Puedes acceder de forma habitual con tu mismo correo y contraseña de siempre.
               </p>
             </div>
 
             <div className="pt-4">
               <h3 className="text-base font-bold text-text-primary mb-1">
-                ¿Qué pasará con la aplicación en mi teléfono Android?
+                ¿Qué pasa con la aplicación en mi teléfono Android?
               </h3>
               <p className="text-sm text-text-secondary leading-relaxed">
-                La aplicación instalada seguirá exactamente en tu móvil. Una vez reactivado el servicio, se reconectará de forma transparente a los nuevos servidores.
+                La aplicación en tu móvil continúa funcionando con total normalidad y se conecta automáticamente a los nuevos sistemas de forma transparente.
               </p>
             </div>
 
             <div className="pt-4">
               <h3 className="text-base font-bold text-text-primary mb-1">
-                ¿Cómo podré acceder tras el mantenimiento?
+                ¿Qué ocurre si entro desde enlaces o marcadores antiguos?
               </h3>
               <p className="text-sm text-text-secondary leading-relaxed">
-                Podrás ingresar desde <strong className="text-accent">profitnessglass.com</strong> o desde tus accesos directos habituales. Iniciarás sesión con tu mismo correo y contraseña de siempre.
+                El sistema redirige de forma automática y segura a <strong className="text-accent">profitnessglass.es</strong>, por lo que nunca perderás el acceso.
               </p>
             </div>
           </div>
