@@ -1,13 +1,17 @@
 {
-  "version": "7.16.18",
-  "releaseNotes": "Actualización v7.16.18: Rediseño responsive armónico del aviso de migración completada en dispositivos móviles con cabecera integrada y botón de cierre (X).",
+  "version": "7.16.19",
+  "releaseNotes": "Actualización v7.16.19: Banner de aviso ultracompacto en móvil (2 líneas) y elementos unificados y centrados sin separación excesiva en PC.",
   "welcome": {
-    "title": "Aviso de Migración Optimizado",
-    "subtitle": "Diseño responsive perfecto en móvil y escritorio con control de visualización.",
+    "title": "Aviso de Migración Ultracompacto",
+    "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",
     "features": [
       {
-        "title": "Aviso Móvil Armónico",
-        "description": "La cabecera del aviso de migración en móvil alinea perfectamente el distintivo de estado y el botón de cierre (X), optimizando la lectura del mensaje."
+        "title": "Máxima Compactación en Móvil",
+        "description": "El distintivo de migración ahora se integra en línea con el texto, reduciendo la altura del aviso a solo 2 líneas sin tapar la pantalla."
+      },
+      {
+        "title": "Elementos Agrupados en PC",
+        "description": "Distintivo, mensaje explicativo, enlace y botón de cierre aparecen juntos y centrados sin espacios vacíos de lado a lado."
       },
       {
         "title": "Cierre Permanente (X)",
@@ -16,10 +20,6 @@
       {
         "title": "Apertura Superior en Tutoriales",
         "description": "Al seleccionar cualquier apartado o volver atrás, la vista se posiciona automáticamente arriba del todo."
-      },
-      {
-        "title": "Sincronización Dinámica en Android",
-        "description": "Las noticias y tutoriales se actualizan automáticamente en tiempo real."
       }
     ]
   }
