@@ -1,25 +1,25 @@
 {
-  "version": "7.16.16",
-  "releaseNotes": "Actualización v7.16.16: Sincronización dinámica de noticias en tiempo real para Android y Web, resolución canónica de API resiliente y botón de sincronización instantánea.",
+  "version": "7.16.17",
+  "releaseNotes": "Actualización v7.16.17: Scroll automático al inicio al navegar entre categorías de tutoriales y botón de cierre permanente (X) en el aviso oficial de migración.",
   "welcome": {
-    "title": "Sincronización Total de Noticias",
-    "subtitle": "Tus noticias y guías científicas se actualizan en tiempo real sin depender de actualizaciones del APK.",
+    "title": "Navegación Fluida en Tutoriales",
+    "subtitle": "Mejoras de usabilidad con apertura centrada arriba y control de avisos.",
     "features": [
       {
+        "title": "Apertura Superior en Tutoriales",
+        "description": "Al seleccionar cualquier apartado o volver atrás, la vista se posiciona automáticamente arriba del todo para ver los primeros pasos de inmediato."
+      },
+      {
+        "title": "Cierre Permanente del Aviso (X)",
+        "description": "Puedes ocultar el banner de migración completada pulsando su botón X y no volverá a aparecer en tu navegador."
+      },
+      {
         "title": "Sincronización Dinámica en Android",
-        "description": "Las nuevas guías y artículos publicados en la web se descargan al instante en tu app móvil sin necesidad de sacar una nueva versión."
+        "description": "Las nuevas guías y artículos de noticias se actualizan en tiempo real sin requerir nuevas versiones de la app."
       },
       {
-        "title": "Botón Sincronizar en Cabecera",
-        "description": "Acceso directo con un solo toque para refrescar la lista de noticias al momento con confirmación visual de estado."
-      },
-      {
-        "title": "Conexión Resiliente y Anti-Caché",
-        "description": "Bypass de cachés congeladas en WebView y reconexión automática al servidor canónico ante cualquier microcorte."
-      },
-      {
-        "title": "Caché Offline Completa (36 Guías)",
-        "description": "Acceso instantáneo a las 36 guías científicas publicadas incluso si te quedas sin cobertura o conexión."
+        "title": "Servidor Oficial de Alta Velocidad",
+        "description": "Plataforma 100% activa en profitnessglass.es con latencias mínimas y datos completamente seguros."
       }
     ]
   }

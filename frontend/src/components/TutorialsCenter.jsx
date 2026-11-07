@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity, Bell, BookOpen, BarChart3, ChevronLeft, ChevronRight,
   Dumbbell, Flame, HelpCircle, MessageCircle, Palette, Search, Settings,
@@ -148,7 +148,18 @@ export default function TutorialsCenter({ userRole, onClose, onStart }) {
   const [selectedMobileCategory, setSelectedMobileCategory] = useState(null);
   const [search, setSearch] = useState('');
   const categoriesRef = useRef(null);
+  const scrollContainerRef = useRef(null);
   const dragRef = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
+
+  const scrollToTop = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  };
+
+  useEffect(() => {
+    scrollToTop();
+  }, [selectedMobileCategory, activeCategory, search]);
 
   const availableTutorials = useMemo(() => APP_TUTORIALS.filter(tutorial => !tutorial.roles || tutorial.roles.includes(userRole)), [userRole]);
   const categories = useMemo(() => ['Todos', ...new Set(availableTutorials.map(tutorial => tutorial.category))], [availableTutorials]);
@@ -169,6 +180,12 @@ export default function TutorialsCenter({ userRole, onClose, onStart }) {
   const handleMobileCategorySelect = (category) => {
     setSelectedMobileCategory(category);
     setActiveCategory(category);
+    scrollToTop();
+  };
+
+  const handleBackToCategories = () => {
+    setSelectedMobileCategory(null);
+    scrollToTop();
   };
 
   const handleCategoryPointerDown = event => {
@@ -276,7 +293,7 @@ export default function TutorialsCenter({ userRole, onClose, onStart }) {
             </div>
           </header>
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(1.5rem+var(--safe-bottom))] sm:p-6 custom-scrollbar">
+          <div ref={scrollContainerRef} className="min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(1.5rem+var(--safe-bottom))] sm:p-6 custom-scrollbar">
             {/* VISTA MÓVIL */}
             <div className="sm:hidden">
               {/* CASO 1: Móvil en la lista principal de categorías (Todos, Empezar, etc.) */}
@@ -311,7 +328,7 @@ export default function TutorialsCenter({ userRole, onClose, onStart }) {
                     <div className="flex items-center justify-between pb-1">
                       <button
                         type="button"
-                        onClick={() => setSelectedMobileCategory(null)}
+                        onClick={handleBackToCategories}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs font-bold text-text-secondary hover:text-text-primary transition-all active:scale-95"
                       >
                         <ChevronLeft size={16} /> Volver a categorías
