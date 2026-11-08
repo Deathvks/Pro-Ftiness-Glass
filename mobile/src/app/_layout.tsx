@@ -13,6 +13,7 @@ import { useAppColors } from '@/hooks/useAppColors';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { DynamicIslandTimer } from '@/components/workout/DynamicIslandTimer';
 import { RestTimerModal } from '@/components/workout/RestTimerModal';
+import { ActiveWorkoutFloatingBar } from '@/components/workout/ActiveWorkoutFloatingBar';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -149,6 +150,7 @@ export default function RootLayout() {
           <Stack.Screen name="legal-notice" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="cookies" options={{ headerShown: false, animation: 'slide_from_right' }} />
         </Stack>
+        <ActiveWorkoutFloatingBar />
         <DynamicIslandTimer />
         <RestTimerModal />
         <ToastContainer />

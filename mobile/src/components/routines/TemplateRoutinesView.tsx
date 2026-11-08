@@ -104,6 +104,8 @@ export function TemplateRoutinesView() {
 
   const createRoutine = useAppStore(state => state.createRoutine);
   const startWorkout = useAppStore(state => state.startWorkout);
+  const stopWorkout = useAppStore(state => state.stopWorkout);
+  const activeWorkout = useAppStore(state => state.activeWorkout);
 
   const [query, setQuery] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string>('all');
@@ -176,6 +178,34 @@ export function TemplateRoutinesView() {
         exercise_order: idx,
       })),
     };
+
+    if (activeWorkout) {
+      if (String(activeWorkout.routineId) === String(routineObj.id)) {
+        router.push('/workout');
+        return;
+      }
+      Alert.alert(
+        'Entrenamiento en curso',
+        `Ya tienes una sesión activa (${activeWorkout.routineName || 'Entrenamiento'}). ¿Deseas volver a ella o descartarla para iniciar la plantilla "${template.name}"?`,
+        [
+          {
+            text: 'Volver a la sesión',
+            onPress: () => router.push('/workout'),
+          },
+          {
+            text: 'Descartar e iniciar plantilla',
+            style: 'destructive',
+            onPress: async () => {
+              if (stopWorkout) stopWorkout();
+              if (startWorkout) await startWorkout(routineObj);
+              router.push('/workout');
+            },
+          },
+          { text: 'Cancelar', style: 'cancel' },
+        ]
+      );
+      return;
+    }
 
     if (startWorkout) {
       await startWorkout(routineObj);

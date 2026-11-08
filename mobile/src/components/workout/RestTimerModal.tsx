@@ -19,6 +19,7 @@ import {
   Minimize2,
   Play,
   Pause,
+  Square,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
@@ -139,6 +140,18 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
   const handleClose = () => {
     try {
       Haptics.selectionAsync();
+    } catch {}
+    if (restTimerEndTime || isRestTimerPaused) {
+      setRestTimerMode('minimized');
+    } else {
+      stopRestTimer();
+    }
+    if (onClose) onClose();
+  };
+
+  const handleStopAndClose = () => {
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     } catch {}
     stopRestTimer();
     if (onClose) onClose();
@@ -507,6 +520,22 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
                     </Text>
                   </TouchableOpacity>
                 </View>
+
+                {/* Botón Finalizar / Omitir descanso */}
+                <TouchableOpacity
+                  onPress={handleStopAndClose}
+                  activeOpacity={0.8}
+                  style={[
+                    styles.stopRestBtn,
+                    {
+                      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.08)',
+                      borderColor: 'rgba(239, 68, 68, 0.3)',
+                    },
+                  ]}
+                >
+                  <Square size={13} color="#ef4444" fill="#ef4444" style={{ marginRight: 6 }} />
+                  <Text style={styles.stopRestBtnText}>Terminar Descanso</Text>
+                </TouchableOpacity>
               </View>
             </View>
           )}
@@ -705,5 +734,22 @@ const styles = StyleSheet.create({
   adjustTimeBtnText: {
     fontSize: 14,
     fontWeight: '700',
+  },
+  stopRestBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 9999,
+    borderWidth: 1,
+    marginTop: 18,
+    width: '100%',
+    maxWidth: 260,
+  },
+  stopRestBtnText: {
+    color: '#ef4444',
+    fontSize: 14,
+    fontWeight: '800',
   },
 });

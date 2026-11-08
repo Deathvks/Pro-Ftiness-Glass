@@ -16,6 +16,7 @@ import {
   Calculator,
   Activity,
   Timer,
+  Minimize2,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,6 +34,7 @@ interface WorkoutHeaderProps {
   isWorkoutPaused: boolean;
   hasWorkoutStarted: boolean;
   onBackClick: () => void;
+  onMinimize?: () => void;
   onTogglePause: () => void;
   onFinishClick: () => void;
   onShowCalculator: () => void;
@@ -46,6 +48,7 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
   isWorkoutPaused,
   hasWorkoutStarted,
   onBackClick,
+  onMinimize,
   onTogglePause,
   onFinishClick,
   onShowCalculator,
@@ -122,7 +125,7 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
       ) : null}
 
       <View style={styles.content}>
-        {/* Fila superior: Botón atrás alineado a la izquierda como en el Frontend */}
+        {/* Fila superior: Botón atrás y botón Minimizar */}
         <View style={styles.topRow}>
           <TouchableOpacity
             onPress={handleBack}
@@ -138,6 +141,28 @@ export const WorkoutHeader: React.FC<WorkoutHeaderProps> = ({
             <ChevronLeft size={20} color={colors.text} />
             <Text style={[styles.backText, { color: colors.text }]}>Atrás</Text>
           </TouchableOpacity>
+
+          {hasWorkoutStarted && onMinimize ? (
+            <TouchableOpacity
+              onPress={() => {
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch {}
+                onMinimize();
+              }}
+              activeOpacity={0.75}
+              style={[
+                styles.iconBtnPill,
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
+                },
+              ]}
+            >
+              <Minimize2 size={16} color={colors.text} />
+              <Text style={[styles.backText, { color: colors.text }]}>Minimizar</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* Título de la rutina */}

@@ -491,6 +491,32 @@ export default function Dashboard() {
   };
 
   const handleStartCardio = (name: string) => {
+    if (activeWorkout) {
+      Alert.alert(
+        'Entrenamiento en curso',
+        `Ya tienes una sesión activa (${activeWorkout.routineName || 'Entrenamiento'}). ¿Deseas volver a ella o descartarla para iniciar este cardio?`,
+        [
+          {
+            text: 'Volver a la sesión',
+            onPress: () => router.push('/workout'),
+          },
+          {
+            text: 'Descartar e iniciar cardio',
+            style: 'destructive',
+            onPress: () => {
+              if (stopWorkout) stopWorkout();
+              if (startSimpleWorkout) {
+                startSimpleWorkout(`Cardio: ${name}`);
+                router.push('/workout');
+              }
+            },
+          },
+          { text: 'Cancelar', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+
     if (startSimpleWorkout) {
       startSimpleWorkout(`Cardio: ${name}`);
       router.push('/workout');
@@ -1143,6 +1169,29 @@ export default function Dashboard() {
                 onPress={async () => {
                   if (isActive) {
                     router.push('/workout');
+                    return;
+                  }
+                  if (activeWorkout) {
+                    Alert.alert(
+                      'Entrenamiento en curso',
+                      `Ya tienes una sesión activa (${activeWorkout.routineName || 'Entrenamiento'}). ¿Deseas volver a ella o descartarla para iniciar "${routine.name}"?`,
+                      [
+                        {
+                          text: 'Volver a la sesión',
+                          onPress: () => router.push('/workout'),
+                        },
+                        {
+                          text: 'Descartar e iniciar nueva',
+                          style: 'destructive',
+                          onPress: async () => {
+                            if (stopWorkout) stopWorkout();
+                            if (startWorkout) await startWorkout(routine);
+                            router.push('/workout');
+                          },
+                        },
+                        { text: 'Cancelar', style: 'cancel' },
+                      ]
+                    );
                     return;
                   }
                   if (isCompleted) {

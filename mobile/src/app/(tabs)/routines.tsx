@@ -62,6 +62,7 @@ export default function RoutinesScreen() {
   const completedRoutineIdsToday = useAppStore((state) => state.completedRoutineIdsToday || []);
   const activeWorkout = useAppStore((state) => state.activeWorkout);
   const startWorkout = useAppStore((state) => state.startWorkout);
+  const stopWorkout = useAppStore((state) => state.stopWorkout);
   const deleteRoutine = useAppStore((state) => state.deleteRoutine);
   const deleteAllRoutines = useAppStore((state) => state.deleteAllRoutines);
   const createRoutine = useAppStore((state) => state.createRoutine);
@@ -141,15 +142,31 @@ export default function RoutinesScreen() {
 
   // Iniciar entrenamiento
   const handleStartWorkout = async (routine: any) => {
-    if (activeWorkout && activeWorkout.routineId === routine.id) {
+    if (activeWorkout && String(activeWorkout.routineId) === String(routine.id)) {
       router.push('/workout');
       return;
     }
 
-    if (isAnyWorkoutActive && activeWorkout.routineId !== routine.id) {
+    if (isAnyWorkoutActive && String(activeWorkout.routineId) !== String(routine.id)) {
       Alert.alert(
         'Entrenamiento en curso',
-        'Ya tienes un entrenamiento en curso. Finalízalo o descártalo para empezar uno nuevo.'
+        `Ya tienes una sesión activa (${activeWorkout.routineName || 'Entrenamiento'}). ¿Deseas volver a ella o descartarla para iniciar "${routine.name}"?`,
+        [
+          {
+            text: 'Volver a la sesión',
+            onPress: () => router.push('/workout'),
+          },
+          {
+            text: 'Descartar e iniciar nueva',
+            style: 'destructive',
+            onPress: async () => {
+              if (stopWorkout) stopWorkout();
+              if (startWorkout) await startWorkout(routine);
+              router.push('/workout');
+            },
+          },
+          { text: 'Cancelar', style: 'cancel' },
+        ]
       );
       return;
     }

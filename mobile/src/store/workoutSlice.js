@@ -84,7 +84,7 @@ const getRestTimerStateFromStorage = () => {
         isResting,
         restTimerEndTime: JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerEndTime') : null)),
         restTimerInitialDuration: JSON.parse((typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerInitialDuration') : null)),
-        restTimerMode: (typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerMode') : null) || 'modal',
+        restTimerMode: (typeof localStorage !== 'undefined' ? localStorage.getItem('restTimerMode') : null) || 'hidden',
         isRestTimerPaused,
         restTimerRemaining,
       };
@@ -140,7 +140,7 @@ const initialState = {
   restTimerEndTime: null,
   restTimerInitialDuration: null,
   plannedRestTime: null,
-  restTimerMode: 'modal',
+  restTimerMode: 'hidden',
   isRestTimerPaused: false,
   restTimerRemaining: null,
   completedRoutineIdsToday: [],
@@ -603,7 +603,7 @@ export const createWorkoutSlice = (set, get) => ({
   resetRestTimer: () => {
     clearRestTimerInStorage();
     stopNativeTimer();
-    set({ restTimerEndTime: null, restTimerInitialDuration: null, isRestTimerPaused: false, restTimerRemaining: null });
+    set({ restTimerEndTime: null, restTimerInitialDuration: null, isRestTimerPaused: false, restTimerRemaining: null, restTimerMode: 'hidden' });
   },
 
   stopRestTimer: () => {
@@ -614,7 +614,7 @@ export const createWorkoutSlice = (set, get) => ({
       restTimerEndTime: null,
       restTimerInitialDuration: null,
       plannedRestTime: null,
-      restTimerMode: 'modal',
+      restTimerMode: 'hidden',
       isRestTimerPaused: false,
       restTimerRemaining: null,
     });

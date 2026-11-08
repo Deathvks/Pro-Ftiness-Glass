@@ -166,30 +166,53 @@ export default function WorkoutScreen() {
     );
   }
 
+  const handleMinimizeWorkout = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
   // Manejador del botón Atrás
   const handleBackClick = () => {
     if (hasWorkoutStarted) {
       Alert.alert(
-        '¿Descartar entrenamiento?',
-        'Si sales ahora se cancelará la sesión y perderás los datos registrados de hoy.',
+        'Entrenamiento en curso',
+        '¿Deseas minimizar la sesión para seguir navegando por la app o descartarla por completo?',
         [
-          { text: 'Continuar Entrenando', style: 'cancel' },
           {
-            text: 'Descartar y Salir',
+            text: 'Minimizar y navegar',
+            onPress: handleMinimizeWorkout,
+          },
+          {
+            text: 'Descartar sesión',
             style: 'destructive',
             onPress: () => {
               try {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               } catch {}
               stopWorkout();
-              router.back();
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)');
+              }
             },
           },
+          { text: 'Seguir entrenando', style: 'cancel' },
         ]
       );
     } else {
       stopWorkout();
-      router.back();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)');
+      }
     }
   };
 
@@ -318,6 +341,7 @@ export default function WorkoutScreen() {
             isWorkoutPaused={isWorkoutPaused}
             hasWorkoutStarted={hasWorkoutStarted}
             onBackClick={handleBackClick}
+            onMinimize={handleMinimizeWorkout}
             onTogglePause={togglePauseWorkout}
             onFinishClick={handleFinishClick}
             onShowCalculator={() => setShowCalculator(true)}

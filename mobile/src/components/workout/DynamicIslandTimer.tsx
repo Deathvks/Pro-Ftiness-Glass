@@ -34,13 +34,10 @@ export const DynamicIslandTimer: React.FC = () => {
   const [isBlinking, setIsBlinking] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Animación suave de apertura y cierre
+  // Animación suave de apertura y cierre (física estilo iOS spring)
   const animWidth = useRef(new Animated.Value(215)).current;
   const animHeight = useRef(new Animated.Value(38)).current;
   const animRadius = useRef(new Animated.Value(20)).current;
-
-  const longPressTimerRef = useRef<any>(null);
-  const isLongPressRef = useRef(false);
 
   useEffect(() => {
     if (!restTimerEndTime && !isRestTimerPaused) return;
@@ -118,29 +115,18 @@ export const DynamicIslandTimer: React.FC = () => {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  const handlePressIn = () => {
-    isLongPressRef.current = false;
-    longPressTimerRef.current = setTimeout(() => {
-      isLongPressRef.current = true;
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      } catch {}
-      setIsExpanded(true);
-    }, 350);
-  };
-
-  const handlePressOut = () => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-    }
-  };
-
   const handleTapPill = () => {
-    if (isLongPressRef.current) return;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
     setRestTimerMode('modal');
+  };
+
+  const handleLongPress = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    } catch {}
+    setIsExpanded(true);
   };
 
   const handleTogglePause = () => {
@@ -166,8 +152,15 @@ export const DynamicIslandTimer: React.FC = () => {
     setIsExpanded(false);
   };
 
-  // Posicionamiento dinámico en la Isla Dinámica de hardware (iPhone 14 Pro, 15, 16) o margen superior seguro
-  const topPosition = insets.top > 50 ? insets.top - 46 : insets.top > 30 ? insets.top - 20 : 12;
+  // Posicionamiento de la cápsula en la Isla Dinámica de hardware de Apple o zona segura superior
+  const topPosition =
+    insets.top > 50
+      ? insets.top - 44
+      : insets.top > 30
+      ? insets.top - 18
+      : insets.top > 0
+      ? insets.top + 4
+      : 12;
 
   return (
     <>
@@ -184,217 +177,222 @@ export const DynamicIslandTimer: React.FC = () => {
         />
       )}
 
-      <Animated.View
-        style={[
-          styles.islandContainer,
-          {
-            top: topPosition,
-            width: animWidth,
-            height: animHeight,
-            borderRadius: animRadius,
-            borderColor: isFinished
-              ? isBlinking
-                ? '#ef4444'
-                : 'rgba(255, 255, 255, 0.15)'
-              : 'rgba(255, 255, 255, 0.18)',
-            shadowColor: isFinished ? '#ef4444' : '#000',
-            shadowOpacity: isFinished ? 0.6 : 0.45,
-          },
-        ]}
+      {/* Contenedor envolvente de ancho completo para centrado fiable y paso de toques */}
+      <View
+        style={[styles.islandWrapper, { top: topPosition }]}
+        pointerEvents="box-none"
       >
-        {/* Barra de progreso inferior fina en estado contraído */}
-        {!isExpanded && !isFinished && (
-          <View
-            style={[
-              styles.progressBar,
-              {
-                width: `${progress}%`,
-                backgroundColor: colors.tint,
-              },
-            ]}
-          />
-        )}
+        <Animated.View
+          style={[
+            styles.islandContainer,
+            {
+              width: animWidth,
+              height: animHeight,
+              borderRadius: animRadius,
+              borderColor: isFinished
+                ? isBlinking
+                  ? '#ef4444'
+                  : 'rgba(255, 255, 255, 0.15)'
+                : 'rgba(255, 255, 255, 0.18)',
+              shadowColor: isFinished ? '#ef4444' : '#000',
+              shadowOpacity: isFinished ? 0.6 : 0.45,
+            },
+          ]}
+        >
+          {/* Barra de progreso inferior fina en estado contraído */}
+          {!isExpanded && !isFinished && (
+            <View
+              style={[
+                styles.progressBar,
+                {
+                  width: `${progress}%`,
+                  backgroundColor: colors.tint,
+                },
+              ]}
+            />
+          )}
 
-        {/* --- 1. ESTADO CONTRAÍDO (Cápsula Dynamic Island) --- */}
-        {!isExpanded ? (
-          <View style={styles.compactRow}>
-            {/* Pulsar para abrir en grande o mantener para expandir */}
-            <Pressable
-              onPressIn={handlePressIn}
-              onPressOut={handlePressOut}
+          {/* --- 1. ESTADO CONTRAÍDO (Cápsula Dynamic Island Apple) --- */}
+          {!isExpanded ? (
+            <TouchableOpacity
+              activeOpacity={0.88}
               onPress={handleTapPill}
-              style={styles.compactLeftTouchable}
+              onLongPress={handleLongPress}
+              delayLongPress={280}
+              style={styles.compactRow}
             >
-              <View
-                style={[
-                  styles.compactIconCircle,
-                  {
-                    backgroundColor: isFinished
-                      ? 'rgba(239, 68, 68, 0.25)'
-                      : colors.tint + '25',
-                  },
-                ]}
-              >
-                <Timer
-                  size={14}
-                  color={isFinished ? '#ef4444' : colors.tint}
-                  strokeWidth={2.5}
-                />
-              </View>
-              <Text
-                style={[
-                  styles.compactTimerText,
-                  {
-                    color: isFinished
-                      ? '#ef4444'
-                      : isRestTimerPaused
-                      ? '#f59e0b'
-                      : '#ffffff',
-                  },
-                ]}
-              >
-                {formatTime(timeLeft)}
-              </Text>
-            </Pressable>
-
-            <View style={styles.compactDivider} />
-
-            {/* Controles rápidos (Pausa/Play + Cerrar) */}
-            <View style={styles.compactActions}>
-              <TouchableOpacity
-                onPress={handleTogglePause}
-                hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
-                style={[
-                  styles.compactPlayBtn,
-                  {
-                    backgroundColor: isRestTimerPaused
-                      ? colors.tint
-                      : 'rgba(255, 255, 255, 0.14)',
-                  },
-                ]}
-              >
-                {isRestTimerPaused ? (
-                  <Play size={12} color="#ffffff" fill="#ffffff" />
-                ) : (
-                  <Pause size={12} color="#ffffff" fill="#ffffff" />
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={handleStop}
-                hitSlop={{ top: 8, bottom: 8, left: 6, right: 8 }}
-                style={styles.compactCloseBtn}
-              >
-                <X size={13} color="rgba(255, 255, 255, 0.6)" strokeWidth={2.5} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          /* --- 2. ESTADO EXPANDIDO (Live Activity Widget) --- */
-          <View style={styles.expandedContent}>
-            {/* Encabezado */}
-            <View style={styles.expandedHeader}>
-              <View style={styles.expandedStatusWrap}>
+              <View style={styles.compactLeftTouchable}>
                 <View
                   style={[
-                    styles.statusDot,
+                    styles.compactIconCircle,
                     {
                       backgroundColor: isFinished
+                        ? 'rgba(239, 68, 68, 0.25)'
+                        : colors.tint + '25',
+                    },
+                  ]}
+                >
+                  <Timer
+                    size={14}
+                    color={isFinished ? '#ef4444' : colors.tint}
+                    strokeWidth={2.5}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.compactTimerText,
+                    {
+                      color: isFinished
                         ? '#ef4444'
                         : isRestTimerPaused
                         ? '#f59e0b'
-                        : '#10b981',
+                        : '#ffffff',
                     },
                   ]}
-                />
-                <Text style={styles.expandedStatusLabel}>
-                  {isFinished
-                    ? '¡Descanso Finalizado!'
-                    : isRestTimerPaused
-                    ? 'En Pausa'
-                    : 'En Descanso'}
+                >
+                  {formatTime(timeLeft)}
                 </Text>
               </View>
-              <Text
-                style={[
-                  styles.expandedTitleText,
-                  { color: isFinished ? '#ef4444' : '#ffffff' },
-                ]}
-              >
-                {formatTime(timeLeft)}
-              </Text>
+
+              <View style={styles.compactDivider} />
+
+              {/* Controles rápidos (Pausa/Play + Cerrar) */}
+              <View style={styles.compactActions}>
+                <TouchableOpacity
+                  onPress={handleTogglePause}
+                  hitSlop={{ top: 10, bottom: 10, left: 8, right: 8 }}
+                  style={[
+                    styles.compactPlayBtn,
+                    {
+                      backgroundColor: isRestTimerPaused
+                        ? colors.tint
+                        : 'rgba(255, 255, 255, 0.14)',
+                    },
+                  ]}
+                >
+                  {isRestTimerPaused ? (
+                    <Play size={12} color="#ffffff" fill="#ffffff" />
+                  ) : (
+                    <Pause size={12} color="#ffffff" fill="#ffffff" />
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleStop}
+                  hitSlop={{ top: 10, bottom: 10, left: 8, right: 10 }}
+                  style={styles.compactCloseBtn}
+                >
+                  <X size={13} color="rgba(255, 255, 255, 0.7)" strokeWidth={2.5} />
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          ) : (
+            /* --- 2. ESTADO EXPANDIDO (Live Activity Widget) --- */
+            <View style={styles.expandedContent}>
+              {/* Encabezado */}
+              <View style={styles.expandedHeader}>
+                <View style={styles.expandedStatusWrap}>
+                  <View
+                    style={[
+                      styles.statusDot,
+                      {
+                        backgroundColor: isFinished
+                          ? '#ef4444'
+                          : isRestTimerPaused
+                          ? '#f59e0b'
+                          : '#10b981',
+                      },
+                    ]}
+                  />
+                  <Text style={styles.expandedStatusLabel}>
+                    {isFinished
+                      ? '¡Descanso Finalizado!'
+                      : isRestTimerPaused
+                      ? 'En Pausa'
+                      : 'En Descanso'}
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.expandedTitleText,
+                    { color: isFinished ? '#ef4444' : '#ffffff' },
+                  ]}
+                >
+                  {formatTime(timeLeft)}
+                </Text>
+              </View>
+
+              {/* Botones de incremento rápido */}
+              <View style={styles.quickAddRow}>
+                <TouchableOpacity
+                  onPress={() => handleAddQuickTime(15)}
+                  style={styles.quickAddBtn}
+                >
+                  <Plus size={13} color="#ffffff" strokeWidth={2.5} />
+                  <Text style={styles.quickAddBtnText}>15s</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => handleAddQuickTime(30)}
+                  style={styles.quickAddBtn}
+                >
+                  <Plus size={13} color="#ffffff" strokeWidth={2.5} />
+                  <Text style={styles.quickAddBtnText}>30s</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => handleAddQuickTime(60)}
+                  style={styles.quickAddBtn}
+                >
+                  <Plus size={13} color="#ffffff" strokeWidth={2.5} />
+                  <Text style={styles.quickAddBtnText}>1 min</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Botonera de acciones principales */}
+              <View style={styles.expandedActionsRow}>
+                <TouchableOpacity
+                  onPress={handleStop}
+                  style={[styles.expandedCircleBtn, styles.stopBtnBg]}
+                >
+                  <X size={20} color="#ef4444" strokeWidth={2.5} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleTogglePause}
+                  style={[
+                    styles.expandedPlayBigBtn,
+                    {
+                      backgroundColor: isRestTimerPaused
+                        ? colors.tint
+                        : 'rgba(255, 255, 255, 0.16)',
+                    },
+                  ]}
+                >
+                  {isRestTimerPaused ? (
+                    <Play size={24} color="#ffffff" fill="#ffffff" style={{ marginLeft: 2 }} />
+                  ) : (
+                    <Pause size={24} color="#ffffff" fill="#ffffff" />
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch {}
+                    setIsExpanded(false);
+                    setRestTimerMode('modal');
+                  }}
+                  style={[styles.expandedCircleBtn, styles.modalBtnBg]}
+                >
+                  <Timer size={20} color="#ffffff" strokeWidth={2.5} />
+                </TouchableOpacity>
+              </View>
             </View>
-
-            {/* Botones de incremento rápido */}
-            <View style={styles.quickAddRow}>
-              <TouchableOpacity
-                onPress={() => handleAddQuickTime(15)}
-                style={styles.quickAddBtn}
-              >
-                <Plus size={13} color="#ffffff" strokeWidth={2.5} />
-                <Text style={styles.quickAddBtnText}>15s</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => handleAddQuickTime(30)}
-                style={styles.quickAddBtn}
-              >
-                <Plus size={13} color="#ffffff" strokeWidth={2.5} />
-                <Text style={styles.quickAddBtnText}>30s</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => handleAddQuickTime(60)}
-                style={styles.quickAddBtn}
-              >
-                <Plus size={13} color="#ffffff" strokeWidth={2.5} />
-                <Text style={styles.quickAddBtnText}>1 min</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Botonera de acciones principales */}
-            <View style={styles.expandedActionsRow}>
-              <TouchableOpacity
-                onPress={handleStop}
-                style={[styles.expandedCircleBtn, styles.stopBtnBg]}
-              >
-                <X size={20} color="#ef4444" strokeWidth={2.5} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={handleTogglePause}
-                style={[
-                  styles.expandedPlayBigBtn,
-                  {
-                    backgroundColor: isRestTimerPaused
-                      ? colors.tint
-                      : 'rgba(255, 255, 255, 0.16)',
-                  },
-                ]}
-              >
-                {isRestTimerPaused ? (
-                  <Play size={24} color="#ffffff" fill="#ffffff" style={{ marginLeft: 2 }} />
-                ) : (
-                  <Pause size={24} color="#ffffff" fill="#ffffff" />
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {
-                  try {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  } catch {}
-                  setIsExpanded(false);
-                  setRestTimerMode('modal');
-                }}
-                style={[styles.expandedCircleBtn, styles.modalBtnBg]}
-              >
-                <Timer size={20} color="#ffffff" strokeWidth={2.5} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      </Animated.View>
+          )}
+        </Animated.View>
+      </View>
     </>
   );
 };
@@ -409,13 +407,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.45)',
     zIndex: 99998,
   },
-  islandContainer: {
+  islandWrapper: {
     position: 'absolute',
-    alignSelf: 'center',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 99999,
+  },
+  islandContainer: {
     backgroundColor: '#000000',
     borderWidth: 1,
     overflow: 'hidden',
-    zIndex: 99999,
     shadowOffset: { width: 0, height: 8 },
     shadowRadius: 18,
     elevation: 12,
@@ -548,25 +550,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   stopBtnBg: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    backgroundColor: 'rgba(239, 68, 68, 0.18)',
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.35)',
   },
-  modalBtnBg: {
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
-  },
   expandedPlayBigBtn: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 6,
+  },
+  modalBtnBg: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
   },
 });
