@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Plus, Trash2, Edit2, Utensils } from 'lucide-react-native';
+import { Plus, Trash2, Edit2, Utensils, Copy } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
@@ -32,6 +32,7 @@ interface MealSectionProps {
   onDeleteFood: (log: FoodLogItem) => void;
   onClearMeal: () => void;
   onViewFood: (log: FoodLogItem) => void;
+  onCopyMeal?: (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => void;
 }
 
 export const MealSection: React.FC<MealSectionProps> = ({
@@ -44,6 +45,7 @@ export const MealSection: React.FC<MealSectionProps> = ({
   onDeleteFood,
   onClearMeal,
   onViewFood,
+  onCopyMeal,
 }) => {
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
@@ -76,6 +78,29 @@ export const MealSection: React.FC<MealSectionProps> = ({
             </View>
 
             <View style={styles.headerActions}>
+              {onCopyMeal && (
+                <TouchableOpacity
+                  onPress={() => {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch {}
+                    onCopyMeal(mealType);
+                  }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={[
+                    styles.actionIconBtn,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                      borderColor: colors.border,
+                      borderWidth: 1,
+                    },
+                  ]}
+                  activeOpacity={0.7}
+                >
+                  <Copy size={15} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+
               {logs.length > 1 && (
                 <TouchableOpacity
                   onPress={() => {
@@ -282,32 +307,35 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   glassWrapper: {
-    borderRadius: 26,
-    overflow: 'hidden',
+    borderRadius: 24,
     borderWidth: 1,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 3,
   },
   card: {
     padding: 16,
-    borderRadius: 26,
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    marginBottom: 14,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 6,
+    gap: 8,
   },
   title: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
-    letterSpacing: -0.3,
   },
   kcalTotal: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   headerActions: {
@@ -316,9 +344,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   actionIconBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -331,16 +359,16 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 18,
     borderWidth: 1,
-    gap: 10,
+    gap: 12,
   },
   thumbContainer: {
     width: 48,
     height: 48,
     borderRadius: 14,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    borderWidth: 1,
   },
   thumbImage: {
     width: '100%',
@@ -348,21 +376,23 @@ const styles = StyleSheet.create({
   },
   foodInfo: {
     flex: 1,
+    justifyContent: 'center',
     gap: 4,
   },
   foodTopRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingRight: 4,
   },
   foodName: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '700',
     flex: 1,
-    marginRight: 6,
+    marginRight: 8,
   },
   foodKcal: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '800',
   },
   foodKcalUnit: {
@@ -372,64 +402,60 @@ const styles = StyleSheet.create({
   macroPillRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
     flexWrap: 'wrap',
+    gap: 8,
   },
   macroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 4,
   },
   macroDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   macroBadgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   weightText: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '600',
-    marginLeft: 4,
+    marginLeft: 2,
   },
   itemActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
     gap: 4,
+    paddingLeft: 4,
   },
   itemActionBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 4,
   },
   emptyBox: {
+    paddingVertical: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 20,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     borderStyle: 'dashed',
     gap: 8,
   },
   emptyText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   emptyAddBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
     borderWidth: 1,
+    gap: 4,
   },
   emptyAddText: {
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '700',
   },
 });

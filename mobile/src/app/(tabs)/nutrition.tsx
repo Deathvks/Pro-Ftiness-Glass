@@ -9,10 +9,19 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Target,
+  ChevronRight,
+  Sparkles,
+} from 'lucide-react-native';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -24,6 +33,7 @@ import { DailySummary } from '@/components/nutrition/DailySummary';
 import { WaterTrackerCard } from '@/components/nutrition/WaterTrackerCard';
 import { CreatineTrackerCard } from '@/components/nutrition/CreatineTrackerCard';
 import { MealSection, FoodLogItem } from '@/components/nutrition/MealSection';
+import { PromoBanner } from '@/components/nutrition/PromoBanner';
 
 // Modals
 import { WaterLogModal } from '@/components/nutrition/WaterLogModal';
@@ -32,11 +42,15 @@ import { SugarTargetModal } from '@/components/nutrition/SugarTargetModal';
 import { FoodDetailModal } from '@/components/nutrition/FoodDetailModal';
 import { NutritionLogModal } from '@/components/nutrition/NutritionLogModal';
 import { ConfirmationModal } from '@/components/social/ConfirmationModal';
+import { SmartNutritionCoachModal } from '@/components/nutrition/SmartNutritionCoachModal';
+import { MealCopyModal } from '@/components/nutrition/MealCopyModal';
 
-// Services
+// Services & Utils
 import * as nutritionService from '@/services/nutritionService';
+import { generateSmartNutritionCoachPlan } from '@/utils/smartNutritionCoach';
 
 export default function NutritionScreen() {
+  const router = useRouter();
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const insets = useSafeAreaInsets();
@@ -64,6 +78,11 @@ export default function NutritionScreen() {
   }>({ type: null, data: null });
 
   const [showCreatineModal, setShowCreatineModal] = useState(false);
+  const [showNutritionCoachModal, setShowNutritionCoachModal] = useState(false);
+  const [mealCopy, setMealCopy] = useState<{
+    destinationMealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  } | null>(null);
+
   const [viewingLog, setViewingLog] = useState<FoodLogItem | null>(null);
   const [logToDelete, setLogToDelete] = useState<FoodLogItem | null>(null);
   const [mealGroupToDelete, setMealGroupToDelete] = useState<string | null>(null);
@@ -171,6 +190,42 @@ export default function NutritionScreen() {
     });
     return totalsMap;
   }, [nutritionLog]);
+
+  // Smart Nutrition Coach Plan calculation (Matching frontend 1:1)
+  const nutritionPlan = useMemo(() => {
+    if (!nutritionLog || nutritionLog.length === 0) return null;
+    return generateSmartNutritionCoachPlan({
+      userProfile,
+      totals,
+      targets: {
+        calorieTarget: targets.calories,
+        proteinTarget: targets.protein,
+        carbsTarget: targets.carbs,
+        fatsTarget: targets.fats,
+        sugarTarget: targets.sugar,
+        waterTarget,
+        creatineTarget,
+      },
+      waterLog,
+      todaysCreatineLog,
+      meals,
+      nutritionLog,
+      selectedDate,
+      latestWeight,
+    });
+  }, [
+    userProfile,
+    totals,
+    targets,
+    waterTarget,
+    creatineTarget,
+    waterLog,
+    todaysCreatineLog,
+    meals,
+    nutritionLog,
+    selectedDate,
+    latestWeight,
+  ]);
 
   // Handlers
   const handleSaveWater = async (quantity_ml: number) => {
@@ -338,17 +393,126 @@ export default function NutritionScreen() {
           />
         }
       >
+        {/* Promo Banner linking to Asesoría (Matching Frontend) */}
+        <PromoBanner
+          type="nutrition"
+          onPress={() => router.push('/(tabs)/profile' as any)}
+        />
+
         {/* Date Navigator */}
         <DateNavigator
           selectedDate={selectedDate}
           onDateChange={fetchDataForDate}
         />
 
-        {/* Daily Summary Card (Bento Grid vs SVG Donut Chart) */}
+        {/* Smart Nutrition Coach Diagnostic Banner (Matching frontend: only when foods exist) */}
+        {nutritionLog && nutritionLog.length > 0 && nutritionPlan ? (
+          <TouchableOpacity
+            activeOpacity={0.88}
+            onPress={() => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch {}
+              setShowNutritionCoachModal(true);
+            }}
+            style={[
+              styles.coachBanner,
+              {
+                backgroundColor: nutritionPlan.isWarning
+                  ? 'rgba(245, 158, 11, 0.12)'
+                  : nutritionPlan.isOptimal
+                  ? 'rgba(16, 185, 129, 0.12)'
+                  : colors.tint + '12',
+                borderColor: nutritionPlan.isWarning
+                  ? 'rgba(245, 158, 11, 0.3)'
+                  : nutritionPlan.isOptimal
+                  ? 'rgba(16, 185, 129, 0.3)'
+                  : colors.tint + '30',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.coachIconWrap,
+                {
+                  backgroundColor: nutritionPlan.isWarning
+                    ? 'rgba(245, 158, 11, 0.22)'
+                    : nutritionPlan.isOptimal
+                    ? 'rgba(16, 185, 129, 0.22)'
+                    : colors.tint + '22',
+                },
+              ]}
+            >
+              {nutritionPlan.isWarning ? (
+                <AlertTriangle size={20} color="#f59e0b" strokeWidth={2.5} />
+              ) : nutritionPlan.isOptimal ? (
+                <CheckCircle2 size={20} color="#10b981" strokeWidth={2.5} />
+              ) : (
+                <Target size={20} color={colors.tint} strokeWidth={2.5} />
+              )}
+            </View>
+
+            <View style={styles.coachBannerInfo}>
+              <View style={styles.coachTopTags}>
+                <View
+                  style={[
+                    styles.coachStatusBadge,
+                    {
+                      backgroundColor: nutritionPlan.isWarning
+                        ? 'rgba(245, 158, 11, 0.2)'
+                        : nutritionPlan.isOptimal
+                        ? 'rgba(16, 185, 129, 0.2)'
+                        : colors.tint + '20',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.coachStatusText,
+                      {
+                        color: nutritionPlan.isWarning
+                          ? '#f59e0b'
+                          : nutritionPlan.isOptimal
+                          ? '#10b981'
+                          : colors.tint,
+                      },
+                    ]}
+                  >
+                    {nutritionPlan.isWarning
+                      ? `Aviso Nutricional (${nutritionPlan.warningsCount} ${
+                          nutritionPlan.warningsCount === 1 ? 'alerta' : 'alertas'
+                        }) !`
+                      : nutritionPlan.isOptimal
+                      ? '¡Día Nutricional en Racha! ✓'
+                      : 'Objetivo Nutricional'}
+                  </Text>
+                </View>
+
+                <Text style={[styles.coachGoalLabel, { color: colors.textMuted }]}>
+                  Meta: {nutritionPlan.userGoal.label}
+                </Text>
+              </View>
+
+              <Text style={[styles.coachBannerDesc, { color: colors.text }]} numberOfLines={2}>
+                {nutritionPlan.isWarning
+                  ? 'Ajustes recomendados para hoy: Revisa proteína, calorías o hidratación.'
+                  : nutritionPlan.isOptimal
+                  ? '¡Tus macros y calorías están perfectamente ajustados a tu meta!'
+                  : 'Pautas recomendadas para completar tus objetivos de nutrición hoy.'}
+              </Text>
+            </View>
+
+            <ChevronRight size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        ) : null}
+
+        {/* Daily Summary Card (Bento Grid vs SVG Donut Chart + Coach Pill) */}
         <DailySummary
           totals={totals}
           targets={targets}
           onOpenSugarModal={() => setModal({ type: 'sugar' })}
+          nutritionPlan={nutritionPlan}
+          onOpenNutritionCoach={() => setShowNutritionCoachModal(true)}
         />
 
         {/* Water Tracker Card */}
@@ -365,7 +529,7 @@ export default function NutritionScreen() {
           onPress={() => setShowCreatineModal(true)}
         />
 
-        {/* 4 Meal Sections */}
+        {/* 4 Meal Sections with Copy feature */}
         {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(mealKey => (
           <MealSection
             key={mealKey}
@@ -378,13 +542,37 @@ export default function NutritionScreen() {
             onDeleteFood={item => setLogToDelete(item)}
             onClearMeal={() => setMealGroupToDelete(mealKey)}
             onViewFood={item => setViewingLog(item)}
+            onCopyMeal={() => setMealCopy({ destinationMealType: mealKey })}
           />
         ))}
       </Animated.ScrollView>
 
       {/* MODALS */}
 
-      {/* 1. Water Log Modal */}
+      {/* 1. Smart Nutrition Coach Modal */}
+      <SmartNutritionCoachModal
+        visible={showNutritionCoachModal}
+        plan={nutritionPlan}
+        latestWeight={latestWeight}
+        onClose={() => setShowNutritionCoachModal(false)}
+        onNavigateAsesoria={() => router.push('/(tabs)/profile' as any)}
+      />
+
+      {/* 2. Meal Copy Modal */}
+      <MealCopyModal
+        visible={Boolean(mealCopy)}
+        destinationMealType={mealCopy?.destinationMealType || 'breakfast'}
+        destinationDate={selectedDate}
+        currentDayLogs={nutritionLog}
+        onClose={() => setMealCopy(null)}
+        onCopySuccess={async () => {
+          await fetchDataForDate(selectedDate);
+          if (fetchNotifications) fetchNotifications();
+          if (fetchInitialData) fetchInitialData();
+        }}
+      />
+
+      {/* 3. Water Log Modal */}
       {modal.type === 'water' && (
         <WaterLogModal
           visible={true}
@@ -395,7 +583,7 @@ export default function NutritionScreen() {
         />
       )}
 
-      {/* 2. Creatine Tracker Modal */}
+      {/* 4. Creatine Tracker Modal */}
       <CreatineTrackerModal
         visible={showCreatineModal}
         selectedDate={selectedDate}
@@ -404,7 +592,7 @@ export default function NutritionScreen() {
         onRefresh={() => fetchDataForDate(selectedDate)}
       />
 
-      {/* 3. Sugar Target Modal */}
+      {/* 5. Sugar Target Modal */}
       {modal.type === 'sugar' && (
         <SugarTargetModal
           visible={true}
@@ -414,7 +602,7 @@ export default function NutritionScreen() {
         />
       )}
 
-      {/* 4. Food Log Modal (Search, Recents, Favorites, Manual) */}
+      {/* 6. Food Log Modal (Search, Recents, Favorites, Manual) */}
       {modal.type === 'food' && (
         <NutritionLogModal
           visible={true}
@@ -426,14 +614,14 @@ export default function NutritionScreen() {
         />
       )}
 
-      {/* 5. Food Detail View Modal */}
+      {/* 7. Food Detail View Modal */}
       <FoodDetailModal
         visible={Boolean(viewingLog)}
         food={viewingLog}
         onClose={() => setViewingLog(null)}
       />
 
-      {/* 6. Delete Food Confirmation */}
+      {/* 8. Delete Food Confirmation */}
       <ConfirmationModal
         visible={Boolean(logToDelete)}
         title="Eliminar alimento"
@@ -445,7 +633,7 @@ export default function NutritionScreen() {
         onCancel={() => setLogToDelete(null)}
       />
 
-      {/* 7. Clear Meal Group Confirmation */}
+      {/* 9. Clear Meal Group Confirmation */}
       <ConfirmationModal
         visible={Boolean(mealGroupToDelete)}
         title="Vaciar comida"
@@ -470,9 +658,54 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
   },
-  trackersRow: {
+  coachBanner: {
     flexDirection: 'row',
-    gap: 12,
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 22,
+    borderWidth: 1,
     marginBottom: 16,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  coachIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coachBannerInfo: {
+    flex: 1,
+  },
+  coachTopTags: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 4,
+  },
+  coachStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2.5,
+    borderRadius: 12,
+  },
+  coachStatusText: {
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  coachGoalLabel: {
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  coachBannerDesc: {
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
   },
 });

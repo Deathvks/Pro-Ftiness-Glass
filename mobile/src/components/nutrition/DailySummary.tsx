@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
-import { LayoutGrid, PieChart, Flame, Beef, Wheat, Salad, IceCream, AlertTriangle } from 'lucide-react-native';
+import { LayoutGrid, PieChart, Flame, Beef, Wheat, Salad, IceCream, AlertTriangle, CheckCircle2, Target } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
@@ -27,6 +27,8 @@ interface DailySummaryProps {
   totals: Totals;
   targets: Targets;
   onOpenSugarModal: () => void;
+  nutritionPlan?: any;
+  onOpenNutritionCoach?: () => void;
 }
 
 interface NutritionStatCardProps {
@@ -131,6 +133,8 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
   totals,
   targets,
   onOpenSugarModal,
+  nutritionPlan,
+  onOpenNutritionCoach,
 }) => {
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
@@ -262,7 +266,61 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
         <View style={styles.card}>
           {/* Header with Switcher */}
           <View style={styles.headerRow}>
-            <Text style={[styles.title, { color: colors.text }]}>Resumen del Día</Text>
+            <View style={styles.headerLeftWithCoach}>
+              <Text style={[styles.title, { color: colors.text }]}>Resumen del Día</Text>
+              {Boolean(nutritionPlan && onOpenNutritionCoach) && (
+                <TouchableOpacity
+                  onPress={() => {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch {}
+                    onOpenNutritionCoach?.();
+                  }}
+                  activeOpacity={0.7}
+                  style={[
+                    styles.coachPill,
+                    {
+                      backgroundColor: nutritionPlan.isWarning
+                        ? 'rgba(245, 158, 11, 0.18)'
+                        : nutritionPlan.isOptimal
+                        ? 'rgba(16, 185, 129, 0.18)'
+                        : colors.tint + '18',
+                      borderColor: nutritionPlan.isWarning
+                        ? 'rgba(245, 158, 11, 0.35)'
+                        : nutritionPlan.isOptimal
+                        ? 'rgba(16, 185, 129, 0.35)'
+                        : colors.tint + '35',
+                    },
+                  ]}
+                >
+                  {nutritionPlan.isWarning ? (
+                    <AlertTriangle size={12} color="#f59e0b" strokeWidth={2.5} />
+                  ) : nutritionPlan.isOptimal ? (
+                    <CheckCircle2 size={12} color="#10b981" strokeWidth={2.5} />
+                  ) : (
+                    <Target size={12} color={colors.tint} strokeWidth={2.5} />
+                  )}
+                  <Text
+                    style={[
+                      styles.coachPillText,
+                      {
+                        color: nutritionPlan.isWarning
+                          ? '#f59e0b'
+                          : nutritionPlan.isOptimal
+                          ? '#10b981'
+                          : colors.tint,
+                      },
+                    ]}
+                  >
+                    {nutritionPlan.isWarning
+                      ? 'Aviso !'
+                      : nutritionPlan.isOptimal
+                      ? 'Óptimo ✓'
+                      : 'Info Objetivo'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <View
               style={[
                 styles.toggleContainer,
@@ -553,6 +611,27 @@ const styles = StyleSheet.create({
   card: {
     padding: 18,
     borderRadius: 28,
+  },
+  headerLeftWithCoach: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+    flex: 1,
+    marginRight: 8,
+  },
+  coachPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3.5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  coachPillText: {
+    fontSize: 10.5,
+    fontWeight: '800',
   },
   headerRow: {
     flexDirection: 'row',
