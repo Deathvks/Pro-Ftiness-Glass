@@ -1,4 +1,26 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Crypto from 'expo-crypto';
+
+// Polyfill global crypto para React Native / Hermes
+if (typeof global.crypto === 'undefined' || !global.crypto) {
+  global.crypto = {
+    getRandomValues: (array) => Crypto.getRandomValues(array),
+    randomUUID: () => Crypto.randomUUID(),
+  };
+} else {
+  if (!global.crypto.getRandomValues) {
+    global.crypto.getRandomValues = (array) => Crypto.getRandomValues(array);
+  }
+  if (!global.crypto.randomUUID) {
+    global.crypto.randomUUID = () => Crypto.randomUUID();
+  }
+}
+if (typeof globalThis !== 'undefined') {
+  globalThis.crypto = global.crypto;
+}
+if (typeof window !== 'undefined') {
+  window.crypto = global.crypto;
+}
 
 const memoryStore = {};
 

@@ -1,5 +1,5 @@
-/* frontend/src/store/syncSlice.js */
-import { v4 as uuidv4 } from 'uuid';
+/* mobile/src/store/syncSlice.js */
+import * as Crypto from 'expo-crypto';
 
 const STORAGE_KEY = 'offline_sync_queue';
 
@@ -39,7 +39,7 @@ export const createSyncSlice = (set, get) => ({
         if (isDuplicate) return;
 
         const newQueue = [...currentQueue, {
-            id: uuidv4(),
+            id: Crypto.randomUUID(),
             endpoint,
             options,
             timestamp: Date.now(),

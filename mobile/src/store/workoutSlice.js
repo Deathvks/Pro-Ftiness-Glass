@@ -1,7 +1,7 @@
 /* frontend/src/store/workoutSlice.js */
 import * as workoutService from '../services/workoutService';
 import { formatDateForQuery } from '../utils/dateUtils';
-import { v4 as uuidv4 } from 'uuid';
+import * as Crypto from 'expo-crypto';
 
 const stopNativeTimer = () => {
   // TODO: Implementar temporizador nativo para React Native en el futuro si es necesario.
@@ -448,7 +448,7 @@ export const createWorkoutSlice = (set, get) => ({
         is_warmup: false,
         rir: null, // NUEVO CAMPO
       })),
-      id: uuidv4(),
+      id: Crypto.randomUUID(),
       exercise_list_id: newExercise.id,
       muscle_group: newExercise.muscle_group,
       last_performance: lastPerformance,

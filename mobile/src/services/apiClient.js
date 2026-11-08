@@ -187,7 +187,10 @@ const apiClient = async (endpoint, options = {}) => {
             errMessage.includes('could not connect');
 
         // Interceptamos fallos de red (Offline o Timeout por red lentísima) para peticiones de escritura (POST, PUT, DELETE, etc.)
-        if (isNetworkFailure && config.method !== 'GET') {
+        const isAuthEndpoint = typeof endpoint === 'string' && endpoint.includes('/auth');
+        const queueWhenOffline = options.queueWhenOffline !== false && !isAuthEndpoint;
+
+        if (isNetworkFailure && config.method !== 'GET' && queueWhenOffline) {
             // No guardamos FormData en la cola por complejidad de serialización (imágenes, etc.)
             const isFormData = body instanceof FormData;
 
