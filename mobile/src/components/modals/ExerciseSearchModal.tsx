@@ -171,10 +171,10 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
     }
     
     if (youtubeId) {
-      return `https://img.youtube.com/vi/${youtubeId}/0.jpg`;
+      return `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`;
     }
     
-    let finalUrl = item.muscle_group_image_url || 'https://via.placeholder.com/400';
+    let finalUrl = item.muscle_group_image_url || '';
     if (finalUrl && finalUrl.startsWith('/')) {
       const baseUrl = API_BASE_URL.replace('/api', '');
       return baseUrl + finalUrl;
@@ -184,7 +184,6 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
 
   const renderExerciseItem = ({ item }: { item: any }) => {
     const isStaged = stagedIds.has(item.id);
-    const imageUrl = getImageUrl(item);
     
     return (
       <TouchableOpacity 
@@ -194,11 +193,9 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
           setView('detail');
         }}
       >
-        <Image 
-          source={{ uri: imageUrl }} 
-          style={{ width: '100%', aspectRatio: 1, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
-          resizeMode="cover"
-        />
+        <View style={{ width: '100%', aspectRatio: 1, borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: 'hidden', backgroundColor: colors.background }}>
+          <ExerciseMediaPreview item={item} fitMode="contain" staticOnly={false} />
+        </View>
         <View style={{ padding: 12, flex: 1, backgroundColor: colors.background + '80' }}>
           <Text style={[styles.exerciseName, { color: colors.text }]} numberOfLines={2}>{item.name}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
@@ -492,11 +489,10 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                 onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
                 scrollEventThrottle={16}
                 renderItem={({ item }) => {
-                  const imageUrl = getImageUrl(item.exercise);
                   return (
                     <View style={[styles.exerciseCard, { backgroundColor: colors.card, borderColor: colors.border, flexDirection: 'column', alignItems: 'stretch' }]}>
                       <View style={{ width: '100%', aspectRatio: 1, borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: 'hidden', backgroundColor: colors.background }}>
-                        <ExerciseMediaPreview item={item.exercise} getImageUrl={getImageUrl} staticOnly={true} />
+                        <ExerciseMediaPreview item={item.exercise} fitMode="contain" staticOnly={false} />
                       </View>
                       <View style={{ padding: 12, flex: 1, backgroundColor: colors.background + '80' }}>
                         <Text style={[styles.exerciseName, { color: colors.text }]} numberOfLines={2}>{item.exercise.name}</Text>

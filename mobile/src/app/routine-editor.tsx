@@ -71,7 +71,7 @@ export default function RoutineEditorScreen() {
   });
 
   const updateExerciseField = (exerciseId: string, field: string, value: any) => {
-    setExercises(prev => prev.map(ex => 
+    setExercises((prev: any[]) => prev.map((ex: any) => 
       ex.id === exerciseId ? { ...ex, [field]: value } : ex
     ));
   };
@@ -83,7 +83,7 @@ export default function RoutineEditorScreen() {
   }, [routines]);
 
   const getImageUrl = (item: any) => {
-    let url = item.muscle_group_image_url || 'https://via.placeholder.com/400';
+    let url = item.muscle_group_image_url || '';
     if (item.image_url_start) url = item.image_url_start;
     else if (item.image_url) url = item.image_url;
     else if (item.images && Array.isArray(item.images) && item.images.length > 0) url = item.images[0];
@@ -99,7 +99,7 @@ export default function RoutineEditorScreen() {
   };
 
   const removeExercise = (id: string) => {
-    setExercises(prev => prev.filter(ex => ex.id !== id));
+    setExercises((prev: any[]) => prev.filter((ex: any) => ex.id !== id));
   };
 
   const handleImagePick = async () => {
@@ -361,8 +361,8 @@ export default function RoutineEditorScreen() {
           }}>
             {/* Media Area */}
             <View style={{ width: '100%', aspectRatio: 1, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)', alignItems: 'center', justifyContent: 'center' }}>
-              {(!item.is_manual && item.exercise_id !== null && item.exercise_list_id !== null) ? (
-                <ExerciseMediaPreview item={item} getImageUrl={getImageUrl} staticOnly={true} />
+              {!item.is_manual ? (
+                <ExerciseMediaPreview item={item} getImageUrl={getImageUrl} fitMode="contain" staticOnly={false} />
               ) : (
                 <View style={{ flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.03)' }}>
                   <ImageIcon size={54} color={colors.textSecondary} style={{ opacity: 0.3, marginBottom: 12 }} />
@@ -376,7 +376,7 @@ export default function RoutineEditorScreen() {
             <View style={{ flex: 1, padding: 12 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <View style={{ flex: 1, marginRight: 8 }}>
-                  {(item.is_manual || item.exercise_id === null || item.exercise_list_id === null) ? (
+                  {item.is_manual ? (
                     <View>
                       <TextInput
                         style={{ color: colors.text, fontWeight: 'bold', fontSize: 17, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: colors.background, borderRadius: 12, borderWidth: 1, borderColor: colors.border, marginBottom: 10 }}
@@ -538,7 +538,7 @@ export default function RoutineEditorScreen() {
             <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.text, marginBottom: 16 }}>Seleccionar Carpeta</Text>
             
             <TouchableOpacity style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border }} onPress={() => { setFolder(''); setShowFolderPicker(false); }}>
-              <Text style={{ color: colors.error || '#ef4444', fontSize: 16, fontWeight: 'bold' }}>✕ Ninguna (Quitar)</Text>
+              <Text style={{ color: (colors as any).error || '#ef4444', fontSize: 16, fontWeight: 'bold' }}>✕ Ninguna (Quitar)</Text>
             </TouchableOpacity>
 
             {uniqueFolders.length > 0 ? (
@@ -569,6 +569,8 @@ export default function RoutineEditorScreen() {
             ...item.exercise,
             id: Math.random().toString(36).substring(7),
             exercise_id: item.exercise.id,
+            exercise_list_id: item.exercise.id,
+            is_manual: false,
             sets: item.sets,
             reps: item.reps,
             rest_seconds: item.rest_seconds,

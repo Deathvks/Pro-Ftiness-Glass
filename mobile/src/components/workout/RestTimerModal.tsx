@@ -7,30 +7,32 @@ import {
   TouchableOpacity,
   Modal,
   Pressable,
+  TextInput,
+  Dimensions,
 } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import {
-  Clock,
-  Play,
-  Pause,
   X,
+  ArrowLeft,
   Plus,
   Minus,
-  CheckCircle,
+  Minimize2,
+  Play,
+  Pause,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
-import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
-import { formatWorkoutTime } from '@/utils/workoutHelpers';
+import { useAppColors } from '@/hooks/useAppColors';
 
 interface RestTimerModalProps {
-  visible: boolean;
+  visible?: boolean;
   initialSeconds?: number;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 export const RestTimerModal: React.FC<RestTimerModalProps> = ({
-  visible,
+  visible: propVisible,
   initialSeconds = 90,
   onClose,
 }) => {
@@ -38,75 +40,191 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
-  const [timeLeft, setTimeLeft] = useState(initialSeconds);
-  const [isPaused, setIsPaused] = useState(false);
-  const [totalTime, setTotalTime] = useState(initialSeconds);
+  const restTimerEndTime = useAppStore(state => state.restTimerEndTime);
+  const restTimerInitialDuration = useAppStore(state => state.restTimerInitialDuration);
+  const startRestTimer = useAppStore(state => state.startRestTimer);
+  const stopRestTimer = useAppStore(state => state.stopRestTimer);
+  const addRestTime = useAppStore(state => state.addRestTime);
+  const resetRestTimer = useAppStore(state => state.resetRestTimer);
+  const plannedRestTime = useAppStore(state => state.plannedRestTime) || initialSeconds || 90;
+  const setRestTimerMode = useAppStore(state => state.setRestTimerMode);
+  const togglePauseRestTimer = useAppStore(state => state.togglePauseRestTimer);
+  const isRestTimerPaused = useAppStore(state => state.isRestTimerPaused);
+  const restTimerRemaining = useAppStore(state => state.restTimerRemaining);
+  const restTimerMode = useAppStore(state => state.restTimerMode);
 
+  // La visibilidad se controla tanto por store (modal abierto) como por prop visible opcional
+  const isVisible = restTimerMode === 'modal' || Boolean(propVisible);
+
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [view, setView] = useState<'select' | 'timer'>(
+    restTimerEndTime || isRestTimerPaused ? 'timer' : 'select'
+  );
+  const [customDuration, setCustomDuration] = useState('');
+
+  // Sincronizar vista inicial si hay un cronómetro en marcha
   useEffect(() => {
-    if (visible) {
-      setTimeLeft(initialSeconds);
-      setTotalTime(initialSeconds);
-      setIsPaused(false);
+    if (restTimerEndTime || isRestTimerPaused) {
+      setView('timer');
+    } else {
+      setView('select');
     }
-  }, [visible, initialSeconds]);
+  }, [restTimerEndTime, isRestTimerPaused, isVisible]);
 
   useEffect(() => {
-    if (!visible || isPaused || timeLeft <= 0) return;
+    if (!restTimerEndTime && !isRestTimerPaused) {
+      setTimeLeft(0);
+      return;
+    }
 
-    const interval = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          try {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          } catch {}
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    const updateTimer = () => {
+      let remaining = 0;
+      if (isRestTimerPaused && restTimerRemaining !== null) {
+        remaining = Math.ceil(restTimerRemaining / 1000);
+      } else if (restTimerEndTime) {
+        remaining = Math.ceil((restTimerEndTime - Date.now()) / 1000);
+      }
+      setTimeLeft(Math.max(0, remaining));
+    };
 
+    updateTimer();
+    const interval = setInterval(updateTimer, 100);
     return () => clearInterval(interval);
-  }, [visible, isPaused, timeLeft]);
+  }, [restTimerEndTime, isRestTimerPaused, restTimerRemaining]);
 
-  const handleAddSeconds = (secs: number) => {
+  const parseTimeToSeconds = (timeStr: string) => {
+    if (!timeStr || typeof timeStr !== 'string') return 0;
+    if (timeStr.includes(':')) {
+      const parts = timeStr.split(':');
+      const m = parseInt(parts[0] || '0', 10);
+      const s = parseInt(parts[1] || '0', 10);
+      return m * 60 + s;
+    }
+    const sec = parseInt(timeStr, 10);
+    return isNaN(sec) ? 0 : sec;
+  };
+
+  const handleStartPreset = (duration: number) => {
+    if (duration > 0) {
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {}
+      startRestTimer(duration);
+      setTimeLeft(duration);
+      setView('timer');
+    }
+  };
+
+  const handleStartCustom = () => {
+    const duration = parseTimeToSeconds(customDuration);
+    if (duration > 0) {
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {}
+      startRestTimer(duration);
+      setTimeLeft(duration);
+      setView('timer');
+      setCustomDuration('');
+    }
+  };
+
+  const goBackToSelect = () => {
     try {
       Haptics.selectionAsync();
     } catch {}
-    setTimeLeft(prev => Math.max(0, prev + secs));
-    setTotalTime(prev => Math.max(prev, prev + secs));
+    resetRestTimer();
+    setView('select');
   };
 
-  const handleTogglePause = () => {
+  const handleClose = () => {
     try {
       Haptics.selectionAsync();
     } catch {}
-    setIsPaused(prev => !prev);
+    stopRestTimer();
+    if (onClose) onClose();
   };
 
-  const handleFinishEarly = () => {
+  const handleMinimize = () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
-    onClose();
+    setRestTimerMode('minimized');
+    if (onClose) onClose();
   };
 
-  if (!visible) return null;
+  const handlePauseToggle = () => {
+    try {
+      Haptics.selectionAsync();
+    } catch {}
+    togglePauseRestTimer();
+  };
 
-  const progressPercent = totalTime > 0 ? Math.min(100, Math.max(0, ((totalTime - timeLeft) / totalTime) * 100)) : 100;
+  const handleAddTime = (seconds: number) => {
+    try {
+      Haptics.selectionAsync();
+    } catch {}
+    addRestTime(seconds);
+  };
+
+  const handleDismiss = () => {
+    try {
+      Haptics.selectionAsync();
+    } catch {}
+    if (restTimerEndTime || isRestTimerPaused) {
+      setRestTimerMode('minimized');
+    } else {
+      stopRestTimer();
+    }
+    if (onClose) onClose();
+  };
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  if (!isVisible) return null;
+
+  const total = restTimerInitialDuration || 1;
+  const progress =
+    total > 0 && timeLeft > 0
+      ? ((total - timeLeft) / total) * 100
+      : timeLeft === 0
+      ? 100
+      : 0;
+
+  // Parámetros de la circunferencia SVG
+  const radius = 80;
+  const circumference = 2 * Math.PI * radius; // ~502.65
+  const strokeDashoffset = circumference - (circumference * progress) / 100;
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <Pressable style={[styles.overlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.35)' }]} onPress={onClose}>
+    <Modal visible={isVisible} transparent animationType="fade">
+      <Pressable
+        style={[
+          styles.overlay,
+          {
+            backgroundColor: isDark
+              ? 'rgba(0, 0, 0, 0.65)'
+              : 'rgba(0, 0, 0, 0.4)',
+          },
+        ]}
+        onPress={handleDismiss}
+      >
         <Pressable
-          onPress={e => e.stopPropagation()}
           style={[
-            styles.card,
+            styles.modalContent,
             {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
+              backgroundColor: isDark
+                ? 'rgba(20, 20, 28, 0.94)'
+                : 'rgba(255, 255, 255, 0.94)',
+              borderColor: isDark
+                ? 'rgba(255, 255, 255, 0.12)'
+                : 'rgba(0, 0, 0, 0.1)',
             },
           ]}
+          onPress={e => e.stopPropagation()}
         >
           <GlassView
             glassEffectStyle="regular"
@@ -114,129 +232,284 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
             style={StyleSheet.absoluteFill}
           />
 
-          {/* Close button */}
-          <TouchableOpacity
-            onPress={onClose}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={[
-              styles.closeBtn,
-              {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-              },
-            ]}
-          >
-            <X size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-          <View style={styles.headerRow}>
-            <Clock size={20} color={colors.tint} style={{ marginRight: 8 }} />
-            <Text style={[styles.title, { color: colors.text }]}>Tiempo de Descanso</Text>
-          </View>
-
-          {/* Giant Countdown */}
-          <Text
-            style={[
-              styles.countdownText,
-              {
-                color: timeLeft === 0 ? '#22c55e' : colors.tint,
-              },
-            ]}
-          >
-            {formatWorkoutTime(timeLeft)}
-          </Text>
-
-          {/* Progress track */}
+          {/* Manija superior táctil */}
           <View
             style={[
-              styles.progressTrack,
+              styles.dragHandle,
               {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                backgroundColor: isDark
+                  ? 'rgba(255, 255, 255, 0.25)'
+                  : 'rgba(0, 0, 0, 0.2)',
               },
             ]}
-          >
-            <View
-              style={[
-                styles.progressBar,
-                {
-                  width: `${progressPercent}%`,
-                  backgroundColor: colors.tint,
-                },
-              ]}
-            />
-          </View>
+          />
 
-          {/* Quick Adjustment Buttons (+30s / -15s) */}
-          <View style={styles.quickAdjustRow}>
-            <TouchableOpacity
-              onPress={() => handleAddSeconds(-15)}
-              style={[
-                styles.adjustPill,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-              activeOpacity={0.7}
-            >
-              <Minus size={14} color={colors.text} style={{ marginRight: 4 }} />
-              <Text style={[styles.adjustText, { color: colors.text }]}>15s</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleTogglePause}
-              style={[
-                styles.pausePlayBtn,
-                {
-                  backgroundColor: colors.tint,
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.8)',
-                  shadowColor: colors.tint,
-                  shadowOffset: { width: 0, height: 3 },
-                  shadowOpacity: 0.4,
-                  shadowRadius: 8,
-                  elevation: 4,
-                },
-              ]}
-              activeOpacity={0.8}
-            >
-              {isPaused ? (
-                <Play size={20} color="#fff" fill="#fff" style={{ marginLeft: 2 }} />
-              ) : (
-                <Pause size={20} color="#fff" fill="#fff" />
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => handleAddSeconds(30)}
-              style={[
-                styles.adjustPill,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-              activeOpacity={0.7}
-            >
-              <Plus size={14} color={colors.text} style={{ marginRight: 4 }} />
-              <Text style={[styles.adjustText, { color: colors.text }]}>30s</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Saltar Descanso Button */}
+          {/* Botón Cerrar (Esquina superior derecha) */}
           <TouchableOpacity
-            onPress={handleFinishEarly}
-            style={[
-              styles.skipBtn,
-              {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
-              },
-            ]}
-            activeOpacity={0.75}
+            onPress={handleClose}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            style={styles.closeBtn}
           >
-            <CheckCircle size={16} color={colors.tint} style={{ marginRight: 6 }} />
-            <Text style={[styles.skipText, { color: colors.text }]}>Listo / Continuar Serie</Text>
+            <X size={20} color={colors.textSecondary} />
           </TouchableOpacity>
+
+          {/* ===================== VISTA 1: SELECCIONAR ===================== */}
+          {view === 'select' && (
+            <View style={styles.viewBody}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                Seleccionar Descanso
+              </Text>
+
+              {/* Anillo de tiempo previo */}
+              <View style={styles.circleContainer}>
+                <Svg width={200} height={200} viewBox="0 0 200 200">
+                  <Circle
+                    cx="100"
+                    cy="100"
+                    r={radius}
+                    stroke={isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}
+                    strokeWidth="8"
+                    fill="transparent"
+                  />
+                  <Circle
+                    cx="100"
+                    cy="100"
+                    r={radius}
+                    stroke={colors.tint}
+                    strokeWidth="8"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={circumference}
+                    strokeLinecap="round"
+                    fill="transparent"
+                    origin="100, 100"
+                    rotation="-90"
+                  />
+                </Svg>
+                <View style={styles.circleTextOverlay}>
+                  <Text style={[styles.timerCountdownText, { color: colors.textSecondary }]}>
+                    {restTimerEndTime ? formatTime(timeLeft) : '0:00'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Botón Iniciar Planeado */}
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => handleStartPreset(plannedRestTime)}
+                style={[styles.primaryActionBtn, { backgroundColor: colors.tint }]}
+              >
+                <Text style={styles.primaryActionBtnText}>
+                  Iniciar Planeado ({formatTime(plannedRestTime)})
+                </Text>
+              </TouchableOpacity>
+
+              {/* Grid de presets (1m, 2m, 3m) */}
+              <View style={styles.presetsGrid}>
+                {[60, 120, 180].map(time => (
+                  <TouchableOpacity
+                    key={time}
+                    activeOpacity={0.75}
+                    onPress={() => handleStartPreset(time)}
+                    style={[
+                      styles.presetItemBtn,
+                      {
+                        backgroundColor: isDark
+                          ? 'rgba(255, 255, 255, 0.07)'
+                          : 'rgba(0, 0, 0, 0.04)',
+                        borderColor: isDark
+                          ? 'rgba(255, 255, 255, 0.12)'
+                          : 'rgba(0, 0, 0, 0.08)',
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.presetNumber, { color: colors.text }]}>
+                      {time / 60}
+                    </Text>
+                    <Text style={[styles.presetUnit, { color: colors.textSecondary }]}>
+                      min
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Input personalizado M:SS */}
+              <View style={styles.customRow}>
+                <TextInput
+                  placeholder="M:SS (ej. 1:45)"
+                  placeholderTextColor={colors.textSecondary}
+                  value={customDuration}
+                  onChangeText={setCustomDuration}
+                  keyboardType="numbers-and-punctuation"
+                  style={[
+                    styles.customInput,
+                    {
+                      backgroundColor: isDark
+                        ? 'rgba(255, 255, 255, 0.07)'
+                        : 'rgba(0, 0, 0, 0.04)',
+                      borderColor: isDark
+                        ? 'rgba(255, 255, 255, 0.14)'
+                        : 'rgba(0, 0, 0, 0.1)',
+                      color: colors.text,
+                    },
+                  ]}
+                />
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={handleStartCustom}
+                  style={[styles.customStartBtn, { backgroundColor: colors.tint }]}
+                >
+                  <Text style={styles.customStartBtnText}>Iniciar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* ===================== VISTA 2: TIMER ACTIVO ===================== */}
+          {view === 'timer' && (
+            <View style={styles.viewBody}>
+              {/* Botón Atrás a la selección */}
+              <TouchableOpacity
+                onPress={goBackToSelect}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={styles.backBtn}
+              >
+                <ArrowLeft size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+
+              {/* Botón Minimizar a Isla Dinámica */}
+              <TouchableOpacity
+                onPress={handleMinimize}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={styles.minimizeBtn}
+              >
+                <Minimize2 size={20} color={colors.tint} />
+              </TouchableOpacity>
+
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                Tiempo de Descanso
+              </Text>
+
+              {/* Anillo de cuenta regresiva SVG circular animado */}
+              <View style={styles.circleContainer}>
+                <Svg width={200} height={200} viewBox="0 0 200 200">
+                  <Circle
+                    cx="100"
+                    cy="100"
+                    r={radius}
+                    stroke={isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}
+                    strokeWidth="8"
+                    fill="transparent"
+                  />
+                  <Circle
+                    cx="100"
+                    cy="100"
+                    r={radius}
+                    stroke={timeLeft === 0 ? '#ef4444' : colors.tint}
+                    strokeWidth="8"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={strokeDashoffset}
+                    strokeLinecap="round"
+                    fill="transparent"
+                    origin="100, 100"
+                    rotation="-90"
+                  />
+                </Svg>
+                <View style={styles.circleTextOverlay}>
+                  <Text
+                    style={[
+                      styles.timerCountdownText,
+                      {
+                        color:
+                          timeLeft === 0
+                            ? '#ef4444'
+                            : isRestTimerPaused
+                            ? '#f59e0b'
+                            : colors.text,
+                      },
+                    ]}
+                  >
+                    {formatTime(timeLeft)}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Controles de temporizador: Pausar/Reanudar y ±10s */}
+              <View style={styles.timerControlsCol}>
+                <View style={styles.pauseResumeRow}>
+                  <TouchableOpacity
+                    onPress={handlePauseToggle}
+                    activeOpacity={0.85}
+                    style={[
+                      styles.pauseBigCircleBtn,
+                      {
+                        backgroundColor: isRestTimerPaused
+                          ? colors.tint
+                          : isDark
+                          ? 'rgba(255, 255, 255, 0.12)'
+                          : 'rgba(0, 0, 0, 0.07)',
+                        borderColor: isRestTimerPaused
+                          ? colors.tint
+                          : isDark
+                          ? 'rgba(255, 255, 255, 0.2)'
+                          : 'rgba(0, 0, 0, 0.12)',
+                      },
+                    ]}
+                  >
+                    {isRestTimerPaused ? (
+                      <Play size={28} color="#ffffff" fill="#ffffff" style={{ marginLeft: 3 }} />
+                    ) : (
+                      <Pause size={28} color={isDark ? '#ffffff' : colors.text} fill={isDark ? '#ffffff' : colors.text} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                {/* Botones -10s y +10s */}
+                <View style={styles.adjustTimeRow}>
+                  <TouchableOpacity
+                    onPress={() => handleAddTime(-10)}
+                    disabled={timeLeft === 0}
+                    style={[
+                      styles.adjustTimeBtn,
+                      {
+                        backgroundColor: isDark
+                          ? 'rgba(255, 255, 255, 0.08)'
+                          : 'rgba(0, 0, 0, 0.04)',
+                        borderColor: isDark
+                          ? 'rgba(255, 255, 255, 0.12)'
+                          : 'rgba(0, 0, 0, 0.08)',
+                        opacity: timeLeft === 0 ? 0.4 : 1,
+                      },
+                    ]}
+                  >
+                    <Minus size={18} color={colors.text} />
+                    <Text style={[styles.adjustTimeBtnText, { color: colors.text }]}>
+                      -10 seg
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => handleAddTime(10)}
+                    style={[
+                      styles.adjustTimeBtn,
+                      {
+                        backgroundColor: isDark
+                          ? 'rgba(255, 255, 255, 0.08)'
+                          : 'rgba(0, 0, 0, 0.04)',
+                        borderColor: isDark
+                          ? 'rgba(255, 255, 255, 0.12)'
+                          : 'rgba(0, 0, 0, 0.08)',
+                      },
+                    ]}
+                  >
+                    <Plus size={18} color={colors.text} />
+                    <Text style={[styles.adjustTimeBtnText, { color: colors.text }]}>
+                      +10 seg
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          )}
         </Pressable>
       </Pressable>
     </Modal>
@@ -246,102 +519,191 @@ export const RestTimerModal: React.FC<RestTimerModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    justifyContent: 'flex-end',
   },
-  card: {
+  modalContent: {
     width: '100%',
-    maxWidth: 340,
-    borderRadius: 32,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
     borderWidth: 1,
-    padding: 24,
-    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 42,
+    paddingHorizontal: 24,
     overflow: 'hidden',
     position: 'relative',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.25,
     shadowRadius: 18,
-    elevation: 8,
+    elevation: 20,
+  },
+  dragHandle: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginBottom: 16,
   },
   closeBtn: {
     position: 'absolute',
     top: 18,
-    right: 18,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    right: 20,
     zIndex: 10,
+    padding: 6,
   },
-  headerRow: {
-    flexDirection: 'row',
+  backBtn: {
+    position: 'absolute',
+    top: 18,
+    left: 20,
+    zIndex: 10,
+    padding: 6,
+  },
+  minimizeBtn: {
+    position: 'absolute',
+    top: 18,
+    right: 56,
+    zIndex: 10,
+    padding: 6,
+  },
+  viewBody: {
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  countdownText: {
-    fontSize: 58,
-    fontWeight: '900',
-    fontVariant: ['tabular-nums'],
-    letterSpacing: -1.5,
-    marginBottom: 16,
-  },
-  progressTrack: {
     width: '100%',
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  circleContainer: {
+    width: 200,
+    height: 200,
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 24,
   },
-  progressBar: {
-    height: '100%',
-    borderRadius: 3,
+  circleTextOverlay: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  quickAdjustRow: {
-    flexDirection: 'row',
+  timerCountdownText: {
+    fontSize: 44,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+    letterSpacing: 1,
+  },
+  primaryActionBtn: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
-    marginBottom: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
   },
-  adjustPill: {
+  primaryActionBtnText: {
+    color: '#ffffff',
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  presetsGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    gap: 12,
+    width: '100%',
+    marginBottom: 18,
+  },
+  presetItemBtn: {
+    flex: 1,
+    paddingVertical: 14,
     borderRadius: 18,
     borderWidth: 1,
-  },
-  adjustText: {
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  pausePlayBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    borderWidth: 1.2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  skipBtn: {
+  presetNumber: {
+    fontSize: 22,
+    fontWeight: '900',
+  },
+  presetUnit: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 2,
+    textTransform: 'uppercase',
+  },
+  customRow: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+    alignItems: 'center',
+  },
+  customInput: {
+    flex: 1,
+    height: 48,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  customStartBtn: {
+    paddingHorizontal: 22,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customStartBtnText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  timerControlsCol: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 16,
+  },
+  pauseResumeRow: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pauseBigCircleBtn: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  adjustTimeRow: {
+    flexDirection: 'row',
+    gap: 16,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  adjustTimeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
-    height: 46,
-    borderRadius: 20,
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 9999,
     borderWidth: 1,
   },
-  skipText: {
+  adjustTimeBtnText: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
   },
 });

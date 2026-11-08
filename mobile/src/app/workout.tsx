@@ -48,6 +48,7 @@ export default function WorkoutScreen() {
   const workoutAccumulatedTime = useAppStore(state => state.workoutAccumulatedTime) || 0;
   const userProfile = useAppStore(state => state.userProfile || (state as any).user);
   const workoutLog = useAppStore(state => state.workoutLog) || [];
+  const openRestModal = useAppStore(state => state.openRestModal);
 
   // Zustand Store Actions
   const togglePauseWorkout = useAppStore(state => state.togglePauseWorkout);
@@ -354,9 +355,7 @@ export default function WorkoutScreen() {
                   onSetExerciseToReplace={(idx) => setSubstituteIndex(idx)}
                   onUpdateSet={updateActiveWorkoutSet}
                   onToggleWarmup={toggleWarmupSet}
-                  onOpenRestModal={(secs) =>
-                    setRestModalConfig({ visible: true, restSeconds: secs || 90 })
-                  }
+                  onOpenRestModal={(secs) => openRestModal(secs || 90)}
                   onShowSmartCoach={(ex) => setCoachExercise(ex)}
                 />
               );
@@ -381,9 +380,7 @@ export default function WorkoutScreen() {
                 onAddDropset={addDropset}
                 onRemoveDropset={removeDropset}
                 onToggleWarmup={toggleWarmupSet}
-                onOpenRestModal={(secs) =>
-                  setRestModalConfig({ visible: true, restSeconds: secs || 90 })
-                }
+                onOpenRestModal={(secs) => openRestModal(secs || 90)}
               />
             );
           })}
@@ -438,12 +435,6 @@ export default function WorkoutScreen() {
         }}
       />
 
-      {/* 5. Modal Temporizador de Descanso */}
-      <RestTimerModal
-        visible={restModalConfig.visible}
-        initialSeconds={restModalConfig.restSeconds}
-        onClose={() => setRestModalConfig(prev => ({ ...prev, visible: false }))}
-      />
 
       {/* 6. Modal Calculadora de Discos */}
       <PlateCalculatorModal

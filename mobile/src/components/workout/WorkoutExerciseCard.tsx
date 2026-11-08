@@ -21,13 +21,27 @@ import {
   Clock,
   Info,
   ChevronRight,
+  Zap,
+  Calendar,
+  TrendingUp,
+  Sparkles,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { calculate1RM } from '@/utils/workoutHelpers';
-import { getExerciseHistorySessions, diagnoseExerciseTrend } from '@/utils/smartProgressionCoach';
+import {
+  getExerciseHistorySessions,
+  diagnoseExerciseTrend,
+  detectIntraSessionMuscleFatigue,
+  getEquipmentDetails,
+  calculateIntraSessionFatigueAdjustment,
+} from '@/utils/smartProgressionCoach';
+import {
+  evaluateExerciseFollowUpAndRecovery,
+  getAppliedCoachStrategy,
+} from '@/utils/coachAppliedHistory';
 import { WorkoutSetGrid } from './WorkoutSetGrid';
 import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview';
 import { BACKEND_BASE_URL, API_BASE_URL } from '@/services/apiClient';
@@ -69,6 +83,8 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
   const setExerciseReminder = useAppStore(state => state.setExerciseReminder);
   const userProfile = useAppStore(state => state.userProfile || (state as any).user);
   const workoutLog = useAppStore(state => state.workoutLog) || [];
+  const activeWorkout = useAppStore(state => state.activeWorkout);
+  const allExercises = useAppStore(state => state.allExercises) || [];
 
   const isInAsesoria = Boolean(
     userProfile?.trainer_id ||
@@ -76,11 +92,63 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
     (userProfile?.role === 'trainee' && userProfile?.trainer_id)
   );
 
-  const trend = useMemo(() => {
-    if (!exercise?.name || !workoutLog) return null;
-    const sessions = getExerciseHistorySessions(exercise.name, workoutLog);
-    return diagnoseExerciseTrend(sessions);
-  }, [exercise?.name, workoutLog]);
+  const { trend, followUp } = useMemo(() => {
+    if (!exercise?.name || !workoutLog) return { trend: null, followUp: null };
+    const currentRoutineId = activeWorkout?.routine_id || activeWorkout?.routineId || activeWorkout?.id || null;
+    const currentRoutineName = activeWorkout?.routine_name || activeWorkout?.routineName || activeWorkout?.name || null;
+    const allSessions = getExerciseHistorySessions(exercise.name, workoutLog, currentRoutineId, currentRoutineName) as any;
+    const rCtx = allSessions?.routineContext;
+    const targetSessions = (currentRoutineId || currentRoutineName)
+      ? (rCtx?.sameRoutineSessions || [])
+      : allSessions;
+    const diagnosedTrend = diagnoseExerciseTrend(targetSessions, currentRoutineId) as any;
+    const lastApplied = getAppliedCoachStrategy(exercise.name, currentRoutineId, currentRoutineName) as any;
+    const evaluatedFollowUp = evaluateExerciseFollowUpAndRecovery({
+      exerciseName: exercise.name,
+      sessions: targetSessions,
+      allSessions,
+      routineContext: rCtx,
+      currentTrend: diagnosedTrend,
+      lastApplied,
+      userProfile,
+    } as any) as any;
+    // Detección en tiempo real de fatiga acumulada en la sesión activa por ejercicios del mismo músculo
+    const fatigue = detectIntraSessionMuscleFatigue(exercise, activeWorkout, allExercises, userProfile) as any;
+
+    let effectiveFollowUp: any = evaluatedFollowUp;
+    if (fatigue?.hasFatigue && evaluatedFollowUp?.type !== 'ok_green') {
+      const equip = getEquipmentDetails(fatigue.currentEquipment);
+      const adj = calculateIntraSessionFatigueAdjustment({
+        baseWeight: fatigue.currentEquipment === 'bodyweight' ? 0 : (parseFloat(exercise.weight) || 0),
+        targetReps: parseInt(String(exercise.reps || '10').split('-')[0], 10) || 10,
+        equipmentType: fatigue.currentEquipment,
+        goalKey: fatigue.goalKey,
+        severity: fatigue.severity,
+        fatigueInfo: fatigue,
+      } as any);
+
+      effectiveFollowUp = {
+        type: 'intra_session_fatigue',
+        badge: `⚡ Fatiga (${fatigue.sharedMuscleName})`,
+        badgeShort: '⚡ Ajustado',
+        title: `Ajuste en tiempo real (${fatigue.sharedMuscleName})`,
+        message: `En ${fatigue.fatiguedExerciseName} levantaste por debajo de lo previsto (${fatigue.performanceSummary}). Carga recalculada a ${adj.adjustedWeight > 0 ? `${adj.adjustedWeight} kg` : `${adj.adjustedReps} reps`} para tu objetivo de ${fatigue.goalLabel} y material (${equip.label}).`,
+        actionHint: 'Toca para ver el desglose y aplicar la carga adaptada.',
+        color: 'amber',
+        intraSessionFatigue: { ...fatigue, ...adj, equipmentDetails: equip },
+      };
+    }
+
+    return { trend: diagnosedTrend, followUp: effectiveFollowUp };
+  }, [
+    exercise?.name,
+    exercise?.weight,
+    exercise?.reps,
+    workoutLog,
+    userProfile,
+    activeWorkout,
+    allExercises,
+  ]);
 
   const [showWarmupModal, setShowWarmupModal] = useState(false);
   const [workingWeightInput, setWorkingWeightInput] = useState('');
@@ -338,6 +406,151 @@ export const WorkoutExerciseCard: React.FC<WorkoutExerciseCardProps> = ({
             </View>
           </View>
         </View>
+
+        {/* --- AVISO INTELIGENTE DE SEGUIMIENTO Y RECUPERACIÓN (LIQUID GLASS) --- */}
+        {!isInAsesoria && onShowSmartCoach && followUp ? (
+          <TouchableOpacity
+            activeOpacity={0.82}
+            onPress={() => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch {}
+              onShowSmartCoach(exercise);
+            }}
+            style={[
+              styles.followUpCard,
+              followUp.type === 'ok_green'
+                ? {
+                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                    borderColor: 'rgba(16, 185, 129, 0.3)',
+                  }
+                : followUp.type === 'intra_session_fatigue'
+                ? {
+                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                    borderColor: 'rgba(245, 158, 11, 0.4)',
+                  }
+                : followUp.type === 'inactivity_warning' || followUp.type === 'recovery_warning'
+                ? {
+                    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                    borderColor: 'rgba(245, 158, 11, 0.35)',
+                  }
+                : followUp.type === 'recovery_notice'
+                ? {
+                    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                    borderColor: 'rgba(59, 130, 246, 0.3)',
+                  }
+                : {
+                    backgroundColor: colors.tint + '18',
+                    borderColor: colors.tint + '38',
+                  },
+            ]}
+          >
+            <View style={styles.followUpContentRow}>
+              <View
+                style={[
+                  styles.followUpIconWrap,
+                  followUp.type === 'ok_green'
+                    ? { backgroundColor: 'rgba(16, 185, 129, 0.2)' }
+                    : followUp.type === 'intra_session_fatigue' ||
+                      followUp.type === 'inactivity_warning' ||
+                      followUp.type === 'recovery_warning'
+                    ? { backgroundColor: 'rgba(245, 158, 11, 0.22)' }
+                    : followUp.type === 'recovery_notice'
+                    ? { backgroundColor: 'rgba(59, 130, 246, 0.2)' }
+                    : { backgroundColor: colors.tint + '22' },
+                ]}
+              >
+                {followUp.type === 'ok_green' ? (
+                  <CheckCircle2 size={18} color="#10b981" strokeWidth={2.5} />
+                ) : followUp.type === 'intra_session_fatigue' ? (
+                  <Zap size={18} color="#f59e0b" strokeWidth={2.5} />
+                ) : followUp.type === 'inactivity_warning' ? (
+                  <Calendar size={18} color="#f59e0b" strokeWidth={2.5} />
+                ) : followUp.type === 'recovery_warning' ? (
+                  <AlertTriangle size={18} color="#f59e0b" strokeWidth={2.5} />
+                ) : followUp.type === 'recovery_notice' ? (
+                  <Clock size={18} color="#3b82f6" strokeWidth={2.5} />
+                ) : followUp.type === 'next_session_target' ? (
+                  <TrendingUp size={18} color={colors.tint} strokeWidth={2.5} />
+                ) : (
+                  <Sparkles size={18} color={colors.tint} strokeWidth={2.5} />
+                )}
+              </View>
+
+              <View style={styles.followUpTextCol}>
+                <View style={styles.followUpBadgeRow}>
+                  {followUp.badge ? (
+                    <View
+                      style={[
+                        styles.followUpBadgePill,
+                        followUp.type === 'ok_green'
+                          ? { backgroundColor: 'rgba(16, 185, 129, 0.2)' }
+                          : followUp.type === 'intra_session_fatigue'
+                          ? {
+                              backgroundColor: 'rgba(245, 158, 11, 0.25)',
+                              borderColor: 'rgba(245, 158, 11, 0.4)',
+                              borderWidth: 1,
+                            }
+                          : { backgroundColor: colors.tint + '22' },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.followUpBadgeText,
+                          followUp.type === 'ok_green'
+                            ? { color: '#10b981' }
+                            : followUp.type === 'intra_session_fatigue' ||
+                              followUp.type === 'inactivity_warning' ||
+                              followUp.type === 'recovery_warning'
+                            ? { color: '#f59e0b' }
+                            : { color: colors.tint },
+                        ]}
+                      >
+                        {followUp.badge}
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  {followUp.timeAgoText ? (
+                    <Text style={[styles.followUpTimeAgo, { color: colors.textSecondary }]}>
+                      {followUp.timeAgoText}
+                    </Text>
+                  ) : null}
+                </View>
+
+                {followUp.title ? (
+                  <Text style={[styles.followUpTitle, { color: colors.text }]} numberOfLines={1}>
+                    {followUp.title}
+                  </Text>
+                ) : null}
+
+                {followUp.message ? (
+                  <Text
+                    style={[styles.followUpMessage, { color: colors.textSecondary }]}
+                    numberOfLines={2}
+                  >
+                    {followUp.message}
+                  </Text>
+                ) : null}
+              </View>
+
+              <View style={styles.followUpChevronWrap}>
+                <View
+                  style={[
+                    styles.chevronBubble,
+                    {
+                      backgroundColor: isDark
+                        ? 'rgba(255,255,255,0.08)'
+                        : 'rgba(0,0,0,0.05)',
+                    },
+                  ]}
+                >
+                  <ChevronRight size={16} color={colors.textSecondary} />
+                </View>
+              </View>
+            </View>
+          </TouchableOpacity>
+        ) : null}
 
         {/* 4. Divisor fino */}
         <View
@@ -829,5 +1042,72 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  followUpCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 14,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  followUpContentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  followUpIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  followUpTextCol: {
+    flex: 1,
+    gap: 3,
+  },
+  followUpBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+    marginBottom: 2,
+  },
+  followUpBadgePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 9999,
+  },
+  followUpBadgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  followUpTimeAgo: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  followUpTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 18,
+  },
+  followUpMessage: {
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 16,
+  },
+  followUpChevronWrap: {
+    alignSelf: 'center',
+    paddingLeft: 4,
+  },
+  chevronBubble: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

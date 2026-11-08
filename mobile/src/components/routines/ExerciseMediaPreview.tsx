@@ -1,9 +1,11 @@
+/* mobile/src/components/routines/ExerciseMediaPreview.tsx */
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Image, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { Play, Image as ImageIcon, Volume2, VolumeX } from 'lucide-react-native';
+import { Play, Volume2, VolumeX, Dumbbell } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BACKEND_BASE_URL, API_BASE_URL } from '@/services/apiClient';
+import useAppStore from '@/store/useAppStore';
 
 interface ExerciseMediaPreviewProps {
   item: any;
@@ -20,13 +22,16 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   details,
   getImageUrl,
   staticOnly = false,
-  fitMode = 'cover',
+  fitMode = 'contain',
   playYouTube = false,
   onPress,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(playYouTube);
   const [isMuted, setIsMuted] = useState(true);
+  const [imageError, setImageError] = useState(false);
+
+  const allExercises = useAppStore(state => state.allExercises) || [];
 
   useEffect(() => {
     if (playYouTube) {
@@ -34,7 +39,36 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
     }
   }, [playYouTube]);
 
-  const target = details || item || {};
+  const rawTarget = details || item || {};
+  const rawSubDetails = rawTarget.exercise_details || rawTarget.exercise || {};
+
+  // Si el ejercicio viene sin fotos/vídeo (típico de rutinas guardadas), buscar en el catálogo completo
+  const matchedFromStore = useMemo(() => {
+    const hasMedia =
+      rawTarget.images ||
+      rawTarget.image_url_start ||
+      rawTarget.image_url ||
+      rawTarget.video_url ||
+      rawTarget.youtube_id ||
+      rawSubDetails.images ||
+      rawSubDetails.image_url_start ||
+      rawSubDetails.image_url ||
+      rawSubDetails.video_url ||
+      rawSubDetails.youtube_id;
+
+    if (hasMedia) return null;
+
+    const targetId = rawTarget.exercise_list_id || rawTarget.exercise_id || rawTarget.id;
+    const targetName = (rawTarget.name || '').trim().toLowerCase();
+
+    return allExercises.find((ex: any) => {
+      if (targetId && (ex.id === targetId || ex.exercise_list_id === targetId)) return true;
+      if (targetName && ex.name?.trim().toLowerCase() === targetName) return true;
+      return false;
+    });
+  }, [rawTarget, rawSubDetails, allExercises]);
+
+  const target = matchedFromStore ? { ...matchedFromStore, ...rawTarget } : rawTarget;
   const subDetails = target.exercise_details || target.exercise || {};
 
   // 1. Extractor y normalizador de ID de YouTube
@@ -66,6 +100,12 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       return null;
     }
     const clean = url.trim();
+
+    // Descartar placeholders genéricos que fallan en la carga y dejan la pantalla negra
+    if (clean.includes('placeholder') || clean.includes('via.placeholder')) {
+      return null;
+    }
+
     if (clean.startsWith('http://') || clean.startsWith('https://')) {
       return clean;
     }
@@ -83,20 +123,28 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
     return `${base}/${path}`;
   };
 
-  // 3. Extracción de lista completa de imágenes
+  // 3. Extracción de lista completa de imágenes (para efecto GIF)
   const images = useMemo(() => {
     const list: string[] = [];
 
     // Parseo de arrays o cadenas JSON / separadas por comas
     const rawImages = target.images || subDetails.images;
     if (Array.isArray(rawImages)) {
-      list.push(...rawImages);
+      rawImages.forEach((imgItem: any) => {
+        if (typeof imgItem === 'string') list.push(imgItem);
+        else if (imgItem && typeof imgItem === 'object' && imgItem.image) list.push(imgItem.image);
+      });
     } else if (typeof rawImages === 'string') {
       const trimmed = rawImages.trim();
       if (trimmed.startsWith('[')) {
         try {
           const parsed = JSON.parse(trimmed);
-          if (Array.isArray(parsed)) list.push(...parsed);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((imgItem: any) => {
+              if (typeof imgItem === 'string') list.push(imgItem);
+              else if (imgItem && typeof imgItem === 'object' && imgItem.image) list.push(imgItem.image);
+            });
+          }
         } catch {}
       } else if (trimmed.includes(',')) {
         list.push(...trimmed.split(',').map(s => s.trim()));
@@ -105,7 +153,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       }
     }
 
-    // Inicio y fin de movimiento (convención start/end)
+    // Inicio y fin de movimiento (convención start/end para ciclo GIF)
     const startImg = target.image_url_start || subDetails.image_url_start;
     const endImg = target.image_url_end || subDetails.image_url_end;
     if (startImg && !list.includes(startImg)) {
@@ -115,7 +163,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       list.push(endImg);
     }
 
-    // Imagen única por defecto
+    // Imagen única
     const singleImg =
       target.image_url ||
       target.image ||
@@ -126,18 +174,23 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       list.push(singleImg);
     }
 
-    // Normalizar y descartar vacíos o placeholders genéricos si hay thumbnail de youtube
+    // Normalizar y descartar vacíos o placeholders
     const normalized = Array.from(
       new Set(list.map(getNormalizedUrl).filter((u): u is string => Boolean(u)))
     );
 
-    // Si no hay imágenes del usuario pero sí hay video de YouTube, usar la miniatura de YouTube
+    // Si no hay imágenes válidas pero sí vídeo de YouTube, usar miniatura de YouTube
     if (normalized.length === 0 && youtubeThumbnail) {
       return [youtubeThumbnail];
     }
 
     return normalized;
   }, [target, subDetails, getImageUrl, youtubeThumbnail]);
+
+  // Reset de error si cambian las imágenes
+  useEffect(() => {
+    setImageError(false);
+  }, [images]);
 
   // 4. Efecto de animación GIF cíclico (alterna imágenes cada 1300ms si hay más de una)
   useEffect(() => {
@@ -227,14 +280,16 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
 
   // 6. Selección de la imagen activa
   const activeImageUri =
-    images.length > 0
+    !imageError && images.length > 0
       ? images[currentIndex % images.length]
-      : youtubeThumbnail;
+      : !imageError
+      ? youtubeThumbnail
+      : null;
 
   if (!activeImageUri) {
     return (
       <View style={[styles.fullContainer, styles.placeholderContainer]}>
-        <ImageIcon size={38} color="rgba(255,255,255,0.3)" />
+        <Dumbbell size={38} color="rgba(255,255,255,0.3)" />
       </View>
     );
   }
@@ -260,6 +315,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
         source={{ uri: activeImageUri }}
         style={styles.imageFill}
         resizeMode={fitMode}
+        onError={() => setImageError(true)}
       />
 
       {/* Indicador de más imágenes (efecto GIF) */}
@@ -275,7 +331,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       {!staticOnly && (rawVideo || yid) && !isPlaying && (
         <View style={styles.playOverlay}>
           <View style={styles.playPill}>
-            <Play size={18} color="#ffffff" fill="#ffffff" />
+            <Play size={16} color="#ffffff" fill="#ffffff" />
             <Text style={styles.playText}>Ver Vídeo</Text>
           </View>
         </View>
@@ -310,10 +366,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    paddingHorizontal: 7,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   gifBadgeText: {
     color: '#ffffff',
@@ -330,12 +388,12 @@ const styles = StyleSheet.create({
   },
   playPill: {
     backgroundColor: 'rgba(0, 0, 0, 0.72)',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: 30,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.25)',
     shadowColor: '#000',
@@ -346,7 +404,7 @@ const styles = StyleSheet.create({
   },
   playText: {
     color: '#ffffff',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
   },
   muteButton: {

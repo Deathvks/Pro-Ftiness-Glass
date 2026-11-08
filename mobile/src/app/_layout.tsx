@@ -11,6 +11,8 @@ import useAppStore, { resolveTheme, applyNativeColorScheme } from '@/store/useAp
 import ThemeBackground from '@/components/ThemeBackground';
 import { useAppColors } from '@/hooks/useAppColors';
 import { ToastContainer } from '@/components/ui/ToastContainer';
+import { DynamicIslandTimer } from '@/components/workout/DynamicIslandTimer';
+import { RestTimerModal } from '@/components/workout/RestTimerModal';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -147,6 +149,8 @@ export default function RootLayout() {
           <Stack.Screen name="legal-notice" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="cookies" options={{ headerShown: false, animation: 'slide_from_right' }} />
         </Stack>
+        <DynamicIslandTimer />
+        <RestTimerModal />
         <ToastContainer />
       </ThemeProvider>
     </GestureHandlerRootView>
