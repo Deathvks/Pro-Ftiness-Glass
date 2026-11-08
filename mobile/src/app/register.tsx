@@ -148,9 +148,11 @@ export default function Register() {
     }
   };
 
-  const openLegalModal = (doc: LegalDocType) => {
-    setLegalDocType(doc);
-    setShowLegalModal(true);
+  const openLegalModal = (doc: LegalDocType | 'cookies') => {
+    if (doc === 'terms') router.push('/terms');
+    else if (doc === 'legalNotice') router.push('/legal-notice');
+    else if (doc === 'cookies') router.push('/cookies');
+    else router.push('/privacy');
   };
 
   const redirectUri = AuthSession.makeRedirectUri({ scheme: 'mobile' });
@@ -862,6 +864,10 @@ export default function Register() {
                     <Text style={[styles.legalDot, { color: colors.textMuted }]}>•</Text>
                     <TouchableOpacity onPress={() => openLegalModal('legalNotice')}>
                       <Text style={[styles.legalLink, { color: colors.textSecondary }]}>Aviso Legal</Text>
+                    </TouchableOpacity>
+                    <Text style={[styles.legalDot, { color: colors.textMuted }]}>•</Text>
+                    <TouchableOpacity onPress={() => router.push('/cookies')}>
+                      <Text style={[styles.legalLink, { color: colors.textSecondary }]}>Cookies</Text>
                     </TouchableOpacity>
                   </View>
                 </View>

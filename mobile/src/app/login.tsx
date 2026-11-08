@@ -143,9 +143,11 @@ export default function Login() {
     }
   };
 
-  const openLegalModal = (doc: LegalDocType) => {
-    setLegalDocType(doc);
-    setShowLegalModal(true);
+  const openLegalModal = (doc: LegalDocType | 'cookies') => {
+    if (doc === 'terms') router.push('/terms');
+    else if (doc === 'legalNotice') router.push('/legal-notice');
+    else if (doc === 'cookies') router.push('/cookies');
+    else router.push('/privacy');
   };
 
   // Manejo de códigos OTP de 6 dígitos
@@ -959,6 +961,10 @@ export default function Login() {
                     <Text style={[styles.legalDot, { color: colors.textMuted }]}>•</Text>
                     <TouchableOpacity onPress={() => openLegalModal('legalNotice')}>
                       <Text style={[styles.legalLink, { color: colors.textSecondary }]}>Aviso Legal</Text>
+                    </TouchableOpacity>
+                    <Text style={[styles.legalDot, { color: colors.textMuted }]}>•</Text>
+                    <TouchableOpacity onPress={() => router.push('/cookies')}>
+                      <Text style={[styles.legalLink, { color: colors.textSecondary }]}>Cookies</Text>
                     </TouchableOpacity>
                   </View>
                 </View>

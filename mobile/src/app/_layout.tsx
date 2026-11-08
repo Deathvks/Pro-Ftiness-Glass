@@ -78,10 +78,11 @@ export default function RootLayout() {
     const inRegister = segments[0] === 'register';
     const inForgot = segments[0] === 'forgot-password';
     const inOnboarding = segments[0] === 'onboarding';
+    const inLegal = ['privacy', 'terms', 'legal-notice', 'cookies'].includes(segments[0]);
 
     const needsOnboarding = isAuthenticated && userProfile && !userProfile.goal && userProfile.role !== 'trainee';
 
-    if (!isAuthenticated && !inLogin && !inRegister && !inForgot) {
+    if (!isAuthenticated && !inLogin && !inRegister && !inForgot && !inLegal) {
       router.replace('/login');
     } else if (needsOnboarding && !inOnboarding) {
       // Bloquear acceso hasta que complete el onboarding
@@ -95,7 +96,7 @@ export default function RootLayout() {
     } else if (isAuthenticated && !hasRestoredPath) {
       setHasRestoredPath(true);
       // Only restore if we're currently at the root/index - don't redirect if already navigated
-      const atRoot = segments.length <= 1 || (segments[0] === '(tabs)' && (!segments[1] || segments[1] === 'index'));
+      const atRoot = segments.length <= 1 || (segments[0] === '(tabs)' && (!segments[1] || (segments[1] as string) === 'index'));
       if (atRoot && !needsOnboarding) {
         const lastPath = typeof localStorage !== 'undefined' ? localStorage.getItem('last_path') : null;
         if (lastPath && lastPath !== '/' && lastPath !== '/index' && !lastPath.includes('login') && !lastPath.includes('register') && !lastPath.includes('onboarding')) {
@@ -140,6 +141,10 @@ export default function RootLayout() {
           <Stack.Screen name="login" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="register" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="forgot-password" options={{ headerShown: false, animation: 'fade' }} />
+          <Stack.Screen name="privacy" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="terms" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="legal-notice" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="cookies" options={{ headerShown: false, animation: 'slide_from_right' }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>
