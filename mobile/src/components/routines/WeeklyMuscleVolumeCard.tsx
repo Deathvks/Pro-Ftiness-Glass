@@ -8,6 +8,9 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  Platform,
+  LayoutAnimation,
+  UIManager,
 } from 'react-native';
 import {
   Activity,
@@ -20,6 +23,7 @@ import {
   Sparkles,
   Layers,
   ChevronDown,
+  Target,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
@@ -27,6 +31,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export const TRACKED_MUSCLES = [
   { key: 'chest', label: 'Pecho', aliases: ['chest', 'pecho', 'pectoral', 'pectorals', 'pectoralis major'] },
@@ -519,6 +528,14 @@ export function WeeklyMuscleVolumeCard({
 
   const { exclusions } = useWeeklyVolumeExclusions();
 
+  const handleToggleExpand = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsExpanded(prev => !prev);
+  };
+
   const goalRange = useMemo(() => {
     const g = (goal || '').toLowerCase();
     if (g.includes('gain') || g.includes('musculo') || g.includes('hipertrofia')) return GOAL_RANGES.gain;
@@ -611,6 +628,10 @@ export function WeeklyMuscleVolumeCard({
       };
     });
 
+    // Ordenar para mostrar primero los grupos a revisar (naranja/rojo) como en el frontend
+    const statusOrder: Record<string, number> = { red: 0, orange: 1, green: 2 };
+    rows.sort((a, b) => statusOrder[a.status] - statusOrder[b.status] || b.directSets - a.directSets);
+
     const optimalCount = rows.filter(r => r.status === 'green').length;
     const reviewCount = rows.filter(r => r.status !== 'green').length;
 
@@ -630,7 +651,7 @@ export function WeeklyMuscleVolumeCard({
       style={[
         styles.container,
         {
-          borderColor: colors.border,
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
           backgroundColor: isDark
             ? 'rgba(255, 255, 255, 0.03)'
             : 'rgba(255, 255, 255, 0.65)',
@@ -640,128 +661,229 @@ export function WeeklyMuscleVolumeCard({
       <GlassView
         glassEffectStyle="regular"
         colorScheme={isDark ? 'dark' : 'light'}
-        style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
+        style={[StyleSheet.absoluteFill, { borderRadius: 26 }]}
       />
 
-      {/* Header */}
-      <View style={styles.cardHeader}>
+      {/* Header Interactivo (Solapado / Resumen por defecto - Idéntico al frontend) */}
+      <TouchableOpacity
+        onPress={handleToggleExpand}
+        activeOpacity={0.8}
+        style={[
+          styles.cardHeaderButton,
+          isExpanded && {
+            borderBottomWidth: 1,
+            borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+          },
+        ]}
+      >
         <View style={styles.headerLeft}>
           <View style={[styles.headerIconCircle, { backgroundColor: colors.tint + '18' }]}>
-            <Activity size={20} color={colors.tint} />
+            <Activity size={22} color={colors.tint} />
           </View>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <Text style={[styles.cardTitle, { color: colors.text }]}>
-                Series Semanales
-              </Text>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>
+              Volumen muscular semanal
+            </Text>
+            <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={2}>
+              {isExpanded
+                ? 'Toca cualquier músculo para ver qué subgrupos cuentan en la suma y en qué rutina están.'
+                : `${volumeData.optimalCount} músculos en rango • ${volumeData.reviewCount} a revisar`}
+            </Text>
+
+            <View style={styles.pillsRow}>
               <View style={[styles.goalPill, { backgroundColor: colors.tint + '15' }]}>
+                <Target size={11} color={colors.tint} style={{ marginRight: 4 }} />
                 <Text style={[styles.goalPillText, { color: colors.tint }]}>
-                  {goalRange.label} ({goalRange.min}–{goalRange.max}/sem)
+                  {goalRange.label}
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.rangePill,
+                  { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)' },
+                ]}
+              >
+                <Text style={[styles.rangePillText, { color: colors.textSecondary }]}>
+                  {`Rango: ${goalRange.min}-${goalRange.max} series`}
                 </Text>
               </View>
             </View>
-            <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-              {volumeData.optimalCount} óptimos · {volumeData.reviewCount} a revisar
-            </Text>
           </View>
+
+          <ChevronDown
+            size={20}
+            color={colors.textSecondary}
+            style={{
+              transform: [{ rotate: isExpanded ? '180deg' : '0deg' }],
+              marginTop: 2,
+            }}
+          />
         </View>
+      </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => (onOpenSettings ? onOpenSettings() : setShowFilterModal(true))}
-          style={[styles.filterBtn, { backgroundColor: colors.tint + '15', borderColor: colors.tint + '30' }]}
-          activeOpacity={0.7}
-        >
-          <FolderKanban size={14} color={colors.tint} />
-          <Text style={[styles.filterBtnText, { color: colors.tint }]}>
-            Elegir {volumeData.excludedCount > 0 ? `(${volumeData.excludedCount} excl.)` : ''}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Muscle Rows Grid */}
-      <View style={styles.rowsGrid}>
-        {(isExpanded ? volumeData.rows : volumeData.rows.slice(0, 4)).map(row => {
-          const statusColor =
-            row.status === 'green'
-              ? '#10b981'
-              : row.status === 'orange'
-              ? '#f59e0b'
-              : '#ef4444';
-
-          return (
-            <TouchableOpacity
-              key={row.key}
-              onPress={() => setSelectedMuscle(row)}
-              activeOpacity={0.75}
+      {/* Contenido Expandible (Sólo cuando se toca para extender) */}
+      {isExpanded && (
+        <View style={styles.expandedContent}>
+          {/* Bento Grid con 3 Métricas de Resumen */}
+          <View style={styles.summaryBentoGrid}>
+            <View
               style={[
-                styles.muscleCard,
+                styles.bentoTile,
+                { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)' },
+              ]}
+            >
+              <Text style={[styles.bentoNumber, { color: colors.text }]}>
+                {volumeData.totalRoutines}
+              </Text>
+              <Text style={[styles.bentoLabel, { color: colors.textSecondary }]}>
+                Rutinas activas
+              </Text>
+            </View>
+
+            <View style={[styles.bentoTile, { backgroundColor: 'rgba(34, 197, 94, 0.12)' }]}>
+              <Text style={[styles.bentoNumber, { color: '#22c55e' }]}>
+                {volumeData.optimalCount}
+              </Text>
+              <Text style={[styles.bentoLabel, { color: colors.textSecondary }]}>
+                En rango
+              </Text>
+            </View>
+
+            <View
+              style={[
+                styles.bentoTile,
                 {
-                  backgroundColor: isDark
-                    ? 'rgba(255, 255, 255, 0.04)'
-                    : 'rgba(255, 255, 255, 0.7)',
-                  borderColor: statusColor + '30',
+                  backgroundColor:
+                    volumeData.reviewCount > 0
+                      ? 'rgba(245, 158, 11, 0.12)'
+                      : isDark
+                      ? 'rgba(255, 255, 255, 0.05)'
+                      : 'rgba(0, 0, 0, 0.04)',
                 },
               ]}
             >
-              <View style={styles.muscleTopRow}>
-                <Text style={[styles.muscleName, { color: colors.text }]}>{row.label}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: statusColor + '18' }]}>
-                  {row.status === 'green' ? (
-                    <CheckCircle2 size={10} color={statusColor} />
-                  ) : (
-                    <AlertTriangle size={10} color={statusColor} />
-                  )}
-                  <Text style={[styles.statusText, { color: statusColor }]}>{row.statusLabel}</Text>
-                </View>
-              </View>
+              <Text
+                style={[
+                  styles.bentoNumber,
+                  { color: volumeData.reviewCount > 0 ? '#f59e0b' : colors.text },
+                ]}
+              >
+                {volumeData.reviewCount}
+              </Text>
+              <Text style={[styles.bentoLabel, { color: colors.textSecondary }]}>
+                A revisar
+              </Text>
+            </View>
+          </View>
 
-              <View style={styles.muscleNumbersRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
-                  <Text style={[styles.setsNum, { color: statusColor }]}>{row.directSets}</Text>
-                  <Text style={[styles.setsUnit, { color: colors.textSecondary }]}>directas</Text>
-                  {row.indirectSets > 0 && (
-                    <Text style={[styles.indirectTag, { color: colors.textMuted }]}>
-                      +{row.indirectSets} ind.
-                    </Text>
-                  )}
+          {/* Botón de Selección de Rutinas y Ejercicios */}
+          {volumeData.totalRoutines > 0 && (
+            <TouchableOpacity
+              onPress={() => (onOpenSettings ? onOpenSettings() : setShowFilterModal(true))}
+              style={[
+                styles.fullFilterBtn,
+                {
+                  backgroundColor: colors.tint + '15',
+                  borderColor: colors.tint + '30',
+                },
+              ]}
+              activeOpacity={0.75}
+            >
+              <FolderKanban size={15} color={colors.tint} style={{ marginRight: 6 }} />
+              <Text style={[styles.fullFilterBtnText, { color: colors.tint }]}>
+                Elegir rutinas y ejercicios
+              </Text>
+              {volumeData.excludedCount > 0 && (
+                <View style={[styles.excludedBadge, { backgroundColor: colors.tint + '25' }]}>
+                  <Text style={[styles.excludedBadgeText, { color: colors.tint }]}>
+                    {`${volumeData.excludedCount} excl.`}
+                  </Text>
                 </View>
-                <Text style={[styles.targetLabel, { color: colors.textMuted }]}>
-                  meta {goalRange.min}–{goalRange.max}
-                </Text>
-              </View>
+              )}
+            </TouchableOpacity>
+          )}
 
-              {/* Progress bar */}
-              <View style={[styles.progressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
-                <View
+          {/* Grid Completo de los 10 Grupos Musculares */}
+          <View style={styles.rowsGrid}>
+            {volumeData.rows.map(row => {
+              const statusColor =
+                row.status === 'green'
+                  ? '#10b981'
+                  : row.status === 'orange'
+                  ? '#f59e0b'
+                  : '#ef4444';
+
+              return (
+                <TouchableOpacity
+                  key={row.key}
+                  onPress={() => setSelectedMuscle(row)}
+                  activeOpacity={0.75}
                   style={[
-                    styles.progressBarFill,
+                    styles.muscleCard,
                     {
-                      width: `${row.progress}%`,
-                      backgroundColor: statusColor,
+                      backgroundColor: isDark
+                        ? 'rgba(255, 255, 255, 0.04)'
+                        : 'rgba(255, 255, 255, 0.7)',
+                      borderColor: statusColor + '30',
                     },
                   ]}
-                />
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+                >
+                  <View style={styles.muscleTopRow}>
+                    <Text style={[styles.muscleName, { color: colors.text }]}>{row.label}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: statusColor + '18' }]}>
+                      {row.status === 'green' ? (
+                        <CheckCircle2 size={10} color={statusColor} />
+                      ) : (
+                        <AlertTriangle size={10} color={statusColor} />
+                      )}
+                      <Text style={[styles.statusText, { color: statusColor }]}>{row.statusLabel}</Text>
+                    </View>
+                  </View>
 
-      {/* Expand / Collapse Button */}
-      <TouchableOpacity
-        onPress={() => setIsExpanded(v => !v)}
-        style={styles.expandToggleBtn}
-        activeOpacity={0.7}
-      >
-        <Text style={[styles.expandToggleText, { color: colors.tint }]}>
-          {isExpanded ? 'Mostrar menos grupos' : `Ver los 10 grupos musculares`}
-        </Text>
-        <ChevronDown
-          size={14}
-          color={colors.tint}
-          style={{ transform: [{ rotate: isExpanded ? '180deg' : '0deg' }] }}
-        />
-      </TouchableOpacity>
+                  <View style={styles.muscleNumbersRow}>
+                    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
+                      <Text style={[styles.setsNum, { color: statusColor }]}>{row.directSets}</Text>
+                      <Text style={[styles.setsUnit, { color: colors.textSecondary }]}>directas</Text>
+                      {row.indirectSets > 0 && (
+                        <Text style={[styles.indirectTag, { color: colors.textMuted }]}>
+                          {`+${row.indirectSets} ind.`}
+                        </Text>
+                      )}
+                    </View>
+                    <Text style={[styles.targetLabel, { color: colors.textMuted }]}>
+                      {`meta ${goalRange.min}-${goalRange.max}`}
+                    </Text>
+                  </View>
+
+                  {/* Progress bar */}
+                  <View
+                    style={[
+                      styles.progressBarBg,
+                      { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.progressBarFill,
+                        {
+                          width: `${row.progress}%`,
+                          backgroundColor: statusColor,
+                        },
+                      ]}
+                    />
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Nota al pie informativa */}
+          <Text style={[styles.footerNote, { color: colors.textSecondary }]}>
+            Las series de ejercicios secundarios cuentan al 50%. Toca un músculo para ver el desglose.
+          </Text>
+        </View>
+      )}
 
       {/* Modal Desglose por Músculo */}
       {selectedMuscle && (
@@ -813,10 +935,7 @@ export function WeeklyMuscleVolumeCard({
                         style={[
                           styles.statusText,
                           {
-                            color:
-                              selectedMuscle.status === 'green'
-                                ? '#10b981'
-                                : '#f59e0b',
+                            color: selectedMuscle.status === 'green' ? '#10b981' : '#f59e0b',
                           },
                         ]}
                       >
@@ -825,7 +944,7 @@ export function WeeklyMuscleVolumeCard({
                     </View>
                   </View>
                   <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-                    Objetivo semanal: {goalRange.min}–{goalRange.max} series
+                    {`Objetivo semanal: ${goalRange.min}-${goalRange.max} series`}
                   </Text>
                 </View>
                 <TouchableOpacity onPress={() => setSelectedMuscle(null)} style={styles.closeBtn}>
@@ -857,12 +976,12 @@ export function WeeklyMuscleVolumeCard({
                           {c.exerciseName}
                         </Text>
                         <Text style={[styles.contribRoutineName, { color: colors.textSecondary }]} numberOfLines={1}>
-                          {c.routineName} · {c.isDirect ? 'Directo' : 'Sinergista (indirecto)'}
+                          {`${c.routineName} • ${c.isDirect ? 'Directo' : 'Sinergista (indirecto)'}`}
                         </Text>
                       </View>
                       <View style={[styles.setsPill, { backgroundColor: colors.tint + '18' }]}>
                         <Text style={[styles.setsPillText, { color: colors.tint }]}>
-                          {c.sets} series
+                          {`${c.sets} series`}
                         </Text>
                       </View>
                     </View>
@@ -887,62 +1006,109 @@ export function WeeklyMuscleVolumeCard({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 28,
+    borderRadius: 24,
     borderWidth: 1,
-    padding: 16,
     marginBottom: 20,
     overflow: 'hidden',
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    marginBottom: 14,
+  cardHeaderButton: {
+    padding: 16,
   },
   headerLeft: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
-    flex: 1,
   },
   headerIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
+    width: 42,
+    height: 42,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '900',
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
   },
   cardSubtitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    marginTop: 2,
+    lineHeight: 16,
+    marginTop: 3,
+  },
+  pillsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    flexWrap: 'wrap',
   },
   goalPill: {
-    paddingHorizontal: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  goalPillText: {
+    fontSize: 10.5,
+    fontWeight: '800',
+  },
+  rangePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  rangePillText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
+  expandedContent: {
+    padding: 16,
+    paddingTop: 14,
+    gap: 14,
+  },
+  summaryBentoGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  bentoTile: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  bentoNumber: {
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  bentoLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  fullFilterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 42,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  fullFilterBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  excludedBadge: {
+    marginLeft: 6,
+    paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
   },
-  goalPillText: {
+  excludedBadgeText: {
     fontSize: 10,
-    fontWeight: '800',
-  },
-  filterBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  filterBtnText: {
-    fontSize: 11,
     fontWeight: '800',
   },
   rowsGrid: {
@@ -1007,17 +1173,13 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 2.5,
   },
-  expandToggleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingTop: 12,
-    marginTop: 4,
-  },
-  expandToggleText: {
-    fontSize: 12,
-    fontWeight: '800',
+  footerNote: {
+    fontSize: 11,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    lineHeight: 15,
+    paddingHorizontal: 12,
+    paddingTop: 4,
   },
   modalOverlay: {
     flex: 1,
