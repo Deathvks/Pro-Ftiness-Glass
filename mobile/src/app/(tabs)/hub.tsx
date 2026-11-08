@@ -121,7 +121,7 @@ export default function Hub() {
             title="Tu Progreso"
             description="Estadísticas, RM y volumen"
             colors={colors}
-            onPress={() => Alert.alert('Tu Progreso', 'Próximamente en la app móvil')}
+            onPress={() => router.push('/progress' as any)}
           />
           
           {isClient && (

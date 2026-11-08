@@ -494,7 +494,7 @@ export default function RoutinesScreen() {
           {/* BANNER "VER TU PROGRESO" */}
           <TouchableOpacity
             activeOpacity={0.88}
-            onPress={() => router.push('/(tabs)/hub')}
+            onPress={() => router.push('/progress' as any)}
             style={[styles.progressBanner, { borderColor: colors.tint + '35' }]}
           >
             <GlassView
