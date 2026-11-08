@@ -26,12 +26,14 @@ router.post('/register', authLimiter, [
     .matches(/^[a-zA-Z0-9_.-]+$/).withMessage('Nombre de usuario solo puede contener letras, números, _, . y - (sin espacios).'),
   body('email', 'Por favor, incluye un email válido').isEmail().toLowerCase().trim(),
   body('password', 'La contraseña debe tener 6 o más caracteres').isLength({ min: 6 }),
+  body('marketingEmailConsent').optional().isBoolean(),
+  body('coachingEmailConsent').optional().isBoolean(),
   referralValidator
 ], authController.register);
 
 router.post('/verify-email', authLimiter, [
   body('email', 'Por favor, incluye un email válido').isEmail().toLowerCase().trim(),
-  body('code', 'El código de verificación es requerido').not().isEmpty().trim()
+  body('code', 'El código de verificación debe tener seis dígitos').isString().trim().matches(/^\d{6}$/)
 ], authController.verifyEmail);
 
 router.post('/resend-verification', [

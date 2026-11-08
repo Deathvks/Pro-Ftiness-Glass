@@ -4,13 +4,29 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import { toBlob } from 'html-to-image';
 import {
-  Dumbbell, Target, Clock, Flame, Plus, Play, Edit, Footprints,
-  Bike, Activity, Droplet, Beef, Zap, CheckCircle, XCircle,
+  Dumbbell, Target, Clock, Flame, Plus, Play, Edit,
+  Droplet, Beef, Zap, CheckCircle, XCircle,
   ArrowUp, ArrowDown, Minus, ChevronRight, Trophy as TrophyLucide, Check, Crown,
-  LayoutGrid, IceCream, TriangleAlert, Info, Share2, X, Loader2, Lock, List, Copy, ListFilter
+  LayoutGrid, IceCream, TriangleAlert, Info, Share2, X, Loader2, Lock, List, Copy, ListFilter,
+  MapPin, Trash2, ShieldCheck
 } from 'lucide-react';
-import { FaChartPie, FaTrophy } from 'react-icons/fa';
-import { FaMeteor } from 'react-icons/fa6'; 
+import ConfirmationModal from '../components/ConfirmationModal';
+import { FaChartPie, FaTrophy, FaInstagram } from 'react-icons/fa';
+import { 
+  FaMeteor, 
+  FaWeightScale, 
+  FaHeartPulse, 
+  FaUtensils, 
+  FaDumbbell, 
+  FaFireFlameCurved, 
+  FaBullseye, 
+  FaFire, 
+  FaClock, 
+  FaCircleCheck, 
+  FaPlay, 
+  FaListCheck 
+} from 'react-icons/fa6'; 
+import { FaBicycle, FaPersonRunning } from 'react-icons/fa6';
 
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
@@ -19,7 +35,11 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import GlassCard from '../components/GlassCard';
 import BodyWeightModal from '../components/BodyWeightModal';
 import SugarTargetModal from '../components/SugarTargetModal';
+import GymLocationModal from '../components/GymLocationModal';
+import { enrichGymWithMedia } from '../utils/gymMedia';
 import { isSameDay } from '../utils/helpers';
+import { getTrainingWeek, trainingDateFormatter } from '../utils/weeklyTraining';
+import { isWorkoutDoneToday } from '../store/workoutSlice';
 import useAppStore from '../store/useAppStore';
 import { getLevelProgress } from '../store/gamificationSlice';
 import CircularProgress from '../components/CircularProgress';
@@ -30,6 +50,7 @@ import TourGuide from '../components/TourGuide';
 import ExerciseSearch from '../components/RoutineEditor/ExerciseSearch';
 import LevelBadge from '../components/LevelBadge';
 import * as nutritionService from '../services/nutritionService';
+import * as userService from '../services/userService';
 import { useToast } from '../hooks/useToast';
 import { useLocalNotifications } from '../hooks/useLocalNotifications';
 import SEOHead from '../components/SEOHead';
@@ -39,7 +60,7 @@ import PRShareCard from '../components/PRShareCard';
 import DashboardInsights from '../components/Dashboard/DashboardInsights';
 import { useAppTheme } from '../hooks/useAppTheme'; 
 
-const isIOS = () => {
+const _isIOS = () => {
   if (typeof navigator === 'undefined') return false;
   return [
     'iPad Simulator', 'iPhone Simulator', 'iPod Simulator', 'iPad', 'iPhone', 'iPod'
@@ -119,6 +140,38 @@ const getWeightTrendData = (current, previous, goal) => {
   return { icon: isGaining ? ArrowUp : ArrowDown, color, bg };
 };
 
+const getStreakCountdown = (lastActivityDate, now = new Date()) => {
+  if (!lastActivityDate) return null;
+
+  const [year, month, day] = String(lastActivityDate).slice(0, 10).split('-').map(Number);
+  if (!year || !month || !day) return null;
+
+  // La racha permite descansar sábado y domingo. El plazo vence al terminar
+  // el siguiente día laborable disponible tras el último entrenamiento.
+  // Protege hasta 2 días laborables de descanso biológico (48-72h) más fines de semana.
+  const targetDate = new Date(year, month - 1, day);
+  let addedWeekdays = 0;
+  while (addedWeekdays < 3) {
+    targetDate.setDate(targetDate.getDate() + 1);
+    const dow = targetDate.getDay();
+    if (dow !== 0 && dow !== 6) {
+      addedWeekdays++;
+    }
+  }
+
+  const deadline = new Date(targetDate);
+  deadline.setHours(23, 59, 59, 999);
+
+  const remaining = deadline.getTime() - now.getTime();
+  if (remaining <= 0) return { expired: true };
+
+  const totalMinutes = Math.ceil(remaining / 60000);
+  const days = Math.floor(totalMinutes / (24 * 60));
+  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+  const minutes = totalMinutes % 60;
+  return { expired: false, days, hours, minutes };
+};
+
 const BentoStatCard = ({ title, value, unit, icon: Icon, onClick, subtext, iconColor = "text-accent", onInfoClick }) => (
   <GlassCard
     onClick={onClick}
@@ -155,14 +208,14 @@ const Dashboard = ({ setView }) => {
   const { addToast } = useToast();
   const { t } = useTranslation(['translation', 'exercise_names']);
   
-  const { startThemeTest, isTestingTheme, testTimeLeft } = useAppTheme(); 
+  const { startThemeTest, isTestingTheme: _isTestingTheme, testTimeLeft: _testTimeLeft } = useAppTheme(); 
 
   const {
     routines, workoutLog, bodyWeightLog, userProfile, logBodyWeight,
     updateTodayBodyWeight, startWorkout, startSimpleWorkout, nutritionLog,
     waterLog, todaysCreatineLog, fetchDataForDate,
-    completedRoutineIdsToday, activeWorkout, gamification,
-    checkStreak, addXp, personalRecords
+    completedRoutineIdsToday, activeWorkout, gamification, fetchTodaysCompletedRoutines, stopWorkout,
+    checkStreak: _checkStreak, addXp: _addXp, addGamificationEvents, personalRecords
   } = useAppStore(useShallow(state => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
@@ -177,14 +230,23 @@ const Dashboard = ({ setView }) => {
     todaysCreatineLog: state.todaysCreatineLog,
     fetchDataForDate: state.fetchDataForDate,
     completedRoutineIdsToday: state.completedRoutineIdsToday,
+    fetchTodaysCompletedRoutines: state.fetchTodaysCompletedRoutines,
     activeWorkout: state.activeWorkout,
+    stopWorkout: state.stopWorkout,
     gamification: state.gamification,
     checkStreak: state.checkStreak,
     addXp: state.addXp,
+    addGamificationEvents: state.addGamificationEvents,
     personalRecords: state.personalRecords || []
   })));
 
   const { cancelLoginReminder } = useLocalNotifications();
+
+  useEffect(() => {
+    if (fetchTodaysCompletedRoutines) {
+      fetchTodaysCompletedRoutines();
+    }
+  }, [fetchTodaysCompletedRoutines]);
 
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showXPModal, setShowXPModal] = useState(false);
@@ -195,14 +257,139 @@ const Dashboard = ({ setView }) => {
   const [showPRModal, setShowPRModal] = useState(false);
   const [showPRList, setShowPRList] = useState(false);
   const [showExerciseLibrary, setShowExerciseLibrary] = useState(false); // NUEVO
+  const [streakCountdown, setStreakCountdown] = useState(null);
   const [selectedPR, setSelectedPR] = useState(null);
   const [isSharing, setIsSharing] = useState(false);
+  const [showGymModal, setShowGymModal] = useState(false);
+  const [showDiscardWorkoutModal, setShowDiscardWorkoutModal] = useState(false);
+  const [currentGym, setCurrentGym] = useState(() => {
+    try {
+      const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
+      const saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
+      return saved ? enrichGymWithMedia(JSON.parse(saved)) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
+    const loadGym = (e) => {
+      if (e?.detail === null) {
+        setCurrentGym(null);
+        return;
+      }
+      try {
+        const saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
+        if (saved) {
+          setCurrentGym(enrichGymWithMedia(JSON.parse(saved)));
+          return;
+        }
+        const freshProfile = useAppStore.getState().userProfile;
+        if (freshProfile?.gym_data) {
+          const remoteGym = typeof freshProfile.gym_data === 'string' ? JSON.parse(freshProfile.gym_data) : freshProfile.gym_data;
+          if (remoteGym) {
+            setCurrentGym(enrichGymWithMedia(remoteGym));
+            return;
+          }
+        }
+        setCurrentGym(null);
+      } catch {
+        setCurrentGym(null);
+      }
+    };
+    loadGym();
+    window.addEventListener('storage', loadGym);
+    window.addEventListener('user-gym-updated', loadGym);
+    return () => {
+      window.removeEventListener('storage', loadGym);
+      window.removeEventListener('user-gym-updated', loadGym);
+    };
+  }, [userProfile?.id]);
+
+  const handleSaveGym = (gymData) => {
+    const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
+    const enriched = enrichGymWithMedia(gymData);
+    localStorage.setItem(userKey, JSON.stringify(enriched));
+    localStorage.setItem('user_gym', JSON.stringify(enriched));
+    setCurrentGym(enriched);
+    if (typeof useAppStore.getState().setUserProfile === 'function') {
+      const cur = useAppStore.getState().userProfile;
+      if (cur) useAppStore.getState().setUserProfile({ ...cur, gym_data: enriched });
+    }
+    const viewed = useAppStore.getState().socialViewedProfile;
+    if (viewed && String(viewed.id) === String(userProfile?.id)) {
+      useAppStore.setState({ socialViewedProfile: { ...viewed, gym: enriched } });
+    }
+    window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: enriched }));
+    userService.updateUserProfile({ gym_data: enriched }).catch(err => {
+      console.warn('Error al guardar gimnasio en backend:', err);
+    });
+  };
+
+  const handleRemoveGym = () => {
+    const userKey = userProfile?.id ? `user_gym_${userProfile.id}` : 'user_gym';
+    localStorage.removeItem(userKey);
+    localStorage.removeItem('user_gym');
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith('user_gym_') || k === 'user_gym')) {
+          localStorage.removeItem(k);
+        }
+      }
+    } catch {}
+    setCurrentGym(null);
+    useAppStore.setState((s) => ({
+      userProfile: s.userProfile ? { ...s.userProfile, gym_data: null } : null,
+      socialViewedProfile: s.socialViewedProfile ? { ...s.socialViewedProfile, gym: null, gym_data: null } : null
+    }));
+    window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: null }));
+    userService.updateUserProfile({ gym_data: null }).catch(err => {
+      console.warn('Error al eliminar gimnasio en backend:', err);
+    });
+  };
 
   const prCardRef = useRef(null);
   const weeklyRecapRef = useRef(null);
   const streakCheckedRef = useRef(false);
 
   const [timeUntilSunday, setTimeUntilSunday] = useState(null);
+
+  useEffect(() => {
+    const updateStreakCountdown = () => {
+      setStreakCountdown(getStreakCountdown(gamification?.lastActivityDate));
+    };
+
+    updateStreakCountdown();
+    const interval = setInterval(updateStreakCountdown, 60000);
+    return () => clearInterval(interval);
+  }, [gamification?.lastActivityDate]);
+
+  const showStreakTimeRemaining = (event) => {
+    event.stopPropagation();
+
+    if (weeklyConsistency.shieldActive) {
+      addToast(
+        `🛡️ Escudo activo (${weeklyConsistency.daysThisWeek}/${weeklyConsistency.targetDays} días). Puedes descansar el resto de la semana y conservar tu racha.`,
+        'success'
+      );
+      return;
+    }
+
+    const remainingForShield = Math.max(0, weeklyConsistency.targetDays - weeklyConsistency.daysThisWeek);
+    const time = streakCountdown && !streakCountdown.expired
+      ? `${streakCountdown.days ? `${streakCountdown.days} d ` : ''}${streakCountdown.hours} h ${streakCountdown.minutes} min`
+      : null;
+
+    const streakHeader = `🔥 Meta Semanal: ${weeklyConsistency.daysThisWeek}/${weeklyConsistency.targetDays} días entrenados esta semana (te ${remainingForShield === 1 ? 'falta 1 día' : `faltan ${remainingForShield} días`} para activar el Escudo de Racha).`;
+
+    const bufferMsg = time
+      ? ` Plazo hasta próximo entreno: ${time}. Fines de semana y descansos biológicos protegidos.`
+      : ' Al alcanzar tu meta se activa la protección hasta el final de la semana.';
+
+    addToast(streakHeader + bufferMsg, 'info');
+  };
 
   useEffect(() => {
     const updateTimer = () => {
@@ -238,12 +425,11 @@ const Dashboard = ({ setView }) => {
   }, []);
 
   useEffect(() => {
-    if (checkStreak && !streakCheckedRef.current) {
-      checkStreak(new Date().toISOString().split('T')[0]);
+    if (!streakCheckedRef.current) {
       streakCheckedRef.current = true;
       cancelLoginReminder();
     }
-  }, [checkStreak, cancelLoginReminder]);
+  }, [cancelLoginReminder]);
 
   const levelData = useMemo(() => {
     const level = gamification?.level || 1;
@@ -274,47 +460,50 @@ const Dashboard = ({ setView }) => {
     );
   }, [sortedWeightLog, userProfile?.goal]);
 
-  const { weeklySessions, weeklyTimeDisplay, weeklyCalories, weekDays, weeklyRecapData } = useMemo(() => {
-    const today = new Date();
-    const day = today.getDay();
-    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-    const startOfWeek = new Date(today.getFullYear(), today.getMonth(), diff);
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(startOfWeek);
-      d.setDate(startOfWeek.getDate() + i);
-      return d;
-    });
-
-    const logs = workoutLog.filter(log => new Date(log.workout_date) >= startOfWeek);
-    const seconds = logs.reduce((acc, log) => acc + log.duration_seconds, 0);
-    const volume = logs.reduce((acc, log) => acc + (log.total_volume || 0), 0);
-    const calories = logs.reduce((acc, log) => acc + (log.calories_burned || 0), 0);
-
+  const weekFormatter = useMemo(() => trainingDateFormatter(userProfile?.timezone), [userProfile?.timezone]);
+  const todayKey = weekFormatter.format(new Date());
+  const { days: weekDays, trainedDays, logs: weeklyLogs } = useMemo(
+    () => getTrainingWeek(workoutLog, todayKey, weekFormatter),
+    [workoutLog, todayKey, weekFormatter]
+  );
+  const { weeklySessions, weeklyTimeDisplay, weeklyCalories, weeklyRecapData } = useMemo(() => {
+    const seconds = weeklyLogs.reduce((total, log) => total + (Number(log.duration_seconds) || 0), 0);
+    const volume = weeklyLogs.reduce((total, log) => total + (Number(log.total_volume) || 0), 0);
+    const calories = weeklyLogs.reduce((total, log) => total + (Number(log.calories_burned) || 0), 0);
     return {
-      weekDays: days,
-      weeklySessions: logs.length,
+      weeklySessions: weeklyLogs.length,
       weeklyCalories: calories,
       weeklyTimeDisplay: seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${(seconds / 3600).toFixed(1)} h`,
-      weeklyRecapData: { totalVolume: volume, totalWorkouts: logs.length, totalDuration: seconds, totalCalories: calories }
+      weeklyRecapData: { totalVolume: volume, totalWorkouts: weeklyLogs.length, totalDuration: seconds, totalCalories: calories }
     };
-  }, [workoutLog]);
+  }, [weeklyLogs]);
+
+  const targetDays = userProfile?.weeklyTrainingTarget ?? 3;
+  const weeklyConsistency = { targetDays, daysThisWeek: trainedDays.size, shieldActive: trainedDays.size >= targetDays };
 
   const hasWeeklyData = weeklySessions > 0;
   const isWeeklyRecapUnlocked = timeUntilSunday === null;
   const canOpenWeeklyRecap = hasWeeklyData && isWeeklyRecapUnlocked;
 
   const latestPRs = useMemo(() => {
-    if (!Array.isArray(personalRecords) || personalRecords.length === 0) return [];
+    try {
+      if (!Array.isArray(personalRecords) || personalRecords.length === 0) return [];
 
-    const validRecords = personalRecords.filter(r => r.date);
-    if (validRecords.length === 0) return [];
+      const validRecords = personalRecords.filter(r => r && r.date);
+      if (validRecords.length === 0) return [];
 
-    const sorted = [...validRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
-    const latestDate = sorted[0].date.split('T')[0];
+      const sorted = [...validRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
+      const firstDateStr = String(sorted[0]?.date || '');
+      const latestDate = firstDateStr.includes('T') ? firstDateStr.split('T')[0] : firstDateStr;
 
-    return sorted.filter(r => r.date.split('T')[0] === latestDate);
+      return sorted.filter(r => {
+        const dStr = String(r?.date || '');
+        return (dStr.includes('T') ? dStr.split('T')[0] : dStr) === latestDate;
+      });
+    } catch (e) {
+      console.warn('[Dashboard] Error en latestPRs:', e);
+      return [];
+    }
   }, [personalRecords]);
 
   const prShareData = useMemo(() => {
@@ -380,11 +569,13 @@ const Dashboard = ({ setView }) => {
   const handleSaveWater = async (quantity_ml) => {
     setModal({ type: 'submitting' });
     try {
-      await nutritionService.upsertWaterLog({ log_date: new Date().toISOString().split('T')[0], quantity_ml });
-      if (addXp) addXp(5);
+      const res = await nutritionService.upsertWaterLog({ log_date: new Date().toISOString().split('T')[0], quantity_ml });
+      if (res?.gamification?.length && addGamificationEvents) {
+        addGamificationEvents(res.gamification);
+      }
       addToast(t('Registro actualizado.', { defaultValue: 'Registro actualizado.' }), 'success');
       await fetchDataForDate(new Date().toISOString().split('T')[0]);
-    } catch (error) {
+    } catch {
       addToast(t('Error al guardar.', { defaultValue: 'Error al guardar.' }), 'error');
     } finally {
       setModal({ type: null });
@@ -396,11 +587,27 @@ const Dashboard = ({ setView }) => {
     setIsSharing(true);
 
     try {
+      if (ref.current) {
+        const innerImgs = ref.current.querySelectorAll('img');
+        await Promise.all(
+          Array.from(innerImgs).map(async (img) => {
+            if (img.complete) return;
+            try {
+              if ('decode' in img) {
+                await img.decode();
+              }
+            } catch (_) {}
+          })
+        );
+      }
+
       const blob = await toBlob(ref.current, {
         pixelRatio: 1,
         backgroundColor: '#000000',
         width: 1080,
-        height: 1920
+        height: 1920,
+        skipFonts: true,
+        cacheBust: false
       });
 
       if (!blob) {
@@ -479,11 +686,11 @@ const Dashboard = ({ setView }) => {
   const isAdmin = userProfile?.role === 'admin';
   const referralCount = userProfile?.referralCount || 0;
   const maxReferrals = 3;
-  const displayReferralCount = isAdmin ? maxReferrals : referralCount;
-  const referralProgress = isAdmin ? 100 : Math.min((referralCount / maxReferrals) * 100, 100);
-  const isCampaignComplete = referralCount >= maxReferrals || isAdmin;
+  const _displayReferralCount = isAdmin ? maxReferrals : referralCount;
+  const _referralProgress = isAdmin ? 100 : Math.min((referralCount / maxReferrals) * 100, 100);
+  const _isCampaignComplete = referralCount >= maxReferrals || isAdmin;
   const isCapacitor = !!window.Capacitor?.isNativePlatform?.() || window.location.origin.includes('localhost') && !window.location.port;
-  const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://pro-fitness-glass.zeabur.app') : window.location.origin;
+  const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://profitnessglass.es') : window.location.origin;
   const referralLink = `${baseUrl}/register?ref=${userProfile?.referral_code || ''}`;
 
   const handleCopyReferral = () => {
@@ -491,7 +698,7 @@ const Dashboard = ({ setView }) => {
     addToast(t('¡Enlace copiado al portapapeles!', { defaultValue: '¡Enlace copiado al portapapeles!' }), 'success');
   };
 
-  const handleShareReferral = async () => {
+  const _handleShareReferral = async () => {
     const shareData = {
       title: t('Únete a Pro Fitness Glass', { defaultValue: 'Únete a Pro Fitness Glass' }),
       text: t('¡Regístrate con mi enlace y transformemos nuestro cuerpo juntos!', { defaultValue: '¡Regístrate con mi enlace y transformemos nuestro cuerpo juntos!' }),
@@ -504,11 +711,11 @@ const Dashboard = ({ setView }) => {
           ...shareData,
           dialogTitle: t('Compartir Invitación', { defaultValue: 'Compartir Invitación' })
         });
-      } catch (e) {}
+      } catch { /* ignore */ }
     } else if (navigator.share) {
       try {
         await navigator.share(shareData);
-      } catch (e) {}
+      } catch { /* ignore */ }
     } else {
       handleCopyReferral();
     }
@@ -536,9 +743,50 @@ const Dashboard = ({ setView }) => {
               {userProfile?.username || t('Atleta', { defaultValue: 'Atleta' })}
             </span>
           </div>
-          <p className="text-xs font-bold text-text-secondary uppercase tracking-widest drop-shadow-md">
-            {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </p>
+          <div className="flex flex-wrap items-center gap-2 pt-0.5">
+            <p className="text-xs font-bold text-text-secondary uppercase tracking-widest drop-shadow-md">
+              {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
+            <span className="text-text-muted hidden sm:inline">•</span>
+            <button
+              onClick={() => setShowGymModal(true)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all duration-200 active:scale-95 group shadow-sm text-xs font-semibold ${
+                currentGym
+                  ? 'bg-accent/10 border-accent/30 text-text-primary hover:bg-accent/20 hover:border-accent/50'
+                  : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/10 text-text-secondary hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10'
+              }`}
+              title={currentGym ? `${currentGym.name}${currentGym.address ? ` - ${currentGym.address}` : ''}` : t('Localizar gimnasio', { defaultValue: 'Localizar gimnasio' })}
+            >
+              {currentGym?.logo || currentGym?.image ? (
+                <span className="relative w-4 h-4 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/20 bg-black/5 flex items-center justify-center">
+                  <img
+                    src={currentGym.logo || currentGym.image}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      if (e.currentTarget.nextElementSibling) {
+                        e.currentTarget.nextElementSibling.style.display = 'inline-flex';
+                      }
+                    }}
+                  />
+                  <span style={{ display: 'none' }} className="w-full h-full items-center justify-center">
+                    <MapPin className="w-3 h-3 text-accent" />
+                  </span>
+                </span>
+              ) : (
+                <MapPin className="w-3.5 h-3.5 text-accent shrink-0 group-hover:scale-110 transition-transform" />
+              )}
+              <span className="truncate max-w-[190px] sm:max-w-[280px]">
+                {currentGym?.name || t('Localizar gimnasio', { defaultValue: 'Localizar gimnasio' })}
+              </span>
+              {currentGym?.distanceFormatted && (
+                <span className="text-[10px] text-accent font-bold bg-accent/15 px-1.5 py-0.5 rounded-full hidden xs:inline">
+                  {currentGym.distanceFormatted}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         <GlassCard
@@ -570,16 +818,88 @@ const Dashboard = ({ setView }) => {
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center pl-6 border-l border-glass-border flex-shrink-0">
-            <div className={`transition-all duration-500 mb-1 ${levelData.streak > 0 ? 'text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.6)]' : 'text-text-muted opacity-30'}`}>
-              <Flame size={26} fill={levelData.streak > 0 ? "currentColor" : "none"} />
+          <div className="flex flex-col items-center justify-center pl-5 sm:pl-6 border-l border-glass-border flex-shrink-0">
+            <div className="relative flex items-center justify-center mb-1">
+              <div className={`transition-all duration-500 ${levelData.streak > 0 || weeklyConsistency.daysThisWeek > 0 ? 'text-accent drop-shadow-[0_0_10px_rgba(var(--accent-rgb),0.6)]' : 'text-text-muted opacity-30'}`}>
+                <FaFireFlameCurved size={24} />
+              </div>
+              {weeklyConsistency.shieldActive && (
+                <span
+                  className="absolute -right-2 -bottom-1 w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm"
+                  title="Escudo de Racha Semanal Activo"
+                >
+                  <ShieldCheck size={11} strokeWidth={3} />
+                </span>
+              )}
             </div>
-            <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary">
-              {levelData.streak} {t('DÍAS', { defaultValue: 'DÍAS' })}
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-text-primary">
+                {`${weeklyConsistency.daysThisWeek}/${weeklyConsistency.targetDays} ${t('SEM', { defaultValue: 'SEM' })}`}
+              </span>
+              <button
+                type="button"
+                aria-label={t('Información de la racha', { defaultValue: 'Información de la racha' })}
+                onClick={showStreakTimeRemaining}
+                className="text-text-muted hover:text-accent transition-colors"
+              >
+                <Info size={12} />
+              </button>
+            </div>
+            <span className={`text-[9px] font-bold leading-none mt-0.5 ${weeklyConsistency.shieldActive ? 'text-emerald-500' : 'text-text-muted'}`}>
+              {weeklyConsistency.shieldActive
+                ? t('🛡️ Blindada', { defaultValue: '🛡️ Blindada' })
+                : `${levelData.streak} ${levelData.streak === 1 ? t('día', { defaultValue: 'día' }) : t('días', { defaultValue: 'días' })}`}
             </span>
           </div>
         </GlassCard>
       </div>
+
+            {/* BANNER DE ENTRENAMIENTO EN CURSO */}
+      {activeWorkout && (
+        <div className="mb-8 animate-[fade-in_0.3s_ease-out]">
+          <GlassCard className="glass relative p-5 sm:p-6 rounded-[28px] overflow-hidden border-2 border-accent/40 bg-accent/5 shadow-xl shadow-accent/10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-12 h-12 rounded-[20px] bg-accent text-accent-contrast flex items-center justify-center shrink-0 shadow-lg shadow-accent/30 animate-pulse">
+                  <FaDumbbell size={22} />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-accent bg-accent/15 px-2.5 py-0.5 rounded-full">
+                      {t('Entrenamiento en curso', { defaultValue: 'Entrenamiento en curso' })}
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-black text-text-primary truncate mt-1">
+                    {activeWorkout.routineName || activeWorkout.name || t('Entrenamiento Libre', { defaultValue: 'Entrenamiento Libre' })}
+                  </h3>
+                  <p className="text-xs text-text-secondary truncate mt-0.5">
+                    {t('Tienes una sesión activa sin finalizar. Puedes continuarla o descartarla para empezar otra.', { defaultValue: 'Tienes una sesión activa sin finalizar. Puedes continuarla o descartarla para empezar otra.' })}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setView('workout')}
+                  className="flex-1 sm:flex-none px-5 py-2.5 rounded-2xl bg-accent text-accent-contrast font-bold text-sm shadow-md shadow-accent/25 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <FaPlay size={14} />
+                  <span>{t('Continuar entreno', { defaultValue: 'Continuar entreno' })}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDiscardWorkoutModal(true)}
+                  className="px-4 py-2.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 font-bold text-sm hover:bg-red-500/20 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  title={t('Descartar entrenamiento', { defaultValue: 'Descartar entrenamiento' })}
+                >
+                  <Trash2 size={16} />
+                  <span className="hidden xs:inline">{t('Descartar', { defaultValue: 'Descartar' })}</span>
+                </button>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4 mb-8">
         <GlassCard
@@ -631,7 +951,7 @@ const Dashboard = ({ setView }) => {
                 {latestPRs.length > 1
                   ? t('Pulsa para verlos todos', { defaultValue: 'Pulsa para verlos todos' })
                   : (latestPRs.length === 1
-                    ? t(latestPRs[0].exercise_name || latestPRs[0].exerciseName, { ns: 'exercise_names', defaultValue: latestPRs[0].exercise_name || latestPRs[0].exerciseName })
+                    ? (latestPRs[0].exercise_name || latestPRs[0].exerciseName)
                     : t('Aún sin récords', { defaultValue: 'Aún sin récords' }))}
               </p>
             </div>
@@ -641,28 +961,43 @@ const Dashboard = ({ setView }) => {
 
 
       <div className="mb-10">
-        <DashboardInsights />
+        <DashboardInsights setView={setView} />
       </div>
 
       <div id="tour-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <GlassCard className="glass p-5 flex flex-col justify-between h-full min-h-[160px] rounded-[28px] relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
-          <div className="flex justify-between items-start mb-4">
-            <div className="p-3 rounded-[20px] transition-transform duration-300 group-hover:scale-110 text-accent bg-black/5 dark:bg-white/5">
-              <Dumbbell size={24} />
+        <GlassCard
+          onClick={showStreakTimeRemaining}
+          className="glass p-3 sm:p-5 flex min-w-0 flex-col h-full min-h-[160px] rounded-[28px] relative overflow-hidden group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 cursor-pointer"
+        >
+          <div className="flex items-center justify-between gap-1.5">
+            <div className={`p-2 sm:p-3 shrink-0 rounded-[16px] sm:rounded-[20px] transition-transform duration-300 group-hover:scale-110 ${weeklyConsistency.shieldActive ? 'text-emerald-500 bg-emerald-500/15' : 'text-accent bg-black/5 dark:bg-white/5'}`}>
+              {weeklyConsistency.shieldActive ? <ShieldCheck className="size-4 sm:size-5" /> : <FaDumbbell className="size-4 sm:size-5" />}
             </div>
-            <span className="text-3xl font-black text-text-primary tracking-tight">{weeklySessions}</span>
+            <div className="flex min-w-0 flex-wrap items-baseline justify-end gap-x-1 text-right">
+              <span className="text-xl sm:text-3xl font-black text-text-primary tracking-tight whitespace-nowrap">
+                {weeklyConsistency.daysThisWeek}/{weeklyConsistency.targetDays}
+              </span>
+              <span className="text-xs font-bold text-text-muted">{t('días', { defaultValue: 'días' })}</span>
+            </div>
           </div>
+          <span className={`self-start max-w-full mt-2 px-2 py-1 rounded-full text-[9px] sm:text-[10px] leading-tight font-black uppercase ${
+            weeklyConsistency.shieldActive ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-accent/15 text-accent'
+          }`}>
+            {weeklyConsistency.shieldActive
+              ? t('Escudo activo', { defaultValue: 'Escudo activo' })
+              : t('Meta semanal', { defaultValue: 'Meta semanal' })}
+          </span>
 
-          <div className="flex justify-between items-center w-full overflow-x-auto no-scrollbar gap-1">
-            {weekDays.map((date, i) => {
+          <div className="mt-auto grid grid-cols-7 gap-0.5 sm:gap-1 pt-3">
+            {weekDays.map((day, i) => {
               const dayLetters = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-              const isToday = isSameDay(date, new Date());
-              const hasWorkout = workoutLog.some(log => isSameDay(new Date(log.workout_date), date));
+              const isToday = day === todayKey;
+              const hasWorkout = trainedDays.has(day);
               return (
-                <div key={i} className="flex flex-col items-center gap-1.5 flex-1 min-w-[20px]">
+                <div key={day} className="flex min-w-0 flex-col items-center gap-1.5">
                   <span className={`text-[9px] font-bold ${isToday ? 'text-accent' : 'text-text-muted'}`}>{dayLetters[i]}</span>
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${hasWorkout ? 'bg-accent text-accent-contrast' : 'bg-transparent text-transparent border border-glass-border'}`}>
-                    {hasWorkout && <Check size={10} strokeWidth={4} />}
+                  <div className={`w-full max-w-5 aspect-square rounded-full flex items-center justify-center transition-all ${hasWorkout ? (weeklyConsistency.shieldActive ? 'bg-emerald-500 text-white' : 'bg-accent text-accent-contrast') : 'border border-glass-border'}`}>
+                    {hasWorkout && <Check className="size-2 sm:size-2.5" strokeWidth={4} aria-hidden="true" />}
                   </div>
                 </div>
               );
@@ -674,21 +1009,21 @@ const Dashboard = ({ setView }) => {
           title={t('Meta Calórica', { defaultValue: 'Meta Calórica' })}
           value={targets.calories.toLocaleString()}
           unit="kcal"
-          icon={Target}
+          icon={FaBullseye}
           subtext={t('Objetivo diario', { defaultValue: 'Objetivo diario' })}
           onInfoClick={() => addToast(t('Tu meta ya incluye tus entrenamientos semanales. ¡No comas de más los días que entrenas!', { defaultValue: 'Tu meta ya incluye tus entrenamientos semanales. ¡No comas de más los días que entrenas!' }), 'info')}
         />
         <BentoStatCard
           title={t('Tiempo Activo', { defaultValue: 'Tiempo Activo' })}
           value={weeklyTimeDisplay}
-          icon={Clock}
+          icon={FaClock}
           subtext={t('Total semanal', { defaultValue: 'Total semanal' })}
         />
         <BentoStatCard
           title={t('Quemadas', { defaultValue: 'Quemadas' })}
           value={weeklyCalories.toLocaleString()}
           unit="kcal"
-          icon={Flame}
+          icon={FaFire}
           subtext={t('Total estimado', { defaultValue: 'Total estimado' })}
           onInfoClick={() => addToast(t('Calorías quemadas en entrenamientos. Es un logro visual, no debes sumarlas a tus comidas.', { defaultValue: 'Calorías quemadas en entrenamientos. Es un logro visual, no debes sumarlas a tus comidas.' }), 'info')}
         />
@@ -701,7 +1036,7 @@ const Dashboard = ({ setView }) => {
               <div className="flex items-center justify-between gap-2 mb-8 sm:mb-10 relative z-10">
                 <div className="flex items-center gap-2 sm:gap-4 min-w-0">
                   <div className="p-2 sm:p-3.5 rounded-[20px] text-accent transition-transform bg-black/5 dark:bg-white/5 shrink-0">
-                    <Activity className="w-5 h-5 sm:w-[26px] sm:h-[26px]" />
+                    <FaUtensils className="w-5 h-5 sm:w-[24px] sm:h-[24px]" />
                   </div>
                   <div className="min-w-0">
                     <h2 className="text-lg sm:text-2xl font-bold text-text-primary truncate">{t('Nutrición', { defaultValue: 'Nutrición' })}</h2>
@@ -742,11 +1077,11 @@ const Dashboard = ({ setView }) => {
 
           <section id="tour-quick-cardio">
             <div className="flex items-center gap-3 mb-6 px-1">
-              <Zap size={24} className="text-accent" />
+              <FaHeartPulse size={22} className="text-accent" />
               <h2 className="text-xl font-bold">{t('Cardio Rápido', { defaultValue: 'Cardio Rápido' })}</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
-              {[{ name: 'Cinta', key: 'Cinta', icon: Footprints }, { name: 'Bici', key: 'Bici', icon: Activity }].map(item => (
+              {[{ name: 'Cinta', key: 'Cinta', icon: FaPersonRunning }, { name: 'Bici', key: 'Bici', icon: FaBicycle }].map(item => (
                 <GlassCard key={item.key} className="glass relative p-0 overflow-hidden rounded-[24px] group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 h-36 cursor-pointer">
                   <button onClick={() => { startSimpleWorkout(`Cardio: ${item.name}`); setView('workout'); }} className="w-full h-full flex flex-col items-center justify-center gap-4 transition-all">
                     <div className="p-3.5 rounded-[20px] text-accent group-hover:scale-110 transition-all bg-black/5 dark:bg-white/5">
@@ -772,7 +1107,7 @@ const Dashboard = ({ setView }) => {
           <section id="tour-routines">
             <div className="flex items-center justify-between mb-6 px-1">
               <div className="flex items-center gap-3">
-                <Dumbbell size={24} className="text-accent" />
+                <FaDumbbell size={22} className="text-accent" />
                 <h2 className="text-xl font-bold">{t('Mis Rutinas', { defaultValue: 'Mis Rutinas' })}</h2>
               </div>
               <button onClick={() => setView('routines', { forceTab: 'myRoutines' })} className="p-2 rounded-[20px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-text-primary transition-colors">
@@ -782,7 +1117,8 @@ const Dashboard = ({ setView }) => {
 
             <div className="flex flex-col gap-4">
               {routines.length > 0 ? routines.slice(0, 3).map(routine => {
-                const isCompleted = completedRoutineIdsToday.map(String).includes(String(routine.id));
+                const isCompleted = (completedRoutineIdsToday || []).some(id => String(id) === String(routine.id)) ||
+                  (workoutLog || []).some(log => String(log?.routine_id) === String(routine.id) && isWorkoutDoneToday(log));
                 const isActive = activeWorkout && String(activeWorkout.routineId) === String(routine.id);
 
                 return (
@@ -790,19 +1126,21 @@ const Dashboard = ({ setView }) => {
                     key={routine.id}
                     onClick={async () => {
                       if (isActive) { setView('workout'); return; }
-                      if (!isCompleted) { await startWorkout(routine); setView('workout'); }
+                      if (isCompleted) { setView('routines'); return; }
+                      await startWorkout(routine);
+                      setView('workout');
                     }}
-                    className={`glass relative p-5 rounded-[28px] transition-all duration-300 cursor-pointer group hover:-translate-y-1 hover:shadow-xl ${isActive ? 'ring-2 ring-accent shadow-accent/20' : isCompleted ? 'opacity-70 hover:opacity-100' : ''}`}
+                    className={`glass relative p-5 rounded-[28px] transition-all duration-300 ${isActive ? 'ring-2 ring-accent shadow-accent/20 cursor-pointer' : isCompleted ? 'opacity-80 ring-1 ring-accent/20 cursor-pointer' : 'cursor-pointer group hover:-translate-y-1 hover:shadow-xl'}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4 overflow-hidden">
-                        <div className={`w-12 h-12 rounded-[20px] flex items-center justify-center shrink-0 transition-colors ${isActive ? 'bg-accent/20' : 'bg-black/5 dark:bg-white/5'}`}>
-                          {isActive ? <Clock size={24} className="text-accent" /> : (isCompleted ? <CheckCircle size={24} className="text-green-500" /> : <Play size={24} className={isActive ? 'text-white' : 'text-accent'} fill="currentColor" />)}
+                        <div className={`w-12 h-12 rounded-[20px] flex items-center justify-center shrink-0 transition-colors ${isActive ? 'bg-accent/20' : isCompleted ? 'bg-accent/10 text-accent' : 'bg-black/5 dark:bg-white/5'}`}>
+                          {isActive ? <FaClock size={22} className="text-accent" /> : (isCompleted ? <FaCircleCheck size={22} className="text-accent" /> : <FaPlay size={20} className={isActive ? 'text-white' : 'text-accent'} />)}
                         </div>
                         <div className="min-w-0">
                           <h3 className={`font-bold text-base truncate ${isActive ? 'text-accent' : 'text-text-primary'}`}>{routine.name}</h3>
-                          <p className={`text-xs truncate font-medium mt-0.5 ${isActive ? 'text-accent/80' : 'text-text-secondary'}`}>
-                            {isActive ? t('En curso', { defaultValue: 'En curso' }) : (isCompleted ? t('Completada', { defaultValue: 'Completada' }) : t('Iniciar entrenamiento', { defaultValue: 'Iniciar entrenamiento' }))}
+                          <p className={`text-xs truncate font-medium mt-0.5 ${isActive ? 'text-accent/80' : isCompleted ? 'text-accent' : 'text-text-secondary'}`}>
+                            {isActive ? t('En curso', { defaultValue: 'En curso' }) : (isCompleted ? t('Completada hoy', { defaultValue: 'Completada hoy' }) : t('Iniciar entrenamiento', { defaultValue: 'Iniciar entrenamiento' }))}
                           </p>
                         </div>
                       </div>
@@ -825,7 +1163,7 @@ const Dashboard = ({ setView }) => {
             >
               <div className="flex items-center gap-4 overflow-hidden">
                 <div className="w-12 h-12 rounded-[20px] bg-black/5 dark:bg-white/5 flex items-center justify-center shrink-0 transition-colors">
-                  <ListFilter size={24} className="text-accent" />
+                  <FaListCheck size={22} className="text-accent" />
                 </div>
                 <div className="text-left min-w-0">
                   <h3 className="font-bold text-base text-text-primary truncate">Biblioteca de Ejercicios</h3>
@@ -839,7 +1177,7 @@ const Dashboard = ({ setView }) => {
           <section id="tour-weight">
             <div className="flex items-center justify-between mb-6 px-1">
               <div className="flex items-center gap-3">
-                <TrophyLucide size={24} className="text-accent" />
+                <FaWeightScale size={22} className="text-accent" />
                 <h2 className="text-xl font-bold">{t('Peso', { defaultValue: 'Peso' })}</h2>
               </div>
               <button onClick={() => setShowWeightModal(true)} className="p-2 rounded-[20px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors">
@@ -884,18 +1222,27 @@ const Dashboard = ({ setView }) => {
         </div>
       </div>
 
-      {showXPModal && <XPGuideModal onClose={() => setShowXPModal(false)} />}
+      {showXPModal && <XPGuideModal targetDays={targetDays} onClose={() => setShowXPModal(false)} />}
       {showSugarModal && <SugarTargetModal isOpen={showSugarModal} onClose={() => setShowSugarModal(false)} currentSugar={nutritionTotals.sugar} maxSugar={targets.sugar} />}
       {showWeightModal && <BodyWeightModal onClose={() => setShowWeightModal(false)} onSave={todaysWeightLog ? updateTodayBodyWeight : logBodyWeight} existingLog={todaysWeightLog} />}
       {modal.type === 'water' && <WaterLogModal initialQuantity={waterLog?.quantity_ml || 0} onSave={handleSaveWater} onClose={() => setModal({ type: null })} isLoading={modal.type === 'submitting'} />}
       {modal.type === 'creatine' && <CreatinaTracker onClose={() => { setModal({ type: null }); fetchDataForDate(new Date().toISOString().split('T')[0]); }} selectedDate={new Date().toISOString().split('T')[0]} />}
+      {showGymModal && (
+        <GymLocationModal
+          isOpen={showGymModal}
+          onClose={() => setShowGymModal(false)}
+          currentGym={currentGym}
+          onSave={handleSaveGym}
+          onRemove={handleRemoveGym}
+        />
+      )}
 
       <div style={{ position: 'fixed', left: '-20000px', top: '-20000px' }}>
         <div ref={weeklyRecapRef} style={{ width: '1080px', height: '1920px' }}>
           {showWeeklyRecap && <WeeklyRecapCard weeklyData={weeklyRecapData} userProfile={userProfile} />}
         </div>
         <div ref={prCardRef} style={{ width: '1080px', height: '1920px' }}>
-          {showPRModal && prShareData && <PRShareCard prData={prShareData} userName={userProfile?.username} userImage={userProfile?.profile_image || userProfile?.profile_image_url} />}
+          {showPRModal && prShareData && <PRShareCard prData={prShareData} userName={userProfile?.username} userImage={userProfile?.profile_image_url || userProfile?.avatar || userProfile?.profile_image || userProfile?.avatar_url} />}
         </div>
       </div>
 
@@ -971,7 +1318,7 @@ const Dashboard = ({ setView }) => {
             <div className="flex-1 w-full min-h-0 my-4 flex items-center justify-center pointer-events-none">
               <ScaleToFit width={1080} height={1920}>
                 <div className="w-[1080px] h-[1920px] rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 pointer-events-auto">
-                  <PRShareCard prData={prShareData} userName={userProfile?.username} userImage={userProfile?.profile_image || userProfile?.profile_image_url} />
+                  <PRShareCard prData={prShareData} userName={userProfile?.username} userImage={userProfile?.profile_image_url || userProfile?.avatar || userProfile?.profile_image || userProfile?.avatar_url} />
                 </div>
               </ScaleToFit>
             </div>
@@ -982,9 +1329,9 @@ const Dashboard = ({ setView }) => {
                   <span className="font-bold text-xs sm:text-sm whitespace-nowrap">{t('Ver Lista', { defaultValue: 'Ver Lista' })}</span>
                 </button>
               )}
-              <button onClick={handleSharePR} disabled={isSharing} className="glass bg-white/10 text-white px-5 md:px-8 py-3 md:py-4 rounded-full flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 border border-white/20">
-                {isSharing ? <Loader2 size={20} className="animate-spin shrink-0" /> : <Share2 size={20} className="shrink-0" />}
-                <span className="font-black text-sm sm:text-lg tracking-tight whitespace-nowrap">{t('Compartir Logro', { defaultValue: 'Compartir Logro' })}</span>
+              <button onClick={handleSharePR} disabled={isSharing} className="py-3 px-6 rounded-full bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] text-white flex items-center gap-2 shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50">
+                {isSharing ? <Loader2 size={20} className="animate-spin shrink-0" /> : <FaInstagram size={20} className="shrink-0" />}
+                <span className="font-black text-sm sm:text-base tracking-tight whitespace-nowrap">{t('Compartir en Stories', { defaultValue: 'Compartir en Stories' })}</span>
               </button>
             </div>
           </div>
@@ -1023,6 +1370,19 @@ const Dashboard = ({ setView }) => {
             </div>
           </div>
         </div>
+      )}
+
+            {showDiscardWorkoutModal && (
+        <ConfirmationModal
+          message={t('¿Seguro que deseas descartar el entrenamiento en curso? Perderás el progreso de la sesión actual.', { defaultValue: '¿Seguro que deseas descartar el entrenamiento en curso? Perderás el progreso de la sesión actual.' })}
+          confirmText={t('Descartar', { defaultValue: 'Descartar' })}
+          onConfirm={() => {
+            stopWorkout();
+            setShowDiscardWorkoutModal(false);
+            addToast(t('Entrenamiento descartado.', { defaultValue: 'Entrenamiento descartado.' }), 'info');
+          }}
+          onCancel={() => setShowDiscardWorkoutModal(false)}
+        />
       )}
 
       {showExerciseLibrary && (

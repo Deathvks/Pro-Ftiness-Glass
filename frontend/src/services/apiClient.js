@@ -2,15 +2,28 @@
 import useAppStore from '../store/useAppStore';
 import { Capacitor } from '@capacitor/core';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const CANONICAL_API_BASE_URL = 'https://profitnessglass.es/api';
 
-if (!API_BASE_URL) {
-    throw new Error('FATAL ERROR: La variable de entorno VITE_API_BASE_URL no está definida. Por favor, configura esta variable en tu entorno de despliegue (ej: Zeabur) apuntando a la URL de tu backend.');
-}
+const resolveApiBaseUrl = () => {
+    const envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+    const isLocalDev = typeof window !== 'undefined' && 
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
+        !Capacitor.isNativePlatform();
+
+    if (isLocalDev && envUrl && !envUrl.includes('zeabur')) {
+        return envUrl;
+    }
+    if (!envUrl || envUrl.includes('localhost') || envUrl.includes('10.0.2.2') || envUrl.includes('zeabur')) {
+        return CANONICAL_API_BASE_URL;
+    }
+    return envUrl;
+};
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 const apiClient = async (endpoint, options = {}) => {
     const token = useAppStore.getState().token;
-    const { body, ...customConfig } = options;
+    const { body, queueWhenOffline = true, ...customConfig } = options;
 
     // Headers por defecto.
     const headers = { ...customConfig.headers };
@@ -38,6 +51,7 @@ const apiClient = async (endpoint, options = {}) => {
 
     const config = {
         method: body ? 'POST' : 'GET',
+        credentials: 'include',
         ...customConfig,
         headers,
     };
@@ -57,7 +71,8 @@ const apiClient = async (endpoint, options = {}) => {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos de timeout para tareas pesadas
+    const requestTimeout = customConfig.timeout || 12000;
+    const timeoutId = setTimeout(() => controller.abort(), requestTimeout);
     config.signal = controller.signal;
 
     try {
@@ -72,7 +87,7 @@ const apiClient = async (endpoint, options = {}) => {
                 try {
                     const maintenanceData = await response.json();
                     if (maintenanceData.error === 'maintenance') {
-                        const maintenanceErr = new Error(maintenanceData.message || '🔧 Estamos en mantenimiento. Volvemos enseguida.');
+                        const maintenanceErr = new Error(maintenanceData.message || 'Estamos en mantenimiento. Volvemos enseguida.');
                         maintenanceErr.status = 503;
                         maintenanceErr.isMaintenance = true;
                         throw maintenanceErr;
@@ -82,9 +97,32 @@ const apiClient = async (endpoint, options = {}) => {
                 }
             }
 
-            if (response.status === 401 && !endpoint.includes('/auth/login')) {
-                useAppStore.getState().handleSessionExpiry();
-                // --- CAMBIO: Interrumpir flujo inmediatamente ---
+            // Solo expirar la sesión si la respuesta corresponde al token que
+            // sigue activo. Peticiones antiguas pueden responder después de
+            // cerrar sesión o iniciar una sesión nueva.
+            if (
+                response.status === 401 &&
+                token &&
+                useAppStore.getState().token === token &&
+                !endpoint.startsWith('/auth/')
+            ) {
+                const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+                const isPublic = currentPath.startsWith('/noticias') ||
+                                 currentPath === '/calculadora-1rm' ||
+                                 currentPath === '/calculadora-calorias-macros' ||
+                                 currentPath === '/ejercicios' ||
+                                 currentPath === '/sobre-nosotros' ||
+                                 currentPath === '/faq' ||
+                                 currentPath === '/privacy' ||
+                                 currentPath === '/terms' ||
+                                 currentPath === '/aviso-legal' ||
+                                 currentPath === '/legal' ||
+                                 currentPath.startsWith('/share/');
+                if (isPublic) {
+                    useAppStore.getState().handleLogout();
+                } else {
+                    useAppStore.getState().handleSessionExpiry();
+                }
                 throw new Error('Sesión expirada');
             }
 
@@ -128,7 +166,6 @@ const apiClient = async (endpoint, options = {}) => {
         return response.json();
     } catch (error) {
         clearTimeout(timeoutId);
-
         const errMessage = (error.message || '').toLowerCase();
         const isNetworkFailure = 
             error.name === 'AbortError' || 
@@ -138,7 +175,7 @@ const apiClient = async (endpoint, options = {}) => {
             errMessage.includes('network request failed');
 
         // Interceptamos fallos de red (Offline o Timeout por red lentísima) para peticiones de escritura (POST, PUT, DELETE, etc.)
-        if (isNetworkFailure && config.method !== 'GET') {
+        if (isNetworkFailure && config.method !== 'GET' && queueWhenOffline) {
             // No guardamos FormData en la cola por complejidad de serialización (imágenes, etc.)
             const isFormData = body instanceof FormData;
 

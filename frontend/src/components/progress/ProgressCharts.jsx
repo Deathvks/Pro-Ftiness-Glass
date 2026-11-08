@@ -26,15 +26,21 @@ import {
     ArrowDownRight,
     Target,
     Ruler,
-    Sparkles
+    Sparkles,
+    AlertTriangle,
+    CheckCircle2,
+    ChevronRight
 } from 'lucide-react';
 import GlassCard from '../GlassCard';
 import Spinner from '../Spinner';
+import useAppStore from '../../store/useAppStore';
+import { getExerciseHistorySessions, diagnoseExerciseTrend } from '../../utils/smartProgressionCoach';
+import SmartExerciseCoachModal from '../Workout/SmartExerciseCoachModal';
 
 // --- FILTRO DE PERIODOS (APPLE PILL SEGMENTED CONTROL) ---
 export const PeriodFilter = ({ periods = ['7D', '1M', '3M', '6M', '1A', 'Todo'], activePeriod, onChange }) => {
     return (
-        <div className="flex items-center gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-full ring-1 ring-black/5 dark:ring-white/10 shrink-0">
+        <div className="flex items-center gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-full ring-1 ring-black/5 dark:ring-white/10 shrink-0 max-w-full overflow-x-auto no-scrollbar">
             {periods.map((p) => {
                 const isActive = activePeriod === p;
                 return (
@@ -42,7 +48,7 @@ export const PeriodFilter = ({ periods = ['7D', '1M', '3M', '6M', '1A', 'Todo'],
                         key={p}
                         type="button"
                         onClick={() => onChange(p)}
-                        className={`px-2.5 py-1 text-[11px] font-black rounded-full transition-all duration-200 outline-none ${
+                        className={`px-2.5 py-1 text-[11px] font-black rounded-full transition-all duration-200 outline-none whitespace-nowrap ${
                             isActive
                                 ? 'bg-accent text-accent-contrast shadow-sm scale-[1.03]'
                                 : 'text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/5'
@@ -56,26 +62,48 @@ export const PeriodFilter = ({ periods = ['7D', '1M', '3M', '6M', '1A', 'Todo'],
     );
 };
 
-// Helper para filtrar datos por periodo
+// Helper para filtrar datos por periodo (corte por fecha de calendario)
 export const filterByPeriod = (data, period, dateKey = 'date') => {
-    if (!data || !data.length || period === 'Todo') return data;
-    const now = Date.now();
-    let days = 30;
-    if (period === '7D') days = 7;
-    else if (period === '14D') days = 14;
-    else if (period === '1M') days = 30;
-    else if (period === '3M') days = 90;
-    else if (period === '6M') days = 180;
-    else if (period === '1A') days = 365;
+    if (!data || !data.length || period === 'Todo') return data || [];
 
-    const cutoff = now - days * 24 * 60 * 60 * 1000;
-    const filtered = data.filter((item) => {
-        const val = item[dateKey] ?? item.timestamp ?? item.date;
-        const time = typeof val === 'number' ? val : new Date(val).getTime();
+    // Inicio del día de corte (00:00:00.000)
+    const cutoffDate = new Date();
+    cutoffDate.setHours(0, 0, 0, 0);
+
+    if (period === '7D') {
+        cutoffDate.setDate(cutoffDate.getDate() - 7);
+    } else if (period === '14D') {
+        cutoffDate.setDate(cutoffDate.getDate() - 14);
+    } else if (period === '1M') {
+        cutoffDate.setMonth(cutoffDate.getMonth() - 1);
+    } else if (period === '3M') {
+        cutoffDate.setMonth(cutoffDate.getMonth() - 3);
+    } else if (period === '6M') {
+        cutoffDate.setMonth(cutoffDate.getMonth() - 6);
+    } else if (period === '1A') {
+        cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
+    } else {
+        return data;
+    }
+
+    const cutoff = cutoffDate.getTime();
+
+    return data.filter((item) => {
+        if (!item) return false;
+        const val = item[dateKey] ?? item.timestamp ?? item.date ?? item.log_date ?? item.workout_date;
+        if (val === undefined || val === null) return false;
+
+        let time;
+        if (typeof val === 'number') {
+            time = val;
+        } else if (typeof val === 'string' && !isNaN(Number(val)) && Number(val) > 1000000000) {
+            time = Number(val);
+        } else {
+            time = new Date(val).getTime();
+        }
+
         return !isNaN(time) && time >= cutoff;
     });
-
-    return filtered.length > 0 ? filtered : data;
 };
 
 // --- TOOLTIP FLOTANTE LIQUID GLASS ---
@@ -84,7 +112,8 @@ export const ModernTooltip = ({ active, payload, label }) => {
     const rawDate = payload[0]?.payload?.date || payload[0]?.payload?.timestamp || label;
     let formattedDate = label;
     if (rawDate) {
-        const d = new Date(rawDate);
+        const num = Number(rawDate);
+        const d = !isNaN(num) && num > 1000000000 ? new Date(num) : new Date(rawDate);
         if (!isNaN(d.getTime())) {
             formattedDate = d.toLocaleDateString('es-ES', {
                 weekday: 'short',
@@ -128,9 +157,15 @@ export const ModernTooltip = ({ active, payload, label }) => {
 };
 
 // --- KPI STAT BADGE (APPLE HEALTH STYLE) ---
-const StatBadge = ({ label, value, unit, trend, isPositive, icon: Icon }) => {
+const StatBadge = ({ label, value, unit, trend, isPositive, icon: Icon, onClick, title }) => {
     return (
-        <div className="p-3 sm:p-3.5 rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 flex flex-col justify-between min-w-[110px] sm:min-w-[130px] flex-1">
+        <div 
+            onClick={onClick}
+            title={title}
+            className={`p-3 sm:p-3.5 rounded-[20px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 flex flex-col justify-between min-w-[110px] sm:min-w-[130px] flex-1 ${
+                onClick ? 'cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 active:scale-[0.98] transition-all' : ''
+            }`}
+        >
             <div className="flex items-center justify-between gap-1 mb-1">
                 <span className="text-[10px] font-black uppercase tracking-wider text-text-muted truncate">
                     {label}
@@ -178,6 +213,7 @@ const ChartBase = ({
     activePeriod,
     onPeriodChange,
     kpis,
+    alertsContent,
     headerExtra,
     emptyMessage = 'Sin datos suficientes',
     children
@@ -212,10 +248,17 @@ const ChartBase = ({
 
         {/* Tarjetas KPI Hero (Apple Health Style) */}
         {kpis && kpis.length > 0 && !isLoading && data?.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 mb-4">
                 {kpis.map((kpi, idx) => (
                     <StatBadge key={idx} {...kpi} />
                 ))}
+            </div>
+        )}
+
+        {/* Alertas Inteligentes / Diagnóstico (Apple Health Pills) */}
+        {alertsContent && !isLoading && data?.length > 0 && (
+            <div className="mb-4">
+                {alertsContent}
             </div>
         )}
 
@@ -225,10 +268,19 @@ const ChartBase = ({
                 <Spinner size={32} />
             </div>
         ) : !data?.length ? (
-            <div className="flex flex-col justify-center items-center h-60 sm:h-72 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 shadow-inner text-center p-6 gap-2">
+            <div className="flex flex-col justify-center items-center h-60 sm:h-72 bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 shadow-inner text-center p-6 gap-3">
                 <span className="text-text-muted text-sm font-semibold bg-bg-primary px-4 py-2 rounded-full ring-1 ring-black/5 dark:ring-white/10">
                     {emptyMessage}
                 </span>
+                {activePeriod && activePeriod !== 'Todo' && onPeriodChange && (
+                    <button
+                        type="button"
+                        onClick={() => onPeriodChange('Todo')}
+                        className="text-xs font-bold text-accent hover:underline active:scale-95 transition-transform"
+                    >
+                        Ver todo el historial
+                    </button>
+                )}
             </div>
         ) : (
             <div className="h-60 sm:h-72 w-full [&_*]:!outline-none pt-2">
@@ -260,7 +312,8 @@ const grid = (
 
 const formatTick = (t) => {
     if (!t) return '';
-    const d = new Date(t);
+    const num = Number(t);
+    const d = !isNaN(num) && num > 1000000000 ? new Date(num) : new Date(t);
     return isNaN(d.getTime()) ? '' : d.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
 };
 
@@ -326,12 +379,16 @@ const ReferencePill = ({ viewBox, text, stroke = '#f59e0b', color = '#f59e0b', p
 // ============================================================
 // 1. GRÁFICA DE PESO CORPORAL (APPLE HEALTH STYLE)
 // ============================================================
-export const BodyWeightChart = ({ data, axisColor }) => {
+export const BodyWeightChart = ({ data, axisColor, compactHeading = false }) => {
     const [period, setPeriod] = useState('3M');
 
     const sortedData = useMemo(() => {
         if (!data || !data.length) return [];
-        return [...data].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        return [...data].sort((a, b) => {
+            const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime() || 0;
+            const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime() || 0;
+            return timeA - timeB;
+        });
     }, [data]);
 
     const filteredData = useMemo(() => {
@@ -350,19 +407,34 @@ export const BodyWeightChart = ({ data, axisColor }) => {
         const max = Math.max(...weights);
         const avg = Math.round((weights.reduce((a, b) => a + b, 0) / weights.length) * 10) / 10;
 
-        return { current, start, delta, min, max, avg };
+        return { current, start, delta, min, max, avg, count: weights.length };
     }, [filteredData]);
 
     const ax = axisConfig(axisColor);
 
     return (
         <ChartBase
-            title="Evolución de Peso Corporal"
+            title={compactHeading ? 'Evolución en el tiempo' : 'Evolución de Peso Corporal'}
             icon={Activity}
             data={filteredData}
             periods={['7D', '1M', '3M', '6M', '1A', 'Todo']}
             activePeriod={period}
             onPeriodChange={setPeriod}
+            emptyMessage={
+                period === 'Todo'
+                    ? 'Sin registros de peso'
+                    : `Sin registros en los últimos ${
+                          period === '7D'
+                              ? '7 días'
+                              : period === '1M'
+                              ? '30 días'
+                              : period === '3M'
+                              ? '3 meses'
+                              : period === '6M'
+                              ? '6 meses'
+                              : '12 meses'
+                      }`
+            }
             kpis={
                 stats
                     ? [
@@ -371,9 +443,11 @@ export const BodyWeightChart = ({ data, axisColor }) => {
                               value: stats.current,
                               unit: 'kg',
                               trend:
-                                  stats.delta !== 0
-                                      ? `${stats.delta > 0 ? '+' : ''}${stats.delta} kg`
-                                      : 'Estable',
+                                  stats.count > 1
+                                      ? stats.delta !== 0
+                                          ? `${stats.delta > 0 ? '+' : ''}${stats.delta} kg (${period})`
+                                          : `Estable (${period})`
+                                      : '1 registro',
                               isPositive: stats.delta <= 0,
                               icon: Activity
                           },
@@ -426,6 +500,7 @@ export const BodyWeightChart = ({ data, axisColor }) => {
                     strokeWidth={3.5}
                     fill="url(#colorPesoApple)"
                     filter="url(#glowPeso)"
+                    dot={{ r: 3.5, strokeWidth: 2, fill: '#10b981', stroke: '#fff' }}
                     activeDot={{ r: 7, strokeWidth: 2.5, stroke: '#fff', fill: '#10b981' }}
                     unit="kg"
                 />
@@ -454,148 +529,331 @@ export const BodyWeightChart = ({ data, axisColor }) => {
 // ============================================================
 // 2. GRÁFICA DE EJERCICIOS CON PR Y 1RM (APPLE FITNESS STYLE)
 // ============================================================
-export const ExerciseChart = ({ data, axisColor, exerciseName }) => {
+export const ExerciseChart = ({ data, axisColor, exerciseName, rawExerciseName }) => {
     const [period, setPeriod] = useState('3M');
+    const [showSmartCoachModal, setShowSmartCoachModal] = useState(false);
+
+    const { workoutLog, userProfile, exercises } = useAppStore((state) => ({
+        workoutLog: state.workoutLog,
+        userProfile: state.userProfile,
+        exercises: state.allExercises || []
+    }));
+
+    const effectiveRawName = rawExerciseName || exerciseName;
+
+    const sessions = useMemo(() => {
+        if (!effectiveRawName || !workoutLog) return [];
+        return getExerciseHistorySessions(effectiveRawName, workoutLog);
+    }, [effectiveRawName, workoutLog]);
+
+    const trend = useMemo(() => {
+        if (!sessions || sessions.length === 0) return null;
+        return diagnoseExerciseTrend(sessions);
+    }, [sessions]);
+
+    const coachExerciseObject = useMemo(() => {
+        const raw = effectiveRawName;
+        const match = exercises.find(
+            (e) => e.name?.toLowerCase().trim() === raw?.toLowerCase().trim()
+        );
+        return {
+            ...(match || {}),
+            name: raw,
+            displayName: exerciseName || raw,
+            sets: match?.sets || 3,
+            reps: match?.reps || '10'
+        };
+    }, [effectiveRawName, exerciseName, exercises]);
 
     const sortedData = useMemo(() => {
         if (!data || !data.length) return [];
-        return [...data].sort((a, b) => (a.date || 0) - (b.date || 0));
+        return [...data].sort((a, b) => {
+            const timeA = typeof a.date === 'number' ? a.date : new Date(a.date).getTime() || 0;
+            const timeB = typeof b.date === 'number' ? b.date : new Date(b.date).getTime() || 0;
+            return timeA - timeB;
+        });
     }, [data]);
 
     const filteredData = useMemo(() => {
         return filterByPeriod(sortedData, period, 'date');
     }, [sortedData, period]);
 
+    // PR y 1RM históricos calculados sobre TODO el historial registrado del ejercicio
+    const allTimePR = useMemo(() => {
+        if (!data || !data.length) return 0;
+        return Math.max(...data.map((d) => parseFloat(d['Peso Máximo (kg)']) || 0), 0);
+    }, [data]);
+
+    const allTime1RM = useMemo(() => {
+        if (!data || !data.length) return 0;
+        return Math.max(...data.map((d) => parseFloat(d['1RM Estimado (kg)']) || 0), 0);
+    }, [data]);
+
     const stats = useMemo(() => {
         if (!filteredData.length) return null;
-        const maxWeights = filteredData.map((d) => d['Peso Máximo (kg)'] || 0);
-        const est1RMs = filteredData.map((d) => d['1RM Estimado (kg)'] || 0);
+        const maxWeights = filteredData.map((d) => parseFloat(d['Peso Máximo (kg)']) || 0);
+        const est1RMs = filteredData.map((d) => parseFloat(d['1RM Estimado (kg)']) || 0);
 
         const currentWeight = maxWeights[maxWeights.length - 1] || 0;
-        const prWeight = Math.max(...maxWeights, 0);
-        const max1RM = Math.max(...est1RMs, 0);
         const firstWeight = maxWeights[0] || 0;
         const gain = Math.round((currentWeight - firstWeight) * 10) / 10;
+        const periodMax1RM = Math.max(...est1RMs, 0);
 
-        return { currentWeight, prWeight, max1RM, gain };
-    }, [filteredData]);
+        return { currentWeight, prWeight: allTimePR, max1RM: allTime1RM, gain, periodMax1RM, count: filteredData.length };
+    }, [filteredData, allTimePR, allTime1RM]);
+
+    const alerts = useMemo(() => {
+        if (!trend && (!sessions || sessions.length === 0)) return [];
+        const list = [];
+
+        // 1. Detección de Estancamiento / Mismo Peso
+        if (trend?.status === 'stagnant') {
+            list.push({
+                id: 'stagnant',
+                icon: AlertTriangle,
+                badge: 'Mismo peso (estancado)',
+                title: trend.weeksStagnant > 1
+                    ? `Llevas ${trend.weeksStagnant} semanas con el mismo peso`
+                    : 'Llevas varias sesiones con el mismo peso',
+                subtitle: 'Toca aquí para ver la estrategia recomendada y volver a subir',
+                colorClass: 'bg-amber-500/10 hover:bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-600 dark:text-amber-400',
+                badgeClass: 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+            });
+        }
+        // 2. Detección de Fatiga / Descenso de Rendimiento
+        else if (trend?.status === 'decreasing') {
+            list.push({
+                id: 'fatigue',
+                icon: AlertTriangle,
+                badge: 'Aviso de descanso',
+                title: `Fatiga detectada (${trend.badgeText})`,
+                subtitle: 'Toca aquí para ver la pauta de recuperación y ajuste de cargas',
+                colorClass: 'bg-rose-500/10 hover:bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-600 dark:text-rose-400',
+                badgeClass: 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
+            });
+        }
+        // 3. Detección de En Racha / Progresión Activa
+        else if (trend?.status === 'progressing') {
+            list.push({
+                id: 'streak',
+                icon: CheckCircle2,
+                badge: '¡En racha positiva!',
+                title: `Fuerza en aumento (+${Math.abs(trend.pctChange)}%)`,
+                subtitle: 'Toca aquí para ver tu siguiente meta de sobrecarga sugerida',
+                colorClass: 'bg-emerald-500/10 hover:bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-600 dark:text-emerald-400',
+                badgeClass: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+            });
+        }
+        // 4. Si la ganancia es constante en el periodo (stats?.gain === 0) y hay varias sesiones
+        else if (stats && stats.gain === 0 && sessions.length >= 2) {
+            list.push({
+                id: 'constant_weight',
+                icon: AlertTriangle,
+                badge: 'Misma carga',
+                title: `Manteniendo ${stats.currentWeight} kg`,
+                subtitle: 'Toca aquí para ver recomendaciones de ajuste y progreso',
+                colorClass: 'bg-amber-500/10 hover:bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-600 dark:text-amber-400',
+                badgeClass: 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+            });
+        }
+        // 5. Calibrando / Estableciendo base inicial
+        else {
+            list.push({
+                id: 'calibration',
+                icon: Target,
+                badge: 'Pauta Inteligente',
+                title: 'Recomendaciones según tu objetivo',
+                subtitle: 'Toca para ver pautas calculadas de fuerza, volumen e intensidad',
+                colorClass: 'bg-accent/10 hover:bg-accent/15 ring-1 ring-accent/30 text-accent',
+                badgeClass: 'bg-accent/20 text-accent'
+            });
+        }
+
+        return list;
+    }, [trend, stats, sessions]);
 
     const ax = axisConfig(axisColor);
 
     return (
-        <ChartBase
-            title={`Progreso: ${exerciseName || 'Ejercicio'}`}
-            icon={TrendingUp}
-            data={filteredData}
-            periods={['1M', '3M', '6M', '1A', 'Todo']}
-            activePeriod={period}
-            onPeriodChange={setPeriod}
-            headerExtra={
-                <div className="flex items-center gap-2 flex-wrap text-[10px] font-bold text-text-muted bg-black/5 dark:bg-white/5 px-2.5 py-1.5 rounded-full ring-1 ring-black/5 dark:ring-white/10">
-                    <span className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-1 bg-[#818cf8] rounded-full inline-block" />
-                        Peso Real
-                    </span>
-                    <span className="flex items-center gap-1.5 text-rose-500">
-                        <span className="w-2.5 h-0.5 border-b-2 border-dashed border-[#f43f5e] inline-block" />
-                        1RM Estimado
-                    </span>
-                    <span className="flex items-center gap-1.5 text-amber-500">
-                        <span className="w-2.5 h-0.5 border-b-2 border-dotted border-amber-500 inline-block" />
-                        Récord PR
-                    </span>
-                </div>
-            }
-            kpis={
-                stats
-                    ? [
-                          {
-                              label: 'Última Carga',
-                              value: stats.currentWeight,
-                              unit: 'kg',
-                              trend:
-                                  stats.gain > 0
-                                      ? `+${stats.gain} kg`
-                                      : stats.gain < 0
-                                      ? `${stats.gain} kg`
-                                      : 'Constante',
-                              isPositive: stats.gain >= 0,
-                              icon: TrendingUp
-                          },
-                          {
-                              label: 'Récord Personal (PR)',
-                              value: stats.prWeight,
-                              unit: 'kg',
-                              trend: 'Récord histórico',
-                              isPositive: true,
-                              icon: Trophy
-                          },
-                          {
-                              label: '1RM Estimado Máx',
-                              value: stats.max1RM,
-                              unit: 'kg',
-                              trend: 'Fuerza teórica',
-                              icon: Award
-                          }
-                      ]
-                    : null
-            }
-        >
-            <LineChart data={filteredData} margin={{ top: 30, right: 14, left: -20, bottom: 0 }}>
-                <defs>
-                    <filter id="glowExercise" x="-20%" y="-20%" width="140%" height="140%">
-                        <feGaussianBlur stdDeviation="2.5" result="blur" />
-                        <feMerge>
-                            <feMergeNode in="blur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                    </filter>
-                </defs>
-                {grid}
-                <XAxis dataKey="date" tickFormatter={formatTick} {...ax} />
-                <YAxis domain={['dataMin - 2', 'dataMax + 5']} {...ax} />
-                <Tooltip content={<ModernTooltip />} cursor={{ stroke: 'rgba(129, 140, 248, 0.3)', strokeWidth: 1.5, strokeDasharray: '4 4' }} />
-                <Line
-                    type="monotone"
-                    dataKey="Peso Máximo (kg)"
-                    stroke="#818cf8"
-                    strokeWidth={3.5}
-                    filter="url(#glowExercise)"
-                    dot={<PRCustomDot maxWeight={stats?.prWeight} />}
-                    activeDot={{ r: 7, strokeWidth: 2, stroke: '#fff', fill: '#818cf8' }}
-                    name="Peso Máximo"
-                    unit="kg"
-                />
-                <Line
-                    type="monotone"
-                    dataKey="1RM Estimado (kg)"
-                    stroke="#f43f5e"
-                    strokeWidth={2.5}
-                    strokeDasharray="5 5"
-                    dot={{ r: 2.5, strokeWidth: 0, fill: '#f43f5e' }}
-                    activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff', fill: '#f43f5e' }}
-                    name="1RM Estimado"
-                    unit="kg"
-                />
-                {stats?.prWeight > 0 && (
-                    <ReferenceLine
-                        y={stats.prWeight}
-                        stroke="rgba(245, 158, 11, 0.55)"
-                        strokeDasharray="4 4"
-                        strokeWidth={1.5}
-                        label={(props) => (
-                            <ReferencePill
-                                {...props}
-                                position="left"
-                                text={`PR: ${stats.prWeight} kg`}
-                                stroke="#f59e0b"
-                                color="#f59e0b"
-                            />
-                        )}
+        <>
+            <ChartBase
+                title={`Progreso: ${exerciseName || 'Ejercicio'}`}
+                icon={TrendingUp}
+                data={filteredData}
+                periods={['1M', '3M', '6M', '1A', 'Todo']}
+                activePeriod={period}
+                onPeriodChange={setPeriod}
+                emptyMessage={
+                    period === 'Todo'
+                        ? 'Sin registros para este ejercicio'
+                        : `Sin registros en los últimos ${
+                              period === '1M'
+                                  ? '30 días'
+                                  : period === '3M'
+                                  ? '3 meses'
+                                  : period === '6M'
+                                  ? '6 meses'
+                                  : '12 meses'
+                          }`
+                }
+                headerExtra={
+                    <div className="flex items-center gap-2 flex-wrap text-[10px] font-bold text-text-muted bg-black/5 dark:bg-white/5 px-2.5 py-1.5 rounded-full ring-1 ring-black/5 dark:ring-white/10">
+                        <span className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-1 bg-[#818cf8] rounded-full inline-block" />
+                            Peso Real
+                        </span>
+                        <span className="flex items-center gap-1.5 text-rose-500">
+                            <span className="w-2.5 h-0.5 border-b-2 border-dashed border-[#f43f5e] inline-block" />
+                            1RM Estimado
+                        </span>
+                        <span className="flex items-center gap-1.5 text-amber-500">
+                            <span className="w-2.5 h-0.5 border-b-2 border-dotted border-amber-500 inline-block" />
+                            Récord PR
+                        </span>
+                    </div>
+                }
+                kpis={
+                    stats
+                        ? [
+                              {
+                                  label: 'Última Carga',
+                                  value: stats.currentWeight,
+                                  unit: 'kg',
+                                  trend:
+                                      stats.count > 1
+                                          ? stats.gain > 0
+                                              ? `+${stats.gain} kg (${period})`
+                                              : stats.gain < 0
+                                              ? `${stats.gain} kg (${period})`
+                                              : `Constante (${period})`
+                                          : '1 sesión',
+                                  isPositive: stats.gain >= 0,
+                                  icon: TrendingUp,
+                                  onClick: () => setShowSmartCoachModal(true),
+                                  title: 'Toca para ver recomendaciones inteligentes para este ejercicio'
+                              },
+                              {
+                                  label: 'Récord Personal (PR)',
+                                  value: allTimePR,
+                                  unit: 'kg',
+                                  trend: 'Récord histórico',
+                                  isPositive: true,
+                                  icon: Trophy
+                              },
+                              {
+                                  label: '1RM Estimado Máx',
+                                  value: allTime1RM,
+                                  unit: 'kg',
+                                  trend: 'Récord histórico',
+                                  icon: Award
+                              }
+                          ]
+                        : null
+                }
+                alertsContent={
+                    alerts.length > 0 ? (
+                        <div className="flex flex-col gap-2">
+                            {alerts.map((alert) => {
+                                const AlertIcon = alert.icon;
+                                return (
+                                    <button
+                                        key={alert.id}
+                                        type="button"
+                                        onClick={() => setShowSmartCoachModal(true)}
+                                        className={`w-full p-3.5 sm:p-4 rounded-[22px] text-left transition-all active:scale-[0.99] cursor-pointer shadow-sm flex items-center justify-between gap-3 group border-none ${alert.colorClass}`}
+                                    >
+                                        <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+                                            <div className="p-2 sm:p-2.5 rounded-[14px] bg-black/5 dark:bg-white/10 shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                                                <AlertIcon size={18} strokeWidth={2.5} className="shrink-0" />
+                                            </div>
+                                            <div className="min-w-0 space-y-0.5">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${alert.badgeClass}`}>
+                                                        {alert.badge}
+                                                    </span>
+                                                </div>
+                                                <h4 className="text-xs sm:text-sm font-black text-text-primary leading-tight truncate">
+                                                    {alert.title}
+                                                </h4>
+                                                <p className="text-[11px] text-text-secondary font-medium leading-snug truncate">
+                                                    {alert.subtitle}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <ChevronRight size={16} className="text-text-muted group-hover:text-text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    ) : null
+                }
+            >
+                <LineChart data={filteredData} margin={{ top: 30, right: 14, left: -20, bottom: 0 }}>
+                    <defs>
+                        <filter id="glowExercise" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="2.5" result="blur" />
+                            <feMerge>
+                                <feMergeNode in="blur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    {grid}
+                    <XAxis dataKey="date" tickFormatter={formatTick} {...ax} />
+                    <YAxis domain={['dataMin - 2', 'dataMax + 5']} {...ax} />
+                    <Tooltip content={<ModernTooltip />} cursor={{ stroke: 'rgba(129, 140, 248, 0.3)', strokeWidth: 1.5, strokeDasharray: '4 4' }} />
+                    <Line
+                        type="monotone"
+                        dataKey="Peso Máximo (kg)"
+                        stroke="#818cf8"
+                        strokeWidth={3.5}
+                        filter="url(#glowExercise)"
+                        dot={<PRCustomDot maxWeight={allTimePR} />}
+                        activeDot={{ r: 7, strokeWidth: 2, stroke: '#fff', fill: '#818cf8' }}
+                        name="Peso Máximo"
+                        unit="kg"
                     />
-                )}
-            </LineChart>
-        </ChartBase>
+                    <Line
+                        type="monotone"
+                        dataKey="1RM Estimado (kg)"
+                        stroke="#f43f5e"
+                        strokeWidth={2.5}
+                        strokeDasharray="5 5"
+                        dot={{ r: 3, strokeWidth: 1, stroke: '#fff', fill: '#f43f5e' }}
+                        activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff', fill: '#f43f5e' }}
+                        name="1RM Estimado"
+                        unit="kg"
+                    />
+                    {allTimePR > 0 && (
+                        <ReferenceLine
+                            y={allTimePR}
+                            stroke="rgba(245, 158, 11, 0.55)"
+                            strokeDasharray="4 4"
+                            strokeWidth={1.5}
+                            label={(props) => (
+                                <ReferencePill
+                                    {...props}
+                                    position="left"
+                                    text={`PR: ${allTimePR} kg`}
+                                    stroke="#f59e0b"
+                                    color="#f59e0b"
+                                />
+                            )}
+                        />
+                    )}
+                </LineChart>
+            </ChartBase>
+
+            {showSmartCoachModal && (
+                <SmartExerciseCoachModal
+                    exercise={coachExerciseObject}
+                    userProfile={userProfile}
+                    workoutLog={workoutLog}
+                    onClose={() => setShowSmartCoachModal(false)}
+                    readOnly={true}
+                />
+            )}
+        </>
     );
 };
 
@@ -864,7 +1122,11 @@ export const MeasurementChart = ({ data, axisColor, measureLabel }) => {
 
     const sortedData = useMemo(() => {
         if (!data || !data.length) return [];
-        return [...data].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        return [...data].sort((a, b) => {
+            const timeA = typeof a.timestamp === 'number' ? a.timestamp : new Date(a.timestamp).getTime() || 0;
+            const timeB = typeof b.timestamp === 'number' ? b.timestamp : new Date(b.timestamp).getTime() || 0;
+            return timeA - timeB;
+        });
     }, [data]);
 
     const filteredData = useMemo(() => {
@@ -882,7 +1144,7 @@ export const MeasurementChart = ({ data, axisColor, measureLabel }) => {
         const min = Math.min(...vals);
         const max = Math.max(...vals);
 
-        return { current, delta, min, max };
+        return { current, delta, min, max, count: vals.length };
     }, [filteredData]);
 
     const ax = axisConfig(axisColor);
@@ -895,6 +1157,19 @@ export const MeasurementChart = ({ data, axisColor, measureLabel }) => {
             periods={['1M', '3M', '6M', '1A', 'Todo']}
             activePeriod={period}
             onPeriodChange={setPeriod}
+            emptyMessage={
+                period === 'Todo'
+                    ? 'Sin registros de medida'
+                    : `Sin registros en los últimos ${
+                          period === '1M'
+                              ? '30 días'
+                              : period === '3M'
+                              ? '3 meses'
+                              : period === '6M'
+                              ? '6 meses'
+                              : '12 meses'
+                      }`
+            }
             kpis={
                 stats
                     ? [
@@ -903,9 +1178,11 @@ export const MeasurementChart = ({ data, axisColor, measureLabel }) => {
                               value: stats.current,
                               unit: 'cm',
                               trend:
-                                  stats.delta !== 0
-                                      ? `${stats.delta > 0 ? '+' : ''}${stats.delta} cm`
-                                      : 'Constante',
+                                  stats.count > 1
+                                      ? stats.delta !== 0
+                                          ? `${stats.delta > 0 ? '+' : ''}${stats.delta} cm (${period})`
+                                          : `Constante (${period})`
+                                      : '1 registro',
                               isPositive: stats.delta <= 0,
                               icon: Ruler
                           },
@@ -952,6 +1229,7 @@ export const MeasurementChart = ({ data, axisColor, measureLabel }) => {
                     strokeWidth={3.5}
                     fill="url(#colorMedidaApple)"
                     filter="url(#glowMedida)"
+                    dot={{ r: 3.5, strokeWidth: 2, fill: '#a855f7', stroke: '#fff' }}
                     activeDot={{ r: 7, strokeWidth: 2.5, stroke: '#fff', fill: '#9333ea' }}
                     unit="cm"
                 />

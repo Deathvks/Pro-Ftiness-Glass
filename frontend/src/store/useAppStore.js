@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { createAuthSlice } from './authSlice';
 import { createDataSlice } from './dataSlice';
-import { createWorkoutSlice } from './workoutSlice';
+import { createWorkoutSlice, initNativeTimerSync } from './workoutSlice';
 import { createNotificationSlice } from './notificationSlice';
 import { createGamificationSlice } from './gamificationSlice';
 import { createSocialSlice } from './socialSlice';
@@ -47,11 +47,59 @@ const useAppStore = create((set, get) => ({
         set({ hapticsEnabled: enabled });
     },
 
-    // --- Configuración Global: Tour Guiado General ---
+    // --- Configuración Global: Sonido de Fin de Descanso ---
+    restSoundEnabled: (() => {
+        try {
+            const stored = localStorage.getItem('restSoundEnabled');
+            return stored === null ? true : JSON.parse(stored);
+        } catch (e) {
+            return true;
+        }
+    })(),
+
+    setRestSoundEnabled: (enabled) => {
+        try {
+            localStorage.setItem('restSoundEnabled', JSON.stringify(enabled));
+        } catch (e) {
+            console.warn('Error saving rest sound preference', e);
+        }
+        set({ restSoundEnabled: enabled });
+    },
+
+    // --- Efectos de galaxia en dispositivos táctiles ---
+    galaxyEffectsEnabled: (() => {
+        try {
+            return localStorage.getItem('galaxyEffectsEnabled') === 'true';
+        } catch (e) {
+            return false;
+        }
+    })(),
+
+    setGalaxyEffectsEnabled: (enabled) => {
+        try {
+            localStorage.setItem('galaxyEffectsEnabled', JSON.stringify(enabled));
+        } catch (e) {
+            console.warn('Error saving Galaxy effects preference', e);
+        }
+        if (typeof document !== 'undefined') {
+            document.documentElement.classList.toggle('galaxy-effects-enabled', enabled);
+        }
+        set({ galaxyEffectsEnabled: enabled });
+    },
+
+    // --- Configuración Global: Tour Guiado General con persistencia robusta por usuario ---
     tourCompleted: (() => {
         try {
-            return localStorage.getItem('tourCompleted') === 'true';
-        } catch (e) {
+            if (localStorage.getItem('tourCompleted') === 'true') return true;
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith('tourCompleted_') && localStorage.getItem(k) === 'true') {
+                    localStorage.setItem('tourCompleted', 'true');
+                    return true;
+                }
+            }
+            return false;
+        } catch {
             return false;
         }
     })(),
@@ -59,6 +107,8 @@ const useAppStore = create((set, get) => ({
     completeTour: () => {
         try {
             localStorage.setItem('tourCompleted', 'true');
+            const uid = get().userProfile?.id;
+            if (uid) localStorage.setItem(`tourCompleted_${uid}`, 'true');
         } catch (e) {
             console.warn(e);
         }
@@ -68,15 +118,27 @@ const useAppStore = create((set, get) => ({
     resetTour: () => {
         try {
             localStorage.removeItem('tourCompleted');
-        } catch (e) { }
+            const uid = get().userProfile?.id;
+            if (uid) localStorage.removeItem(`tourCompleted_${uid}`);
+        } catch {
+            /* ignore */
+        }
         set({ tourCompleted: false });
     },
 
     // --- Configuración Global: Tour Nutrición ---
     nutritionTourCompleted: (() => {
         try {
-            return localStorage.getItem('nutritionTourCompleted') === 'true';
-        } catch (e) {
+            if (localStorage.getItem('nutritionTourCompleted') === 'true') return true;
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith('nutritionTourCompleted_') && localStorage.getItem(k) === 'true') {
+                    localStorage.setItem('nutritionTourCompleted', 'true');
+                    return true;
+                }
+            }
+            return false;
+        } catch {
             return false;
         }
     })(),
@@ -84,6 +146,8 @@ const useAppStore = create((set, get) => ({
     completeNutritionTour: () => {
         try {
             localStorage.setItem('nutritionTourCompleted', 'true');
+            const uid = get().userProfile?.id;
+            if (uid) localStorage.setItem(`nutritionTourCompleted_${uid}`, 'true');
         } catch (e) {
             console.warn(e);
         }
@@ -93,15 +157,27 @@ const useAppStore = create((set, get) => ({
     resetNutritionTour: () => {
         try {
             localStorage.removeItem('nutritionTourCompleted');
-        } catch (e) { }
+            const uid = get().userProfile?.id;
+            if (uid) localStorage.removeItem(`nutritionTourCompleted_${uid}`);
+        } catch {
+            /* ignore */
+        }
         set({ nutritionTourCompleted: false });
     },
 
     // --- Configuración Global: Tour Rutinas ---
     routineTourCompleted: (() => {
         try {
-            return localStorage.getItem('routineTourCompleted') === 'true';
-        } catch (e) {
+            if (localStorage.getItem('routineTourCompleted') === 'true') return true;
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith('routineTourCompleted_') && localStorage.getItem(k) === 'true') {
+                    localStorage.setItem('routineTourCompleted', 'true');
+                    return true;
+                }
+            }
+            return false;
+        } catch {
             return false;
         }
     })(),
@@ -109,6 +185,8 @@ const useAppStore = create((set, get) => ({
     completeRoutineTour: () => {
         try {
             localStorage.setItem('routineTourCompleted', 'true');
+            const uid = get().userProfile?.id;
+            if (uid) localStorage.setItem(`routineTourCompleted_${uid}`, 'true');
         } catch (e) {
             console.warn(e);
         }
@@ -118,15 +196,27 @@ const useAppStore = create((set, get) => ({
     resetRoutineTour: () => {
         try {
             localStorage.removeItem('routineTourCompleted');
-        } catch (e) { }
+            const uid = get().userProfile?.id;
+            if (uid) localStorage.removeItem(`routineTourCompleted_${uid}`);
+        } catch {
+            /* ignore */
+        }
         set({ routineTourCompleted: false });
     },
 
     // --- Configuración Global: Tour Social ---
     socialTourCompleted: (() => {
         try {
-            return localStorage.getItem('socialTourCompleted') === 'true';
-        } catch (e) {
+            if (localStorage.getItem('socialTourCompleted') === 'true') return true;
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith('socialTourCompleted_') && localStorage.getItem(k) === 'true') {
+                    localStorage.setItem('socialTourCompleted', 'true');
+                    return true;
+                }
+            }
+            return false;
+        } catch {
             return false;
         }
     })(),
@@ -134,6 +224,8 @@ const useAppStore = create((set, get) => ({
     completeSocialTour: () => {
         try {
             localStorage.setItem('socialTourCompleted', 'true');
+            const uid = get().userProfile?.id;
+            if (uid) localStorage.setItem(`socialTourCompleted_${uid}`, 'true');
         } catch (e) {
             console.warn(e);
         }
@@ -143,15 +235,27 @@ const useAppStore = create((set, get) => ({
     resetSocialTour: () => {
         try {
             localStorage.removeItem('socialTourCompleted');
-        } catch (e) { }
+            const uid = get().userProfile?.id;
+            if (uid) localStorage.removeItem(`socialTourCompleted_${uid}`);
+        } catch {
+            /* ignore */
+        }
         set({ socialTourCompleted: false });
     },
 
     // --- Configuración Global: Tour Hub ---
     hubTourCompleted: (() => {
         try {
-            return localStorage.getItem('hubTourCompleted') === 'true';
-        } catch (e) {
+            if (localStorage.getItem('hubTourCompleted') === 'true') return true;
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith('hubTourCompleted_') && localStorage.getItem(k) === 'true') {
+                    localStorage.setItem('hubTourCompleted', 'true');
+                    return true;
+                }
+            }
+            return false;
+        } catch {
             return false;
         }
     })(),
@@ -159,6 +263,8 @@ const useAppStore = create((set, get) => ({
     completeHubTour: () => {
         try {
             localStorage.setItem('hubTourCompleted', 'true');
+            const uid = get().userProfile?.id;
+            if (uid) localStorage.setItem(`hubTourCompleted_${uid}`, 'true');
         } catch (e) {
             console.warn(e);
         }
@@ -168,9 +274,41 @@ const useAppStore = create((set, get) => ({
     resetHubTour: () => {
         try {
             localStorage.removeItem('hubTourCompleted');
-        } catch (e) { }
+            const uid = get().userProfile?.id;
+            if (uid) localStorage.removeItem(`hubTourCompleted_${uid}`);
+        } catch {
+            /* ignore */
+        }
         set({ hubTourCompleted: false });
+    },
+
+    // Sincronización bidireccional de tours para el usuario activo (evita que reaparezcan tras actualizar)
+    syncToursForUser: (profile) => {
+        if (!profile?.id) return;
+        const uid = profile.id;
+        const tourList = [
+            'tourCompleted',
+            'nutritionTourCompleted',
+            'routineTourCompleted',
+            'socialTourCompleted',
+            'hubTourCompleted'
+        ];
+        const updates = {};
+        tourList.forEach((key) => {
+            const isCompleted = localStorage.getItem(key) === 'true' || localStorage.getItem(`${key}_${uid}`) === 'true';
+            if (isCompleted) {
+                localStorage.setItem(key, 'true');
+                localStorage.setItem(`${key}_${uid}`, 'true');
+                updates[key] = true;
+            }
+        });
+        if (Object.keys(updates).length > 0) {
+            set(updates);
+        }
     }
 }));
+
+// Inicializar sincronización bidireccional de acciones nativas del temporizador (Android)
+initNativeTimerSync(useAppStore);
 
 export default useAppStore;

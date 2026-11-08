@@ -1,12 +1,12 @@
 import ModalPortal from './ModalPortal';
 /* frontend/src/components/RestTimerModal.jsx */
 import React, { useState, useEffect } from 'react';
-import { X, ArrowLeft, Plus, Minus, Minimize2, Play, Pause } from 'lucide-react';
+import { X, ArrowLeft, Plus, Minus, Minimize2, Play, Pause, Sliders } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { triggerHaptic, HapticType } from '../utils/haptics';
 import useModalLock from '../hooks/useModalLock';
 
-const RestTimerModal = () => {
+const RestTimerModal = ({ onNavigate }) => {
 
   // --- Bloquear scroll del fondo y swipe entre páginas ---
   useModalLock();
@@ -53,17 +53,10 @@ const RestTimerModal = () => {
       if (isRestTimerPaused && restTimerRemaining !== null) {
         remaining = Math.ceil(restTimerRemaining / 1000);
       } else if (restTimerEndTime) {
-        remaining = Math.round((restTimerEndTime - Date.now()) / 1000);
+        remaining = Math.ceil((restTimerEndTime - Date.now()) / 1000);
       }
 
-      const newTimeLeft = Math.max(0, remaining);
-
-      setTimeLeft((prevTimeLeft) => {
-        if (prevTimeLeft > 0 && newTimeLeft === 0) {
-          triggerHaptic(HapticType.timer);
-        }
-        return newTimeLeft;
-      });
+      setTimeLeft(Math.max(0, remaining));
     };
 
     updateTimer();
@@ -172,6 +165,18 @@ const RestTimerModal = () => {
         {/* Drag handle for mobile */}
         <div className="w-12 h-1.5 bg-black/10 dark:bg-white/20 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
         
+        {onNavigate && (
+          <button
+            onClick={() => {
+              setRestTimerMode('minimized');
+              onNavigate('settings', { highlight: 'workout', returnView: 'workout' });
+            }}
+            className="absolute top-4 left-4 p-1.5 rounded-full text-text-secondary hover:text-accent transition-colors"
+            title="Ajustes de sonido y descanso"
+          >
+            <Sliders size={18} />
+          </button>
+        )}
         <button onClick={handleClose} className="absolute top-4 right-4 text-text-secondary hover:text-text-primary"><X size={20} /></button>
 
         {view === 'select' &&
@@ -240,7 +245,7 @@ const RestTimerModal = () => {
 
         {view === 'timer' &&
         <div>
-            <button onClick={goBackToSelect} className="absolute top-4 left-4 text-text-secondary hover:text-text-primary"><ArrowLeft size={20} /></button>
+            <button onClick={goBackToSelect} className="absolute top-4 left-14 p-1.5 rounded-full text-text-secondary hover:text-text-primary transition-colors"><ArrowLeft size={20} /></button>
 
             <button
             onClick={handleMinimize}

@@ -4,6 +4,7 @@ import { Op } from 'sequelize';
 import models from '../models/index.js';
 import { processWorkoutGamification, processProgressiveOverload } from '../services/gamificationService.js';
 import { createNotification } from '../services/notificationService.js';
+import { sanitizePlainText } from '../utils/sanitizer.js';
 
 // --- Función para calcular 1RM ---
 const calculate1RM = (weight, reps) => {
@@ -21,15 +22,24 @@ const { WorkoutLog, WorkoutLogDetail, WorkoutLogSet, PersonalRecord, User, Frien
 
 export const getWorkoutHistory = async (req, res, next) => {
   try {
-    const { date, startDate, endDate } = req.query;
+    const { date, startDate, endDate, tzOffset } = req.query;
     const whereCondition = { user_id: req.user.userId };
 
     if (date) {
       const [year, month, day] = date.split('-').map(Number);
-      const startOfDay = new Date(year, month - 1, day);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(year, month - 1, day);
-      endOfDay.setHours(23, 59, 59, 999);
+      let startOfDay, endOfDay;
+
+      if (tzOffset !== undefined && !isNaN(parseInt(tzOffset, 10))) {
+        // Offset en minutos enviado por el cliente (ej: -120 para España UTC+2)
+        const offsetMin = parseInt(tzOffset, 10);
+        startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0) + offsetMin * 60 * 1000);
+        endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999) + offsetMin * 60 * 1000);
+      } else {
+        startOfDay = new Date(year, month - 1, day);
+        startOfDay.setHours(0, 0, 0, 0);
+        endOfDay = new Date(year, month - 1, day);
+        endOfDay.setHours(23, 59, 59, 999);
+      }
 
       whereCondition.workout_date = {
         [Op.between]: [startOfDay, endOfDay]
@@ -128,7 +138,8 @@ export const logWorkoutSession = async (req, res, next) => {
       finalDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     }
 
-    const finalRoutineName = routineName || routine_name || 'Entrenamiento Sin Nombre';
+    const rawRoutineName = routineName || routine_name || 'Entrenamiento Sin Nombre';
+    const finalRoutineName = sanitizePlainText(rawRoutineName) || 'Entrenamiento Sin Nombre';
 
     const newWorkoutLog = await WorkoutLog.create({
       user_id: userId,
@@ -137,7 +148,7 @@ export const logWorkoutSession = async (req, res, next) => {
       workout_date: finalDate,
       duration_seconds,
       calories_burned,
-      notes,
+      notes: notes ? sanitizePlainText(notes) : null,
       visibility: visibility || 'friends' 
     }, { transaction: t });
 
@@ -179,7 +190,7 @@ export const logWorkoutSession = async (req, res, next) => {
 
       const newLogDetail = await WorkoutLogDetail.create({
         workout_log_id: newWorkoutLog.id,
-        exercise_name: exercise.exerciseName || exercise.name, // Asegurar que pilla el nombre correcto
+        exercise_name: sanitizePlainText(exercise.exerciseName || exercise.name || 'Ejercicio'),
         total_volume: totalVolume,
         best_set_weight: bestSetWeight,
         superset_group_id: exercise.superset_group_id,
@@ -279,8 +290,8 @@ export const logWorkoutSession = async (req, res, next) => {
           streak: workoutGamification.streak
         });
       }
-    } catch (wGError) {
-      console.error('Error procesando workout gamification:', wGError);
+    } catch (gamificationErr) {
+      console.error('Error procesando workout gamification:', gamificationErr);
     }
 
     try {
@@ -514,11 +525,251 @@ export const deleteWorkoutLog = async (req, res, next) => {
   }
 };
 
+export const importWorkouts = async (req, res, next) => {
+  const { workouts, skipDuplicates = true } = req.body;
+  const { userId } = req.user;
+
+  if (!Array.isArray(workouts) || workouts.length === 0) {
+    return res.status(400).json({ error: 'No se enviaron entrenamientos válidos para importar.' });
+  }
+
+  const t = await sequelize.transaction();
+
+  try {
+    let importedCount = 0;
+    let skippedCount = 0;
+    let totalSetsImported = 0;
+    const prCandidates = new Map();
+
+    for (const w of workouts) {
+      const routineName = sanitizePlainText(w.routine_name || 'Entrenamiento Importado') || 'Entrenamiento Importado';
+      const workoutDate = w.workout_date ? new Date(w.workout_date) : new Date();
+      const finalDate = isNaN(workoutDate.getTime()) ? new Date() : workoutDate;
+
+      if (skipDuplicates) {
+        const rangeStart = new Date(finalDate.getTime() - 15 * 60 * 1000);
+        const rangeEnd = new Date(finalDate.getTime() + 15 * 60 * 1000);
+        const existing = await WorkoutLog.findOne({
+          where: {
+            user_id: userId,
+            routine_name: routineName,
+            workout_date: {
+              [Op.between]: [rangeStart, rangeEnd]
+            }
+          },
+          transaction: t
+        });
+
+        if (existing) {
+          skippedCount++;
+          continue;
+        }
+      }
+
+      const durationSeconds = parseInt(w.duration_seconds, 10) || 3600;
+      const notes = w.notes ? sanitizePlainText(String(w.notes)) : null;
+
+      const newLog = await WorkoutLog.create({
+        user_id: userId,
+        routine_name: routineName,
+        routine_id: null,
+        workout_date: finalDate,
+        duration_seconds: durationSeconds,
+        calories_burned: null,
+        notes: notes,
+        visibility: 'private'
+      }, { transaction: t });
+
+      const exercises = w.details || w.exercises || [];
+
+      for (const ex of exercises) {
+        const exerciseName = sanitizePlainText(ex.exercise_name || ex.name || 'Ejercicio');
+        const sets = ex.setsDone || ex.sets || [];
+
+        let totalVolume = 0;
+        let bestSetWeight = 0;
+        let bestSetFor1RM = null;
+
+        sets.forEach(set => {
+          const weight = parseFloat(set.weight_kg) || 0;
+          const reps = parseInt(set.reps, 10) || 0;
+          const isWarmup = set.is_warmup === true || set.is_warmup === 'true' || set.is_warmup === 1;
+
+          if (weight > 0 && reps > 0) {
+            totalVolume += weight * reps;
+
+            if (!isWarmup) {
+              if (weight > bestSetWeight) {
+                bestSetWeight = weight;
+                bestSetFor1RM = set;
+              } else if (weight === bestSetWeight && reps > (parseInt(bestSetFor1RM?.reps, 10) || 0)) {
+                bestSetFor1RM = set;
+              }
+            }
+          }
+        });
+
+        let estimated1RM = null;
+        if (bestSetFor1RM) {
+          estimated1RM = calculate1RM(bestSetFor1RM.weight_kg, bestSetFor1RM.reps);
+        }
+
+        const newDetail = await WorkoutLogDetail.create({
+          workout_log_id: newLog.id,
+          exercise_name: exerciseName,
+          total_volume: totalVolume,
+          best_set_weight: bestSetWeight,
+          superset_group_id: ex.superset_group_id || null,
+          estimated_1rm: estimated1RM
+        }, { transaction: t });
+
+        if (sets.length > 0) {
+          const setsToCreate = sets.map((set, sIdx) => ({
+            log_detail_id: newDetail.id,
+            set_number: parseInt(set.set_number, 10) || sIdx + 1,
+            reps: parseInt(set.reps, 10) || 0,
+            weight_kg: parseFloat(set.weight_kg) || 0,
+            is_dropset: !!set.is_dropset,
+            is_warmup: !!set.is_warmup,
+            rir: set.rir !== undefined && set.rir !== null && set.rir !== '' ? parseFloat(set.rir) : null
+          }));
+
+          await WorkoutLogSet.bulkCreate(setsToCreate, { transaction: t });
+          totalSetsImported += setsToCreate.length;
+        }
+
+        if (bestSetWeight > 0) {
+          const currentCandidate = prCandidates.get(exerciseName);
+          if (!currentCandidate || bestSetWeight > currentCandidate.maxWeight) {
+            prCandidates.set(exerciseName, { maxWeight: bestSetWeight, date: finalDate });
+          }
+        }
+      }
+
+      importedCount++;
+    }
+
+    // Actualizar o crear Récords Personales (PRs)
+    for (const [exerciseName, prData] of prCandidates.entries()) {
+      const existingPR = await PersonalRecord.findOne({
+        where: { user_id: userId, exercise_name: exerciseName },
+        transaction: t
+      });
+
+      if (!existingPR) {
+        await PersonalRecord.create({
+          user_id: userId,
+          exercise_name: exerciseName,
+          weight_kg: prData.maxWeight,
+          date: prData.date
+        }, { transaction: t });
+      } else if (prData.maxWeight > existingPR.weight_kg) {
+        existingPR.weight_kg = prData.maxWeight;
+        existingPR.date = prData.date;
+        await existingPR.save({ transaction: t });
+      }
+    }
+
+    await t.commit();
+
+    return res.json({
+      success: true,
+      importedCount,
+      skippedCount,
+      totalSetsImported,
+      message: `Se importaron ${importedCount} entrenamientos correctamente${skippedCount > 0 ? ` (${skippedCount} omitidos por estar duplicados)` : ''}.`
+    });
+
+  } catch (error) {
+    await t.rollback();
+    next(error);
+  }
+};
+
+export const exportWorkoutsCSV = async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+
+    const history = await WorkoutLog.findAll({
+      where: { user_id: userId },
+      include: [{
+        model: WorkoutLogDetail,
+        as: 'WorkoutLogDetails',
+        include: [{
+          model: WorkoutLogSet,
+          as: 'WorkoutLogSets',
+          order: [['set_number', 'ASC']]
+        }],
+        order: [['id', 'ASC']]
+      }],
+      order: [['workout_date', 'DESC']]
+    });
+
+    const escapeCSV = (val) => {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes(';') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const rows = [
+      'Date,Workout Name,Duration (min),Exercise Name,Set Order,Set Type,Weight (kg),Reps,RIR,Notes'
+    ];
+
+    for (const log of history) {
+      const rawDate = log.workout_date ? new Date(log.workout_date) : new Date();
+      const dateStr = !isNaN(rawDate.getTime()) ? rawDate.toISOString().replace('T', ' ').slice(0, 19) : '';
+      const routineName = log.routine_name || 'Entrenamiento';
+      const durationMin = log.duration_seconds ? Math.round(log.duration_seconds / 60) : 0;
+      const workoutNotes = log.notes || '';
+
+      const details = log.WorkoutLogDetails || [];
+      for (const detail of details) {
+        const exerciseName = detail.exercise_name || 'Ejercicio';
+        const sets = detail.WorkoutLogSets || [];
+
+        for (let i = 0; i < sets.length; i++) {
+          const set = sets[i];
+          let setType = 'Normal';
+          if (set.is_warmup) setType = 'Calentamiento';
+          else if (set.is_dropset) setType = 'Dropset';
+
+          const row = [
+            escapeCSV(dateStr),
+            escapeCSV(routineName),
+            escapeCSV(durationMin),
+            escapeCSV(exerciseName),
+            escapeCSV(set.set_number || i + 1),
+            escapeCSV(setType),
+            escapeCSV(set.weight_kg !== undefined ? set.weight_kg : 0),
+            escapeCSV(set.reps !== undefined ? set.reps : 0),
+            escapeCSV(set.rir !== null && set.rir !== undefined ? set.rir : ''),
+            escapeCSV(workoutNotes)
+          ];
+          rows.push(row.join(','));
+        }
+      }
+    }
+
+    const csvContent = '\uFEFF' + rows.join('\r\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="pro_fitness_glass_historial_${new Date().toISOString().split('T')[0]}.csv"`);
+    return res.send(csvContent);
+
+  } catch (error) {
+    next(error);
+  }
+};
+
 const workoutController = {
   getWorkoutHistory,
   logWorkoutSession,
   updateWorkoutLog,
-  deleteWorkoutLog
+  deleteWorkoutLog,
+  importWorkouts,
+  exportWorkoutsCSV
 };
 
 export default workoutController;

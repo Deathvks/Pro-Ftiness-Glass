@@ -17,9 +17,9 @@ export const CHALLENGES = {
     social_add_1_friend: { type: 'general', target: 1, xp: 100, title: 'Tu primer amigo', desc: 'Agrega 1 amigo a tu lista' },
     social_add_3_friends: { type: 'general', target: 3, xp: 200, title: 'Creciendo el círculo', desc: 'Agrega 3 amigos' },
     social_add_5_friends: { type: 'general', target: 5, xp: 300, title: 'Influencer de gimnasio', desc: 'Agrega 5 amigos' },
-    social_share_workout: { type: 'daily', target: 1, xp: 25, title: 'Presume tu esfuerzo', desc: 'Registra un entrenamiento en el mural' },
-    social_comment_post: { type: 'daily', target: 2, xp: 25, title: 'Conversador', desc: 'Comenta en publicaciones del mural' },
-    social_like_post: { type: 'daily', target: 2, xp: 25, title: 'Buen rollo', desc: 'Dale like a publicaciones' },
+    social_share_workout: { type: 'daily', target: 1, xp: 25, title: 'Presume tu esfuerzo', desc: 'Publica un entrenamiento en el Muro (Global, Mi Gimnasio o Amigos) • Suma +25 XP' },
+    social_comment_post: { type: 'daily', target: 2, xp: 25, title: 'Conversador del Muro', desc: 'Comenta en 2 publicaciones del Muro (Global, Mi Gimnasio o Amigos) • Suma +25 XP' },
+    social_like_post: { type: 'daily', target: 2, xp: 25, title: 'Reacciones de Gimnasio', desc: 'Envía 2 reacciones rápidas (🔥 Fuego, 💪 Bestia, 🫡 Respeto o 🏆 PR) en el Muro • Suma +25 XP' },
     social_upload_story: { type: 'general', target: 1, xp: 50, title: 'Un día en mi vida', desc: 'Sube una historia' },
     
     // Generales: Nutrición

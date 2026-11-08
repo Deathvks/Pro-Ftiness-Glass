@@ -9,6 +9,9 @@ import { useToast } from '../hooks/useToast';
 import CustomSelect from '../components/CustomSelect';
 import UserAvatar from '../components/UserAvatar';
 
+let cachedPushLogs = null;
+let cachedPushTotalPages = 1;
+
 const AdminNotifications = () => {
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('adminNotificationsTab') || 'history';
@@ -20,11 +23,11 @@ const AdminNotifications = () => {
 
   const { showToast } = useToast();
   
-  // History State
-  const [logs, setLogs] = useState([]);
-  const [loadingLogs, setLoadingLogs] = useState(false);
+  // History State con caché SWR en memoria
+  const [logs, setLogs] = useState(() => cachedPushLogs || []);
+  const [loadingLogs, setLoadingLogs] = useState(() => !cachedPushLogs);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(() => cachedPushTotalPages);
   const [statusFilter, setStatusFilter] = useState('all');
   const [titleFilter, setTitleFilter] = useState('');
   const [timeRange, setTimeRange] = useState(30);
@@ -43,8 +46,10 @@ const AdminNotifications = () => {
   const [cronJobs, setCronJobs] = useState([]);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (activeTab === 'send' && users.length === 0) {
+      fetchUsers();
+    }
+  }, [activeTab, users.length]);
 
   useEffect(() => {
     let interval;
@@ -62,9 +67,10 @@ const AdminNotifications = () => {
   const fetchUsers = async () => {
     try {
       const data = await getAllUsers();
-      setUsers(data);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
+      setUsers([]);
       showToast('Error cargando usuarios', 'error');
     }
   };
@@ -73,10 +79,11 @@ const AdminNotifications = () => {
     try {
       if (showSpinner) setLoadingLogs(true);
       const data = await getPushLogs(page, statusFilter, titleFilter, timeRange);
-      setLogs(data.logs || []);
-      setTotalPages(data.totalPages || 1);
+      setLogs(Array.isArray(data?.logs) ? data.logs : []);
+      setTotalPages(data?.totalPages || 1);
     } catch (err) {
       console.error(err);
+      setLogs([]);
       if (showSpinner) showToast('Error cargando historial de notificaciones', 'error');
     } finally {
       if (showSpinner) setLoadingLogs(false);
@@ -86,9 +93,10 @@ const AdminNotifications = () => {
   const fetchCronList = async () => {
     try {
       const data = await getCronJobs();
-      setCronJobs(data);
+      setCronJobs(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
+      setCronJobs([]);
       showToast('Error cargando tareas automáticas', 'error');
     }
   };
@@ -199,7 +207,7 @@ const AdminNotifications = () => {
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-black text-text-primary flex items-center gap-2">
+                  <h2 className="hidden items-center gap-2 text-xl font-black text-text-primary md:flex">
                     <History size={24} className="text-accent shrink-0" />
                     Historial Push
                   </h2>
@@ -329,12 +337,12 @@ const AdminNotifications = () => {
       {/* ENVIAR NUEVA TAB */}
       {activeTab === 'send' && (
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-xl font-black text-text-primary flex items-center gap-2">
+          <h2 className="hidden items-center gap-2 text-xl font-black text-text-primary md:flex">
             <Send size={24} className="text-accent" />
             Redactar Notificación Push
           </h2>
           
-          <form onSubmit={handleSendPush} className="flex flex-col gap-5 mt-6">
+          <form onSubmit={handleSendPush} className="flex flex-col gap-5 md:mt-6">
             <div className="flex flex-col gap-2">
               <label className="text-sm font-bold text-text-secondary flex items-center gap-2">
                 <Users size={16} /> Destinatario
@@ -372,6 +380,7 @@ const AdminNotifications = () => {
                 rows={3}
                 className="bg-bg-secondary border border-transparent dark:border-white/10 rounded-xl px-4 py-3 text-text-primary focus:ring-2 focus:ring-accent outline-none resize-none"
               />
+              <p className="text-xs text-text-secondary">Este mensaje puede verse en la pantalla bloqueada. Evita incluir datos privados.</p>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -422,11 +431,11 @@ const AdminNotifications = () => {
       {/* CRON JOBS TAB */}
       {activeTab === 'cron' && (
         <div>
-          <h2 className="text-xl font-black text-text-primary flex items-center gap-2">
+          <h2 className="hidden items-center gap-2 text-xl font-black text-text-primary md:flex">
             <Clock size={24} className="text-accent" />
             Notificaciones Programadas
           </h2>
-          <p className="text-sm text-text-secondary mb-6 mt-2 ml-1">
+          <p className="text-sm text-text-secondary mb-6 ml-1 md:mt-2">
             Estas notificaciones se generan automáticamente en el servidor (Cron Jobs) a las horas indicadas para la zona horaria de cada usuario.
           </p>
 

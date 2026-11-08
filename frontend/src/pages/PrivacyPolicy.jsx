@@ -1,16 +1,28 @@
+import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
 /* frontend/src/pages/PrivacyPolicy.jsx */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, Cookie, Camera, Shield, Bell, Globe, Trash2, 
-  Mail, Clock, Users, HeartHandshake, MapPin 
+  Mail, Clock, Users, HeartHandshake, MapPin, ShieldCheck, ExternalLink 
 } from 'lucide-react';
 import SEOHead from '../components/SEOHead';
+import { mailProvider, privacyEmail } from '../config/mailContacts';
 
 const PrivacyPolicy = ({ onBack }) => {
   // Permitimos usar la prop onBack si se pasa (para el bypass en App.jsx) o useNavigate por defecto
   const navigate = useNavigate();
   const handleBack = onBack || (() => navigate(-1));
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const id = window.location.hash.replace('#', '');
+      const el = document.getElementById(id);
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+      }
+    }
+  }, []);
 
   // Fecha actual formateada en español
   const currentDate = new Date().toLocaleDateString('es-ES', {
@@ -45,6 +57,7 @@ const PrivacyPolicy = ({ onBack }) => {
 
       <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] sm:mt-0" style={{ paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 1rem)' }}>
         
+        <MaintenanceNoticeBanner className="rounded-2xl mb-6" />
         {/* Botón Volver */}
         <button 
           onClick={handleBack} 
@@ -64,6 +77,146 @@ const PrivacyPolicy = ({ onBack }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+
+            {/* --- SECCIÓN FORMAL RGPD: Cuadro del Responsable del Tratamiento --- */}
+            <PolicyCard className="md:col-span-2" highlight={true}>
+              <div className="flex items-center gap-4 mb-6">
+                <div className="p-3.5 bg-accent text-accent-contrast rounded-[20px] shadow-lg shadow-accent/30 ring-1 ring-white/20 shrink-0">
+                  <ShieldCheck size={28} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <span className="text-[10px] sm:text-xs font-black tracking-widest text-accent uppercase">
+                    Primera Capa Informativa — Art. 13 RGPD y Art. 11 LOPDGDD
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">
+                    Información Básica sobre Protección de Datos
+                  </h2>
+                </div>
+              </div>
+
+              <p className="text-text-secondary font-medium mb-6 text-sm sm:text-base leading-relaxed max-w-3xl">
+                En cumplimiento del <strong>Reglamento General de Protección de Datos (UE 2016/679)</strong> y la <strong>Ley Orgánica 3/2018 (LOPDGDD)</strong>, te informamos de manera formal y transparente sobre la gestión y el tratamiento de tus datos personales:
+              </p>
+
+              <div className="overflow-hidden rounded-[24px] ring-1 ring-black/10 dark:ring-white/10 bg-bg-primary/70 backdrop-blur-md shadow-sm">
+                <div className="divide-y divide-black/5 dark:divide-white/10 text-xs sm:text-sm">
+                  {/* Responsable */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Responsable del Tratamiento
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      <strong className="text-text-primary">Dylan Jesús Suárez Falcón</strong> (Titular de Pro Fitness Glass).
+                      <br />
+                      Correo de contacto y ejercicio de derechos: <a href={`mailto:${privacyEmail}`} className="text-accent underline font-bold">{privacyEmail}</a>
+                    </div>
+                  </div>
+
+                  {/* Finalidad */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Finalidad Principal
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      Gestión integral de cuenta de usuario, diario de entrenamiento en gimnasio, cálculo de marcas (1RM), registro de sobrecarga progresiva, control nutricional asistido y asesoría deportiva voluntaria con entrenadores vinculados. Las historias efímeras compartidas se destruyen automáticamente tras 24 horas.
+                    </div>
+                  </div>
+
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Avisos de actividad por correo
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      Si has verificado tu dirección, te avisamos cuando hay nuevos mensajes en el chat de asesoría o se te asigna una asesoría. Estos avisos están activados por defecto. El contenido del chat y los nombres se consultan dentro de la aplicación. Puedes desactivar estos avisos en Ajustes, en la sección Notificaciones, o mediante su enlace de baja.
+                    </div>
+                  </div>
+
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Correos promocionales opcionales
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      Puedes autorizar por separado los recordatorios personalizados de entrenamiento y los recordatorios promocionales sobre asesorías que hayas consultado en el chat. Guardamos cuándo y desde dónde das o retiras el permiso, junto con el aviso que aceptaste. Puedes retirarlo en Ajustes o mediante el enlace de baja incluido en cada correo, sin afectar a tu cuenta ni a los avisos necesarios para su seguridad.
+                    </div>
+                  </div>
+
+                  {/* Legitimación / Bases Jurídicas */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Bases Jurídicas (Legitimación)
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed space-y-1.5">
+                      <p>
+                        <strong className="text-text-primary">1. Ejecución del contrato (Art. 6.1.b RGPD):</strong> Necesario para la prestación del servicio, sincronización de rutinas y acceso a la plataforma.
+                      </p>
+                      <p>
+                        <strong className="text-text-primary">2. Consentimiento explícito e informado (Art. 6.1.a y 9.2.a RGPD):</strong> Aplicable a métricas de rendimiento físico, peso corporal, calorías y datos antropométricos relativos a la salud deportiva.
+                      </p>
+                      <p>
+                        <strong className="text-text-primary">3. Interés legítimo (Art. 6.1.f RGPD):</strong> Mantenimiento de la seguridad de la plataforma, prevención de fraude y registro de auditoría de sesiones.
+                      </p>
+                      <p>
+                        <strong className="text-text-primary">4. Consentimiento opcional (Art. 6.1.a y, cuando corresponda, Art. 9.2.a RGPD):</strong> Envío de recordatorios de entrenamiento y de asesoría por correo, cada uno con su propio permiso. Puedes retirarlos en cualquier momento desde Ajustes o desde el enlace de baja. Tu decisión no afecta al uso del servicio.
+                      </p>
+                      <p>
+                        <strong className="text-text-primary">5. Interés legítimo para los avisos de actividad (art. 6.1.f RGPD).</strong> El interés de Pro Fitness Glass es facilitar el seguimiento de las conversaciones y asignaciones de asesoría que ya forman parte de tu actividad en el servicio. Puedes oponerte y desactivar estos avisos en cualquier momento.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Destinatarios */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Destinatarios
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed space-y-1.5">
+                      <p>No vendemos tus datos ni los compartimos para que terceros hagan su propia publicidad. Para prestar el servicio utilizamos proveedores tecnológicos, entre ellos los de alojamiento e inicio de sesión.</p>
+                      <p>Usamos el servicio SMTP de {mailProvider} para enviar los correos de Pro Fitness Glass. El proveedor recibe la dirección de destino, el asunto, el contenido del mensaje y los datos técnicos necesarios para tramitar la entrega.</p>
+                    </div>
+                  </div>
+
+                  {/* Conservación */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Plazos de Conservación
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      Tus datos se conservan mientras tu cuenta permanezca activa. Puedes solicitar o ejecutar la eliminación total e irreversible de tu cuenta en cualquier momento desde tu Perfil. Las historias efímeras se eliminan de forma irrecuperable a las 24 horas.
+                    </div>
+                  </div>
+
+                  {/* Derechos */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Tus Derechos
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      Derecho de acceso, rectificación, supresión (derecho al olvido), limitación del tratamiento, oposición y portabilidad de datos (exportación completa en formatos abiertos JSON, CSV y Excel). Puedes ejercerlos al instante desde los Ajustes de tu cuenta o escribiendo a <a href={`mailto:${privacyEmail}`} className="text-accent underline font-bold">{privacyEmail}</a>.
+                    </div>
+                  </div>
+
+                  {/* Edad Mínima de Consentimiento */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Edad Mínima de Consentimiento
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      El tratamiento de datos personales en la plataforma está fijado en <strong className="text-text-primary">14 años cumplidos</strong> (Art. 7 de la Ley Orgánica 3/2018 - LOPDGDD y Art. 8 del RGPD UE 2016/679). Los menores de 14 años requieren el consentimiento y supervisión previa de sus progenitores o tutores legales.
+                    </div>
+                  </div>
+
+                  {/* Reclamación AEPD */}
+                  <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-2 md:gap-6">
+                    <span className="font-extrabold text-text-primary md:w-56 shrink-0 uppercase tracking-wider text-[11px] text-accent">
+                      Autoridad de Control
+                    </span>
+                    <div className="text-text-secondary font-medium leading-relaxed">
+                      Tienes derecho a presentar una reclamación ante la <strong className="text-text-primary">Agencia Española de Protección de Datos (AEPD)</strong> a través de su sede electrónica oficial en <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer" className="text-accent underline font-bold inline-flex items-center gap-1">www.aepd.es <ExternalLink size={12} /></a> si consideras vulnerados tus derechos.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </PolicyCard>
 
             {/* --- SECCIÓN DESTACADA: Historias --- */}
             <PolicyCard className="md:col-span-2" highlight={true}>
@@ -185,9 +338,12 @@ const PrivacyPolicy = ({ onBack }) => {
                 </div>
                 <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">Notificaciones</h2>
               </div>
-              <p className="text-text-secondary font-medium text-sm leading-relaxed mb-5">
-                Solo te avisaremos para ayudarte a cumplir tus metas. Puedes desactivarlas cuando quieras desde los ajustes.
-              </p>
+              <div className="space-y-3 text-text-secondary font-medium text-sm leading-relaxed mb-5">
+                <p>En Ajustes → Notificaciones puedes activar los avisos push en cada dispositivo para recibir avisos de cuenta, seguridad y actividad de la app. Tratamos la suscripción para ofrecer el canal que eliges. Puedes desactivar el dispositivo desde Ajustes o retirar el permiso en el navegador o sistema operativo.</p>
+                <p>Los recordatorios de entrenamiento, el seguimiento promocional de asesoría y las novedades por push se basan en tu consentimiento. Puedes elegir cada categoría por separado. Inicialmente están desactivadas. Guardamos la categoría, la versión del aviso y la fecha de tu elección para acreditarla. Puedes retirar cada permiso desde Ajustes → Notificaciones. El correo tiene sus propias preferencias.</p>
+                <p>Para entregar el aviso usamos un identificador de suscripción o token y, en la web, claves de cifrado. En Android el envío remoto se realiza con Firebase Cloud Messaging (Google). En la web interviene el servicio de notificaciones del navegador, como los de Google, Mozilla, Apple o Microsoft. El aviso del dispositivo resume qué ha ocurrido. El contenido de los mensajes privados y los datos técnicos de seguridad se consultan dentro de la app.</p>
+                <p>Una tarea diaria borra los registros técnicos de entrega con más de 30 días. Al desactivar el push desde la app eliminamos la suscripción de ese dispositivo. También retiramos las suscripciones que el proveedor confirma que han caducado. Los recordatorios locales de Android se programan en el propio dispositivo cuando los activas.</p>
+              </div>
               <div className="flex flex-wrap gap-2.5">
                 <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-[10px] text-text-secondary ring-1 ring-black/5 dark:ring-white/10 shadow-sm">Recordatorios</span>
                 <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-[10px] text-text-secondary ring-1 ring-black/5 dark:ring-white/10 shadow-sm">Temporizador</span>
@@ -236,7 +392,7 @@ const PrivacyPolicy = ({ onBack }) => {
             </PolicyCard>
 
             {/* --- TARJETA: Eliminación (Full Width) --- */}
-            <div className="md:col-span-2">
+            <div id="eliminacion-datos" className="md:col-span-2 scroll-mt-24">
                 <PolicyCard>
                     <div className="flex items-center gap-4 mb-8">
                         <div className="p-3 bg-red/10 text-red rounded-[16px] ring-1 ring-red/30 shadow-sm shrink-0">
@@ -267,7 +423,7 @@ const PrivacyPolicy = ({ onBack }) => {
                             <ul className="text-sm font-bold text-text-secondary space-y-2.5 ml-2 list-none mb-4">
                                 <li className="flex items-start gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
-                                    <span>Envía un correo a <a href="mailto:profitnessglass@gmail.com" className="text-accent hover:underline">profitnessglass@gmail.com</a></span>
+                                    <span>Envía un correo a <a href={`mailto:${privacyEmail}`} className="text-accent hover:underline">{privacyEmail}</a></span>
                                 </li>
                                 <li className="flex items-start gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
@@ -306,8 +462,8 @@ const PrivacyPolicy = ({ onBack }) => {
               </div>
               <h2 className="text-2xl font-extrabold text-text-primary mb-2 tracking-tight">¿Tienes dudas?</h2>
               <p className="text-sm font-medium text-text-secondary mb-6 max-w-sm">Estamos aquí para ayudarte en lo que necesites. Escríbenos en cualquier momento.</p>
-              <a href="mailto:profitnessglass@gmail.com" className="px-6 py-3 bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-full text-accent font-extrabold text-lg sm:text-xl shadow-sm hover:scale-105 active:scale-95 transition-all">
-                profitnessglass@gmail.com
+              <a href={`mailto:${privacyEmail}`} className="px-6 py-3 bg-bg-primary ring-1 ring-black/5 dark:ring-white/10 rounded-full text-accent font-extrabold text-lg sm:text-xl shadow-sm hover:scale-105 active:scale-95 transition-all">
+                {privacyEmail}
               </a>
             </div>
 

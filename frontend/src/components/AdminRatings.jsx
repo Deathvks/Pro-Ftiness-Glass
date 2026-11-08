@@ -9,10 +9,11 @@ import UserAvatar from './UserAvatar';
 import { es } from 'date-fns/locale';
 
 
-export default function AdminRatings() {
+let cachedRatings = null;
 
-    const [ratings, setRatings] = useState([]);
-    const [loading, setLoading] = useState(true);
+export default function AdminRatings() {
+    const [ratings, setRatings] = useState(() => cachedRatings || []);
+    const [loading, setLoading] = useState(() => !cachedRatings);
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 10;
 
@@ -20,9 +21,12 @@ export default function AdminRatings() {
         const fetchRatings = async () => {
             try {
                 const data = await getAppRatings();
-                setRatings(data);
+                const safe = Array.isArray(data) ? data : [];
+                cachedRatings = safe;
+                setRatings(safe);
             } catch (error) {
                 console.error("Error fetching ratings:", error);
+                setRatings([]);
             } finally {
                 setLoading(false);
             }
@@ -34,14 +38,15 @@ export default function AdminRatings() {
         return <div className="flex justify-center items-center py-12"><Spinner size={32} /></div>;
     }
 
-    const averageRating = ratings.length ? (ratings.reduce((acc, r) => acc + r.rating, 0) / ratings.length).toFixed(1) : 0;
-    const totalPages = Math.ceil(ratings.length / ITEMS_PER_PAGE);
-    const currentRatings = ratings.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    const safeRatings = Array.isArray(ratings) ? ratings : [];
+    const averageRating = safeRatings.length ? (safeRatings.reduce((acc, r) => acc + (r.rating || 0), 0) / safeRatings.length).toFixed(1) : 0;
+    const totalPages = Math.ceil(safeRatings.length / ITEMS_PER_PAGE) || 1;
+    const currentRatings = safeRatings.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     return (
         <div className="w-full text-left">
             <div className="mb-6">
-                <h2 className="text-2xl font-extrabold text-text-primary mb-2">Valoraciones de la App</h2>
+                <h2 className="hidden text-2xl font-extrabold text-text-primary mb-2 md:block">Valoraciones de la App</h2>
                 <p className="text-text-secondary font-medium text-sm">Feedback general de los usuarios.</p>
             </div>
 

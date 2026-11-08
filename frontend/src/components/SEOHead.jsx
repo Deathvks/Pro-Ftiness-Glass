@@ -2,7 +2,7 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
-const BASE_URL = 'https://pro-fitness-glass.zeabur.app';
+const BASE_URL = 'https://profitnessglass.es';
 
 export default function SEOHead({ title, description, route, noIndex = false }) {
     let path = route;

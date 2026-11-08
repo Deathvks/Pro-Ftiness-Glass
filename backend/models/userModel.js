@@ -158,6 +158,15 @@ User.init({
     defaultValue: true,
     allowNull: false
   },
+  show_gym: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    allowNull: false
+  },
+  gym_data: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
 
   // --- 2FA ---
   two_factor_enabled: {
@@ -185,6 +194,32 @@ User.init({
     type: DataTypes.BOOLEAN,
     defaultValue: true,
     allowNull: false
+  },
+  email_activity_notifications: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    allowNull: false,
+    comment: 'Preferencia para recibir notificaciones de actividad por correo'
+  },
+  email_marketing_consent: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false,
+    comment: 'Consentimiento expreso para recordatorios promocionales por correo'
+  },
+  email_coaching_consent: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false
+  },
+  push_consents: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  email_preferences_updated_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Fecha de la última actualización de preferencias de correo'
   },
 
   // --- GAMIFICACIÓN ---

@@ -153,6 +153,15 @@ const TransferModal = ({ sourceName, existingManuals = [], onClose, onTransferSu
     }
   };
 
+  const destinationExerciseName = targetExercise?.name || targetManualName.trim() || 'el ejercicio de destino';
+  const routineReplacementDescription = replaceInRoutines
+    ? deleteSource
+      ? `Se quitará «${sourceName}» de tus rutinas y se usará «${destinationExerciseName}». El historial también se moverá al destino.`
+      : `Tus rutinas usarán «${destinationExerciseName}». El historial original se conservará y también se copiará al destino.`
+    : deleteSource
+      ? `«${sourceName}» seguirá en tus rutinas, pero su historial se moverá a «${destinationExerciseName}».`
+      : `«${sourceName}» y su historial seguirán en tus rutinas; el historial también se copiará al destino.`;
+
   return (
     <ModalPortal>
       <div 
@@ -255,7 +264,14 @@ const TransferModal = ({ sourceName, existingManuals = [], onClose, onTransferSu
                 <div className={"w-5 h-5 rounded border flex items-center justify-center transition-colors " + (replaceInRoutines ? "bg-accent border-accent text-accent-contrast" : "border-text-muted bg-transparent text-transparent group-hover:border-accent")}>
                   <Check size={14} strokeWidth={3} />
                 </div>
-                <span className="text-sm font-medium text-text-primary">Reemplazar en mis rutinas guardadas</span>
+                <span className="flex-1">
+                  <span className="block text-sm font-medium text-text-primary">
+                    Reemplazar «{sourceName}» por «{destinationExerciseName}» en mis rutinas guardadas
+                  </span>
+                  <span className="mt-1 block text-xs leading-relaxed text-text-muted">
+                    {routineReplacementDescription}
+                  </span>
+                </span>
                 <input type="checkbox" className="hidden" checked={replaceInRoutines} onChange={() => setReplaceInRoutines(!replaceInRoutines)} />
               </label>
             </div>

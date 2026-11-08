@@ -6,6 +6,18 @@ import { deleteFile } from '../services/imageService.js';
 
 const { Story, User, StoryLike, StoryView, Friendship } = models;
 
+const publicUserData = (user) => {
+    if (!user) return user;
+    const data = typeof user.toJSON === 'function' ? user.toJSON() : { ...user };
+    if (data.role === 'admin') {
+        data.role = 'user';
+        data.trainer_id = null;
+        delete data.isAdmin;
+        delete data.is_admin;
+    }
+    return data;
+};
+
 /**
  * Helper para obtener IDs de amigos (Optimizado: solo devuelve array de enteros)
  */
@@ -70,6 +82,7 @@ export const createStory = async (req, res) => {
             attributes: ['id', 'username', 'profile_image_url', 'role', 'trainer_id'],
             raw: true
         });
+        const publicUser = publicUserData(user);
 
         const storyResponse = {
             id: newStory.id,
@@ -82,12 +95,12 @@ export const createStory = async (req, res) => {
             likes: [], 
             isLiked: false,
             viewed: false,
-            userId: user.id,
-            username: user.username,
-            avatar: user.profile_image_url,
-            role: user.role,
-            trainer_id: user.trainer_id,
-            user: user
+            userId: publicUser.id,
+            username: publicUser.username,
+            avatar: publicUser.profile_image_url,
+            role: publicUser.role,
+            trainer_id: publicUser.trainer_id,
+            user: publicUser
         };
 
         // 4. Emitir evento Socket (Solo si hay clientes escuchando)
@@ -172,13 +185,14 @@ export const getStories = async (req, res) => {
             if (!u) continue; // Skip si usuario borrado
 
             if (!groupedStories[u.id]) {
+                const publicUser = publicUserData(u);
                 groupedStories[u.id] = {
-                    userId: u.id,
-                    username: u.username,
-                    avatar: u.profile_image_url,
-                    role: u.role,
-                    trainer_id: u.trainer_id,
-                    user: u,
+                    userId: publicUser.id,
+                    username: publicUser.username,
+                    avatar: publicUser.profile_image_url,
+                    role: publicUser.role,
+                    trainer_id: publicUser.trainer_id,
+                    user: publicUser,
                     hasUnseen: false,
                     items: []
                 };

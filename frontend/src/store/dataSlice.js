@@ -10,26 +10,100 @@ import * as templateRoutineService from '../services/templateRoutineService';
 import * as creatinaService from '../services/creatinaService';
 import * as exerciseService from '../services/exerciseService';
 import * as personalRecordService from '../services/personalRecordService';
+import { APP_VERSION } from '../config/version';
+
+let initialFetchInFlight = null;
+let initialFetchRetryCount = 0;
+let initialFetchRetryTimer = null;
+let initialFetchWakeListenersBound = false;
+
+// Reintentos con espera creciente (~95s en total). Cubren el reinicio del backend tras cada despliegue,
+// que es justo cuando aparece el aviso de "Nueva versión" y el usuario pulsa Actualizar.
+const INITIAL_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000, 12000, 15000, 20000, 30000];
+
+// Errores transitorios (red, timeout, backend reiniciando o en mantenimiento) que merecen reintento automático.
+const isTransientInitialError = (error) => {
+  if (!error) return false;
+  if (error.isMaintenance) return true;
+  const status = Number(error.status) || 0;
+  if (status >= 500 || status === 408 || status === 429) return true;
+  if (status) return false;
+  const msg = String(error.message || '').toLowerCase();
+  return (
+    error.name === 'TypeError' ||
+    msg.includes('fetch') ||
+    msg.includes('network') ||
+    msg.includes('conexión') ||
+    msg.includes('conectar') ||
+    msg.includes('lenta') ||
+    msg.includes('timeout')
+  );
+};
 
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
+const CACHE_VERSION_KEY = 'pfg_cache_version';
+const INITIAL_CACHE_KEY = 'pfg_cached_initial_state_v1';
+let lastDateFetchInfo = { date: null, timestamp: 0 };
+
+const readInitialCache = () => {
+  try {
+    if (typeof window === 'undefined' || !localStorage.getItem('pro_fitness_token')) return null;
+    // La caché sobrevive a las actualizaciones de versión para que el Dashboard pinte al instante tras recargar.
+    // Si cambia su formato, se renombra INITIAL_CACHE_KEY (sufijo _vN); ante un fallo, CrashGuard la purga.
+    const raw = localStorage.getItem(INITIAL_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeInitialCache = (partial) => {
+  try {
+    if (typeof window === 'undefined' || !localStorage.getItem('pro_fitness_token')) return;
+    localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
+    const existing = readInitialCache() || {};
+    const merged = {
+      ...existing,
+      ...partial,
+      updatedAt: Date.now(),
+    };
+    if (Array.isArray(merged.workoutLog) && merged.workoutLog.length > 40) {
+      merged.workoutLog = merged.workoutLog.slice(0, 40);
+    }
+    if (Array.isArray(merged.personalRecords) && merged.personalRecords.length > 60) {
+      merged.personalRecords = merged.personalRecords.slice(0, 60);
+    }
+    localStorage.setItem(INITIAL_CACHE_KEY, JSON.stringify(merged));
+  } catch {
+    // Ignore storage quota errors silently
+  }
+};
+
+const cachedData = readInitialCache();
+const todayStr = getTodayDateString();
+const isCachedToday = cachedData?.cachedDate === todayStr;
+
 const initialState = {
-  routines: [],
-  workoutLog: [],
-  bodyWeightLog: [],
-  bodyMeasurementsLog: [],
+  routines: Array.isArray(cachedData?.routines) ? cachedData.routines : [],
+  workoutLog: Array.isArray(cachedData?.workoutLog) ? cachedData.workoutLog : [],
+  bodyWeightLog: Array.isArray(cachedData?.bodyWeightLog) ? cachedData.bodyWeightLog : [],
+  bodyMeasurementsLog: Array.isArray(cachedData?.bodyMeasurementsLog) ? cachedData.bodyMeasurementsLog : [],
   prNotification: null,
-  nutritionLog: [],
-  waterLog: { quantity_ml: 0 },
-  selectedDate: getTodayDateString(),
+  nutritionLog: isCachedToday && Array.isArray(cachedData?.nutritionLog) ? cachedData.nutritionLog : [],
+  waterLog: isCachedToday && cachedData?.waterLog ? cachedData.waterLog : { quantity_ml: 0 },
+  selectedDate: todayStr,
   nutritionSummary: { nutrition: [], water: [] },
-  favoriteMeals: [],
-  recentMeals: [],
+  favoriteMeals: Array.isArray(cachedData?.favoriteMeals) ? cachedData.favoriteMeals : [],
+  recentMeals: Array.isArray(cachedData?.recentMeals) ? cachedData.recentMeals : [],
   templateRoutines: {},
-  todaysCreatineLog: [],
-  creatineStats: null,
+  todaysCreatineLog: isCachedToday && Array.isArray(cachedData?.todaysCreatineLog) ? cachedData.todaysCreatineLog : [],
+  creatineStats: cachedData?.creatineStats || null,
   allExercises: [],
-  personalRecords: [], // Estado inicial array vacío
+  personalRecords: Array.isArray(cachedData?.personalRecords) ? cachedData.personalRecords : [], // Estado inicial array vacío
+  initialDataPending: false,
 };
 
 export const createDataSlice = (set, get) => ({
@@ -78,114 +152,219 @@ export const createDataSlice = (set, get) => ({
       return;
     }
 
-    set({ isLoading: true });
-    try {
-      const profileData = await userService.getMyProfile();
+    if (initialFetchInFlight) {
+      return initialFetchInFlight;
+    }
 
-      // Actualizar silenciosamente la zona horaria si ha cambiado
+    // Una llamada manual (botón Reintentar, foco, volver online) adelanta el reintento programado.
+    if (initialFetchRetryTimer) {
+      clearTimeout(initialFetchRetryTimer);
+      initialFetchRetryTimer = null;
+    }
+
+    // Reintentar en cuanto vuelva la red o el usuario regrese a la app mientras sigamos sin datos frescos.
+    if (!initialFetchWakeListenersBound && typeof window !== 'undefined') {
+      initialFetchWakeListenersBound = true;
+      const wake = () => {
+        if (get().initialDataPending && get().token && !initialFetchInFlight) {
+          get().fetchInitialData().catch(() => {});
+        }
+      };
+      window.addEventListener('online', wake);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') wake();
+      });
+    }
+
+    const todayAtStart = get().selectedDate || getTodayDateString();
+    // Reservar fecha desde el inicio para evitar que Dashboard dispare fetchDataForDate duplicado
+    lastDateFetchInfo = { date: todayAtStart, timestamp: Date.now() };
+
+    const existingProfile = get().userProfile;
+    const hasHydratedProfile = Boolean(existingProfile && 'role' in existingProfile);
+    if (!hasHydratedProfile) {
+      set({ isLoading: true });
+    }
+
+    initialFetchInFlight = (async () => {
+      let retryScheduled = false;
       try {
-        const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        if (profileData.timezone !== currentTimezone) {
-            await userService.updateUserProfile({ timezone: currentTimezone }).catch(console.error);
-            profileData.timezone = currentTimezone;
+        // Timeout corto (8s) con reintentos: mejor que una única espera larga contra un backend reiniciándose.
+        const profileData = await userService.getMyProfile({ timeout: 8000 });
+
+        // Actualizar silenciosamente la zona horaria sin bloquear el arranque
+        try {
+          const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          if (profileData.timezone !== currentTimezone) {
+              profileData.timezone = currentTimezone;
+              userService.updateUserProfile({ timezone: currentTimezone }).catch(console.error);
+          }
+        } catch (e) {
+          console.warn('Could not detect timezone', e);
         }
-      } catch (e) {
-        console.warn('Could not detect timezone', e);
-      }
 
-      get().checkWelcomeModal();
+        get().checkWelcomeModal();
 
-      set({ userProfile: profileData, isAuthenticated: true });
-
-      // Obtener el conteo de chats no leídos
-      if (get().fetchUnreadChats) {
-        get().fetchUnreadChats();
-      }
-
-      if (profileData && get().setGamificationData) {
-        get().setGamificationData({
-          xp: profileData.xp,
-          level: profileData.level,
-          streak: profileData.streak,
-          last_activity_date: profileData.last_activity_date,
-          unlocked_badges: profileData.unlocked_badges
-        });
-
-        const today = getTodayDateString();
-        if (get().checkStreak) get().checkStreak(today);
-
-        const hasFirstLoginBadge = profileData.unlocked_badges && profileData.unlocked_badges.includes('first_login');
-        if (get().unlockBadge && !hasFirstLoginBadge) {
-          get().unlockBadge('first_login');
+        // Desbloqueamos inmediatamente la interfaz con el perfil cargado
+        initialFetchRetryCount = 0;
+        set({ userProfile: profileData, isAuthenticated: true, isLoading: false, initialDataPending: false });
+        writeInitialCache({ userProfile: profileData });
+        if (get().syncToursForUser) {
+          get().syncToursForUser(profileData);
         }
-      }
 
-      if (profileData?.id) {
-        await get().checkCookieConsent(profileData.id);
-      }
+        if (profileData && get().setGamificationData) {
+          get().setGamificationData({
+            xp: profileData.xp,
+            level: profileData.level,
+            streak: profileData.streak,
+            last_activity_date: profileData.last_activity_date,
+            unlocked_badges: profileData.unlocked_badges
+          });
 
-      if (profileData.goal) {
-        const today = get().selectedDate;
+          const today = getTodayDateString();
+          if (get().checkStreak) get().checkStreak(today);
 
-        const [
-          routines,
-          workouts,
-          bodyweight,
-          measurements,
-          nutrition,
-          favoriteMeals,
-          recentMeals,
-          todaysCreatine,
-          creatineStats,
-          prsResponse
-        ] = await Promise.all([
-          routineService.getRoutines(),
-          workoutService.getWorkouts(),
-          bodyWeightService.getHistory(),
-          bodyMeasurementService.getHistory(),
-          nutritionService.getNutritionLogsByDate(today),
-          favoriteMealService.getFavoriteMeals(),
-          nutritionService.getRecentMeals(),
-          creatinaService.getCreatinaLogs({ startDate: today, endDate: today }),
-          creatinaService.getCreatinaStats(),
-          personalRecordService.getPersonalRecords(1, 'all').catch(() => [])
-        ]);
-        
-        // BLINDAJE: Detectamos estructura paginada { records: [...] }
-        const safePRs = prsResponse?.records || (Array.isArray(prsResponse) ? prsResponse : []);
-
-        set({
-          routines: routines || [],
-          workoutLog: workouts || [],
-          bodyWeightLog: bodyweight || [],
-          bodyMeasurementsLog: measurements || [],
-          nutritionLog: nutrition.nutrition || [],
-          waterLog: nutrition.water || { quantity_ml: 0 },
-          favoriteMeals,
-          recentMeals: recentMeals || [],
-          todaysCreatineLog: todaysCreatine.data || [],
-          creatineStats: creatineStats.data || null,
-          personalRecords: safePRs
-        });
-      }
-        } catch (error) {
-        console.error("Error al cargar datos iniciales (posiblemente de red):", error);
-        if (error?.message?.includes('fetch') || error?.message?.includes('network') || error?.name === 'TypeError' || error?.isMaintenance) {
-          console.log('[fetchInitialData] Error de red detectado, reintentando en 3s...');
-          setTimeout(() => { get().fetchInitialData(); }, 3000);
-        } else {
-          console.log('[fetchInitialData] Error no recuperable, forzando cierre de sesión preventivo.');
-          if (get().handleSessionExpiry) {
-            get().handleSessionExpiry();
+          const hasFirstLoginBadge = profileData.unlocked_badges && profileData.unlocked_badges.includes('first_login');
+          if (get().unlockBadge && !hasFirstLoginBadge) {
+            get().unlockBadge('first_login');
           }
         }
+
+        if (profileData?.id) {
+          Promise.resolve(get().checkCookieConsent(profileData.id)).catch(() => {});
+        }
+
+        if (profileData.goal) {
+          const today = get().selectedDate || getTodayDateString();
+          lastDateFetchInfo = { date: today, timestamp: Date.now() };
+
+          // Fase 1 (Rápida, máximo 5 peticiones simultáneas)
+          Promise.all([
+            routineService.getRoutines().catch(() => null),
+            nutritionService.getNutritionLogsByDate(today).catch(() => null),
+            creatinaService.getCreatinaLogs({ startDate: today, endDate: today }).catch(() => null),
+            favoriteMealService.getFavoriteMeals().catch(() => null),
+            nutritionService.getRecentMeals().catch(() => null),
+          ]).then(([routines, nutrition, todaysCreatine, favoriteMeals, recentMeals]) => {
+            const fastUpdate = {};
+            if (routines) fastUpdate.routines = routines;
+            if (nutrition) {
+              fastUpdate.nutritionLog = nutrition.nutrition || [];
+              fastUpdate.waterLog = nutrition.water || { quantity_ml: 0 };
+            }
+            if (todaysCreatine) fastUpdate.todaysCreatineLog = todaysCreatine.data || [];
+            if (favoriteMeals) fastUpdate.favoriteMeals = favoriteMeals;
+            if (recentMeals) fastUpdate.recentMeals = recentMeals;
+
+            if (Object.keys(fastUpdate).length > 0) {
+              set(fastUpdate);
+              writeInitialCache({ ...fastUpdate, cachedDate: today });
+            }
+          }).catch((err) => console.error('Error en carga rápida inicial:', err))
+          .finally(() => {
+            // Fase 2 (Históricos pesados): se ejecuta tras terminar Fase 1 para no saturar el pool de base de datos
+            setTimeout(() => {
+              if (get().fetchUnreadChats) {
+                get().fetchUnreadChats();
+              }
+              if (get().fetchTodaysCompletedRoutines) {
+                get().fetchTodaysCompletedRoutines().catch(() => {});
+              }
+              if (get().fetchFriends) {
+                get().fetchFriends().catch(() => {});
+              }
+              if (get().fetchFriendRequests) {
+                get().fetchFriendRequests().catch(() => {});
+              }
+              if (get().fetchStories && profileData?.id) {
+                get().fetchStories(profileData.id).catch(() => {});
+              }
+              if (get().fetchLeaderboard) {
+                get().fetchLeaderboard().catch(() => {});
+              }
+              Promise.all([
+                workoutService.getWorkouts().catch(() => null),
+                bodyWeightService.getHistory().catch(() => null),
+                bodyMeasurementService.getHistory().catch(() => null),
+                creatinaService.getCreatinaStats().catch(() => null),
+                personalRecordService.getPersonalRecords(1, 'all').catch(() => null),
+              ]).then(([workouts, bodyweight, measurements, creatineStats, prsResponse]) => {
+                const heavyUpdate = {};
+                if (workouts) {
+                  heavyUpdate.workoutLog = workouts;
+                }
+                if (bodyweight) heavyUpdate.bodyWeightLog = bodyweight;
+                if (measurements) heavyUpdate.bodyMeasurementsLog = measurements;
+                if (creatineStats) heavyUpdate.creatineStats = creatineStats.data || null;
+                if (prsResponse) {
+                  heavyUpdate.personalRecords = prsResponse?.records || (Array.isArray(prsResponse) ? prsResponse : []);
+                }
+
+                if (Object.keys(heavyUpdate).length > 0) {
+                  set(heavyUpdate);
+                  writeInitialCache(heavyUpdate);
+                }
+
+                if (workouts && get().fetchTodaysCompletedRoutines) {
+                  get().fetchTodaysCompletedRoutines().catch(() => {});
+                }
+              }).catch((err) => console.error('Error en carga de historial inicial:', err));
+            }, 600);
+          });
+        } else if (get().fetchUnreadChats) {
+          get().fetchUnreadChats();
+        }
+      } catch (error) {
+        console.error("Error al cargar datos iniciales (posiblemente de red):", error);
+        if (
+          error?.status === 404 ||
+          error?.status === 401 ||
+          error?.status === 403 ||
+          error?.message?.includes('Sesión expirada')
+        ) {
+          console.warn('[fetchInitialData] Sesión inválida o usuario no encontrado en el backend. Cerrando sesión limpia...');
+          get().handleLogout();
+        } else if (isTransientInitialError(error) && initialFetchRetryCount < INITIAL_RETRY_DELAYS_MS.length) {
+          const delay = INITIAL_RETRY_DELAYS_MS[initialFetchRetryCount];
+          initialFetchRetryCount++;
+          retryScheduled = true;
+          console.log(`[fetchInitialData] Error transitorio (intento ${initialFetchRetryCount}), reintentando en ${delay / 1000}s...`);
+          initialFetchRetryTimer = setTimeout(() => {
+            initialFetchRetryTimer = null;
+            get().fetchInitialData().catch(() => {});
+          }, delay);
+        } else {
+          initialFetchRetryCount = 0;
+          console.error('[fetchInitialData] Error de API o límite de reintentos alcanzado; se detienen reintentos automáticos.');
+        }
       } finally {
-      set({ isLoading: false });
-    }
+        initialFetchInFlight = null;
+        // Mientras haya un reintento programado, la interfaz se mantiene en carga (o con los datos en caché)
+        // en lugar de mostrar la pantalla de error de conexión.
+        set({ isLoading: false, initialDataPending: retryScheduled });
+      }
+    })();
+
+    return initialFetchInFlight;
   },
 
-  fetchDataForDate: async (date) => {
-    set({ selectedDate: date, isLoading: true });
+  fetchDataForDate: async (date, options = {}) => {
+    const isSameDate = get().selectedDate === date;
+    const now = Date.now();
+    // Evitar peticiones duplicadas si acabamos de cargar esta misma fecha hace menos de 45s
+    if (!options.force && isSameDate && lastDateFetchInfo.date === date && (now - lastDateFetchInfo.timestamp) < 45000) {
+      return;
+    }
+    lastDateFetchInfo = { date, timestamp: now };
+
+    const shouldShowBlockingLoader = !isSameDate;
+    if (shouldShowBlockingLoader) {
+      set({ selectedDate: date, isLoading: true });
+    } else {
+      set({ selectedDate: date });
+    }
+
     try {
       const [nutrition, todaysCreatine, favoriteMeals, recentMeals] = await Promise.all([
         nutritionService.getNutritionLogsByDate(date),
@@ -193,17 +372,23 @@ export const createDataSlice = (set, get) => ({
         favoriteMealService.getFavoriteMeals(),
         nutritionService.getRecentMeals()
       ]);
-      set({
+      const nextState = {
         nutritionLog: nutrition.nutrition || [],
         waterLog: nutrition.water || { quantity_ml: 0 },
         todaysCreatineLog: todaysCreatine.data || [],
         favoriteMeals: favoriteMeals || [],
         recentMeals: recentMeals || []
-      });
+      };
+      set(nextState);
+      if (date === getTodayDateString()) {
+        writeInitialCache({ ...nextState, cachedDate: date });
+      }
     } catch (error) {
       console.error("Error al cargar datos de nutrición:", error);
     } finally {
-      set({ isLoading: false });
+      if (shouldShowBlockingLoader) {
+        set({ isLoading: false });
+      }
     }
   },
 
@@ -275,7 +460,7 @@ export const createDataSlice = (set, get) => ({
         routines: [...state.routines, newRoutine]
       }));
 
-      if (get().addXp) get().addXp(20);
+      if (get().addXp) get().addXp(20, 'Rutina creada');
 
       return { success: true, routine: newRoutine, message: 'Rutina creada con éxito.' };
     } catch (error) {
@@ -372,7 +557,7 @@ export const createDataSlice = (set, get) => ({
         }));
       }
 
-      if (get().addXp) get().addXp(10);
+      if (get().addXp) get().addXp(10, 'Peso registrado');
 
       return { success: true, message: 'Peso registrado con éxito.' };
     } catch (error) {
@@ -407,7 +592,7 @@ export const createDataSlice = (set, get) => ({
       set({ bodyMeasurementsLog: history });
 
       if (response && response.xpAdded > 0) {
-        if (get().addXp) get().addXp(response.xpAdded);
+        if (get().addXp) get().addXp(response.xpAdded, 'Medida corporal registrada');
       }
 
       const message = (response && response.xpAdded > 0)

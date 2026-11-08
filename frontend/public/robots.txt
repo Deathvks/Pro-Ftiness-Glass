@@ -1,5 +1,61 @@
 User-agent: *
-Allow: /
-Disallow:
+Allow: /$
+Allow: /sobre-nosotros
+Allow: /faq
+Allow: /privacy
+Allow: /terms
+Allow: /noticias
+Allow: /noticias/
+Allow: /calculadora-1rm
+Allow: /calculadora-calorias-macros
+Allow: /ejercicios
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /workout
+Disallow: /routines
+Disallow: /nutrition
+Disallow: /progress
+Disallow: /social
+Disallow: /settings
+Disallow: /profile
+Disallow: /admin
+Disallow: /login
+Disallow: /register
+Disallow: /forgotPassword
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /asesoria
+Disallow: /hub
+Disallow: /share/
+Disallow: /explore
+Disallow: /*?*from=
+Disallow: /*?*utm_
 
-Sitemap: https://pro-fitness-glass.zeabur.app/sitemap.xml
+# Rastreadores de Motores de IA y Búsqueda Generativa (GEO)
+User-agent: GPTBot
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+
+Sitemap: https://profitnessglass.es/sitemap.xml
+Sitemap: https://profitnessglass.es/rss.xml

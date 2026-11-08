@@ -56,9 +56,24 @@ export default function MilestoneLevelUpModal({ level, onClose }) {
         <h2 className={`text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br ${tier.colors} mb-2 uppercase tracking-tighter drop-shadow-lg`}>
           ¡Rango {tier.name}!
         </h2>
-        <p className="text-gray-300 text-lg mb-8 font-medium px-4">
+        <p className="text-gray-300 text-lg mb-6 font-medium px-4">
           Has alcanzado el asombroso nivel {level}. Tu dedicación está rindiendo frutos. ¡Sigue así!
         </p>
+
+        {level === 20 && (
+          <div className="mb-6 w-full bg-white/5 border border-white/10 rounded-2xl p-3 backdrop-blur-md animate-[fade-in_0.5s_ease-out]">
+            <p className="text-xs uppercase tracking-wider font-extrabold text-amber-300 mb-2.5">
+              ✨ ¡Recompensa Desbloqueada: 5 Acentos Animados!
+            </p>
+            <div className="flex gap-2.5 justify-center items-center">
+              <span className="w-8 h-8 rounded-full shadow-md living-accent-preview ring-1 ring-white/20" style={{ backgroundImage: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 35%, #3b82f6 70%, #7c3aed 100%)', boxShadow: '0 4px 12px rgba(124, 58, 237, 0.45)' }} title="Supernova" />
+              <span className="w-8 h-8 rounded-full shadow-md living-accent-preview ring-1 ring-white/20" style={{ backgroundImage: 'linear-gradient(135deg, #10b981 0%, #06b6d4 35%, #3b82f6 70%, #10b981 100%)', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.45)' }} title="Plasma Cuántico" />
+              <span className="w-8 h-8 rounded-full shadow-md living-accent-preview ring-1 ring-white/20" style={{ backgroundImage: 'linear-gradient(135deg, #ef4444 0%, #f97316 35%, #facc15 70%, #ef4444 100%)', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.45)' }} title="Llama Eterna" />
+              <span className="w-8 h-8 rounded-full shadow-md living-accent-preview ring-1 ring-white/20" style={{ backgroundImage: 'linear-gradient(135deg, #1d4ed8 0%, #6366f1 35%, #14b8a6 70%, #1d4ed8 100%)', boxShadow: '0 4px 12px rgba(29, 78, 216, 0.45)' }} title="Vórtice Abisal" />
+              <span className="w-8 h-8 rounded-full shadow-md living-accent-preview ring-1 ring-white/20" style={{ backgroundImage: 'linear-gradient(135deg, #d97706 0%, #fef08a 35%, #b45309 70%, #d97706 100%)', boxShadow: '0 4px 12px rgba(217, 119, 6, 0.45)' }} title="Oro Cósmico" />
+            </div>
+          </div>
+        )}
 
         <button
           onClick={onClose}

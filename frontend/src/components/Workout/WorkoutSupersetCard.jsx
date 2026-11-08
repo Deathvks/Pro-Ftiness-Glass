@@ -1,9 +1,10 @@
-import React from 'react';
-import { Clock, Flame, Repeat, Target, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Clock, Flame, Repeat, Target, AlertTriangle, CheckCircle2, TrendingUp, Calendar } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import GlassCard from '../GlassCard';
 import useAppStore from '../../store/useAppStore';
 import { getExerciseHistorySessions, diagnoseExerciseTrend } from '../../utils/smartProgressionCoach';
+import { getAppliedCoachStrategy, evaluateExerciseFollowUpAndRecovery } from '../../utils/coachAppliedHistory';
 
 // --- Helper para normalizar inputs ---
 const normalizeDecimalInput = (value) => {
@@ -35,10 +36,22 @@ const WorkoutSupersetCard = ({
     baseInputClasses,
     onShowSmartCoach,
 }) => {
-    const { userProfile, workoutLog } = useAppStore((state) => ({
+    const { userProfile, workoutLog, activeWorkout } = useAppStore((state) => ({
         userProfile: state.userProfile,
-        workoutLog: state.workoutLog
+        workoutLog: state.workoutLog,
+        activeWorkout: state.activeWorkout
     }));
+    const [_appliedTick, setAppliedTick] = useState(0);
+
+    // Escuchar actualización instantánea de la estrategia aplicada por el coach
+    React.useEffect(() => {
+        const handleApplied = () => {
+            setAppliedTick(v => v + 1);
+        };
+        window.addEventListener('coach-strategy-applied', handleApplied);
+        return () => window.removeEventListener('coach-strategy-applied', handleApplied);
+    }, []);
+
     const isInAsesoria = Boolean(
         userProfile?.trainer_id ||
         userProfile?.trainer ||
@@ -185,8 +198,24 @@ const WorkoutSupersetCard = ({
         */}
                 <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 snap-x hide-scrollbar md:justify-center">
                     {group.map((ex) => {
-                        const exSessions = getExerciseHistorySessions(ex.name, workoutLog);
-                        const exTrend = diagnoseExerciseTrend(exSessions);
+                        const currentRoutineId = activeWorkout?.routine_id || activeWorkout?.routineId || activeWorkout?.id || null;
+                        const currentRoutineName = activeWorkout?.routine_name || activeWorkout?.routineName || activeWorkout?.name || null;
+                        const exAllSessions = getExerciseHistorySessions(ex.name, workoutLog, currentRoutineId, currentRoutineName);
+                        const exRCtx = exAllSessions.routineContext;
+                        const exSessions = (currentRoutineId || currentRoutineName)
+                            ? (exRCtx?.sameRoutineSessions || [])
+                            : exAllSessions;
+                        const exTrend = diagnoseExerciseTrend(exSessions, currentRoutineId);
+                        const exLastApplied = getAppliedCoachStrategy(ex.name, currentRoutineId, currentRoutineName);
+                        const exFollowUp = evaluateExerciseFollowUpAndRecovery({
+                            exerciseName: ex.name,
+                            sessions: exSessions,
+                            allSessions: exAllSessions,
+                            routineContext: exRCtx,
+                            currentTrend: exTrend,
+                            lastApplied: exLastApplied,
+                            userProfile
+                        });
 
                         return (
                         <div
@@ -211,6 +240,19 @@ const WorkoutSupersetCard = ({
                                 <span className="text-[10px] text-text-muted uppercase tracking-wide mt-0.5 truncate">
                                     {ex.sets} Series × {ex.reps} Reps
                                 </span>
+                                {exFollowUp && (
+                                    <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full mt-1 w-fit ${
+                                        exFollowUp.type === 'ok_green'
+                                            ? 'bg-emerald-500/15 text-emerald-400'
+                                            : exFollowUp.type === 'inactivity_warning' || exFollowUp.type === 'recovery_warning'
+                                            ? 'bg-amber-500/15 text-amber-400'
+                                            : exFollowUp.type === 'recovery_notice'
+                                            ? 'bg-blue-500/15 text-blue-400'
+                                            : 'bg-accent/15 text-accent'
+                                    }`}>
+                                        {exFollowUp.badgeShort || exFollowUp.badge}
+                                    </span>
+                                )}
                             </div>
 
                             {/* 3. Botones de acción */}
@@ -220,29 +262,44 @@ const WorkoutSupersetCard = ({
                                         type="button"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onShowSmartCoach(ex);
+                                            onShowSmartCoach({
+                                                ...ex,
+                                                superset_group_id: ex.superset_group_id || group[0]?.superset_group_id || 'superset_active'
+                                            });
                                         }}
                                         className={`p-1.5 rounded-md transition-colors flex items-center justify-center ${
-                                            exTrend.isWarning
+                                            exFollowUp?.type === 'ok_green'
+                                                ? 'text-emerald-400 hover:bg-emerald-500/10'
+                                                : exFollowUp?.type === 'inactivity_warning' || exFollowUp?.type === 'recovery_warning'
+                                                ? 'text-amber-400 hover:bg-amber-500/10'
+                                                : exFollowUp?.type === 'recovery_notice'
+                                                ? 'text-blue-400 hover:bg-blue-500/10'
+                                                : exFollowUp?.type === 'next_session_target'
+                                                ? 'text-accent hover:bg-accent/10'
+                                                : exTrend.isWarning
                                                 ? 'text-amber-400 hover:bg-amber-500/10'
                                                 : exTrend.isProgressing
                                                 ? 'text-emerald-400 hover:bg-emerald-500/10'
                                                 : 'text-accent hover:bg-accent/10'
                                         }`}
-                                        title={
-                                            exTrend.isWarning
-                                                ? 'Aviso de rendimiento: Toca para ver recomendaciones'
-                                                : exTrend.isProgressing
-                                                ? '¡En racha! Toca para ver recomendaciones de sobrecarga'
-                                                : 'Guía inteligente según tu objetivo'
-                                        }
+                                        title={exFollowUp?.title || 'Guía inteligente según tu objetivo'}
                                     >
-                                        {exTrend.isWarning ? (
+                                        {exFollowUp?.type === 'ok_green' ? (
+                                            <CheckCircle2 size={16} strokeWidth={2.5} className="text-emerald-400" />
+                                        ) : exFollowUp?.type === 'inactivity_warning' ? (
+                                            <Calendar size={16} strokeWidth={2.5} className="text-amber-400 animate-pulse" />
+                                        ) : exFollowUp?.type === 'recovery_warning' ? (
+                                            <AlertTriangle size={16} strokeWidth={2.5} className="text-amber-400 animate-pulse" />
+                                        ) : exFollowUp?.type === 'recovery_notice' ? (
+                                            <Clock size={16} strokeWidth={2.5} className="text-blue-400" />
+                                        ) : exFollowUp?.type === 'next_session_target' ? (
+                                            <TrendingUp size={16} strokeWidth={2.5} className="text-accent" />
+                                        ) : exTrend.isWarning ? (
                                             <AlertTriangle size={16} strokeWidth={2.5} className="text-amber-400 animate-pulse" />
                                         ) : exTrend.isProgressing ? (
                                             <CheckCircle2 size={16} strokeWidth={2.5} className="text-emerald-400" />
                                         ) : (
-                                            <Target size={16} strokeWidth={2.5} className="text-accent" />
+                                            <TrendingUp size={16} strokeWidth={2.5} className="text-accent" />
                                         )}
                                     </button>
                                 )}

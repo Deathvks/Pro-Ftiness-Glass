@@ -4,6 +4,7 @@ import models from '../models/index.js';
 import { Op } from 'sequelize';
 import { addXp } from '../services/gamificationService.js';
 import { deleteFile } from '../services/imageService.js';
+import { sanitizePlainText } from '../utils/sanitizer.js';
 
 const {
   sequelize,
@@ -119,6 +120,7 @@ export const getAllRoutines = async (req, res, next) => {
       ...assignedRoutines.map(r => formatRoutine(r, true))
     ];
 
+    res.set('Cache-Control', 'private, max-age=15, stale-while-revalidate=45');
     res.json(routinesData);
   } catch (error) {
     next(error);
@@ -212,13 +214,6 @@ const processAndSaveExercises = async (
       } else if (exerciseListId && !isNaN(parseInt(exerciseListId))) {
         try {
           let exerciseFromList = await ExerciseList.findByPk(parseInt(exerciseListId), { transaction });
-          
-          if (!exerciseFromList) {
-            exerciseFromList = await ExerciseList.findOne({
-              where: { wger_id: parseInt(exerciseListId) },
-              transaction
-            });
-          }
 
           if (!exerciseFromList && exerciseName) {
             exerciseFromList = await ExerciseList.findOne({
@@ -249,8 +244,8 @@ const processAndSaveExercises = async (
 
       // CORRECCIÓN APLICADA AQUÍ: Truncar para que MySQL no lance "Data too long"
       return {
-        name: exerciseName ? String(exerciseName).substring(0, 255) : "Ejercicio Manual",
-        muscle_group: muscleGroup ? String(muscleGroup).substring(0, 100) : "Varios",
+        name: exerciseName ? sanitizePlainText(String(exerciseName)).substring(0, 255) : "Ejercicio Manual",
+        muscle_group: muscleGroup ? sanitizePlainText(String(muscleGroup)).substring(0, 100) : "Varios",
         sets: ex.sets,
         reps: ex.reps,
         rest_seconds: ex.rest_seconds,
@@ -260,7 +255,7 @@ const processAndSaveExercises = async (
         routine_id: routineId,
         superset_group_id: ex.superset_group_id,
         exercise_order: ex.exercise_order,
-        reminder: ex.reminder || null, // <-- AÑADIDO: Guardar la meta/recordatorio
+        reminder: ex.reminder ? sanitizePlainText(String(ex.reminder)).substring(0, 500) : null,
       };
     })
   );
@@ -278,12 +273,18 @@ export const createRoutine = async (req, res, next) => {
   }
 
   const { name, description, is_public = false, exercises = [], image_url, folder, visibility, is_trainer_template = false } = req.body;
+  const cleanName = sanitizePlainText(name);
+  if (!cleanName) {
+    return res.status(400).json({ error: 'El nombre de la rutina es requerido.' });
+  }
+  const cleanDescription = description ? sanitizePlainText(description) : null;
+  const cleanFolder = folder ? sanitizePlainText(folder) : null;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
   try {
     const existingRoutine = await sequelize.models.Routine.findOne({
-      where: { name, user_id: userId },
+      where: { name: cleanName, user_id: userId },
       transaction: t,
     });
 
@@ -295,12 +296,12 @@ export const createRoutine = async (req, res, next) => {
     const newRoutine = await sequelize.models.Routine.create(
         {
           is_trainer_template,
-        name,
-        description,
+        name: cleanName,
+        description: cleanDescription,
         user_id: userId,
         is_public, 
         visibility: visibility || 'private', 
-        folder: folder || null,
+        folder: cleanFolder,
         downloads_count: 0,
         image_url: image_url || null
       },
@@ -341,13 +342,19 @@ export const updateRoutine = async (req, res, next) => {
 
   const { id } = req.params;
   const { name, description, is_public, exercises = [], image_url, folder, visibility } = req.body;
+  const cleanName = sanitizePlainText(name);
+  if (!cleanName) {
+    return res.status(400).json({ error: 'El nombre de la rutina es requerido.' });
+  }
+  const cleanDescription = description !== undefined ? (description ? sanitizePlainText(description) : null) : undefined;
+  const cleanFolder = folder !== undefined ? (folder ? sanitizePlainText(folder) : null) : undefined;
   const { userId } = req.user;
   const t = await sequelize.transaction();
 
   try {
     const existingRoutine = await sequelize.models.Routine.findOne({
       where: {
-        name,
+        name: cleanName,
         user_id: userId,
         id: { [Op.ne]: id },
       },
@@ -372,11 +379,13 @@ export const updateRoutine = async (req, res, next) => {
 
     const oldImageUrl = routine.image_url;
 
-    const updateData = { name, description };
+    const updateData = { name: cleanName };
+    if (cleanDescription !== undefined) updateData.description = cleanDescription;
+    if (cleanFolder !== undefined) updateData.folder = cleanFolder;
     if (typeof is_public !== 'undefined') updateData.is_public = is_public;
     if (typeof visibility !== 'undefined') updateData.visibility = visibility;
     if (typeof image_url !== 'undefined') updateData.image_url = image_url;
-    if (typeof folder !== 'undefined') updateData.folder = folder;
+
 
     await routine.update(updateData, { transaction: t });
 
@@ -772,7 +781,11 @@ export const downloadRoutine = async (req, res, next) => {
       image_url: sourceRoutine.image_url 
     }, { transaction: t });
 
-    const exercisesToCopy = sourceRoutine.RoutineExercises.map(ex => ({
+    const sortedSourceExercises = (sourceRoutine.RoutineExercises || []).slice().sort(
+      (a, b) => (a.exercise_order ?? 0) - (b.exercise_order ?? 0)
+    );
+
+    const exercisesToCopy = sortedSourceExercises.map((ex, idx) => ({
       exercise_list_id: ex.exercise_list_id,
       name: ex.name,
       muscle_group: ex.muscle_group,
@@ -782,7 +795,7 @@ export const downloadRoutine = async (req, res, next) => {
       video_url: ex.video_url,
       image_url_start: ex.image_url_start,
       superset_group_id: ex.superset_group_id,
-      exercise_order: ex.exercise_order,
+      exercise_order: idx,
       is_manual: ex.exercise_list_id === null,
       reminder: null // <-- AÑADIDO: No copiamos las metas de otras personas
     }));

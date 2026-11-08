@@ -257,35 +257,41 @@ const DailyDetailView = ({ logs, onClose, isTrainerMode = false }) => {
 
   return (
     <>
-      <ModalPortal><div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.3s_ease-out] !pt-[calc(1rem+var(--safe-top))] !pb-[calc(1rem+var(--safe-bottom))]">
-        {/* Contenedor Modal: Flex Column con max-height */}
-        <div className={`relative w-full max-w-lg p-0 flex flex-col m-4 bg-bg-primary rounded-2xl shadow-2xl border ${subtleBorderClass} max-h-[80vh] md:max-h-[90vh] overflow-hidden animate-[scale-in_0.3s_ease-out]`}>
+      <ModalPortal>
+        <div 
+          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.2s_ease-out] p-0 sm:p-4 pt-[var(--safe-top,env(safe-area-inset-top,0px))]"
+          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
+          {/* Contenedor Modal: En móvil se abre como Bottom Sheet a altura completa (92vh) con swipe pill */}
+          <div className={`relative w-full max-w-2xl p-0 flex flex-col bg-bg-primary rounded-t-[32px] sm:rounded-3xl shadow-2xl border ${subtleBorderClass} h-[92vh] sm:h-auto sm:max-h-[90vh] overflow-hidden animate-[slide-up_0.3s_ease-out] sm:animate-[scale-in_0.2s_ease-out]`}>
+            {/* Indicador visual de arrastre / pill para móvil */}
+            <div className="w-12 h-1.5 bg-black/15 dark:bg-white/20 rounded-full mx-auto my-2.5 sm:hidden shrink-0" />
 
-          {/* Header (Fijo) */}
-          <div className={`p-5 border-b ${subtleBorderClass} bg-bg-secondary flex justify-between items-center z-10 shrink-0`}>
-            <div>
-              <h3 className="text-xl font-bold text-text-primary">Resumen del Día</h3>
-              {logs.length > 0 &&
-                <p className="text-text-muted text-sm">{new Date(logs[0].workout_date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                }
+            {/* Header (Fijo) */}
+            <div className={`px-5 py-4 sm:p-6 border-b ${subtleBorderClass} bg-bg-secondary flex justify-between items-center z-10 shrink-0`}>
+              <div>
+                <h3 className="text-xl font-bold text-text-primary">Resumen del Día</h3>
+                {logs.length > 0 &&
+                  <p className="text-text-muted text-sm capitalize">{new Date(logs[0].workout_date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                  }
+              </div>
+              <button onClick={onClose} className="text-text-secondary hover:text-text-primary p-2 hover:bg-bg-primary rounded-full transition"><X size={20} /></button>
             </div>
-            <button onClick={onClose} className="text-text-secondary hover:text-text-primary p-2 hover:bg-bg-primary rounded-full transition"><X size={20} /></button>
-          </div>
 
-          {/* Estadísticas (Fijo) */}
-          <div className={`grid grid-cols-2 gap-4 text-center shrink-0 p-4 bg-bg-primary border-b ${subtleBorderClass}`}>
-            <div className={`bg-bg-secondary p-2 rounded-xl border ${subtleBorderClass} shadow-sm`}>
-              <span className="text-xs text-text-secondary block mb-1">Duración</span>
-              <strong className="text-lg text-text-primary">{Math.round(totalDuration / 60)} min</strong>
+            {/* Estadísticas (Fijo) */}
+            <div className={`grid grid-cols-2 gap-4 text-center shrink-0 p-4 bg-bg-primary border-b ${subtleBorderClass}`}>
+              <div className={`bg-bg-secondary p-2 rounded-xl border ${subtleBorderClass} shadow-sm`}>
+                <span className="text-xs text-text-secondary block mb-1">Duración</span>
+                <strong className="text-lg text-text-primary">{Math.round(totalDuration / 60)} min</strong>
+              </div>
+              <div className={`bg-bg-secondary p-2 rounded-xl border ${subtleBorderClass} shadow-sm`}>
+                <span className="text-xs text-text-secondary block mb-1">Calorías</span>
+                <strong className="text-lg text-text-primary">{totalCalories} kcal</strong>
+              </div>
             </div>
-            <div className={`bg-bg-secondary p-2 rounded-xl border ${subtleBorderClass} shadow-sm`}>
-              <span className="text-xs text-text-secondary block mb-1">Calorías</span>
-              <strong className="text-lg text-text-primary">{totalCalories} kcal</strong>
-            </div>
-          </div>
 
-          {/* Lista Scrollable (Flexible) */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col gap-4 bg-bg-primary min-h-0">
+            {/* Lista Scrollable (Flexible) */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col gap-4 bg-bg-primary min-h-0 pb-[calc(var(--safe-bottom)+2rem)] sm:pb-6">
             {visibleLogs.map((log) => {
                 const exerciseGroups = groupExercises(log.WorkoutLogDetails);
                 const isCardioOnly = !log.WorkoutLogDetails || log.WorkoutLogDetails.length === 0;

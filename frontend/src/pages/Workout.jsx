@@ -1,8 +1,10 @@
 /* frontend/src/pages/Workout.jsx */
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Activity, Maximize2, CloudOff, RefreshCw } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
+import { useAppTheme } from '../hooks/useAppTheme';
 import { calculateCalories } from '../utils/helpers';
 import Spinner from '../components/Spinner';
 
@@ -14,7 +16,8 @@ import ExerciseSearch from '../components/RoutineEditor/ExerciseSearch';
 import WorkoutExerciseDetailModal from './WorkoutExerciseDetailModal';
 import PlateCalculatorModal from '../components/PlateCalculatorModal';
 import ExerciseHistoryModal from './ExerciseHistoryModal';
-import WorkoutHeatmapModal from '../components/Workout/WorkoutHeatmapModal';
+import WorkoutHeatmapModal, { getWorkoutMuscleData } from '../components/Workout/WorkoutHeatmapModal';
+import MuscleHeatmap from '../components/MuscleHeatmap/MuscleHeatmap';
 import WorkoutReviewModal from '../components/Workout/WorkoutReviewModal';
 
 // --- IMPORTS DE COMPONENTES MODULARIZADOS ---
@@ -28,9 +31,10 @@ import SmartExerciseCoachModal from '../components/Workout/SmartExerciseCoachMod
 // --- Lazy Load de QuickCardio ---
 const QuickCardio = React.lazy(() => import('./QuickCardio'));
 
-const Workout = ({ timer, setView }) => {
+const Workout = ({ timer, setView, navParams }) => {
     const { addToast } = useToast();
     const { t } = useTranslation(['exercise_names', 'exercise_descriptions']);
+    const { resolvedTheme } = useAppTheme();
 
     // --- 1. Estado de Zustand (Global) ---
     const {
@@ -89,7 +93,43 @@ const Workout = ({ timer, setView }) => {
     const [smartCoachExercise, setSmartCoachExercise] = useState(null);
     const [dismissedPreviousNote, setDismissedPreviousNote] = useState(false);
 
+    const syncQueue = useAppStore((state) => state.syncQueue || []);
+    const isSyncing = useAppStore((state) => state.isSyncing || false);
+    const pendingWorkoutsCount = useMemo(() => {
+        return syncQueue.filter(item => item.endpoint === '/workouts' || item.endpoint?.startsWith('/workouts')).length;
+    }, [syncQueue]);
+
     const [showQuickCardio, setShowQuickCardio] = useState(false);
+
+    // --- Restaurar modal de Smart Coach si volvemos desde Asesoría ---
+    useEffect(() => {
+        let exerciseToReopen = navParams?.reopenCoachExercise;
+        if (!exerciseToReopen) {
+            try {
+                const saved = sessionStorage.getItem('asesoria_return_context');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.view === 'workout' && parsed.reopenCoachExercise) {
+                        exerciseToReopen = parsed.reopenCoachExercise;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        if (exerciseToReopen && activeWorkout?.exercises && activeWorkout.exercises.length > 0) {
+            const found = activeWorkout.exercises.find(
+                (e) => (exerciseToReopen.id && e.id === exerciseToReopen.id) ||
+                       (exerciseToReopen.name && e.name === exerciseToReopen.name) ||
+                       (typeof exerciseToReopen === 'string' && (e.name === exerciseToReopen || e.id === exerciseToReopen))
+            );
+            if (found) {
+                setSmartCoachExercise(found);
+                try {
+                    sessionStorage.removeItem('asesoria_return_context');
+                } catch (e) {}
+            }
+        }
+    }, [navParams, activeWorkout?.exercises]);
 
     // --- Recordatorio inteligente: Nota de la sesión anterior ---
     const previousWorkoutNote = useMemo(() => {
@@ -146,6 +186,11 @@ const Workout = ({ timer, setView }) => {
     const hasWorkoutStarted = workoutStartTime !== null;
     const isSimpleWorkout =
         !activeWorkout?.exercises || activeWorkout.exercises.length === 0;
+
+    const workoutMuscleData = useMemo(
+        () => getWorkoutMuscleData(activeWorkout?.exercises || []),
+        [activeWorkout?.exercises]
+    );
 
     const exerciseGroups = useMemo(() => {
         if (isSimpleWorkout) return [];
@@ -260,6 +305,8 @@ const Workout = ({ timer, setView }) => {
 
     const handleReviewConfirm = async () => {
         setIsSaving(true);
+        const isFirstWorkout = workoutLog.length === 0 &&
+            !useAppStore.getState().gamification.unlockedBadges?.includes('first_workout');
         
         const workoutData = {
             routineId: activeWorkout.routineId,
@@ -295,27 +342,36 @@ const Workout = ({ timer, setView }) => {
 
         const result = await logWorkout(workoutData);
         if (result.success) {
-            if (result.gamification) {
-                result.gamification.forEach(event => {
-                    if (event.type === 'xp') {
-                        addToast(`+${event.amount} XP: ${event.reason}`, 'success');
-                    } else if (event.type === 'badge') {
-                        addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
-                    } else if (event.type === 'warning') {
-                        addToast(event.message, 'warning');
-                    } else if (event.type === 'info') {
-                        addToast(event.message, 'info');
-                    }
-                });
-            }
-
-            if (result.message && result.message.includes('Límite de XP')) {
-                addToast(result.message, 'warning');
+            if (result.isOffline) {
+                addToast('📶 Entrenamiento guardado en tu móvil. Se sincronizará automáticamente al recuperar cobertura.', 'info');
             } else {
-                addToast(result.message, 'success');
+                if (result.gamification) {
+                    result.gamification.forEach(event => {
+                        if (event.type === 'xp') {
+                            addToast(`+${event.amount} XP: ${event.reason}`, 'success');
+                        } else if (event.type === 'badge') {
+                            addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
+                        } else if (event.type === 'warning') {
+                            addToast(event.message, 'warning');
+                        } else if (event.type === 'info') {
+                            addToast(event.message, 'info');
+                        }
+                    });
+                }
+
+                if (result.message && result.message.includes('Límite de XP')) {
+                    addToast(result.message, 'warning');
+                } else {
+                    addToast(result.message, 'success');
+                }
             }
 
             setShowReviewModal(false);
+            setCompletedWorkoutData({
+                ...workoutData,
+                isFirstWorkout,
+                newPRs: result.newPRs || []
+            });
             setShowWorkoutSummaryModal(true);
         } else {
             addToast(result.message, 'error');
@@ -353,6 +409,33 @@ const Workout = ({ timer, setView }) => {
 
     return (
         <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-10 pb-28 md:pb-10 animate-[fade-in_0.5s_ease-out]">
+            {pendingWorkoutsCount > 0 && (
+                <div className="mb-5 p-3.5 sm:p-4 rounded-2xl glass border border-amber-500/30 bg-amber-500/10 flex items-center justify-between gap-3 text-xs animate-[fade-in_0.3s_ease-out]">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
+                            <CloudOff size={18} />
+                        </div>
+                        <div className="min-w-0">
+                            <span className="font-bold text-amber-600 dark:text-amber-400 block truncate text-xs sm:text-sm">
+                                {pendingWorkoutsCount === 1 ? '1 entrenamiento guardado en tu móvil' : `${pendingWorkoutsCount} entrenamientos guardados en tu móvil`}
+                            </span>
+                            <span className="text-[11px] text-text-secondary block">
+                                Se sincronizará automáticamente con la nube al recuperar conexión
+                            </span>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => window.dispatchEvent(new Event('pfg-trigger-sync'))}
+                        disabled={isSyncing}
+                        className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shrink-0 active:scale-95 transition-all shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                        <RefreshCw size={12} className={isSyncing ? "animate-spin" : ""} />
+                        <span>{isSyncing ? 'Subiendo...' : 'Sincronizar'}</span>
+                    </button>
+                </div>
+            )}
+
             <WorkoutHeader
                 routineName={activeWorkout.routineName}
                 routineImage={activeWorkout.imageUrl || activeWorkout.image_url} 
@@ -364,7 +447,44 @@ const Workout = ({ timer, setView }) => {
                 onFinishClick={handleFinishClick}
                 onShowCalculator={() => setShowCalculatorModal(true)}
                 onShowHeatmap={() => setShowHeatmapModal(true)}
+                onOpenSettings={() => setView('settings', { highlight: 'workout', returnView: 'workout' })}
             />
+
+            {!isSimpleWorkout && Object.keys(workoutMuscleData).length > 0 && (
+                <section className="mb-7 overflow-hidden rounded-[28px] border border-accent/20 bg-gradient-to-br from-accent/10 via-bg-secondary to-bg-primary shadow-lg shadow-black/5">
+                    <div className="flex items-center justify-between gap-3 px-4 pt-4 sm:px-5 sm:pt-5">
+                        <div className="flex min-w-0 items-center gap-3">
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent">
+                                <Activity size={21} />
+                            </span>
+                            <div className="min-w-0">
+                                <h2 className="font-bold text-text-primary">Mapa muscular</h2>
+                                <p className="text-xs text-text-secondary">Volumen previsto para esta sesión</p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowHeatmapModal(true)}
+                            className="flex shrink-0 items-center gap-1.5 rounded-full border border-accent/20 bg-bg-primary/70 px-3 py-2 text-xs font-semibold text-accent transition hover:bg-accent/10"
+                        >
+                            <Maximize2 size={14} />
+                            Ver ampliado
+                        </button>
+                    </div>
+                    <div className="grid items-center gap-3 px-3 pb-4 pt-2 sm:grid-cols-[minmax(0,1fr)_220px] sm:px-5 sm:pb-5">
+                        <p className="order-2 px-2 text-sm leading-relaxed text-text-secondary sm:order-1 sm:px-0">
+                            La intensidad del color muestra qué músculos acumulan más series. Toca el mapa para alternar entre frente y espalda.
+                        </p>
+                        <div className="order-1 mx-auto w-full max-w-[220px] sm:order-2">
+                            <MuscleHeatmap
+                                muscleData={workoutMuscleData}
+                                darkMode={resolvedTheme !== 'light'}
+                                compact
+                            />
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {/* Banner recordatorio de la nota de la sesión anterior */}
             {previousWorkoutNote && !dismissedPreviousNote && (
@@ -436,6 +556,7 @@ const Workout = ({ timer, setView }) => {
             {showWorkoutSummaryModal && completedWorkoutData && (
                 <WorkoutSummaryModal
                     workoutData={completedWorkoutData}
+                    showReminderOffer={completedWorkoutData.isFirstWorkout}
                     onClose={async () => {
                         setShowWorkoutSummaryModal(false);
                         setCompletedWorkoutData(null);
@@ -502,6 +623,8 @@ const Workout = ({ timer, setView }) => {
                     exercise={smartCoachExercise}
                     userProfile={userProfile}
                     workoutLog={workoutLog}
+                    currentRoutineId={activeWorkout?.routine_id || activeWorkout?.routineId || activeWorkout?.id || null}
+                    currentRoutineName={activeWorkout?.routine_name || activeWorkout?.routineName || activeWorkout?.name || null}
                     onClose={() => setSmartCoachExercise(null)}
                     onApplyStrategy={(strategy) => {
                         const exIndex = activeWorkout?.exercises?.findIndex(
@@ -510,16 +633,26 @@ const Workout = ({ timer, setView }) => {
                         if (exIndex !== -1 && exIndex !== undefined) {
                             applyCoachStrategyToExercise(exIndex, strategy);
 
-                            const parts = [];
-                            if (strategy.suggestedSets) parts.push(`${strategy.suggestedSets} series`);
-                            if (strategy.suggestedWeight !== null && strategy.suggestedWeight !== undefined) {
-                                parts.push(`${strategy.suggestedWeight} kg`);
-                            }
-                            if (strategy.suggestedReps !== null && strategy.suggestedReps !== undefined) {
-                                parts.push(`${strategy.suggestedReps} reps`);
-                            }
+                            if (strategy.perSetPlan && strategy.perSetPlan.length > 0) {
+                                const setsDesc = strategy.perSetPlan.map(s => `${s.weight}kg`).join(' / ');
+                                addToast(`Estrategia aplicada: ${strategy.title} (${setsDesc})`, 'success');
+                            } else {
+                                const parts = [];
+                                if (strategy.suggestedSets) parts.push(`${strategy.suggestedSets} series`);
+                                if (strategy.suggestedWeight !== null && strategy.suggestedWeight !== undefined) {
+                                    const w = parseFloat(strategy.suggestedWeight);
+                                    if (w > 0) {
+                                        parts.push(`${w} kg (todas las series)`);
+                                    } else {
+                                        parts.push('Peso corporal');
+                                    }
+                                }
+                                if (strategy.suggestedReps !== null && strategy.suggestedReps !== undefined) {
+                                    parts.push(`${strategy.suggestedReps} reps`);
+                                }
 
-                            addToast(`Estrategia aplicada: ${parts.join(', ')}`, 'success');
+                                addToast(`Estrategia aplicada: ${parts.join(', ')}`, 'success');
+                            }
                         }
                         setSmartCoachExercise(null);
                     }}
@@ -534,8 +667,23 @@ const Workout = ({ timer, setView }) => {
                         setSmartCoachExercise(null);
                     }}
                     onNavigateAsesoria={() => {
-                        setSmartCoachExercise(null);
-                        if (setView) setView('asesoria');
+                        const exercisePayload = {
+                            id: smartCoachExercise.id,
+                            name: smartCoachExercise.name
+                        };
+                        try {
+                            sessionStorage.setItem('asesoria_return_context', JSON.stringify({
+                                view: 'workout',
+                                reopenCoachExercise: exercisePayload
+                            }));
+                        } catch (e) {}
+
+                        if (setView) {
+                            setView('asesoria', {
+                                returnView: 'workout',
+                                returnParams: { reopenCoachExercise: exercisePayload }
+                            });
+                        }
                     }}
                 />
             )}

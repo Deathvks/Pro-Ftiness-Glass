@@ -5,8 +5,8 @@ import apiClient from '../services/apiClient';
 import { useToast } from '../hooks/useToast';
 import { initSocket } from '../services/socket';
 import useAppStore from '../store/useAppStore';
-import { usePushNotifications } from '../hooks/usePushNotifications';
 import TrainerProfileModal from '../components/TrainerProfileModal';
+import NotificationOffer from '../components/NotificationOffer';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'; 
 const SERVER_URL = API_URL.replace('/api', '');
@@ -20,14 +20,24 @@ const getFullImageUrl = (path) => {
 };
 
 
-export default function AsesoriaScreen({ onBack }) {
-  const { subscribe, isSubscribed } = usePushNotifications();
-  const [trainer, setTrainer] = useState(null);
-  const [messages, setMessages] = useState([]);
-    const [showTrainerProfile, setShowTrainerProfile] = useState(false);
+let cachedTrainerInfo = null;
+let cachedChatMessages = null;
+
+try {
+  const savedTrainer = localStorage.getItem('pfg_asesoria_trainer');
+  if (savedTrainer) cachedTrainerInfo = JSON.parse(savedTrainer);
+  const savedMsgs = localStorage.getItem('pfg_asesoria_messages');
+  if (savedMsgs) cachedChatMessages = JSON.parse(savedMsgs);
+} catch (_) {}
+
+export default function AsesoriaScreen({ onBack, onOpenNotificationSettings }) {
+  const [trainer, setTrainer] = useState(() => cachedTrainerInfo || null);
+  const [messages, setMessages] = useState(() => cachedChatMessages || []);
+  const [showTrainerProfile, setShowTrainerProfile] = useState(false);
   const [newMessage, setNewMessage] = useState('');
   const [fullscreenVideo, setFullscreenVideo] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !cachedTrainerInfo && (!cachedChatMessages || cachedChatMessages.length === 0));
+  const [hasError, setHasError] = useState(false);
   const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef(null);
   const { addToast } = useToast();
@@ -56,33 +66,29 @@ export default function AsesoriaScreen({ onBack }) {
   }, [messages]);
 
   const handleNewMessage = (message) => {
-    setMessages(prev => [...prev, message]);
-    // If we receive a message from the trainer while the screen is open, mark it as read
+    if (!message) return;
+    if (message.type === 'refresh') {
+      fetchData();
+      return;
+    }
+    // If we receive a message from the trainer or bot while the screen is open, mark it as read
     const currentUserId = useAppStore.getState().userProfile?.id;
-    if (String(message.sender_id) !== String(currentUserId)) {
+    if (message.sender_id && String(message.sender_id) !== String(currentUserId)) {
       markAsRead(message.sender_id);
     }
+    setMessages(prev => {
+      if (message.id && prev.some(m => m.id === message.id)) return prev;
+      return [...prev, message];
+    });
   };
 
   const handleMessagesRead = ({ byUserId }) => {
     console.log('AsesoriaScreen: Socket messages_read received from:', byUserId);
-    const currentUserId = useAppStore.getState().userProfile?.id;
     setMessages(prev => prev.map(msg => 
-      String(msg.sender_id) === String(currentUserId) && 
-      String(msg.receiver_id) === String(byUserId) && 
-      !msg.read_at 
+      String(msg.receiver_id) === String(byUserId) && !msg.read_at 
         ? { ...msg, read_at: new Date() } 
         : msg
     ));
-  };
-
-  const handleRequestPushPermission = async (e) => {
-    e.preventDefault();
-    if (isSubscribed) {
-      addToast('Ya tienes las notificaciones activadas.', 'success');
-      return;
-    }
-    await subscribe();
   };
 
   const renderMessageContent = (msg) => {
@@ -92,12 +98,13 @@ export default function AsesoriaScreen({ onBack }) {
         return (
           <p className="text-[13px] sm:text-sm font-medium whitespace-pre-wrap">
             {parts[0]}
-            <span 
-              onClick={handleRequestPushPermission}
+            <button
+              type="button"
+              onClick={onOpenNotificationSettings}
               className="text-accent underline cursor-pointer font-bold"
             >
               notificaciones push
-            </span>
+            </button>
             {parts[1]}
           </p>
         );
@@ -160,18 +167,44 @@ export default function AsesoriaScreen({ onBack }) {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
-      const trainerRes = await apiClient('/chat/trainer-info');
-      setTrainer(trainerRes);
+      if (!cachedTrainerInfo && (!cachedChatMessages || cachedChatMessages.length === 0)) {
+        setLoading(true);
+      }
+      setHasError(false);
 
-      const historyRes = await apiClient(`/chat/history/${trainerRes.id}`);
-      setMessages(historyRes);
-      
-      // Mark as read when loading history unconditionally to guarantee socket event fires
-      markAsRead(trainerRes.id);
+      const knownTrainerId = cachedTrainerInfo?.id || trainer?.id;
+      const trainerPromise = apiClient('/chat/trainer-info');
+      const historyPromise = knownTrainerId ? apiClient(`/chat/history/${knownTrainerId}`) : null;
+
+      const [trainerRes, historyFastRes] = await Promise.all([
+        trainerPromise,
+        historyPromise || Promise.resolve(null)
+      ]);
+
+      if (trainerRes) {
+        cachedTrainerInfo = trainerRes;
+        setTrainer(trainerRes);
+        try { localStorage.setItem('pfg_asesoria_trainer', JSON.stringify(trainerRes)); } catch (_) {}
+      }
+
+      const activeTrainerId = trainerRes?.id || knownTrainerId;
+      if (activeTrainerId) {
+        let historyData = historyFastRes;
+        if (!historyData) {
+          historyData = await apiClient(`/chat/history/${activeTrainerId}`);
+        }
+        const msgs = Array.isArray(historyData) ? historyData : [];
+        cachedChatMessages = msgs;
+        setMessages(msgs);
+        try { localStorage.setItem('pfg_asesoria_messages', JSON.stringify(msgs)); } catch (_) {}
+        markAsRead(activeTrainerId);
+      }
     } catch (error) {
       console.error('Error fetching chat data:', error);
-      addToast('No se pudo cargar la asesoría', 'error');
+      if (!cachedTrainerInfo && (!cachedChatMessages || cachedChatMessages.length === 0)) {
+        setHasError(true);
+      }
+      addToast('No se pudo conectar con la asesoría. Pulsa en reintentar.', 'error');
     } finally {
       setLoading(false);
     }
@@ -205,11 +238,20 @@ export default function AsesoriaScreen({ onBack }) {
       });
       
       // Replace temp message, preserving read_at if updated by socket
-      setMessages(prev => prev.map(msg => 
-        msg.id === tempId 
-          ? { ...res, read_at: msg.read_at || res.read_at } 
-          : msg
-      ));
+      setMessages(prev => {
+        const updated = prev.map(msg => 
+          msg.id === tempId 
+            ? { ...res, read_at: msg.read_at || res.read_at } 
+            : msg
+        );
+        if (res?.botReply && !updated.some(m => m.id === res.botReply.id)) {
+          return [...updated, res.botReply];
+        }
+        return updated;
+      });
+      if (res?.botReply && trainer?.id) {
+        markAsRead(trainer.id);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       addToast('Error al enviar el mensaje', 'error');
@@ -239,32 +281,28 @@ export default function AsesoriaScreen({ onBack }) {
 
   const userProfile = useAppStore(state => state.userProfile);
   const isTrainee = userProfile?.role === 'trainee' || userProfile?.role === 'trainer' || userProfile?.role === 'admin';
+  const firstConsultationIndex = messages.findIndex(msg => msg.id && !msg.temp && !msg.is_closed && String(msg.sender_id) === String(userId));
+  const showNotificationOffer = !loading && !hasError && ['user', 'trainee'].includes(userProfile?.role) && firstConsultationIndex !== -1;
+  const waitingForCoach = showNotificationOffer && !messages.slice(firstConsultationIndex + 1).some(msg =>
+      msg.sender_id && String(msg.sender_id) !== String(userId) && msg.attachment_type !== 'bot_reply');
   
   let isChatBlocked = false;
   let showPromo = false;
   let blockMessage = '';
 
   if (!isTrainee && !loading && trainer) {
-    const lastTrainerMsg = [...messages].reverse().find(m => String(m.sender_id) === String(trainer?.id));
-    const lastUserMsg = [...messages].reverse().find(m => String(m.sender_id) === String(userProfile?.id));
-    
-    const now = Date.now();
-    const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
-    
-    const isTrainerRecent = lastTrainerMsg && (now - new Date(lastTrainerMsg.created_at).getTime() < threeDaysMs);
-    const isUserRecent = lastUserMsg && (now - new Date(lastUserMsg.created_at).getTime() < threeDaysMs);
-    
     if (messages.length === 0) {
       showPromo = true;
       isChatBlocked = true;
-    } else if (isTrainerRecent) {
-      isChatBlocked = false;
-    } else if (isUserRecent) {
-      isChatBlocked = true;
-      blockMessage = "Esperando respuesta del entrenador...";
     } else {
-      showPromo = true;
-      isChatBlocked = true;
+      showPromo = false;
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg && String(lastMsg.sender_id) === String(userProfile?.id)) {
+        isChatBlocked = true;
+        blockMessage = "Esperando respuesta del entrenador...";
+      } else {
+        isChatBlocked = false;
+      }
     }
   }
 
@@ -291,7 +329,16 @@ export default function AsesoriaScreen({ onBack }) {
         method: 'POST',
         body: { receiverId: trainer.id, content }
       });
-      setMessages(prev => prev.map(msg => msg.id === tempId ? { ...res, read_at: msg.read_at || res.read_at } : msg));
+      setMessages(prev => {
+        const updated = prev.map(msg => msg.id === tempId ? { ...res, read_at: msg.read_at || res.read_at } : msg);
+        if (res?.botReply && !updated.some(m => m.id === res.botReply.id)) {
+          return [...updated, res.botReply];
+        }
+        return updated;
+      });
+      if (res?.botReply && trainer?.id) {
+        markAsRead(trainer.id);
+      }
       scrollToBottom();
     } catch (error) {
       console.error(error);
@@ -335,7 +382,8 @@ export default function AsesoriaScreen({ onBack }) {
   );
 
   return (
-    <div 
+    <div
+      id="tutorial-advice-main"
       className="fixed inset-0 z-50 md:inset-auto md:top-[100px] md:bottom-[60px] md:left-1/2 md:-translate-x-1/2 w-full md:w-[90%] md:max-w-xl flex flex-col md:border md:border-glass-border md:rounded-[32px] shadow-2xl overflow-hidden bg-bg-primary animate-fade-in isolate"
     >
       {/* Header */}
@@ -374,10 +422,27 @@ export default function AsesoriaScreen({ onBack }) {
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+      <div id="tutorial-advice-conversation" className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
         {loading ? (
           <div className="flex justify-center p-8">
             <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : hasError ? (
+          <div className="h-full flex flex-col items-center justify-center text-center px-4 space-y-3">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-1">
+              <ChatBubbleLeftRightIcon className="w-7 h-7" />
+            </div>
+            <p className="text-sm font-bold text-text-primary">No se pudo cargar la conversación</p>
+            <p className="text-xs text-text-secondary max-w-xs leading-relaxed">
+              El servidor tardó en responder tras la actualización. Puedes reintentar la conexión de inmediato.
+            </p>
+            <button
+              type="button"
+              onClick={fetchData}
+              className="px-5 py-2.5 rounded-full text-xs font-bold bg-accent text-accent-contrast shadow-md active:scale-95 hover:scale-105 transition-all cursor-pointer"
+            >
+              Reintentar conexión
+            </button>
           </div>
         ) : messages.length === 0 ? (
           <div className={`${showPromo ? 'pt-4 pb-2' : 'h-full justify-center'} flex flex-col items-center text-center px-4 space-y-3 opacity-60`}>
@@ -457,6 +522,7 @@ export default function AsesoriaScreen({ onBack }) {
         
         {/* Promo View para No-Trainees */}
         {showPromo && renderPromo()}
+        {showNotificationOffer && <NotificationOffer purpose="coaching" offerPush={waitingForCoach} offerEmail={userProfile.role === 'user'} />}
 
         <div ref={messagesEndRef} />
       </div>

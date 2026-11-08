@@ -17,9 +17,42 @@ const getFullImageUrl = (path) => {
   return `${SERVER_URL}${cleanPath}`;
 };
 
+// Fast Cache for Trainer Chats & Message History
+let cachedTrainerChatsList = null;
+try {
+  const saved = localStorage.getItem('pfg_trainer_chats_list');
+  if (saved) cachedTrainerChatsList = JSON.parse(saved);
+} catch (e) {}
+
+const chatHistoryMemoryCache = new Map();
+
+const getCachedMessages = (clientId) => {
+  if (!clientId) return null;
+  if (chatHistoryMemoryCache.has(clientId)) {
+    return chatHistoryMemoryCache.get(clientId);
+  }
+  try {
+    const raw = localStorage.getItem('pfg_chat_history_' + clientId);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      chatHistoryMemoryCache.set(clientId, parsed);
+      return parsed;
+    }
+  } catch (e) {}
+  return null;
+};
+
+const setCachedMessages = (clientId, msgs) => {
+  if (!clientId || !msgs) return;
+  chatHistoryMemoryCache.set(clientId, msgs);
+  try {
+    localStorage.setItem('pfg_chat_history_' + clientId, JSON.stringify(msgs));
+  } catch (e) {}
+};
+
 export default function TrainerChats({ onClose }) {
-  const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [clients, setClients] = useState(() => cachedTrainerChatsList || []);
+  const [loading, setLoading] = useState(() => !cachedTrainerChatsList || cachedTrainerChatsList.length === 0);
   const [clientToLink, setClientToLink] = useState(null);
   const [showClosedChats, setShowClosedChats] = useState(false);
   const [showBotChats, setShowBotChats] = useState(false);
@@ -58,6 +91,16 @@ export default function TrainerChats({ onClose }) {
       sessionStorage.removeItem('trainer_chats_selected_client');
     }
   }, [selectedClient]);
+
+  useEffect(() => {
+    if (selectedClient?.id) {
+      const cached = getCachedMessages(selectedClient.id);
+      if (cached && cached.length > 0) {
+        setMessages(cached);
+      }
+      openChat(selectedClient);
+    }
+  }, []);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
@@ -91,21 +134,32 @@ export default function TrainerChats({ onClose }) {
     selectedClientRef.current = selectedClient;
   }, [selectedClient]);
 
-  const fetchClients = async () => {
+    const fetchClients = async () => {
     try {
-      setLoading(true);
+      if (!cachedTrainerChatsList || cachedTrainerChatsList.length === 0) {
+        setLoading(true);
+      }
       const res = await apiClient('/chat/trainer-chats');
       setClients(res);
+      cachedTrainerChatsList = res;
+      try {
+        localStorage.setItem('pfg_trainer_chats_list', JSON.stringify(res));
+      } catch (e) {}
     } catch (error) {
       console.error('Error fetching trainer chats:', error);
-      addToast('No se pudieron cargar los chats', 'error');
+      if (!clients || clients.length === 0) {
+        addToast('No se pudieron cargar los chats', 'error');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleIncomingMessage = (msg) => {
-    const isFromCurrentChat = selectedClientRef.current && String(selectedClientRef.current.id) === String(msg.sender_id);
+    const isForCurrentChat = selectedClientRef.current && (
+      String(selectedClientRef.current.id) === String(msg.sender_id) ||
+      String(selectedClientRef.current.id) === String(msg.receiver_id)
+    );
 
     setClients((prevClients) => {
       let updated = [...prevClients];
@@ -114,7 +168,7 @@ export default function TrainerChats({ onClose }) {
       if (clientIndex !== -1) {
         const client = updated[clientIndex];
         client.lastMessage = msg;
-        if (String(msg.sender_id) === String(client.id) && !isFromCurrentChat) {
+        if (String(msg.sender_id) === String(client.id) && !isForCurrentChat) {
           client.unreadCount = (client.unreadCount || 0) + 1;
         }
 
@@ -126,25 +180,43 @@ export default function TrainerChats({ onClose }) {
 
     const currentUserId = useAppStore.getState().userProfile?.id;
 
-    if (isFromCurrentChat || String(msg.sender_id) === String(currentUserId)) {
-      setMessages((prev) => [...prev, msg]);
+    if (isForCurrentChat) {
+      setMessages((prev) => {
+        if (msg.id && prev.some((m) => m.id === msg.id)) return prev;
+        const next = [...prev, msg];
+        if (selectedClientRef.current?.id) {
+          setCachedMessages(selectedClientRef.current.id, next);
+        }
+        return next;
+      });
       scrollToBottom();
 
       if (String(msg.sender_id) === String(selectedClientRef.current?.id)) {
         markAsRead(selectedClientRef.current.id);
       }
+    } else {
+      const otherClientId = String(msg.sender_id) === String(currentUserId) ? msg.receiver_id : msg.sender_id;
+      if (otherClientId) {
+        const cached = getCachedMessages(otherClientId);
+        if (cached && !cached.some((m) => m.id === msg.id)) {
+          setCachedMessages(otherClientId, [...cached, msg]);
+        }
+      }
     }
   };
 
   const handleMessagesRead = ({ byUserId }) => {
-    const currentUserId = useAppStore.getState().userProfile?.id;
-    setMessages((prev) => prev.map((msg) =>
-    String(msg.sender_id) === String(currentUserId) &&
-    String(msg.receiver_id) === String(byUserId) &&
-    !msg.read_at ?
-    { ...msg, read_at: new Date() } :
-    msg
-    ));
+    setMessages((prev) => {
+      const next = prev.map((msg) =>
+        String(msg.receiver_id) === String(byUserId) && !msg.read_at
+          ? { ...msg, read_at: new Date() }
+          : msg
+      );
+      if (selectedClientRef.current?.id && String(selectedClientRef.current.id) === String(byUserId)) {
+        setCachedMessages(byUserId, next);
+      }
+      return next;
+    });
   };
 
   const renderMessageContent = (msg) => {
@@ -237,6 +309,12 @@ export default function TrainerChats({ onClose }) {
     try {
       const { client, level, type } = resendConfirmData;
       const res = await apiClient('/chat/trainer/bot-reminder-resend/' + client.id + '/' + level + '?type=' + type, { method: 'POST' });
+      const deliveryStatus = res.status?.[type];
+      if (deliveryStatus !== 'ok') {
+        addToast(deliveryStatus === 'skipped' ? 'Omitido por las preferencias del destinatario.' : deliveryStatus === 'no_subscription' ? 'El destinatario no tiene push activo.' : 'No se pudo entregar el aviso.', 'warning');
+        setResendConfirmData(null);
+        return;
+      }
       
       // Update local state so it immediately says "Enviado Manualmente"
       setClients(prev => prev.map(c => {
@@ -287,9 +365,9 @@ export default function TrainerChats({ onClose }) {
       const statuses = response.status;
       
       addToast(
-        'Push: ' + (statuses.push === 'ok' ? 'OK' : 'Error') + ' | ' +
+        'Push: ' + (statuses.push === 'ok' ? 'OK' : statuses.push === 'skipped' ? 'Omitido' : statuses.push === 'no_subscription' ? 'Sin suscripción' : 'Error') + ' | ' +
         'App: ' + (statuses.notification === 'ok' ? 'OK' : 'Error') + ' | ' +
-        'Email: ' + (statuses.email === 'ok' ? 'OK' : 'Error'),
+        'Email: ' + (statuses.email === 'ok' ? 'OK' : statuses.email === 'skipped' ? 'Omitido' : 'Error'),
         'success'
       );
 
@@ -307,11 +385,22 @@ export default function TrainerChats({ onClose }) {
 
 
   const openChat = async (client) => {
+    if (!client) return;
     setSelectedClient(client);
+
+    // Cargar inmediatamente la caché de este cliente o limpiar mensajes para evitar que parpadeen los del chat anterior
+    const cached = getCachedMessages(client.id);
+    if (cached && cached.length > 0) {
+      setMessages(cached);
+    } else {
+      setMessages([]);
+    }
+
     setChatLoading(true);
     try {
       const history = await apiClient(`/chat/history/${client.id}`);
       setMessages(history);
+      setCachedMessages(client.id, history);
       scrollToBottom();
       await markAsRead(client.id);
     } catch (e) {
@@ -352,11 +441,13 @@ export default function TrainerChats({ onClose }) {
         }
       });
 
-      setMessages((prev) => prev.map((msg) =>
-      msg.id === tempId ?
-      { ...res, read_at: msg.read_at || res.read_at } :
-      msg
-      ));
+      setMessages((prev) => {
+        const next = prev.map((msg) =>
+          msg.id === tempId ? { ...res, read_at: msg.read_at || res.read_at } : msg
+        );
+        if (selectedClient?.id) setCachedMessages(selectedClient.id, next);
+        return next;
+      });
       scrollToBottom();
 
       setClients((prevClients) => {
@@ -403,7 +494,11 @@ export default function TrainerChats({ onClose }) {
       if (!response.ok) throw new Error('Error al subir vídeo');
       const sentMessage = await response.json();
 
-      setMessages((prev) => [...prev, sentMessage]);
+      setMessages((prev) => {
+        const next = [...prev, sentMessage];
+        if (selectedClient?.id) setCachedMessages(selectedClient.id, next);
+        return next;
+      });
       scrollToBottom();
       addToast('Vídeo enviado correctamente', 'success');
 
@@ -535,7 +630,7 @@ export default function TrainerChats({ onClose }) {
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar p-3 flex flex-col gap-2">
-          {loading ?
+          {loading && (!clients || clients.length === 0) ?
           <div className="flex justify-center p-8">
               <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
             </div> :
@@ -777,7 +872,7 @@ export default function TrainerChats({ onClose }) {
               className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar"
               style={{ paddingTop: 'calc(max(var(--safe-top, env(safe-area-inset-top, 0px)), 20px) + 85px)' }}
             >
-              {chatLoading ?
+              {chatLoading && (!messages || messages.length === 0) ?
             <div className="flex justify-center p-8">
                   <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
                 </div> :
@@ -787,7 +882,9 @@ export default function TrainerChats({ onClose }) {
                 </div> :
 
               messages.map((msg, index) => {
-                const isMe = String(msg.sender_id) !== String(selectedClient.id);
+                const isBot = msg.attachment_type === 'bot_reply';
+                const isFromClient = selectedClient && String(msg.sender_id) === String(selectedClient.id);
+                const isMe = isBot || !isFromClient;
                 const showDate = index === 0 || new Date(msg.created_at).toDateString() !== new Date(messages[index - 1].created_at).toDateString();
                 return (
                   <React.Fragment key={msg.id || index}>
@@ -808,8 +905,8 @@ export default function TrainerChats({ onClose }) {
                         onMouseUp={handlePressEnd}
                         onMouseLeave={handlePressEnd}
                       >
-                        {msg.attachment_type === 'bot_reply' && (
-                          <div className={`text-[11px] font-bold opacity-80 mb-1 flex items-center gap-1 ${!isMe ? 'text-accent' : ''}`}>
+                        {isBot && (
+                          <div className="text-[11px] font-bold opacity-80 mb-1 flex items-center gap-1">
                             🤖 Bot Coordinador
                           </div>
                         )}
@@ -841,7 +938,7 @@ export default function TrainerChats({ onClose }) {
                         <div className={`text-[9px] mt-0.5 flex items-center justify-end gap-1 ${isMe ? 'text-accent-contrast/70' : 'text-text-muted'}`}>
                           <span>{formatTime(msg.created_at || new Date())}</span>
                           {isMe && (
-                            <div className={`flex items-center -space-x-1.5 -mt-0.5 ${msg.read_at ? 'text-blue-500' : 'opacity-70'}`}>
+                            <div className={`flex items-center -space-x-1.5 -mt-0.5 ${msg.read_at ? 'text-sky-400 font-bold' : 'opacity-70'}`}>
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                               </svg>
@@ -1095,15 +1192,7 @@ export default function TrainerChats({ onClose }) {
                     const targetDate = new Date(lastDate.getTime() + requiredDays * 24 * 60 * 60 * 1000);
                     const diffMs = targetDate - now;
                     if (diffMs <= 0) {
-                      const next11AM = new Date();
-                      next11AM.setHours(11, 0, 0, 0);
-                      if (next11AM < now) {
-                        next11AM.setDate(next11AM.getDate() + 1);
-                      }
-                      const waitMs = next11AM - now;
-                      const h = Math.floor(waitMs / (1000 * 60 * 60));
-                      const m = Math.floor((waitMs % (1000 * 60 * 60)) / (1000 * 60));
-                      return `Sale a las 11:00 AM (en ${h}h ${m}m)`;
+                      return 'Listo para enviar en la próxima revisión horaria';
                     }
                     
                     const h = Math.floor(diffMs / (1000 * 60 * 60));
@@ -1151,7 +1240,7 @@ export default function TrainerChats({ onClose }) {
           title={!isPushOk ? "Toca para reenviar solo el Push" : (pushStatus === 'manual_ok' ? "Push reenviado manualmente" : "Push enviado correctamente")}
         >
           {!isPushOk ? (
-            <><BellAlertIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Push Error ✕</span></>
+            <><BellAlertIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">{pushStatus === 'skipped' ? 'Push omitido' : pushStatus === 'no_subscription' ? 'Sin push activo' : 'Push Error ✕'}</span></>
           ) : (
             <><BellAlertIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">{pushStatus === 'manual_ok' ? 'Push Manual ✓' : 'Push ✓'}</span></>
           )}
@@ -1166,7 +1255,7 @@ export default function TrainerChats({ onClose }) {
           title={!isEmailOk ? "Toca para reenviar solo el Correo" : (emailStatus === 'manual_ok' ? "Correo reenviado manualmente" : "Correo enviado correctamente")}
         >
           {!isEmailOk ? (
-            <><EnvelopeIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">Email Error ✕</span></>
+            <><EnvelopeIcon className="w-3 h-3 pointer-events-none text-red-500" /> <span className="pointer-events-none text-red-500">{emailStatus === 'skipped' ? 'Correo omitido' : 'Email Error ✕'}</span></>
           ) : (
             <><EnvelopeIcon className="w-3 h-3 pointer-events-none" /> <span className="pointer-events-none">{emailStatus === 'manual_ok' ? 'Email Manual ✓' : 'Email ✓'}</span></>
           )}

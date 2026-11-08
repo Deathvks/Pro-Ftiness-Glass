@@ -1,11 +1,30 @@
 /* frontend/src/store/authSlice.js */
 import * as authService from '../services/authService';
 import * as userService from '../services/userService';
-import { APP_VERSION } from '../config/version';
+import { clearDevicePush } from '../services/notificationService';
+import { APP_VERSION, CURRENT_WELCOME_TITLE, hasSeenCurrentWelcome, isNewerVersion } from '../config/version';
+
+const CACHE_VERSION_KEY = 'pfg_cache_version';
+const INITIAL_CACHE_KEY = 'pfg_cached_initial_state_v1';
+
+const getCachedUserProfile = () => {
+    try {
+        if (!localStorage.getItem('pro_fitness_token')) return null;
+        const raw = localStorage.getItem(INITIAL_CACHE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return parsed?.userProfile && typeof parsed.userProfile === 'object' && parsed.userProfile.id
+            ? parsed.userProfile
+            : null;
+    } catch {
+        return null;
+    }
+};
 
 // Esta función se encarga de limpiar el almacenamiento local relacionado con la sesión.
 const clearAuthStorage = () => {
     localStorage.removeItem('pro_fitness_token');
+    localStorage.removeItem(INITIAL_CACHE_KEY);
     localStorage.removeItem('lastView');
     localStorage.removeItem('templateRoutinesSearchQuery');
     localStorage.removeItem('templateRoutinesSelectedCategory');
@@ -14,13 +33,17 @@ const clearAuthStorage = () => {
 };
 
 // Definimos el "slice" o parte del store que gestiona la autenticación y el perfil.
-export const createAuthSlice = (set, get) => ({
+export const createAuthSlice = (set, get) => {
+    const cachedProfile = getCachedUserProfile();
+    return {
     // --- ESTADO INICIAL ---
     isAuthenticated: !!localStorage.getItem('pro_fitness_token'),
     token: localStorage.getItem('pro_fitness_token'),
-    userProfile: null,
-    isLoading: true,
+    userProfile: cachedProfile,
+    isLoading: !cachedProfile,
     showWelcomeModal: false,
+    welcomeRemoteVersion: null,
+    welcomeRemoteData: null,
     show2FAPromo: false,
     tourActive: false,
     sessionExpired: false, // <-- NUEVO: Estado para el modal instantáneo de caducidad
@@ -280,6 +303,7 @@ export const createAuthSlice = (set, get) => ({
 
     // Cierra sesión (LOGOUT MANUAL)
     handleLogout: () => {
+        if (get().isAuthenticated) void clearDevicePush().catch(() => console.warn('No se pudo desvincular el dispositivo push.'));
         clearAuthStorage();
         // MODIFICACIÓN: No limpiamos el estado del workout para que persista
         // get().clearWorkoutState(); 
@@ -331,15 +355,47 @@ export const createAuthSlice = (set, get) => ({
     // Comprueba si se debe mostrar el modal de bienvenida
     checkWelcomeModal: () => {
         const lastSeenVersion = localStorage.getItem('lastSeenVersion');
-        if (lastSeenVersion !== APP_VERSION) {
+        const lastSeenWelcomeTitle = localStorage.getItem('lastSeenWelcomeTitle');
+        const currentWelcomeTitle = CURRENT_WELCOME_TITLE;
+        const shouldShow = !hasSeenCurrentWelcome(lastSeenWelcomeTitle, currentWelcomeTitle);
+        if (!shouldShow) {
+            localStorage.setItem('lastSeenVersion', APP_VERSION);
+            localStorage.setItem('lastSeenWelcomeTitle', currentWelcomeTitle);
+            localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
+        }
+        if (shouldShow) {
+            localStorage.setItem(CACHE_VERSION_KEY, APP_VERSION);
             set({ showWelcomeModal: true });
+        }
+    },
+
+    // Dispara el modal de bienvenida en caliente cuando /version.json detecta nueva versión sin recargar la página
+    triggerRemoteWelcomeModal: (remoteVersion, remoteData = null) => {
+        const targetVersion = remoteVersion || APP_VERSION;
+        const lastSeenVersion = localStorage.getItem('lastSeenVersion');
+        const shouldShow = !lastSeenVersion || isNewerVersion(lastSeenVersion, targetVersion);
+        if (shouldShow) {
+            set({
+                showWelcomeModal: true,
+                welcomeRemoteVersion: targetVersion,
+                welcomeRemoteData: remoteData || null,
+                show2FAPromo: false,
+                tourActive: false,
+            });
         }
     },
 
     // Cierra el modal de bienvenida
     closeWelcomeModal: () => {
-        localStorage.setItem('lastSeenVersion', APP_VERSION);
-        set({ showWelcomeModal: false });
+        const effectiveVersion = get().welcomeRemoteVersion || APP_VERSION;
+        const lastSeenVersion = localStorage.getItem('lastSeenVersion');
+        if (!lastSeenVersion || isNewerVersion(lastSeenVersion, effectiveVersion) || lastSeenVersion === effectiveVersion) {
+            localStorage.setItem('lastSeenVersion', effectiveVersion);
+            localStorage.setItem(CACHE_VERSION_KEY, effectiveVersion);
+        }
+        const effectiveTitle = get().welcomeRemoteData?.welcome?.title || CURRENT_WELCOME_TITLE;
+        localStorage.setItem('lastSeenWelcomeTitle', effectiveTitle);
+        set({ showWelcomeModal: false, welcomeRemoteVersion: null, welcomeRemoteData: null });
     },
 
     setShow2FAPromo: (val) => set({ show2FAPromo: val }),
@@ -367,4 +423,5 @@ export const createAuthSlice = (set, get) => ({
         localStorage.removeItem('cookie_consent');
         set({ cookieConsent: null });
     },
-});
+    };
+};

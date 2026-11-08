@@ -1,6 +1,7 @@
 /* frontend/src/components/ExerciseMedia.jsx */
-import React, { useState, useEffect, memo } from 'react';
-import { Image as ImageIcon } from 'lucide-react';
+import React, { useState, useEffect, useRef, memo } from 'react';
+import { Image as ImageIcon, WifiOff } from 'lucide-react';
+import { useOfflineMediaUrl, useOfflineMediaUrls } from '../services/offlineExerciseService';
 
 
 // Base URL para construir las rutas de imÃƒÂ¡genes/vÃƒÂ­deos
@@ -11,9 +12,22 @@ const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -
  * Componente para mostrar la imagen o vÃƒÂ­deo del ejercicio.
  * Acepta 'details' (el objeto del ejercicio), 'src' directo, y 'className'.
  */
-const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, className = '', fitMode = 'cover', forceAuto = false, forceImage = false, disableAnimation = false }) => {
+const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, className = '', fitMode = 'cover', forceAuto = false, forceImage = false, disableAnimation = false, transparentBackground = false, fillContain = false, roundedMedia = false }) => {
   const [imageError, setImageError] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [isOffline, setIsOffline] = useState(() => typeof navigator !== 'undefined' ? !navigator.onLine : false);
+  const videoElementRef = useRef(null);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
   
 
   // --- LÃƒâ€œGICA INTELIGENTE DE EXTRACCIÃƒâ€œN ---
@@ -74,20 +88,10 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   // ConstrucciÃƒÂ³n segura de la URL final
   const getBestImageUrl = (url) => {
     if (!url || url === 'null' || url === 'undefined' || (typeof url === 'string' && url.trim() === '')) return null;
-    if (typeof url !== 'string') url = String(url); // En caso de que sea un String object
+    if (typeof url !== 'string') url = String(url);
     if (url.startsWith('http')) return url;
     
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
-    const filename = cleanUrl.split('/').pop();
-    
-    // ExpresiÃƒÂ³n regular relajada: Busca el patrÃƒÂ³n UUID en CUALQUIER parte del nombre
-    const isWgerUuid = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(filename);
-    
-    if (isWgerUuid || cleanUrl.includes('exercise-images')) {
-      return `https://wger.de/media/exercise-images/${filename}`;
-    }
-
-    // Si es una imagen normal local, va al backend
     return `${BACKEND_BASE_URL}/${cleanUrl}`;
   };
 
@@ -107,7 +111,7 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   const getYouTubeId = (url) => {
     if (!url || url === 'null' || url === 'undefined') return null;
     if (typeof url !== 'string') url = String(url);
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
   };
@@ -117,6 +121,51 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   // Use mqdefault.jpg for a native 16:9 aspect ratio without black bars
   const youtubeThumbnail = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
 
+  // Resolución offline (reemplaza URLs remotas por blobs locales en 0 ms si están descargados)
+  const resolvedFinalImageUrl = useOfflineMediaUrl(finalImageUrl);
+  const resolvedFinalImagesUrls = useOfflineMediaUrls(finalImagesUrls);
+  const resolvedYoutubeThumbnail = useOfflineMediaUrl(youtubeThumbnail);
+
+  useEffect(() => {
+    const video = videoElementRef.current;
+    if (forceImage || !video || !videoUrl || videoError || youtubeId) return undefined;
+
+    const releaseVideo = () => {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    };
+    const playVideo = () => {
+      if (!video.getAttribute('src')) video.src = videoUrl;
+      video.play().catch(() => {});
+    };
+    const handleVisibilityChange = () => {
+      if (document.hidden) video.pause();
+      else if (video.dataset.inViewport === 'true') playVideo();
+    };
+
+    let observer;
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver(([entry]) => {
+        const isVisible = entry.isIntersecting && entry.intersectionRatio >= 0.15;
+        video.dataset.inViewport = String(isVisible);
+        if (isVisible && !document.hidden) playVideo();
+        else releaseVideo();
+      }, { threshold: [0, 0.15] });
+      observer.observe(video);
+    } else {
+      video.dataset.inViewport = 'true';
+      playVideo();
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      observer?.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      releaseVideo();
+    };
+  }, [videoUrl, videoError, youtubeId, forceImage]);
+
   // LÃƒÂ³gica de contraste para Oscuro, OLED y Galaxia:
   
   const imageBgClass = 'bg-bg-secondary dark:bg-gray-200';
@@ -124,42 +173,62 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   // Fondo caracterÃƒÂ­stico para los placeholders
   const placeholderBgClass = 'bg-accent/10 text-accent';
 
-  // Fallback directo si no hay ningÃƒÂºn recurso asignado (evita renderizar etiquetas vacÃƒÂ­as)
+  // Fallback directo si no hay ningún recurso asignado (evita renderizar etiquetas vacías)
   if (!finalImageUrl && !videoUrl && !youtubeThumbnail) {
-    const hasAspectInClass = className && className.includes('aspect-');
-    const aspectClass = hasAspectInClass ? '' : 'aspect-video';
+    const isSmallContainer = className && (className.includes('h-full') || className.includes('w-16') || className.includes('w-20') || className.includes('h-16') || className.includes('h-20') || className.includes('w-12') || className.includes('w-14'));
+    const hasFixedAspect = className && className.includes('aspect-') && !className.includes('aspect-auto');
+    const aspectClass = hasFixedAspect || isSmallContainer ? '' : 'aspect-video min-h-[200px] sm:min-h-[240px]';
+    const iconSize = isSmallContainer ? 24 : 64;
     return (
-      <div className={`${aspectClass} ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center ${className}`}>
-        <ImageIcon size={48} className="opacity-60" />
+      <div className={`w-full h-full ${aspectClass} ${placeholderBgClass} rounded-[24px] overflow-hidden flex items-center justify-center ${className.replace('aspect-auto', '')}`}>
+        <ImageIcon size={iconSize} className="opacity-60" />
       </div>
     );
   }
 
-  // Reproductor interactivo de YouTube
-  if (youtubeId && playYouTube) {
-    const hasAspectInClass = className && className.includes('aspect-');
-    const aspectClass = hasAspectInClass ? '' : 'aspect-video';
-    return (
-      <div className={`${aspectClass} w-full h-full rounded-xl overflow-hidden bg-black ${className}`}>
-        <iframe
-          key={youtubeId}
-          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&loop=1&playlist=${youtubeId}`}
-          className="w-full h-full border-none pointer-events-none"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
-    );
+  // Reproductor interactivo de YouTube (solo si está online o no hay imágenes de fallback)
+  if (!forceImage && youtubeId && playYouTube) {
+    if (isOffline) {
+      // Si estamos offline y el ejercicio cuenta con fotos/animación local, dejamos que continúe hacia el renderizado de imágenes
+      if (finalImagesUrls.length > 0 || finalImageUrl) {
+        // Fallback transparente a fotos modo GIF
+      } else {
+        const hasAspectInClass = className && className.includes('aspect-');
+        const aspectClass = hasAspectInClass ? '' : 'aspect-video';
+        return (
+          <div className={`${aspectClass} w-full h-full rounded-[24px] overflow-hidden bg-black/80 flex flex-col items-center justify-center p-4 text-center text-text-muted ${className}`}>
+            <WifiOff size={28} className="text-amber-400 mb-2 opacity-80" />
+            <span className="text-xs font-bold text-text-primary">Vídeo no disponible sin conexión</span>
+            <span className="text-[10px] text-text-secondary mt-1">Conéctate a internet para ver el vídeo de YouTube</span>
+          </div>
+        );
+      }
+    } else {
+      const hasAspectInClass = className && className.includes('aspect-');
+      const aspectClass = hasAspectInClass ? '' : 'aspect-video';
+      return (
+        <div className={`${aspectClass} w-full h-full rounded-xl overflow-hidden bg-black ${className}`}>
+          <iframe
+            key={youtubeId}
+            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&loop=1&playlist=${youtubeId}`}
+            className="w-full h-full border-none pointer-events-none"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      );
+    }
   }
 
   // Renderizado de vÃƒÂ­deo (no YouTube directo a <video>)
-  if (videoUrl && !videoError && !youtubeId) {
+  if (!forceImage && videoUrl && !videoError && !youtubeId) {
     return (
       <video
+        ref={videoElementRef}
         key={videoUrl}
         className={`w-full h-auto min-h-[200px] max-h-[70vh] overflow-hidden bg-transparent ${className}`}
-        src={videoUrl}
-        autoPlay
+        data-src={videoUrl}
+        preload="none"
         loop
         muted
         playsInline
@@ -171,42 +240,42 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
   }
 
   // Renderizado de imagen (o miniatura de YouTube si no hay imagen propia)
-  const imageToRender = finalImageUrl || (finalImagesUrls.length > 0 ? finalImagesUrls[0] : youtubeThumbnail);
+  const imageToRender = resolvedFinalImageUrl || (resolvedFinalImagesUrls.length > 0 ? resolvedFinalImagesUrls[0] : resolvedYoutubeThumbnail);
   
-  if ((imageToRender || finalImagesUrls.length > 0) && !imageError) {
+  if ((imageToRender || resolvedFinalImagesUrls.length > 0) && !imageError) {
     const isAuto = fitMode === 'auto' || forceAuto;
     const aspectRatioClass = isAuto ? 'w-full h-auto min-h-[200px] max-h-[70vh]' : 'w-full h-full';
     
-    const finalBgClass = fitMode === 'cover' ? 'bg-transparent' : 'bg-black/5 dark:bg-white/5';
-    const containerClasses = `${aspectRatioClass} relative rounded-[24px] overflow-hidden ${finalBgClass} flex items-center justify-center ${className}`;
+    const finalBgClass = fitMode === 'cover' || transparentBackground ? 'bg-transparent' : 'bg-black/5 dark:bg-white/5';
+    const radiusClass = className && (className.includes('rounded-') || className.includes('rounded')) ? '' : 'rounded-[24px]';
+    const containerClasses = `${aspectRatioClass} relative ${radiusClass} overflow-hidden ${finalBgClass} flex items-center justify-center ${className}`;
 
-    // LÃƒÂ³gica mÃƒÂ¡gica para eliminar el fondo blanco de los dibujos de Wger
+    // Lógica de ajuste de imagen
     const getImageBlendClass = (url) => {
       if (!url) return '';
-      if (url === youtubeThumbnail) return 'object-cover';
-      
-      let blendClass = isAuto ? 'object-contain' : `object-${fitMode}`;
-      if (url.includes('wger.de')) {
-        blendClass = 'object-contain'; // Los dibujos de WGER siempre deben hacer 'contain' para no cortarse
-        blendClass += ' mix-blend-multiply dark:invert dark:hue-rotate-180 dark:mix-blend-screen';
+      if (url === resolvedYoutubeThumbnail || url === youtubeThumbnail) {
+        return fitMode === 'contain' ? 'object-contain' : 'object-cover';
       }
-      return blendClass;
+      return isAuto ? 'object-contain' : `object-${fitMode}`;
     };
 
-    const isContain = fitMode === 'contain' || (imageToRender && imageToRender.includes('wger.de'));
+    const isContain = fitMode === 'contain';
+    const imageRadiusClass = roundedMedia ? 'rounded-[20px]' : '';
     const imgBaseClass = isAuto 
       ? 'w-full h-auto' 
-      : (isContain ? 'absolute inset-0 m-auto max-w-[90%] max-h-[90%] object-contain' : 'absolute inset-0 w-full h-full');
+      : (isContain
+          ? `absolute inset-0 w-full h-full object-contain ${imageRadiusClass}`
+          : `absolute inset-0 w-full h-full ${imageRadiusClass}`);
 
-    if (finalImagesUrls.length > 0) {
-      const hasMultiple = finalImagesUrls.length > 1 && !disableAnimation;
-      const totalDuration = finalImagesUrls.length * 2; // 2 seconds per frame
+    if (resolvedFinalImagesUrls.length > 0) {
+      const hasMultiple = resolvedFinalImagesUrls.length > 1 && !disableAnimation;
+      const totalDuration = resolvedFinalImagesUrls.length * 2; // 2 seconds per frame
       
       return (
         <div className={containerClasses}>
           {hasMultiple && (
             <style>{`
-              @keyframes slideCycle_${finalImagesUrls.length} {
+              @keyframes slideCycle_${resolvedFinalImagesUrls.length} {
                 0% { opacity: 1; z-index: 20; }
                 ${(1.8 / totalDuration) * 100}% { opacity: 1; z-index: 20; }
                 ${(2 / totalDuration) * 100}% { opacity: 0; z-index: 0; }
@@ -214,17 +283,21 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
               }
             `}</style>
           )}
-          {finalImagesUrls.map((url, idx) => {
-            const isUrlContain = fitMode === 'contain' || url.includes('wger.de');
+          {resolvedFinalImagesUrls.map((url, idx) => {
+            const isUrlContain = fitMode === 'contain';
             const posClass = isAuto && idx === 0 ? 'relative' : 'absolute inset-0';
-            const sizeClass = isAuto ? 'w-full h-auto' : (isUrlContain ? 'm-auto max-w-[90%] max-h-[90%] object-contain' : 'w-full h-full');
+            const sizeClass = isAuto
+              ? 'w-full h-auto'
+              : (isUrlContain
+                  ? `w-full h-full object-contain ${imageRadiusClass}`
+                  : `w-full h-full ${imageRadiusClass}`);
             
             let visibilityStyle = {};
             let visibilityClass = '';
 
             if (hasMultiple) {
               visibilityStyle = {
-                animation: `slideCycle_${finalImagesUrls.length} ${totalDuration}s infinite ${idx * 2}s`
+                animation: `slideCycle_${resolvedFinalImagesUrls.length} ${totalDuration}s infinite ${idx * 2}s`
               };
               visibilityClass = 'opacity-0'; // Will be overridden by animation
             } else {
@@ -235,11 +308,11 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
               <img
                 key={idx}
                 src={url}
-                alt={`DemostraciÃƒÂ³n de ${details?.name || 'ejercicio'} - slide ${idx}`}
+                alt={`Demostración de ${details?.name || 'ejercicio'} - slide ${idx}`}
                 className={`${posClass} ${sizeClass} transition-opacity duration-500 ease-in-out ${getImageBlendClass(url)} ${visibilityClass}`}
                 style={visibilityStyle}
                 onError={() => setImageError(true)}
-                loading="lazy"
+                loading="eager"
               />
             );
           })}
@@ -253,19 +326,23 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
         <img
           key={imageToRender}
           src={imageToRender}
-          alt={`DemostraciÃƒÂ³n de ${details?.name || 'ejercicio'}`}
+          alt={`Demostración de ${details?.name || 'ejercicio'}`}
           className={`${imgBaseClass} transition-opacity duration-500 ${getImageBlendClass(imageToRender)}`}
           onError={() => setImageError(true)}
-          loading="lazy"
+          loading="eager"
         />
       </div>
     );
   }
 
   // Fallback final si la imagen falla y no hay video (onError activado)
+  const isSmallContainer = className && (className.includes('h-full') || className.includes('w-16') || className.includes('w-20') || className.includes('h-16') || className.includes('h-20') || className.includes('w-12') || className.includes('w-14'));
+  const hasFixedAspect = className && className.includes('aspect-') && !className.includes('aspect-auto');
+  const aspectClass = hasFixedAspect || isSmallContainer ? '' : 'aspect-video min-h-[200px] sm:min-h-[240px]';
+  const iconSize = isSmallContainer ? 24 : 64;
   return (
-    <div className={`aspect-video ${placeholderBgClass} rounded-xl overflow-hidden flex items-center justify-center ${className}`}>
-      <ImageIcon size={48} className="opacity-60" />
+    <div className={`w-full h-full ${aspectClass} ${placeholderBgClass} rounded-[24px] overflow-hidden flex items-center justify-center ${className.replace('aspect-auto', '')}`}>
+      <ImageIcon size={iconSize} className="opacity-60" />
     </div>
   );
 }, (prevProps, nextProps) => {
@@ -275,12 +352,20 @@ const ExerciseMedia = memo(({ details, src, videoSrc, playYouTube = false, class
     if (!d) return '';
     let imgs = d.images || d.exercise?.images || [];
     let imgsStr = Array.isArray(imgs) ? imgs.join('|') : '';
-    return `${d.image_url_start || ''}|${d.image_url_end || ''}|${d.image_url || ''}|${d.video_url || ''}|${d.exercise?.image_url_start || ''}|${imgsStr}`;
+    return `${d.image_url_start || ''}|${d.image_url_end || ''}|${d.image_url || ''}|${d.video_url || ''}|${d.exercise?.image_url_start || ''}|${d.exercise?.image_url_end || ''}|${d.exercise?.video_url || ''}|${imgsStr}`;
   };
 
   return prevProps.src === nextProps.src &&
          prevProps.videoSrc === nextProps.videoSrc &&
          prevProps.className === nextProps.className &&
+         prevProps.fitMode === nextProps.fitMode &&
+         prevProps.playYouTube === nextProps.playYouTube &&
+         prevProps.forceImage === nextProps.forceImage &&
+         prevProps.forceAuto === nextProps.forceAuto &&
+         prevProps.disableAnimation === nextProps.disableAnimation &&
+         prevProps.transparentBackground === nextProps.transparentBackground &&
+         prevProps.fillContain === nextProps.fillContain &&
+         prevProps.roundedMedia === nextProps.roundedMedia &&
          extractMedia(prevProps.details) === extractMedia(nextProps.details);
 });
 

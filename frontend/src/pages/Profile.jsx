@@ -18,7 +18,7 @@ import {
   deleteMyAccount,
 } from '../services/userService';
 import ProfileImageModal from '../components/ProfileImageModal';
-import Cropper from 'react-easy-crop';
+import ImageCropModal from '../components/ImageCropModal';
 import { getUserRoleRingConfig } from '../utils/userRoleUtils';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -128,6 +128,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
     }),
   );
   const { addToast } = useToast();
+  const isPrivileged = userProfile?.role === 'admin' || userProfile?.role === 'entrenador';
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -227,7 +228,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) {
+      if (!isPrivileged && file.size > 5 * 1024 * 1024) {
         addToast('La imagen es demasiado grande (máx 5MB).', 'error');
         return;
       }
@@ -283,7 +284,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
       }
     }
 
-    if (profileImageFile && profileImageFile.size > 5 * 1024 * 1024) {
+    if (!isPrivileged && profileImageFile && profileImageFile.size > 5 * 1024 * 1024) {
       newErrors.image = 'La imagen no debe pesar más de 5MB.';
     }
     
@@ -421,19 +422,19 @@ const Profile = ({ onCancel, setView, navigate }) => {
         <title>{`Editar Perfil: ${formData.username || "Usuario"} - Pro Fitness Glass`}</title>
       </Helmet>
 
-      <div className="w-full max-w-2xl mx-auto px-4 pb-28 sm:p-6 lg:p-10 animate-[fade-in_0.3s_ease-out] mt-2 sm:mt-0">
+      <div id="tutorial-profile-header" className="w-full max-w-2xl mx-auto px-4 pb-28 sm:p-6 lg:p-10 animate-[fade-in_0.3s_ease-out] mt-2 sm:mt-0">
         
         {/* Header - Avatar */}
-        <div className="flex flex-col items-center mt-6 mb-8">
+        <div id="tutorial-profile-identity" className="flex flex-col items-center mt-6 mb-8">
             <input
               type="file"
               ref={fileInputRef}
               onChange={handleImageChange}
-              accept="image/png, image/jpeg, image/webp"
+              accept="image/*"
               className="hidden"
             />
             {(() => {
-              const roleConfig = getUserRoleRingConfig(userProfile);
+              const roleConfig = getUserRoleRingConfig(userProfile, userProfile);
               return (
                 <>
                   <div
@@ -464,9 +465,9 @@ const Profile = ({ onCancel, setView, navigate }) => {
                   >
                       Editar foto
                   </button>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h1 className="text-2xl font-bold text-text-primary">{userProfile.username || 'Usuario'}</h1>
-                    <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ring-1 ${roleConfig.badgeBg}`}>
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <h1 className="text-2xl font-bold text-text-primary leading-none">{userProfile.username || 'Usuario'}</h1>
+                    <span className={`inline-flex items-center justify-center text-[10px] sm:text-[11px] font-black uppercase tracking-wider leading-none px-2.5 py-1 rounded-full ring-1 translate-y-[1px] sm:translate-y-[1.5px] ${roleConfig.badgeBg}`}>
                       {roleConfig.label}
                     </span>
                   </div>
@@ -477,7 +478,7 @@ const Profile = ({ onCancel, setView, navigate }) => {
         </div>
 
         {/* Group 1: Datos Básicos */}
-        <div className="mb-6">
+        <div id="tutorial-profile-form" className="mb-6">
             <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 px-4">Datos Básicos</h2>
             <div className="bg-bg-secondary rounded-[24px] shadow-sm ring-1 ring-glass-border overflow-hidden">
                 <div className="group flex items-center justify-between p-4 border-b border-glass-border">
@@ -700,43 +701,6 @@ const Profile = ({ onCancel, setView, navigate }) => {
   );
 };
 
-// --- Componente: Modal de Recorte ---
-const ImageCropModal = ({ imageSrc, onComplete, onCancel }) => {
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-
-  const onCropComplete = (croppedArea, croppedAreaPixels) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[200] bg-bg-primary flex flex-col animate-[fade-in_0.2s_ease-out]">
-      <div className="relative flex-1 bg-black">
-        <Cropper
-          image={imageSrc}
-          crop={crop}
-          zoom={zoom}
-          aspect={1}
-          cropShape="round"
-          showGrid={false}
-          onCropChange={setCrop}
-          onCropComplete={onCropComplete}
-          onZoomChange={setZoom}
-        />
-      </div>
-      <div className="bg-bg-primary p-5 pb-8 flex justify-between items-center px-6 sm:px-10 border-t border-black/5 dark:border-white/10" style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom))' }}>
-        <button type="button" onClick={onCancel} className="text-text-secondary font-bold px-6 py-3.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-[16px] transition-colors active:scale-95">
-          Cancelar
-        </button>
-        <button type="button" onClick={() => onComplete(croppedAreaPixels)} className="bg-accent text-accent-contrast font-bold px-8 py-3.5 rounded-[20px] hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent/20">
-          Recortar
-        </button>
-      </div>
-    </div>
-  );
-};
-
 // --- Componente: Modal de Confirmación de Borrado ---
 const DeleteConfirmationModal = ({
   modalAction,
@@ -751,6 +715,9 @@ const DeleteConfirmationModal = ({
   hasPassword,
 }) => {
   
+  const [touchStartY, setTouchStartY] = useState(null);
+  const [dragY, setDragY] = useState(0);
+
   if (!modalAction) return null;
 
   const isDeleteAccount = modalAction === "deleteAccount";

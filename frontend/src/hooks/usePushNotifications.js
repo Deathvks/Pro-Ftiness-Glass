@@ -4,6 +4,7 @@ import { useToast } from './useToast';
 import * as notificationService from '../services/notificationService';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
+import useAppStore from '../store/useAppStore';
 
 // Función helper (sin cambios)
 function urlBase64ToUint8Array(base64String) {
@@ -25,13 +26,16 @@ function urlBase64ToUint8Array(base64String) {
  * Hook para gestionar la suscripción a notificaciones Push.
  * @returns {object} - { isSubscribed, subscribe, unsubscribe, isLoading, error, isSupported }
  */
-export const usePushNotifications = () => {
+export const usePushNotifications = (enabled = true) => {
   const { addToast } = useToast();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscription, setSubscription] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [nativePermission, setNativePermission] = useState('prompt');
   const timeoutRef = useRef(null);
+  const registrationOwner = useRef(null);
+  const userId = useAppStore(state => state.userProfile?.id);
 
   // --- NUEVO: Detectar si es App Nativa o Web ---
   const isNative = Capacitor.isNativePlatform();
@@ -55,9 +59,10 @@ export const usePushNotifications = () => {
    * Comprueba el estado de la suscripción al cargar el hook.
    */
   useEffect(() => {
+    if (!enabled) return;
     let isMounted = true;
 
-    if (!isSupported) {
+    if (!isSupported || !userId) {
       setError('Notificaciones Push no soportadas por este navegador/dispositivo.');
       setIsLoading(false);
       return;
@@ -71,34 +76,31 @@ export const usePushNotifications = () => {
         if (isNative) {
           // --- LÓGICA NATIVA ---
           const perm = await PushNotifications.checkPermissions();
+          if (!isMounted) return;
+          setNativePermission(perm.receive);
           const isLocallySubscribed = localStorage.getItem('native_push_subscribed') === 'true';
           const localToken = localStorage.getItem('native_push_token');
           
+          const active = perm.receive === 'granted' && isLocallySubscribed && localToken
+            && (await notificationService.getPushSubscriptionStatus(`fcm://${localToken}`)).subscribed;
           if (!isMounted) return;
-          if (perm.receive === 'granted' && isLocallySubscribed) {
-            setIsSubscribed(true);
-            if (localToken) setSubscription(localToken);
-          } else {
-            setIsSubscribed(false);
-            setSubscription(null);
-          }
+          setIsSubscribed(!!active);
+          setSubscription(active ? localToken : null);
         } else {
           // --- LÓGICA WEB ---
-          const registration = await getServiceWorkerRegistration();
-          const currentSubscription = await registration.pushManager.getSubscription();
+          const registration = await navigator.serviceWorker.getRegistration();
+          const currentSubscription = await registration?.pushManager?.getSubscription();
 
+          const active = currentSubscription && (await notificationService.getPushSubscriptionStatus(currentSubscription.endpoint)).subscribed;
           if (!isMounted) return;
-          if (currentSubscription) {
-            setIsSubscribed(true);
-            setSubscription(currentSubscription);
-          } else {
-            setIsSubscribed(false);
-            setSubscription(null);
-          }
+          setIsSubscribed(!!active);
+          setSubscription(active ? currentSubscription : null);
         }
       } catch (err) {
         console.error('Error comprobando suscripción:', err);
         if (isMounted) {
+          setIsSubscribed(false);
+          setSubscription(null);
           setError(`Error al comprobar notificaciones: ${err.message}`);
         }
       } finally {
@@ -116,7 +118,8 @@ export const usePushNotifications = () => {
 
     if (isNative) {
       PushNotifications.addListener('registration', async (token) => {
-        console.log('[PUSH NATIVO] ¡Evento registration recibido!', token.value);
+        if (!isMounted || registrationOwner.current !== userId || useAppStore.getState().userProfile?.id !== userId) return;
+        registrationOwner.current = null;
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         try {
           // Guardamos el token FCM con formato especial para identificarlo en el backend
@@ -134,30 +137,34 @@ export const usePushNotifications = () => {
           addToast('Error al vincular con el servidor.', 'error');
         }
         setIsLoading(false);
-      }).then(listener => registrationListener = listener);
+      }).then(listener => { if (isMounted) registrationListener = listener; else listener.remove(); });
 
       PushNotifications.addListener('registrationError', (err) => {
+        if (!isMounted || registrationOwner.current !== userId) return;
+        registrationOwner.current = null;
         console.error('[PUSH NATIVO] ¡Evento registrationError recibido!', err);
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         console.error('Error en el registro nativo:', err);
         setError('Error al registrar dispositivo.');
         setIsLoading(false);
-      }).then(listener => errorListener = listener);
+      }).then(listener => { if (isMounted) errorListener = listener; else listener.remove(); });
     }
 
     // Limpiamos los listeners al desmontar
     return () => {
       isMounted = false;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      registrationOwner.current = null;
       if (registrationListener) registrationListener.remove();
       if (errorListener) errorListener.remove();
     };
-  }, [isSupported, getServiceWorkerRegistration, isNative, addToast]);
+  }, [enabled, isSupported, getServiceWorkerRegistration, isNative, addToast, userId]);
 
   /**
    * Proceso de Suscripción
    */
   const subscribe = useCallback(async () => {
-    if (!isSupported) {
+    if (!isSupported || !userId) {
       addToast('Tu dispositivo no soporta notificaciones push.', 'error');
       return;
     }
@@ -176,10 +183,14 @@ export const usePushNotifications = () => {
         // --- SUSCRIPCIÓN NATIVA (Firebase) ---
         console.log('[PUSH NATIVO] Solicitando permisos...');
         const perm = await PushNotifications.requestPermissions();
+        setNativePermission(perm.receive);
         console.log('[PUSH NATIVO] Permisos concedidos:', perm.receive);
         if (perm.receive === 'granted') {
+          registrationOwner.current = userId;
+          clearTimeout(globalTimeout);
           // Esto dispara el listener 'registration' que configuramos en el useEffect
           timeoutRef.current = setTimeout(() => {
+             registrationOwner.current = null;
              setIsLoading(false);
              clearTimeout(globalTimeout);
              addToast('Tiempo agotado. Revisa tus servicios de Google Play o la conexión.', 'warning');
@@ -188,21 +199,7 @@ export const usePushNotifications = () => {
           await PushNotifications.register();
           console.log('[PUSH NATIVO] PushNotifications.register() ejecutado correctamente (esperando eventos).'); 
         } else {
-          addToast('Permiso denegado. Se abrirán los ajustes para activarlo.', 'warning');
-          setTimeout(async () => {
-              try {
-                const { NativeSettings, AndroidSettings, IOSSettings } = require('capacitor-native-settings');
-                if (Capacitor.getPlatform() === 'android') {
-                    // AppNotification abre directamente la pestaña de notificaciones de la app
-                    await NativeSettings.openAndroid({ option: AndroidSettings.AppNotification });
-                } else if (Capacitor.getPlatform() === 'ios') {
-                    // AppNotification también existe en iOS para ir directo (IOSSettings.AppNotification)
-                    await NativeSettings.openIOS({ option: IOSSettings.AppNotification });
-                }
-             } catch(e) {
-                 console.log("Error al abrir settings:", e);
-             }
-          }, 1500);
+          addToast('No se ha concedido el permiso para las notificaciones.', 'warning');
           setIsLoading(false);
           clearTimeout(globalTimeout);
         }
@@ -239,12 +236,16 @@ export const usePushNotifications = () => {
             new Promise((_, reject) => setTimeout(() => reject(new Error('Service Worker timeout')), 5000))
         ]);
         
-        const newSubscription = await registration.pushManager.subscribe({
+        const newSubscription = await registration.pushManager.getSubscription() || await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey,
         });
 
         // 5. Enviar la suscripción al backend
+        if (useAppStore.getState().userProfile?.id !== userId) {
+          clearTimeout(globalTimeout);
+          return;
+        }
         await notificationService.subscribeToPush(newSubscription);
 
         setSubscription(newSubscription);
@@ -272,7 +273,7 @@ export const usePushNotifications = () => {
       console.error('Error completo de suscripción:', err);
       setIsLoading(false);
     }
-  }, [isSupported, isNative, addToast, getServiceWorkerRegistration]);
+  }, [isSupported, isNative, addToast, getServiceWorkerRegistration, userId]);
 
   /**
    * Proceso de Desuscripción
@@ -287,33 +288,9 @@ export const usePushNotifications = () => {
     setError(null);
 
     try {
-      let endpointToUnsubscribe;
-
-      if (isNative) {
-        // En nativo (Capacitor) eliminamos nuestra referencia en el servidor
-        endpointToUnsubscribe = `fcm://${subscription}`;
-        localStorage.removeItem('native_push_subscribed');
-        localStorage.removeItem('native_push_token');
-      } else {
-        // 1. Desuscribir el PushManager (local web)
-        if (subscription && typeof subscription.unsubscribe === 'function') {
-          const unsubscribed = await subscription.unsubscribe();
-          if (!unsubscribed) {
-            throw new Error('No se pudo cancelar la suscripción desde el navegador.');
-          }
-        }
-        endpointToUnsubscribe = subscription ? subscription.endpoint : null;
-      }
-
-      // 2. Si la desuscripción local tiene éxito, informar al backend
-      if (endpointToUnsubscribe) {
-        try {
-          await notificationService.unsubscribeFromPush(endpointToUnsubscribe);
-        } catch (backendError) {
-          console.error('Error al desuscribir del backend:', backendError);
-          addToast('Desactivado localmente, pero hubo un error al notificar al servidor.', 'warning');
-        }
-      }
+      const endpoint = isNative ? `fcm://${subscription}` : subscription?.endpoint;
+      if (endpoint) await notificationService.unsubscribeFromPush(endpoint);
+      await notificationService.clearDevicePush().catch(() => console.warn('El servidor desactivó los avisos, pero el dispositivo no confirmó la baja local.'));
 
       setSubscription(null);
       setIsSubscribed(false);
@@ -335,6 +312,6 @@ export const usePushNotifications = () => {
     isLoading,
     error,
     isSupported,
-    permission: isSupported && !isNative ? Notification.permission : 'granted'
+    permission: isNative ? nativePermission : isSupported ? Notification.permission : 'denied'
   };
 };

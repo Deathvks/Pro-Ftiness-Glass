@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useLayoutEffect, lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   Plus,
@@ -24,23 +24,37 @@ import {
   Sparkles,
   Flame,
   TrendingUp,
-  ArrowRight
+  ArrowRight,
+  Activity,
+  FileSpreadsheet
 } from 'lucide-react';
+import { FaBrain, FaDumbbell, FaCompass, FaListCheck, FaHeartPulse } from 'react-icons/fa6';
 import GlassCard from '../components/GlassCard';
 import ConfirmationModal from '../components/ConfirmationModal';
 import ModalPortal from '../components/ModalPortal';
-import RoutineEditor from './RoutineEditor';
+const RoutineEditor = lazy(() => import('./RoutineEditor'));
+const WorkoutDataTransferModal = lazy(() => import('../components/WorkoutDataTransferModal'));
 import { useToast } from '../hooks/useToast';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
 import TemplateRoutines from './TemplateRoutines';
 import PromoBanner from '../components/PromoBanner';
-import ManualExercisesManager from '../components/ManualExercisesManager';
-import WorkoutSummaryModal from '../components/WorkoutSummaryModal';
-import RoutineAIGeneratorModal from '../components/RoutineAIGeneratorModal';
+const ManualExercisesManager = lazy(() => import('../components/ManualExercisesManager'));
+import WeeklyMuscleVolumeCard, {
+  RoutineVolumeFilterModal,
+  useWeeklyVolumeExclusions,
+  getRoutineInclusionStats,
+  getExerciseVolumeKey,
+  isExerciseIncludedInVolume
+} from '../components/Routines/WeeklyMuscleVolumeCard';
+const WorkoutSummaryModal = lazy(() => import('../components/WorkoutSummaryModal'));
+const preloadRoutineAIGenerator = () => import('../components/RoutineAIGeneratorModal');
+const RoutineAIGeneratorModal = lazy(preloadRoutineAIGenerator);
 import RoutineTourGuide from '../components/RoutineTourGuide';
 import { calculateRoutineEstimatedTime } from '../utils/helpers';
+import { isWorkoutDoneToday } from '../store/workoutSlice';
 import api from '../services/apiClient';
 
 const GlobalPrivacyModal = ({ onClose }) => {
@@ -128,7 +142,7 @@ const GlobalPrivacyModal = ({ onClose }) => {
                 <div className={getIconContainerClasses('friends')}><Users size={20} strokeWidth={2} /></div>
                 <div className="flex-1 pr-8">
                   <span className={getTextClasses('friends')}>Solo Amigos</span>
-                  <span className="text-xs text-text-secondary block mt-0.5">Tus amigos agregados verán tu actividad.</span>
+                  <span className="text-xs text-text-secondary block mt-0.5">Solo tus amigos verán tu sesión en la pestaña Amigos (no sale en Global).</span>
                 </div>
                 {visibility === 'friends' && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-accent"><CheckCircle size={20} /></div>}
               </button>
@@ -137,7 +151,7 @@ const GlobalPrivacyModal = ({ onClose }) => {
                 <div className={getIconContainerClasses('public')}><Globe size={20} strokeWidth={2} /></div>
                 <div className="flex-1 pr-8">
                   <span className={getTextClasses('public')}>Todo el mundo</span>
-                  <span className="text-xs text-text-secondary block mt-0.5">Cualquier usuario podrá ver tus entrenamientos.</span>
+                  <span className="text-xs text-text-secondary block mt-0.5">Aparece en el Muro Global, en Mi Gimnasio y en Amigos.</span>
                 </div>
                 {visibility === 'public' && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-accent"><CheckCircle size={20} /></div>}
               </button>
@@ -176,7 +190,7 @@ const GlobalPrivacyModal = ({ onClose }) => {
 const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
   const { addToast } = useToast();
   const [visibility, setVisibility] = useState(routine.visibility || 'private');
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [_isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (routine.visibility) {
@@ -185,7 +199,7 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
   }, [routine.visibility]);
 
   const isCapacitor = !!window.Capacitor?.isNativePlatform?.() || window.location.origin.includes('localhost') && !window.location.port;
-  const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://pro-fitness-glass.zeabur.app') : window.location.origin;
+  const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://profitnessglass.es') : window.location.origin;
   const shareUrl = `${baseUrl}/share/routine/${routine.id}`;
 
   const handleVisibilityChange = async (newVisibility) => {
@@ -340,7 +354,7 @@ const ShareSettingsModal = ({ routine, onClose, onUpdate }) => {
   );
 };
 
-const Routines = ({ setView }) => {
+const Routines = ({ setView, mainContentRef }) => {
   const { addToast } = useToast();
   const { t } = useTranslation('exercise_names');
 
@@ -356,7 +370,7 @@ const Routines = ({ setView }) => {
     completedRoutineIdsToday,
     fetchTodaysCompletedRoutines,
     userProfile, // <-- Añadido para acceder al goal
-  } = useAppStore((state) => ({
+  } = useAppStore(useShallow((state) => ({
     routines: state.routines,
     workoutLog: state.workoutLog,
     fetchInitialData: state.fetchInitialData,
@@ -368,7 +382,7 @@ const Routines = ({ setView }) => {
     completedRoutineIdsToday: state.completedRoutineIdsToday,
     fetchTodaysCompletedRoutines: state.fetchTodaysCompletedRoutines,
     userProfile: state.userProfile, // <-- Añadido
-  }));
+  })));
 
   const LS_KEY_EDITING = 'routinesEditingState_v2';
 
@@ -390,13 +404,14 @@ const Routines = ({ setView }) => {
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showDataTransferModal, setShowDataTransferModal] = useState(false);
   const [routineToDelete, setRoutineToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState('');
 
   const [sharingRoutineId, setSharingRoutineId] = useState(null);
   const sharingRoutine = useMemo(() => {
-    if (!sharingRoutineId) return null;
+    if (!sharingRoutineId || !Array.isArray(routines)) return null;
     return routines.find(r => r.id === sharingRoutineId);
   }, [routines, sharingRoutineId]);
 
@@ -414,6 +429,9 @@ const Routines = ({ setView }) => {
     }
     return localStorage.getItem('routinesActiveTab') || 'myRoutines';
   });
+
+  const { exclusions } = useWeeklyVolumeExclusions();
+  const [volumeFilterRoutine, setVolumeFilterRoutine] = useState(null);
 
   const isAnyWorkoutActive = activeWorkout !== null && activeWorkout !== undefined;
 
@@ -446,6 +464,13 @@ const Routines = ({ setView }) => {
   }, [fetchTodaysCompletedRoutines]);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      preloadRoutineAIGenerator().catch(() => {});
+    }, 150);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem('routinesActiveTab', activeTab);
   }, [activeTab]);
 
@@ -461,6 +486,15 @@ const Routines = ({ setView }) => {
     }
   }, [editingRoutine]);
 
+  useLayoutEffect(() => {
+    if (!editingRoutine) return;
+    const scrollContainer = mainContentRef?.current;
+    if (!scrollContainer) return;
+
+    scrollContainer.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    scrollContainer.scrollTop = 0;
+  }, [editingRoutine, mainContentRef]);
+
   const lastUsedMap = useMemo(() => {
     const map = new Map();
     (workoutLog || []).forEach((log) => {
@@ -474,9 +508,9 @@ const Routines = ({ setView }) => {
   }, [workoutLog]);
 
   const uniqueFolders = useMemo(() => {
-    if (!routines) return [];
+    if (!routines || !Array.isArray(routines)) return [];
     const folders = routines
-      .map(r => r.folder)
+      .map(r => r?.folder)
       .filter(f => f && f.trim() !== '');
     return [...new Set(folders)].sort();
   }, [routines]);
@@ -548,21 +582,34 @@ const Routines = ({ setView }) => {
 
   const handleShareClick = (routine) => {
     if (!workoutLog) return;
-    const today = new Date().toDateString();
+    const now = Date.now();
 
-    const todaysLog = workoutLog
-      .filter(log => log.routine_id === routine.id)
-      .sort((a, b) => new Date(b.workout_date) - new Date(a.workout_date))
-      .find(log => new Date(log.workout_date).toDateString() === today);
+    const routineLogs = (workoutLog || [])
+      .filter(log => String(log?.routine_id) === String(routine.id))
+      .sort((a, b) => new Date(b.workout_date) - new Date(a.workout_date));
 
-    if (todaysLog) {
-      const rawDetails = todaysLog.details || todaysLog.WorkoutLogDetails || [];
+    // 1. Buscar primero entrenamiento realizado hoy (o concluido hoy tras medianoche 0:00 / últimas 24h)
+    let selectedLog = routineLogs.find(log => {
+      if (!log?.workout_date) return false;
+      if (isWorkoutDoneToday(log)) return true;
+      const start = new Date(log.workout_date);
+      const end = new Date(start.getTime() + (log.duration_seconds || 0) * 1000);
+      return (now - end.getTime() < 24 * 60 * 60 * 1000 && now >= start.getTime());
+    });
+
+    // 2. Si no se entrenó hoy, tomar la sesión más reciente registrada de esta rutina
+    if (!selectedLog && routineLogs.length > 0) {
+      selectedLog = routineLogs[0];
+    }
+
+    if (selectedLog) {
+      const rawDetails = selectedLog.details || selectedLog.WorkoutLogDetails || [];
       const normalizedDetails = rawDetails.map((ex) => {
         let rawSets = ex.setsDone || ex.sets_done || ex.sets || ex.Sets || ex.WorkoutLogSets || [];
 
         if (typeof rawSets === 'string') {
           try { rawSets = JSON.parse(rawSets); }
-          catch (e) { rawSets = []; }
+          catch { rawSets = []; }
         }
 
         if (!Array.isArray(rawSets)) rawSets = [];
@@ -580,15 +627,16 @@ const Routines = ({ setView }) => {
       });
 
       setShareData({
-        routineName: routine.name || todaysLog.routine_name,
-        duration_seconds: todaysLog.duration_seconds || 0,
-        calories_burned: todaysLog.calories_burned || 0,
+        routineName: routine.name || selectedLog.routine_name || 'Mi Rutina',
+        duration_seconds: selectedLog.duration_seconds || 0,
+        calories_burned: selectedLog.calories_burned || 0,
         details: normalizedDetails,
-        notes: todaysLog.notes,
-        workout_date: todaysLog.workout_date
+        notes: selectedLog.notes,
+        workout_date: selectedLog.workout_date,
+        newPRs: selectedLog.newPRs || selectedLog.PersonalRecords || []
       });
     } else {
-      addToast("No se encontraron datos del entrenamiento de hoy para compartir.", "info");
+      addToast("Esta rutina aún no tiene entrenamientos registrados para compartir.", "info");
     }
   };
 
@@ -660,8 +708,25 @@ const Routines = ({ setView }) => {
   };
 
   const handleStartWorkout = async (routine) => {
-    if (activeWorkout && activeWorkout.routineId === routine.id) {
+    const openWorkoutAtTop = () => {
+      const scrollContainer = mainContentRef?.current;
+      if (scrollContainer) {
+        scrollContainer.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        scrollContainer.scrollTop = 0;
+      }
       setView('workout');
+    };
+
+    if (activeWorkout && activeWorkout.routineId === routine.id) {
+      openWorkoutAtTop();
+      return;
+    }
+
+    // Si la rutina ya fue completada hoy, no permitir volver a entrenarla
+    const isAlreadyCompletedToday = (completedRoutineIdsToday || []).some(id => String(id) === String(routine.id)) ||
+      (workoutLog || []).some(log => String(log?.routine_id) === String(routine.id) && isWorkoutDoneToday(log));
+    if (isAlreadyCompletedToday) {
+      addToast('Esta rutina ya ha sido completada hoy.', 'info');
       return;
     }
 
@@ -685,14 +750,14 @@ const Routines = ({ setView }) => {
         const currentActive = useAppStore.getState().activeWorkout;
         if (currentActive) {
           setIsLoading(false);
-          setView('workout');
+          openWorkoutAtTop();
         } else if (attempts < maxAttempts) {
           attempts++;
           setTimeout(checkAndNavigate, 50);
         } else {
           setIsLoading(false);
           console.warn("Timeout esperando activeWorkout, navegando de todas formas...");
-          setView('workout');
+          openWorkoutAtTop();
         }
       };
 
@@ -732,75 +797,153 @@ const Routines = ({ setView }) => {
 
   if (editingRoutine) {
     return (
-      <RoutineEditor
-        key={editingRoutine.id || 'new'}
-        routine={editingRoutine}
-        onSave={handleSave}
-        onCancel={() => setEditingRoutine(null)}
-        initialFolder={selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : null}
-      />
+      <Suspense fallback={<div className="flex justify-center p-8"><Spinner /></div>}>
+        <RoutineEditor
+          key={editingRoutine.id || 'new'}
+          routine={editingRoutine}
+          onSave={handleSave}
+          onCancel={() => setEditingRoutine(null)}
+          initialFolder={selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : null}
+        />
+      </Suspense>
     );
   }
 
   // --- Nueva función para obtener clases de Píldoras con margen seguro (mx-1.5 y my-2) ---
   const getTabClass = (tabId) => `mx-1.5 my-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap outline-none flex items-center gap-2 ${
     activeTab === tabId
-        ? 'bg-accent text-accent-contrast shadow-md shadow-accent/30 scale-105'
+        ? 'bg-accent text-accent-contrast scale-105'
         : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
   }`;
 
   const getFolderClass = (folderId) => `mx-1.5 my-2 px-5 py-2.5 text-sm font-bold rounded-[20px] transition-all duration-300 whitespace-nowrap flex items-center gap-2 outline-none flex-shrink-0 ${
     selectedFolder === folderId
-        ? 'bg-accent text-accent-contrast shadow-md shadow-accent/30 scale-105'
+        ? 'bg-accent text-accent-contrast scale-105'
         : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
   }`;
 
-  const RoutineActionButtons = ({ className = '', id }) => (
-    <div className={`flex gap-2.5 ${className}`} id={id}>
-      {routines && routines.length > 0 && (
+  const RoutineActionButtons = ({ className = '', id }) => {
+    const isMobile = id === 'routines-actions-mobile';
+
+    if (isMobile) {
+      return (
+        <div className={`flex flex-col gap-2.5 w-full ${className}`} id={id}>
+          {/* Fila principal: Crear Rutina (destacado sin partirse) + IA */}
+          <div className="flex items-center gap-2.5 w-full">
+            <button
+              onClick={() => {
+                setEditingRoutine({
+                  name: '',
+                  description: '',
+                  exercises: [],
+                  folder: selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : ''
+                });
+              }}
+              className="flex-1 flex items-center justify-center gap-2 py-3 px-5 rounded-2xl bg-accent text-accent-contrast font-extrabold text-sm shadow-lg shadow-accent/25 active:scale-[0.98] transition-all whitespace-nowrap"
+            >
+              <Plus size={18} strokeWidth={2.5} />
+              <span>Crear Rutina</span>
+            </button>
+            <button
+              onClick={() => setShowAIGenerator(true)}
+              onMouseEnter={() => preloadRoutineAIGenerator().catch(() => {})}
+              onTouchStart={() => preloadRoutineAIGenerator().catch(() => {})}
+              className="flex items-center justify-center gap-1.5 py-3 px-4 rounded-2xl font-extrabold text-sm bg-gradient-to-r from-accent via-purple-500 to-pink-500 text-white shadow-md active:scale-[0.98] transition-all whitespace-nowrap shrink-0"
+              title="Generar rutina con IA"
+            >
+              <FaBrain size={16} />
+              <span>IA</span>
+            </button>
+          </div>
+
+          {/* Fila secundaria: Herramientas útiles (Importar CSV, Muro, Papelera) */}
+          <div className="flex items-center gap-2 w-full">
+            <button
+              onClick={() => setShowDataTransferModal(true)}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-black/5 dark:bg-white/5 border border-glass-border font-bold text-xs text-text-primary active:scale-[0.98] transition-all whitespace-nowrap"
+            >
+              <FileSpreadsheet size={15} className="text-accent shrink-0" />
+              <span>Importar CSV</span>
+            </button>
+            <button
+              onClick={() => setShowPrivacyModal(true)}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-black/5 dark:bg-white/5 border border-glass-border font-bold text-xs text-text-primary active:scale-[0.98] transition-all whitespace-nowrap"
+            >
+              <Globe size={15} className="shrink-0" />
+              <span>Muro</span>
+            </button>
+            {routines && routines.length > 0 && (
+              <button
+                onClick={() => setShowDeleteAllModal(true)}
+                className="flex items-center justify-center p-2.5 rounded-xl bg-red-500/10 text-red-500 font-bold active:scale-[0.98] transition-all shrink-0"
+                title="Borrar todas las rutinas"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Desktop
+    return (
+      <div className={`flex items-center gap-2.5 ${className}`} id={id}>
+        {routines && routines.length > 0 && (
+          <button
+            onClick={() => setShowDeleteAllModal(true)}
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-red-500/10 text-red-500 font-bold transition hover:scale-105 hover:bg-red-500/20"
+            title="Borrar todas las rutinas"
+          >
+            <Trash2 size={18} />
+          </button>
+        )}
         <button
-          onClick={() => setShowDeleteAllModal(true)}
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-red-500/10 text-red-500 font-bold transition hover:scale-105 hover:bg-red-500/20"
-          title="Borrar todas las rutinas"
+          onClick={() => setShowPrivacyModal(true)}
+          className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full bg-black/5 dark:bg-white/5 text-text-primary font-bold transition hover:scale-105 hover:bg-black/10 dark:hover:bg-white/10"
+          title="Privacidad del Muro"
         >
-          <Trash2 size={18} />
+          <Globe size={18} />
+          <span>Muro</span>
         </button>
-      )}
-      <button
-        onClick={() => setShowPrivacyModal(true)}
-        className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full bg-black/5 dark:bg-white/5 text-text-primary font-bold transition hover:scale-105 hover:bg-black/10 dark:hover:bg-white/10"
-        title="Privacidad del Muro"
-      >
-        <Globe size={18} />
-        <span className="hidden sm:inline">Muro</span>
-      </button>
-      <button
+        <button
+          onClick={() => setShowDataTransferModal(true)}
+          className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full bg-black/5 dark:bg-white/5 text-text-primary font-bold transition hover:scale-105 hover:bg-black/10 dark:hover:bg-white/10"
+          title="Importar historial desde Hevy o Strong en CSV"
+        >
+          <FileSpreadsheet size={18} className="text-accent" />
+          <span>Importar CSV</span>
+        </button>
+        <button
           onClick={() => setShowAIGenerator(true)}
+          onMouseEnter={() => preloadRoutineAIGenerator().catch(() => {})}
+          onTouchStart={() => preloadRoutineAIGenerator().catch(() => {})}
           className="flex items-center justify-center gap-2 px-4 sm:px-5 py-3 rounded-full font-bold transition hover:scale-105 bg-gradient-to-r from-accent via-purple-500 to-pink-500 text-white animate-gradient-x shadow-lg shadow-accent/20 border-none"
           title="Generar rutina con IA"
         >
-        <Sparkles size={18} />
-        <span className="hidden sm:inline">IA</span>
-      </button>
-      <button
-        onClick={() => {
-          setEditingRoutine({
-            name: '',
-            description: '',
-            exercises: [],
-            folder: selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : ''
-          });
-        }}
-        className="flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-accent-contrast font-bold transition hover:scale-105 shadow-lg shadow-accent/30 flex-1 md:flex-none"
-      >
-        <Plus size={18} />
-        Crear Rutina
-      </button>
-    </div>
-  );
+          <FaBrain size={16} />
+          <span>IA</span>
+        </button>
+        <button
+          onClick={() => {
+            setEditingRoutine({
+              name: '',
+              description: '',
+              exercises: [],
+              folder: selectedFolder !== 'all' && selectedFolder !== 'uncategorized' ? selectedFolder : ''
+            });
+          }}
+          className="flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-accent text-accent-contrast font-bold transition hover:scale-105 shadow-lg shadow-accent/30 whitespace-nowrap"
+        >
+          <Plus size={18} />
+          <span>Crear Rutina</span>
+        </button>
+      </div>
+    );
+  };
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 pb-28 md:p-8 md:pb-8 animate-[fade-in_0.5s_ease_out]">
+    <div className="w-full max-w-5xl mx-auto px-4 pt-4 pb-28 md:p-8 md:pb-8 animate-[fade-in_0.5s_ease_out]">
       <RoutineTourGuide />
       <Helmet>
         <title>
@@ -816,24 +959,24 @@ const Routines = ({ setView }) => {
         />
       </Helmet>
 
-      <PromoBanner type="routines" onClick={() => setView('asesoria')} />
-
-      <div className="hidden md:flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
+      <div className="hidden md:flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
         <div className="flex items-center gap-3.5">
-          <h1 className="text-3xl md:text-4xl font-extrabold mt-10 md:mt-0 text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight">
             Rutinas
           </h1>
         </div>
         {activeTab === 'myRoutines' && <RoutineActionButtons id="routines-actions-desktop" />}
       </div>
 
+      <PromoBanner type="routines" onClick={() => setView('asesoria')} />
+
       {/* Tabs principales con márgenes de seguridad para las sombras */}
-      <div id="routines-tabs" className="flex items-center mb-8 overflow-x-auto py-2 -mx-4 px-2.5 md:mx-0 md:px-0 scrollbar-hide mt-6 md:mt-0">
+      <div id="routines-tabs" className="flex items-center mb-8 overflow-x-auto py-2 -mx-4 px-2.5 md:mx-0 md:px-0 scrollbar-hide">
         <button
           onClick={() => setActiveTab('myRoutines')}
           className={getTabClass('myRoutines')}
         >
-          <BookCopy size={18} /> Mis Rutinas
+          <FaDumbbell size={16} /> Mis Rutinas
         </button>
         
         {userProfile?.role === 'admin' && (
@@ -841,15 +984,16 @@ const Routines = ({ setView }) => {
             onClick={() => setActiveTab('explore')}
             className={getTabClass('explore')}
           >
-            <Compass size={18} /> Explorar
+            <FaCompass size={16} /> Explorar
           </button>
         )}
 
         <button
+            id="tutorial-routines-manual-exercises-tab"
             onClick={() => setActiveTab('manualExercises')}
             className={getTabClass('manualExercises')}
           >
-            <Dumbbell size={18} /> Ejercicios Manuales
+            <FaListCheck size={16} /> Ejercicios Manuales
           </button>
         <button
           onClick={() => {
@@ -858,7 +1002,7 @@ const Routines = ({ setView }) => {
           }}
           className={`mx-1.5 my-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap outline-none flex items-center gap-2 bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary`}
         >
-          <Flame size={18} /> Cardio Rápido
+          <FaHeartPulse size={16} /> Cardio Rápido
         </button>
       </div>
 
@@ -900,6 +1044,7 @@ const Routines = ({ setView }) => {
               <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
             </div>
           </button>
+          <WeeklyMuscleVolumeCard routines={routines || []} goal={userProfile?.goal} />
           <div className="mb-8 flex flex-col gap-5">
             <div className="max-w-md relative" id="routines-search">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary z-10 pointer-events-none" size={18} />
@@ -947,7 +1092,8 @@ const Routines = ({ setView }) => {
               filteredSorted.map((routine) => {
                 if (!routine) return null;
 
-                const isCompleted = completedRoutineIdsToday.includes(routine.id);
+                const isCompleted = (completedRoutineIdsToday || []).some(id => String(id) === String(routine.id)) ||
+                  (workoutLog || []).some(log => String(log?.routine_id) === String(routine.id) && isWorkoutDoneToday(log));
                 const isActive = activeWorkout && activeWorkout.routineId === routine.id;
                 const isBlockedByOtherWorkout = isAnyWorkoutActive && !isActive;
 
@@ -1032,9 +1178,20 @@ const Routines = ({ setView }) => {
 
                       <div className="flex flex-wrap items-center gap-3 mb-5 text-xs font-bold text-text-secondary">
                         {isCompleted && (
-                          <span className="inline-flex items-center gap-1 text-accent bg-accent/10 px-2 py-1 rounded-[8px]">
-                            <CheckCircle size={14} /> Completada
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 text-accent bg-accent/10 px-2.5 py-1 rounded-[8px]">
+                              <CheckCircle size={14} /> Completada
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleShareClick(routine)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[8px] bg-gradient-to-r from-accent/20 to-purple-500/20 hover:from-accent/30 hover:to-purple-500/30 text-accent font-extrabold text-xs transition-all active:scale-95 shadow-sm"
+                              title="Compartir entrenamiento en Stories de Instagram"
+                            >
+                              <Share2 size={13} />
+                              <span>Stories</span>
+                            </button>
+                          </div>
                         )}
                         <span className="inline-flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-2 py-1 rounded-[8px]">
                           <Clock size={14} /> ~{estimatedTime} min
@@ -1057,11 +1214,15 @@ const Routines = ({ setView }) => {
                             <Globe size={18} />
                           </button>
                           )}
-                        {isCompleted && !routine.is_from_trainer && (
+                        {(isCompleted || lastUsed) && !routine.is_from_trainer && (
                             <button
                               onClick={() => handleShareClick(routine)}
-                              className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent transition-colors"
-                              title="Compartir"
+                              className={`p-2.5 rounded-[14px] transition-all ${
+                                isCompleted
+                                  ? 'bg-accent/15 text-accent hover:bg-accent hover:text-accent-contrast shadow-sm shadow-accent/20'
+                                  : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-accent'
+                              }`}
+                              title={isCompleted ? "Compartir entrenamiento de hoy en Stories" : "Compartir última sesión en Stories"}
                             >
                               <Share2 size={18} />
                             </button>
@@ -1083,6 +1244,32 @@ const Routines = ({ setView }) => {
                           <Copy size={18} />
                         </button>
 
+                        {totalExercises > 0 && (() => {
+                          const vStats = getRoutineInclusionStats(exclusions, routine);
+                          const badgeColor = vStats.status === 'all'
+                            ? 'text-accent bg-accent/10 hover:bg-accent/20'
+                            : vStats.status === 'partial'
+                              ? 'text-amber-500 bg-amber-500/10 hover:bg-amber-500/20'
+                              : 'text-text-muted bg-black/5 dark:bg-white/5 hover:text-text-primary';
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => setVolumeFilterRoutine(routine)}
+                              className={`px-3 py-2 rounded-[14px] text-xs font-extrabold flex items-center gap-1.5 transition-colors ${badgeColor}`}
+                              title="Elegir qué ejercicios entran en las series semanales"
+                            >
+                              <Activity size={15} />
+                              <span>
+                                {vStats.status === 'all'
+                                  ? `Series sem.: Todos (${vStats.total})`
+                                  : vStats.status === 'none'
+                                    ? 'Series sem.: Ninguno'
+                                    : `Series sem.: ${vStats.included}/${vStats.total}`}
+                              </span>
+                            </button>
+                          );
+                        })()}
+
                         <div className="flex-1"></div>
 
                         {!routine.is_from_trainer && (
@@ -1096,52 +1283,85 @@ const Routines = ({ setView }) => {
                           )}
                       </div>
 
-                      {exerciseGroups.length > 0 && (
-                        <div className="mb-5 bg-black/5 dark:bg-white/5 rounded-[20px] p-4">
-                          <div className="flex flex-col gap-4">
-                            {exerciseGroups.map((group, groupIndex) => (
-                              <div key={groupIndex}>
-                                {group.length > 1 && (
-                                  <div className="mb-2 inline-flex items-center gap-1.5 text-accent text-[10px] uppercase font-bold tracking-wider bg-accent/10 px-2 py-0.5 rounded-[8px]">
-                                    <Link2 size={12} /> Superserie
-                                  </div>
-                                )}
-                                <ul className={`flex flex-col gap-2.5 ${group.length > 1 ? 'pl-3 border-l-2 border-accent/30' : ''}`}>
-                                  {group.map((ex) => (
-                                    <li key={ex.id || ex.tempId} className="flex items-center justify-between text-sm">
-                                      <span className="truncate font-semibold text-text-primary pr-3">
-                                        {t(ex.name)}
-                                      </span>
-                                      <span className="text-text-secondary font-bold text-xs whitespace-nowrap bg-black/5 dark:bg-white/10 px-2 py-1 rounded-[8px]">
-                                        {ex.sets}×{ex.reps}
-                                      </span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ))}
+                      {exerciseGroups.length > 0 && (() => {
+                        const vStats = getRoutineInclusionStats(exclusions, routine);
+                        return (
+                          <div className="mb-5 bg-black/5 dark:bg-white/5 rounded-[20px] p-4">
+                            <button
+                              type="button"
+                              onClick={() => setVolumeFilterRoutine(routine)}
+                              className="mb-3 flex w-full items-center justify-between gap-2 border-b border-black/5 pb-2.5 text-left transition hover:opacity-85 dark:border-white/10"
+                            >
+                              <span className="flex items-center gap-1.5 text-[11px] font-bold text-text-secondary">
+                                <Activity size={13} className={vStats.included > 0 ? 'text-accent' : 'text-text-muted'} />
+                                <span>
+                                  Recuento semanal:{' '}
+                                  <strong className={vStats.included > 0 ? 'text-text-primary' : 'text-text-muted'}>
+                                    {vStats.status === 'all'
+                                      ? `Todos (${vStats.total}/${vStats.total})`
+                                      : vStats.status === 'none'
+                                        ? `Ninguno (0/${vStats.total})`
+                                        : `${vStats.included} de ${vStats.total}`}
+                                  </strong>
+                                </span>
+                              </span>
+                              <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[10px] font-extrabold text-accent">
+                                Elegir
+                              </span>
+                            </button>
+                            <div className="flex flex-col gap-4">
+                              {exerciseGroups.map((group, groupIndex) => (
+                                <div key={groupIndex}>
+                                  {group.length > 1 && (
+                                    <div className="mb-2 inline-flex items-center gap-1.5 text-accent text-[10px] uppercase font-bold tracking-wider bg-accent/10 px-2 py-0.5 rounded-[8px]">
+                                      <Link2 size={12} /> Superserie
+                                    </div>
+                                  )}
+                                  <ul className={`flex flex-col gap-2.5 ${group.length > 1 ? 'pl-3 border-l-2 border-accent/30' : ''}`}>
+                                    {group.map((ex, exIdx) => {
+                                      const originalIdx = exercisesToGroup.indexOf(ex);
+                                      const fallbackIndex = originalIdx >= 0 ? originalIdx : exIdx;
+                                      const exKey = getExerciseVolumeKey(ex, fallbackIndex);
+                                      const isIncluded = isExerciseIncludedInVolume(exclusions, routine, ex, fallbackIndex);
+                                      return (
+                                        <li
+                                          key={ex.id || ex.tempId || exKey}
+                                          className={`flex items-center justify-between text-sm transition-opacity ${
+                                            isIncluded ? '' : 'opacity-45'
+                                          }`}
+                                        >
+                                          <span className={`truncate font-semibold pr-3 ${isIncluded ? 'text-text-primary' : 'text-text-secondary line-through'}`}>
+                                            {t(ex.name)}
+                                          </span>
+                                          <span className="text-text-secondary font-bold text-xs whitespace-nowrap bg-black/5 dark:bg-white/10 px-2 py-1 rounded-[8px]">
+                                            {ex.sets}×{ex.reps}
+                                          </span>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       <div className="mt-auto pt-2">
                         <button
                           onClick={() => handleStartWorkout(routine)}
-                          disabled={isCompleted || isActive || isLoading || isBlockedByOtherWorkout}
+                          disabled={isActive || isLoading || isBlockedByOtherWorkout || isCompleted}
                           className={`w-full inline-flex items-center justify-center gap-2 py-4 rounded-[20px] font-bold text-sm sm:text-base transition-all
-                          ${isCompleted || isActive || isBlockedByOtherWorkout
+                          ${isActive || isBlockedByOtherWorkout
                               ? 'bg-black/5 dark:bg-white/5 text-text-muted cursor-not-allowed'
-                              : 'bg-accent text-accent-contrast hover:scale-[1.02] active:scale-95 shadow-lg shadow-accent/20'
+                              : isCompleted
+                                ? 'bg-black/5 dark:bg-white/5 text-accent border border-accent/20 cursor-not-allowed opacity-90 select-none'
+                                : 'bg-accent text-accent-contrast hover:scale-[1.02] active:scale-95 shadow-lg shadow-accent/20 cursor-pointer'
                             }
                         `}
                         >
-                          {isLoading && !isCompleted && !isActive && !isBlockedByOtherWorkout ? (
+                          {isLoading && !isActive && !isBlockedByOtherWorkout ? (
                             <Spinner size="small" />
-                          ) : isCompleted ? (
-                            <>
-                              <CheckCircle size={20} />
-                              Entrenamiento Completado
-                            </>
                           ) : isActive ? (
                             <>
                               <Clock size={20} />
@@ -1151,6 +1371,11 @@ const Routines = ({ setView }) => {
                             <>
                               <Lock size={20} />
                               Entrenamiento en Curso
+                            </>
+                          ) : isCompleted ? (
+                            <>
+                              <CheckCircle size={20} className="text-accent" />
+                              Completado hoy
                             </>
                           ) : (
                             <>
@@ -1188,8 +1413,19 @@ const Routines = ({ setView }) => {
 
       {activeTab === 'explore' && <TemplateRoutines setView={setView} />}
 
-      {activeTab === 'manualExercises' && <ManualExercisesManager />}
-{showPrivacyModal && (
+      {activeTab === 'manualExercises' && (
+        <Suspense fallback={<div className="flex justify-center p-8"><Spinner /></div>}>
+          <ManualExercisesManager />
+        </Suspense>
+      )}
+      {volumeFilterRoutine && (
+        <RoutineVolumeFilterModal
+          routine={volumeFilterRoutine}
+          onClose={() => setVolumeFilterRoutine(null)}
+        />
+      )}
+
+      {showPrivacyModal && (
         <GlobalPrivacyModal onClose={() => setShowPrivacyModal(false)} />
       )}
 
@@ -1226,18 +1462,33 @@ const Routines = ({ setView }) => {
       )}
 
       {shareData && (
-        <WorkoutSummaryModal
-          workoutData={shareData}
-          onClose={() => setShareData(null)}
-          isShareMode={true}
-        />
+        <Suspense fallback={null}>
+          <WorkoutSummaryModal
+            workoutData={shareData}
+            onClose={() => setShareData(null)}
+            isShareMode={true}
+          />
+        </Suspense>
       )}
 
-      <RoutineAIGeneratorModal
-        isOpen={showAIGenerator}
-        onClose={() => setShowAIGenerator(false)}
-        onGenerate={(generatedRoutine) => setEditingRoutine(generatedRoutine)}
-      />
+      {showAIGenerator && (
+        <Suspense fallback={null}>
+          <RoutineAIGeneratorModal
+            isOpen={showAIGenerator}
+            onClose={() => setShowAIGenerator(false)}
+            onGenerate={(generatedRoutine) => setEditingRoutine(generatedRoutine)}
+          />
+        </Suspense>
+      )}
+
+      {showDataTransferModal && (
+        <Suspense fallback={null}>
+          <WorkoutDataTransferModal
+            isOpen={showDataTransferModal}
+            onClose={() => setShowDataTransferModal(false)}
+          />
+        </Suspense>
+      )}
 
       {isLoading && (
         <div className="fixed inset-0 z-40 grid place-items-center bg-black/60 backdrop-blur-sm">

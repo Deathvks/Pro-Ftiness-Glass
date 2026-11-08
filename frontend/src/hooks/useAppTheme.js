@@ -28,15 +28,60 @@ const HEADER_COLORS = {
   'ocean-dark': '#0f172a',
 };
 
-// --- ESTADO GLOBAL PARA LA PRUEBA DE TEMAS ---
+// --- ESTADO GLOBAL PARA LA PRUEBA DE TEMAS Y SINCRONIZACIÓN REACTIVA ---
 let testingThemeNameGlobal = null;
 let isTestingGlobal = false;
 let testTimeLeftGlobal = 0;
 let testIntervalGlobal = null;
 let listeners = [];
 
+let themeGlobal = typeof window !== 'undefined' ? (localStorage.getItem('theme') || 'system') : 'system';
+let accentGlobal = typeof window !== 'undefined' ? (localStorage.getItem('accent') || 'green') : 'green';
+let appThemeListeners = new Set();
+
 const notifyThemeListeners = () => {
   listeners.forEach(listener => listener());
+};
+
+const notifyAppThemeListeners = () => {
+  appThemeListeners.forEach(fn => fn());
+};
+
+const syncThemeDocumentClass = (themeName) => {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  const effectiveTheme = themeName === 'system'
+    ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    : themeName;
+
+  root.classList.remove('light-theme', 'dark-theme', 'oled-theme', 'galaxy-theme', 'desert-theme', 'ocean-theme', 'dark');
+  const classTheme = ['desert', 'desert-dark'].includes(effectiveTheme)
+    ? 'desert'
+    : ['ocean', 'ocean-dark'].includes(effectiveTheme)
+      ? 'ocean'
+      : ['light', 'oled', 'galaxy'].includes(effectiveTheme)
+        ? effectiveTheme
+        : 'dark';
+  root.classList.add(`${classTheme}-theme`);
+
+  const isLightTheme = effectiveTheme === 'light' || effectiveTheme === 'desert' || effectiveTheme === 'ocean';
+  if (!isLightTheme) root.classList.add('dark');
+
+  // index.html fija estas variables inline para colorear el splash inicial.
+  // Si permanecen inline, ganan a las variables de cada tema definidas en CSS.
+  root.style.removeProperty('--bg-primary');
+  root.style.setProperty('--bg-color', 'var(--bg-primary)');
+  root.style.removeProperty('background-color');
+
+  const appRoot = document.getElementById('root');
+  if (appRoot) {
+    if (['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(effectiveTheme)) {
+      appRoot.style.setProperty('background-color', 'transparent', 'important');
+    } else {
+      appRoot.style.setProperty('background-color', 'var(--bg-primary)', 'important');
+    }
+  }
+  document.body?.style.setProperty('background-color', 'var(--bg-primary)', 'important');
 };
 
 const getSafeTextAccent = (hexColor, isLightTheme) => {
@@ -63,25 +108,28 @@ const ACCENT_MAP = {
   'sky': '#0ea5e9', 'slate': '#64748b', 'zinc': '#71717a', 'stone': '#78716c',
   'mint': '#a8e6cf', 'peach': '#ffd3b6', 'rose-water': '#ffaaa5', 'lavender': '#c5a3ff',
   'baby-blue': '#a2cffe', 'sunset-pink': '#ff9a9e', 'pistachio': '#c5e1a5', 'mango': '#ffbe76',
-  'lemonade': '#fdfd96', 'cherry-blossom': '#fccbcf', 'neutral': '#737373'
+  'lemonade': '#fdfd96', 'cherry-blossom': '#fccbcf',
+  'aurora': '#10b981', 'sunset': '#f43f5e', 'cyberpunk': '#8b5cf6', 'deep-ocean': '#2563eb', 'imperial-gold': '#f59e0b',
+  'supernova': '#8b5cf6', 'plasma': '#10b981', 'eternal-flame': '#f97316', 'abyssal-vortex': '#3b82f6', 'cosmic-gold': '#f59e0b',
+  'neutral': '#737373'
 };
 
 export const useAppTheme = () => {
   const cookieConsent = useAppStore(state => state.cookieConsent);
 
-  const [theme, setThemeState] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') || 'system';
-    }
-    return 'system';
-  });
+  const [theme, setThemeState] = useState(themeGlobal);
+  const [accent, setAccentState] = useState(accentGlobal);
 
-  const [accent, setAccentState] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('accent') || 'green';
-    }
-    return 'green';
-  });
+  useEffect(() => {
+    const syncThemeAndAccent = () => {
+      setThemeState(themeGlobal);
+      setAccentState(accentGlobal);
+    };
+    appThemeListeners.add(syncThemeAndAccent);
+    return () => {
+      appThemeListeners.delete(syncThemeAndAccent);
+    };
+  }, []);
 
   const [isTestingTheme, setIsTestingTheme] = useState(isTestingGlobal);
   const [testTimeLeft, setTestTimeLeft] = useState(testTimeLeftGlobal);
@@ -128,7 +176,10 @@ export const useAppTheme = () => {
     localStorage.removeItem('pending_theme_test');
 
     if (cookieConsent) localStorage.setItem('theme', newTheme);
+    themeGlobal = newTheme;
+    syncThemeDocumentClass(newTheme);
     setThemeState(newTheme);
+    notifyAppThemeListeners();
 
     if (forceReload) {
       window.location.reload();
@@ -137,7 +188,9 @@ export const useAppTheme = () => {
 
   const setAccent = (newAccent) => {
     if (cookieConsent) localStorage.setItem('accent', newAccent);
+    accentGlobal = newAccent;
     setAccentState(newAccent);
+    notifyAppThemeListeners();
   };
 
   const startThemeTest = (themeName = 'galaxy', durationSecs = 10, forceReload = false) => {
@@ -154,6 +207,7 @@ export const useAppTheme = () => {
     testingThemeNameGlobal = themeName;
     isTestingGlobal = true;
     testTimeLeftGlobal = durationSecs;
+    syncThemeDocumentClass(themeName);
     notifyThemeListeners();
 
     testIntervalGlobal = setInterval(() => {
@@ -198,8 +252,14 @@ export const useAppTheme = () => {
     const appRootDiv = document.getElementById('root');
 
     const updateAppearance = () => {
-      let effectiveTheme = activeTheme;
-      if (activeTheme === 'system') {
+      // Este hook se usa desde varias vistas. Lee siempre la selección global más
+      // reciente para que una instancia que renderice tarde no restaure el tema previo.
+      const currentTheme = isTestingGlobal && testingThemeNameGlobal
+        ? testingThemeNameGlobal
+        : themeGlobal;
+      syncThemeDocumentClass(currentTheme);
+      let effectiveTheme = currentTheme;
+      if (currentTheme === 'system') {
         effectiveTheme = mediaQuery.matches ? 'dark' : 'light';
       }
 
@@ -236,6 +296,7 @@ export const useAppTheme = () => {
       else if (effectiveTheme === 'light') classTheme = 'light';
 
       root.classList.add(`${classTheme}-theme`);
+      root.classList.toggle('galaxy-effects-enabled', useAppStore.getState().galaxyEffectsEnabled);
 
       if (effectiveTheme !== 'light' && (effectiveTheme !== 'desert' || isDesertDark) && effectiveTheme !== 'ocean') {
         root.classList.add('dark');
@@ -247,7 +308,11 @@ export const useAppTheme = () => {
       root.style.removeProperty('background-color');
       body.style.setProperty('background-color', 'var(--bg-primary)', 'important');
       if (appRootDiv) {
-        appRootDiv.style.setProperty('background-color', 'var(--bg-primary)', 'important');
+        if (['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(effectiveTheme)) {
+          appRootDiv.style.setProperty('background-color', 'transparent', 'important');
+        } else {
+          appRootDiv.style.setProperty('background-color', 'var(--bg-primary)', 'important');
+        }
       }
 
       const metaColor = document.getElementById('dynamic-theme-color');

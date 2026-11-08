@@ -1,27 +1,38 @@
 /* frontend/src/components/Sidebar.jsx */
-import React, { useState, useEffect } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon, ArrowRightOnRectangleIcon as LogOut, SparklesIcon, BellIcon, UserIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect, Suspense } from 'react';
+import { UserIcon } from '@heroicons/react/24/outline';
+import { FaBrain, FaBell, FaChevronLeft, FaChevronRight, FaRightFromBracket } from 'react-icons/fa6';
 import useAppStore from '../store/useAppStore';
-import StoryViewer from './StoryViewer';
-import AIInfoModal from './AIInfoModal';
 import { getUserRoleRingConfig } from '../utils/userRoleUtils';
+import NetworkIndicatorBadge from './NetworkIndicatorBadge';
+import { lazyWithRetry } from '../utils/lazyWithRetry';
 
-const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, isRed, shouldTruncate, className = '', isCollapsed, badge }) => (
+const StoryViewer = lazyWithRetry(() => import('./StoryViewer'), 'storyViewer');
+import AIInfoModal from './AIInfoModal';
+
+const SidebarItem = ({ label, icon, isActive, onClick, onPreload, onIconClick, badgeCount, isRed, shouldTruncate, className = '', isCollapsed, badge, scaleIcon = true, disableTranslate = false }) => (
   <button
+    onMouseEnter={onPreload}
+    onTouchStart={onPreload}
     onClick={onClick}
     title={isCollapsed ? label : undefined}
-    className={`flex items-center w-full rounded-2xl text-[15px] font-semibold transition-all duration-300 group text-left overflow-hidden ${
+    className={`flex items-center w-full rounded-2xl text-[15px] font-semibold transition-colors duration-200 group text-left overflow-hidden ${
       isCollapsed ? 'justify-center p-3.5' : 'px-4 py-3.5 gap-4'
     } ${className} ${
       isRed
         ? 'text-text-secondary hover:bg-red-500/10 hover:text-red-500'
         : isActive
-        ? 'glass shadow-sm translate-x-1 text-text-primary'
-        : 'text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 hover:translate-x-1'
+        ? `liquid-glass-sidebar-active text-text-primary ${disableTranslate ? '' : 'translate-x-1'}`
+        : `text-text-secondary hover:bg-black/5 dark:hover:bg-white/5 ${disableTranslate ? '' : 'hover:translate-x-1'}`
     }`}
   >
     <div 
-        className={`relative flex items-center justify-center shrink-0 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110 active:scale-95'}`} style={{ color: isActive ? 'var(--color-accent)' : undefined }}
+        className={`relative flex items-center justify-center shrink-0 ${
+          scaleIcon 
+            ? `transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110 active:scale-95'}` 
+            : 'active:scale-95'
+        }`} 
+        style={{ color: isActive ? 'var(--color-accent)' : undefined }}
         onClick={(e) => {
             if (onIconClick) {
                 e.stopPropagation();
@@ -31,12 +42,11 @@ const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, 
     >
       {typeof icon === 'function' ? icon(isActive) : icon}
       {badgeCount > 0 && (
-        <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]" />
+        <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-accent rounded-full border-[1.5px] border-bg-primary z-10 pointer-events-none" />
       )}
       {badgeCount === 0 && badge && (
-        <span className="absolute -top-1 -right-2 w-2.5 h-2.5">
-          <span className="absolute inset-0 bg-accent rounded-full animate-pulse shadow-sm"></span>
-          <span className="absolute inset-0 bg-accent rounded-full animate-ping opacity-75"></span>
+        <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-accent rounded-full border-[1.5px] border-bg-primary z-10 pointer-events-none">
+          <span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-75"></span>
         </span>
       )}
     </div>
@@ -46,9 +56,12 @@ const SidebarItem = ({ label, icon, isActive, onClick, onIconClick, badgeCount, 
   </button>
 );
 
-const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '', handleLogoutClick, unreadCount = 0 }) => {
+const Sidebar = ({ view, navigate, preloadView, navItems, userProfile, BACKEND_BASE_URL = '', handleLogoutClick, unreadCount = 0 }) => {
   const socialRequests = useAppStore(state => state.socialRequests);
   const myStories = useAppStore(state => state.myStories);
+  const isOnline = useAppStore(state => state.isOnline ?? true);
+  const syncQueue = useAppStore(state => state.syncQueue || []);
+  const isUnstableOrOffline = !isOnline || syncQueue.length > 0;
   
   const [viewingStory, setViewingStory] = useState(false);
   const [imgError, setImgError] = useState(false); 
@@ -85,66 +98,76 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
     const newState = !isCollapsed;
     setIsCollapsed(newState);
     localStorage.setItem('sidebarCollapsed', newState.toString());
+    window.dispatchEvent(new Event('sidebar_toggled'));
   };
 
   const getProfileIcon = () => {
-    if (imgError) {
-        return (
-            <div className={`rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-bg-secondary ${hasStories ? 'w-full h-full' : 'w-9 h-9 border border-glass-border'}`}>
-               <UserIcon className={`text-text-secondary ${hasStories ? 'w-[18px] h-[18px]' : 'w-5 h-5'}`} />
-            </div>
-        );
-    }
-
     const imageUrl = userProfile?.profile_image_url?.startsWith('http')
       ? userProfile.profile_image_url
       : userProfile?.profile_image_url 
         ? `${BACKEND_BASE_URL}${userProfile.profile_image_url}` 
         : null;
 
-    const InnerContent = imageUrl ? (
+    const InnerContent = (imageUrl && !imgError) ? (
       <img 
         key={imageUrl}
         src={imageUrl} 
         alt="Perfil" 
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover rounded-full select-none pointer-events-none" 
         referrerPolicy="no-referrer"
         loading="eager"
-        onError={(e) => {
-            e.target.style.display = 'none'; 
+        onError={() => {
             setImgError(true);
         }}
       />
     ) : (
-      <div className="w-full h-full bg-bg-secondary flex items-center justify-center">
+      <div className="w-full h-full bg-bg-secondary flex items-center justify-center rounded-full">
         <UserIcon className={`text-text-secondary ${hasStories ? 'w-[18px] h-[18px]' : 'w-5 h-5'}`} />
       </div>
     );
 
-    const roleConfig = getUserRoleRingConfig(userProfile);
+    const roleConfig = getUserRoleRingConfig(userProfile, userProfile);
 
     if (hasStories && hasUnseen) {
+      const storyRingClass = roleConfig.type === 'admin'
+        ? `${roleConfig.borderClass} ${roleConfig.glowClass}`
+        : 'bg-accent shadow-md shadow-accent/40';
       return (
-        <div className="w-10 h-10 rounded-full p-[2px] shrink-0 transition-all duration-300 cursor-pointer bg-accent shadow-md shadow-accent/40 animate-pulse-slow">
-            <div className="w-full h-full rounded-full p-[1.5px] bg-bg-primary dark:bg-[#121214] overflow-hidden flex items-center justify-center">
-              <div className="w-full h-full rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
-                {InnerContent}
-              </div>
-            </div>
+        <div 
+          className="w-10 h-10 shrink-0 aspect-square relative select-none cursor-pointer"
+          title={`${userProfile?.username || 'Perfil'} • Historias sin ver`}
+        >
+          <div className={`absolute inset-0 rounded-full ${storyRingClass} animate-pulse-slow pointer-events-none`} />
+          <div className="absolute inset-[2px] rounded-full bg-bg-primary dark:bg-[#121214] pointer-events-none" />
+          <div className="absolute inset-[4px] rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
+            {InnerContent}
+          </div>
+          {isUnstableOrOffline && (
+            <NetworkIndicatorBadge
+              isOffline={!isOnline}
+              pendingCount={syncQueue.length}
+            />
+          )}
         </div>
       );
     }
 
     return (
       <div 
-        className={`w-10 h-10 rounded-full p-[2px] shrink-0 transition-all duration-300 ${roleConfig.borderClass} ${roleConfig.glowClass}`}
+        className="w-10 h-10 shrink-0 aspect-square relative select-none"
         title={`${userProfile?.username || 'Perfil'} • ${roleConfig.title}`}
       >
-        <div className="w-full h-full rounded-full p-[1.5px] bg-bg-primary dark:bg-[#121214] overflow-hidden flex items-center justify-center">
-          <div className="w-full h-full rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
-            {InnerContent}
-          </div>
+        <div className={`absolute inset-0 rounded-full ${roleConfig.borderClass} ${roleConfig.glowClass} pointer-events-none`} />
+        <div className="absolute inset-[2px] rounded-full bg-bg-primary dark:bg-[#121214] pointer-events-none" />
+        <div className="absolute inset-[4px] rounded-full overflow-hidden bg-bg-secondary flex items-center justify-center">
+          {InnerContent}
         </div>
+          {isUnstableOrOffline && (
+            <NetworkIndicatorBadge
+              isOffline={!isOnline}
+              pendingCount={syncQueue.length}
+            />
+          )}
       </div>
     );
   };
@@ -153,15 +176,17 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
 
   return (
     <>
-        {viewingStory && userProfile && (
-            <StoryViewer userId={userProfile.id} onClose={() => setViewingStory(false)} />
-        )}
+        <Suspense fallback={null}>
+            {viewingStory && userProfile && (
+                <StoryViewer userId={userProfile.id} onClose={() => setViewingStory(false)} />
+            )}
 
-        {showAIModal && (
-            <AIInfoModal onClose={() => setShowAIModal(false)} />
-        )}
+            {showAIModal && (
+                <AIInfoModal onClose={() => setShowAIModal(false)} />
+            )}
+        </Suspense>
 
-        <nav className={`hidden md:flex flex-col h-full border-r border-glass-border bg-glass-bg backdrop-blur-glass shadow-lg overflow-y-auto overflow-x-hidden z-40 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[88px] px-3 py-6' : 'w-64 lg:w-72 p-6'}`}>
+        <nav className={`hidden md:flex flex-col h-full relative z-40 liquid-glass-sidebar overflow-y-auto overflow-x-hidden transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[88px] px-3 py-6' : 'w-64 lg:w-72 p-6'}`}>
         
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start px-2'} mb-8 shrink-0`}>
             <button 
@@ -183,6 +208,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
                 label={item.label}
                 icon={item.icon}
                 isActive={view === item.id}
+                onPreload={() => preloadView && preloadView(item.id)}
                 onClick={() => navigate(item.id)}
                 badgeCount={item.id === 'social' ? (socialRequests?.received?.length || 0) : 0}
                 isCollapsed={isCollapsed}
@@ -204,7 +230,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
                 }`}
             >
                 <div className="relative flex items-center justify-center shrink-0">
-                    <SparklesIcon className={`w-5 h-5 ${isAILimitReached ? 'text-text-muted' : 'text-accent-contrast drop-shadow-md animate-pulse'}`} />
+                    <FaBrain className={`w-5 h-5 ${isAILimitReached ? 'text-text-muted' : 'text-accent-contrast drop-shadow-md animate-pulse'}`} />
                 </div>
                 {!isCollapsed && (
                     <div className="flex flex-col items-start min-w-0">
@@ -222,8 +248,9 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
 
             <SidebarItem
                 label="Notificaciones"
-                icon={<BellIcon className="w-5 h-5" />}
+                icon={<FaBell className="w-5 h-5" />}
                 isActive={view === 'notifications'}
+                onPreload={() => preloadView && preloadView('notifications')}
                 onClick={() => navigate('notifications')}
                 badgeCount={unreadCount}
                 isCollapsed={isCollapsed}
@@ -231,7 +258,7 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
 
             <SidebarItem
                 label={isCollapsed ? "Expandir" : "Contraer"}
-                icon={isCollapsed ? <ChevronRightIcon className="w-5 h-5" /> : <ChevronLeftIcon className="w-5 h-5" />}
+                icon={isCollapsed ? <FaChevronRight className="w-4 h-4" /> : <FaChevronLeft className="w-4 h-4" />}
                 onClick={toggleSidebar}
                 isCollapsed={isCollapsed}
                 className="text-text-muted hover:text-text-primary mt-1"
@@ -243,15 +270,18 @@ const Sidebar = ({ view, navigate, navItems, userProfile, BACKEND_BASE_URL = '',
                 label={userProfile?.username || 'Perfil'}
                 icon={getProfileIcon()}
                 isActive={view === 'profile'}
+                onPreload={() => preloadView && preloadView('profile')}
                 onClick={() => navigate('profile')}
                 onIconClick={hasStories ? () => setViewingStory(true) : undefined}
                 shouldTruncate={true}
                 isCollapsed={isCollapsed}
+                scaleIcon={false}
+                disableTranslate={true}
             />
 
             <SidebarItem
                 label="Cerrar Sesión"
-                icon={<LogOut className="w-5 h-5" />}
+                icon={<FaRightFromBracket className="w-5 h-5" />}
                 onClick={handleLogoutClick}
                 isRed
                 isCollapsed={isCollapsed}

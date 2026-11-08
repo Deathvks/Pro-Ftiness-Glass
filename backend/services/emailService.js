@@ -2,19 +2,32 @@
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import db from '../models/index.js';
+import { createEmailUnsubscribeToken } from '../utils/emailUnsubscribeToken.js';
+import { canSendPromotionalEmail } from './emailConsentService.js';
+import { domainMailboxes, isDomainSmtpConfigured, privacyContact, publicApiOrigin, smtpHost, smtpPort, supportContact } from '../config/mailContacts.js';
 
-// Configurar transporter - Usar createTransport (sin 'er' al final)
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
+const promotionalSender = 'Dylan Jesús Suárez Falcón';
+
+const automaticEmailNotice = 'Este correo es automático. Si necesitas ayuda técnica, puedes responder para contactar con soporte.';
+
+const transporter = isDomainSmtpConfigured ? nodemailer.createTransport({
+  host: smtpHost,
+  port: smtpPort,
+  secure: smtpPort === 465,
+  requireTLS: smtpPort !== 465,
   auth: {
-    user: process.env.EMAIL_USER, // tu-email@gmail.com
-    pass: process.env.EMAIL_PASS  // contraseña de aplicación
+    user: domainMailboxes.notifications,
+    pass: process.env.EMAIL_PASS
   }
-});
+}) : null;
 
-const sendMailAndLog = async (mailOptions) => {
+const sendMailAndLog = async (mailOptions, promotional = false) => {
   try {
-    const result = await transporter.sendMail(mailOptions);
+    if (!transporter) throw new Error('Configura el SMTP de notificaciones@profitnessglass.es antes de enviar correo.');
+    const from = promotional
+      ? { name: `${promotionalSender} · Pro Fitness Glass`, address: domainMailboxes.notifications }
+      : domainMailboxes.notifications;
+    const result = await transporter.sendMail({ ...mailOptions, from, replyTo: supportContact });
     if (db && db.EmailDeliveryLog) {
       await db.EmailDeliveryLog.create({
         recipient_email: mailOptions.to,
@@ -36,6 +49,81 @@ const sendMailAndLog = async (mailOptions) => {
   }
 };
 
+export const sendDomainMailboxTest = async () => {
+  const recipients = Object.values(domainMailboxes);
+  const results = await Promise.allSettled(recipients.map(email => sendMailAndLog({
+    to: email,
+    subject: 'Prueba de entrega de Pro Fitness Glass',
+    text: `Prueba de correo solicitada desde el panel de administración para ${email}. Si has recibido este mensaje, ese buzón admite correo enviado desde la aplicación.`
+  })));
+
+  return recipients.map((email, index) => ({
+    email,
+    accepted: results[index].status === 'fulfilled' && results[index].value.accepted?.includes(email) === true
+  }));
+};
+
+const findOptionalEmailRecipient = (email, userId) => db.User.findOne({
+  where: { email, ...(userId === undefined ? {} : { id: userId }) },
+  attributes: ['id', 'email', 'is_verified', 'email_activity_notifications', 'email_marketing_consent', 'email_coaching_consent']
+});
+
+export const canSendOptionalEmail = async (user, category) => {
+  if (!user?.is_verified || !user.email || /@(?:x-auth\.local|profitnessglass\.internal)$/i.test(user.email)) return false;
+  return category === 'activity' ? !!user.email_activity_notifications : canSendPromotionalEmail(user, category);
+};
+
+const sendOptionalMailAndLog = async (mailOptions, purpose, userId) => {
+  const recipientEmail = Array.isArray(mailOptions.to) ? mailOptions.to[0]?.address : mailOptions.to;
+  const user = recipientEmail ? await findOptionalEmailRecipient(recipientEmail, userId) : null;
+
+  const allowed = await canSendOptionalEmail(user, purpose ?? 'activity');
+  if (!allowed) return { success: true, skipped: true };
+
+  const token = createEmailUnsubscribeToken({ userId: user.id, email: user.email, category: purpose ?? 'activity' });
+  const baseUrl = (process.env.FRONTEND_URL || 'https://profitnessglass.es').replace(/\/+$/, '');
+  const unsubscribeUrl = new URL('/api/email-preferences/unsubscribe', publicApiOrigin);
+  unsubscribeUrl.searchParams.set('token', token);
+  const promotionalNotice = purpose ? `
+    <div style="max-width:600px;margin:0 auto 16px;padding:12px 16px;box-sizing:border-box;background:#f3f4f6;border-radius:8px;font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#1f2937;">
+      <strong>Comunicación promocional de Pro Fitness Glass</strong><br>
+      Enviada por ${promotionalSender}, titular de Pro Fitness Glass.
+    </div>
+  ` : '';
+  const footerMessage = purpose
+    ? 'Recibes este correo porque autorizaste esta categoría de recordatorios. Puedes retirar tu consentimiento en cualquier momento.'
+    : 'Recibes este aviso según tus preferencias de actividad en Pro Fitness Glass.';
+  const footer = `
+    <div style="max-width:600px;margin:24px auto 0;padding:16px 20px;border-top:1px solid #e5e7eb;text-align:center;font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#6b7280;">
+      <p style="margin:0 0 8px 0;">${footerMessage}</p>
+      <p style="margin:0 0 8px 0;">
+        <a href="${unsubscribeUrl}" style="color:#4f46e5;text-decoration:underline;font-weight:bold;">Darse de baja de estos correos</a>
+      </p>
+      ${purpose ? `<p style="margin:0;font-size:11px;">Contacto: <a href="mailto:${privacyContact}" style="color:#4f46e5;">${privacyContact}</a> · <a href="${baseUrl}/privacy" style="color:#4f46e5;">Política de privacidad</a></p>` : ''}
+    </div>
+  `;
+
+  return sendMailAndLog({
+    ...mailOptions,
+    subject: purpose ? `[Promocional] ${mailOptions.subject}` : mailOptions.subject,
+    html: `${promotionalNotice}${mailOptions.html || ''}${footer}`,
+    text: mailOptions.text
+      ? `${mailOptions.text}\n\n---\n${footerMessage}\nDarse de baja: ${unsubscribeUrl}`
+      : undefined,
+    headers: {
+      ...(mailOptions.headers || {}),
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+    }
+  }, Boolean(purpose));
+};
+
+export const sendEmailPreferenceTest = ({ userId, email, category, label }) => sendOptionalMailAndLog({
+  to: email,
+  subject: `Prueba de baja de correo · ${label}`,
+  html: `<p>Has pedido esta prueba desde el panel de administración. Usa el enlace al pie del correo para desactivar los avisos de ${label} en tu cuenta.</p>`
+}, category === 'activity' ? null : category, userId);
+
 // Generar código de verificación
 export const generateVerificationCode = () => {
   return crypto.randomInt(100000, 999999).toString();
@@ -46,7 +134,6 @@ export const sendVerificationEmail = async (email, code) => {
   const resetUrl = `${process.env.FRONTEND_URL}/forgot-password`;
 
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
     subject: 'Código de verificación - Pro Fitness Glass',
     html: `
@@ -85,7 +172,6 @@ export const sendVerificationEmail = async (email, code) => {
 export const sendPasswordResetEmail = async (email, token) => {
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
     subject: 'Restablecimiento de Contraseña - Pro Fitness Glass',
     html: `
@@ -121,7 +207,6 @@ export const sendLoginAlertEmail = async (email, { ip, userAgent, token }) => {
   const changePasswordUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
   
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
     subject: 'Alerta de seguridad: Nuevo inicio de sesión - Pro Fitness Glass',
     html: `
@@ -159,95 +244,92 @@ export const sendLoginAlertEmail = async (email, { ip, userAgent, token }) => {
     return { success: false, message: 'Error al enviar alerta.' };
   }
 };
-export const sendChatReplyEmail = async (email, senderName) => {
+export const sendChatReplyEmail = async email => {
   const loginUrl = `${process.env.FRONTEND_URL}/login`;
   
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
-    subject: `Nuevo mensaje de ${senderName} en Pro Fitness Glass`,
+    subject: 'Tienes un nuevo mensaje en Pro Fitness Glass',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
         <h2 style="color: #4F46E5;">¡Tienes una nueva respuesta!</h2>
         <p>Hola,</p>
-        <p>Tu entrenador (<strong>${senderName}</strong>) te ha enviado un nuevo mensaje en el chat de asesoría.</p>
+        <p>Tienes un nuevo mensaje en el chat de asesoría.</p>
         <p>Por motivos de privacidad, entra en la aplicación para leerlo y responder.</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${loginUrl}" style="background: #4F46E5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
             Abrir Pro Fitness Glass
           </a>
         </div>
-        <p style="font-size: 12px; color: #888; text-align: center;">Este es un correo automático, por favor no respondas a este mensaje.</p>
+        <p style="font-size: 12px; color: #888; text-align: center;">${automaticEmailNotice}</p>
       </div>
     `
   };
 
   try {
-    await sendMailAndLog(mailOptions);
-    console.log('Correo de respuesta de chat enviado a:', email);
+    const result = await sendOptionalMailAndLog(mailOptions);
+    if (!result?.skipped) console.log('Correo de respuesta de chat enviado a:', email);
   } catch (error) {
     console.error('Error al enviar correo de respuesta de chat:', error);
     throw error;
   }
 };
 
-export const sendNewClientMessageEmail = async (email, clientName) => {
+export const sendNewClientMessageEmail = async email => {
   const loginUrl = `${process.env.FRONTEND_URL}/login`;
   
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
-    subject: `Nuevo mensaje de ${clientName} en Pro Fitness Glass`,
+    subject: 'Tienes un nuevo mensaje en Pro Fitness Glass',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
         <h2 style="color: #4F46E5;">Nuevo mensaje de asesoría</h2>
         <p>Hola,</p>
-        <p>El cliente <strong>${clientName}</strong> te ha enviado un nuevo mensaje.</p>
+        <p>Tienes un nuevo mensaje de asesoría.</p>
         <p>Entra en el panel de administración o entrenador para leerlo y responder.</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${loginUrl}" style="background: #4F46E5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
             Abrir Pro Fitness Glass
           </a>
         </div>
-        <p style="font-size: 12px; color: #888; text-align: center;">Este es un correo automático, por favor no respondas a este mensaje.</p>
+        <p style="font-size: 12px; color: #888; text-align: center;">${automaticEmailNotice}</p>
       </div>
     `
   };
 
   try {
-    await sendMailAndLog(mailOptions);
-    console.log('Correo de nuevo mensaje de cliente enviado a:', email);
+    const result = await sendOptionalMailAndLog(mailOptions);
+    if (!result?.skipped) console.log('Correo de nuevo mensaje de cliente enviado a:', email);
   } catch (error) {
     console.error('Error enviando correo de nuevo mensaje de cliente:', error);
   }
 };
 
-export const sendCoachingLinkedEmail = async (email, trainerName) => {
+export const sendCoachingLinkedEmail = async email => {
   const loginUrl = `${process.env.FRONTEND_URL}/login`;
   
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
-    subject: `¡Has sido añadido a una asesoría en Pro Fitness Glass!`,
+    subject: 'Tienes una actualización en Pro Fitness Glass',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
         <h2 style="color: #4F46E5;">Nueva Asesoría Asignada</h2>
         <p>Hola,</p>
-        <p>El entrenador <strong>${trainerName}</strong> te ha añadido a su programa de asesoría en Pro Fitness Glass.</p>
+        <p>Se te ha asignado una asesoría en Pro Fitness Glass.</p>
         <p>A partir de ahora podrás ver tus rutinas, dietas y hablar con tu entrenador directamente en la app.</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${loginUrl}" style="background: #4F46E5; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
             Acceder a mi Asesoría
           </a>
         </div>
-        <p style="font-size: 12px; color: #888; text-align: center;">Este es un correo automático, por favor no respondas a este mensaje.</p>
+        <p style="font-size: 12px; color: #888; text-align: center;">${automaticEmailNotice}</p>
       </div>
     `
   };
 
   try {
-    await sendMailAndLog(mailOptions);
-    console.log('Correo de asesoría vinculada enviado a:', email);
+    const result = await sendOptionalMailAndLog(mailOptions);
+    if (!result?.skipped) console.log('Correo de asesoría vinculada enviado a:', email);
   } catch (error) {
     console.error('Error enviando correo de asesoría vinculada:', error);
   }
@@ -271,7 +353,7 @@ export const sendBotReminderEmail = async (email, userName, level) => {
       <p>Hola ${userName},</p>
       <p>${texts[level]}</p>
       <p style="margin-top: 30px;">
-        <a href="https://pro-fitness-glass.zeabur.app/social" style="background-color: #6366f1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+        <a href="https://profitnessglass.es/social" style="background-color: #6366f1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
           Ir al chat
         </a>
       </p>
@@ -279,12 +361,11 @@ export const sendBotReminderEmail = async (email, userName, level) => {
   `;
 
     const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
     subject: 'Aviso de asesoría: ' + titles[level],
     html: html
   };
-  return sendMailAndLog(mailOptions);
+  return sendOptionalMailAndLog(mailOptions, 'coaching');
 };
 
 
@@ -292,7 +373,6 @@ export const sendBotReminderEmail = async (email, userName, level) => {
 
 export const sendBugReportResolvedEmail = async (email, userName, reportSubject) => {
   const mailOptions = {
-    from: process.env.EMAIL_USER,
     to: email,
     subject: `Tu reporte ha sido resuelto - Pro Fitness Glass`,
     html: `
@@ -306,7 +386,7 @@ export const sendBugReportResolvedEmail = async (email, userName, reportSubject)
             Volver a la App
           </a>
         </div>
-        <p style="font-size: 12px; color: #888; text-align: center;">Este es un correo automático, por favor no respondas a este mensaje.</p>
+        <p style="font-size: 12px; color: #888; text-align: center;">${automaticEmailNotice}</p>
       </div>
     `
   };
@@ -317,4 +397,59 @@ export const sendBugReportResolvedEmail = async (email, userName, reportSubject)
   } catch (error) {
     console.error('Error enviando correo de reporte resuelto:', error);
   }
+};
+
+
+export const sendRetentionRescueEmail = async ({ userId, email, userName, loadPayload }) => {
+  const recipient = await findOptionalEmailRecipient(email, userId);
+  if (!(await canSendOptionalEmail(recipient, 'training'))) {
+    return { success: true, skipped: true };
+  }
+
+  const {
+    title,
+    message,
+    contextLabel,
+    ctaUrl = '/routines',
+    ctaText = 'Ir a mi entrenamiento'
+  } = await loadPayload(recipient.id);
+  const baseUrl = process.env.FRONTEND_URL || 'https://profitnessglass.es';
+  const targetUrl = ctaUrl.startsWith('http') ? ctaUrl : `${baseUrl}${ctaUrl}`;
+  const safeName = userName || 'Atleta';
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0f172a; color: #f8fafc; border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+      <div style="padding: 32px 28px;">
+        <div style="display: inline-block; padding: 6px 14px; border-radius: 999px; background-color: rgba(34, 197, 94, 0.15); color: #22c55e; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 16px;">
+          PRO FITNESS GLASS · ${contextLabel || 'TU PROGRESO'}
+        </div>
+        <h2 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0 0 14px; line-height: 1.3;">
+          ${title}
+        </h2>
+        <p style="color: #cbd5e1; font-size: 15px; line-height: 1.6; margin: 0 0 12px;">
+          Hola <strong>${safeName}</strong>,
+        </p>
+        <p style="color: #f1f5f9; font-size: 16px; line-height: 1.6; margin: 0 0 28px; background: rgba(255,255,255,0.05); padding: 18px 20px; border-radius: 16px; border-left: 4px solid #22c55e;">
+          ${message}
+        </p>
+        <div style="text-align: center; margin: 28px 0 12px;">
+          <a href="${targetUrl}" style="background-color: #22c55e; color: #0f172a; padding: 14px 28px; text-decoration: none; border-radius: 999px; font-weight: 800; font-size: 15px; display: inline-block;">
+            ${ctaText}
+          </a>
+        </div>
+      </div>
+      <div style="padding: 16px 28px; background-color: rgba(0,0,0,0.25); text-align: center; font-size: 12px; color: #64748b;">
+        Este recordatorio personalizado se envía para ayudarte a mantener la constancia en Pro Fitness Glass.
+      </div>
+    </div>
+  `;
+
+  const mailOptions = {
+    to: email,
+    subject: `${title} - Pro Fitness Glass`,
+    html
+  };
+
+  // La autorización puede cambiar mientras se consulta la actividad.
+  return sendOptionalMailAndLog(mailOptions, 'training', recipient.id);
 };

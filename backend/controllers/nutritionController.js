@@ -16,6 +16,7 @@ import {
   addWaterXpToday
 } from '../services/gamificationService.js';
 import { createNotification } from '../services/notificationService.js';
+import { supportContact } from '../config/mailContacts.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,6 +27,8 @@ const { NutritionLog, WaterLog, FavoriteMeal, LocalFood, User, Notification, Bod
 const MAX_DAILY_WATER_XP = 50;
 const searchCache = new Map();
 const CACHE_TTL = 1000 * 60 * 60 * 24;
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const OFF_USER_AGENT = `ProFitnessGlass - Android - Version 7.12.0 - https://profitnessglass.es - ${supportContact}`;
 
 const offSearchTimestamps = [];
 const canMakeOffSearch = () => {
@@ -33,7 +36,7 @@ const canMakeOffSearch = () => {
   while (offSearchTimestamps.length > 0 && now - offSearchTimestamps[0] > 60000) {
     offSearchTimestamps.shift();
   }
-  return offSearchTimestamps.length < 8;
+  return offSearchTimestamps.length < 25;
 };
 
 const ensureUploadDirExists = async (dirPath) => {
@@ -64,6 +67,119 @@ const downloadAndConvertToWebP = async (imageUrl, outputDir) => {
   } catch (error) {
     return null;
   }
+};
+
+const fetchProductFromOFF = async (barcode) => {
+  try {
+    const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_es,generic_name,brands,image_url,image_front_url,serving_quantity,nutriments`;
+    const response = await axios.get(apiUrl, {
+      timeout: 8000,
+      headers: { 'User-Agent': OFF_USER_AGENT }
+    });
+    if (!response.data || response.data.status === 0 || !response.data.product) {
+      return null;
+    }
+    return response.data.product;
+  } catch (err) {
+    return null;
+  }
+};
+
+const persistProductToLocalFood = async (product, localImageUrl = null) => {
+  if (!product || !LocalFood) return null;
+  try {
+    const barcode = product.code ? String(product.code).trim() : null;
+    let name = (product.product_name_es || product.product_name || product.generic_name || (product.brands ? `${product.brands} Producto` : null) || (barcode ? `Producto ${barcode}` : 'Alimento')).trim();
+    const brand = product.brands ? product.brands.split(',')[0].trim() : null;
+
+    if (brand && !name.toLowerCase().includes(brand.toLowerCase())) {
+      name = `${name} (${brand})`;
+    }
+
+    const servingQuantity = parseFloat(product.serving_quantity) || null;
+    const nutriments = product.nutriments || {};
+    const calories = Math.round(parseFloat(nutriments['energy-kcal_100g'] ?? nutriments['energy-kcal'] ?? 0));
+    const protein_g = Math.round(parseFloat(nutriments.proteins_100g ?? nutriments.proteins ?? 0) * 10) / 10;
+    const carbs_g = Math.round(parseFloat(nutriments.carbohydrates_100g ?? nutriments.carbohydrates ?? 0) * 10) / 10;
+    const fats_g = Math.round(parseFloat(nutriments.fat_100g ?? nutriments.fat ?? 0) * 10) / 10;
+    const sugars_g = Math.round(parseFloat(nutriments.sugars_100g ?? nutriments.sugars ?? 0) * 10) / 10;
+
+    let existing = null;
+    if (barcode) {
+      existing = await LocalFood.findOne({ where: { barcode } });
+    }
+    if (!existing) {
+      existing = await LocalFood.findOne({ where: { name } });
+    }
+
+    if (existing) {
+      await existing.update({
+        barcode: barcode || existing.barcode,
+        brand: brand || existing.brand,
+        serving_quantity: servingQuantity || existing.serving_quantity,
+        calories: calories || existing.calories,
+        protein_g: protein_g || existing.protein_g,
+        carbs_g: carbs_g || existing.carbs_g,
+        fats_g: fats_g || existing.fats_g,
+        sugars_g: sugars_g || existing.sugars_g,
+        image_url: localImageUrl || existing.image_url,
+        last_synced_at: new Date()
+      });
+      return existing;
+    }
+
+    const created = await LocalFood.create({
+      name,
+      barcode,
+      brand,
+      serving_quantity: servingQuantity,
+      calories,
+      protein_g,
+      carbs_g,
+      fats_g,
+      sugars_g,
+      image_url: localImageUrl,
+      last_synced_at: new Date()
+    });
+    return created;
+  } catch (err) {
+    if (err.name === 'SequelizeUniqueConstraintError' && product.code) {
+      try {
+        const fallbackName = `${(product.product_name_es || product.product_name || 'Producto').trim()} [${product.code}]`;
+        const fallbackCreated = await LocalFood.create({
+          name: fallbackName,
+          barcode: String(product.code).trim(),
+          brand: product.brands ? product.brands.split(',')[0].trim() : null,
+          serving_quantity: parseFloat(product.serving_quantity) || null,
+          calories: Math.round(parseFloat(product.nutriments?.['energy-kcal_100g'] ?? 0)),
+          protein_g: parseFloat(product.nutriments?.proteins_100g ?? 0),
+          carbs_g: parseFloat(product.nutriments?.carbohydrates_100g ?? 0),
+          fats_g: parseFloat(product.nutriments?.fat_100g ?? 0),
+          sugars_g: parseFloat(product.nutriments?.sugars_100g ?? 0),
+          image_url: localImageUrl,
+          last_synced_at: new Date()
+        });
+        return fallbackCreated;
+      } catch (innerErr) {
+        console.error('Error in fallback persistProductToLocalFood:', innerErr.message);
+      }
+    }
+    console.error('Error persisting product to LocalFood:', err.message);
+    return null;
+  }
+};
+
+const refreshFoodFromOFF = async (barcode) => {
+  const product = await fetchProductFromOFF(barcode);
+  if (!product) return null;
+
+  const originalImageUrl = product.image_url || product.image_front_url || null;
+  let localImageUrl = null;
+  if (originalImageUrl) {
+    localImageUrl = await downloadAndConvertToWebP(originalImageUrl, FOOD_IMAGES_DIR);
+  }
+
+  return await persistProductToLocalFood(product, localImageUrl);
 };
 
 const isImageInUse = async (imageUrl, excludeLogId = null) => {
@@ -295,7 +411,7 @@ const addFoodLog = async (req, res, next) => {
       }
 
       // Check Protein target
-      const totalProtein = await NutritionLog.sum('protein', { where: { user_id: userId, log_date: log_date } }) || 0;
+      const totalProtein = await NutritionLog.sum('protein_g', { where: { user_id: userId, log_date: log_date } }) || 0;
       if (user && user.target_protein > 0 && totalProtein >= user.target_protein) {
         const protRes = await trackChallenge(userId, 'daily_protein', 1);
         if (protRes.completedNow && protRes.xpResult) {
@@ -456,26 +572,72 @@ const upsertWaterLog = async (req, res, next) => {
 const searchByBarcode = async (req, res, next) => {
   try {
     const { barcode } = req.params;
-    const apiUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=product_name,product_name_es,generic_name,brands,image_url,image_front_url,serving_quantity,nutriments`;
+    if (!barcode) return res.status(400).json({ error: 'Código de barras requerido.' });
 
-    const response = await axios.get(apiUrl, {
-      timeout: 8000,
-      headers: { 'User-Agent': 'FitApp_Backend/1.0 (profitnessglass@gmail.com)' }
-    });
+    // 1. Local Cache Lookup (MySQL local_foods)
+    if (LocalFood) {
+      try {
+        const cached = await LocalFood.findOne({ where: { barcode: String(barcode).trim() } });
+        if (cached) {
+          // Stale check (30 days) -> Trigger background sync without blocking user
+          const isStale = !cached.last_synced_at || (Date.now() - new Date(cached.last_synced_at).getTime() > THIRTY_DAYS_MS);
+          if (isStale) {
+            refreshFoodFromOFF(barcode).catch(err => {
+              console.error(`[SmartSync] Background refresh failed for ${barcode}:`, err.message);
+            });
+          }
 
-    if (!response.data || response.data.status === 0 || !response.data.product) {
+          // Gamification
+          try {
+            const { trackChallenge } = await import('../services/challengeService.js');
+            const userId = req.user?.id || req.user?.userId;
+            if (userId) await trackChallenge(userId, 'nutri_scan_3_barcodes', 1);
+          } catch (err) {}
+
+          return res.json({
+            product: {
+              product_name: cached.name,
+              brand: cached.brand || null,
+              nutriments: {
+                'energy-kcal_100g': cached.calories || 0,
+                'energy-kcal': cached.calories || 0,
+                'proteins_100g': cached.protein_g || 0,
+                'proteins': cached.protein_g || 0,
+                'carbohydrates_100g': cached.carbs_g || 0,
+                'carbohydrates': cached.carbs_g || 0,
+                'fat_100g': cached.fats_g || 0,
+                'fat': cached.fats_g || 0,
+                'fats_100g': cached.fats_g || 0,
+                'sugars_100g': cached.sugars_g || 0,
+                'sugars': cached.sugars_g || 0
+              },
+              image_url: cached.image_url || null,
+              serving_quantity: cached.serving_quantity || null,
+              barcode: cached.barcode,
+              source: 'local_cache',
+              last_synced_at: cached.last_synced_at
+            }
+          });
+        }
+      } catch (cacheErr) {
+        console.error('[SmartSync] Error querying LocalFood cache:', cacheErr.message);
+      }
+    }
+
+    // 2. Fetch from OpenFoodFacts if not in local cache
+    const product = await fetchProductFromOFF(barcode);
+    if (!product) {
       return res.status(404).json({ product: { product_name: 'Producto no encontrado', nutriments: {}, image_url: null } });
     }
 
-    const product = response.data.product;
-    const nutriments = product.nutriments || {};
-
     const originalImageUrl = product.image_url || product.image_front_url || null;
     let localImageUrl = null;
-
     if (originalImageUrl) {
       localImageUrl = await downloadAndConvertToWebP(originalImageUrl, FOOD_IMAGES_DIR);
     }
+
+    // Persist to local_foods for instant future scans
+    const saved = await persistProductToLocalFood(product, localImageUrl);
 
     // Gamification
     try {
@@ -484,12 +646,17 @@ const searchByBarcode = async (req, res, next) => {
       if (userId) await trackChallenge(userId, 'nutri_scan_3_barcodes', 1);
     } catch (err) {}
 
+    const nutriments = product.nutriments || {};
     res.json({
       product: {
-        product_name: product.product_name_es || product.product_name || product.generic_name || product.brands || 'Producto escaneado',
+        product_name: saved?.name || product.product_name_es || product.product_name || product.generic_name || product.brands || 'Producto escaneado',
+        brand: saved?.brand || (product.brands ? product.brands.split(',')[0].trim() : null),
         nutriments: nutriments,
-        image_url: localImageUrl,
-        serving_quantity: product.serving_quantity || null
+        image_url: localImageUrl || originalImageUrl,
+        serving_quantity: product.serving_quantity || null,
+        barcode: barcode,
+        source: 'openfoodfacts',
+        last_synced_at: new Date()
       }
     });
   } catch (error) {
@@ -497,6 +664,46 @@ const searchByBarcode = async (req, res, next) => {
       return res.status(408).json({ error: 'El servidor tardó demasiado en responder.' });
     }
     if (error.response && error.response.status === 404) return res.status(404).json({ product: { product_name: 'No encontrado' } });
+    next(error);
+  }
+};
+
+const refreshFoodByBarcode = async (req, res, next) => {
+  try {
+    const { barcode } = req.params;
+    if (!barcode) return res.status(400).json({ error: 'Código de barras requerido.' });
+
+    const updated = await refreshFoodFromOFF(barcode);
+    if (!updated) {
+      return res.status(404).json({ error: 'No se pudo actualizar el producto desde OpenFoodFacts.' });
+    }
+
+    res.json({
+      success: true,
+      product: {
+        product_name: updated.name,
+        brand: updated.brand || null,
+        nutriments: {
+          'energy-kcal_100g': updated.calories,
+          'energy-kcal': updated.calories,
+          'proteins_100g': updated.protein_g,
+          'proteins': updated.protein_g,
+          'carbohydrates_100g': updated.carbs_g,
+          'carbohydrates': updated.carbs_g,
+          'fat_100g': updated.fats_g,
+          'fat': updated.fats_g,
+          'fats_100g': updated.fats_g,
+          'sugars_100g': updated.sugars_g,
+          'sugars': updated.sugars_g
+        },
+        image_url: updated.image_url,
+        serving_quantity: updated.serving_quantity,
+        barcode: updated.barcode,
+        source: 'openfoodfacts_refreshed',
+        last_synced_at: updated.last_synced_at
+      }
+    });
+  } catch (error) {
     next(error);
   }
 };
@@ -542,6 +749,8 @@ const searchFoods = async (req, res, next) => {
     const formattedLocals = localFoods.map(food => ({
       id: `local-${food.id}`,
       name: food.name,
+      brand: food.brand || null,
+      barcode: food.barcode || null,
       calories: food.calories,
       protein_g: food.protein_g,
       carbs_g: food.carbs_g,
@@ -553,6 +762,7 @@ const searchFoods = async (req, res, next) => {
       fat_per_100g: food.fats_g,
       sugars_per_100g: food.sugars_g,
       image_url: food.image_url || null,
+      serving_quantity: food.serving_quantity || null,
       source: 'local_db',
       weight_g: 100
     }));
@@ -578,58 +788,79 @@ const searchFoods = async (req, res, next) => {
             action: 'process',
             json: 1,
             page_size: 20,
-            fields: 'code,product_name,product_name_es,generic_name,nutriments,image_front_small_url,serving_quantity,serving_size,brands'
+            fields: 'code,product_name,product_name_es,generic_name,brands,nutriments,image_front_small_url,serving_quantity,serving_size'
           },
-          timeout: 4000,
-          headers: { 'User-Agent': 'FitApp_Backend/1.0 (profitnessglass@gmail.com)' }
+          timeout: 6000,
+          headers: { 'User-Agent': OFF_USER_AGENT }
         });
 
         if (offRes.data && offRes.data.products) {
-          externalResults = offRes.data.products.map(p => {
-            let servingWeight = null;
-            if (p.serving_quantity && !isNaN(Number(p.serving_quantity)) && Number(p.serving_quantity) > 0) {
-              servingWeight = Math.round(Number(p.serving_quantity) * 10) / 10;
-            } else if (p.serving_size && typeof p.serving_size === 'string') {
-              const match = p.serving_size.match(/(\d+(?:[.,]\d+)?)\s*(?:g|ml|gr|gramos)/i);
-              if (match) {
-                const parsed = parseFloat(match[1].replace(',', '.'));
-                if (parsed > 0) servingWeight = Math.round(parsed * 10) / 10;
+          // Deduplicate external hits against local results
+          const seenBarcodes = new Set(localResults.map(r => r.barcode).filter(Boolean));
+          const seenNames = new Set(localResults.map(r => r.name.toLowerCase().trim()));
+
+          externalResults = offRes.data.products
+            .filter(p => {
+              if (p.code && seenBarcodes.has(String(p.code).trim())) return false;
+              const pName = (p.product_name_es || p.product_name || p.generic_name || '').toLowerCase().trim();
+              if (pName && seenNames.has(pName)) return false;
+              return true;
+            })
+            .map(p => {
+              let servingWeight = null;
+              if (p.serving_quantity && !isNaN(Number(p.serving_quantity)) && Number(p.serving_quantity) > 0) {
+                servingWeight = Math.round(Number(p.serving_quantity) * 10) / 10;
+              } else if (p.serving_size && typeof p.serving_size === 'string') {
+                const match = p.serving_size.match(/(\d+(?:[.,]\d+)?)\s*(?:g|ml|gr|gramos)/i);
+                if (match) {
+                  const parsed = parseFloat(match[1].replace(',', '.'));
+                  if (parsed > 0) servingWeight = Math.round(parsed * 10) / 10;
+                }
               }
-            }
 
-            const calPer100 = parseFloat(p.nutriments?.['energy-kcal_100g']) || 0;
-            const protPer100 = parseFloat(p.nutriments?.proteins_100g) || 0;
-            const carbsPer100 = parseFloat(p.nutriments?.carbohydrates_100g) || 0;
-            const fatPer100 = parseFloat(p.nutriments?.fat_100g) || 0;
-            const sugarsPer100 = parseFloat(p.nutriments?.sugars_100g) || 0;
+              const calPer100 = parseFloat(p.nutriments?.['energy-kcal_100g'] ?? p.nutriments?.['energy-kcal'] ?? 0) || 0;
+              const protPer100 = parseFloat(p.nutriments?.proteins_100g ?? p.nutriments?.proteins ?? 0) || 0;
+              const carbsPer100 = parseFloat(p.nutriments?.carbohydrates_100g ?? p.nutriments?.carbohydrates ?? 0) || 0;
+              const fatPer100 = parseFloat(p.nutriments?.fat_100g ?? p.nutriments?.fat ?? 0) || 0;
+              const sugarsPer100 = parseFloat(p.nutriments?.sugars_100g ?? p.nutriments?.sugars ?? 0) || 0;
 
-            const finalWeight = servingWeight && servingWeight > 0 ? servingWeight : 100;
-            const factor = finalWeight / 100;
+              const finalWeight = servingWeight && servingWeight > 0 ? servingWeight : 100;
+              const factor = finalWeight / 100;
 
-            return {
-              id: `off-${p.code}`,
-              name: p.product_name_es || p.product_name || p.generic_name || 'Sin nombre',
-              brand: p.brands || null,
-              calories: Math.round(calPer100 * factor),
-              protein_g: parseFloat((protPer100 * factor).toFixed(1)),
-              carbs_g: parseFloat((carbsPer100 * factor).toFixed(1)),
-              fats_g: parseFloat((fatPer100 * factor).toFixed(1)),
-              sugars_g: parseFloat((sugarsPer100 * factor).toFixed(1)),
-              calories_per_100g: calPer100,
-              protein_per_100g: protPer100,
-              carbs_per_100g: carbsPer100,
-              fat_per_100g: fatPer100,
-              sugars_per_100g: sugarsPer100,
-              image_url: p.image_front_small_url || null,
-              source: 'openfoodfacts',
-              serving_weight_g: servingWeight && servingWeight > 0 ? servingWeight : null,
-              weight_g: finalWeight
-            };
-          });
+              return {
+                id: `off-${p.code}`,
+                barcode: p.code || null,
+                brand: p.brands ? p.brands.split(',')[0].trim() : null,
+                name: p.product_name_es || p.product_name || p.generic_name || (p.brands ? `${p.brands} Alimento` : 'Sin nombre'),
+                calories: Math.round(calPer100 * factor),
+                protein_g: parseFloat((protPer100 * factor).toFixed(1)),
+                carbs_g: parseFloat((carbsPer100 * factor).toFixed(1)),
+                fats_g: parseFloat((fatPer100 * factor).toFixed(1)),
+                sugars_g: parseFloat((sugarsPer100 * factor).toFixed(1)),
+                calories_per_100g: calPer100,
+                protein_per_100g: protPer100,
+                carbs_per_100g: carbsPer100,
+                fat_per_100g: fatPer100,
+                sugars_per_100g: sugarsPer100,
+                image_url: p.image_front_small_url || null,
+                serving_quantity: p.serving_quantity || null,
+                serving_weight_g: servingWeight && servingWeight > 0 ? servingWeight : null,
+                source: 'openfoodfacts',
+                weight_g: finalWeight
+              };
+            });
 
           searchCache.set(searchTerm, { timestamp: Date.now(), results: externalResults });
+
+          // Background auto-cache top 5 items into LocalFood for offline & instant future queries
+          const topHits = offRes.data.products.slice(0, 5);
+          Promise.all(topHits.map(p => persistProductToLocalFood(p))).catch(err => {
+            console.error('[SmartSync] Error auto-caching search results:', err.message);
+          });
         }
-      } catch (err) { }
+      } catch (err) {
+        console.error('[SmartSync] Error fetching OFF search results:', err.message);
+      }
     }
     // Gamification
     try {
@@ -644,4 +875,16 @@ const searchFoods = async (req, res, next) => {
   }
 };
 
-export default { getNutritionLogsByDate, getRecentMeals, getNutritionSummary, addFoodLog, updateFoodLog, deleteFoodLog, upsertWaterLog, searchByBarcode, uploadFoodImage, searchFoods };
+export default {
+  getNutritionLogsByDate,
+  getRecentMeals,
+  getNutritionSummary,
+  addFoodLog,
+  updateFoodLog,
+  deleteFoodLog,
+  upsertWaterLog,
+  searchByBarcode,
+  refreshFoodByBarcode,
+  uploadFoodImage,
+  searchFoods
+};

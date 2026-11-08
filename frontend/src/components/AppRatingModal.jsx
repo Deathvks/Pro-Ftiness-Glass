@@ -5,7 +5,7 @@ import { StarIcon as StarOutline } from '@heroicons/react/24/outline';
 import { submitAppRating, getMyRating } from '../services/ratingService';
 import { useToast } from '../hooks/useToast';
 
-const AppRatingModal = ({ visible, onClose, onFinish, bottomSheet = false }) => {
+const AppRatingModal = ({ visible, onClose, onFinish, bottomSheet = false, userId }) => {
     const [rating, setRating] = useState(0);
     const [hover, setHover] = useState(0);
     const [comment, setComment] = useState('');
@@ -55,7 +55,7 @@ const AppRatingModal = ({ visible, onClose, onFinish, bottomSheet = false }) => 
         try {
             await submitAppRating(rating, comment);
             addToast('¡Gracias por tu valoración!', 'success');
-            localStorage.setItem('has_rated_app', 'true');
+            if (userId) localStorage.setItem(`has_rated_app_${userId}`, 'true');
             if (onFinish) onFinish();
             onClose();
         } catch (error) {

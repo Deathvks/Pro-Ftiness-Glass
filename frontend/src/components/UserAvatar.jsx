@@ -1,10 +1,12 @@
 /* frontend/src/components/UserAvatar.jsx */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from 'lucide-react';
 import { getUserRoleRingConfig } from '../utils/userRoleUtils';
+import useAppStore from '../store/useAppStore';
+import NetworkIndicatorBadge from './NetworkIndicatorBadge';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const BACKEND_HOST = API_BASE_URL?.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BACKEND_HOST = (API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL) || 'https://api.profitnessglass.es';
 
 const SIZE_MAP = {
     6: 'w-6 h-6',
@@ -26,23 +28,40 @@ const UserAvatar = ({
     className = "", 
     showRoleRing = true,
     gapClass = "bg-bg-primary dark:bg-[#121214]",
-    onClick
+    onClick,
+    showNetworkStatus = true
 }) => {
     const [error, setError] = useState(false);
+    const viewerProfile = useAppStore(state => state.userProfile);
+    const isOnline = useAppStore(state => state.isOnline ?? true);
+    const syncQueue = useAppStore(state => state.syncQueue || []);
+
+    const rawImgProp = user?.profile_image_url || user?.avatar || user?.profile_image;
+    useEffect(() => {
+        setError(false);
+    }, [rawImgProp]);
+
+    const isCurrentUser = user && viewerProfile && (
+        (user.id && user.id === viewerProfile.id) ||
+        (user.username && user.username === viewerProfile.username) ||
+        user === viewerProfile
+    );
+    const showUnstableNetworkBadge = showNetworkStatus && isCurrentUser && (!isOnline || syncQueue.length > 0);
 
     const sizeClass = SIZE_MAP[size] || (typeof size === 'number' ? `w-${size} h-${size}` : 'w-10 h-10');
-    const roleConfig = getUserRoleRingConfig(user);
+    const roleConfig = getUserRoleRingConfig(user, viewerProfile);
 
     const getSecureImageUrl = () => {
-        const rawUrl = user?.profile_image_url || user?.avatar || user?.profile_image;
+        const rawUrl = user?.profile_image_url || user?.avatar || user?.profile_image || user?.avatar_url;
         if (!rawUrl) return null;
 
         let url = rawUrl;
 
-        // 1. Si es ruta relativa (ej: /uploads/foto.jpg), añadir el host del backend
-        if (!url.startsWith('http') && !url.startsWith('blob:')) {
+        // 1. Si es ruta relativa (ej: /uploads/foto.jpg o /images/...), añadir el host del backend
+        if (!url.startsWith('http') && !url.startsWith('blob:') && !url.startsWith('data:')) {
             const separator = url.startsWith('/') ? '' : '/';
-            url = `${BACKEND_HOST}${separator}${url}`;
+            const host = BACKEND_HOST || 'https://api.profitnessglass.es';
+            url = `${host}${separator}${url}`;
         }
 
         // 2. FORZAR HTTPS (Solo si NO es localhost)
@@ -69,22 +88,31 @@ const UserAvatar = ({
     if (!showRoleRing) {
         return (
             <div 
-                className={`${sizeClass} rounded-full bg-bg-secondary border border-glass-border flex items-center justify-center overflow-hidden shrink-0 ${className}`}
+                className={`${sizeClass} rounded-full bg-bg-secondary border border-glass-border relative flex items-center justify-center shrink-0 ${className}`}
                 onClick={onClick}
             >
-                {!error && imageUrl ? (
-                    <img
-                        src={imageUrl}
-                        alt={user?.username || 'User'}
-                        className="w-full h-full object-cover"
-                        onError={() => setError(true)}
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
-                    />
-                ) : (
-                    <User
-                        size={size === "full" ? 32 : Math.round(typeof size === 'number' ? size * 2.5 : 20)}
-                        className="text-text-secondary opacity-50"
+                <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+                    {!error && imageUrl ? (
+                        <img
+                            src={imageUrl}
+                            alt={user?.username || 'User'}
+                            className="w-full h-full object-cover"
+                            onError={() => setError(true)}
+                            loading="eager"
+                            decoding="async"
+                            referrerPolicy="no-referrer"
+                        />
+                    ) : (
+                        <User
+                            size={size === "full" ? 32 : Math.round(typeof size === 'number' ? size * 2.5 : 20)}
+                            className="text-text-secondary opacity-50"
+                        />
+                    )}
+                </div>
+                {showUnstableNetworkBadge && (
+                    <NetworkIndicatorBadge
+                        isOffline={!isOnline}
+                        pendingCount={syncQueue.length}
                     />
                 )}
             </div>
@@ -109,7 +137,8 @@ const UserAvatar = ({
                             alt={user?.username || 'User'}
                             className="w-full h-full object-cover rounded-full"
                             onError={() => setError(true)}
-                            loading="lazy"
+                            loading="eager"
+                            decoding="async"
                             referrerPolicy="no-referrer"
                         />
                     ) : (
@@ -120,6 +149,12 @@ const UserAvatar = ({
                     )}
                 </div>
             </div>
+            {showUnstableNetworkBadge && (
+                <NetworkIndicatorBadge
+                    isOffline={!isOnline}
+                    pendingCount={syncQueue.length}
+                />
+            )}
         </div>
     );
 };

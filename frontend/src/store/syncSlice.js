@@ -22,6 +22,8 @@ const saveQueue = (queue) => {
 };
 
 export const createSyncSlice = (set, get) => ({
+    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+    setIsOnline: (status) => set({ isOnline: status }),
     syncQueue: getInitialQueue(),
     isSyncing: false,
 

@@ -1,23 +1,93 @@
-import ModalPortal from './ModalPortal';
 /* frontend/src/components/WelcomeModal.jsx */
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
+import ModalPortal from './ModalPortal';
 import {
-  ChevronRight, Brain, Timer, Palette, Smartphone, MessageCircle, Flame, Sparkles } from
-'lucide-react';
+  Bell, ChevronRight, Mail, ShieldCheck, SlidersHorizontal, Sparkles
+} from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6';
-import { APP_VERSION } from '../config/version';
+import { APP_VERSION, RELEASE_WELCOME } from '../config/version';
 import useModalLock from '../hooks/useModalLock';
+import useAppStore from '../store/useAppStore';
+
+const FEATURE_STYLES = [
+  {
+    icon: Sparkles,
+    color: '#10b981',
+    accentGrad: 'linear-gradient(to bottom, #10b981, #06b6d4)',
+    bgGrad: 'linear-gradient(135deg, #080814 0%, #121226 100%)',
+    border: '1px solid rgba(16,185,129,0.35)',
+    glow: '0 4px 20px -8px rgba(16,185,129,0.3)',
+    iconBg: 'rgba(16,185,129,0.15)',
+    iconBorder: '1px solid rgba(16,185,129,0.25)',
+    starry: true
+  },
+  {
+    icon: SlidersHorizontal,
+    color: '#3b82f6',
+    accentGrad: 'linear-gradient(to bottom, #3b82f6, #06b6d4)',
+    iconBg: 'rgba(59,130,246,0.12)',
+    iconBorder: '1px solid rgba(59,130,246,0.25)'
+  },
+  {
+    icon: ShieldCheck,
+    color: '#a855f7',
+    accentGrad: 'linear-gradient(to bottom, #a855f7, #6366f1)',
+    iconBg: 'rgba(168,85,247,0.12)',
+    iconBorder: '1px solid rgba(168,85,247,0.25)'
+  },
+  {
+    icon: Bell,
+    color: '#f97316',
+    accentGrad: 'linear-gradient(to bottom, #f97316, #eab308)',
+    iconBg: 'rgba(249,115,22,0.12)',
+    iconBorder: '1px solid rgba(249,115,22,0.25)'
+  }
+];
 
 const WelcomeModal = ({ onClose }) => {
-
   // --- Bloquear scroll del fondo y swipe entre páginas ---
   useModalLock();
 
-  const appVersion = `v${APP_VERSION}`;
-  const majorVersion = APP_VERSION.split('.')[0];
+  const welcomeRemoteData = useAppStore((state) => state.welcomeRemoteData);
 
-  const handleGetStarted = () => {
-    if (onClose) onClose();
+  const effectiveVersion = APP_VERSION;
+  const appVersion = `v${effectiveVersion}`;
+  const releaseVersion = welcomeRemoteData?.version || APP_VERSION;
+  const { title: welcomeTitle, subtitle: welcomeSubtitle, features } = welcomeRemoteData?.welcome || RELEASE_WELCOME;
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('lastSeenVersion', effectiveVersion);
+      localStorage.setItem('lastSeenWelcomeTitle', welcomeTitle);
+    } catch {}
+  }, [effectiveVersion, welcomeTitle]);
+
+  const handleGetStarted = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+
+    try {
+      localStorage.setItem('lastSeenVersion', effectiveVersion);
+      localStorage.setItem('lastSeenWelcomeTitle', welcomeTitle);
+      localStorage.setItem('pfg_app_version', effectiveVersion);
+      localStorage.setItem('pfg_cache_version', effectiveVersion);
+      localStorage.removeItem('pfg_crash_loop_count');
+      sessionStorage.removeItem('pfg_last_safe_reload_time');
+      sessionStorage.removeItem('pfg_reload_count');
+      sessionStorage.removeItem('pfg_last_chunk_autoreload');
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const k = sessionStorage.key(i);
+        if (k?.startsWith('pfg_chunk_retry_') || k?.startsWith('pfg_reload_')) {
+          sessionStorage.removeItem(k);
+        }
+      }
+    } catch (err) {
+      console.warn('[WelcomeModal] Error guardando estado de versión:', err);
+    }
+
+    // Cierre fluido e instantáneo (0ms) sin recargas
+    if (onClose) {
+      onClose();
+    }
   };
 
   return (
@@ -25,7 +95,7 @@ const WelcomeModal = ({ onClose }) => {
       <style>{`
         @keyframes wm-fade-backdrop {
           from { opacity: 0; }
-          to { opacity: 1; }
+          to   { opacity: 1; }
         }
         @keyframes wm-slide-card {
           from { opacity: 0; transform: translateY(28px) scale(0.97); }
@@ -187,7 +257,8 @@ const WelcomeModal = ({ onClose }) => {
       `}</style>
 
       {/* Backdrop */}
-      <ModalPortal disableSwipeToClose={true}><div
+      <ModalPortal disableSwipeToClose={true}>
+        <div
           className="wm-backdrop fixed inset-0"
           style={{
             zIndex: 150,
@@ -201,8 +272,8 @@ const WelcomeModal = ({ onClose }) => {
           }}
           onClick={handleGetStarted}
         >
-        {/* Modal Container */}
-        <div
+          {/* Modal Container */}
+          <div
             className="wm-card"
             style={{
               position: 'relative',
@@ -220,214 +291,199 @@ const WelcomeModal = ({ onClose }) => {
             onClick={e => e.stopPropagation()}
           >
 
-          {/* Glow / Light effect top */}
-          <div style={{
-              position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-              width: '200px', height: '100px',
-              background: 'var(--color-accent)',
-              opacity: 0.15,
-              filter: 'blur(40px)',
-              pointerEvents: 'none',
-              zIndex: 0
-            }} />
+            {/* Glow / Light effect top */}
+            <div style={{
+                position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+                width: '200px', height: '100px',
+                background: 'var(--color-accent)',
+                opacity: 0.15,
+                filter: 'blur(40px)',
+                pointerEvents: 'none',
+                zIndex: 0
+              }} />
 
-          {/* Scrollable Body */}
-          <div style={{
-              padding: '32px 24px 24px',
-              overflowY: 'auto',
-              flex: 1,
-              position: 'relative',
-              zIndex: 1
-            }}
-            className="hide-scrollbar"
-          >
+            {/* Scrollable Body */}
+            <div style={{
+                padding: '32px 24px 24px',
+                overflowY: 'auto',
+                flex: 1,
+                position: 'relative',
+                zIndex: 1
+              }}
+              className="hide-scrollbar"
+            >
 
-            {/*  Header Section  */}
-            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-              
-              {/* Icon / Avatar with spinning ring */}
-              <div style={{ position: 'relative', width: '72px', height: '72px', margin: '0 auto 20px' }}>
-                <div className="wm-spin-ring" style={{
-                    position: 'absolute', inset: -6,
-                    borderRadius: '50%',
-                    background: 'conic-gradient(from 0deg, transparent 0%, transparent 40%, var(--color-accent) 80%, transparent 100%)',
-                    maskImage: 'radial-gradient(transparent 65%, black 66%)',
-                    WebkitMaskImage: 'radial-gradient(transparent 65%, black 66%)'
-                  }} />
-                <div className="wm-glow-orb" style={{
-                    position: 'absolute', inset: 0,
-                    borderRadius: '50%',
-                    background: 'var(--color-accent)',
-                    filter: 'blur(12px)',
-                  }} />
-                <div style={{
-                    position: 'relative', width: '100%', height: '100%',
-                    background: 'var(--bg-secondary)',
-                    borderRadius: '50%',
-                    border: '2px solid var(--glass-border)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.1)'
+              {/*  Header Section  */}
+              <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+                
+                {/* Icon / Avatar with spinning ring */}
+                <div style={{ position: 'relative', width: '72px', height: '72px', margin: '0 auto 20px' }}>
+                  <div className="wm-spin-ring" style={{
+                      position: 'absolute', inset: -6,
+                      borderRadius: '50%',
+                      background: 'conic-gradient(from 0deg, transparent 0%, transparent 40%, var(--color-accent) 80%, transparent 100%)',
+                      maskImage: 'radial-gradient(transparent 65%, black 66%)',
+                      WebkitMaskImage: 'radial-gradient(transparent 65%, black 66%)'
+                    }} />
+                  <div className="wm-glow-orb" style={{
+                      position: 'absolute', inset: 0,
+                      borderRadius: '50%',
+                      background: 'var(--color-accent)',
+                      filter: 'blur(12px)',
+                    }} />
+                  <div style={{
+                      position: 'relative', width: '100%', height: '100%',
+                      background: 'var(--bg-secondary)',
+                      borderRadius: '50%',
+                      border: '2px solid var(--glass-border)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.1)'
+                    }}>
+                    <FaMeteor size={32} style={{ color: 'var(--text-primary)' }} />
+                    <span style={{
+                        position: 'absolute', bottom: '-4px',
+                        fontSize: '10px', fontWeight: 900,
+                        background: 'var(--text-primary)', color: 'var(--bg-primary)',
+                        padding: '2px 6px', borderRadius: '6px',
+                        letterSpacing: '0.05em',
+                        lineHeight: 1
+                      }}>v{effectiveVersion}</span>
+                  </div>
+
+                  {/* Badge */}
+                  <div className="wm-badge" style={{
+                      position: 'absolute', top: '-10px', right: '-22px',
+                      background: 'var(--color-accent)',
+                      color: 'var(--btn-accent-text, #fff)',
+                      fontSize: '9px', fontWeight: 900,
+                      letterSpacing: '0.15em',
+                      padding: '4px 10px',
+                      borderRadius: '99px',
+                      boxShadow: '0 4px 16px -2px color-mix(in srgb, var(--color-accent) 60%, transparent)',
+                      whiteSpace: 'nowrap'
+                    }}>NOVEDADES V{releaseVersion}</div>
+                </div>
+
+                {/* Title */}
+                <h1 className="wm-shimmer" style={{
+                    fontSize: '26px', fontWeight: 900,
+                    margin: '0 0 10px',
+                    letterSpacing: '-0.5px',
+                    lineHeight: 1.15
                   }}>
-                  <FaMeteor size={32} style={{ color: 'var(--text-primary)' }} />
-                  <span style={{
-                      position: 'absolute', bottom: '-4px',
-                      fontSize: '10px', fontWeight: 900,
-                      background: 'var(--text-primary)', color: 'var(--bg-primary)',
-                      padding: '2px 6px', borderRadius: '6px',
-                      letterSpacing: '0.05em',
-                      lineHeight: 1
-                    }}>v{APP_VERSION}</span>
-                </div>
+                  {welcomeTitle}
+                </h1>
 
-                {/* Badge */}
-                <div className="wm-badge" style={{
-                    position: 'absolute', top: '-10px', right: '-22px',
-                    background: 'var(--color-accent)',
-                    color: 'var(--btn-accent-text, #fff)',
-                    fontSize: '9px', fontWeight: 900,
+                <p style={{
+                    fontSize: '13.5px',
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.65,
+                    margin: 0,
+                    maxWidth: '320px',
+                    marginInline: 'auto'
+                  }}>
+                  {welcomeSubtitle}
+                </p>
+              </div>
+
+              {/*  Divider  */}
+              <div className="wm-divider" style={{ marginBottom: '20px' }} />
+
+              {/*  Feature Cards  */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
+                {(features || []).filter(Boolean).map((feat, idx) => {
+                  const styleConfig = FEATURE_STYLES[idx % FEATURE_STYLES.length];
+                  const IconComponent = styleConfig.icon;
+                  const numStr = String(idx + 1).padStart(2, '0');
+                  const animClass = `wm-feature-${Math.min(idx + 1, 4)}`;
+
+                  return (
+                    <div
+                      key={idx}
+                      className={`wm-feature-card ${animClass}`}
+                      style={{
+                        background: styleConfig.bgGrad || undefined,
+                        border: styleConfig.border || '1px solid var(--glass-border)',
+                        boxShadow: styleConfig.glow || undefined
+                      }}
+                    >
+                      {styleConfig.starry && (
+                        <div style={{
+                          position: 'absolute',
+                          inset: 0,
+                          backgroundImage: `
+                            radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+                            radial-gradient(1.5px 1.5px at 70px 10px, #ffffff, rgba(0,0,0,0)),
+                            radial-gradient(1px 1px at 140px 50px, #ffffff, rgba(0,0,0,0)),
+                            url('https://www.transparenttextures.com/patterns/stardust.png')
+                          `,
+                          opacity: 0.4,
+                          pointerEvents: 'none',
+                          zIndex: 0
+                        }}></div>
+                      )}
+                      <div className="wm-accent-line" style={{ background: styleConfig.accentGrad }} />
+                      <div className="wm-icon-wrap" style={{ background: styleConfig.iconBg, border: styleConfig.iconBorder }}>
+                        <IconComponent size={18} style={{ color: styleConfig.color }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          letterSpacing: '0.12em',
+                          color: styleConfig.color,
+                          margin: '0 0 4px',
+                          textTransform: 'uppercase'
+                        }}>
+                          {feat.title}
+                        </p>
+                        <p style={{
+                          fontSize: '13px',
+                          color: idx === 0 ? 'rgba(203,213,225,0.9)' : 'var(--text-secondary)',
+                          margin: 0,
+                          lineHeight: 1.55,
+                          overflowWrap: 'anywhere'
+                        }}>
+                          {feat.description || feat.subtitle}
+                        </p>
+                      </div>
+                      <span className="wm-num" style={{ color: styleConfig.color }}>{numStr}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/*  Footer  */}
+              <div className="wm-btn-in">
+                <button 
+                  className="wm-btn" 
+                  onClick={handleGetStarted}
+                >
+                  <span style={{ position: 'relative', zIndex: 1 }}>
+                    ENTENDIDO
+                  </span>
+                  <ChevronRight size={18} strokeWidth={2.5} style={{ position: 'relative', zIndex: 1 }} />
+                </button>
+
+                <p style={{
+                    textAlign: 'center',
+                    margin: '14px 0 0',
+                    fontSize: '10px',
                     letterSpacing: '0.15em',
-                    padding: '4px 10px',
-                    borderRadius: '99px',
-                    boxShadow: '0 4px 16px -2px color-mix(in srgb, var(--color-accent) 60%, transparent)',
-                    whiteSpace: 'nowrap'
-                  }}>NOVEDADES V{APP_VERSION}</div>
-              </div>
-
-              {/* Title */}
-              <h1 className="wm-shimmer" style={{
-                  fontSize: '26px', fontWeight: 900,
-                  margin: '0 0 10px',
-                  letterSpacing: '-0.5px',
-                  lineHeight: 1.15
-                }}>
-                Evolución Inteligente
-              </h1>
-
-              <p style={{
-                  fontSize: '13.5px',
-                  color: 'var(--text-secondary)',
-                  lineHeight: 1.65,
-                  margin: 0,
-                  maxWidth: '320px',
-                  marginInline: 'auto'
-                }}>
-                Descubre las recomendaciones con IA para romper mesetas, nuevos bordes de usuario en comunidad y rachas de entrenamiento protegidas en fin de semana.
-              </p>
-            </div>
-
-            {/*  Divider  */}
-            <div className="wm-divider" style={{ marginBottom: '20px' }} />
-
-            {/*  Feature Cards  */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
-
-              {/* Recomendaciones Inteligentes y Mesetas */}
-              <div className="wm-feature-card wm-feature-1" style={{
-                  background: 'linear-gradient(135deg, #080814 0%, #121226 100%)',
-                  border: '1px solid rgba(168,85,247,0.35)',
-                  boxShadow: '0 4px 20px -8px rgba(168,85,247,0.3)'
-                }}>
-                <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    backgroundImage: `
-                    radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
-                    radial-gradient(1.5px 1.5px at 70px 10px, #ffffff, rgba(0,0,0,0)),
-                    radial-gradient(1px 1px at 140px 50px, #ffffff, rgba(0,0,0,0)),
-                    url('https://www.transparenttextures.com/patterns/stardust.png')
-                  `,
-                    opacity: 0.4,
-                    pointerEvents: 'none',
-                    zIndex: 0
-                  }}></div>
-                <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #a855f7, #6366f1)' }} />
-                <div className="wm-icon-wrap" style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.25)' }}>
-                  <Brain size={18} style={{ color: '#a855f7' }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#a855f7', margin: '0 0 4px', textTransform: 'uppercase' }}>Recomendaciones Inteligentes</p>
-                  <p style={{ fontSize: '13px', color: 'rgba(203,213,225,0.9)', margin: 0, lineHeight: 1.55 }}>
-                    Detección de mesetas y sobrecarga progresiva. La IA analiza tus cargas reales previas y te sugiere pesos, reps y ajuste dinámico de series para hoy con 1 toque.
-                  </p>
-                </div>
-                <span className="wm-num" style={{ color: '#a855f7' }}>01</span>
-              </div>
-
-              {/* Nuevos Bordes por Usuario */}
-              <div className="wm-feature-card wm-feature-2" style={{ border: '1px solid var(--glass-border)' }}>
-                <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #3b82f6, #06b6d4)' }} />
-                <div className="wm-icon-wrap" style={{ background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)' }}>
-                  <Palette size={18} style={{ color: '#3b82f6' }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#3b82f6', margin: '0 0 4px', textTransform: 'uppercase' }}>Bordes Dinámicos en Comunidad</p>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Avatares con anillos degradados diferenciados estilo historias en el muro y publicaciones. Reconoce al instante la categoría y membresía de cada atleta y preparador.
-                  </p>
-                </div>
-                <span className="wm-num" style={{ color: '#3b82f6' }}>02</span>
-              </div>
-
-              {/* Rachas y Fines de Semana */}
-              <div className="wm-feature-card wm-feature-3" style={{ border: '1px solid var(--glass-border)' }}>
-                <div className="wm-accent-line" style={{ background: 'linear-gradient(to bottom, #f97316, #eab308)' }} />
-                <div className="wm-icon-wrap" style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)' }}>
-                  <Flame size={18} style={{ color: '#f97316' }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#f97316', margin: '0 0 4px', textTransform: 'uppercase' }}>Rachas Protegidas en Fines de Semana</p>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Las rachas se vinculan 100% a entrenamientos completados. Sábados y domingos quedan protegidos como días de descanso sin romper tu racha ni falsas alertas.
-                  </p>
-                </div>
-                <span className="wm-num" style={{ color: '#f97316' }}>03</span>
-              </div>
-
-              {/* Historias 9:16 y Muro */}
-              <div className="wm-feature-card wm-feature-4" style={{ border: '1px solid var(--glass-border)' }}>
-                <div className="wm-accent-line" style={{ background: '#10b981' }} />
-                <div className="wm-icon-wrap" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)' }}>
-                  <Sparkles size={18} style={{ color: '#10b981' }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: '#10b981', margin: '0 0 4px', textTransform: 'uppercase' }}>Historias 9:16 y Fluidez Total</p>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.55 }}>
-                    Encuadre y recorte vertical 9:16 perfeccionado sin cierres accidentales, importación directa de rutinas de amigos y máxima rapidez de respuesta en cada vista.
-                  </p>
-                </div>
-                <span className="wm-num" style={{ color: '#10b981' }}>04</span>
+                    fontWeight: 700,
+                    color: 'var(--text-muted)',
+                    textTransform: 'uppercase'
+                  }}>
+                  Build {appVersion}
+                </p>
               </div>
 
             </div>
-
-            {/*  Footer  */}
-            <div className="wm-btn-in">
-              <button className="wm-btn" onClick={handleGetStarted}>
-                <span style={{ position: 'relative', zIndex: 1 }}>DESCUBRIR NOVEDADES</span>
-                <ChevronRight size={18} strokeWidth={2.5} style={{ position: 'relative', zIndex: 1 }} />
-              </button>
-
-              <p style={{
-                  textAlign: 'center',
-                  margin: '14px 0 0',
-                  fontSize: '10px',
-                  letterSpacing: '0.15em',
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase'
-                }}>
-                Build {appVersion}
-              </p>
-            </div>
-
           </div>
         </div>
-      </div></ModalPortal>
+      </ModalPortal>
     </>
   );
 };
 
 export default WelcomeModal;
-
-
-

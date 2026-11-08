@@ -242,4 +242,7 @@ router.post('/water', [
 // Buscar producto por código de barras
 router.get('/barcode/:barcode', nutritionController.searchByBarcode);
 
+// Refrescar producto manualmente desde OpenFoodFacts
+router.post('/barcode/:barcode/refresh', nutritionController.refreshFoodByBarcode);
+
 export default router;

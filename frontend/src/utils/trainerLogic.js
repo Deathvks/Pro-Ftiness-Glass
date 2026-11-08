@@ -13,16 +13,46 @@ export const analyzeRoutine = (exercises = [], answers = {}) => {
     let sets = (ex.sets && Array.isArray(ex.sets)) ? (ex.sets.length || 3) : (typeof ex.sets === 'number' ? ex.sets : 3);
     stats.totalSets += sets;
     
-    // Identificamos músculo
-    let muscle = ex.muscle_group || ex.target || 'unknown';
-    if ((!muscle || muscle === 'other') && ex.name) muscle = inferMuscleFromName(ex.name);
-    
-    const muscleKey = muscle ? muscle.toLowerCase() : 'unknown';
-    stats.muscles[muscleKey] = (stats.muscles[muscleKey] || 0) + sets;
+    // Un ejercicio puede indicar varios músculos separados por coma.
+    let muscles = Array.isArray(ex.muscle_group)
+      ? ex.muscle_group
+      : String(ex.muscle_group || ex.target || '').split(',');
+    muscles = [...new Set(muscles.map(muscle => String(muscle).trim().toLowerCase()).filter(Boolean))];
+    const inferredPrimary = ex.name ? inferMuscleFromName(ex.name) : 'unknown';
+    if ((!muscles.length || muscles.every(muscle => ['other', 'unknown'].includes(muscle))) && inferredPrimary !== 'unknown') {
+      muscles = [inferredPrimary];
+    }
+    if (!muscles.length) muscles = ['unknown'];
 
-    // Agrupamos por patrón
-    const group = getGroupFromMuscle(muscleKey);
-    if (group) stats[group] = (stats[group] || 0) + sets;
+    // Damos prioridad al músculo principal del ejercicio y un peso menor a los secundarios/sinergistas
+    const primaryMuscle = (inferredPrimary !== 'unknown' && inferredPrimary !== 'other')
+      ? inferredPrimary
+      : muscles[0];
+    const secondaryMuscles = muscles.filter(m => m !== primaryMuscle);
+
+    if (secondaryMuscles.length === 0) {
+      stats.muscles[primaryMuscle] = (stats.muscles[primaryMuscle] || 0) + sets;
+    } else {
+      const primaryShare = sets * 0.75;
+      const secondaryShare = (sets * 0.25) / secondaryMuscles.length;
+      stats.muscles[primaryMuscle] = (stats.muscles[primaryMuscle] || 0) + primaryShare;
+      secondaryMuscles.forEach(muscle => {
+        stats.muscles[muscle] = (stats.muscles[muscle] || 0) + secondaryShare;
+      });
+    }
+
+    const primaryGroup = getGroupFromMuscle(primaryMuscle);
+    if (primaryGroup) {
+      stats[primaryGroup] = (stats[primaryGroup] || 0) + sets;
+    } else {
+      const groups = [...new Set(muscles.map(getGroupFromMuscle).filter(Boolean))];
+      if (groups.length) {
+        const setsPerGroup = sets / groups.length;
+        groups.forEach(group => {
+          stats[group] = (stats[group] || 0) + setsPerGroup;
+        });
+      }
+    }
   });
 
   const suggestions = [];
@@ -188,10 +218,10 @@ export const checkStagnation = (history = []) => {
     return {
       isStalled: true,
       type: 'stagnation',
-      title: '⚠️ Meseta de Rendimiento',
+      title: '⚠️ Estancamiento de Rendimiento',
       text: 'Llevas 3 sesiones sin lograr superar tus marcas.',
       actions: [
-        'Intenta añadir micro-discos (0.5kg o 1.25kg) en lugar de hacer saltos grandes de peso.',
+        'Intenta hacer saltos pequeños de carga (a partir de 1.25 kg) en lugar de hacer saltos grandes de peso.',
         'Céntrate en progresar sumando repeticiones con este peso antes de intentar volver a subir la carga.',
         'Aumenta el tiempo de descanso entre tus series efectivas a 2-3 minutos.'
       ]

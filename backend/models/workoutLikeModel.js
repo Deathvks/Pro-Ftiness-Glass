@@ -27,6 +27,11 @@ WorkoutLike.init({
       key: 'id'
     },
     onDelete: 'CASCADE'
+  },
+  reaction_type: {
+    type: DataTypes.STRING(20),
+    allowNull: false,
+    defaultValue: 'fire'
   }
 }, {
   sequelize,

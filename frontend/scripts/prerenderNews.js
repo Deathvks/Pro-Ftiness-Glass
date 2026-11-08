@@ -1,0 +1,919 @@
+/* frontend/scripts/prerenderNews.js */
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distDir = path.resolve(__dirname, '../dist');
+const publicDir = path.resolve(__dirname, '../public');
+const indexPath = path.join(distDir, 'index.html');
+const BASE_URL = 'https://profitnessglass.es';
+const API_URL = process.env.VITE_API_BASE_URL || 'https://api.profitnessglass.es/api';
+
+function escapeHtml(str = '') {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function escapeUrlAttr(str = '') {
+  return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function escapeXml(str = '') {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function formatInlineMarkdown(str = '') {
+  return str
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" rel="noopener noreferrer">$1</a>');
+}
+
+function markdownToSemanticHtml(md = '') {
+  if (!md) return '';
+  if (md.includes('\\n') || md.includes('\\r')) {
+    md = md.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\n');
+  }
+  md = md.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = md.split('\n');
+  const htmlParts = [];
+  let inList = false;
+
+  for (let rawLine of lines) {
+    const line = rawLine.trim();
+
+    if (!line) {
+      if (inList) {
+        htmlParts.push('</ul>');
+        inList = false;
+      }
+      continue;
+    }
+
+    // Encabezados
+    if (line.startsWith('### ')) {
+      if (inList) { htmlParts.push('</ul>'); inList = false; }
+      htmlParts.push(`<h3 style="font-size: 1.35rem; font-weight: 800; margin: 1.5rem 0 0.5rem; color: #f8fafc;">${formatInlineMarkdown(line.slice(4))}</h3>`);
+      continue;
+    }
+    if (line.startsWith('## ')) {
+      if (inList) { htmlParts.push('</ul>'); inList = false; }
+      htmlParts.push(`<h2 style="font-size: 1.75rem; font-weight: 900; margin: 2rem 0 0.75rem; color: #f8fafc;">${formatInlineMarkdown(line.slice(3))}</h2>`);
+      continue;
+    }
+    if (line.startsWith('# ')) {
+      if (inList) { htmlParts.push('</ul>'); inList = false; }
+      htmlParts.push(`<h1 style="font-size: 2.2rem; font-weight: 900; margin: 2.5rem 0 1rem; color: #f8fafc;">${formatInlineMarkdown(line.slice(2))}</h1>`);
+      continue;
+    }
+
+    // Cita / Blockquote
+    if (line.startsWith('> ')) {
+      if (inList) { htmlParts.push('</ul>'); inList = false; }
+      htmlParts.push(`<blockquote style="border-left: 4px solid #38bdf8; padding-left: 1rem; margin: 1.5rem 0; color: #cbd5e1; font-style: italic;"><p>${formatInlineMarkdown(line.slice(2))}</p></blockquote>`);
+      continue;
+    }
+
+    // Listas con viñetas
+    if (line.startsWith('- ') || line.startsWith('* ')) {
+      if (!inList) {
+        htmlParts.push('<ul style="padding-left: 1.5rem; margin: 1rem 0; list-style-type: disc;">');
+        inList = true;
+      }
+      htmlParts.push(`<li style="margin-bottom: 0.5rem; color: #e2e8f0;">${formatInlineMarkdown(line.slice(2))}</li>`);
+      continue;
+    }
+
+    // Listas numeradas
+    const numMatch = line.match(/^(\d+)\.\s+(.*)$/);
+    if (numMatch) {
+      if (inList) { htmlParts.push('</ul>'); inList = false; }
+      htmlParts.push(`<p style="margin: 0.75rem 0; color: #e2e8f0;"><strong style="color: #38bdf8;">${numMatch[1]}.</strong> ${formatInlineMarkdown(numMatch[2])}</p>`);
+      continue;
+    }
+
+    if (inList) {
+      htmlParts.push('</ul>');
+      inList = false;
+    }
+
+    // Párrafo estándar
+    htmlParts.push(`<p style="margin: 1.1rem 0; line-height: 1.8; color: #e2e8f0;">${formatInlineMarkdown(line)}</p>`);
+  }
+
+  if (inList) {
+    htmlParts.push('</ul>');
+  }
+
+  return htmlParts.join('\n');
+}
+
+async function fetchArticles() {
+  let apiArticles = [];
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(`${API_URL}/news?limit=100`, {
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' }
+    });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.news) && data.news.length > 0) {
+        apiArticles = data.news;
+        console.log(`[Prerender] Obtenidos ${data.news.length} artículos desde la API.`);
+      }
+    }
+  } catch (err) {
+    console.warn('[Prerender] No se pudo consultar la API remota:', err.message);
+  }
+
+  // Cargar artículos desde cachedNews.json para combinar y asegurar que NINGÚN artículo falte
+  const cachePath = path.resolve(__dirname, '../src/data/cachedNews.json');
+  let cachedArticles = [];
+  if (fs.existsSync(cachePath)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+      if (Array.isArray(cached) && cached.length > 0) {
+        cachedArticles = cached;
+      }
+    } catch (e) {
+      console.warn('[Prerender] Error leyendo caché local:', e.message);
+    }
+  }
+
+  // Fusión por slug: primero locales, sobreescritos por API si existen
+  const combinedMap = new Map();
+  cachedArticles.forEach(a => {
+    if (a.slug) combinedMap.set(a.slug, a);
+  });
+  apiArticles.forEach(a => {
+    if (a.slug) {
+      combinedMap.set(a.slug, { ...(combinedMap.get(a.slug) || {}), ...a });
+    }
+  });
+
+  const merged = Array.from(combinedMap.values());
+  console.log(`[Prerender] Total de artículos únicos a prerenderizar: ${merged.length}`);
+  if (merged.length >= cachedArticles.length && apiArticles.length > 0) {
+    try {
+      fs.writeFileSync(cachePath, JSON.stringify(merged, null, 2), 'utf8');
+      console.log(`[Prerender] Actualizado cachedNews.json con ${merged.length} noticias.`);
+    } catch (e) {
+      console.warn('[Prerender] Error escribiendo cachedNews.json:', e.message);
+    }
+  }
+  return merged;
+}
+
+function injectMeta(html, {
+  title,
+  description,
+  image,
+  url,
+  type = 'article',
+  category = 'Fitness',
+  datePublished,
+  dateModified
+}) {
+  const safeTitle = escapeHtml(title);
+  const safeDesc = escapeHtml(description);
+  const safeImg = escapeUrlAttr(image);
+  const safeUrl = escapeUrlAttr(url);
+
+  let output = html;
+
+  // Title
+  output = output.replace(/<title>[\s\S]*?<\/title>/i, `<title>${safeTitle} | Pro Fitness Glass</title>`);
+
+  // Meta description
+  output = output.replace(/<meta\s+name=["']description["'][\s\S]*?>/i, `<meta name="description" content="${safeDesc}" />`);
+
+  // Canonical
+  output = output.replace(/<link\s+rel=["']canonical["'][\s\S]*?>/i, `<link rel="canonical" href="${safeUrl}" />`);
+
+  // Open Graph
+  output = output.replace(/<meta\s+property=["']og:type["'][\s\S]*?>/i, `<meta property="og:type" content="${type}" />`);
+  output = output.replace(/<meta\s+property=["']og:url["'][\s\S]*?>/i, `<meta property="og:url" content="${safeUrl}" />`);
+  output = output.replace(/<meta\s+property=["']og:title["'][\s\S]*?>/i, `<meta property="og:title" content="${safeTitle} | Pro Fitness Glass" />`);
+  output = output.replace(/<meta\s+property=["']og:description["'][\s\S]*?>/i, `<meta property="og:description" content="${safeDesc}" />`);
+  output = output.replace(/<meta\s+property=["']og:image:alt["'][\s\S]*?>/i, '');
+  output = output.replace(
+    /<meta\s+property=["']og:image["'][\s\S]*?>/i,
+    `<meta property="og:image" content="${safeImg}" />\n  <meta property="og:image:secure_url" content="${safeImg}" />\n  <meta property="og:image:width" content="1200" />\n  <meta property="og:image:height" content="630" />\n  <meta property="og:image:alt" content="${safeTitle}" />`
+  );
+
+  // Twitter
+  output = output.replace(/<meta\s+name=["']twitter:title["'][\s\S]*?>/i, `<meta name="twitter:title" content="${safeTitle} | Pro Fitness Glass" />`);
+  output = output.replace(/<meta\s+name=["']twitter:description["'][\s\S]*?>/i, `<meta name="twitter:description" content="${safeDesc}" />`);
+  output = output.replace(/<meta\s+name=["']twitter:image["'][\s\S]*?>/i, `<meta name="twitter:image" content="${safeImg}" />`);
+
+  // Inyectar Schema.org específico para Article cumpliendo estándares de Google Rich Results
+  if (type === 'article') {
+    const pubIso = datePublished ? new Date(datePublished).toISOString() : new Date().toISOString();
+    const modIso = dateModified ? new Date(dateModified).toISOString() : pubIso;
+    const articleJsonLd = `\n  <script type="application/ld+json">\n  {\n    "@context": "https://schema.org",\n    "@type": "Article",\n    "headline": ${JSON.stringify(title)},\n    "description": ${JSON.stringify(description)},\n    "image": [${JSON.stringify(image)}],\n    "datePublished": ${JSON.stringify(pubIso)},\n    "dateModified": ${JSON.stringify(modIso)},\n    "articleSection": ${JSON.stringify(category)},\n    "inLanguage": "es-ES",\n    "author": [{\n      "@type": "Organization",\n      "name": "Equipo Editorial Pro Fitness Glass",\n      "url": "${BASE_URL}"\n    }],\n    "mainEntityOfPage": {\n      "@type": "WebPage",\n      "@id": ${JSON.stringify(url)}\n    },\n    "publisher": {\n      "@type": "Organization",\n      "name": "Pro Fitness Glass",\n      "logo": {\n        "@type": "ImageObject",\n        "url": "${BASE_URL}/logo.webp"\n      }\n    }\n  }\n  </script>`;
+    output = output.replace('</head>', `${articleJsonLd}\n</head>`);
+  }
+
+  return output;
+}
+
+function findChunkHref(prefix) {
+  const assetsDir = path.join(distDir, 'assets');
+  if (!fs.existsSync(assetsDir)) return null;
+  const match = fs.readdirSync(assetsDir).find(
+    (f) => f.startsWith(`${prefix}-`) && f.endsWith('.js')
+  );
+  return match ? `/assets/${match}` : null;
+}
+
+function injectPrerenderBody(html, seoBodyHtml, chunkPrefix = null) {
+  // Conservamos .app-splash-screen visible para evitar FOUC (parpadeo sin CSS al recargar)
+  // e inyectamos el HTML semántico SEO oculto visualmente dentro de #root + visible en <noscript>.
+  const hiddenSeoBlock = `<div data-seo-prerender="true" style="position:fixed;inset:0;z-index:-1;opacity:0;pointer-events:none;overflow:hidden;max-height:100vh;" aria-hidden="true">${seoBodyHtml}</div>`;
+  let output = html.replace(
+    /(<div id="root">[\s\S]*?)(<\/div>\s*<noscript>)/i,
+    `$1\n    ${hiddenSeoBlock}\n  $2`
+  );
+  output = output.replace(/<noscript>[\s\S]*?<\/noscript>/i, `<noscript>${seoBodyHtml}</noscript>`);
+  if (chunkPrefix) {
+    const chunkHref = findChunkHref(chunkPrefix);
+    if (chunkHref && !output.includes(chunkHref)) {
+      output = output.replace(
+        '</head>',
+        `  <link rel="modulepreload" crossorigin href="${chunkHref}">\n</head>`
+      );
+    }
+  }
+  return output;
+}
+
+function generateRssFeed(articles) {
+  const items = articles.map(a => {
+    const pubDate = a.published_at || a.createdAt || new Date().toISOString();
+    const pubRfc822 = new Date(pubDate).toUTCString();
+    const url = `${BASE_URL}/noticias/${a.slug}`;
+    return `    <item>
+      <title>${escapeXml(a.title)}</title>
+      <link>${url}</link>
+      <guid isPermaLink="true">${url}</guid>
+      <pubDate>${pubRfc822}</pubDate>
+      <description>${escapeXml(a.summary || a.seo_description || '')}</description>
+      <category>${escapeXml(a.category || 'Fitness')}</category>
+    </item>`;
+  }).join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Noticias y Guías de Élite de Fitness y Nutrición | Pro Fitness Glass</title>
+    <link>${BASE_URL}/noticias</link>
+    <description>Artículos científicos, nutrición deportiva, sobrecarga progresiva y guías de entrenamiento en Pro Fitness Glass.</description>
+    <language>es-ES</language>
+    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+    <atom:link href="${BASE_URL}/rss.xml" rel="self" type="application/rss+xml" />
+${items}
+  </channel>
+</rss>`;
+}
+
+async function main() {
+  if (!fs.existsSync(indexPath)) {
+    console.error('[Prerender] Error: dist/index.html no existe. Ejecuta primero vite build.');
+    return;
+  }
+
+  const baseHtml = fs.readFileSync(indexPath, 'utf8');
+  const articles = await fetchArticles();
+
+  // 1. Generar feed RSS 2.0 y guardarlo en dist/rss.xml y public/rss.xml
+  try {
+    const rssXml = generateRssFeed(articles);
+    fs.writeFileSync(path.join(distDir, 'rss.xml'), rssXml, 'utf8');
+    if (fs.existsSync(publicDir)) {
+      fs.writeFileSync(path.join(publicDir, 'rss.xml'), rssXml, 'utf8');
+    }
+    console.log('[Prerender] Generado dist/rss.xml y public/rss.xml con éxito.');
+  } catch (err) {
+    console.warn('[Prerender] Error generando feed RSS:', err.message);
+  }
+
+  // 2. Prerender de la sección principal /noticias con enlaces a todos los artículos
+  const newsIndexDir = path.join(distDir, 'noticias');
+  if (!fs.existsSync(newsIndexDir)) fs.mkdirSync(newsIndexDir, { recursive: true });
+
+  const articleCardsHtml = articles.map(a => `
+      <article style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.25rem; padding: 1.5rem; transition: transform 0.2s;">
+        <span style="display: inline-block; font-size: 0.75rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">${escapeHtml(a.category || 'Fitness')}</span>
+        <h2 style="font-size: 1.35rem; font-weight: 800; line-height: 1.3; margin-bottom: 0.75rem;">
+          <a href="/noticias/${a.slug}" style="color: #f8fafc; text-decoration: none;">${escapeHtml(a.title)}</a>
+        </h2>
+        <p style="font-size: 0.95rem; color: #94a3b8; line-height: 1.6; margin-bottom: 1rem;">${escapeHtml(a.summary || '')}</p>
+        <a href="/noticias/${a.slug}" style="font-size: 0.875rem; font-weight: 700; color: #38bdf8; text-decoration: none;">Leer artículo completo →</a>
+      </article>`).join('\n');
+
+  const newsBodyHtml = `
+  <main style="padding: 3rem 1.5rem; max-width: 1200px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+    <header style="margin-bottom: 2.5rem; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+        <div style="text-align: left;">
+          <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">App de Gimnasio 100% Gratis</span>
+        </div>
+      </div>
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin-bottom: 0.75rem; letter-spacing: -0.02em;">Noticias y Guías de Élite de Fitness y Nutrición</h1>
+      <p style="font-size: 1.05rem; color: #94a3b8; max-width: 750px; margin: 0 auto; line-height: 1.6;">Aprende con artículos basados en evidencia científica, optimiza tus comidas y domina tu rendimiento en el gimnasio con Pro Fitness Glass.</p>
+    </header>
+    <section style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.75rem;">
+      ${articleCardsHtml}
+    </section>
+  </main>`;
+
+  let newsIndexHtml = injectMeta(baseHtml, {
+    title: 'Noticias y Guías de Élite de Fitness y Nutrición',
+    description: 'Aprende con artículos basados en evidencia científica, optimiza tus comidas y domina tu rendimiento en el gimnasio con Pro Fitness Glass.',
+    image: `${BASE_URL}/og-preview.jpg`,
+    url: `${BASE_URL}/noticias`,
+    type: 'website'
+  });
+  newsIndexHtml = injectPrerenderBody(newsIndexHtml, newsBodyHtml, 'NewsListPage');
+  fs.writeFileSync(path.join(newsIndexDir, 'index.html'), newsIndexHtml, 'utf8');
+  console.log('[Prerender] Generado dist/noticias/index.html con lista de artículos semánticos.');
+
+  // 3. Prerender de cada artículo individual con su contenido completo en el body
+  console.log(`[Prerender] Procesando ${articles.length} artículos con contenido semántico completo...`);
+
+  // Mapa de caché local para obtener el contenido markdown completo
+  const cachePath = path.resolve(__dirname, '../src/data/cachedNews.json');
+  const cachedMap = new Map();
+  if (fs.existsSync(cachePath)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+      if (Array.isArray(cached)) {
+        cached.forEach(a => { if (a.slug) cachedMap.set(a.slug, a); });
+      }
+    } catch (e) {
+      console.warn('[Prerender] Error leyendo cachedNews.json:', e.message);
+    }
+  }
+
+  let count = 0;
+  for (const article of articles) {
+    const slug = (article.slug || '').trim();
+    if (!slug) continue;
+    if (!/^[a-zA-Z0-9_-]+$/.test(slug)) continue;
+
+    const articleDir = path.join(distDir, 'noticias', slug);
+    if (!fs.existsSync(articleDir)) fs.mkdirSync(articleDir, { recursive: true });
+
+    let articleImage = article.image_url || `${BASE_URL}/entrenamiento.png`;
+    if (articleImage.includes('photo-1510519138197-06b8628cbf4f')) {
+      articleImage = 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80';
+    }
+    if (!articleImage.startsWith('http')) {
+      articleImage = `${BASE_URL}${articleImage.startsWith('/') ? '' : '/'}${articleImage}`;
+    }
+
+    const pubDate = article.published_at || article.createdAt || new Date().toISOString();
+    const pubIso = new Date(pubDate).toISOString();
+    const pubFormatted = new Date(pubDate).toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    // Obtener contenido completo desde el artículo, caché local o API remota
+    let content = article.content || cachedMap.get(slug)?.content || '';
+    if (!content) {
+      try {
+        const artRes = await fetch(`${API_URL}/news/article/${slug}`);
+        if (artRes.ok) {
+          const artData = await artRes.json();
+          content = artData.article?.content || artData.news?.content || artData.content || '';
+        }
+      } catch (e) {
+        console.warn(`[Prerender] No se pudo obtener contenido remoto para ${slug}:`, e.message);
+      }
+    }
+
+    const semanticArticleHtml = markdownToSemanticHtml(content);
+
+    const articleBodyHtml = `
+  <article style="padding: 2.5rem 1.5rem; max-width: 860px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.8;">
+    <nav style="margin-bottom: 2rem;">
+      <a href="/noticias" style="color: #38bdf8; text-decoration: none; font-weight: 700; font-size: 0.95rem;">← Volver a Noticias y Artículos</a>
+    </nav>
+    <header style="margin-bottom: 2.5rem;">
+      <span style="display: inline-block; padding: 0.35rem 0.85rem; border-radius: 9999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">${escapeHtml(article.category || 'Fitness')}</span>
+      <h1 style="font-size: 2.5rem; font-weight: 900; line-height: 1.25; margin-bottom: 1.25rem; letter-spacing: -0.02em;">${escapeHtml(article.title)}</h1>
+      <p style="font-size: 1.2rem; color: #94a3b8; margin-bottom: 1.5rem; line-height: 1.6;">${escapeHtml(article.summary || '')}</p>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; color: #64748b; font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 1rem 0;">
+        <span>Por <strong style="color: #e2e8f0;">${escapeHtml(article.author_name || 'Equipo Editorial Pro Fitness Glass')}</strong></span>
+        <span>•</span>
+        <time datetime="${pubIso}">${pubFormatted}</time>
+        <span>•</span>
+        <span>${article.reading_time || 5} min de lectura</span>
+      </div>
+    </header>
+    ${articleImage ? `<div style="margin: 2rem 0; border-radius: 1.5rem; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);"><img src="${escapeUrlAttr(articleImage)}" alt="${escapeHtml(article.title)}" style="width: 100%; height: auto; display: block; object-fit: cover; max-height: 480px;" /></div>` : ''}
+    <div style="font-size: 1.125rem; color: #e2e8f0;">
+      ${semanticArticleHtml}
+    </div>
+    <footer style="margin-top: 3.5rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
+      <a href="/noticias" style="display: inline-block; padding: 0.75rem 1.75rem; border-radius: 9999px; background: #38bdf8; color: #0f172a; font-weight: 800; text-decoration: none; font-size: 0.95rem;">Explorar más artículos en Pro Fitness Glass</a>
+    </footer>
+  </article>`;
+
+    let articleHtml = injectMeta(baseHtml, {
+      title: article.title,
+      description: article.summary || article.seo_description || 'Guía científica de entrenamiento y nutrición deportiva en Pro Fitness Glass.',
+      image: articleImage,
+      url: `${BASE_URL}/noticias/${slug}`,
+      type: 'article',
+      category: article.category,
+      datePublished: article.published_at || article.createdAt,
+      dateModified: article.updatedAt || article.published_at || article.createdAt
+    });
+
+    articleHtml = injectPrerenderBody(articleHtml, articleBodyHtml, 'NewsDetailPage');
+    fs.writeFileSync(path.join(articleDir, 'index.html'), articleHtml, 'utf8');
+    count++;
+  }
+
+  console.log(`[Prerender] ¡Listo! ${count} artículos prerenderizados con contenido semántico completo en dist/noticias/:slug/index.html`);
+
+  // 4. Prerender de las Calculadoras Públicas de Gimnasio (/calculadora-1rm y /calculadora-calorias-macros)
+  const calc1rmDir = path.join(distDir, 'calculadora-1rm');
+  if (!fs.existsSync(calc1rmDir)) fs.mkdirSync(calc1rmDir, { recursive: true });
+
+  const calc1rmBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 960px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Volver a Pro Fitness Glass</a> |
+      <a href="/calculadora-calorias-macros" style="color: #34d399; text-decoration: none; font-weight: 700;">Calculadora de Calorías y Macros</a> |
+      <a href="/noticias" style="color: #a855f7; text-decoration: none; font-weight: 700;">Guías de Gimnasio</a>
+    </nav>
+    <header style="margin-bottom: 2.5rem; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+        <div style="text-align: left;">
+          <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">App de Gimnasio 100% Gratis</span>
+        </div>
+      </div>
+      <br />
+      <span style="display: inline-block; font-size: 0.75rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.08em;">Herramienta Gratuita de Gimnasio y Fuerza</span>
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">Calculadora de 1RM (Repetición Máxima) y Tabla de Porcentajes para Gimnasio</h1>
+      <p style="font-size: 1.15rem; color: #94a3b8;">Calcula tu fuerza máxima estimada en Press de Banca, Sentadilla Libre, Peso Muerto, Press Militar o Dominadas Lastradas mediante las fórmulas científicas de Epley, Brzycki y Lander.</p>
+    </header>
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Tabla de Porcentajes de 1RM para Hipertrofia y Fuerza</h2>
+      <ul style="padding-left: 1.5rem; color: #e2e8f0;">
+        <li><strong>100% del 1RM (1 repetición):</strong> Fuerza máxima y récord personal (PR).</li>
+        <li><strong>90% - 95% del 1RM (2 a 4 repeticiones):</strong> Fuerza neural y powerlifting.</li>
+        <li><strong>80% - 85% del 1RM (5 a 8 repeticiones):</strong> Zona óptima de hipertrofia miofibrilar y tensión mecánica.</li>
+        <li><strong>70% - 75% del 1RM (8 a 12 repeticiones):</strong> Hipertrofia muscular, volumen de trabajo y bombeo.</li>
+        <li><strong>60% - 65% del 1RM (13 a 18 repeticiones):</strong> Resistencia muscular y técnica de aproximación.</li>
+      </ul>
+    </section>
+    <section style="margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem;">¿Cómo calcular el 1RM con las fórmulas de Epley y Brzycki?</h2>
+      <p style="color: #cbd5e1;">La fórmula de <strong>Epley</strong> estima tu 1RM multiplicando el peso levantado por <code>(1 + repeticiones / 30)</code>, mientras que la ecuación de <strong>Brzycki</strong> utiliza <code>Peso × (36 / (37 - repeticiones))</code>. Para obtener la máxima precisión en el gimnasio, utiliza una serie llevada cerca del fallo muscular entre 3 y 10 repeticiones.</p>
+    </section>
+  </main>`;
+
+  let calc1rmHtml = injectMeta(baseHtml, {
+    title: 'Calculadora de 1RM (Repetición Máxima) para Gimnasio y Pesas',
+    description: 'Calcula gratis tu 1RM (Repetición Máxima) en Press de Banca, Sentadilla, Peso Muerto y Press Militar con las fórmulas de Epley, Brzycki y Lander y descubre tus porcentajes de hipertrofia y fuerza.',
+    image: `${BASE_URL}/og-preview.jpg`,
+    url: `${BASE_URL}/calculadora-1rm`,
+    type: 'website'
+  });
+  calc1rmHtml = injectPrerenderBody(calc1rmHtml, calc1rmBody, 'OneRMCalculatorPage');
+  fs.writeFileSync(path.join(calc1rmDir, 'index.html'), calc1rmHtml, 'utf8');
+
+  const calcMacrosDir = path.join(distDir, 'calculadora-calorias-macros');
+  if (!fs.existsSync(calcMacrosDir)) fs.mkdirSync(calcMacrosDir, { recursive: true });
+
+  const calcMacrosBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 960px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Volver a Pro Fitness Glass</a> |
+      <a href="/calculadora-1rm" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Calculadora de 1RM y Fuerza</a> |
+      <a href="/noticias" style="color: #a855f7; text-decoration: none; font-weight: 700;">Guías de Nutrición y Gimnasio</a>
+    </nav>
+    <header style="margin-bottom: 2.5rem; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+        <div style="text-align: left;">
+          <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">App de Gimnasio 100% Gratis</span>
+        </div>
+      </div>
+      <br />
+      <span style="display: inline-block; font-size: 0.75rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.08em;">Herramienta Gratuita de Nutrición Deportiva</span>
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">Calculadora de Calorías, Macros y Déficit Calórico para Gimnasio</h1>
+      <p style="font-size: 1.15rem; color: #94a3b8;">Calcula tu Tasa Metabólica Basal (TMB), tu Gasto Energético Diario Total (TDEE) con la fórmula científica de Mifflin-St Jeor y obtén tus gramos exactos de proteínas, carbohidratos, grasas, agua y creatina.</p>
+    </header>
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Distribución Científica de Macronutrientes para Hipertrofia y Definición</h2>
+      <ul style="padding-left: 1.5rem; color: #e2e8f0;">
+        <li><strong>Proteínas (1.8 a 2.2 g/kg):</strong> Esenciales para la síntesis proteica muscular y para proteger tu masa magra en definición.</li>
+        <li><strong>Grasas saludables (0.8 a 1.0 g/kg):</strong> Fundamentales para el entorno hormonal, testosterona y absorción de vitaminas.</li>
+        <li><strong>Carbohidratos (Energía de entrenamiento):</strong> Recargan el glucógeno muscular para rendir al máximo en tus rutinas de pesas y aplicar sobrecarga progresiva.</li>
+        <li><strong>Creatina Monohidrato (0.1 g/kg):</strong> Suplemento con mayor respaldo científico para ganar fuerza explosiva y retención intracelular.</li>
+      </ul>
+    </section>
+  </main>`;
+
+  let calcMacrosHtml = injectMeta(baseHtml, {
+    title: 'Calculadora de Calorías, Macros y Déficit Calórico para Gimnasio',
+    description: 'Calcula gratis tus calorías diarias (TDEE), tasa metabólica basal (Mifflin-St Jeor) y reparto exacto de proteínas, carbohidratos y grasas para perder grasa o ganar masa muscular.',
+    image: `${BASE_URL}/og-preview.jpg`,
+    url: `${BASE_URL}/calculadora-calorias-macros`,
+    type: 'website'
+  });
+  calcMacrosHtml = injectPrerenderBody(calcMacrosHtml, calcMacrosBody, 'MacroCalculatorPage');
+  fs.writeFileSync(path.join(calcMacrosDir, 'index.html'), calcMacrosHtml, 'utf8');
+  console.log('[Prerender] Generadas calculadoras SEO en dist/calculadora-1rm/index.html y dist/calculadora-calorias-macros/index.html.');
+
+  const ejerciciosDir = path.join(distDir, 'ejercicios');
+  if (!fs.existsSync(ejerciciosDir)) fs.mkdirSync(ejerciciosDir, { recursive: true });
+
+  const ejerciciosBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 960px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Volver a Pro Fitness Glass</a> |
+      <a href="/calculadora-1rm" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Calculadora de 1RM</a> |
+      <a href="/calculadora-calorias-macros" style="color: #34d399; text-decoration: none; font-weight: 700;">Calculadora de Calorías y Macros</a> |
+      <a href="/noticias" style="color: #a855f7; text-decoration: none; font-weight: 700;">Guías de Gimnasio</a>
+    </nav>
+    <header style="margin-bottom: 2.5rem; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+        <div style="text-align: left;">
+          <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">App de Gimnasio 100% Gratis</span>
+        </div>
+      </div>
+      <br />
+      <span style="display: inline-block; font-size: 0.75rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.08em;">Enciclopedia Biomecánica de Gimnasio</span>
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">Mejores Ejercicios de Gimnasio y Rutinas de Hipertrofia (Guía Técnica)</h1>
+      <p style="font-size: 1.15rem; color: #94a3b8;">Aprende la técnica biomecánica paso a paso de Press de Banca, Sentadilla Libre, Sentadilla Búlgara, Peso Muerto Rumano, Hip Thrust, Dominadas, Remo con Barra, Press Militar y Elevaciones Laterales, junto con las mejores rutinas Push Pull Legs, Torso Pierna y Full Body.</p>
+    </header>
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Ejercicios Fundamentales por Grupo Muscular</h2>
+      <ul style="padding-left: 1.5rem; color: #e2e8f0;">
+        <li><strong>Pecho:</strong> Press de Banca Plano con Barra y Press Inclinado con Mancuernas a 30°.</li>
+        <li><strong>Pierna y Glúteo:</strong> Sentadilla Libre con Barra, Sentadilla Búlgara, Peso Muerto Rumano y Hip Thrust.</li>
+        <li><strong>Espalda:</strong> Dominadas Pronas Lastradas, Jalón al Pecho y Remo con Barra / Polea.</li>
+        <li><strong>Hombros y Brazos:</strong> Press Militar, Elevaciones Laterales, Curl de Bíceps Inclinado y Extensión de Tríceps en Polea.</li>
+      </ul>
+    </section>
+  </main>`;
+
+  let ejerciciosHtml = injectMeta(baseHtml, {
+    title: 'Ejercicios de Gimnasio y Rutinas de Hipertrofia (Guía Técnica)',
+    description: 'Aprende la técnica correcta de los mejores ejercicios de gimnasio para pecho, espalda, piernas, glúteos, hombros y brazos, junto con las mejores rutinas Push Pull Legs y Torso Pierna.',
+    image: `${BASE_URL}/og-preview.jpg`,
+    url: `${BASE_URL}/ejercicios`,
+    type: 'website'
+  });
+  ejerciciosHtml = injectPrerenderBody(ejerciciosHtml, ejerciciosBody, 'PublicExercisesPage');
+  fs.writeFileSync(path.join(ejerciciosDir, 'index.html'), ejerciciosHtml, 'utf8');
+  console.log('[Prerender] Generada enciclopedia de ejercicios en dist/ejercicios/index.html.');
+
+  // ==========================================
+  // PRERENDER: /sobre-nosotros (About Us / Quiénes Somos)
+  // ==========================================
+  const sobreNosotrosDir = path.join(distDir, 'sobre-nosotros');
+  if (!fs.existsSync(sobreNosotrosDir)) fs.mkdirSync(sobreNosotrosDir, { recursive: true });
+
+  const sobreNosotrosJsonLd = `
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "AboutPage",
+        "@id": "${BASE_URL}/sobre-nosotros#webpage",
+        "url": "${BASE_URL}/sobre-nosotros",
+        "name": "¿Qué es Pro Fitness Glass? — Quiénes Somos, Misión y Plataforma Fitness",
+        "description": "Conoce la historia, tecnología y filosofía 100% gratuita detrás de Pro Fitness Glass, la app de entrenamiento de gimnasio, hipertrofia y nutrición con diseño Glassmorphism e IA.",
+        "inLanguage": "es"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "Pro Fitness Glass",
+        "applicationCategory": "HealthApplication",
+        "operatingSystem": "Android, Web Browser, Windows, macOS, iOS",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR"
+        },
+        "description": "Aplicación de entrenamiento y nutrición para gimnasio 100% gratuita con sobrecarga progresiva, vídeos de técnica, animaciones anatómicas, temporizador nativo en segundo plano y asistente de IA Synapse.",
+        "author": {
+          "@type": "Person",
+          "name": "Dylan Jesús Suárez Falcón",
+          "jobTitle": "Fundador y Desarrollador Principal",
+          "image": "${BASE_URL}/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg"
+        }
+      },
+      {
+        "@type": "Organization",
+        "name": "Pro Fitness Glass",
+        "url": "${BASE_URL}",
+        "logo": "${BASE_URL}/icons/icon-512.png",
+        "founder": {
+          "@type": "Person",
+          "name": "Dylan Jesús Suárez Falcón",
+          "image": "${BASE_URL}/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg"
+        },
+        "sameAs": [
+          "https://play.google.com/store/apps/details?id=com.profitnessglass.app"
+        ]
+      }
+    ]
+  }
+  </script>`;
+
+  const sobreNosotrosBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 960px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Volver a Pro Fitness Glass</a> |
+      <a href="/faq" style="color: #34d399; text-decoration: none; font-weight: 700;">Preguntas Frecuentes (FAQ)</a> |
+      <a href="/calculadora-1rm" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Calculadora de 1RM</a> |
+      <a href="/noticias" style="color: #a855f7; text-decoration: none; font-weight: 700;">Guías de Gimnasio</a>
+    </nav>
+    <header style="margin-bottom: 2.5rem; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+        <div style="text-align: left;">
+          <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">Software Deportivo 100% Gratuito</span>
+        </div>
+      </div>
+      <br />
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">¿Qué es Pro Fitness Glass? — Quiénes Somos y Nuestra Misión</h1>
+      <p style="font-size: 1.15rem; color: #94a3b8;">La plataforma libre definitiva para registrar tus entrenamientos de musculación, hipertrofia, progresión de fuerza y nutrición deportiva. Creada por Dylan Jesús Suárez Falcón para devolver al fitness una herramienta libre de suscripciones abusivas.</p>
+    </header>
+
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; color: #34d399;">Nuestra Filosofía: 100% Gratis, Sin Muros de Pago</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1rem;">La industria de las apps de fitness cobra entre 10 € y 15 € al mes por funciones esenciales como registrar rutinas o consultar el historial de marcas. En Pro Fitness Glass creemos que las herramientas de salud y ciencia deportiva deben ser universales. Todas nuestras funciones clave son y serán gratuitas para siempre.</p>
+    </section>
+
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; color: #38bdf8;">Módulos y Características de la Plataforma</h2>
+      <ul style="padding-left: 1.5rem; color: #e2e8f0; line-height: 1.8;">
+        <li><strong>Sobrecarga Progresiva Real:</strong> Registro de series, repeticiones, kilos y RIR/RPE con comparativa automática de récords frente a tu última sesión.</li>
+        <li><strong>Guía Biomecánica en Vídeo y 3D:</strong> Más de 300 ejercicios de gimnasio con técnica en alta definición y animaciones anatómicas que enseñan la trayectoria óptima.</li>
+        <li><strong>Inteligencia Artificial Synapse:</strong> Asesor deportivo inteligente que responde dudas de entrenamiento, previene sobreentrenamiento y asiste en la progresión.</li>
+        <li><strong>Temporizador Nativo en Segundo Plano:</strong> Servicio en primer plano para Android con notificación flotante interactiva para descansar exactamente el tiempo necesario.</li>
+        <li><strong>Nutrición y Calculadoras Deportivas:</strong> Fórmulas científicas validadas (Mifflin-St Jeor para calorías y TDEE; Epley, Brzycki y Lander para 1RM).</li>
+        <li><strong>Radar de Gimnasios:</strong> Mapa interactivo con geolocalización para encontrar salas de musculación y calistenia cercanas.</li>
+        <li><strong>Comunidad y Asesorías:</strong> Compartir rutinas con un solo enlace y sincronización bidireccional entre atletas y entrenadores personales.</li>
+      </ul>
+    </section>
+
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem; color: #f8fafc;">Quién está detrás</h2>
+      <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+        <img src="/27B6A09D-BE3C-4CCD-AB66-3328BB57E60BIMG_20250601_211116.jpg" alt="Dylan Jesús Suárez Falcón — Creador de Pro Fitness Glass" style="width: 110px; height: 110px; border-radius: 1.25rem; object-fit: cover; object-position: top; border: 2px solid rgba(34, 197, 94, 0.5); box-shadow: 0 10px 25px rgba(0,0,0,0.4);" />
+        <div style="flex: 1; min-width: 240px;">
+          <h3 style="font-size: 1.25rem; font-weight: 900; margin: 0 0 0.5rem; color: #f8fafc;">Dylan Jesús Suárez Falcón</h3>
+          <p style="color: #cbd5e1; margin: 0; line-height: 1.6;">Pro Fitness Glass fue fundada y desarrollada por <strong>Dylan Jesús Suárez Falcón</strong>, uniendo ingeniería de software moderna con el entrenamiento de hipertrofia y fuerza. La plataforma garantiza privacidad total de datos, autenticación de dos factores (2FA) y desarrollo continuo impulsado por la comunidad.</p>
+        </div>
+      </div>
+    </section>
+  </main>`;
+
+  let sobreNosotrosHtml = injectMeta(baseHtml, {
+    title: '¿Qué es Pro Fitness Glass? — Quiénes Somos, Misión y App de Gimnasio 100% Gratis',
+    description: 'Conoce la historia, tecnología y filosofía 100% gratuita detrás de Pro Fitness Glass, la app de entrenamiento de gimnasio, hipertrofia y nutrición con diseño Glassmorphism e IA.',
+    image: `${BASE_URL}/og-preview.jpg`,
+    url: `${BASE_URL}/sobre-nosotros`,
+    type: 'website'
+  });
+  sobreNosotrosHtml = sobreNosotrosHtml.replace('</head>', `${sobreNosotrosJsonLd}
+</head>`);
+  sobreNosotrosHtml = injectPrerenderBody(sobreNosotrosHtml, sobreNosotrosBody, 'AboutUsPage');
+  fs.writeFileSync(path.join(sobreNosotrosDir, 'index.html'), sobreNosotrosHtml, 'utf8');
+  console.log('[Prerender] Generada página Sobre Nosotros en dist/sobre-nosotros/index.html.');
+
+  // ==========================================
+  // PRERENDER: /faq (Preguntas Frecuentes)
+  // ==========================================
+  const faqDir = path.join(distDir, 'faq');
+  if (!fs.existsSync(faqDir)) fs.mkdirSync(faqDir, { recursive: true });
+
+  const faqJsonLd = `
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "¿Pro Fitness Glass es realmente gratis o tiene costos ocultos?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Pro Fitness Glass es 100% gratuita. Todas las funciones —creación ilimitada de rutinas, historial completo de por vida, vídeos biomecánicos, animaciones 3D, cronómetro en segundo plano, calculadoras de 1RM y macros, e IA Synapse— están desbloqueadas sin cuotas mensuales ni suscripciones de pago."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "¿En qué plataformas y dispositivos puedo utilizar la aplicación?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Puedes utilizarla en cualquier dispositivo: dispones de una aplicación nativa para Android en Google Play Store y de una Progressive Web App (PWA) compatible con navegadores de escritorio (Windows, macOS, Linux) y dispositivos móviles iOS (iPhone/iPad)."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "¿Cómo funciona el registro de series y la sobrecarga progresiva?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "En cada ejercicio puedes registrar la carga en kilogramos, repeticiones y Repeticiones en Reserva (RIR o RPE). Pro Fitness Glass compara de forma automática cada serie con tu registro histórico previo y te indica cuándo batir una marca para asegurar el estímulo óptimo de hipertrofia muscular."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "¿El temporizador de descanso sigue funcionando con la pantalla bloqueada?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Sí. En la aplicación de Android disponemos de un servicio nativo en primer plano con notificación interactiva. El temporizador continúa con precisión absoluta aunque apagues la pantalla o cambies a reproducir música u otra aplicación."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "¿En qué se diferencia Pro Fitness Glass de apps como Hevy o Strong?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "La diferencia principal radica en la libertad del usuario: no limitamos el número de rutinas (en Hevy gratis solo puedes guardar 3 o 4), no bloqueamos tu historial a 3 meses, incluimos vídeos y 3D en cada ejercicio, temporizador nativo en segundo plano, calculadoras deportivas e IA, todo sin cobrarte 10 € a 15 € mensuales."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "¿Qué es el Asistente de IA Synapse y en qué me ayuda?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Synapse es el asistente inteligente especializado en ciencias del deporte integrado en Pro Fitness Glass. Puedes consultarle dudas sobre cómo realizar un ejercicio, sustituciones seguras por molestias articulares, pautas de recuperación y recomendaciones de volumen según tu fatiga acumulada."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "¿Quién ha desarrollado Pro Fitness Glass y cuál es el contacto oficial?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Pro Fitness Glass ha sido creada y desarrollada de forma independiente por Dylan Jesús Suárez Falcón, con la misión de democratizar la salud deportiva. Puedes contactar con nosotros a través de nuestro soporte técnico en la plataforma o mediante los canales oficiales."
+        }
+      }
+    ]
+  }
+  </script>`;
+
+  const faqBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 960px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Volver a Pro Fitness Glass</a> |
+      <a href="/sobre-nosotros" style="color: #34d399; text-decoration: none; font-weight: 700;">Quiénes Somos y Misión</a> |
+      <a href="/calculadora-1rm" style="color: #38bdf8; text-decoration: none; font-weight: 700;">Calculadora 1RM</a> |
+      <a href="/noticias" style="color: #a855f7; text-decoration: none; font-weight: 700;">Artículos Deportivos</a>
+    </nav>
+    <header style="margin-bottom: 2.5rem; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+        <div style="text-align: left;">
+          <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">Centro de Ayuda y FAQ Oficial</span>
+        </div>
+      </div>
+      <br />
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">Preguntas Frecuentes (FAQ) sobre Pro Fitness Glass</h1>
+      <p style="font-size: 1.15rem; color: #94a3b8;">Respuestas oficiales y detalladas sobre gratuidad, rutinas ilimitadas, funcionamiento del cronómetro en segundo plano, app Android en Play Store y la IA deportiva Synapse.</p>
+    </header>
+
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿Pro Fitness Glass es realmente gratis o tiene costos ocultos?</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1.5rem;">Pro Fitness Glass es 100% gratuita. Todas las herramientas —rutinas ilimitadas, historial completo de por vida, vídeos biomecánicos, animaciones 3D, cronómetro en segundo plano, calculadoras de 1RM y macros, e IA Synapse— están desbloqueadas sin cuotas de suscripción mensual.</p>
+
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿En qué plataformas y dispositivos puedo utilizar la app?</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1.5rem;">Está disponible como aplicación nativa para Android en Google Play Store y como Progressive Web App (PWA) universal para navegadores de escritorio (Windows, macOS, Linux) y dispositivos móviles iOS (iPhone/iPad).</p>
+
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿Cómo funciona el registro de series y sobrecarga progresiva?</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1.5rem;">En cada serie puedes registrar peso en kg, repeticiones y RIR (Repeticiones en Reserva). La plataforma compara automáticamente cada registro con tu historial previo y te indica cuándo batir una marca personal (PR).</p>
+
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿El temporizador de descanso sigue funcionando con la pantalla bloqueada?</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1.5rem;">Sí. En Android disponemos de un servicio en primer plano nativo con notificación interactiva. El temporizador continúa con precisión absoluta aunque bloquees el móvil o uses otras aplicaciones.</p>
+
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿En qué se diferencia de apps como Hevy o Strong?</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1.5rem;">No limitamos el número de rutinas (en Hevy gratis solo puedes guardar 3 o 4), no bloqueamos tu historial pasado a 3 meses, incluimos vídeos y 3D en cada ejercicio, cronómetro en segundo plano, calculadoras deportivas e IA, todo sin cobrarte 10 € a 15 € mensuales.</p>
+
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿Quién creó Pro Fitness Glass y cuál es el contacto oficial?</h2>
+      <p style="color: #cbd5e1;">Pro Fitness Glass ha sido creada y desarrollada de forma independiente por <strong>Dylan Jesús Suárez Falcón</strong>. Puedes contactar mediante el soporte técnico de la plataforma o en nuestros canales oficiales.</p>
+    </section>
+  </main>`;
+
+  let faqHtml = injectMeta(baseHtml, {
+    title: 'Preguntas Frecuentes (FAQ) sobre Pro Fitness Glass | Todo lo que Necesitas Saber',
+    description: 'Respuestas oficiales a todas las dudas sobre Pro Fitness Glass: gratuidad, rutinas ilimitadas, app Android en Play Store, IA Synapse, cálculo de 1RM y sincronización en la nube.',
+    image: `${BASE_URL}/og-preview.jpg`,
+    url: `${BASE_URL}/faq`,
+    type: 'website'
+  });
+  faqHtml = faqHtml.replace('</head>', `${faqJsonLd}
+</head>`);
+  faqHtml = injectPrerenderBody(faqHtml, faqBody, 'FAQPage');
+  fs.writeFileSync(path.join(faqDir, 'index.html'), faqHtml, 'utf8');
+  console.log('[Prerender] Generada página FAQ en dist/faq/index.html.');
+
+  // ==========================================
+  // PRERENDER: /mantenimiento (Aviso Oficial de Mantenimiento y Migración)
+  // ==========================================
+  const mantenimientoDir = path.join(distDir, 'mantenimiento');
+  if (!fs.existsSync(mantenimientoDir)) fs.mkdirSync(mantenimientoDir, { recursive: true });
+
+  const mantenimientoJsonLd = `
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Mantenimiento Programado y Nueva Infraestructura — Pro Fitness Glass",
+    "description": "La migración técnica al dominio oficial profitnessglass.es ha finalizado con éxito. Tus datos están 100% seguros y la plataforma ahora ofrece mayor velocidad y estabilidad.",
+    "url": "${BASE_URL}/mantenimiento",
+    "inLanguage": "es"
+  }
+  </script>`;
+
+  const mantenimientoBody = `
+  <main style="padding: 3rem 1.5rem; max-width: 960px; margin: 0 auto; color: #f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.75;">
+    <nav style="margin-bottom: 1.5rem;">
+      <a href="/" style="color: #38bdf8; text-decoration: none; font-weight: 700;">← Volver a Pro Fitness Glass</a> |
+      <a href="/faq" style="color: #34d399; text-decoration: none; font-weight: 700;">Preguntas Frecuentes</a> |
+      <a href="/sobre-nosotros" style="color: #a855f7; text-decoration: none; font-weight: 700;">Quiénes Somos</a>
+    </nav>
+    <header style="margin-bottom: 2.5rem; text-align: center;">
+      <div style="display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="/icons/icon-96.png" alt="Pro Fitness Glass" style="width: 44px; height: 44px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+        <div style="text-align: left;">
+          <div style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: #f8fafc;">Pro Fitness Glass</div>
+          <span style="display: inline-block; font-size: 0.7rem; font-weight: 800; color: #10b981; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.25rem;">Aviso Oficial · Migración Finalizada con Éxito</span>
+        </div>
+      </div>
+      <br />
+      <h1 style="font-size: 2.5rem; font-weight: 900; margin: 0.5rem 0 1rem; letter-spacing: -0.02em;">¡Migración Completada con Éxito!</h1>
+      <p style="font-size: 1.15rem; color: #94a3b8;">La plataforma ya está 100% operativa en su dominio oficial <strong style="color: #34d399;">profitnessglass.es</strong>, con mayor velocidad, estabilidad y todos tus datos 100% seguros.</p>
+    </header>
+
+    <section style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #34d399;">Plataforma 100% Operativa y Restablecida</h2>
+      <p style="color: #cbd5e1; margin-bottom: 0;">La transición técnica hacia nuestro dominio oficial profitnessglass.es ha finalizado con éxito total. Puedes seguir entrenando y registrando tu progreso con normalidad.</p>
+    </section>
+
+    <section style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #34d399;">Tus Datos Están 100% Seguros y Protegidos</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1rem;">No tienes nada de qué preocuparte: ningún dato se perderá ni estará en peligro. Todas tus rutinas, historial de entrenamientos, pesos, series y marcas personales (PR) se migran de forma íntegra y cifrada a los nuevos servidores.</p>
+      <p style="color: #cbd5e1; margin-bottom: 0;">No tendrás que volver a registrarte ni volver a configurar nada. Iniciarás sesión con tu misma cuenta y contraseña habituales.</p>
+    </section>
+
+    <section style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem;">
+      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem; color: #38bdf8;">¿Por qué realizamos este cambio?</h2>
+      <p style="color: #cbd5e1; margin-bottom: 1rem;">Nuestro proveedor externo de servidores actual cesará sus servicios. Por ello, hemos dado el paso definitivo a servidores propios dedicados exclusivamente para Pro Fitness Glass, garantizando mayor velocidad, estabilidad y soberanía sobre nuestra plataforma.</p>
+      <p style="color: #cbd5e1; margin-bottom: 0;">Además, pasaremos a operar en nuestro nuevo dominio oficial: <strong>profitnessglass.com</strong>.</p>
+    </section>
+  </main>`;
+
+  let mantenimientoHtml = injectMeta(baseHtml, {
+    title: 'Migración y Mantenimiento Completados con Éxito — Pro Fitness Glass',
+    description: 'La migración técnica al dominio oficial profitnessglass.es ha finalizado con éxito. Tus datos están 100% seguros y la plataforma ahora ofrece mayor velocidad y estabilidad.',
+    image: `${BASE_URL}/og-preview.jpg`,
+    url: `${BASE_URL}/mantenimiento`,
+    type: 'website'
+  });
+  mantenimientoHtml = mantenimientoHtml.replace('</head>', `${mantenimientoJsonLd}
+</head>`);
+  mantenimientoHtml = injectPrerenderBody(mantenimientoHtml, mantenimientoBody, 'MaintenanceInfoPage');
+  fs.writeFileSync(path.join(mantenimientoDir, 'index.html'), mantenimientoHtml, 'utf8');
+  console.log('[Prerender] Generada página Mantenimiento en dist/mantenimiento/index.html.');
+
+}
+
+main().catch(err => {
+  console.error('[Prerender] Error:', err);
+});

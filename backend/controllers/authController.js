@@ -8,10 +8,16 @@ import { OAuth2Client } from 'google-auth-library';
 import { UAParser } from 'ua-parser-js';
 import models from '../models/index.js';
 import { generateVerificationCode, sendVerificationEmail, sendPasswordResetEmail } from '../services/emailService.js';
+import { EMAIL_CONSENT_VERSION, updateEmailConsents } from '../services/emailConsentService.js';
 import { createNotification } from '../services/notificationService.js';
 import { syncUserStreak, unlockBadge, addXp, DAILY_LOGIN_XP } from '../services/gamificationService.js';
 
+import { setAuthCookie, clearAuthCookie } from '../utils/authCookies.js';
+
 const { User, UserSession } = models;
+
+const bindVerificationCodeToEmail = (email, code) =>
+  crypto.createHmac('sha256', process.env.JWT_SECRET).update(JSON.stringify([email, code])).digest('hex');
 
 // Inicializar cliente de Google
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -231,6 +237,7 @@ export const loginUser = async (req, res, next) => {
       data: { ip, userAgent, date: new Date() }
     });
 
+    setAuthCookie(res, token);
     res.json({ message: 'Inicio de sesión exitoso.', token });
 
   } catch (error) {
@@ -404,6 +411,7 @@ export const googleLogin = async (req, res, next) => {
       } catch (err) {
         console.error("Error logging successful google:", err);
       }
+      setAuthCookie(res, appToken);
       res.json({
       message: 'Inicio de sesión con Google exitoso.',
       token: appToken,
@@ -564,6 +572,7 @@ export const discordLogin = async (req, res, next) => {
       } catch (err) {
         console.error("Error logging successful discord:", err);
       }
+      setAuthCookie(res, appToken);
       res.json({
       message: 'Inicio de sesión con Discord exitoso.',
       token: appToken,
@@ -719,6 +728,7 @@ export const facebookLogin = async (req, res, next) => {
       } catch (err) {
         console.error("Error logging successful facebook:", err);
       }
+      setAuthCookie(res, appToken);
       res.json({
       message: 'Inicio de sesión con Facebook exitoso.',
       token: appToken,
@@ -899,6 +909,7 @@ export const xLogin = async (req, res, next) => {
       } catch (err) {
         console.error("Error logging successful x:", err);
       }
+      setAuthCookie(res, appToken);
       res.json({
       message: 'Inicio de sesión con X exitoso.',
       token: appToken,
@@ -1084,6 +1095,7 @@ export const githubLogin = async (req, res, next) => {
       } catch (err) {
         console.error("Error logging successful github:", err);
       }
+      setAuthCookie(res, appToken);
       res.json({
       message: 'Inicio de sesión con GitHub exitoso.',
       token: appToken,
@@ -1263,6 +1275,7 @@ export const spotifyLogin = async (req, res, next) => {
       } catch (err) {
         console.error("Error logging successful spotify:", err);
       }
+      setAuthCookie(res, appToken);
       res.json({
       message: 'Inicio de sesión con Spotify exitoso.',
       token: appToken,
@@ -1282,12 +1295,12 @@ export const spotifyLogin = async (req, res, next) => {
 };
 
 export const logoutUser = async (req, res) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = req.cookies?.token || (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]);
 
   if (token) {
     try { await UserSession.destroy({ where: { token } }); } catch (err) {}
   }
+  clearAuthCookie(res);
 
   res.json({ message: 'Cierre de sesión exitoso.' });
 };
@@ -1299,7 +1312,7 @@ export const register = async (req, res, next) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  let { username, email, password, referralCode } = req.body;
+  let { username, email, password, referralCode, marketingEmailConsent, coachingEmailConsent, emailConsentVersion } = req.body;
   email = email.toLowerCase().trim();
 
   try {
@@ -1319,30 +1332,38 @@ export const register = async (req, res, next) => {
     if (!emailResult.success) return res.status(500).json({ error: 'Error enviando código de verificación' });
 
     const referred_by = await resolveReferral(referralCode);
-
-    if (userToProcess) {
-      await userToProcess.update({
+    const consentNoticeMatches = emailConsentVersion === EMAIL_CONSENT_VERSION;
+    const registered = await models.sequelize.transaction(async transaction => {
+      const account = {
         name: username,
-        username: username,
-        email: email,
-        password_hash: password,
-        verification_code: verificationCode,
-        verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000),
-        is_verified: false,
-        referred_by: userToProcess.referred_by || referred_by // Actualizar solo si no tiene referidor
-      });
-    } else {
-      await User.create({
-        name: username,
-        username: username,
+        username,
         email,
         password_hash: password,
         verification_code: verificationCode,
         verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000),
-        is_verified: false,
-        referred_by
-      });
-    }
+        is_verified: false
+      };
+      let user = userToProcess;
+      if (user) {
+        await user.reload({ transaction, lock: transaction.LOCK.UPDATE });
+        if (user.is_verified) return false;
+        if (user.email !== email) {
+          await updateEmailConsents(user, {
+            email_marketing_consent: false,
+            email_coaching_consent: false
+          }, 'registration', transaction);
+        }
+        await user.update({ ...account, referred_by: user.referred_by || referred_by }, { transaction });
+      } else {
+        user = await User.create({ ...account, referred_by }, { transaction });
+      }
+      await updateEmailConsents(user, {
+        email_marketing_consent: consentNoticeMatches && marketingEmailConsent === true,
+        email_coaching_consent: consentNoticeMatches && coachingEmailConsent === true
+      }, 'registration', transaction);
+      return true;
+    });
+    if (!registered) return res.status(409).json({ error: 'La cuenta ya está verificada.' });
 
     res.status(200).json({ message: 'Código de verificación enviado al email', email });
 
@@ -1386,32 +1407,28 @@ export const verifyEmail = async (req, res, next) => {
     if (!user) return res.status(400).json({ error: 'Usuario no encontrado' });
 
     if (user.is_verified && !isPendingUpdate) {
-      const platform = req.headers['x-app-platform'] || 'web';
-      const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
-
-      const payload = { userId: user.id, role: user.role };
-      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn });
-
-      await createUserSession(user.id, token, req);
-      return res.status(200).json({
-        message: 'Email ya verificado.',
-        token,
-        user: { id: user.id, name: user.name, username: user.username, email: user.email, is_verified: user.is_verified }
-      });
+      return res.status(400).json({ error: 'Tu correo ya está verificado. Inicia sesión para continuar.' });
     }
 
     if (!user.verification_code) return res.status(400).json({ error: 'Código no encontrado o expirado' });
     if (new Date() > user.verification_code_expires_at) {
-      await user.update({ verification_code: null, verification_code_expires_at: null });
       return res.status(400).json({ error: 'Código expirado' });
     }
-    if (user.verification_code !== code) return res.status(400).json({ error: 'Código incorrecto' });
+    const expectedCode = isPendingUpdate ? bindVerificationCodeToEmail(email, code) : code;
+    if (user.verification_code !== expectedCode) return res.status(400).json({ error: 'Código incorrecto' });
 
-    if (isPendingUpdate) {
-      await user.update({ email: email, is_verified: true, verification_code: null, verification_code_expires_at: null });
-    } else {
-      await user.update({ is_verified: true, verification_code: null, verification_code_expires_at: null });
-    }
+    const verified = { email, is_verified: true, verification_code: null, verification_code_expires_at: null };
+    const [affected] = await User.update(verified, {
+      where: {
+        id: user.id,
+        email: user.email,
+        is_verified: user.is_verified,
+        verification_code: expectedCode,
+        verification_code_expires_at: { [Op.gt]: new Date() }
+      }
+    });
+    if (!affected) return res.status(400).json({ error: 'Código no encontrado o expirado' });
+    user.set(verified, { raw: true });
 
     const platform = req.headers['x-app-platform'] || 'web';
     const expiresIn = (platform === 'native' || platform === 'pwa') ? '3650d' : '30d';
@@ -1457,6 +1474,7 @@ export const verifyEmail = async (req, res, next) => {
         console.error("Error logging successful register:", err);
     }
 
+    setAuthCookie(res, token);
     return res.status(200).json({
       message: 'Email verificado exitosamente',
       token,
@@ -1504,7 +1522,7 @@ export const resendVerificationEmail = async (req, res, next) => {
     if (!emailResult.success) return res.status(500).json({ error: 'Error enviando código de verificación' });
 
     await user.update({
-      verification_code: verificationCode,
+      verification_code: isPendingUpdate ? bindVerificationCodeToEmail(email, verificationCode) : verificationCode,
       verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
     });
 
@@ -1531,10 +1549,13 @@ export const updateEmailForVerification = async (req, res, next) => {
     if (existingUser && existingUser.id !== userId) return res.status(409).json({ error: 'El email ya está en uso por otra cuenta.' });
 
     const verificationCode = generateVerificationCode();
-    await sendVerificationEmail(newEmail, verificationCode);
+    const emailResult = await sendVerificationEmail(newEmail, verificationCode);
+    if (!emailResult.success) return res.status(500).json({ error: 'Error enviando código de verificación' });
 
     await user.update({
-      verification_code: verificationCode,
+      verification_code: user.email.endsWith('@x-auth.local')
+        ? bindVerificationCodeToEmail(newEmail, verificationCode)
+        : verificationCode,
       verification_code_expires_at: new Date(Date.now() + 10 * 60 * 1000)
     });
 
@@ -1554,7 +1575,8 @@ export const forgotPassword = async (req, res, next) => {
   try {
     const user = await User.findOne({ where: { email } });
 
-    if (!user) return res.json({ message: 'Si existe una cuenta con ese email, se ha enviado un enlace para restablecer tu contraseña.' });
+    const message = 'Solicitud recibida. Revisa tu bandeja de entrada y el correo no deseado.';
+    if (!user) return res.json({ message });
 
     const resetToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
@@ -1565,7 +1587,7 @@ export const forgotPassword = async (req, res, next) => {
 
     await sendPasswordResetEmail(user.email, resetToken);
 
-    res.json({ message: 'Se ha enviado un email para restablecer tu contraseña.' });
+    res.json({ message });
   } catch (error) {
     next(error);
   }

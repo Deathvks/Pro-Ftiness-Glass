@@ -24,6 +24,7 @@ import PushSubscription from './pushSubscriptionModel.js';
 import Notification from './notificationModel.js';
 import PushDeliveryLog from './pushDeliveryLogModel.js';
 import EmailDeliveryLog from './emailDeliveryLogModel.js';
+import './emailConsentEventModel.js';
 import UserSession from './userSessionModel.js';
 import Friendship from './friendshipModel.js';
 import BugReport from './bugReportModel.js';
@@ -31,6 +32,9 @@ import AppRating from './appRatingModel.js';
 import UserChallenge from './userChallengeModel.js';
 import Message from './messageModel.js';
 import UploadLog from './uploadLogModel.js';
+import News from './newsModel.js';
+import NewsVisitLog from './newsVisitLogModel.js';
+import RetentionRescueLog from './retentionRescueLogModel.js';
 
 // Nuevos modelos de Squads
 import Squad from './squadModel.js';
@@ -192,6 +196,16 @@ RoutineAssignment.belongsTo(User, { foreignKey: 'client_id', as: 'Client' });
 User.hasMany(SecurityLog, { foreignKey: 'userId', as: 'securityLogs' });
 SecurityLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
+// --- NOTICIAS & TRACKER ---
+News.hasMany(NewsVisitLog, { foreignKey: 'news_id', as: 'visitLogs' });
+NewsVisitLog.belongsTo(News, { foreignKey: 'news_id', as: 'news' });
+User.hasMany(NewsVisitLog, { foreignKey: 'user_id', as: 'newsVisitLogs' });
+NewsVisitLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// --- RETENCIÓN Y RESCATE 72H ---
+User.hasMany(RetentionRescueLog, { foreignKey: 'user_id', as: 'RetentionRescueLogs', onDelete: 'CASCADE' });
+RetentionRescueLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 const models = {
   sequelize,
   User,
@@ -232,7 +246,10 @@ const models = {
   Message,
   SecurityLog,
   IpBlacklist,
-  UploadLog
+  UploadLog,
+  News,
+  NewsVisitLog,
+  RetentionRescueLog
 };
 
 export default models;

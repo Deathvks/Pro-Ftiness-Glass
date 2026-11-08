@@ -28,9 +28,6 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
   const dropdownRef = useRef(null);
   const { addToast } = useToast();
   
-  const { t: tName } = useTranslation('exercise_names');
-  const { t: tMuscle } = useTranslation('exercise_muscles');
-  const { t: tCommon } = useTranslation('translation');
   const { t: tUi } = useTranslation('exercise_ui');
 
   // Sincroniza el estado interno si la query inicial (prop) cambia y no estamos buscando activamente
@@ -57,7 +54,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
           const fakeExercise = {
             id: null, 
             name: currentVal,
-            muscle_group: tMuscle('unknown', { defaultValue: 'N/A' }), 
+            muscle_group: 'N/A', 
             image_url: null, 
             video_url: null,
             image_url_start: null,
@@ -81,7 +78,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [isSearching, initialQuery, inputValue, disableManualAdd, onExerciseSelect, tMuscle]);
+  }, [isSearching, initialQuery, inputValue, disableManualAdd, onExerciseSelect]);
 
   // Carga todos los ejercicios al montar el componente
   useEffect(() => {
@@ -137,19 +134,15 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
     return allExercises
       .filter(ex => {
         const originalName = (ex.name || '').toLowerCase();
-        const translatedName = tName(ex.name, { defaultValue: ex.name }).toLowerCase();
         const category = (ex.category || ex.muscle_group || '').toLowerCase();
-        const translatedCategory = tMuscle(category, { defaultValue: category }).toLowerCase();
 
         return (
           originalName.includes(query) ||
-          translatedName.includes(query) ||
-          category.includes(query) ||
-          translatedCategory.includes(query)
+          category.includes(query)
         );
       })
       .slice(0, 50);
-  }, [allExercises, inputValue, isSearching, tName, tMuscle, initialQuery]);
+  }, [allExercises, inputValue, isSearching, initialQuery]);
 
   const handleSelect = (exercise) => {
     const normalizedExercise = {
@@ -173,7 +166,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
     const fakeExercise = {
       id: null, 
       name: exerciseName,
-      muscle_group: tMuscle('unknown', { defaultValue: 'N/A' }), 
+      muscle_group: 'N/A', 
       image_url: null, 
       video_url: null,
       image_url_start: null,
@@ -256,10 +249,10 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-extrabold text-text-primary truncate text-sm sm:text-base group-hover:text-accent transition-colors">
-                        {tName(exercise.name, { defaultValue: exercise.name })}
+                        {exercise.name}
                       </p>
                       <p className="text-[11px] sm:text-xs font-bold text-text-tertiary uppercase tracking-wider truncate mt-0.5">
-                        {tMuscle(exercise.category || exercise.muscle_group, { defaultValue: exercise.category || exercise.muscle_group })}
+                        {exercise.category || exercise.muscle_group}
                       </p>
                     </div>
                   </button>
@@ -272,7 +265,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
         {/* Sin Resultados */}
         {showNoResults && (
           <div className="p-6 text-center">
-            <p className="text-text-secondary font-medium">{tCommon('No se encontraron ejercicios.', { defaultValue: 'No se encontraron ejercicios.' })}</p>
+            <p className="text-text-secondary font-medium">No se encontraron ejercicios.</p>
           </div>
         )}
 
@@ -310,7 +303,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
                 const fakeExercise = {
                   id: null, 
                   name: currentVal,
-                  muscle_group: tMuscle('unknown', { defaultValue: 'N/A' }), 
+                  muscle_group: 'N/A', 
                   image_url: null, 
                   video_url: null,
                   image_url_start: null,
@@ -324,7 +317,7 @@ const ExerciseSearchInput = ({ onExerciseSelect, initialQuery = '', className = 
               }
             }
           }}
-          placeholder={tCommon('Buscar ejercicio...', { defaultValue: 'Buscar ejercicio...' })}
+          placeholder="Buscar ejercicio..."
           className={`w-full pl-12 pr-5 py-4 rounded-[20px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all font-bold text-text-primary placeholder:text-text-muted shadow-inner ${inputClassName}`}
         />
         <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />

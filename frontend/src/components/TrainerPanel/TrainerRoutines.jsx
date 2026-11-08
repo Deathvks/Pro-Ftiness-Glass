@@ -15,9 +15,16 @@ const getFullImageUrl = (path, API_URL) => {
   return SERVER_URL + cleanPath;
 };
 
+// Fast Cache for Trainer Routines
+let cachedTrainerRoutines = null;
+try {
+  const saved = localStorage.getItem('pfg_trainer_routines');
+  if (saved) cachedTrainerRoutines = JSON.parse(saved);
+} catch (e) {}
+
 export default function TrainerRoutines({ activeClients }) {
-  const [routines, setRoutines] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [routines, setRoutines] = useState(() => cachedTrainerRoutines || []);
+  const [loading, setLoading] = useState(() => !cachedTrainerRoutines || cachedTrainerRoutines.length === 0);
   const [isEditing, setIsEditing] = useState(false);
   const [editingRoutineId, setEditingRoutineId] = useState(null);
   const { addToast } = useToast();
@@ -33,13 +40,21 @@ export default function TrainerRoutines({ activeClients }) {
     fetchRoutines();
   }, []);
 
-  const fetchRoutines = async () => {
+    const fetchRoutines = async () => {
     try {
-      setLoading(true);
+      if (!cachedTrainerRoutines || cachedTrainerRoutines.length === 0) {
+        setLoading(true);
+      }
       const res = await apiClient('/trainer/routines');
       setRoutines(res);
+      cachedTrainerRoutines = res;
+      try {
+        localStorage.setItem('pfg_trainer_routines', JSON.stringify(res));
+      } catch (e) {}
     } catch (err) {
-      addToast('Error al cargar rutinas', 'error');
+      if (!cachedTrainerRoutines || cachedTrainerRoutines.length === 0) {
+        addToast('Error al cargar rutinas', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -130,7 +145,7 @@ export default function TrainerRoutines({ activeClients }) {
         </button>
       </div>
 
-      {loading ? (
+      {loading && (!routines || routines.length === 0) ? (
         <div className="flex justify-center p-12">
           <div className="w-10 h-10 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
         </div>

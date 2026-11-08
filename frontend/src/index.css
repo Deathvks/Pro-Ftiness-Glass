@@ -5,6 +5,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tailwind's reset gives every border a light gray default. In dark themes,
+   use a low contrast default while allowing explicit border color utilities. */
+@layer base {
+  html.dark,
+  html.dark * {
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+}
+
 /* 2) VARIABLES (Modo oscuro por defecto - True Liquid Glass) */
 :root {
   --bg-primary: #0f172a;
@@ -31,8 +40,8 @@
   --glass-radius: 32px;
   --glass-bg: rgba(255, 255, 255, 0.02);
   --glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
-  --glass-border: rgba(255, 255, 255, 0.1); 
-  --glass-highlight: inset 0px 1px 1px rgba(255, 255, 255, 0.2), inset 0px -1px 1px rgba(0, 0, 0, 0.3);
+  --glass-border: rgba(255, 255, 255, 0.04);
+  --glass-highlight: inset 0px 1px 1px rgba(255, 255, 255, 0.06), inset 0px -1px 1px rgba(0, 0, 0, 0.3);
   --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
   --glass-saturation: 180%;
   --glass-brightness: 1.1;
@@ -61,8 +70,8 @@ html.dark-theme {
 
   --glass-bg: rgba(255, 255, 255, 0.02);
   --glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 100%);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-highlight: inset 0px 1px 1px rgba(255, 255, 255, 0.2), inset 0px -1px 1px rgba(0, 0, 0, 0.3);
+  --glass-border: rgba(255, 255, 255, 0.04);
+  --glass-highlight: inset 0px 1px 1px rgba(255, 255, 255, 0.06), inset 0px -1px 1px rgba(0, 0, 0, 0.3);
   --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
   --glass-saturation: 180%;
   --glass-brightness: 1.1;
@@ -103,8 +112,8 @@ html.oled-theme {
   --glass-blur: 32px;
   --glass-bg: rgba(255, 255, 255, 0.01); 
   --glass-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 100%);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-highlight: inset 0px 1px 1px rgba(255, 255, 255, 0.1), inset 0px -1px 1px rgba(0, 0, 0, 0.5);
+  --glass-border: rgba(255, 255, 255, 0.03);
+  --glass-highlight: inset 0px 1px 1px rgba(255, 255, 255, 0.04), inset 0px -1px 1px rgba(0, 0, 0, 0.5);
   --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   --glass-saturation: 120%;
   --glass-brightness: 1.0;
@@ -126,16 +135,19 @@ html.galaxy-theme {
   --color-accent-transparent: rgba(168, 85, 247, 0.12);
   --color-accent-border: rgba(168, 85, 247, 0.28);
 
-  --glass-blur: 24px; 
+  --glass-blur: 14px;
   --glass-bg: rgba(8, 8, 20, 0.3); 
   --glass-gradient: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
   --glass-border: rgba(168, 85, 247, 0.25);
   --glass-highlight: inset 0px 1px 1px rgba(168, 85, 247, 0.3), inset 0px -1px 1px rgba(0, 0, 0, 0.4);
   --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-  --glass-saturation: 150%;
-  --glass-brightness: 1.1;
+  --glass-saturation: 130%;
+  --glass-brightness: 1;
 
   --header-solid: #080814;
+  --header-bg-solid: #080814;
+  --header-text-solid: #f8fafc;
+  --btn-accent-text: #ffffff;
 }
 
 @keyframes starry-background {
@@ -198,7 +210,6 @@ html.galaxy-theme #root::before {
   opacity: 0.7;
   z-index: 9998;
   pointer-events: none;
-  will-change: transform;
   backface-visibility: hidden;
   perspective: 1000px;
 }
@@ -216,7 +227,111 @@ html.galaxy-theme #root::after {
   z-index: 9999;
   animation: meteor-shower 6s linear infinite;
   pointer-events: none;
-  will-change: transform, opacity;
+}
+
+/* Lower-cost Galaxy rendering for touch devices (Android WebView and mobile PWAs).
+   Keep the star field but avoid large, continuously moving compositor layers. */
+@media (hover: none), (pointer: coarse) {
+  html.galaxy-theme {
+    --glass-blur: 8px;
+    --glass-saturation: 115%;
+  }
+
+  html.galaxy-theme .glass,
+  html.galaxy-theme .glass-btn,
+  html.galaxy-theme [class*="backdrop-blur"],
+  html.galaxy-theme button.bg-black\/5,
+  html.galaxy-theme button.bg-black\/10,
+  html.galaxy-theme button.bg-surface,
+  html.galaxy-theme button.dark\:bg-white\/5,
+  html.galaxy-theme button.dark\:bg-white\/10 {
+    -webkit-backdrop-filter: blur(8px) saturate(115%) !important;
+    backdrop-filter: blur(8px) saturate(115%) !important;
+    transform: none;
+    will-change: auto !important;
+  }
+
+  html.galaxy-theme #root {
+    background-attachment: scroll;
+  }
+
+  html.galaxy-theme #root::before {
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    animation: none;
+    opacity: 0.4;
+    backface-visibility: visible;
+    perspective: none;
+  }
+
+  html.galaxy-theme.galaxy-effects-enabled #root::before {
+    animation: starry-background 80s linear infinite;
+  }
+
+  html.galaxy-theme #root::after {
+    display: none;
+    animation: none;
+  }
+
+  html.galaxy-theme.galaxy-effects-enabled #root::after {
+    display: block;
+    animation: meteor-shower 6s linear infinite;
+  }
+
+  .landing-page [class*="backdrop-blur"] {
+    -webkit-backdrop-filter: blur(8px) saturate(110%) !important;
+    backdrop-filter: blur(8px) saturate(110%) !important;
+  }
+
+  .landing-page [class*="blur-"] {
+    filter: none !important;
+  }
+
+  .landing-floating-elements,
+  .landing-gym-bot,
+  .landing-ambient-bg,
+  .landing-floating-elements *,
+  .landing-gym-bot * {
+    animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.galaxy-theme #root::before,
+  html.galaxy-theme #root::after,
+  .landing-floating-elements,
+  .landing-gym-bot,
+  .landing-ambient-bg,
+  .landing-floating-elements *,
+  .landing-gym-bot * {
+    animation: none !important;
+  }
+}
+
+/* Landing surfaces use the same visible Liquid Glass treatment as the app. */
+.landing-page .landing-liquid-glass {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.16) 45%, rgba(255, 255, 255, 0.08)) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.48) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.72), 0 18px 45px rgba(15, 23, 42, 0.12) !important;
+}
+
+html.dark .landing-page .landing-liquid-glass {
+  background-color: rgba(255, 255, 255, 0.065) !important;
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.045) 42%, rgba(255, 255, 255, 0.015)) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 18px 45px rgba(0, 0, 0, 0.24) !important;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .landing-page .landing-liquid-glass {
+    backdrop-filter: blur(14px) saturate(145%) !important;
+    -webkit-backdrop-filter: blur(14px) saturate(145%) !important;
+  }
 }
 
 /* 4) PALETAS DE ACENTO */
@@ -413,7 +528,528 @@ html.galaxy-theme #root::after {
   --btn-accent-text: #000000;
 }
 
+/* 4.2) ACENTOS CON DEGRADADO (NIVEL 15) */
+.accent-aurora {
+  --color-accent: #10b981;
+  --color-accent-gradient: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #34d399 0%, #22d3ee 100%);
+  --color-accent-transparent: rgba(16, 185, 129, 0.14);
+  --color-accent-border: rgba(6, 182, 212, 0.32);
+  --btn-accent-text: #ffffff;
+}
 
+.accent-sunset {
+  --color-accent: #f43f5e;
+  --color-accent-gradient: linear-gradient(135deg, #f43f5e 0%, #fb923c 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #fb7185 0%, #fb923c 100%);
+  --color-accent-transparent: rgba(244, 63, 94, 0.14);
+  --color-accent-border: rgba(251, 146, 60, 0.32);
+  --btn-accent-text: #ffffff;
+}
+
+.accent-cyberpunk {
+  --color-accent: #8b5cf6;
+  --color-accent-gradient: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
+  --color-accent-transparent: rgba(139, 92, 246, 0.14);
+  --color-accent-border: rgba(236, 72, 153, 0.32);
+  --btn-accent-text: #ffffff;
+}
+
+.accent-deep-ocean {
+  --color-accent: #2563eb;
+  --color-accent-gradient: linear-gradient(135deg, #2563eb 0%, #00f5d4 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #60a5fa 0%, #2dd4bf 100%);
+  --color-accent-transparent: rgba(37, 99, 235, 0.14);
+  --color-accent-border: rgba(0, 245, 212, 0.32);
+  --btn-accent-text: #ffffff;
+}
+
+.accent-imperial-gold {
+  --color-accent: #f59e0b;
+  --color-accent-gradient: linear-gradient(135deg, #f59e0b 0%, #fde047 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  --color-accent-transparent: rgba(245, 158, 11, 0.14);
+  --color-accent-border: rgba(253, 224, 71, 0.32);
+  --btn-accent-text: #000000;
+}
+
+/* Efecto degradado automático en botones principales (.bg-accent) */
+.accent-aurora button.bg-accent,
+.accent-aurora a.bg-accent,
+.accent-aurora .btn-accent {
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%) !important;
+  color: #ffffff !important;
+}
+
+.accent-sunset button.bg-accent,
+.accent-sunset a.bg-accent,
+.accent-sunset .btn-accent {
+  background: linear-gradient(135deg, #f43f5e 0%, #fb923c 100%) !important;
+  color: #ffffff !important;
+}
+
+.accent-cyberpunk button.bg-accent,
+.accent-cyberpunk a.bg-accent,
+.accent-cyberpunk .btn-accent {
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%) !important;
+  color: #ffffff !important;
+}
+
+.accent-deep-ocean button.bg-accent,
+.accent-deep-ocean a.bg-accent,
+.accent-deep-ocean .btn-accent {
+  background: linear-gradient(135deg, #2563eb 0%, #00f5d4 100%) !important;
+  color: #ffffff !important;
+}
+
+.accent-imperial-gold button.bg-accent,
+.accent-imperial-gold a.bg-accent,
+.accent-imperial-gold .btn-accent {
+  background: linear-gradient(135deg, #f59e0b 0%, #fde047 100%) !important;
+  color: #000000 !important;
+}
+
+/* Gradiente suave en letras/textos para acentos de nivel 15 (aurora, sunset, cyberpunk, deep-ocean, imperial-gold) */
+.accent-aurora :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-sunset :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-cyberpunk :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-deep-ocean :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-imperial-gold :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-aurora div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-sunset div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-cyberpunk div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-deep-ocean div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-imperial-gold div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-aurora button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-sunset button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-cyberpunk button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-deep-ocean button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-imperial-gold button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-aurora .text-accent-gradient,
+.accent-sunset .text-accent-gradient,
+.accent-cyberpunk .text-accent-gradient,
+.accent-deep-ocean .text-accent-gradient,
+.accent-imperial-gold .text-accent-gradient {
+  background-image: var(--color-accent-text-gradient, var(--color-accent-gradient)) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Blindaje de iconos SVG para acentos de nivel 15:
+   Asegura que los iconos SVG nunca hereden relleno transparente ni se rompan.
+   Los iconos con text-accent o dentro de contenedores text-accent mantienen color sólido nítido. */
+.accent-aurora svg.text-accent,
+.accent-sunset svg.text-accent,
+.accent-cyberpunk svg.text-accent,
+.accent-deep-ocean svg.text-accent,
+.accent-imperial-gold svg.text-accent,
+.accent-aurora .text-accent svg,
+.accent-sunset .text-accent svg,
+.accent-cyberpunk .text-accent svg,
+.accent-deep-ocean .text-accent svg,
+.accent-imperial-gold .text-accent svg {
+  -webkit-text-fill-color: initial !important;
+  color: var(--color-accent) !important;
+}
+
+.accent-aurora .text-accent svg[class*="text-white"],
+.accent-sunset .text-accent svg[class*="text-white"],
+.accent-cyberpunk .text-accent svg[class*="text-white"],
+.accent-deep-ocean .text-accent svg[class*="text-white"],
+.accent-imperial-gold .text-accent svg[class*="text-white"] {
+  color: #ffffff !important;
+}
+
+.accent-aurora .text-accent svg[class*="text-red"],
+.accent-sunset .text-accent svg[class*="text-red"],
+.accent-cyberpunk .text-accent svg[class*="text-red"],
+.accent-deep-ocean .text-accent svg[class*="text-red"],
+.accent-imperial-gold .text-accent svg[class*="text-red"] {
+  color: #ef4444 !important;
+}
+
+/* Iconos dentro de botones con fondo degradado: heredan el color legible del botón */
+.accent-aurora .bg-accent svg,
+.accent-sunset .bg-accent svg,
+.accent-cyberpunk .bg-accent svg,
+.accent-deep-ocean .bg-accent svg,
+.accent-imperial-gold .bg-accent svg,
+.accent-aurora .btn-accent svg,
+.accent-sunset .btn-accent svg,
+.accent-cyberpunk .btn-accent svg,
+.accent-deep-ocean .btn-accent svg,
+.accent-imperial-gold .btn-accent svg {
+  -webkit-text-fill-color: initial !important;
+  color: inherit !important;
+}
+
+
+
+/* 4.3) ACENTOS DINÁMICOS ANIMADOS (NIVEL 20) */
+@keyframes living-accent-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes living-preview-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.living-accent-preview {
+  background-size: 280% 280% !important;
+  animation: living-accent-flow 3.5s ease-in-out infinite, living-preview-breathe 2.5s ease-in-out infinite !important;
+}
+
+.accent-supernova {
+  --color-accent: #8b5cf6;
+  --color-accent-gradient: linear-gradient(135deg, #7c3aed 0%, #ec4899 35%, #3b82f6 70%, #7c3aed 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #a78bfa 0%, #f472b6 35%, #60a5fa 70%, #a78bfa 100%);
+  --color-accent-transparent: rgba(139, 92, 246, 0.16);
+  --color-accent-border: rgba(236, 72, 153, 0.35);
+  --btn-accent-text: #ffffff;
+  --aurora-gradient: repeating-linear-gradient(100deg, #7c3aed 10%, #ec4899 15%, #3b82f6 20%, #a855f7 25%, #7c3aed 30%);
+  --aurora-glow-1: #8b5cf6;
+  --aurora-glow-2: #ec4899;
+}
+
+.accent-plasma {
+  --color-accent: #10b981;
+  --color-accent-gradient: linear-gradient(135deg, #10b981 0%, #06b6d4 35%, #3b82f6 70%, #10b981 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #34d399 0%, #22d3ee 35%, #60a5fa 70%, #34d399 100%);
+  --color-accent-transparent: rgba(16, 185, 129, 0.16);
+  --color-accent-border: rgba(6, 182, 212, 0.35);
+  --btn-accent-text: #ffffff;
+  --aurora-gradient: repeating-linear-gradient(100deg, #10b981 10%, #06b6d4 15%, #3b82f6 20%, #34d399 25%, #10b981 30%);
+  --aurora-glow-1: #10b981;
+  --aurora-glow-2: #06b6d4;
+}
+
+.accent-eternal-flame {
+  --color-accent: #f97316;
+  --color-accent-gradient: linear-gradient(135deg, #ef4444 0%, #f97316 35%, #facc15 70%, #ef4444 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #f87171 0%, #fb923c 35%, #fde047 70%, #f87171 100%);
+  --color-accent-transparent: rgba(249, 115, 22, 0.16);
+  --color-accent-border: rgba(250, 204, 21, 0.35);
+  --btn-accent-text: #ffffff;
+  --aurora-gradient: repeating-linear-gradient(100deg, #ef4444 10%, #f97316 15%, #facc15 20%, #fb923c 25%, #ef4444 30%);
+  --aurora-glow-1: #ef4444;
+  --aurora-glow-2: #f97316;
+}
+
+.accent-abyssal-vortex {
+  --color-accent: #3b82f6;
+  --color-accent-gradient: linear-gradient(135deg, #1d4ed8 0%, #6366f1 35%, #14b8a6 70%, #1d4ed8 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #60a5fa 0%, #818cf8 35%, #2dd4bf 70%, #60a5fa 100%);
+  --color-accent-transparent: rgba(59, 130, 246, 0.16);
+  --color-accent-border: rgba(99, 102, 241, 0.35);
+  --btn-accent-text: #ffffff;
+  --aurora-gradient: repeating-linear-gradient(100deg, #1d4ed8 10%, #6366f1 15%, #14b8a6 20%, #60a5fa 25%, #1d4ed8 30%);
+  --aurora-glow-1: #1d4ed8;
+  --aurora-glow-2: #6366f1;
+}
+
+.accent-cosmic-gold {
+  --color-accent: #f59e0b;
+  --color-accent-gradient: linear-gradient(135deg, #d97706 0%, #fef08a 35%, #b45309 70%, #d97706 100%);
+  --color-accent-text-gradient: linear-gradient(135deg, #f59e0b 0%, #fde047 35%, #d97706 70%, #f59e0b 100%);
+  --color-accent-transparent: rgba(245, 158, 11, 0.16);
+  --color-accent-border: rgba(254, 240, 138, 0.35);
+  --btn-accent-text: #000000;
+  --aurora-gradient: repeating-linear-gradient(100deg, #d97706 10%, #f59e0b 15%, #fef08a 20%, #b45309 25%, #d97706 30%);
+  --aurora-glow-1: #d97706;
+  --aurora-glow-2: #f59e0b;
+}
+
+/* Efecto de degradado animado en botones principales (.bg-accent) */
+.accent-supernova button.bg-accent,
+.accent-supernova a.bg-accent,
+.accent-supernova .btn-accent {
+  background: var(--color-accent-gradient) !important;
+  background-size: 250% 250% !important;
+  animation: living-accent-flow 6s ease infinite !important;
+  color: #ffffff !important;
+}
+
+.accent-plasma button.bg-accent,
+.accent-plasma a.bg-accent,
+.accent-plasma .btn-accent {
+  background: var(--color-accent-gradient) !important;
+  background-size: 250% 250% !important;
+  animation: living-accent-flow 6s ease infinite !important;
+  color: #ffffff !important;
+}
+
+.accent-eternal-flame button.bg-accent,
+.accent-eternal-flame a.bg-accent,
+.accent-eternal-flame .btn-accent {
+  background: var(--color-accent-gradient) !important;
+  background-size: 250% 250% !important;
+  animation: living-accent-flow 6s ease infinite !important;
+  color: #ffffff !important;
+}
+
+.accent-abyssal-vortex button.bg-accent,
+.accent-abyssal-vortex a.bg-accent,
+.accent-abyssal-vortex .btn-accent {
+  background: var(--color-accent-gradient) !important;
+  background-size: 250% 250% !important;
+  animation: living-accent-flow 6s ease infinite !important;
+  color: #ffffff !important;
+}
+
+.accent-cosmic-gold button.bg-accent,
+.accent-cosmic-gold a.bg-accent,
+.accent-cosmic-gold .btn-accent {
+  background: var(--color-accent-gradient) !important;
+  background-size: 250% 250% !important;
+  animation: living-accent-flow 6s ease infinite !important;
+  color: #000000 !important;
+}
+
+/* Flujo animado en letras/textos para acentos de nivel 20 (supernova, plasma, eternal-flame, abyssal-vortex, cosmic-gold) */
+.accent-supernova :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-plasma :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-eternal-flame :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-abyssal-vortex :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-cosmic-gold :is(h1, h2, h3, h4, h5, h6, p, span, a, strong, b, label, small):not([class*="bg-"]):not(svg).text-accent,
+.accent-supernova div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-plasma div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-eternal-flame div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-abyssal-vortex div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-cosmic-gold div:not([class*="bg-"]):not(:has(> svg)):not(:has(> div)).text-accent,
+.accent-supernova button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-plasma button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-eternal-flame button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-abyssal-vortex button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-cosmic-gold button:not([class*="bg-"]):not(:has(> svg)).text-accent,
+.accent-supernova .text-accent-gradient,
+.accent-plasma .text-accent-gradient,
+.accent-eternal-flame .text-accent-gradient,
+.accent-abyssal-vortex .text-accent-gradient,
+.accent-cosmic-gold .text-accent-gradient {
+  background-image: var(--color-accent-text-gradient, var(--color-accent-gradient)) !important;
+  background-size: 250% 250% !important;
+  animation: living-accent-flow 6s ease infinite !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Blindaje de iconos SVG para acentos de nivel 20:
+   Asegura que los iconos SVG nunca hereden relleno transparente ni se rompan.
+   Los iconos con text-accent o dentro de contenedores text-accent mantienen color sólido nítido. */
+.accent-supernova svg.text-accent,
+.accent-plasma svg.text-accent,
+.accent-eternal-flame svg.text-accent,
+.accent-abyssal-vortex svg.text-accent,
+.accent-cosmic-gold svg.text-accent,
+.accent-supernova .text-accent svg,
+.accent-plasma .text-accent svg,
+.accent-eternal-flame .text-accent svg,
+.accent-abyssal-vortex .text-accent svg,
+.accent-cosmic-gold .text-accent svg {
+  -webkit-text-fill-color: initial !important;
+  color: var(--color-accent) !important;
+}
+
+.accent-supernova .text-accent svg[class*="text-white"],
+.accent-plasma .text-accent svg[class*="text-white"],
+.accent-eternal-flame .text-accent svg[class*="text-white"],
+.accent-abyssal-vortex .text-accent svg[class*="text-white"],
+.accent-cosmic-gold .text-accent svg[class*="text-white"] {
+  color: #ffffff !important;
+}
+
+.accent-supernova .text-accent svg[class*="text-red"],
+.accent-plasma .text-accent svg[class*="text-red"],
+.accent-eternal-flame .text-accent svg[class*="text-red"],
+.accent-abyssal-vortex .text-accent svg[class*="text-red"],
+.accent-cosmic-gold .text-accent svg[class*="text-red"] {
+  color: #ef4444 !important;
+}
+
+/* Iconos dentro de botones con fondo degradado animado */
+.accent-supernova .bg-accent svg,
+.accent-plasma .bg-accent svg,
+.accent-eternal-flame .bg-accent svg,
+.accent-abyssal-vortex .bg-accent svg,
+.accent-cosmic-gold .bg-accent svg,
+.accent-supernova .btn-accent svg,
+.accent-plasma .btn-accent svg,
+.accent-eternal-flame .btn-accent svg,
+.accent-abyssal-vortex .btn-accent svg,
+.accent-cosmic-gold .btn-accent svg {
+  -webkit-text-fill-color: initial !important;
+  color: inherit !important;
+}
+
+/* ==========================================================================
+   4.4) ATMÓSFERA AURORA BOREAL (EXCLUSIVA NIVEL 20 - TRANQUILITA SOLO ARRIBA)
+   ========================================================================== */
+:root {
+  --aurora-stripes: repeating-linear-gradient(
+    100deg,
+    #ffffff 0%,
+    #ffffff 7%,
+    transparent 10%,
+    transparent 12%,
+    #ffffff 16%
+  );
+}
+
+@keyframes aurora-wave {
+  from {
+    background-position: 50% 50%;
+  }
+  to {
+    background-position: 300% 50%;
+  }
+}
+
+@keyframes aurora-glow-breathe {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(0.97);
+    opacity: 0.40;
+  }
+  50% {
+    transform: translate3d(0, -6px, 0) scale(1.05);
+    opacity: 0.65;
+  }
+}
+
+/* Blindaje CSS: La aurora solo existe y se muestra en acentos de Nivel 20 */
+.aurora-container {
+  display: none !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40vh;
+  max-height: 360px;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  opacity: 0.65;
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate3d(0, 0, 0);
+  mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 20%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 20%, transparent 80%);
+}
+
+:is(
+  html.accent-supernova,
+  html.accent-plasma,
+  html.accent-eternal-flame,
+  html.accent-abyssal-vortex,
+  html.accent-cosmic-gold
+) .aurora-container {
+  display: block !important;
+}
+
+html.light-theme,
+html.desert-theme:not(.dark),
+html.ocean-theme:not(.dark) {
+  --aurora-stripes: repeating-linear-gradient(
+    100deg,
+    transparent 0%,
+    transparent 8%,
+    rgba(255, 255, 255, 0.45) 10%,
+    rgba(255, 255, 255, 0.45) 12%,
+    transparent 15%
+  );
+}
+
+html.light-theme .aurora-container,
+html.desert-theme:not(.dark) .aurora-container,
+html.ocean-theme:not(.dark) .aurora-container {
+  opacity: 0.65;
+  mask-image: radial-gradient(ellipse 92% 62% at 50% 0%, #000 25%, transparent 82%);
+  -webkit-mask-image: radial-gradient(ellipse 92% 62% at 50% 0%, #000 25%, transparent 82%);
+}
+
+html.oled-theme .aurora-container {
+  opacity: 0.55;
+  mask-image: radial-gradient(ellipse 85% 55% at 50% 0%, #000 15%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 85% 55% at 50% 0%, #000 15%, transparent 75%);
+}
+
+.aurora-glow {
+  position: absolute;
+  top: -20%;
+  left: 5%;
+  right: 5%;
+  height: 36vh;
+  max-height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 30%, var(--aurora-glow-1, transparent) 0%, var(--aurora-glow-2, transparent) 45%, transparent 75%);
+  filter: blur(40px);
+  transform: translate3d(0, 0, 0);
+  will-change: transform, opacity;
+  pointer-events: none;
+  animation: aurora-glow-breathe 12s ease-in-out infinite;
+}
+
+html.light-theme .aurora-glow,
+html.desert-theme:not(.dark) .aurora-glow,
+html.ocean-theme:not(.dark) .aurora-glow {
+  top: -20%;
+  left: 0;
+  right: 0;
+  height: 36vh;
+  max-height: 320px;
+  opacity: 0.70;
+  filter: blur(35px);
+  background: radial-gradient(
+    ellipse at 50% 25%,
+    var(--aurora-glow-1, transparent) 0%,
+    var(--aurora-glow-2, transparent) 42%,
+    transparent 75%
+  );
+}
+
+.aurora-curtain {
+  position: absolute;
+  top: -10px;
+  left: -20px;
+  right: -20px;
+  height: 100%;
+  background-image: var(--aurora-stripes), var(--aurora-gradient);
+  background-size: 250% 180%;
+  background-position: 50% 50%;
+  filter: blur(12px);
+  opacity: 0.35;
+  transform: translate3d(0, 0, 0);
+  will-change: background-position;
+  pointer-events: none;
+  animation: aurora-wave 60s linear infinite;
+}
+
+html.light-theme .aurora-curtain,
+html.desert-theme:not(.dark) .aurora-curtain,
+html.ocean-theme:not(.dark) .aurora-curtain {
+  opacity: 0.40;
+  filter: blur(10px);
+}
 
 .accent-neutral {
   --color-accent: #737373;
@@ -514,6 +1150,186 @@ html.galaxy-theme #root::after {
     will-change: transform, backdrop-filter;
   }
 
+  /* ==========================================================================
+     APPLE HIG LIQUID GLASS (mid-2026) - Floating Functional Navigation Layer
+     ========================================================================== */
+  .liquid-glass-navbar {
+    /* Mobile Floating Capsule: Refined Apple Liquid Glass */
+    background-color: rgba(var(--bg-primary-rgb, 15, 23, 42), 0.46) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(255, 255, 255, 0) 100%) !important;
+    backdrop-filter: blur(20px) saturate(190%) brightness(1.08) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(190%) brightness(1.08) !important;
+    border-radius: 9999px !important;
+    border: 0.5px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow:
+      0 12px 32px -4px rgba(0, 0, 0, 0.35),
+      0 4px 12px -2px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.22),   /* Delicately soft top reflection (not harsh) */
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.15) !important;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform;
+    contain: layout style;
+  }
+
+  /* Single Fluid Liquid Glass Droplet / Lens - GPU Optimized (No nested backdrop-filter for iPhone WebKit) */
+  .liquid-glass-drop {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+    border-radius: 9999px !important;
+    border: 0.5px solid rgba(255, 255, 255, 0.20) !important;
+    box-shadow:
+      0 4px 12px -2px rgba(0, 0, 0, 0.25),
+      0 0 14px -2px var(--color-accent-transparent),
+      inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.30),
+      inset 0 -1px 0.5px 0 rgba(0, 0, 0, 0.15) !important;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform;
+  }
+
+  /* Desktop Sidebar Liquid Glass (macOS style) */
+  .liquid-glass-sidebar {
+    background-color: rgba(var(--bg-primary-rgb, 15, 23, 42), 0.28) !important;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.01) 100%) !important;
+    backdrop-filter: blur(20px) saturate(180%) brightness(1.05) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.05) !important;
+    border-right: 1.5px solid rgba(255, 255, 255, 0.10) !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .liquid-glass-sidebar-active {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.04) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.28) !important;
+    box-shadow: inset 0 1px 0.5px rgba(255, 255, 255, 0.45), 0 4px 14px rgba(0, 0, 0, 0.20) !important;
+  }
+
+  /* --- LIGHT THEME ADAPTATION --- */
+  html.light-theme .liquid-glass-navbar {
+    background-color: rgba(255, 255, 255, 0.68) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.35) 100%) !important;
+    backdrop-filter: blur(20px) saturate(190%) brightness(1.02) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(190%) brightness(1.02) !important;
+    border: 0.5px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow:
+      0 10px 28px -4px rgba(15, 23, 42, 0.08),
+      0 4px 10px rgba(15, 23, 42, 0.04),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.80),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.04) !important;
+  }
+
+  html.light-theme .liquid-glass-drop {
+    background-color: rgba(255, 255, 255, 0.75) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.50) 100%) !important;
+    border: 0.5px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow:
+      0 3px 10px -2px rgba(15, 23, 42, 0.10),
+      0 0 14px -2px var(--color-accent-transparent),
+      inset 0 1px 0.5px 0 #ffffff,
+      inset 0 -1px 0.5px 0 rgba(0, 0, 0, 0.04) !important;
+  }
+
+  html.light-theme .liquid-glass-sidebar {
+    background-color: rgba(255, 255, 255, 0.40) !important;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.70) 0%, rgba(255, 255, 255, 0.25) 100%) !important;
+    border-right: 1.5px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 4px 0 20px rgba(15, 23, 42, 0.05) !important;
+  }
+
+  html.light-theme .liquid-glass-sidebar-active {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    background-image: linear-gradient(135deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.02) 100%) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: inset 0 1px 0.5px #ffffff, 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* --- OLED THEME ADAPTATION --- */
+  html.oled-theme .liquid-glass-navbar {
+    background-color: rgba(0, 0, 0, 0.55) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(0, 0, 0, 0) 100%) !important;
+    backdrop-filter: blur(20px) saturate(190%) brightness(1.10) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(190%) brightness(1.10) !important;
+    border: 0.5px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow:
+      0 16px 40px -4px rgba(0, 0, 0, 0.90),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.20),
+      inset 0 -1px 0 0 rgba(255, 255, 255, 0.03) !important;
+  }
+
+  html.oled-theme .liquid-glass-drop {
+    background-color: rgba(255, 255, 255, 0.10) !important;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+    border: 0.5px solid rgba(255, 255, 255, 0.18) !important;
+    box-shadow:
+      0 4px 14px -2px rgba(0, 0, 0, 0.60),
+      0 0 16px -2px var(--color-accent-transparent),
+      inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.30) !important;
+  }
+
+  html.oled-theme .liquid-glass-sidebar {
+    background-color: rgba(0, 0, 0, 0.38) !important;
+    border-right: 1.5px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 6px 0 32px rgba(0, 0, 0, 0.60) !important;
+  }
+
+  /* --- GALAXY THEME ADAPTATION --- */
+  html.galaxy-theme .liquid-glass-navbar {
+    background-color: rgba(8, 8, 20, 0.48) !important;
+    background-image: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(59, 130, 246, 0.04) 45%, rgba(255, 255, 255, 0) 100%) !important;
+    backdrop-filter: blur(20px) saturate(190%) brightness(1.08) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(190%) brightness(1.08) !important;
+    border: 0.5px solid rgba(168, 85, 247, 0.25) !important;
+    box-shadow:
+      0 16px 40px -4px rgba(8, 8, 20, 0.85),
+      0 0 20px -2px rgba(168, 85, 247, 0.20),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.30) !important;
+  }
+
+  html.galaxy-theme .liquid-glass-drop {
+    background-color: rgba(168, 85, 247, 0.18) !important;
+    background-image: linear-gradient(135deg, rgba(168, 85, 247, 0.28) 0%, rgba(59, 130, 246, 0.08) 100%) !important;
+    border: 0.5px solid rgba(168, 85, 247, 0.25) !important;
+    box-shadow:
+      0 4px 14px -2px rgba(8, 8, 20, 0.50),
+      0 0 16px -2px rgba(168, 85, 247, 0.35),
+      inset 0 1px 0.5px 0 rgba(255, 255, 255, 0.35) !important;
+  }
+
+  html.galaxy-theme .liquid-glass-sidebar {
+    background-color: rgba(8, 8, 20, 0.32) !important;
+    background-image: linear-gradient(180deg, rgba(168, 85, 247, 0.08) 0%, rgba(59, 130, 246, 0.02) 100%) !important;
+    border-right: 1.5px solid rgba(168, 85, 247, 0.20) !important;
+    box-shadow: 6px 0 32px rgba(8, 8, 20, 0.60) !important;
+  }
+
+  /* --- OCEAN THEME ADAPTATION --- */
+  html.ocean-theme .liquid-glass-navbar {
+    background-color: rgba(var(--bg-primary-rgb), 0.48) !important;
+    background-image: linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(14, 165, 233, 0.04) 50%, rgba(255, 255, 255, 0) 100%) !important;
+    backdrop-filter: blur(20px) saturate(190%) brightness(1.08) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(190%) brightness(1.08) !important;
+    border: 0.5px solid rgba(56, 189, 248, 0.22) !important;
+    box-shadow:
+      0 16px 40px -4px rgba(8, 47, 73, 0.45),
+      0 0 18px -2px rgba(56, 189, 248, 0.15),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.22) !important;
+  }
+
+  /* --- DESERT THEME ADAPTATION --- */
+  html.desert-theme .liquid-glass-navbar {
+    background-color: rgba(var(--bg-primary-rgb), 0.48) !important;
+    background-image: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.03) 50%, rgba(255, 255, 255, 0) 100%) !important;
+    backdrop-filter: blur(20px) saturate(190%) brightness(1.08) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(190%) brightness(1.08) !important;
+    border: 0.5px solid rgba(245, 158, 11, 0.20) !important;
+    box-shadow:
+      0 16px 40px -4px rgba(44, 30, 22, 0.40),
+      0 0 18px -2px rgba(245, 158, 11, 0.15),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.22) !important;
+  }
+
   /* Liquid Glass Buttons Unification */
   .glass-btn {
     @apply relative transition-all duration-300;
@@ -561,7 +1377,7 @@ html.galaxy-theme #root::after {
   }
 
 
-  /* Unify all bg-accent buttons to use true Liquid Glass effect */
+  /* Unify all bg-accent buttons to use true Liquid Glass effect without outer accent drop shadows or brightness flares */
   button.bg-accent, .btn-accent {
     position: relative;
     background-color: var(--color-accent) !important;
@@ -570,20 +1386,24 @@ html.galaxy-theme #root::after {
     -webkit-backdrop-filter: blur(12px) saturate(var(--glass-saturation)) !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     color: var(--btn-accent-text, #ffffff) !important;
-    box-shadow: 0 4px 15px var(--color-accent-transparent), inset 0 2px 2px rgba(255, 255, 255, 0.4) !important;
+    box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.4), inset 0 -1px 1px rgba(0, 0, 0, 0.2) !important;
+    filter: none !important;
+    -webkit-filter: none !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
 
   button.bg-accent:hover:not(:disabled), .btn-accent:hover:not(:disabled) {
     transform: translateY(-2px) !important;
-    box-shadow: 0 8px 20px var(--color-accent-transparent), inset 0 2px 2px rgba(255, 255, 255, 0.5) !important;
-    filter: brightness(1.1) !important;
+    box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.5), inset 0 -1px 1px rgba(0, 0, 0, 0.2) !important;
+    filter: none !important;
+    -webkit-filter: none !important;
   }
 
   button.bg-accent:active:not(:disabled), .btn-accent:active:not(:disabled) {
     transform: translateY(1px) !important;
-    box-shadow: 0 2px 8px var(--color-accent-transparent), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
-    filter: brightness(0.95) !important;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.25) !important;
+    filter: none !important;
+    -webkit-filter: none !important;
   }
 
   button.bg-accent:disabled, .btn-accent:disabled {
@@ -591,6 +1411,40 @@ html.galaxy-theme #root::after {
     cursor: not-allowed !important;
     transform: none !important;
     box-shadow: none !important;
+  }
+
+  /* Active news category pill: preserve true Liquid Glass relief and top reflection while eliminating any hover/active brightness, jump, or accent drop shadow */
+  button.news-category-active,
+  button.news-category-active.bg-accent,
+  button.news-category-active:hover,
+  button.news-category-active.bg-accent:hover,
+  button.news-category-active.bg-accent:hover:not(:disabled),
+  button.news-category-active:active,
+  button.news-category-active.bg-accent:active,
+  button.news-category-active.bg-accent:active:not(:disabled),
+  button.news-category-active:focus,
+  button.news-category-active.bg-accent:focus,
+  button.news-category-active.bg-accent:focus:not(:disabled),
+  button.news-category-active:focus-visible,
+  button.news-category-active.bg-accent:focus-visible,
+  button.news-category-active.bg-accent:focus-visible:not(:disabled) {
+    box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.5), inset 0 -1px 1px rgba(0, 0, 0, 0.2) !important;
+    -webkit-box-shadow: inset 0 1.5px 2px rgba(255, 255, 255, 0.5), inset 0 -1px 1px rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    filter: none !important;
+    -webkit-filter: none !important;
+    transform: scale(1.05) !important;
+    outline: none !important;
+  }
+
+  /* FAQ category buttons: strictly disallow translateY or transform jumps */
+  button.faq-tab-btn,
+  button.faq-tab-btn:hover,
+  button.faq-tab-btn:active,
+  button.faq-tab-btn:focus,
+  button.faq-tab-btn:focus-visible {
+    transform: none !important;
+    -webkit-transform: none !important;
   }
 
   .form-error-text {
@@ -864,54 +1718,6 @@ html.dark.ocean-theme #root::before {
   }
 }
 
-/* GALAXY THEME */
-html.galaxy-theme #root {
-  background-color: transparent !important;
-  background-image: url('/assets/themes/galaxy.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-html.dark.galaxy-theme {
-  --bg-primary: #0a0a1a;
-  --bg-secondary: #14142b;
-  --text-primary: #e0e0ff;
-  --text-secondary: #b0b0d0;
-  --text-muted: #8080a0;
-
-  --bg-primary-rgb: 10, 10, 26;
-
-  --color-accent: #a855f7;
-  --color-accent-transparent: rgba(168, 85, 247, 0.12);
-  --color-accent-border: rgba(168, 85, 247, 0.28);
-
-  --glass-blur: 32px;
-  --glass-bg: rgba(10, 10, 26, 0.65);
-  --glass-gradient: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(147, 51, 234, 0.05) 100%);
-  --glass-border: rgba(168, 85, 247, 0.35);
-  --glass-highlight: inset 0px 1px 2px rgba(255, 255, 255, 0.2), inset 0px -1px 1px rgba(0, 0, 0, 0.5);
-  --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
-  --glass-saturation: 180%;
-  --glass-brightness: 1.1;
-
-  --header-solid: #0a0a1a;
-  --header-bg-solid: #0a0a1a;
-  --header-text-solid: #e0e0ff;
-  --btn-accent-text: #ffffff;
-}
-
-html.dark.galaxy-theme #root::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(10, 10, 26, 0.5);
-  z-index: -1;
-  pointer-events: none;
-}
 
 /* DESERT THEME */
 html.desert-theme #root {
@@ -1099,13 +1905,14 @@ body .driver-popover-footer button.driver-popover-done-btn {
   -webkit-backdrop-filter: blur(12px) saturate(var(--glass-saturation)) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: var(--btn-accent-text, #ffffff) !important;
-  box-shadow: 0 4px 15px var(--color-accent-transparent), inset 0 2px 2px rgba(255, 255, 255, 0.4) !important;
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.4), inset 0 -1px 1px rgba(0, 0, 0, 0.2) !important;
+  filter: none !important;
 }
 body .driver-popover-footer button.driver-popover-next-btn:hover, 
 body .driver-popover-footer button.driver-popover-done-btn:hover { 
   transform: translateY(-2px) !important;
-  box-shadow: 0 8px 20px var(--color-accent-transparent), inset 0 2px 2px rgba(255, 255, 255, 0.5) !important;
-  filter: brightness(1.1) !important;
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.5), inset 0 -1px 1px rgba(0, 0, 0, 0.2) !important;
+  filter: none !important;
 }
 
 /* Botón Cerrar (X) */
@@ -1143,6 +1950,10 @@ body .driver-popover .driver-popover-close-btn:hover {
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+html.hide-global-header main {
+  padding-top: calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 0.75rem) !important;
+}
+
 .hide-global-header .global-header-element {
   display: none !important;
 }
@@ -1171,15 +1982,71 @@ html.light-theme.accent-pistachio, html.light-theme.accent-pistachio * { --text-
 html.light-theme.accent-cherry-blossom, html.light-theme.accent-cherry-blossom * { --text-accent: #be123c; }
 html.light-theme.accent-lime, html.light-theme.accent-lime * { --text-accent: #3f6212; }
 html.light-theme.accent-sky, html.light-theme.accent-sky * { --text-accent: #0284c7; }
+html.light-theme.accent-aurora, html.light-theme.accent-aurora * { --text-accent: #059669; --color-accent-text-gradient: linear-gradient(135deg, #059669 0%, #0891b2 100%); }
+html.light-theme.accent-sunset, html.light-theme.accent-sunset * { --text-accent: #e11d48; --color-accent-text-gradient: linear-gradient(135deg, #e11d48 0%, #ea580c 100%); }
+html.light-theme.accent-cyberpunk, html.light-theme.accent-cyberpunk * { --text-accent: #7c3aed; --color-accent-text-gradient: linear-gradient(135deg, #7c3aed 0%, #c026d3 100%); }
+html.light-theme.accent-deep-ocean, html.light-theme.accent-deep-ocean * { --text-accent: #1d4ed8; --color-accent-text-gradient: linear-gradient(135deg, #2563eb 0%, #0d9488 100%); }
+html.light-theme.accent-imperial-gold, html.light-theme.accent-imperial-gold * { --text-accent: #b45309; --color-accent-text-gradient: linear-gradient(135deg, #b45309 0%, #d97706 100%); }
+html.light-theme.accent-supernova, html.light-theme.accent-supernova *,
+html.desert-theme:not(.dark).accent-supernova, html.desert-theme:not(.dark).accent-supernova *,
+html.ocean-theme:not(.dark).accent-supernova, html.ocean-theme:not(.dark).accent-supernova * {
+  --text-accent: #7c3aed;
+  --color-accent-text-gradient: linear-gradient(135deg, #7c3aed 0%, #db2777 35%, #2563eb 70%, #7c3aed 100%);
+  --aurora-gradient: repeating-linear-gradient(100deg, #7c3aed 0%, #db2777 12%, #2563eb 25%, #9333ea 37%, #7c3aed 50%);
+  --aurora-glow-1: #8b5cf6;
+  --aurora-glow-2: #ec4899;
+}
 
-/* En modo claro con temas amarillos/pasteles, asegurar que botones y cápsulas con fondo acento tengan texto/icono oscuro de alto contraste */
+html.light-theme.accent-plasma, html.light-theme.accent-plasma *,
+html.desert-theme:not(.dark).accent-plasma, html.desert-theme:not(.dark).accent-plasma *,
+html.ocean-theme:not(.dark).accent-plasma, html.ocean-theme:not(.dark).accent-plasma * {
+  --text-accent: #059669;
+  --color-accent-text-gradient: linear-gradient(135deg, #059669 0%, #0891b2 35%, #2563eb 70%, #059669 100%);
+  --aurora-gradient: repeating-linear-gradient(100deg, #059669 0%, #0891b2 12%, #2563eb 25%, #0d9488 37%, #059669 50%);
+  --aurora-glow-1: #059669;
+  --aurora-glow-2: #06b6d4;
+}
+
+html.light-theme.accent-eternal-flame, html.light-theme.accent-eternal-flame *,
+html.desert-theme:not(.dark).accent-eternal-flame, html.desert-theme:not(.dark).accent-eternal-flame *,
+html.ocean-theme:not(.dark).accent-eternal-flame, html.ocean-theme:not(.dark).accent-eternal-flame * {
+  --text-accent: #ea580c;
+  --color-accent-text-gradient: linear-gradient(135deg, #dc2626 0%, #ea580c 35%, #ca8a04 70%, #dc2626 100%);
+  --aurora-gradient: repeating-linear-gradient(100deg, #e11d48 0%, #ea580c 12%, #ca8a04 25%, #f97316 37%, #e11d48 50%);
+  --aurora-glow-1: #ea580c;
+  --aurora-glow-2: #e11d48;
+}
+
+html.light-theme.accent-abyssal-vortex, html.light-theme.accent-abyssal-vortex *,
+html.desert-theme:not(.dark).accent-abyssal-vortex, html.desert-theme:not(.dark).accent-abyssal-vortex *,
+html.ocean-theme:not(.dark).accent-abyssal-vortex, html.ocean-theme:not(.dark).accent-abyssal-vortex * {
+  --text-accent: #1d4ed8;
+  --color-accent-text-gradient: linear-gradient(135deg, #1e40af 0%, #4f46e5 35%, #0d9488 70%, #1e40af 100%);
+  --aurora-gradient: repeating-linear-gradient(100deg, #1d4ed8 0%, #4f46e5 12%, #0d9488 25%, #2563eb 37%, #1d4ed8 50%);
+  --aurora-glow-1: #1d4ed8;
+  --aurora-glow-2: #4f46e5;
+}
+
+html.light-theme.accent-cosmic-gold, html.light-theme.accent-cosmic-gold *,
+html.desert-theme:not(.dark).accent-cosmic-gold, html.desert-theme:not(.dark).accent-cosmic-gold *,
+html.ocean-theme:not(.dark).accent-cosmic-gold, html.ocean-theme:not(.dark).accent-cosmic-gold * {
+  --text-accent: #b45309;
+  --color-accent-text-gradient: linear-gradient(135deg, #b45309 0%, #ca8a04 35%, #92400e 70%, #b45309 100%);
+  --aurora-gradient: repeating-linear-gradient(100deg, #b45309 0%, #d97706 12%, #eab308 25%, #f59e0b 37%, #b45309 50%);
+  --aurora-glow-1: #d97706;
+  --aurora-glow-2: #f59e0b;
+}
+
+/* En modo claro con temas amarillos/pasteles/dorados, asegurar que botones y cápsulas con fondo acento tengan texto/icono oscuro de alto contraste */
 html.light-theme.accent-yellow .bg-accent,
 html.light-theme.accent-lemonade .bg-accent,
 html.light-theme.accent-lime .bg-accent,
 html.light-theme.accent-mango .bg-accent,
 html.light-theme.accent-peach .bg-accent,
 html.light-theme.accent-mint .bg-accent,
-html.light-theme.accent-cherry-blossom .bg-accent {
+html.light-theme.accent-cherry-blossom .bg-accent,
+html.light-theme.accent-imperial-gold .bg-accent,
+html.light-theme.accent-cosmic-gold .bg-accent {
   color: var(--btn-accent-text, #000000) !important;
 }
 
@@ -1189,6 +2056,17 @@ html.light-theme.accent-lime .bg-accent svg,
 html.light-theme.accent-mango .bg-accent svg,
 html.light-theme.accent-peach .bg-accent svg,
 html.light-theme.accent-mint .bg-accent svg,
-html.light-theme.accent-cherry-blossom .bg-accent svg {
+html.light-theme.accent-cherry-blossom .bg-accent svg,
+html.light-theme.accent-imperial-gold .bg-accent svg,
+html.light-theme.accent-cosmic-gold .bg-accent svg {
   color: var(--btn-accent-text, #000000) !important;
+}
+
+/* Bordes de superficie más discretos en todos los temas oscuros. */
+html.dark .dark\:border-white\/10 {
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+html.dark .dark\:ring-white\/10 {
+  --tw-ring-color: rgba(255, 255, 255, 0.04);
 }

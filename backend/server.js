@@ -3,6 +3,7 @@ import 'dotenv/config';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import compression from 'compression'; // OPTIMIZACIÓN: Ahorro de ancho de banda (Gzip)
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -11,7 +12,7 @@ import db from './models/index.js';
 import errorHandler from './middleware/errorHandler.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
+import { exec } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,8 +44,12 @@ import aiRoutes from './routes/ai.js';
 import trainerRoutes from './routes/trainerRoutes.js';
 import chatRoutes from './routes/chat.js';
 import securityRoutes from './routes/securityRoutes.js';
+import newsRoutes from './routes/news.js';
+import emailPreferencesRoutes from './routes/emailPreferences.js';
+import { seedInitialNewsIfEmpty, getSitemapNews, getRSSNews } from './controllers/newsController.js';
 import { checkBlacklist, sniffingDetector } from './middleware/securityMonitor.js';
 import { startCronJobs } from './services/cronService.js';
+import { publicApiOrigin } from './config/mailContacts.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -60,6 +65,7 @@ app.use(sniffingDetector);
 
 // OPTIMIZACIÓN: Compresión global antes de cualquier ruta o archivo estático
 app.use(compression());
+app.use(cookieParser());
 
 // --- Configuración CORS ---
 const isProduction = process.env.NODE_ENV === 'production';
@@ -67,6 +73,12 @@ const isProduction = process.env.NODE_ENV === 'production';
 const allowedOrigins = [
   'capacitor://localhost',
   'https://localhost',
+  'http://localhost',
+  'https://profitnessglass.es',
+  'https://www.profitnessglass.es',
+  'https://pro-fitness-glass.zeabur.app',
+  'https://pro-fitness-glass.app',
+  publicApiOrigin,
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
@@ -93,6 +105,7 @@ const corsOptions = {
     }
   },
   credentials: true,
+  maxAge: 86400, // Cachear preflight OPTIONS 24h para evitar tormenta de peticiones en recargas
   optionsSuccessStatus: 200
 };
 
@@ -107,7 +120,11 @@ const io = new Server(httpServer, {
 });
 
 io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
+  let token = socket.handshake.auth?.token;
+  if (!token && socket.handshake.headers?.cookie) {
+    const match = socket.handshake.headers.cookie.match(/(?:^|;\s*)token=([^;]+)/);
+    if (match) token = match[1];
+  }
   if (!token) {
     console.error('Socket error: Token required for socket', socket.id);
     return next(new Error('Authentication error: Token required'));
@@ -135,6 +152,9 @@ io.on('connection', (socket) => {
   if (userId) {
     socket.join(userId.toString());
   }
+  if (socket.user?.role === 'admin') {
+    socket.join('admin');
+  }
 
   socket.on('disconnect', () => {});
 });
@@ -149,7 +169,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 // --- ARCHIVOS ESTÁTICOS (con caché para ahorrar tráfico) ---
 const staticPath = path.join(__dirname, 'public');
@@ -157,11 +178,16 @@ app.use(express.static(staticPath, {
   maxAge: '7d',        // El navegador/app guarda los archivos 7 días sin volver a pedirlos
   etag: true,          // Si el archivo cambia en el servidor, se descarga la versión nueva
   lastModified: true,  // Permite al navegador verificar si el archivo fue modificado
-  immutable: false     // Los archivos pueden cambiar (ej: foto de perfil actualizada)
+  immutable: false,    // Los archivos pueden cambiar (ej: foto de perfil actualizada)
+  setHeaders: (res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
 }));
 
 // --- Rutas API ---
 app.use('/api/auth', authRoutes);
+app.use('/api/email-preferences', emailPreferencesRoutes);
 app.use('/api/bodyweight', bodyweightRoutes);
 app.use('/api/measurements', bodyMeasurementRoutes);
 app.use('/api/creatina', creatinaRoutes);
@@ -188,6 +214,99 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/trainer', trainerRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/admin/security', securityRoutes);
+app.use('/api/news', newsRoutes);
+
+// Helper para escapar caracteres especiales reservados en XML/RSS
+const escapeXml = (unsafe = '') => {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+};
+
+// Sitemap XML dinámico con todas las noticias indexables en tiempo real
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const newsItems = await getSitemapNews();
+    const baseUrl = 'https://profitnessglass.es';
+    const xml = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+      '  <url><loc>' + baseUrl + '/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>',
+      '  <url><loc>' + baseUrl + '/calculadora-1rm</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>',
+      '  <url><loc>' + baseUrl + '/calculadora-calorias-macros</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>',
+      '  <url><loc>' + baseUrl + '/ejercicios</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>',
+      '  <url><loc>' + baseUrl + '/noticias</loc><changefreq>daily</changefreq><priority>0.9</priority></url>',
+      '  <url><loc>' + baseUrl + '/mantenimiento</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>',
+      '  <url><loc>' + baseUrl + '/privacy</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>',
+      '  <url><loc>' + baseUrl + '/terms</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>',
+      '  <url><loc>' + baseUrl + '/aviso-legal</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>',
+      ...newsItems.map(item => '  <url><loc>' + baseUrl + '/noticias/' + encodeURIComponent(item.slug || '') + '</loc><lastmod>' + new Date(item.updatedAt || item.published_at).toISOString().split('T')[0] + '</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>'),
+      '</urlset>'
+    ].join('\n');
+    res.header('Content-Type', 'application/xml; charset=utf-8');
+    res.send(xml);
+  } catch (e) {
+    res.status(500).send('Error generating sitemap');
+  }
+});
+
+// Feed RSS 2.0 dinámico para Google Noticias, Discover y agregadores
+app.get(['/rss.xml', '/feed.xml'], async (req, res) => {
+  try {
+    const newsItems = await getRSSNews();
+    const baseUrl = 'https://profitnessglass.es';
+    const lastBuildDate = newsItems.length > 0
+      ? new Date(newsItems[0].published_at || newsItems[0].updatedAt).toUTCString()
+      : new Date().toUTCString();
+
+    const itemsXml = newsItems.map(item => {
+      const url = `${baseUrl}/noticias/${encodeURIComponent(item.slug || '')}`;
+      const pubDate = new Date(item.published_at || item.updatedAt).toUTCString();
+      const escapedTitle = escapeXml(item.title);
+      const escapedSummary = escapeXml(item.summary);
+      const category = escapeXml(item.category || 'Fitness');
+      const escapedImageUrl = item.image_url ? escapeXml(item.image_url) : '';
+
+      return `    <item>
+      <title>${escapedTitle}</title>
+      <link>${url}</link>
+      <guid isPermaLink="true">${url}</guid>
+      <description>${escapedSummary}</description>
+      <category>${category}</category>
+      <pubDate>${pubDate}</pubDate>
+      ${escapedImageUrl ? `<enclosure url="${escapedImageUrl}" type="image/jpeg" length="0" />` : ''}
+    </item>`;
+    }).join('\n');
+
+    const rss = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Pro Fitness Glass - Noticias y Artículos de Ciencia Fitness</title>
+    <link>${baseUrl}/noticias</link>
+    <description>Actualidad, hipertrofia, nutrición deportiva, salud y biomecánica basada en evidencia científica.</description>
+    <language>es-ES</language>
+    <lastBuildDate>${lastBuildDate}</lastBuildDate>
+    <atom:link href="${baseUrl}/rss.xml" rel="self" type="application/rss+xml" />
+${itemsXml}
+  </channel>
+</rss>`;
+
+    res.header('Content-Type', 'application/xml; charset=utf-8');
+    res.send(rss);
+  } catch (e) {
+    console.error('Error generating RSS:', e);
+    res.status(500).send('Error generating RSS feed');
+  }
+});
+
+// Verificación IndexNow para motores de búsqueda (Bing, Yandex, etc.)
+app.get('/f478a2e99b0c41d6832fb91e0a8d5c3f.txt', (req, res) => {
+  res.type('text/plain').send('f478a2e99b0c41d6832fb91e0a8d5c3f');
+});
 
 app.use(errorHandler);
 
@@ -197,24 +316,62 @@ import chatController from './controllers/chatController.js';
 
 const isProductionDB = process.env.NODE_ENV === 'production' || !!process.env.MYSQL_HOST;
 (isProductionDB ? db.sequelize.authenticate() : db.sequelize.sync())
-  .then(() => {
-    
-    if (process.env.NODE_ENV === 'production' || process.env.MYSQL_HOST) {
-      try {
-        console.log('Ejecutando migraciones pendientes en producción...');
-        execSync('npx --yes sequelize-cli db:migrate --env production', { stdio: 'inherit' });
-        console.log('Migraciones completadas exitosamente.');
-      } catch (err) {
-        console.error('Error al ejecutar migraciones automáticas:', err.message);
+  .then(async () => {
+    // Verificación defensiva inmediata de columnas de gimnasio en users
+    try {
+      const [cols] = await db.sequelize.query('DESCRIBE users').catch(() => [[]]);
+      const colNames = Array.isArray(cols) ? cols.map(c => c.Field) : [];
+      if (colNames.length > 0 && !colNames.includes('show_gym')) {
+        await db.sequelize.query('ALTER TABLE users ADD COLUMN show_gym TINYINT(1) NOT NULL DEFAULT 1').catch(() => {});
+        console.log('Columna show_gym añadida a users.');
       }
+      if (colNames.length > 0 && !colNames.includes('gym_data')) {
+        await db.sequelize.query('ALTER TABLE users ADD COLUMN gym_data TEXT NULL').catch(() => {});
+        console.log('Columna gym_data añadida a users.');
+      }
+
+      const [likeCols] = await db.sequelize.query('DESCRIBE workout_likes').catch(() => [[]]);
+      const likeColNames = Array.isArray(likeCols) ? likeCols.map(c => c.Field) : [];
+      if (likeColNames.length > 0 && !likeColNames.includes('reaction_type')) {
+        await db.sequelize.query("ALTER TABLE workout_likes ADD COLUMN reaction_type VARCHAR(20) NOT NULL DEFAULT 'fire'").catch(() => {});
+        console.log('Columna reaction_type añadida a workout_likes.');
+      }
+    } catch (schemaErr) {
+      console.warn('Verificación defensiva de esquema en users:', schemaErr.message);
     }
+
+    // Verificación defensiva inmediata de tabla de rastreo de noticias y retención 72h
+    try {
+      if (db.NewsVisitLog) {
+        await db.NewsVisitLog.sync();
+      }
+      if (db.RetentionRescueLog) {
+        await db.RetentionRescueLog.sync();
+      }
+    } catch (newsErr) {
+      console.warn('Verificación defensiva de tablas auxiliares:', newsErr.message);
+    }
+
     httpServer.listen(PORT, () => {
       console.log(`🚀 Server (HTTP + Socket.io) running on port ${PORT}`);
     });
     startCronJobs();
-    
+
+    const migrateEnv = (process.env.NODE_ENV === 'production' || process.env.MYSQL_HOST) ? 'production' : 'development';
+    console.log(`Ejecutando migraciones pendientes (${migrateEnv})...`);
+    exec(`npx --yes sequelize-cli db:migrate --env ${migrateEnv}`, (err, stdout, stderr) => {
+      if (stdout) console.log(stdout);
+      if (stderr) console.error(stderr);
+      if (err) {
+        console.error('Error al ejecutar migraciones automáticas:', err.message);
+      } else {
+        console.log('Migraciones completadas exitosamente.');
+      }
+    });
+
     // Retroactively send bot replies for "sin compromiso" users
     chatController.runRetroactiveBotReplies();
+    seedInitialNewsIfEmpty();
   })
   .catch(err => {
     console.error('❌ Database connection failed:', err.message);

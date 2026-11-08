@@ -201,14 +201,6 @@ const ImageSlideshow = ({ ex, isShort }) => {
     if (url.startsWith('http')) return url;
     
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
-    const filename = cleanUrl.split('/').pop();
-    
-    const isWgerUuid = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(filename);
-    
-    if (isWgerUuid || cleanUrl.includes('exercise-images')) {
-      return `https://wger.de/media/exercise-images/${filename}`;
-    }
-
     return `${SERVER_URL}/${cleanUrl}`;
   };
 
@@ -241,8 +233,26 @@ const AdminExercises = ({ isTrainerMode = false }) => {
   
 
 
-  const [exercises, setExercises] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [exercises, setExercises] = useState(() => {
+    try {
+      const cached = localStorage.getItem('pro_fitness_exercise_list_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return [];
+  });
+  const [isLoading, setIsLoading] = useState(() => {
+    try {
+      const cached = localStorage.getItem('pro_fitness_exercise_list_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return false;
+      }
+    } catch (_) {}
+    return true;
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroupFilter, setSelectedGroupFilter] = useState('all');
   
@@ -380,11 +390,17 @@ const AdminExercises = ({ isTrainerMode = false }) => {
   ];
 
   const fetchExercises = async () => {
-    setIsLoading(true);
     try {
+      if (!exercises || exercises.length === 0) {
+        setIsLoading(true);
+      }
       const data = await getExerciseList();
-      setExercises(data);
+      setExercises(Array.isArray(data) ? data : []);
     } catch (error) {
+      console.error('Error fetching exercises:', error);
+      if (!exercises || exercises.length === 0) {
+        setExercises([]);
+      }
       addToast('Error al cargar ejercicios', 'error');
     } finally {
       setIsLoading(false);

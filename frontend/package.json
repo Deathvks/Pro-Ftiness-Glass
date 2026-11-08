@@ -1,7 +1,7 @@
 {
   "name": "pro-fitness-glass",
   "private": true,
-  "version": "7.4.0",
+  "version": "7.16.27",
   "type": "module",
   "engines": {
     "node": ">=20.0.0",
@@ -9,7 +9,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerenderNews.js && npx cap copy android",
+    "cap:copy": "npx cap copy android",
+    "cap:sync": "npx cap sync android",
     "lint": "eslint .",
     "preview": "vite preview",
     "tailwind:init": "node node_modules/tailwindcss/lib/cli.js init -p",
@@ -95,4 +97,3 @@
     "workbox-background-sync": "^7.4.0"
   }
 }
-

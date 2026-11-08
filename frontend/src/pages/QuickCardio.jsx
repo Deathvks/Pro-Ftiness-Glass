@@ -22,7 +22,7 @@ const INTENSITY_OPTIONS = [
 // --- FUNCIONES PARA AÑADIR SEGURIDAD A LOS TABS ---
 const getTabClass = (isActive) => `mx-1.5 my-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap outline-none flex items-center gap-2 flex-shrink-0 ${
     isActive
-        ? 'bg-accent text-accent-contrast shadow-md shadow-accent/30 scale-105'
+        ? 'bg-accent text-accent-contrast scale-105'
         : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
 }`;
 
@@ -340,7 +340,7 @@ const QuickCardio = ({ onBack, setView }) => {
       </div>
 
       {/* Buscador y Filtros */}
-      <div className="mb-8 flex flex-col sm:flex-row gap-5 sm:items-center">
+      <div id="tutorial-cardio-search" className="mb-8 flex flex-col sm:flex-row gap-5 sm:items-center">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary" size={18} />
           <input
@@ -361,7 +361,7 @@ const QuickCardio = ({ onBack, setView }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 items-start">
+      <div id="tutorial-cardio-list" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 items-start">
         {filteredActivities.map((activity) => (
           <GlassCard
             key={activity.id}

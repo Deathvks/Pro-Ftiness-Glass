@@ -2,9 +2,58 @@
 import { body, validationResult } from 'express-validator';
 import db from '../models/index.js';
 import { createNotification as sendNotificationService } from '../services/notificationService.js';
+import { hasPushConsent, PUSH_CONSENT_VERSION, PUSH_PURPOSES } from '../config/pushConsent.js';
+import { isSupportedPushEndpoint } from '../services/pushService.js';
 
 // Accedemos de forma segura por si db no se ha cargado bien
-const { PushSubscription, Notification } = db;
+const { PushSubscription, Notification, User, sequelize } = db;
+
+const formatPushPreferences = consents => Object.fromEntries(
+  PUSH_PURPOSES.map(purpose => [purpose, hasPushConsent(consents, purpose)])
+);
+
+const getPushPreferences = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.userId, { attributes: ['push_consents'] });
+    if (!user) return res.sendStatus(404);
+    return res.set('Cache-Control', 'no-store').json(formatPushPreferences(user.push_consents));
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updatePushPreferences = async (req, res, next) => {
+  const { purpose, granted, version } = req.body ?? {};
+  if (!PUSH_PURPOSES.includes(purpose) || typeof granted !== 'boolean') {
+    return res.status(400).json({ error: 'Preferencia de notificaciones no válida.' });
+  }
+  if (granted && version !== PUSH_CONSENT_VERSION) {
+    return res.status(409).json({ error: 'Actualiza la app para consultar el aviso de consentimiento vigente.' });
+  }
+
+  try {
+    const preferences = await sequelize.transaction(async transaction => {
+      const user = await User.findByPk(req.user.userId, { attributes: ['id', 'push_consents'], transaction, lock: transaction.LOCK.UPDATE });
+      if (!user) return null;
+      const consents = user.push_consents ?? {};
+      if (granted ? hasPushConsent(consents, purpose) : !consents[purpose]?.grantedAt || consents[purpose].withdrawnAt) {
+        return formatPushPreferences(consents);
+      }
+
+      const now = new Date().toISOString();
+      const entry = granted
+        ? { version: PUSH_CONSENT_VERSION, grantedAt: now }
+        : { ...consents[purpose], withdrawnAt: now };
+      const updated = { ...consents, [purpose]: entry };
+      await user.update({ push_consents: updated }, { transaction });
+      return formatPushPreferences(updated);
+    });
+    if (!preferences) return res.sendStatus(404);
+    return res.set('Cache-Control', 'no-store').json(preferences);
+  } catch (error) {
+    next(error);
+  }
+};
 
 /* =========================================
    SECCIÓN 1: PUSH NOTIFICATIONS (VAPID)
@@ -26,7 +75,7 @@ const getVapidKey = (req, res) => {
 
 // 2. Controlador para suscribir a un usuario
 const subscribe = [
-  body('endpoint').isString().notEmpty().withMessage('Endpoint requerido.'),
+  body('endpoint').custom(isSupportedPushEndpoint).withMessage('Proveedor de notificaciones push no admitido.'),
   body('keys.p256dh').isString().notEmpty().withMessage('Clave p256dh requerida.'),
   body('keys.auth').isString().notEmpty().withMessage('Clave auth requerida.'),
 
@@ -48,29 +97,13 @@ const subscribe = [
       const { userId } = req.user;
       const { endpoint, keys } = req.body;
 
-      // Buscar primero, luego crear o actualizar
-      let subscription = await PushSubscription.findOne({
-        where: { endpoint: endpoint }
-      });
-
-      if (subscription) {
-        subscription.user_id = userId; // CORREGIDO: userId -> user_id
-        subscription.keys = keys;
-        await subscription.save();
-      } else {
-        await PushSubscription.create({
-          user_id: userId, // CORREGIDO: userId -> user_id
-          endpoint: endpoint,
-          keys: keys
-        });
-      }
+      await PushSubscription.upsert({ user_id: userId, endpoint, keys, updated_at: new Date() });
 
       return res.status(201).json({ message: 'Suscripción guardada correctamente.' });
 
     } catch (error) {
-      console.error('[Push] EXCEPCIÓN en subscribe:', error);
-      const msg = error.message || 'Error desconocido';
-      return res.status(500).json({ error: `Error del servidor al guardar: ${msg}` });
+      console.error('[Push] Error guardando la suscripción:', error.name);
+      return res.status(500).json({ error: 'No se pudo guardar la suscripción push.' });
     }
   }
 ];
@@ -107,11 +140,22 @@ const unsubscribe = [
       return res.status(200).json({ message: 'Suscripción eliminada.' });
 
     } catch (error) {
-      console.error('[Push] EXCEPCIÓN en unsubscribe:', error);
-      return res.status(500).json({ error: `Error al desuscribir: ${error.message}` });
+      console.error('[Push] Error eliminando la suscripción:', error.name);
+      return res.status(500).json({ error: 'No se pudo desactivar la suscripción push.' });
     }
   }
 ];
+
+const subscriptionStatus = async (req, res, next) => {
+  const { endpoint } = req.body ?? {};
+  if (typeof endpoint !== 'string' || !endpoint || endpoint.length > 500) return res.sendStatus(400);
+  try {
+    const subscription = isSupportedPushEndpoint(endpoint) && await PushSubscription.findOne({ where: { endpoint, user_id: req.user.userId }, attributes: ['id'] });
+    return res.set('Cache-Control', 'no-store').json({ subscribed: !!subscription });
+  } catch (error) {
+    next(error);
+  }
+};
 
 /* =========================================
    SECCIÓN 2: NOTIFICACIONES INTERNAS (App)
@@ -136,7 +180,8 @@ const create = [
         type,
         title,
         message,
-        data
+        data,
+        pushPurpose: 'news'
       });
 
       res.status(201).json({ message: 'Notificación creada y enviada.' });
@@ -190,6 +235,17 @@ const getNotifications = async (req, res, next) => {
 };
 
 // Marcar una notificación como leída
+const getNotification = async (req, res, next) => {
+  if (!validationResult(req).isEmpty()) return res.sendStatus(400);
+  try {
+    const notice = await Notification.findOne({ where: { id: req.params.id, user_id: req.user.userId } });
+    if (!notice) return res.sendStatus(404);
+    return res.set('Cache-Control', 'no-store').json(notice);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const markAsRead = async (req, res, next) => {
   try {
     const { userId } = req.user;
@@ -272,9 +328,13 @@ export default {
   getVapidKey,
   subscribe,
   unsubscribe,
+  subscriptionStatus,
+  getPushPreferences,
+  updatePushPreferences,
   // Internas
   create,
   getNotifications,
+  getNotification,
   markAsRead,
   markAllAsRead,
   deleteNotification,

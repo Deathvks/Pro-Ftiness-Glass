@@ -38,9 +38,10 @@ const ForgotPasswordScreen = ({ showLogin }) => {
                 title="Recuperar Contraseña - Pro Fitness Glass" 
                 description="Recupera el acceso a tu cuenta de Pro Fitness Glass."
                 route="forgot-password"
+                noIndex={true}
             />
 
-            <div className="auth-container flex flex-col items-center justify-center w-full min-h-[calc(100vh-100px)] p-4 animate-[fade-in_0.5s_ease-out]">
+            <div className="auth-container flex flex-col items-center justify-start w-full pt-8 pb-16 px-4 animate-[fade-in_0.5s_ease-out]">
                 <div className="w-full max-w-md text-center">
                     
                     {!isSubmitted ? (
@@ -90,7 +91,7 @@ const ForgotPasswordScreen = ({ showLogin }) => {
                             </div>
                             <h2 className="text-2xl font-extrabold text-text-primary tracking-tight mb-3">Revisa tu correo</h2>
                             <p className="text-text-secondary font-medium leading-relaxed">
-                                Si existe una cuenta con <strong>{email}</strong>, hemos enviado un enlace para restablecer tu contraseña.
+                                Busca el enlace para restablecer tu contraseña en <strong>{email}</strong> y revisa también el correo no deseado.
                             </p>
                         </GlassCard>
                     )}

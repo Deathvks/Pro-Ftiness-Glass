@@ -1,41 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Mail, History, CheckCircle2, XCircle, Search, Users, ChevronLeft, ChevronRight, Activity, Calendar
+  History, CheckCircle2, XCircle, Search, Users, ChevronLeft, ChevronRight, Activity, Calendar
 } from 'lucide-react';
 import { getEmailLogs, getEmailStats } from '../services/adminService';
 import { useToast } from '../hooks/useToast';
 import CustomSelect from '../components/CustomSelect';
 
+let cachedEmailLogs = null;
+let cachedEmailStats = null;
+let cachedEmailTotalPages = 1;
+
 const AdminEmails = () => {
-  const [logs, setLogs] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState(() => cachedEmailLogs || []);
+  const [stats, setStats] = useState(() => cachedEmailStats);
+  const [loading, setLoading] = useState(() => !cachedEmailLogs);
   const { addToast } = useToast();
 
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterRange, setFilterRange] = useState(30);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(() => cachedEmailTotalPages);
 
   useEffect(() => {
     fetchLogs();
   }, [filterStatus, filterRange, page]);
 
   const fetchLogs = async () => {
-    setLoading(true);
+    if (!cachedEmailLogs) setLoading(true);
     try {
-      const logsRes = await getEmailLogs({
-        status: filterStatus,
-        range: filterRange,
-        page,
-        limit: 20
-      });
-      setLogs(logsRes.logs);
-      setTotalPages(logsRes.totalPages);
-
-      const statsRes = await getEmailStats({ range: filterRange });
-      setStats(statsRes);
+      const [logsRes, statsRes] = await Promise.all([
+        getEmailLogs({
+          status: filterStatus,
+          range: filterRange,
+          page,
+          limit: 20
+        }),
+        getEmailStats({ range: filterRange })
+      ]);
+      const safeLogs = Array.isArray(logsRes?.logs) ? logsRes.logs : [];
+      const safePages = logsRes?.totalPages || 1;
+      cachedEmailLogs = safeLogs;
+      cachedEmailStats = statsRes || null;
+      cachedEmailTotalPages = safePages;
+      setLogs(safeLogs);
+      setTotalPages(safePages);
+      setStats(statsRes || null);
     } catch (err) {
+      setLogs([]);
       addToast('Error al cargar historial de correos', 'error');
     } finally {
       setLoading(false);
@@ -54,16 +65,10 @@ const AdminEmails = () => {
     <div className="animate-[fade-in_0.3s_ease-out]">
       <div className="flex flex-col">
         <div className="flex flex-col gap-4 mb-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-black text-text-primary flex items-center gap-2">
-                  <History size={24} className="text-accent shrink-0" />
-                  Historial de Correos
-                </h2>
-              </div>
-            </div>
-          </div>
+          <h2 className="hidden items-center gap-2 text-xl font-black text-text-primary md:flex">
+            <History size={24} className="text-accent shrink-0" />
+            Historial de Correos
+          </h2>
           
           <div className="flex flex-col md:flex-row gap-3 w-full bg-black/5 dark:bg-white/5 p-3 rounded-2xl border border-glass-border">
             <div className="flex-1">

@@ -1,0 +1,812 @@
+import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
+/* frontend/src/pages/NewsDetailPage.jsx */
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import {
+  FaChevronLeft,
+  FaCalendarDays,
+  FaClock,
+  FaEye,
+  FaShareNodes,
+  FaCheck,
+  FaCopy,
+  FaArrowRight,
+  FaArrowLeft,
+  FaBookOpen,
+  FaThumbsUp,
+  FaFont,
+  FaMobileScreen,
+  FaXmark,
+  FaWifi,
+  FaArrowsRotate,
+  FaWhatsapp,
+  FaXTwitter,
+  FaTelegram
+} from 'react-icons/fa6';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Capacitor } from '@capacitor/core';
+
+import Spinner from '../components/Spinner';
+import NewsLoadingSkeleton from '../components/News/NewsLoadingSkeleton';
+import ArticleSEO from '../components/News/ArticleSEO';
+import AdSenseSlot from '../components/News/AdSenseSlot';
+import MarkdownContent from '../components/News/MarkdownContent';
+import NewsConversionBanner from '../components/News/NewsConversionBanner';
+import TrainerAdvisoryCard from '../components/News/TrainerAdvisoryCard';
+import PublicPageFooter from '../components/PublicPageFooter';
+import * as newsService from '../services/newsService';
+import { trackArticleVisit } from '../utils/newsTracker';
+import { useToast } from '../hooks/useToast';
+import useAppStore from '../store/useAppStore';
+
+const isOfficialAuthor = (name = '') => {
+  if (!name) return true;
+  const n = name.toLowerCase();
+  return (
+    n.includes('pro fitness') ||
+    n.includes('equipo cient') ||
+    n.includes('nutricionista') ||
+    n.includes('redacci') ||
+    n.includes('editorial')
+  );
+};
+
+export default function NewsDetailPage({ onBack, navigate: customNavigate }) {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const containerRef = useRef(null);
+  const { addToast } = useToast();
+  const isAuthenticated = useAppStore((state) => state.isAuthenticated);
+
+  // Hidratación instantánea (0ms) desde caché o state previo de navegación
+  const cachedData = newsService.getCachedArticle(slug);
+  const previewFromState = location.state?.previewArticle;
+  const initialArticle = cachedData?.article || previewFromState || null;
+
+  const [article, setArticle] = useState(initialArticle);
+  const [relatedNews, setRelatedNews] = useState(cachedData?.relatedNews || []);
+  const [nextArticle, setNextArticle] = useState(cachedData?.nextArticle || null);
+  const [prevArticle, setPrevArticle] = useState(cachedData?.prevArticle || null);
+  // Si ya disponemos de al menos el artículo o tarjeta previa, NO bloqueamos la pantalla
+  const [isLoading, setIsLoading] = useState(!initialArticle);
+  const [error, setError] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const handleRetry = () => {
+    setReloadKey((prev) => prev + 1);
+  };
+  const [copied, setCopied] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const isNative = Capacitor.isNativePlatform();
+  const isMobile = typeof window !== 'undefined' && (/android|iphone|ipad|ipod/i.test(navigator.userAgent) || window.innerWidth < 768);
+  const isAndroid = typeof window !== 'undefined' && /android/i.test(navigator.userAgent);
+  const targetSlug = article?.slug || slug;
+  const appIntentUrl = isAndroid
+    ? `intent://profitnessglass.es/noticias/${targetSlug}#Intent;scheme=https;package=com.profitnessglass.app;end`
+    : `profitness://noticias/${targetSlug}`;
+  const [fontSize, setFontSize] = useState('normal'); // 'normal' | 'large' | 'xlarge'
+  const [hasLiked, setHasLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
+
+  // Monitor de scroll para la barra de lectura fija superior
+  const handleScroll = useCallback(() => {
+    if (!containerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+    const totalScrollable = scrollHeight - clientHeight;
+    if (totalScrollable <= 0) {
+      setScrollProgress(100);
+      return;
+    }
+    const currentProgress = (scrollTop / totalScrollable) * 100;
+    setScrollProgress(Math.min(100, Math.max(0, currentProgress)));
+  }, []);
+
+  // Resetea el scroll de forma inmediata y fiable tanto en contenedor fixed como en window
+  const scrollToTop = useCallback(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+      containerRef.current.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+    setScrollProgress(0);
+  }, []);
+
+  const handleArticleNavigate = useCallback((targetSlug, previewObj) => {
+    scrollToTop();
+    navigate(`/noticias/${targetSlug}`, { state: { previewArticle: previewObj } });
+    requestAnimationFrame(() => {
+      scrollToTop();
+    });
+  }, [navigate, scrollToTop]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    // Sincronización síncrona si cambia el slug (ej. al navegar a noticia siguiente o previa)
+    const freshCache = newsService.getCachedArticle(slug);
+    const navStateArticle = location.state?.previewArticle;
+    const bestInitial = freshCache?.article || navStateArticle || null;
+    if (bestInitial) {
+      setArticle(bestInitial);
+      if (freshCache?.relatedNews?.length) setRelatedNews(freshCache.relatedNews);
+      if (freshCache?.nextArticle) setNextArticle(freshCache.nextArticle);
+      if (freshCache?.prevArticle) setPrevArticle(freshCache.prevArticle);
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+
+    const loadArticle = async () => {
+      setError(null);
+      try {
+        const data = await newsService.fetchNewsBySlug(slug, { bypassCache: !bestInitial });
+        if (isMounted && data?.article) {
+          setArticle(data.article);
+          setRelatedNews(data.relatedNews || []);
+          setNextArticle(data.nextArticle || null);
+          setPrevArticle(data.prevArticle || null);
+          setLikesCount(data.article?.likes_count || 0);
+          const alreadyLiked = localStorage.getItem(`liked_article_${data.article?.id}`) === 'true';
+          setHasLiked(alreadyLiked);
+
+          // Registrar cada visita en el sniffer en tiempo real
+          trackArticleVisit(slug, data.article?.title || '').then(res => {
+            if (res?.views_count !== undefined && isMounted) {
+              setArticle(prev => prev ? { ...prev, views_count: res.views_count } : prev);
+            }
+          });
+        }
+      } catch (err) {
+        if (isMounted) {
+          // Solo mostrar pantalla completa de error si no tenemos nada que mostrar
+          if (!bestInitial) {
+            setError(err);
+          }
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    if (slug) {
+      scrollToTop();
+      loadArticle();
+      requestAnimationFrame(() => {
+        scrollToTop();
+      });
+      setTimeout(() => {
+        scrollToTop();
+      }, 50);
+    }
+
+    return () => { isMounted = false; };
+  }, [slug, reloadKey]);
+
+  // Sincronizar título de documento en cliente
+  useEffect(() => {
+    if (article?.title) {
+      const prevTitle = document.title;
+      document.title = `${article.title} | Pro Fitness Glass`;
+      return () => {
+        document.title = prevTitle;
+      };
+    }
+  }, [article?.title]);
+
+  const handleGoBack = () => {
+    if (onBack) onBack();
+    else if (customNavigate) customNavigate('noticias');
+    else navigate('/noticias');
+  };
+
+  const currentUrl = `https://profitnessglass.es/noticias/${article?.slug || slug}`;
+
+  const handleCopyLink = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(currentUrl);
+      setCopied(true);
+      addToast('Enlace copiado al portapapeles', 'success');
+      setTimeout(() => setCopied(false), 2500);
+    }
+  };
+
+  const handleShareNative = async () => {
+    if (navigator.share && article) {
+      try {
+        await navigator.share({
+          title: article.title,
+          text: article.summary,
+          url: currentUrl
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          handleCopyLink();
+        }
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
+
+  const handleToggleLike = async () => {
+    if (!article) return;
+    const nextLiked = !hasLiked;
+    const action = nextLiked ? 'like' : 'unlike';
+
+    // Actualización optimista inmediata
+    setHasLiked(nextLiked);
+    setLikesCount(prev => nextLiked ? prev + 1 : Math.max(0, prev - 1));
+
+    if (nextLiked) {
+      localStorage.setItem(`liked_article_${article.id}`, 'true');
+      addToast('¡Gracias por valorar este artículo!', 'success');
+    } else {
+      localStorage.removeItem(`liked_article_${article.id}`);
+      addToast('Valoración retirada', 'info');
+    }
+
+    try {
+      const res = await newsService.toggleLikeArticle(article.slug, action);
+      if (res && res.likes_count !== undefined) {
+        setLikesCount(res.likes_count);
+      }
+    } catch (err) {
+      console.error('Error al actualizar valoración en BD:', err);
+      // Revertir optimismo si falló la conexión
+      setHasLiked(!nextLiked);
+      setLikesCount(prev => nextLiked ? Math.max(0, prev - 1) : prev + 1);
+    }
+  };
+
+  const toggleFontSize = () => {
+    if (fontSize === 'normal') setFontSize('large');
+    else if (fontSize === 'large') setFontSize('xlarge');
+    else setFontSize('normal');
+  };
+
+  const fontSizeLabels = {
+    normal: 'A',
+    large: 'A+',
+    xlarge: 'A++'
+  };
+
+  const shareText = encodeURIComponent(article ? `${article.title} - Pro Fitness Glass` : '');
+  const shareUrl = encodeURIComponent(currentUrl);
+
+  const whatsappUrl = `https://api.whatsapp.com/send?text=${shareText}%20${shareUrl}`;
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`;
+  const telegramUrl = `https://t.me/share/url?url=${shareUrl}&text=${shareText}`;
+
+  if (isLoading) {
+    return <NewsLoadingSkeleton isDetail={true} />;
+  }
+
+  if (error || !article) {
+    const isNotFound = error?.status === 404 || (!error && !article);
+    const errorMessage = typeof error === 'string'
+      ? error
+      : error?.message || (isNotFound ? 'El artículo que buscas ha sido trasladado o ya no está disponible.' : 'No pudimos conectar con el servidor.');
+
+    return (
+      <div
+        className="fixed inset-0 z-50 bg-bg-primary overflow-y-auto px-4 py-16 text-center flex flex-col items-center justify-center gap-4 custom-scrollbar"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+          paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
+          paddingBottom: 'var(--safe-bottom, env(safe-area-inset-bottom, 0px))'
+        }}
+      >
+        <div className={`w-16 h-16 rounded-3xl flex items-center justify-center ${isNotFound ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
+          {isNotFound ? <FaBookOpen className="text-3xl" /> : <FaWifi className="text-3xl" />}
+        </div>
+        <h2 className="text-2xl font-black text-text-primary">
+          {isNotFound ? 'Artículo no encontrado' : 'Problema de conexión'}
+        </h2>
+        <p className="text-text-secondary text-sm max-w-md leading-relaxed px-4">
+          {errorMessage}
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
+          {!isNotFound && (
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+            >
+              <FaArrowsRotate className="text-xs shrink-0" />
+              Reintentar
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleGoBack}
+            className={`px-6 py-2.5 rounded-full font-bold text-xs transition-all cursor-pointer ${
+              isNotFound
+                ? 'bg-accent text-accent-contrast shadow-md shadow-accent/20 hover:scale-105 active:scale-95'
+                : 'bg-glass-surface hover:bg-glass-surface-hover text-text-primary border border-glass-border hover:scale-105 active:scale-95'
+            }`}
+          >
+            Volver a Noticias
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      onScroll={handleScroll}
+      className="fixed inset-0 z-50 bg-bg-primary overflow-y-auto overflow-x-hidden custom-scrollbar"
+      style={{
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'pan-y',
+        paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 2rem)'
+      }}
+    >
+      {/* BARRA DE PROGRESO DE LECTURA SUPERIOR */}
+      <div className="fixed top-0 left-0 right-0 h-1 z-[100] bg-black/10 dark:bg-white/10 pointer-events-none">
+        <div
+          className="h-full bg-accent transition-all duration-150"
+          style={{ width: `${scrollProgress}%` }}
+        />
+      </div>
+
+      {/* CONTENEDOR EDITORIAL CENTRADO (ESTILO XATAKA / MEDIO DIGITAL) */}
+      <article className="min-h-full max-w-3xl mx-auto px-4 sm:px-6 py-6 pb-6 sm:pb-8 flex flex-col animate-[fade-in_0.3s_ease-out]">
+        {/* COMPONENTE SEO COMPLETO (Meta, Open Graph, Twitter, JSON-LD NewsArticle) */}
+        <ArticleSEO article={article} />
+
+        {/* NAVEGACIÓN SUPERIOR / BREADCRUMB CON LOGO Y MARCA */}
+        <nav aria-label="Ruta de navegación" className="flex items-center justify-between gap-2 pb-4 pt-1 w-full">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 group cursor-pointer shrink-0"
+              title="Pro Fitness Glass - App 100% Gratis"
+            >
+              <img
+                src="/icons/icon-96.png"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = '/logo.webp';
+                }}
+                alt="Pro Fitness Glass"
+                loading="eager"
+                decoding="async"
+                className="w-8 h-8 rounded-xl object-contain shadow-xs ring-1 ring-black/10 dark:ring-white/10 group-hover:scale-105 transition-transform shrink-0"
+              />
+              <div className="hidden sm:flex flex-col text-left">
+                <span className="font-black text-xs sm:text-sm tracking-tight text-text-primary leading-none group-hover:text-accent transition-colors truncate">
+                  Pro Fitness Glass
+                </span>
+                <span className="text-[9px] font-black text-emerald-400 tracking-wider uppercase leading-none mt-0.5">
+                  100% Gratis
+                </span>
+              </div>
+            </Link>
+
+            <span className="text-text-tertiary text-xs shrink-0">/</span>
+
+            <button
+              type="button"
+              onClick={handleGoBack}
+              className="cursor-pointer inline-flex items-center gap-1 text-text-secondary hover:text-accent transition-colors shrink-0 font-bold text-xs"
+            >
+              <FaChevronLeft className="text-xs shrink-0" /> Noticias
+            </button>
+            <span className="shrink-0 hidden md:inline text-text-tertiary text-xs">/</span>
+            <button
+              type="button"
+              onClick={() => navigate(`/noticias?category=${encodeURIComponent(article.category)}`)}
+              className="cursor-pointer uppercase tracking-wider text-accent hover:underline transition-colors font-bold truncate hidden md:inline text-xs max-w-[140px]"
+              title={`Ver artículos de ${article.category}`}
+            >
+              {article.category}
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={() => (onBack ? onBack() : customNavigate ? customNavigate('hub') : navigate('/dashboard'))}
+                className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1 rounded-full ring-1 ring-black/10 dark:ring-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-xs font-bold text-text-secondary hover:text-text-primary shrink-0 active:scale-95 whitespace-nowrap"
+              >
+                <FaChevronLeft className="text-accent text-[11px] shrink-0" />
+                <span className="sm:hidden">App</span>
+                <span className="hidden sm:inline">Volver a la App</span>
+              </button>
+            ) : !isNative && isMobile ? (
+              <a
+                href={appIntentUrl}
+                className="whitespace-nowrap shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent text-accent-contrast transition-all text-xs font-bold shadow-xs active:scale-95"
+                title="Abrir en la aplicación nativa"
+              >
+                <FaMobileScreen className="text-xs shrink-0" />
+                <span className="whitespace-nowrap">Abrir App</span>
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={() => navigate('/register')}
+                className="cursor-pointer hidden xs:inline-flex items-center gap-1 px-3 py-1 rounded-full bg-accent text-accent-contrast text-xs font-black shadow-xs hover:opacity-90 active:scale-95 transition-all whitespace-nowrap"
+              >
+                <span>Probar Gratis</span>
+                <FaArrowRight className="text-xs shrink-0" />
+              </button>
+            )}
+
+            {/* Control de tamaño de fuente A/A+/A++ */}
+            <button
+              type="button"
+              onClick={toggleFontSize}
+              title={`Tamaño de letra (actual: ${fontSize})`}
+              className="cursor-pointer shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/10 dark:ring-white/10 text-xs font-black text-text-secondary hover:text-text-primary transition-all active:scale-95 whitespace-nowrap"
+            >
+              <FaFont className="text-accent text-xs shrink-0" />
+              <span>{fontSizeLabels[fontSize]}</span>
+            </button>
+          </div>
+        </nav>
+        <MaintenanceNoticeBanner className="rounded-2xl mb-4" />
+
+        {/* CABECERA EDITORIAL (TITULAR + ENTRADILLA) */}
+        <header className="pt-2">
+          {/* Categoría / Antetítulo */}
+          <button
+            type="button"
+            onClick={() => navigate(`/noticias?category=${encodeURIComponent(article.category)}`)}
+            className="cursor-pointer text-xs font-black uppercase tracking-widest text-accent mb-2 block hover:underline transition-colors"
+            title={`Ver artículos de ${article.category}`}
+          >
+            {article.category}
+          </button>
+
+          {/* Gran Titular */}
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[42px] font-black text-text-primary tracking-tight leading-[1.2] mb-4 break-words">
+            {article.title}
+          </h1>
+
+          {/* Entradilla (Subtítulo explicativo del reportaje) */}
+          <p className="text-base sm:text-lg lg:text-xl text-text-secondary leading-relaxed font-normal mb-6 break-words">
+            {article.summary}
+          </p>
+
+          {/* FIRMA DE AUTOR, FECHA Y BOTONES DE COMPARTIR (Línea de metadatos Xataka) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 border-y border-black/10 dark:border-white/10 gap-3 sm:gap-4 text-xs">
+            <div className="flex items-start sm:items-center gap-3 min-w-0 w-full sm:w-auto">
+              {isOfficialAuthor(article.author_name) ? (
+                <div className="w-10 h-10 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center p-1.5 shrink-0 mt-0.5 sm:mt-0 shadow-sm overflow-hidden" title="Equipo Oficial Pro Fitness Glass">
+                  <img src="/logo.webp" alt="Pro Fitness Glass" className="w-6 h-6 object-contain drop-shadow" />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center font-black text-xs text-accent uppercase shrink-0 mt-0.5 sm:mt-0">
+                  {article.author_name.slice(0, 2)}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="font-bold text-text-primary truncate">
+                  Por <span className="text-accent">{article.author_name}</span>
+                </p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-text-tertiary text-xs sm:text-[11px] mt-1">
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                    <FaCalendarDays className="shrink-0 text-text-secondary text-[11px]" />
+                    <span>{format(new Date(article.published_at), "d 'de' MMMM, yyyy", { locale: es })}</span>
+                  </span>
+                  <span className="hidden sm:inline text-text-tertiary/40 select-none">•</span>
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                    <FaClock className="shrink-0 text-text-secondary text-[11px]" />
+                    <span>{article.reading_time} min de lectura</span>
+                  </span>
+                  <span className="hidden sm:inline text-text-tertiary/40 select-none">•</span>
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                    <FaEye className="shrink-0 text-text-secondary text-[11px]" />
+                    <span>{article.views_count === 1 ? '1 lectura' : `${(article.views_count || 0).toLocaleString()} lecturas`}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Botones Sociales con colores de marca siempre activos */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap shrink-0 self-start sm:self-center pt-1 sm:pt-0">
+              <button
+                type="button"
+                onClick={handleShareNative}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-xs"
+                title="Compartir"
+              >
+                <FaShareNodes className="text-xs shrink-0" />
+              </button>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#25D366]/15 text-[#25D366] border border-[#25D366]/30 hover:bg-[#25D366]/25 hover:scale-105 active:scale-95 transition-all shadow-xs"
+                title="Compartir en WhatsApp"
+              >
+                <FaWhatsapp size={15} />
+              </a>
+              <a
+                href={twitterUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-black/15 dark:bg-white/10 text-text-primary border border-black/20 dark:border-white/20 hover:bg-black/25 dark:hover:bg-white/20 hover:scale-105 active:scale-95 transition-all shadow-xs"
+                title="Compartir en X"
+              >
+                <FaXTwitter size={13} />
+              </a>
+              <a
+                href={telegramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#229ED9]/15 text-[#229ED9] border border-[#229ED9]/30 hover:bg-[#229ED9]/25 hover:scale-105 active:scale-95 transition-all shadow-xs"
+                title="Compartir en Telegram"
+              >
+                <FaTelegram size={14} />
+              </a>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-xs"
+                title="Copiar enlace"
+              >
+                {copied ? <FaCheck className="text-emerald-500 text-xs shrink-0" /> : <FaCopy className="text-xs shrink-0" />}
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* FOTO PRINCIPAL / CABECERA CON PIE DE FOTO */}
+        {article.image_url && (
+          <figure className="my-6">
+            <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] md:aspect-[16/9] max-h-[380px] sm:max-h-[420px] rounded-2xl overflow-hidden bg-black/10 shadow-md ring-1 ring-black/10 dark:ring-white/10">
+              <img
+                src={article.image_url?.includes('photo-1510519138197-06b8628cbf4f')
+                  ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
+                  : (article.image_url || '/entrenamiento.png')}
+                alt={article.title}
+                className="w-full h-full object-cover object-center"
+                loading="eager"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = '/entrenamiento.png';
+                }}
+              />
+            </div>
+            <figcaption className="text-center text-xs text-text-tertiary mt-2 italic">
+              Fotografía: Unsplash / Archivo Pro Fitness Glass
+            </figcaption>
+          </figure>
+        )}
+
+        {/* CUERPO DEL ARTÍCULO (FLUJO CONTINUO EDITORIAL) */}
+        <section className="article-body py-2">
+          {article?.content ? (
+            <MarkdownContent content={article.content} fontSize={fontSize} />
+          ) : (
+            <div className="space-y-4 py-4 animate-pulse">
+              <div className="h-4 bg-black/10 dark:bg-white/10 rounded-full w-5/6"></div>
+              <div className="h-4 bg-black/10 dark:bg-white/10 rounded-full w-full"></div>
+              <div className="h-4 bg-black/10 dark:bg-white/10 rounded-full w-4/5"></div>
+              <div className="h-4 bg-black/10 dark:bg-white/10 rounded-full w-2/3"></div>
+              <div className="h-32 bg-black/5 dark:bg-white/5 rounded-2xl w-full my-6"></div>
+              <div className="h-4 bg-black/10 dark:bg-white/10 rounded-full w-full"></div>
+              <div className="h-4 bg-black/10 dark:bg-white/10 rounded-full w-3/4"></div>
+            </div>
+          )}
+        </section>
+
+        {/* VALORACIÓN INTERACTIVA REAL "¿TE HA SERVIDO?" */}
+        <div className="my-8 p-5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/10 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+          <div>
+            <h4 className="text-sm font-bold text-text-primary">¿Te ha resultado útil esta información?</h4>
+            <p className="text-xs text-text-secondary mt-0.5">Tu voto real se guarda en la base de datos para priorizar nuevos temas científicos.</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleToggleLike}
+            className={`cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold transition-all active:scale-95 shadow-sm ${
+              hasLiked
+                ? 'bg-accent text-accent-contrast shadow-accent/20 scale-105'
+                : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-primary border border-black/10 dark:border-white/10'
+            }`}
+          >
+            <FaThumbsUp className="text-xs shrink-0" />
+            <span>{hasLiked ? '¡Marcado como útil!' : 'Me ha servido'}</span>
+            <span className="font-mono font-black text-xs px-1.5 py-0.5 rounded-full bg-black/10 dark:bg-white/10">
+              {likesCount}
+            </span>
+          </button>
+        </div>
+
+        {/* BANNER DINÁMICO DE CONVERSIÓN CONTEXTUAL */}
+        <div className="my-6">
+          <NewsConversionBanner article={article} customNavigate={customNavigate} />
+        </div>
+
+        {/* TEMAS / ETIQUETAS AL PIE (ESTILO XATAKA) */}
+        {article.tags && (
+          <div className="pt-6 pb-6 border-t border-black/10 dark:border-white/10">
+            <span className="text-xs font-black uppercase tracking-wider text-text-tertiary block mb-3">
+              Temas relacionados:
+            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {article.tags.split(',').map((tag, i) => (
+                <span
+                  key={i}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                >
+                  #{tag.trim()}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* HERRAMIENTAS PÚBLICAS DE GIMNASIO (INTERLINKING SEO) */}
+        <div className="my-6 p-5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/10 dark:border-white/10">
+          <span className="text-[11px] font-black uppercase tracking-widest text-accent block mb-3">
+            Herramientas Gratuitas de Gimnasio Relacionadas
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <a
+              href="/calculadora-1rm"
+              className="p-3.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-accent/10 border border-black/5 dark:border-white/10 hover:border-accent/40 transition-all no-underline block"
+            >
+              <strong className="text-xs font-black text-text-primary block mb-0.5">Calculadora de 1RM →</strong>
+              <span className="text-[11px] text-text-secondary">Calcula tu fuerza máxima y porcentajes de carga</span>
+            </a>
+            <a
+              href="/calculadora-calorias-macros"
+              className="p-3.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-emerald-500/10 border border-black/5 dark:border-white/10 hover:border-emerald-500/40 transition-all no-underline block"
+            >
+              <strong className="text-xs font-black text-text-primary block mb-0.5">Calculadora de Macros →</strong>
+              <span className="text-[11px] text-text-secondary">Calorías, proteínas, déficit y volumen limpio</span>
+            </a>
+            <a
+              href="/ejercicios"
+              className="p-3.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-purple-500/10 border border-black/5 dark:border-white/10 hover:border-purple-500/40 transition-all no-underline block"
+            >
+              <strong className="text-xs font-black text-text-primary block mb-0.5">Guía de Ejercicios y Rutinas →</strong>
+              <span className="text-[11px] text-text-secondary">Técnica biomecánica y rutinas Push Pull Legs</span>
+            </a>
+          </div>
+        </div>
+
+        {/* PUERTA DE ENTRADA A ASESORÍA CON ENTRENADORES */}
+        <TrainerAdvisoryCard customNavigate={customNavigate} />
+
+        {/* FICHA EDITORIAL DEL AUTOR */}
+        <div className="p-5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 flex items-center gap-4 my-6">
+          {isOfficialAuthor(article.author_name) ? (
+            <div className="w-12 h-12 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center p-2 shrink-0 shadow-sm overflow-hidden" title="Equipo Oficial Pro Fitness Glass">
+              <img src="/logo.webp" alt="Pro Fitness Glass" className="w-7 h-7 object-contain drop-shadow" />
+            </div>
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center font-black text-sm text-accent uppercase shrink-0">
+              {article.author_name.slice(0, 2)}
+            </div>
+          )}
+          <div className="space-y-0.5">
+            <h4 className="text-sm font-bold text-text-primary">{article.author_name}</h4>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              Equipo de redacción y divulgación científica de Pro Fitness Glass. Artículos contrastados con la literatura de la ISSN, PubMed y NSCA.
+            </p>
+          </div>
+        </div>
+
+        {/* NAVEGACIÓN CONTINUA: ARTÍCULO ANTERIOR Y SIGUIENTE */}
+        {(prevArticle || nextArticle) && (
+          <nav aria-label="Navegación entre artículos" className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-8 pt-6 border-t border-black/10 dark:border-white/10">
+            {prevArticle ? (
+              <a
+                href={`/noticias/${prevArticle.slug}`}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    handleArticleNavigate(prevArticle.slug, prevArticle);
+                  }
+                }}
+                onMouseEnter={() => newsService.prefetchNewsBySlug(prevArticle.slug)}
+                onTouchStart={() => newsService.prefetchNewsBySlug(prevArticle.slug)}
+                className="p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-all cursor-pointer group flex flex-col justify-between no-underline block"
+              >
+                <span className="text-[11px] font-black uppercase tracking-wider text-text-tertiary flex items-center gap-1 mb-1">
+                  <FaArrowLeft className="text-xs shrink-0" /> Noticia anterior
+                </span>
+                <span className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors line-clamp-2">
+                  {prevArticle.title}
+                </span>
+              </a>
+            ) : <div />}
+
+            {nextArticle ? (
+              <a
+                href={`/noticias/${nextArticle.slug}`}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    handleArticleNavigate(nextArticle.slug, nextArticle);
+                  }
+                }}
+                onMouseEnter={() => newsService.prefetchNewsBySlug(nextArticle.slug)}
+                onTouchStart={() => newsService.prefetchNewsBySlug(nextArticle.slug)}
+                className="p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-all cursor-pointer group flex flex-col justify-between text-right no-underline block"
+              >
+                <span className="text-[11px] font-black uppercase tracking-wider text-accent flex items-center justify-end gap-1 mb-1">
+                  Siguiente noticia <FaArrowRight className="text-xs shrink-0" />
+                </span>
+                <span className="text-sm font-bold text-text-primary group-hover:text-accent transition-colors line-clamp-2">
+                  {nextArticle.title}
+                </span>
+              </a>
+            ) : <div />}
+          </nav>
+        )}
+
+        {/* ARTÍCULOS RELACIONADOS / TAMBIÉN TE PUEDE INTERESAR */}
+        {relatedNews.length > 0 && (
+          <section className="pt-8 pb-4 border-t border-black/10 dark:border-white/10 space-y-4">
+            <h2 className="text-lg font-black uppercase tracking-wider text-text-primary">
+              También te puede interesar
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {relatedNews.map((rel) => (
+                <a
+                  key={rel.id}
+                  href={`/noticias/${rel.slug}`}
+                  onClick={(e) => {
+                    if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                      e.preventDefault();
+                      handleArticleNavigate(rel.slug, rel);
+                    }
+                  }}
+                  onMouseEnter={() => newsService.prefetchNewsBySlug(rel.slug)}
+                  onTouchStart={() => newsService.prefetchNewsBySlug(rel.slug)}
+                  className="rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 hover:border-accent/40 transition-all cursor-pointer group flex flex-col justify-between bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black/[0.04] dark:hover:bg-white/[0.04] no-underline block"
+                >
+                  <div className="h-32 bg-black/10 overflow-hidden relative">
+                    <img
+                      src={rel.image_url?.includes('photo-1510519138197-06b8628cbf4f')
+                        ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
+                        : (rel.image_url || '/entrenamiento.png')}
+                      alt={rel.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/entrenamiento.png';
+                      }}
+                    />
+                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-black/70 backdrop-blur-sm text-white">
+                      {rel.category}
+                    </span>
+                  </div>
+                  <div className="p-3.5 flex flex-col gap-2">
+                    <h4 className="text-xs font-bold text-text-primary group-hover:text-accent transition-colors line-clamp-2 leading-snug">
+                      {rel.title}
+                    </h4>
+                    <div className="flex items-center justify-between text-[10px] text-text-tertiary pt-2 border-t border-black/5 dark:border-white/5">
+                      <span>{rel.reading_time} min</span>
+                      <span className="text-accent font-bold inline-flex items-center gap-0.5">
+                        Leer <FaArrowRight className="text-[10px] shrink-0" />
+                      </span>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+      </article>
+
+      <PublicPageFooter />
+    </div>
+  );
+}

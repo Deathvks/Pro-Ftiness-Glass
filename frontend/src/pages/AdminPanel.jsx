@@ -1,26 +1,27 @@
 /* frontend/src/pages/AdminPanel.jsx */
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Star,
-  ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle, Check,
-  Bug, Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw, ShieldAlert, Bell, Mail, Cloud
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import {
+  ChevronLeft, Edit, Trash2, Plus, CheckCircle, XCircle, Check, Camera,
+  Users, CheckSquare, Smartphone, Monitor, Globe, ZoomIn, X, ChevronRight, Calendar, Search, Sparkles, Sun, Droplets, RefreshCw
 } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
+import MobileSectionList from '../components/MobileSectionList';
+import { ADMIN_SECTIONS } from '../config/adminSections';
+import { useSectionNavigation } from '../hooks/useSectionNavigation';
+import { lazyWithRetry } from '../utils/lazyWithRetry';
 import Spinner from '../components/Spinner';
 import ConfirmationModal from '../components/ConfirmationModal';
 import UserEditModal from './UserEditModal';
 import UserCreateModal from './UserCreateModal';
-import AdminExercises from './AdminExercises';
-import AdminRatings from '../components/AdminRatings';
 import UserAvatar from '../components/UserAvatar';
-import AdminNotifications from './AdminNotifications';
-import AdminEmails from './AdminEmails';
-import SecurityDashboard from './SecurityDashboard';
-import AdminUploads from '../components/AdminUploads';
 import CustomSelect from '../components/CustomSelect';
-import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getSystemStats } from '../services/adminService';
+import ImageCropModal, { getCroppedImg } from '../components/ImageCropModal';
+
+import { getAllUsers, updateUser, deleteUser, createUser, freeServerMemory, getSystemStats, updateTrainerProfileImage, deleteTrainerProfileImage } from '../services/adminService';
 import { getBugReports, deleteBugReport } from '../services/reportService';
 import { useToast } from '../hooks/useToast';
 import useAppStore from '../store/useAppStore';
+import apiClient from '../services/apiClient';
 import { useShallow } from 'zustand/react/shallow';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -28,6 +29,17 @@ import { es } from 'date-fns/locale';
 // Umbral para considerar a un usuario "online" (5 minutos)
 const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
 const REPORTS_PER_PAGE = 5;
+
+const AdminRatings = lazyWithRetry(() => import('../components/AdminRatings'), 'adminRatings');
+const AdminUploads = lazyWithRetry(() => import('../components/AdminUploads'), 'adminUploads');
+const AdminExercises = lazyWithRetry(() => import('./AdminExercises'), 'adminExercises');
+const AdminNotifications = lazyWithRetry(() => import('./AdminNotifications'), 'adminNotifications');
+const AdminEmails = lazyWithRetry(() => import('./AdminEmails'), 'adminEmails');
+const AdminNotificationTests = lazyWithRetry(() => import('./AdminNotificationTests'), 'adminNotificationTests');
+const SecurityDashboard = lazyWithRetry(() => import('./SecurityDashboard'), 'adminSecurity');
+const AdminNewsManager = lazyWithRetry(() => import('../components/Admin/AdminNewsManager'), 'adminNews');
+const AdminRetentionRescue = lazyWithRetry(() => import('../components/Admin/AdminRetentionRescue'), 'adminRetention');
+const AdminServerResources = lazyWithRetry(() => import('./AdminServerResources'), 'adminServerResources');
 
 const REPORT_CATEGORY_LABELS = {
   bug: 'Bug',
@@ -37,6 +49,49 @@ const REPORT_CATEGORY_LABELS = {
   feature: 'Mejora',
   other: 'Otro'
 };
+
+class AdminTabErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.warn('[AdminTabErrorBoundary] Error en pestaña admin:', error, errorInfo);
+  }
+  componentDidUpdate(prevProps) {
+    if (prevProps.activeTab !== this.props.activeTab && this.state.hasError) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="py-16 px-4 flex flex-col items-center justify-center text-center space-y-3 animate-[fade-in_0.3s_ease-out]">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+            <RefreshCw size={24} />
+          </div>
+          <h3 className="text-base font-bold text-text-primary">
+            No se pudo cargar este apartado
+          </h3>
+          <p className="text-xs text-text-secondary max-w-sm">
+            Ocurrió un problema al inicializar esta sección. Puedes pulsar en reintentar o navegar a otra pestaña.
+          </p>
+          <button
+            type="button"
+            onClick={() => this.setState({ hasError: false, error: null })}
+            className="px-4 py-2 rounded-full text-xs font-bold bg-accent text-accent-contrast shadow-md active:scale-95 transition-all cursor-pointer"
+          >
+            Reintentar sección
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Función auxiliar segura para formatear fechas
 const formatDateSafe = (dateString) => {
@@ -162,7 +217,7 @@ const StatusIndicator = ({ lastSeen }) => {
   );
 };
 
-const AdminPanel = ({ onCancel }) => {
+const AdminPanel = ({ onCancel, navigate, scrollRef }) => {
   const { showToast: addToast } = useToast();
   const { userProfile, setUserProfile, setGamificationData } = useAppStore(useShallow(state => ({
     userProfile: state.userProfile,
@@ -170,8 +225,8 @@ const AdminPanel = ({ onCancel }) => {
     setGamificationData: state.setGamificationData
   })));
 
-  // Recuperar la pestaña activa de localStorage o usar default 'users'
-  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('admin_active_tab') || 'users');
+  const { activeTab, isMobile, setActiveTab, closeSection } = useSectionNavigation(ADMIN_SECTIONS, 'users', scrollRef, 'admin_active_tab');
+  const showSystemControls = !isMobile || activeTab === 'users';
 
   const [reportPage, setReportPage] = useState(1);
   const REPORTS_PER_PAGE = 20;
@@ -180,6 +235,8 @@ const AdminPanel = ({ onCancel }) => {
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [platformFilter, setPlatformFilter] = useState('ALL');
   const [levelFilter, setLevelFilter] = useState('ALL');
+  const [funnelRange, setFunnelRange] = useState('30d'); // '7d' | '30d' | 'all'
+  const [funnelStageFilter, setFunnelStageFilter] = useState('ALL'); // 'ALL' | 'STUCK_PROFILE' | 'STUCK_ROUTINE' | 'STUCK_WORKOUT1' | 'STUCK_WORKOUT2' | 'STUCK_NUTRITION'
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState(() => localStorage.getItem('admin_users_sort') || 'default');
 
@@ -189,18 +246,120 @@ const AdminPanel = ({ onCancel }) => {
 
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [usersError, setUsersError] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [userToEdit, setUserToEdit] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [systemStats, setSystemStats] = useState(null);
 
+  // Estados para gestion de foto de perfil (solo entrenadores)
+  const [trainerPhotoTarget, setTrainerPhotoTarget] = useState(null);
+  const [cropImageSrc, setCropImageSrc] = useState(null);
+  const [isCroppingTrainer, setIsCroppingTrainer] = useState(false);
+  const [isUploadingTrainerPhoto, setIsUploadingTrainerPhoto] = useState(false);
+  const trainerFileInputRef = useRef(null);
+
+  // Limpieza de memoria para URLs blob
+  useEffect(() => {
+    return () => {
+      if (cropImageSrc && cropImageSrc.startsWith('blob:')) {
+        URL.revokeObjectURL(cropImageSrc);
+      }
+    };
+  }, [cropImageSrc]);
+
+  const handleStartTrainerPhoto = (user) => {
+    if (!user || (user.role !== 'trainer' && user.role !== 'entrenador')) {
+      addToast('Solo se puede gestionar la foto de perfil de entrenadores.', 'warning');
+      return;
+    }
+    setTrainerPhotoTarget(user);
+    if (trainerFileInputRef.current) {
+      trainerFileInputRef.current.value = '';
+      trainerFileInputRef.current.click();
+    }
+  };
+
+  const handleTrainerFileSelected = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const isValidType = file.type.startsWith('image/') || /\.(jpe?g|png|webp)$/i.test(file.name);
+    if (!isValidType) {
+      addToast('Formato de imagen no valido (solo JPG, PNG, WebP).', 'error');
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      addToast('La imagen es demasiado grande (max 15MB).', 'error');
+      return;
+    }
+
+    if (cropImageSrc && cropImageSrc.startsWith('blob:')) {
+      URL.revokeObjectURL(cropImageSrc);
+    }
+
+    setCropImageSrc(URL.createObjectURL(file));
+    setIsCroppingTrainer(true);
+  };
+
+  const handleTrainerCropComplete = async (croppedAreaPixels) => {
+    if (!trainerPhotoTarget || !cropImageSrc) return;
+
+    try {
+      setIsUploadingTrainerPhoto(true);
+      const croppedFile = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+      const formData = new FormData();
+      formData.append('profileImage', croppedFile);
+
+      const res = await updateTrainerProfileImage(trainerPhotoTarget.id, formData);
+      const newUrl = res.profile_image_url;
+
+      setUsers(prev => prev.map(u => u.id === trainerPhotoTarget.id ? { ...u, profile_image_url: newUrl } : u));
+      if (userToEdit && userToEdit.id === trainerPhotoTarget.id) {
+        setUserToEdit(prev => ({ ...prev, profile_image_url: newUrl }));
+      }
+      if (userProfile && String(userProfile.id) === String(trainerPhotoTarget.id)) {
+        setUserProfile({ ...userProfile, profile_image_url: newUrl });
+      }
+
+      addToast('Foto de perfil del entrenador actualizada correctamente', 'success');
+      setIsCroppingTrainer(false);
+      if (cropImageSrc && cropImageSrc.startsWith('blob:')) {
+        URL.revokeObjectURL(cropImageSrc);
+      }
+      setCropImageSrc(null);
+      setTrainerPhotoTarget(null);
+    } catch (err) {
+      console.error('Error al actualizar foto del entrenador:', err);
+      addToast(err.message || 'Error al actualizar la foto de perfil', 'error');
+    } finally {
+      setIsUploadingTrainerPhoto(false);
+    }
+  };
+
+  const handleRemoveTrainerPhoto = async (user) => {
+    if (!user || (user.role !== 'trainer' && user.role !== 'entrenador')) return;
+
+    try {
+      await deleteTrainerProfileImage(user.id);
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, profile_image_url: null } : u));
+      if (userToEdit && userToEdit.id === user.id) {
+        setUserToEdit(prev => ({ ...prev, profile_image_url: null }));
+      }
+      if (userProfile && String(userProfile.id) === String(user.id)) {
+        setUserProfile({ ...userProfile, profile_image_url: null });
+      }
+      addToast('Foto de perfil eliminada', 'info');
+    } catch (err) {
+      console.error('Error al eliminar foto del entrenador:', err);
+      addToast(err.message || 'Error al eliminar la foto', 'error');
+    }
+  };
+
   const API_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
   const SERVER_URL = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : API_URL.replace('/api', '');
-
-  useEffect(() => {
-    localStorage.setItem('admin_active_tab', activeTab);
-  }, [activeTab]);
 
   useEffect(() => {
     localStorage.setItem('admin_users_sort', sortBy);
@@ -218,18 +377,24 @@ const AdminPanel = ({ onCancel }) => {
   }, []);
 
   useEffect(() => {
+    if (!showSystemControls) return;
     fetchSystemStats();
     const interval = setInterval(fetchSystemStats, 15000);
     return () => clearInterval(interval);
-  }, [fetchSystemStats]);
+  }, [fetchSystemStats, showSystemControls]);
 
   const fetchUsers = useCallback(async (isInitialLoad = false) => {
-    if (isInitialLoad) setIsLoading(true);
+    if (isInitialLoad) {
+      setIsLoading(true);
+      setUsersError(false);
+    }
     try {
       const data = await getAllUsers();
-      setUsers(data);
+      setUsers(data || []);
+      setUsersError(false);
     } catch (error) {
       if (isInitialLoad) {
+        setUsersError(true);
         addToast(error.message || 'No se pudo cargar la lista de usuarios.', 'error');
       } else {
         console.error("Error al refrescar usuarios:", error);
@@ -258,7 +423,7 @@ const AdminPanel = ({ onCancel }) => {
   useEffect(() => {
     if (activeTab === 'users') {
       fetchUsers(true);
-    } else {
+    } else if (activeTab === 'reports') {
       fetchReports();
     }
   }, [activeTab, fetchUsers, fetchReports]);
@@ -285,11 +450,8 @@ const AdminPanel = ({ onCancel }) => {
           role: updatedUser.role,
           name: updatedUser.name,
           username: updatedUser.username,
+          ...(updatedUser.profile_image_url ? { profile_image_url: updatedUser.profile_image_url } : {})
         });
-        
-        if (updatedUser.profile_image_url) {
-           setProfileImgSrc(updatedUser.profile_image_url);
-        }
       }
 
       addToast('Usuario guardado exitosamente', 'success');
@@ -418,6 +580,24 @@ const AdminPanel = ({ onCancel }) => {
         (u.username || '').toLowerCase().includes(q)
       );
     }
+
+    if (funnelStageFilter !== 'ALL') {
+      const now = Date.now();
+      filtered = filtered.filter(u => {
+        if (u.role === 'admin' || u.role === 'trainer' || u.role === 'entrenador') return false;
+        if (funnelRange !== 'all') {
+          const createdMs = getTime(getUserDate(u));
+          const days = funnelRange === '7d' ? 7 : 30;
+          if (!createdMs || (now - createdMs) > days * 24 * 60 * 60 * 1000) return false;
+        }
+        if (funnelStageFilter === 'STUCK_PROFILE') return !(u.goal && (u.height || u.age));
+        if (funnelStageFilter === 'STUCK_ROUTINE') return Number(u.routineCount || 0) === 0;
+        if (funnelStageFilter === 'STUCK_WORKOUT1') return Number(u.workoutCount || 0) === 0;
+        if (funnelStageFilter === 'STUCK_WORKOUT2') return Number(u.workoutCount || 0) === 1;
+        if (funnelStageFilter === 'STUCK_NUTRITION') return Number(u.nutritionCount || 0) === 0;
+        return true;
+      });
+    }
     
     switch (sortBy) {
       case 'date':
@@ -429,7 +609,7 @@ const AdminPanel = ({ onCancel }) => {
       default:
         return filtered.sort((a, b) => getTime(b.lastSeen) - getTime(a.lastSeen));
     }
-  }, [users, sortBy, searchQuery, roleFilter, platformFilter, levelFilter]);
+  }, [users, sortBy, searchQuery, roleFilter, platformFilter, levelFilter, funnelStageFilter, funnelRange]);
 
   const totalPages = Math.ceil(reports.length / REPORTS_PER_PAGE);
   const currentReports = useMemo(() => {
@@ -441,10 +621,109 @@ const AdminPanel = ({ onCancel }) => {
   const desertUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 8).length, [users]);
   const oceanUsersCount = useMemo(() => users.filter(user => user.role === 'admin' || (user.referralCount || 0) >= 11).length, [users]);
 
+  const retentionFunnel = useMemo(() => {
+    const now = Date.now();
+    const regularUsers = users.filter(u => u.role !== 'admin' && u.role !== 'trainer' && u.role !== 'entrenador');
+
+    const cohort = regularUsers.filter(u => {
+      if (funnelRange === 'all') return true;
+      const createdMs = getTime(getUserDate(u));
+      if (!createdMs) return false;
+      const days = funnelRange === '7d' ? 7 : 30;
+      return (now - createdMs) <= days * 24 * 60 * 60 * 1000;
+    });
+
+    const total = cohort.length;
+    const hasProfile = (u) => Boolean(u.goal && (u.height || u.age));
+    const hasRoutine = (u) => Number(u.routineCount || 0) >= 1;
+    const hasWorkout1 = (u) => Number(u.workoutCount || 0) >= 1;
+    const hasWorkout2 = (u) => Number(u.workoutCount || 0) >= 2;
+    const hasNutrition = (u) => Number(u.nutritionCount || 0) >= 1;
+
+    const profileCount = cohort.filter(hasProfile).length;
+    const routineCount = cohort.filter(hasRoutine).length;
+    const workout1Count = cohort.filter(hasWorkout1).length;
+    const workout2Count = cohort.filter(hasWorkout2).length;
+    const nutritionCount = cohort.filter(hasNutrition).length;
+
+    const pct = (n) => (total > 0 ? Math.round((n / total) * 100) : 0);
+
+    const steps = [
+      {
+        id: 'STUCK_PROFILE',
+        stepNum: 1,
+        label: 'Perfil físico',
+        sublabel: 'Completaron onboarding',
+        count: profileCount,
+        missingCount: Math.max(0, total - profileCount),
+        percent: pct(profileCount),
+        color: 'from-blue-500 to-cyan-400',
+        badgeClass: 'bg-blue-500/15 text-blue-500 ring-blue-500/30'
+      },
+      {
+        id: 'STUCK_ROUTINE',
+        stepNum: 2,
+        label: '1ª Rutina creada',
+        sublabel: 'Tienen al menos 1 rutina',
+        count: routineCount,
+        missingCount: Math.max(0, total - routineCount),
+        percent: pct(routineCount),
+        color: 'from-violet-500 to-purple-400',
+        badgeClass: 'bg-purple-500/15 text-purple-500 ring-purple-500/30'
+      },
+      {
+        id: 'STUCK_WORKOUT1',
+        stepNum: 3,
+        label: '1er Entreno',
+        sublabel: 'Registraron 1ª sesión',
+        count: workout1Count,
+        missingCount: Math.max(0, total - workout1Count),
+        percent: pct(workout1Count),
+        color: 'from-amber-500 to-orange-400',
+        badgeClass: 'bg-amber-500/15 text-amber-500 ring-amber-500/30'
+      },
+      {
+        id: 'STUCK_WORKOUT2',
+        stepNum: 4,
+        label: '2º Entreno',
+        sublabel: 'Volvieron a entrenar',
+        count: workout2Count,
+        missingCount: Math.max(0, total - workout2Count),
+        percent: pct(workout2Count),
+        color: 'from-emerald-500 to-teal-400',
+        badgeClass: 'bg-emerald-500/15 text-emerald-500 ring-emerald-500/30'
+      },
+      {
+        id: 'STUCK_NUTRITION',
+        stepNum: 5,
+        label: '1ª Comida',
+        sublabel: 'Usaron diario nutricional',
+        count: nutritionCount,
+        missingCount: Math.max(0, total - nutritionCount),
+        percent: pct(nutritionCount),
+        color: 'from-pink-500 to-rose-400',
+        badgeClass: 'bg-pink-500/15 text-pink-500 ring-pink-500/30'
+      }
+    ];
+
+    // Detectar el mayor salto de abandono secuencial (Registro -> Perfil -> Rutina -> 1er Entreno -> 2º Entreno)
+    const sequential = [
+      { from: 'Registro', to: 'Perfil físico', lost: total - profileCount },
+      { from: 'Perfil físico', to: 'Crear 1ª rutina', lost: Math.max(0, profileCount - routineCount) },
+      { from: 'Crear 1ª rutina', to: 'Completar 1er entreno', lost: Math.max(0, routineCount - workout1Count) },
+      { from: '1er entreno', to: 'Completar 2º entreno', lost: Math.max(0, workout1Count - workout2Count) }
+    ];
+    const biggestDrop = total > 0
+      ? sequential.reduce((best, cur) => (cur.lost > best.lost ? cur : best), sequential[0])
+      : null;
+
+    return { total, steps, biggestDrop };
+  }, [users, funnelRange]);
+
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 pb-24 md:p-6 lg:p-8 animate-[fade-in_0.5s_ease-out]">
-      <div className="flex items-center justify-between gap-2 md:gap-6 mb-6 sm:mb-8">
-        <div className="flex items-center gap-4">
+    <div id="tutorial-admin-panel" className="w-full max-w-6xl mx-auto px-4 py-2 md:p-6 lg:p-8 animate-[fade-in_0.5s_ease-out]">
+      {showSystemControls && <div className="flex items-center justify-end gap-2 mb-6 sm:mb-8 md:justify-between md:gap-6">
+        <div className="hidden items-center gap-4 md:flex">
           <button 
             onClick={onCancel} 
             className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors w-fit shrink-0"
@@ -475,99 +754,41 @@ const AdminPanel = ({ onCancel }) => {
               <span>Liberar RAM</span>
           </button>
         </div>
-      </div>
+      </div>}
 
-      <div className="flex overflow-x-auto sm:flex-wrap hide-scrollbar gap-2 sm:gap-3 mb-6 sm:mb-8 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-1">
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'users'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-          Usuarios
-        </button>
-        <button
-          onClick={() => setActiveTab('reports')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'reports'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <Bug className="w-4 h-4 sm:w-5 sm:h-5" />
-          Reportes
-          {reports.length > 0 && (
-              <span className={`min-w-[20px] h-[20px] px-1.5 flex items-center justify-center text-[11px] font-black rounded-full ml-0.5 ${
-                activeTab === 'reports' ? 'bg-black/20 dark:bg-white/20 text-inherit' : 'bg-red text-white shadow-sm'
-              }`}>
-                {reports.length > 99 ? '99+' : reports.length}
-              </span>
-            )}
-        </button>
-        <button
-          onClick={() => setActiveTab('exercises')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'exercises'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <Monitor className="w-4 h-4 sm:w-5 sm:h-5" />
-          Ejercicios
-        </button>
-                            <button
-            onClick={() => setActiveTab('ratings')}
-            className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'ratings'
-              ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-              : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-              }`}
-          >
-            <Star className="w-4 h-4 sm:w-5 sm:h-5" />
-            Valoraciones
-          </button>
-          <button
-            onClick={() => setActiveTab('notifications')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'notifications'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-          Notificaciones
-        </button>
-        <button
-          onClick={() => setActiveTab('emails')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'emails'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <Mail className="w-4 h-4 sm:w-5 sm:h-5" />
-          Correos
-        </button>
-        <button
-          onClick={() => setActiveTab('uploads')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'uploads'
-            ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <Cloud className="w-4 h-4 sm:w-5 sm:h-5" />
-          Subidas
-        </button>
-        <button
-          onClick={() => setActiveTab('security')}
-          className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 text-sm sm:text-base ${activeTab === 'security'
-            ? 'bg-red text-white shadow-lg shadow-red/20'
-            : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'
-            }`}
-        >
-          <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5" />
-          Ciberseguridad
-        </button>
-      </div>
+      {isMobile && !activeTab && (
+        <MobileSectionList
+          id="tutorial-admin-tabs"
+          label="Apartados del panel Admin"
+          sections={ADMIN_SECTIONS.map(tab => tab.id === 'reports' ? { ...tab, count: reports.length } : tab)}
+          onSelect={setActiveTab}
+        />
+      )}
+      {!isMobile && (
+        <nav id="tutorial-admin-tabs" aria-label="Apartados del panel Admin" className="hidden flex-wrap gap-3 mb-8 px-1 pt-2 pb-4 md:flex">
+          {ADMIN_SECTIONS.map(({ id, label, icon: Icon, danger }) => (
+            <button
+              key={id}
+              type="button"
+              aria-current={activeTab === id ? 'page' : undefined}
+              onClick={() => setActiveTab(id)}
+              className={`flex items-center gap-2 px-6 py-3.5 rounded-full font-bold transition-all whitespace-nowrap active:scale-95 ${activeTab === id
+                ? danger ? 'bg-red text-white shadow-lg shadow-red/20' : 'bg-accent text-accent-contrast shadow-lg shadow-accent/20'
+                : 'bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10'}`}
+            >
+              <Icon className="h-5 w-5" aria-hidden="true" />
+              {label}
+              {id === 'reports' && reports.length > 0 && (
+                <span className={`min-w-5 h-5 px-1.5 flex items-center justify-center text-[11px] font-black rounded-full ml-0.5 ${activeTab === id ? 'bg-black/20 dark:bg-white/20 text-inherit' : 'bg-red text-white shadow-sm'}`}>
+                  {reports.length > 99 ? '99+' : reports.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+      )}
 
-      <GlassCard className="glass p-6 sm:p-8 shadow-xl border-none ring-1 ring-black/5 dark:ring-white/10 rounded-[32px]">
+      {activeTab && <GlassCard className="glass p-3.5 sm:p-6 md:p-8 shadow-xl border-none ring-1 ring-black/5 dark:ring-white/10 rounded-2xl sm:rounded-[32px]">
         {activeTab === 'users' ? (
           /* --- CONTENIDO PESTAÑA USUARIOS --- */
           <>
@@ -600,6 +821,130 @@ const AdminPanel = ({ onCancel }) => {
                 </div>
                 <span className="text-xs font-bold text-[#0ea5e9] uppercase tracking-wider mb-1 relative z-10">Océano</span>
                 <span className="text-4xl font-black text-[#0ea5e9] relative z-10">{oceanUsersCount}</span>
+              </div>
+            </div>
+
+            {/* EMBUDO DE RETENCIÓN Y ABANDONO DE NUEVOS USUARIOS */}
+            <div className="mb-8 p-4 sm:p-6 bg-black/5 dark:bg-white/5 rounded-[28px] ring-1 ring-black/5 dark:ring-white/10">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base sm:text-lg font-black text-text-primary tracking-tight">
+                      Embudo de Activación y Abandono
+                    </h3>
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-accent/15 text-accent ring-1 ring-accent/30">
+                      {retentionFunnel.total} {retentionFunnel.total === 1 ? 'usuario evaluado' : 'usuarios evaluados'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Porcentaje de usuarios que superan cada paso clave. Pulsa una tarjeta para filtrar abajo quiénes se atascaron ahí.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-bg-primary p-1 rounded-2xl ring-1 ring-black/5 dark:ring-white/10 self-start sm:self-auto shrink-0">
+                  {[
+                    { id: '7d', label: '7 días' },
+                    { id: '30d', label: '30 días' },
+                    { id: 'all', label: 'Todos' }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setFunnelRange(tab.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                        funnelRange === tab.id
+                          ? 'bg-accent text-accent-contrast shadow-sm'
+                          : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                {retentionFunnel.steps.map((step) => {
+                  const isSelected = funnelStageFilter === step.id;
+                  return (
+                    <button
+                      key={step.id}
+                      type="button"
+                      onClick={() => setFunnelStageFilter(prev => (prev === step.id ? 'ALL' : step.id))}
+                      className={`text-left p-4 rounded-2xl transition-all flex flex-col justify-between gap-3 cursor-pointer ring-1 ${
+                        isSelected
+                          ? 'bg-accent/15 ring-2 ring-accent shadow-md'
+                          : 'bg-bg-primary/80 hover:bg-bg-primary ring-black/5 dark:ring-white/10'
+                      }`}
+                    >
+                      <div className="space-y-1 w-full">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ring-1 ${step.badgeClass}`}>
+                            Paso {step.stepNum}
+                          </span>
+                          <span className="text-xs font-extrabold text-text-secondary">
+                            {step.count}/{retentionFunnel.total}
+                          </span>
+                        </div>
+                        <p className="text-sm font-black text-text-primary pt-1 truncate">
+                          {step.label}
+                        </p>
+                        <p className="text-[11px] font-medium text-text-muted truncate">
+                          {step.sublabel}
+                        </p>
+                      </div>
+
+                      <div className="w-full space-y-1.5">
+                        <div className="flex items-baseline justify-between">
+                          <span className="text-2xl font-black text-text-primary leading-none">
+                            {step.percent}%
+                          </span>
+                          <span className="text-[10px] font-bold text-amber-500">
+                            {step.missingCount > 0
+                              ? step.id === 'STUCK_WORKOUT2'
+                                ? `${ retentionFunnel.steps[2].count - step.count >= 0 ? retentionFunnel.steps[2].count - step.count : 0 } con solo 1 entreno`
+                                : `${step.missingCount} sin completar`
+                              : '100% completado'}
+                          </span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full bg-gradient-to-r ${step.color} transition-all duration-500`}
+                            style={{ width: `${Math.min(100, Math.max(0, step.percent))}%` }}
+                          />
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-black/5 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                {retentionFunnel.biggestDrop && retentionFunnel.biggestDrop.lost > 0 ? (
+                  <div className="flex items-center gap-2 text-text-secondary">
+                    <span className="inline-block w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                    <span>
+                      Mayor fuga detectada entre <strong className="text-text-primary">{retentionFunnel.biggestDrop.from}</strong> y{' '}
+                      <strong className="text-text-primary">{retentionFunnel.biggestDrop.to}</strong> ({retentionFunnel.biggestDrop.lost}{' '}
+                      {retentionFunnel.biggestDrop.lost === 1 ? 'usuario se quedó' : 'usuarios se quedaron'} en ese paso).
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-text-muted font-medium">
+                    Sin fugas destacables en el periodo seleccionado.
+                  </span>
+                )}
+
+                {funnelStageFilter !== 'ALL' && (
+                  <button
+                    type="button"
+                    onClick={() => setFunnelStageFilter('ALL')}
+                    className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/15 text-amber-500 font-extrabold text-xs hover:bg-amber-500/25 transition-all cursor-pointer shrink-0"
+                  >
+                    <X size={13} />
+                    <span>Quitar filtro de embudo ({filteredAndSortedUsers.length} mostrados)</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -753,6 +1098,23 @@ const AdminPanel = ({ onCancel }) => {
 
             {isLoading ? (
               <div className="flex justify-center items-center py-12"><Spinner size={32} /></div>
+            ) : usersError ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center animate-[fade-in_0.3s_ease-out] bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 mt-4 space-y-3 p-6">
+                <div className="w-14 h-14 bg-amber-500/10 text-amber-500 rounded-2xl flex items-center justify-center shadow-sm mx-auto">
+                  <RefreshCw size={24} />
+                </div>
+                <h3 className="text-lg font-bold text-text-primary">Error al conectar con la lista de usuarios</h3>
+                <p className="text-text-secondary text-xs max-w-sm mx-auto">
+                  El servidor no respondió a tiempo o se está reiniciando tras la actualización. Pulsa para reintentar la carga.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => fetchUsers(true)}
+                  className="px-5 py-2.5 rounded-full text-xs font-bold bg-accent text-accent-contrast shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                >
+                  Reintentar carga de usuarios
+                </button>
+              </div>
             ) : filteredAndSortedUsers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center animate-[fade-in_0.3s_ease-out] bg-black/5 dark:bg-white/5 rounded-[24px] ring-1 ring-black/5 dark:ring-white/10 mt-4">
                 <div className="w-20 h-20 bg-bg-primary rounded-[24px] flex items-center justify-center mb-5 ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
@@ -782,8 +1144,25 @@ const AdminPanel = ({ onCancel }) => {
                           {/* 1. Usuario (Avatar + Nombre + Email) */}
                           <td className="p-4 pl-6 align-middle">
                             <div className="flex items-center gap-4">
-                              <div className="relative shrink-0">
-                                <UserAvatar user={user} size={12} className="ring-2 ring-black/5 dark:ring-white/10 shadow-sm" />
+                              <div className="relative shrink-0 group/avatar">
+                                <UserAvatar
+                                  user={user}
+                                  size={12}
+                                  className={`ring-2 ring-black/5 dark:ring-white/10 shadow-sm ${
+                                    (user.role === 'trainer' || user.role === 'entrenador') ? 'cursor-pointer hover:ring-orange-500/50 transition-all' : ''
+                                  }`}
+                                  onClick={(user.role === 'trainer' || user.role === 'entrenador') ? () => handleStartTrainerPhoto(user) : undefined}
+                                />
+                                {(user.role === 'trainer' || user.role === 'entrenador') && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStartTrainerPhoto(user)}
+                                    className="absolute -top-1 -left-1 p-1 rounded-full bg-orange-500 text-white shadow-md opacity-0 group-hover/avatar:opacity-100 hover:scale-110 active:scale-95 transition-all"
+                                    title="Cambiar foto de perfil del entrenador"
+                                  >
+                                    <Camera size={10} />
+                                  </button>
+                                )}
                                 <div className="absolute -bottom-1 -right-2 flex items-center gap-0.5">
                                   <LoginMethodBadge user={user} />
                                   <PlatformBadge user={user} />
@@ -821,13 +1200,55 @@ const AdminPanel = ({ onCancel }) => {
                             </div>
                           </td>
 
-                          {/* 3. Actividad (Estado + Registro) */}
+                          {/* 3. Actividad (Estado + Registro + Progreso Embudo) */}
                           <td className="p-4 align-middle">
                             <div className="flex flex-col items-start gap-1">
                               <StatusIndicator lastSeen={user.lastSeen} />
                               <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
                                 Reg: {formatDateSafe(getUserDate(user))}
                               </span>
+                              <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                    user.goal && (Number(user.height) > 0 || Number(user.age) > 0)
+                                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                      : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                                  }`}
+                                  title="Perfil físico completado"
+                                >
+                                  Perfil {user.goal && (Number(user.height) > 0 || Number(user.age) > 0) ? '✓' : '—'}
+                                </span>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                    Number(user.routineCount || 0) >= 1
+                                      ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400'
+                                      : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                                  }`}
+                                  title="Rutinas creadas"
+                                >
+                                  Rut: {Number(user.routineCount || 0)}
+                                </span>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                    Number(user.workoutCount || 0) >= 1
+                                      ? 'bg-violet-500/15 text-violet-600 dark:text-violet-400'
+                                      : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                                  }`}
+                                  title="Entrenos completados"
+                                >
+                                  Ent: {Number(user.workoutCount || 0)}
+                                </span>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                    Number(user.nutritionCount || 0) >= 1
+                                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                      : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                                  }`}
+                                  title="Comidas registradas"
+                                >
+                                  Nut: {Number(user.nutritionCount || 0)}
+                                </span>
+                              </div>
                             </div>
                           </td>
 
@@ -858,6 +1279,15 @@ const AdminPanel = ({ onCancel }) => {
                           {/* 5. Acciones */}
                           <td className="p-4 pr-6 align-middle text-right">
                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              {(user.role === 'trainer' || user.role === 'entrenador') && (
+                                <button
+                                  onClick={() => handleStartTrainerPhoto(user)}
+                                  title="Cambiar foto de perfil del entrenador"
+                                  className="p-2 rounded-xl bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white transition-all active:scale-95"
+                                >
+                                  <Camera size={16} />
+                                </button>
+                              )}
                               <button onClick={() => setUserToEdit(user)} className="p-2 rounded-xl bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-accent hover:text-accent-contrast transition-all active:scale-95">
                                 <Edit size={16} />
                               </button>
@@ -879,7 +1309,24 @@ const AdminPanel = ({ onCancel }) => {
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex-1 min-w-0 pr-2 flex items-center gap-4">
                           <div className="relative shrink-0">
-                            <UserAvatar user={user} size={14} className="ring-2 ring-black/5 dark:ring-white/10 shadow-sm" />
+                            <UserAvatar
+                              user={user}
+                              size={14}
+                              className={`ring-2 ring-black/5 dark:ring-white/10 shadow-sm ${
+                                (user.role === 'trainer' || user.role === 'entrenador') ? 'cursor-pointer active:scale-95 transition-all' : ''
+                              }`}
+                              onClick={(user.role === 'trainer' || user.role === 'entrenador') ? () => handleStartTrainerPhoto(user) : undefined}
+                            />
+                            {(user.role === 'trainer' || user.role === 'entrenador') && (
+                              <button
+                                type="button"
+                                onClick={() => handleStartTrainerPhoto(user)}
+                                className="absolute -top-1 -left-1 p-1.5 rounded-full bg-orange-500 text-white shadow-md active:scale-95 transition-all"
+                                title="Cambiar foto de perfil del entrenador"
+                              >
+                                <Camera size={11} />
+                              </button>
+                            )}
                             <div className="absolute -bottom-1 -right-2 flex items-center gap-0.5">
                               <LoginMethodBadge user={user} />
                               <PlatformBadge user={user} />
@@ -891,6 +1338,15 @@ const AdminPanel = ({ onCancel }) => {
                           </div>
                         </div>
                         <div className="flex flex-col gap-2 shrink-0">
+                          {(user.role === 'trainer' || user.role === 'entrenador') && (
+                            <button
+                              onClick={() => handleStartTrainerPhoto(user)}
+                              title="Cambiar foto del entrenador"
+                              className="p-2.5 bg-orange-500/10 rounded-xl text-orange-500 hover:bg-orange-500 hover:text-white transition-all active:scale-95 flex items-center justify-center"
+                            >
+                              <Camera size={16} />
+                            </button>
+                          )}
                           <button onClick={() => setUserToEdit(user)} className="p-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary hover:bg-accent hover:text-accent-contrast transition-all active:scale-95"><Edit size={16} /></button>
                           <button onClick={() => setUserToDelete(user)} className="p-2.5 bg-black/5 dark:bg-white/5 rounded-xl text-text-secondary hover:text-red hover:bg-red/10 transition-all active:scale-95"><Trash2 size={16} /></button>
                         </div>
@@ -949,6 +1405,45 @@ const AdminPanel = ({ onCancel }) => {
                           </div>
                         </div>
 
+                        <div className="flex flex-wrap items-center gap-1.5 border-t border-black/5 dark:border-white/5 pt-2.5">
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                              user.goal && (Number(user.height) > 0 || Number(user.age) > 0)
+                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                            }`}
+                          >
+                            Perfil {user.goal && (Number(user.height) > 0 || Number(user.age) > 0) ? '✓' : '—'}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                              Number(user.routineCount || 0) >= 1
+                                ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400'
+                                : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                            }`}
+                          >
+                            Rutinas: {Number(user.routineCount || 0)}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                              Number(user.workoutCount || 0) >= 1
+                                ? 'bg-violet-500/15 text-violet-600 dark:text-violet-400'
+                                : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                            }`}
+                          >
+                            Entrenos: {Number(user.workoutCount || 0)}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                              Number(user.nutritionCount || 0) >= 1
+                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                : 'bg-black/5 dark:bg-white/5 text-text-muted'
+                            }`}
+                          >
+                            Comidas: {Number(user.nutritionCount || 0)}
+                          </span>
+                        </div>
+
                       </div>
                     </div>
                   ))}
@@ -982,7 +1477,7 @@ const AdminPanel = ({ onCancel }) => {
           /* --- CONTENIDO PESTAÑA REPORTES --- */
           <>
             <div className="mb-8 text-left">
-              <h2 className="text-2xl font-extrabold text-text-primary mb-2">Reportes de Problemas</h2>
+              <h2 className="hidden text-2xl font-extrabold text-text-primary mb-2 md:block">Reportes de Problemas</h2>
               <p className="text-text-secondary font-medium text-sm">Feedback técnico enviado por los usuarios.</p>
             </div>
 
@@ -1086,20 +1581,34 @@ const AdminPanel = ({ onCancel }) => {
               </div>
             )}
           </>
-        ) : activeTab === 'exercises' ? (
-          <AdminExercises />
-        ) : activeTab === 'ratings' ? (
-            <AdminRatings />
-          ) : activeTab === 'notifications' ? (
-          <AdminNotifications />
-        ) : activeTab === 'emails' ? (
-          <AdminEmails />
-        ) : activeTab === 'uploads' ? (
-          <AdminUploads />
-        ) : activeTab === 'security' ? (
-          <SecurityDashboard onBack={() => setActiveTab('users')} />
-        ) : null}
-      </GlassCard>
+        ) : (
+          <AdminTabErrorBoundary activeTab={activeTab}>
+            <React.Suspense fallback={<div className="flex justify-center p-8"><Spinner size={32} /></div>}>
+            {activeTab === 'server' ? (
+              <AdminServerResources onFreeMemorySuccess={fetchSystemStats} isMobile={isMobile} onBack={() => isMobile ? closeSection() : setActiveTab('users')} />
+            ) : activeTab === 'retention' ? (
+              <AdminRetentionRescue />
+            ) : activeTab === 'exercises' ? (
+              <AdminExercises />
+            ) : activeTab === 'ratings' ? (
+              <AdminRatings />
+            ) : activeTab === 'notifications' ? (
+              <AdminNotifications />
+            ) : activeTab === 'emails' ? (
+              <AdminEmails />
+            ) : activeTab === 'notificationTests' ? (
+              <AdminNotificationTests onOpenSettings={() => navigate('settings', { highlight: 'notifications', returnView: 'adminPanel', returnParams: { section: 'notificationTests' } })} />
+            ) : activeTab === 'uploads' ? (
+              <AdminUploads />
+            ) : activeTab === 'news' ? (
+              <AdminNewsManager />
+            ) : activeTab === 'security' ? (
+              <SecurityDashboard hideMobileTitle onBack={() => isMobile ? closeSection() : setActiveTab('users')} />
+            ) : null}
+            </React.Suspense>
+          </AdminTabErrorBoundary>
+        )}
+      </GlassCard>}
 
       {/* Lightbox y Modales */}
       {selectedImageForLightbox && (
@@ -1125,6 +1634,35 @@ const AdminPanel = ({ onCancel }) => {
           onSave={handleSaveUser}
           onCancel={() => setUserToEdit(null)}
           isLoading={isUpdating}
+          onEditPhoto={handleStartTrainerPhoto}
+          onRemovePhoto={handleRemoveTrainerPhoto}
+        />
+      )}
+
+      {/* Input de archivo oculto para gestionar foto de perfil de entrenadores */}
+      <input
+        type="file"
+        ref={trainerFileInputRef}
+        onChange={handleTrainerFileSelected}
+        accept="image/*"
+        className="hidden"
+      />
+
+      {/* Modal de recorte de imagen solo para entrenadores */}
+      {isCroppingTrainer && cropImageSrc && (
+        <ImageCropModal
+          imageSrc={cropImageSrc}
+          title={`Foto de perfil: ${trainerPhotoTarget?.username || trainerPhotoTarget?.name || 'Entrenador'}`}
+          isSaving={isUploadingTrainerPhoto}
+          onCancel={() => {
+            setIsCroppingTrainer(false);
+            if (cropImageSrc && cropImageSrc.startsWith('blob:')) {
+              URL.revokeObjectURL(cropImageSrc);
+            }
+            setCropImageSrc(null);
+            setTrainerPhotoTarget(null);
+          }}
+          onComplete={handleTrainerCropComplete}
         />
       )}
 

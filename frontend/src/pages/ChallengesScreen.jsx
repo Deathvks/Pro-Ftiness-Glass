@@ -23,7 +23,7 @@ const ChallengesScreen = ({ setView }) => {
         const fetchChallenges = async () => {
             try {
                 const data = await apiClient('/gamification/challenges');
-                setChallenges(data);
+                setChallenges(Array.isArray(data) ? data : []);
             } catch (err) {
                 console.error("Error cargando retos", err);
             } finally {
@@ -33,15 +33,17 @@ const ChallengesScreen = ({ setView }) => {
         fetchChallenges();
     }, []);
 
-    const dailyChallenges = challenges
+    const safeChallenges = Array.isArray(challenges) ? challenges : [];
+
+    const dailyChallenges = safeChallenges
         .filter(c => c.type === 'daily')
         .sort((a, b) => (a.completed === b.completed ? 0 : a.completed ? 1 : -1));
         
-    const generalChallenges = challenges
+    const generalChallenges = safeChallenges
         .filter(c => c.type === 'general' || c.type === 'weekly')
         .sort((a, b) => (a.completed === b.completed ? 0 : a.completed ? 1 : -1));
         
-    const completedChallenges = challenges.filter(c => c.completed);
+    const completedChallenges = safeChallenges.filter(c => c && c.completed);
 
     const renderChallengeCard = (challenge) => {
         const percentage = Math.min((challenge.progress / challenge.target) * 100, 100);
@@ -90,7 +92,7 @@ const ChallengesScreen = ({ setView }) => {
 
     const handleCopyReferral = () => {
         const isCapacitor = !!window.Capacitor?.isNativePlatform?.() || window.location.origin.includes('localhost') && !window.location.port;
-        const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://pro-fitness-glass.zeabur.app') : window.location.origin;
+        const baseUrl = isCapacitor ? (import.meta.env.VITE_WEB_URL || 'https://profitnessglass.es') : window.location.origin;
         const referralLink = `${baseUrl}/register?ref=${userProfile?.referral_code || ''}`;
         navigator.clipboard.writeText(referralLink);
         addToast('¡Enlace copiado!', 'success');
@@ -110,7 +112,7 @@ const ChallengesScreen = ({ setView }) => {
                             Volver
                         </button>
                     </div>
-                    <header className="px-6 pt-4 md:pt-6 pb-4 glassCardClass">
+                    <header id="tutorial-challenges-header" className="px-6 pt-4 md:pt-6 pb-4 glassCardClass">
                         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary tracking-tight mb-2">
                             Retos y Misiones
                         </h1>
@@ -120,7 +122,7 @@ const ChallengesScreen = ({ setView }) => {
                     
                     {/* Referrals Infinite Challenge Card */}
                     <div className="mb-4">
-                        <div className="relative group overflow-hidden rounded-[20px] bg-accent shadow-xl shadow-accent/30 border border-white/20 p-6 transform transition-all duration-300 hover:scale-[1.02] cursor-pointer" onClick={handleCopyReferral}>
+                        <div id="tutorial-challenges-referral" className="relative group overflow-hidden rounded-[20px] bg-accent shadow-xl shadow-accent/30 border border-white/20 p-6 transform transition-all duration-300 hover:scale-[1.02] cursor-pointer" onClick={handleCopyReferral}>
                             <div className="absolute inset-0 bg-black/10 mix-blend-overlay"></div>
                             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30 mix-blend-overlay"></div>
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-20 rounded-full blur-2xl transform translate-x-10 -translate-y-10 group-hover:opacity-30 transition-opacity"></div>
@@ -154,20 +156,23 @@ const ChallengesScreen = ({ setView }) => {
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex gap-3 mb-8">
+                    <div id="tutorial-challenges-tabs" className="flex gap-3 mb-8">
                         <button 
+                            data-tutorial="challenges-tab-daily"
                             className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'daily' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
                             onClick={() => setActiveTab('daily')}
                         >
                             Diarios
                         </button>
                         <button 
+                            data-tutorial="challenges-tab-general"
                             className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'general' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
                             onClick={() => setActiveTab('general')}
                         >
                             Generales
                         </button>
                         <button 
+                            data-tutorial="challenges-tab-completed"
                             className={`flex-1 py-3 px-5 text-sm font-bold rounded-[20px] transition-all duration-300 ${activeTab === 'completed' ? 'bg-accent text-accent-contrast shadow-lg shadow-accent/20 scale-[1.02]' : 'glass-btn text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-glass-border'}`}
                             onClick={() => setActiveTab('completed')}
                         >
@@ -203,9 +208,13 @@ const ChallengesScreen = ({ setView }) => {
                                     </div>
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-text-primary mb-4 flex items-center gap-2">
-                                        <UserGroupIcon className="w-6 h-6 text-accent" /> Social
+                                    <h2 className="text-xl font-bold text-text-primary mb-2 flex items-center gap-2">
+                                        <UserGroupIcon className="w-6 h-6 text-accent" /> Social y Muro
                                     </h2>
+                                    <div className="mb-4 p-3.5 rounded-2xl bg-accent/10 border border-accent/20 text-xs text-text-secondary leading-relaxed">
+                                        <strong className="text-accent font-extrabold block mb-0.5">⚡ Interactuar en el Muro suma XP cada día</strong>
+                                        Dar reacciones rápidas (<strong>🔥 Fuego · 💪 Bestia · 🫡 Respeto · 🏆 PR</strong>), comentar entrenos de otros atletas y compartir tus sesiones en <strong>Global, Mi Gimnasio o Amigos</strong> te otorga <strong>+25 XP</strong> por misión completada.
+                                    </div>
                                     <div className="space-y-4">
                                         {dailyChallenges.filter(c => c.id.startsWith('social_')).map(renderChallengeCard)}
                                     </div>

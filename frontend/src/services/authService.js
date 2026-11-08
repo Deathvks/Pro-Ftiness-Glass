@@ -106,10 +106,12 @@ export const spotifyLogin = (payload) => {
 
 // --- GOOGLE AUTH PLUGIN ---
 
+import { Capacitor } from '@capacitor/core';
+
 export const initGoogleAuth = () => {
-    // Inicialización para WEB. 
-    // NOTA: En Android/iOS esta función NO debe llamarse si se usa capacitor.config.json,
-    // ya que el plugin se autoconfigura. (Controlado en LoginScreen.jsx)
+    // En Web usamos @react-oauth/google (useGoogleLogin), por lo que no debemos inicializar
+    // el script legacy apis.google.com/js/platform.js de @codetrix-studio/capacitor-google-auth
+    if (!Capacitor.isNativePlatform()) return;
     try {
         GoogleAuth.initialize({
             clientId: GOOGLE_CLIENT_ID,

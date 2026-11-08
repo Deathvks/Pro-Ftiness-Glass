@@ -3,9 +3,11 @@ import { Cloud } from 'lucide-react';
 import apiClient from '../services/apiClient';
 import { useToast } from '../hooks/useToast';
 
+let cachedUploadLogs = null;
+
 export default function AdminUploads() {
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState(() => cachedUploadLogs || []);
+  const [loading, setLoading] = useState(() => !cachedUploadLogs);
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -15,9 +17,12 @@ export default function AdminUploads() {
   const fetchLogs = async () => {
     try {
       const res = await apiClient('/admin/upload-logs');
-      setLogs(res);
+      const safe = Array.isArray(res) ? res : [];
+      cachedUploadLogs = safe;
+      setLogs(safe);
     } catch (e) {
       console.error(e);
+      setLogs([]);
       addToast('Error al cargar historial', 'error');
     } finally {
       setLoading(false);
@@ -26,7 +31,7 @@ export default function AdminUploads() {
 
   return (
     <div>
-      <h2 className="text-2xl font-extrabold text-text-primary mb-2">Historial de Subidas</h2>
+      <h2 className="hidden text-2xl font-extrabold text-text-primary mb-2 md:block">Historial de Subidas</h2>
       <p className="text-text-secondary font-medium text-sm mb-6">Registro de archivos y vídeos enviados al chat.</p>
       {loading ? (
         <p>Cargando...</p>

@@ -3,11 +3,24 @@ import models from '../models/index.js';
 import { Op } from 'sequelize';
 import { createNotification } from '../services/notificationService.js';
 import jwt from 'jsonwebtoken';
+import { sanitizePlainText } from '../utils/sanitizer.js';
 
 const { 
     User, Friendship, WorkoutLog, Routine, RoutineExercise, ExerciseList, 
     WorkoutLike, WorkoutComment, WorkoutLogDetail, WorkoutLogSet 
 } = models;
+
+const publicUserData = (user) => {
+    if (!user) return user;
+    const data = typeof user.toJSON === 'function' ? user.toJSON() : { ...user };
+    if (data.role === 'admin') {
+        data.role = 'user';
+        data.trainer_id = null;
+        delete data.isAdmin;
+        delete data.is_admin;
+    }
+    return data;
+};
 
 export const searchUsers = async (req, res) => {
     try {
@@ -42,8 +55,8 @@ export const searchUsers = async (req, res) => {
             profile_image_url: user.profile_image_url,
             level: user.show_level_xp ? user.level : null,
             xp: user.show_level_xp ? user.xp : null,
-            role: user.role,
-            trainer_id: user.trainer_id
+            role: user.role === 'admin' ? 'user' : user.role,
+            trainer_id: user.role === 'admin' ? null : user.trainer_id
         }));
 
         res.json(results);
@@ -138,8 +151,8 @@ export const getFriendRequests = async (req, res) => {
             profile_image_url: user.profile_image_url,
             level: user.show_level_xp ? user.level : null,
             xp: user.show_level_xp ? user.xp : null,
-            role: user.role,
-            trainer_id: user.trainer_id
+            role: user.role === 'admin' ? 'user' : user.role,
+            trainer_id: user.role === 'admin' ? null : user.trainer_id
         });
 
         const formattedReceived = received.map(req => ({
@@ -253,8 +266,8 @@ export const getFriends = async (req, res) => {
                 profile_image_url: friend.profile_image_url,
                 level: friend.show_level_xp ? friend.level : null,
                 xp: friend.show_level_xp ? friend.xp : null,
-                role: friend.role,
-                trainer_id: friend.trainer_id
+                role: friend.role === 'admin' ? 'user' : friend.role,
+                trainer_id: friend.role === 'admin' ? null : friend.trainer_id
             };
         });
 
@@ -355,19 +368,32 @@ export const getPublicProfile = async (req, res) => {
                 }))
         }));
 
+        let parsedGym = null;
+        if (user.gym_data) {
+            try {
+                parsedGym = typeof user.gym_data === 'string' ? JSON.parse(user.gym_data) : user.gym_data;
+            } catch (e) {
+                parsedGym = null;
+            }
+        }
+
+        const isGymVisible = user.show_gym !== false;
+
         const data = {
             id: user.id,
             username: user.username,
             profile_image_url: user.profile_image_url,
-            role: user.role,
-            trainer_id: user.trainer_id,
+            role: isMe || user.role !== 'admin' ? user.role : 'user',
+            trainer_id: isMe || user.role !== 'admin' ? user.trainer_id : null,
             is_friend: isFriend && !isMe, 
             is_me: isMe,
             bio: user.bio,
             createdAt: user.created_at,
             lastSeen: user.updated_at,
             show_level_xp: !!(user.show_level_xp || isMe), 
-            show_badges: !!(user.show_badges || isMe),     
+            show_badges: !!(user.show_badges || isMe),
+            show_gym: isGymVisible,
+            gym: (isGymVisible || isMe) ? parsedGym : null,     
             level: null,
             xp: null,
             streak: null,
@@ -412,9 +438,9 @@ export const getLeaderboard = async (req, res) => {
             },
             order: [['xp', 'DESC']],
             limit: 50,
-            attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'role', 'trainer_id']
+            attributes: ['id', 'username', 'profile_image_url', 'level', 'xp', 'streak', 'role', 'trainer_id']
         });
-        res.json(users);
+        res.json(users.map(publicUserData));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -447,89 +473,381 @@ export const removeFriend = async (req, res) => {
 };
 
 // ==========================================
-// OPTIMIZACIÓN: NUEVA FUNCIÓN DEL FEED
+// OPTIMIZACIÓN: NUEVA FUNCIÓN DEL FEED (GLOBAL / MI GIMNASIO / AMIGOS)
 // ==========================================
+
+const parseGymDataSafe = (raw) => {
+    if (!raw) return null;
+    try {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        return parsed && typeof parsed === 'object' && (parsed.name || parsed.city) ? parsed : null;
+    } catch {
+        return null;
+    }
+};
+
+const normalizeGymString = (str) =>
+    String(str || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+const calculateGymDistanceMeters = (lat1, lon1, lat2, lon2) => {
+    const aLat = parseFloat(lat1);
+    const aLon = parseFloat(lon1);
+    const bLat = parseFloat(lat2);
+    const bLon = parseFloat(lon2);
+    if (!Number.isFinite(aLat) || !Number.isFinite(aLon) || !Number.isFinite(bLat) || !Number.isFinite(bLon)) {
+        return null;
+    }
+    const R = 6371e3;
+    const p1 = (aLat * Math.PI) / 180;
+    const p2 = (bLat * Math.PI) / 180;
+    const dp = ((bLat - aLat) * Math.PI) / 180;
+    const dl = ((bLon - aLon) * Math.PI) / 180;
+    const a = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+};
+
+const classifyGymMatchType = (myGym, otherGym) => {
+    if (!myGym || !otherGym) return null;
+
+    if (myGym.id && otherGym.id && String(myGym.id) === String(otherGym.id)) {
+        return 'same_gym';
+    }
+
+    const dist = calculateGymDistanceMeters(myGym.lat, myGym.lng, otherGym.lat, otherGym.lng);
+    if (dist !== null && dist <= 320) {
+        return 'same_gym';
+    }
+
+    const normMyName = normalizeGymString(myGym.name);
+    const normOtherName = normalizeGymString(otherGym.name);
+    const normMyCity = normalizeGymString(myGym.city);
+    const normOtherCity = normalizeGymString(otherGym.city);
+
+    if (normMyName && normOtherName && normMyName === normOtherName) {
+        if (!normMyCity || !normOtherCity || normMyCity === normOtherCity || (dist !== null && dist <= 3000)) {
+            return 'same_gym';
+        }
+    }
+
+    if (
+        normMyCity &&
+        normOtherCity &&
+        (normMyCity === normOtherCity ||
+            (normMyCity.length >= 4 && normOtherCity.includes(normMyCity)) ||
+            (normOtherCity.length >= 4 && normMyCity.includes(normOtherCity)))
+    ) {
+        return 'same_city';
+    }
+
+    if (dist !== null && dist <= 20000) {
+        return 'same_city';
+    }
+
+    return null;
+};
 
 export const getFeed = async (req, res) => {
     try {
         const userId = req.user.userId;
+        const requestedScope = String(req.query.scope || 'global').toLowerCase();
+        const scope = ['global', 'gym', 'friends'].includes(requestedScope) ? requestedScope : 'global';
+        const gymSubFilter = String(req.query.gymFilter || 'all').toLowerCase();
+        const includeOlder = req.query.includeOlder === 'true' || req.query.all === 'true';
 
-        // 1. Obtener IDs de amigos aceptados
-        const friendships = await Friendship.findAll({
-            where: {
-                [Op.or]: [{ requester_id: userId }, { addressee_id: userId }],
-                status: 'accepted'
-            },
-            attributes: ['requester_id', 'addressee_id']
+        // 1. Obtener relaciones de amistad (aceptadas y pendientes) y datos del propio usuario
+        const [allFriendships, currentUser] = await Promise.all([
+            Friendship.findAll({
+                where: {
+                    [Op.or]: [{ requester_id: userId }, { addressee_id: userId }]
+                },
+                attributes: ['requester_id', 'addressee_id', 'status']
+            }),
+            User.findByPk(userId, {
+                attributes: ['id', 'username', 'gym_data', 'show_gym', 'is_public_profile']
+            })
+        ]);
+
+        const friendIds = [];
+        const pendingIdsSet = new Set();
+        allFriendships.forEach(f => {
+            const otherId = f.requester_id === userId ? f.addressee_id : f.requester_id;
+            if (f.status === 'accepted') {
+                friendIds.push(otherId);
+            } else if (f.status === 'pending') {
+                pendingIdsSet.add(otherId);
+            }
         });
+        const friendIdsSet = new Set(friendIds);
+        const friendsAndSelfIds = Array.from(new Set([...friendIds, userId]));
 
-        const friendIds = friendships.map(f => f.requester_id === userId ? f.addressee_id : f.requester_id);
-        const feedUserIds = [...friendIds, userId];
+        const myGym = parseGymDataSafe(currentUser?.gym_data);
 
-        // 2. Buscar los logs de entrenamiento de esas personas
-        const logs = await WorkoutLog.findAll({
-            where: {
-                user_id: { [Op.in]: feedUserIds },
-                [Op.or]: [
-                    { visibility: 'friends' },
-                    { visibility: 'public' },
-                    { visibility: null }
+        // 2. Resolver usuarios objetivo y metadatos de gimnasio según el filtro (scope)
+        let targetUserIds = friendsAndSelfIds;
+        let gymMeta = {
+            hasGym: !!myGym,
+            myGym: myGym
+                ? {
+                      id: myGym.id || null,
+                      name: myGym.name || null,
+                      city: myGym.city || null,
+                      address: myGym.address || null,
+                      isVerified: !!myGym.isVerified
+                  }
+                : null,
+            sameGymCount: 0,
+            sameCityCount: 0,
+            gymMembers: []
+        };
+
+        const userGymMatchMap = new Map();
+
+        if (myGym) {
+            userGymMatchMap.set(userId, 'same_gym');
+            const usersWithGym = await User.findAll({
+                where: {
+                    gym_data: { [Op.ne]: null }
+                },
+                attributes: [
+                    'id',
+                    'username',
+                    'profile_image_url',
+                    'level',
+                    'xp',
+                    'streak',
+                    'show_level_xp',
+                    'role',
+                    'trainer_id',
+                    'gym_data',
+                    'show_gym',
+                    'is_public_profile'
                 ]
-            },
-            order: [
-                ['workout_date', 'DESC'], 
-                [{ model: WorkoutComment, as: 'Comments' }, 'created_at', 'ASC'] 
-            ],
-            limit: 20, // REDUCIDO DE 30 A 20: Menos carga en BD y red
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: ['id', 'username', 'profile_image_url', 'role', 'trainer_id']
-                },
-                {
-                    model: Routine,
-                    as: 'routine',
-                    attributes: ['id', 'name', 'image_url', 'folder'],
-                    include: [{
-                        model: RoutineExercise,
-                        as: 'RoutineExercises',
-                        attributes: ['name', 'image_url_start'],
-                        include: [{
-                            model: ExerciseList,
-                            attributes: ['image_url_start']
-                        }]
-                    }]
-                },
-                {
-                    model: WorkoutLogDetail,
-                    as: 'WorkoutLogDetails',
-                    include: [{
-                        model: WorkoutLogSet,
-                        as: 'WorkoutLogSets',
-                        attributes: ['weight_kg', 'reps', 'set_number'] // OPTIMIZACIÓN: Solo traemos los campos que importan
-                    }]
-                },
-                {
-                    model: WorkoutLike,
-                    as: 'Likes',
-                    attributes: ['id', 'user_id']
-                },
-                {
-                    model: WorkoutComment,
-                    as: 'Comments',
-                    attributes: ['id', 'comment', 'created_at', 'user_id'], // OPTIMIZACIÓN
-                    include: [{
+            });
+
+            const sameGymUserIds = [userId];
+            const sameCityUserIds = [];
+            const gymMembersList = [];
+
+            usersWithGym.forEach(u => {
+                if (u.id === userId) return;
+                const isFriend = friendIdsSet.has(u.id);
+                if (!u.is_public_profile && !isFriend) return;
+                if (u.show_gym === false && !isFriend) return;
+
+                const uGym = parseGymDataSafe(u.gym_data);
+                if (!uGym) return;
+
+                const matchType = classifyGymMatchType(myGym, uGym);
+                if (!matchType) return;
+
+                userGymMatchMap.set(u.id, matchType);
+                if (matchType === 'same_gym') {
+                    sameGymUserIds.push(u.id);
+                } else if (matchType === 'same_city') {
+                    sameCityUserIds.push(u.id);
+                }
+
+                const cleanUser = publicUserData(u);
+                gymMembersList.push({
+                    id: cleanUser.id,
+                    username: cleanUser.username,
+                    profile_image_url: cleanUser.profile_image_url,
+                    level: cleanUser.show_level_xp ? cleanUser.level : null,
+                    xp: cleanUser.show_level_xp ? cleanUser.xp : null,
+                    streak: cleanUser.streak || 0,
+                    role: cleanUser.role,
+                    trainer_id: cleanUser.trainer_id,
+                    gymName: uGym.name || null,
+                    gymCity: uGym.city || null,
+                    matchType,
+                    isFriend,
+                    hasPendingRequest: pendingIdsSet.has(u.id)
+                });
+            });
+
+            gymMembersList.sort((a, b) => {
+                if (a.matchType === 'same_gym' && b.matchType !== 'same_gym') return -1;
+                if (b.matchType === 'same_gym' && a.matchType !== 'same_gym') return 1;
+                return (b.streak || 0) - (a.streak || 0) || (b.xp || 0) - (a.xp || 0);
+            });
+
+            gymMeta.sameGymCount = sameGymUserIds.length - 1;
+            gymMeta.sameCityCount = sameCityUserIds.length;
+            gymMeta.gymMembers = gymMembersList.slice(0, 24);
+
+            if (scope === 'gym') {
+                if (gymSubFilter === 'same_gym') {
+                    targetUserIds = Array.from(new Set(sameGymUserIds));
+                } else if (gymSubFilter === 'same_city') {
+                    targetUserIds = Array.from(new Set([...sameCityUserIds, userId]));
+                } else {
+                    targetUserIds = Array.from(new Set([...sameGymUserIds, ...sameCityUserIds]));
+                }
+            }
+        } else if (scope === 'gym') {
+            targetUserIds = [];
+        }
+
+        if (scope === 'global') {
+            const publicUsers = await User.findAll({
+                where: { is_public_profile: true },
+                attributes: ['id']
+            });
+            targetUserIds = Array.from(new Set([...publicUsers.map(u => u.id), userId]));
+        }
+
+        if (scope === 'gym' && !myGym) {
+            res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+            return res.json({
+                feed: [],
+                hasOlder: false,
+                scope,
+                gymMeta
+            });
+        }
+
+        // Ventana estricta de 7 días por defecto (y acceso al histórico completo bajo demanda)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+
+        // Reglas estrictas de privacidad del muro:
+        // - Global: SOLO entrenamientos en "Todo el mundo" (visibility === 'public')
+        // - Mi Gimnasio: entrenamientos en "Todo el mundo" (visibility === 'public'), o en "Solo Amigos" si además ese compañero ya es tu amigo
+        // - Amigos: entrenamientos de tus amigos y tuyos en "Solo Amigos" ('friends') o "Todo el mundo" ('public')
+        const buildWhereClause = (withDateLimit, isOlderCheck = false) => {
+            const safeTargetIds = targetUserIds.length > 0 ? targetUserIds : [-1];
+            let clause;
+
+            if (scope === 'friends') {
+                clause = {
+                    user_id: { [Op.in]: safeTargetIds },
+                    [Op.or]: [{ visibility: 'friends' }, { visibility: 'public' }, { visibility: null }]
+                };
+            } else if (scope === 'gym') {
+                const gymFriendIds = safeTargetIds.filter(id => friendIdsSet.has(id) || id === userId);
+                if (gymFriendIds.length > 0) {
+                    clause = {
+                        [Op.or]: [
+                            {
+                                user_id: { [Op.in]: safeTargetIds },
+                                visibility: 'public'
+                            },
+                            {
+                                user_id: { [Op.in]: gymFriendIds },
+                                [Op.or]: [{ visibility: 'friends' }, { visibility: 'public' }, { visibility: null }]
+                            }
+                        ]
+                    };
+                } else {
+                    clause = {
+                        user_id: { [Op.in]: safeTargetIds },
+                        visibility: 'public'
+                    };
+                }
+            } else {
+                // scope === 'global' -> exclusivamente entrenamientos marcados como "Todo el mundo" ('public')
+                clause = {
+                    user_id: { [Op.in]: safeTargetIds },
+                    visibility: 'public'
+                };
+            }
+
+            if (isOlderCheck) {
+                clause.workout_date = { [Op.lt]: sevenDaysAgo };
+            } else if (withDateLimit) {
+                clause.workout_date = { [Op.gte]: sevenDaysAgo };
+            }
+            return clause;
+        };
+
+        const queryLogs = async (withDateLimit, limitCount) =>
+            WorkoutLog.findAll({
+                where: buildWhereClause(withDateLimit),
+                order: [
+                    ['workout_date', 'DESC'],
+                    [{ model: WorkoutComment, as: 'Comments' }, 'created_at', 'ASC'],
+                    [{ model: WorkoutLogDetail, as: 'WorkoutLogDetails' }, 'id', 'ASC']
+                ],
+                limit: limitCount,
+                include: [
+                    {
                         model: User,
                         as: 'user',
-                        attributes: ['id', 'username', 'profile_image_url', 'role', 'trainer_id']
-                    }]
-                }
-            ]
-        });
+                        attributes: [
+                            'id',
+                            'username',
+                            'profile_image_url',
+                            'streak',
+                            'level',
+                            'xp',
+                            'show_level_xp',
+                            'role',
+                            'trainer_id',
+                            'gym_data',
+                            'show_gym',
+                            'is_public_profile'
+                        ]
+                    },
+                    {
+                        model: Routine,
+                        as: 'routine',
+                        attributes: ['id', 'name', 'image_url', 'folder'],
+                        include: [
+                            {
+                                model: RoutineExercise,
+                                as: 'RoutineExercises',
+                                attributes: ['id', 'name', 'exercise_order', 'image_url_start'],
+                                include: [
+                                    {
+                                        model: ExerciseList,
+                                        attributes: ['image_url_start']
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        model: WorkoutLogDetail,
+                        as: 'WorkoutLogDetails',
+                        include: [
+                            {
+                                model: WorkoutLogSet,
+                                as: 'WorkoutLogSets',
+                                attributes: ['weight_kg', 'reps', 'set_number']
+                            }
+                        ]
+                    },
+                    {
+                        model: WorkoutLike,
+                        as: 'Likes',
+                        attributes: ['id', 'user_id', 'reaction_type']
+                    },
+                    {
+                        model: WorkoutComment,
+                        as: 'Comments',
+                        attributes: ['id', 'comment', 'created_at', 'user_id'],
+                        include: [
+                            {
+                                model: User,
+                                as: 'user',
+                                attributes: ['id', 'username', 'profile_image_url', 'role', 'trainer_id']
+                            }
+                        ]
+                    }
+                ]
+            });
+
+        const effectiveIncludeOlder = includeOlder;
+        const logs = await queryLogs(!effectiveIncludeOlder, effectiveIncludeOlder ? 50 : 25);
 
         // 3. OPTIMIZACIÓN MASIVA: Obtener SOLO los nombres de ejercicios presentes en ESTOS entrenamientos
-        // En lugar de cargar todo el catálogo (ExerciseList.findAll()), extraemos los nombres únicos del feed de hoy
         const uniqueExerciseNamesInFeed = new Set();
         logs.forEach(log => {
             if (log.WorkoutLogDetails) {
@@ -541,15 +859,16 @@ export const getFeed = async (req, res) => {
             }
         });
 
-        // Solo buscamos en la BD las imágenes de los ejercicios que realmente se han usado hoy
-        const relevantExercises = await ExerciseList.findAll({
-            where: {
-                name: { [Op.in]: Array.from(uniqueExerciseNamesInFeed) }
-            },
-            attributes: ['name', 'image_url_start', 'video_url'] // Solo traemos campos útiles, no descripciones enteras
-        });
+        const relevantExercises =
+            uniqueExerciseNamesInFeed.size > 0
+                ? await ExerciseList.findAll({
+                      where: {
+                          name: { [Op.in]: Array.from(uniqueExerciseNamesInFeed) }
+                      },
+                      attributes: ['name', 'image_url_start', 'video_url']
+                  })
+                : [];
 
-        // Creamos un diccionario rápido en memoria para no usar .find() en cada vuelta (O(1) en vez de O(n))
         const exerciseDictionary = {};
         relevantExercises.forEach(ex => {
             exerciseDictionary[ex.name.toLowerCase()] = ex;
@@ -558,12 +877,57 @@ export const getFeed = async (req, res) => {
         const formattedFeed = logs.map(log => {
             const logData = log.toJSON();
             const likes = logData.Likes || [];
+            const rawAuthor = logData.user || {};
+            const isMe = logData.user_id === userId;
+            const isFriend = friendIdsSet.has(logData.user_id);
 
-            // Añadir ejercicios, series e imágenes usando el diccionario rápido
+            const parsedAuthorGym =
+                rawAuthor.show_gym !== false || isMe ? parseGymDataSafe(rawAuthor.gym_data) : null;
+
+            const gymMatchType =
+                userGymMatchMap.get(logData.user_id) ||
+                (myGym && parsedAuthorGym ? classifyGymMatchType(myGym, parsedAuthorGym) : null);
+
+            const sanitizedAuthor = publicUserData(rawAuthor);
+            if (sanitizedAuthor) {
+                delete sanitizedAuthor.gym_data;
+                sanitizedAuthor.level = sanitizedAuthor.show_level_xp ? sanitizedAuthor.level : null;
+                sanitizedAuthor.xp = sanitizedAuthor.show_level_xp ? sanitizedAuthor.xp : null;
+                sanitizedAuthor.gym_name = parsedAuthorGym?.name || null;
+                sanitizedAuthor.gym_city = parsedAuthorGym?.city || null;
+                sanitizedAuthor.gym_verified = !!parsedAuthorGym?.isVerified;
+                sanitizedAuthor.gym_match_type = gymMatchType;
+                sanitizedAuthor.is_friend = isFriend;
+                sanitizedAuthor.has_pending_request = pendingIdsSet.has(logData.user_id);
+            }
+
+            logData.user = sanitizedAuthor;
+            logData.Comments = (logData.Comments || []).map(comment => ({
+                ...comment,
+                user: publicUserData(comment.user)
+            }));
+
             if (logData.WorkoutLogDetails) {
+                // Orden canónico de la rutina asociada (si existe)
+                const routineExercises = (logData.routine?.RoutineExercises || []).slice().sort((a, b) => {
+                    const orderA = a.exercise_order !== undefined && a.exercise_order !== null ? Number(a.exercise_order) : 0;
+                    const orderB = b.exercise_order !== undefined && b.exercise_order !== null ? Number(b.exercise_order) : 0;
+                    return orderA - orderB;
+                });
+
+                const routineOrderMap = new Map();
+                routineExercises.forEach((re, idx) => {
+                    if (re.name) {
+                        const norm = re.name.toLowerCase().trim();
+                        if (!routineOrderMap.has(norm)) {
+                            routineOrderMap.set(norm, idx);
+                        }
+                    }
+                });
+
                 logData.WorkoutLogDetails = logData.WorkoutLogDetails.map(detail => {
                     const matchingEx = exerciseDictionary[detail.exercise_name?.toLowerCase()];
-                    
+
                     let validSets = [];
                     if (detail.WorkoutLogSets) {
                         validSets = detail.WorkoutLogSets
@@ -578,26 +942,108 @@ export const getFeed = async (req, res) => {
                         WorkoutLogSets: validSets
                     };
                 });
+
+                // Ordenar los ejercicios según el orden de la rutina o por orden de ejecución/creación (id)
+                logData.WorkoutLogDetails.sort((a, b) => {
+                    const nameA = (a.exercise_name || '').toLowerCase().trim();
+                    const nameB = (b.exercise_name || '').toLowerCase().trim();
+                    const hasA = routineOrderMap.has(nameA);
+                    const hasB = routineOrderMap.has(nameB);
+
+                    if (hasA && hasB) return routineOrderMap.get(nameA) - routineOrderMap.get(nameB);
+                    if (hasA) return -1;
+                    if (hasB) return 1;
+                    return (a.id || 0) - (b.id || 0);
+                });
             }
+
+            const reactionsCounts = {
+                fire: 0,
+                beast: 0,
+                respect: 0,
+                pr: 0
+            };
+            let myReaction = null;
+
+            likes.forEach(like => {
+                const rType = ['fire', 'beast', 'respect', 'pr'].includes(like.reaction_type)
+                    ? like.reaction_type
+                    : 'fire';
+                reactionsCounts[rType] = (reactionsCounts[rType] || 0) + 1;
+                if (like.user_id === userId) {
+                    myReaction = rType;
+                }
+            });
 
             return {
                 ...logData,
                 likesCount: likes.length,
-                hasLiked: likes.some(like => like.user_id === userId)
+                hasLiked: !!myReaction,
+                myReaction,
+                reactionsCounts
             };
         });
 
-        res.json(formattedFeed);
+        // Comprobar si existen publicaciones más antiguas de 7 días disponibles
+        let hasOlderPosts = false;
+        if (!effectiveIncludeOlder && targetUserIds.length > 0) {
+            const olderLog = await WorkoutLog.findOne({
+                where: buildWhereClause(false, true),
+                attributes: ['id']
+            });
+            hasOlderPosts = !!olderLog;
+        }
+
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+        res.json({
+            feed: formattedFeed,
+            hasOlder: hasOlderPosts,
+            isShowingOlder: effectiveIncludeOlder,
+            scope,
+            gymMeta
+        });
     } catch (error) {
         console.error("Error en getFeed:", error);
         res.status(500).json({ error: error.message });
     }
 };
 
+const REACTION_META = {
+    fire: { label: 'Fuego', verb: 'le dio Fuego a' },
+    beast: { label: 'Modo Bestia', verb: 'reconoció como Bestia' },
+    respect: { label: 'Respeto', verb: 'mostró Respeto por' },
+    pr: { label: 'PR / Récord', verb: 'celebró tu PR en' }
+};
+
+const buildWorkoutReactionsSnapshot = async (workoutId, userId) => {
+    const allLikes = await WorkoutLike.findAll({
+        where: { workout_id: workoutId },
+        attributes: ['user_id', 'reaction_type'],
+        raw: true
+    });
+    const reactionsCounts = { fire: 0, beast: 0, respect: 0, pr: 0 };
+    let myReaction = null;
+    for (const like of allLikes) {
+        const rType = ['fire', 'beast', 'respect', 'pr'].includes(like.reaction_type) ? like.reaction_type : 'fire';
+        reactionsCounts[rType] = (reactionsCounts[rType] || 0) + 1;
+        if (Number(like.user_id) === Number(userId)) {
+            myReaction = rType;
+        }
+    }
+    return {
+        likesCount: allLikes.length,
+        hasLiked: !!myReaction,
+        myReaction,
+        reactionsCounts
+    };
+};
+
 export const toggleLike = async (req, res) => {
     try {
         const { workoutId } = req.params;
         const userId = req.user.userId;
+        const rawReaction = String(req.body?.reactionType || 'fire').toLowerCase();
+        const reactionType = ['fire', 'beast', 'respect', 'pr'].includes(rawReaction) ? rawReaction : 'fire';
         const io = req.app.get('io');
 
         const existingLike = await WorkoutLike.findOne({
@@ -605,27 +1051,73 @@ export const toggleLike = async (req, res) => {
         });
 
         if (existingLike) {
-            await existingLike.destroy();
-            // OPTIMIZACIÓN WEB SOCKET: Enviamos solo a los amigos que tengan el muro abierto, o a nadie si queremos silenciarlo.
-            // Para simplificar y ahorrar CPU del servidor de websockets, lo quitamos, 
-            // el usuario que le de a like lo verá en su pantalla igual por React state.
-            return res.json({ success: true, liked: false });
+            const currentType = existingLike.reaction_type || 'fire';
+            if (currentType === reactionType) {
+                await existingLike.destroy();
+                const snapshot = await buildWorkoutReactionsSnapshot(workoutId, userId);
+                return res.json({ success: true, liked: false, reactionType: null, ...snapshot });
+            } else {
+                existingLike.reaction_type = reactionType;
+                await existingLike.save();
+                if (io) {
+                    const workout = await WorkoutLog.findByPk(workoutId, { attributes: ['user_id'] });
+                    if (workout && workout.user_id !== userId) {
+                        io.to(workout.user_id.toString()).emit('feed_update');
+                    }
+                }
+                const snapshot = await buildWorkoutReactionsSnapshot(workoutId, userId);
+                return res.json({ success: true, liked: true, reactionType, ...snapshot });
+            }
         } else {
-            await WorkoutLike.create({ user_id: userId, workout_id: workoutId });
-            
-            // Notificar al dueño del entrenamiento (si no soy yo mismo)
-            const workout = await WorkoutLog.findByPk(workoutId);
+            await WorkoutLike.create({
+                user_id: userId,
+                workout_id: workoutId,
+                reaction_type: reactionType
+            });
+
+            // Notificar al dueño del entrenamiento con contexto real de ejercicio/rutina y contador de atletas
+            const workout = await WorkoutLog.findByPk(workoutId, {
+                include: [
+                    {
+                        model: WorkoutLogDetail,
+                        as: 'WorkoutLogDetails',
+                        attributes: ['exercise_name']
+                    }
+                ]
+            });
+
             if (workout && workout.user_id !== userId) {
-                const liker = await User.findByPk(userId, { attributes: ['username'] });
+                const [liker, totalReactions] = await Promise.all([
+                    User.findByPk(userId, { attributes: ['username'] }),
+                    WorkoutLike.count({ where: { workout_id: workoutId } })
+                ]);
+
+                const likerName = liker?.username || 'Un atleta';
+                const starExercise = workout.WorkoutLogDetails?.[0]?.exercise_name;
+                const workoutTarget = starExercise || workout.routine_name || 'tu entrenamiento';
+                const meta = REACTION_META[reactionType] || REACTION_META.fire;
+
+                const notifTitle =
+                    totalReactions >= 2
+                        ? `¡A ${totalReactions} atletas les flipó tu entreno!`
+                        : `¡Nueva reacción: ${meta.label}!`;
+
+                const notifMessage =
+                    totalReactions >= 2
+                        ? `A ${likerName} y ${totalReactions - 1} atleta${totalReactions - 1 > 1 ? 's' : ''} más les flipó tu récord en ${workoutTarget} (${meta.label}).`
+                        : `${likerName} ${meta.verb} ${workoutTarget}.`;
+
                 await createNotification(workout.user_id, {
                     type: 'success',
-                    title: '¡Nuevo Me gusta!',
-                    message: `A ${liker.username} le ha gustado tu entrenamiento.`,
-                    data: { url: `/social?tab=feed` }
+                    title: notifTitle,
+                    message: notifMessage,
+                    data: { url: `/social?tab=feed`, workoutId: String(workoutId), reactionType }
                 });
-                
-                // Si tienes io, avísale solo a ÉL para actualizar la campana.
-                if (io) io.to(workout.user_id.toString()).emit('feed_update');
+
+                if (io) {
+                    io.to(workout.user_id.toString()).emit('feed_update');
+                    io.to(workout.user_id.toString()).emit('new_notification');
+                }
             }
 
             // Gamification
@@ -634,7 +1126,8 @@ export const toggleLike = async (req, res) => {
                 await trackChallenge(userId, 'social_like_post', 1);
             } catch (err) {}
 
-            return res.json({ success: true, liked: true });
+            const snapshot = await buildWorkoutReactionsSnapshot(workoutId, userId);
+            return res.json({ success: true, liked: true, reactionType, ...snapshot });
         }
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -648,14 +1141,15 @@ export const addComment = async (req, res) => {
         const userId = req.user.userId;
         const io = req.app.get('io');
 
-        if (!comment || comment.trim() === '') {
+        const cleanComment = sanitizePlainText(comment);
+        if (!comment || !cleanComment) {
             return res.status(400).json({ error: 'El comentario no puede estar vacío' });
         }
 
         const newComment = await WorkoutComment.create({
             user_id: userId,
             workout_id: workoutId,
-            comment: comment.trim()
+            comment: cleanComment
         });
 
         // Cargar usuario para devolver el comentario completo al frontend
@@ -667,17 +1161,32 @@ export const addComment = async (req, res) => {
             }]
         });
 
-        // Notificar al dueño
-        const workout = await WorkoutLog.findByPk(workoutId);
+        // Notificar al dueño con previsualización del comentario y ejercicio/rutina
+        const workout = await WorkoutLog.findByPk(workoutId, {
+            include: [
+                {
+                    model: WorkoutLogDetail,
+                    as: 'WorkoutLogDetails',
+                    attributes: ['exercise_name']
+                }
+            ]
+        });
         if (workout && workout.user_id !== userId) {
             const commenter = await User.findByPk(userId, { attributes: ['username'] });
+            const starExercise = workout.WorkoutLogDetails?.[0]?.exercise_name;
+            const workoutTarget = starExercise || workout.routine_name || 'tu entrenamiento';
+            const snippet = cleanComment.length > 65 ? `${cleanComment.slice(0, 62)}...` : cleanComment;
+
             await createNotification(workout.user_id, {
                 type: 'info',
-                title: 'Nuevo comentario',
-                message: `${commenter.username} ha comentado en tu entrenamiento.`,
-                data: { url: `/social?tab=feed` }
+                title: `${commenter?.username || 'Un atleta'} comentó tu sesión`,
+                message: `En ${workoutTarget}: "${snippet}"`,
+                data: { url: `/social?tab=feed`, workoutId: String(workoutId) }
             });
-            if (io) io.to(workout.user_id.toString()).emit('feed_update');
+            if (io) {
+                io.to(workout.user_id.toString()).emit('feed_update');
+                io.to(workout.user_id.toString()).emit('new_notification');
+            }
         }
 
         // Gamification

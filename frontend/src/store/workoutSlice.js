@@ -1,13 +1,14 @@
 /* frontend/src/store/workoutSlice.js */
 import * as workoutService from '../services/workoutService';
 import { formatDateForQuery } from '../utils/dateUtils';
+import { isSameDay } from '../utils/helpers';
 import { v4 as uuidv4 } from 'uuid';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
 // Registramos el plugin nativo aquí
-const NativeTimer = Capacitor.isNativePlatform() ? registerPlugin('NativeTimer') : null;
+const NativeTimer = Capacitor.getPlatform() === 'android' ? registerPlugin('NativeTimer') : null;
 
-const getAccentColor = () => {
+const _getAccentColor = () => {
   try {
     const accent = localStorage.getItem('accent') || 'green';
     const colors = {
@@ -18,15 +19,54 @@ const getAccentColor = () => {
       sky: '#0ea5e9', slate: '#64748b', zinc: '#71717a', stone: '#78716c', neutral: '#737373'
     };
     return colors[accent] || '#22c55e';
-  } catch (e) {
+  } catch {
     return '#22c55e';
   }
 };
 
 const stopNativeTimer = () => {
-  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android' && NativeTimer) {
-    NativeTimer.stopTimer().catch(console.warn);
+  NativeTimer?.stopTimer().catch(console.warn);
+};
+
+const startNativeTimer = (endTimeMs, { restSoundEnabled, hapticsEnabled }) => {
+  if (NativeTimer) {
+    NativeTimer.startTimer({
+      endTimeMs,
+      color: _getAccentColor(),
+      sound: restSoundEnabled ?? true,
+      vibrate: hapticsEnabled ?? true
+    }).catch(console.warn);
   }
+};
+
+export const completeNativeRestTimer = endTimeMs => NativeTimer?.completeTimer({ endTimeMs });
+
+export const initNativeTimerSync = (store) => {
+  if (typeof window === 'undefined' || !NativeTimer) return;
+  NativeTimer.addListener('timerAction', data => {
+    const state = store.getState();
+    if (!state.isResting || state.isRestTimerPaused || state.restTimerEndTime !== data?.endTimeMs) return;
+    if (data.action === 'addTime') state.addRestTime(data.seconds, data.newEndTimeMs);
+    if (data.action === 'skip' || data.action === 'complete') state.stopRestTimer({ notifyNative: false });
+  }).catch(console.warn);
+
+  const deadline = store.getState().restTimerEndTime;
+  if (!deadline) return;
+  NativeTimer.getTimerState().then(({ endTimeMs }) => {
+    const state = store.getState();
+    if (!state.isResting || state.isRestTimerPaused || state.restTimerEndTime !== deadline) return;
+    if (!endTimeMs) state.stopRestTimer({ notifyNative: false });
+    else if (endTimeMs !== deadline) state.addRestTime(Math.round((endTimeMs - deadline) / 1000), endTimeMs);
+  }).catch(console.warn);
+};
+
+// --- HELPER: Detectar si un entrenamiento se inició hoy según la hora local del usuario ---
+export const isWorkoutDoneToday = (log, todayDate = new Date()) => {
+  if (!log?.workout_date) return false;
+  const start = new Date(log.workout_date);
+  if (isNaN(start.getTime())) return false;
+
+  return isSameDay(start, todayDate);
 };
 
 // --- HELPER CORREGIDO: Buscar último rendimiento (AHORA LEE BIEN EL BACKEND) ---
@@ -61,15 +101,31 @@ const findLastPerformance = (workoutLog, exerciseName) => {
 // --- FUNCIONES DE ALMACENAMIENTO LOCAL ---
 const getWorkoutStateFromStorage = () => {
   try {
-    const activeWorkout = JSON.parse(localStorage.getItem('activeWorkout'));
-    if (!activeWorkout) return {};
+    const rawWorkout = localStorage.getItem('activeWorkout');
+    if (!rawWorkout) return {};
+    const activeWorkout = JSON.parse(rawWorkout);
+    if (!activeWorkout || typeof activeWorkout !== 'object') return {};
+
+    const rawStartTime = localStorage.getItem('workoutStartTime');
+    const parsedStartTime = rawStartTime ? JSON.parse(rawStartTime) : null;
+    const workoutStartTime = typeof parsedStartTime === 'number' && parsedStartTime > 0 ? parsedStartTime : Date.now();
+
+    if (!activeWorkout.startTime) {
+      activeWorkout.startTime = new Date(workoutStartTime).toISOString();
+    }
+
+    const rawPaused = localStorage.getItem('isWorkoutPaused');
+    const isWorkoutPaused = rawPaused ? Boolean(JSON.parse(rawPaused)) : false;
+
+    const rawAccum = localStorage.getItem('workoutAccumulatedTime');
+    const parsedAccum = rawAccum ? JSON.parse(rawAccum) : 0;
+    const workoutAccumulatedTime = typeof parsedAccum === 'number' && parsedAccum >= 0 ? parsedAccum : 0;
+
     return {
       activeWorkout,
-      workoutStartTime: JSON.parse(localStorage.getItem('workoutStartTime')),
-      isWorkoutPaused: JSON.parse(localStorage.getItem('isWorkoutPaused')),
-      workoutAccumulatedTime: JSON.parse(
-        localStorage.getItem('workoutAccumulatedTime')
-      ),
+      workoutStartTime,
+      isWorkoutPaused,
+      workoutAccumulatedTime,
     };
   } catch {
     clearWorkoutInStorage();
@@ -134,6 +190,25 @@ const clearRestTimerInStorage = () => {
   localStorage.removeItem('restTimerRemaining');
 };
 
+const getCompletedRoutinesFromStorage = () => {
+  try {
+    const raw = localStorage.getItem('pro_fitness_completed_routines_today');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    const todayStr = formatDateForQuery(new Date());
+    if (parsed && parsed.date === todayStr && Array.isArray(parsed.ids)) {
+      return parsed.ids;
+    }
+    // Si la fecha guardada no es hoy, limpiar inmediatamente el residuo caducado
+    try {
+      localStorage.removeItem('pro_fitness_completed_routines_today');
+    } catch {}
+    return [];
+  } catch {
+    return [];
+  }
+};
+
 // --- SLICE DE ZUSTAND ---
 const initialState = {
   activeWorkout: null,
@@ -147,7 +222,7 @@ const initialState = {
   restTimerMode: 'modal',
   isRestTimerPaused: false,
   restTimerRemaining: null,
-  completedRoutineIdsToday: [],
+  completedRoutineIdsToday: getCompletedRoutinesFromStorage(),
 };
 
 export const createWorkoutSlice = (set, get) => ({
@@ -157,18 +232,53 @@ export const createWorkoutSlice = (set, get) => ({
 
   fetchTodaysCompletedRoutines: async () => {
     try {
-      const todayQuery = formatDateForQuery(new Date());
+      const today = new Date();
+      const todayQuery = formatDateForQuery(today);
 
       const workouts = await workoutService.getWorkouts({
         date: todayQuery
       });
 
-      if (Array.isArray(workouts)) {
-        const completedIds = workouts
-          .map(w => w.routine_id || w.routineId)
-          .filter(id => id != null);
+      const apiCompletedIds = Array.isArray(workouts)
+        ? workouts.map(w => w.routine_id || w.routineId).filter(id => id != null)
+        : [];
 
-        set({ completedRoutineIdsToday: [...new Set(completedIds)] });
+      // Validar estrictamente con workoutLog asegurando que se haya iniciado o concluido hoy (soporta terminar pasada la medianoche)
+      const stateLogs = get().workoutLog || [];
+      const localCompletedIds = stateLogs
+        .filter(log => {
+          if (!log?.routine_id || !log?.workout_date) return false;
+          return isWorkoutDoneToday(log, today);
+        })
+        .map(log => log.routine_id);
+
+      // Leemos de almacenamiento únicamente si coincide con la fecha de hoy
+      const stored = getCompletedRoutinesFromStorage();
+
+      // Verificar que los IDs almacenados pertenezcan a entrenamientos que se hicieron o terminaron hoy
+      const verifiedStored = stored.filter(storedId => {
+        const matchingLogs = stateLogs.filter(l => String(l?.routine_id) === String(storedId));
+        if (matchingLogs.length > 0) {
+          return matchingLogs.some(l => isWorkoutDoneToday(l, today));
+        }
+        return true;
+      });
+
+      // Solo rutinas que realmente correspondan a HOY (no arrastrar estado en memoria de días pasados)
+      const merged = [...new Set([...verifiedStored, ...apiCompletedIds, ...localCompletedIds])];
+      set({ completedRoutineIdsToday: merged });
+
+      try {
+        if (merged.length > 0) {
+          localStorage.setItem('pro_fitness_completed_routines_today', JSON.stringify({
+            date: todayQuery,
+            ids: merged
+          }));
+        } else {
+          localStorage.removeItem('pro_fitness_completed_routines_today');
+        }
+      } catch (e) {
+        console.warn('Error saving completed routines to storage', e);
       }
     } catch (error) {
       console.error("Error obteniendo rutinas completadas hoy:", error);
@@ -324,10 +434,10 @@ export const createWorkoutSlice = (set, get) => ({
     const targetExercise = newExercises[exIndex];
     if (!targetExercise) return;
 
-    const { suggestedSets, suggestedWeight, suggestedReps } = strategy || {};
+    const { suggestedSets, suggestedWeight, suggestedReps, perSetPlan } = strategy || {};
 
     // 1. Modificar número de series si la recomendación indica un conteo específico
-    const targetSetsCount = parseInt(suggestedSets, 10);
+    const targetSetsCount = parseInt(suggestedSets || (Array.isArray(perSetPlan) ? perSetPlan.length : null), 10);
     if (!isNaN(targetSetsCount) && targetSetsCount > 0) {
       const currentSets = targetExercise.setsDone || [];
       if (currentSets.length > targetSetsCount) {
@@ -336,10 +446,12 @@ export const createWorkoutSlice = (set, get) => ({
       } else if (currentSets.length < targetSetsCount) {
         // Aumentar series si la pauta sugiere más volumen
         while (targetExercise.setsDone.length < targetSetsCount) {
+          const newIdx = targetExercise.setsDone.length;
+          const planSet = perSetPlan && perSetPlan[newIdx] ? perSetPlan[newIdx] : null;
           targetExercise.setsDone.push({
             set_number: targetExercise.setsDone.length + 1,
-            reps: suggestedReps !== null && suggestedReps !== undefined ? String(suggestedReps) : '',
-            weight_kg: suggestedWeight !== null && suggestedWeight !== undefined ? String(suggestedWeight) : '',
+            reps: planSet?.reps !== undefined && planSet?.reps !== null ? String(planSet.reps) : (suggestedReps !== null && suggestedReps !== undefined ? String(suggestedReps) : ''),
+            weight_kg: planSet?.weight !== undefined && planSet?.weight !== null ? String(planSet.weight) : (suggestedWeight !== null && suggestedWeight !== undefined ? String(suggestedWeight) : ''),
             is_dropset: false,
             is_warmup: false,
             rir: null,
@@ -360,40 +472,58 @@ export const createWorkoutSlice = (set, get) => ({
 
     // 2. Aplicar peso y repeticiones sugeridas a las series de trabajo
     if (targetExercise.setsDone && targetExercise.setsDone.length > 0) {
-      let appliedWeightCount = 0;
-      let appliedRepsCount = 0;
-
-      // Completar series que estén vacías
-      targetExercise.setsDone.forEach((set) => {
-        if (set.is_warmup) return;
-        if (suggestedWeight !== null && suggestedWeight !== undefined) {
-          if (set.weight_kg === '' || set.weight_kg === null || set.weight_kg === undefined) {
-            set.weight_kg = suggestedWeight;
-            appliedWeightCount++;
-          }
-        }
-        if (suggestedReps !== null && suggestedReps !== undefined) {
-          if (set.reps === '' || set.reps === null || set.reps === undefined) {
-            set.reps = suggestedReps;
-            appliedRepsCount++;
-          }
-        }
-      });
-
-      // Si ninguna serie estaba vacía, actualizar todas las series de trabajo a la pauta
-      if (appliedWeightCount === 0 && suggestedWeight !== null && suggestedWeight !== undefined) {
+      if (perSetPlan && Array.isArray(perSetPlan) && perSetPlan.length > 0) {
+        // Asignación diferenciada por serie (ej: Top Set + Back-off sets)
+        let workingIdx = 0;
         targetExercise.setsDone.forEach((set) => {
-          if (!set.is_warmup) {
-            set.weight_kg = suggestedWeight;
+          if (set.is_warmup || set.is_dropset) return;
+          const planSet = perSetPlan[workingIdx] || perSetPlan[perSetPlan.length - 1];
+          if (planSet) {
+            if (planSet.weight !== null && planSet.weight !== undefined) {
+              set.weight_kg = planSet.weight;
+            }
+            if (planSet.reps !== null && planSet.reps !== undefined) {
+              set.reps = planSet.reps;
+            }
+          }
+          workingIdx++;
+        });
+      } else {
+        let appliedWeightCount = 0;
+        let appliedRepsCount = 0;
+
+        // Completar series que estén vacías
+        targetExercise.setsDone.forEach((set) => {
+          if (set.is_warmup) return;
+          if (suggestedWeight !== null && suggestedWeight !== undefined) {
+            if (set.weight_kg === '' || set.weight_kg === null || set.weight_kg === undefined) {
+              set.weight_kg = suggestedWeight;
+              appliedWeightCount++;
+            }
+          }
+          if (suggestedReps !== null && suggestedReps !== undefined) {
+            if (set.reps === '' || set.reps === null || set.reps === undefined) {
+              set.reps = suggestedReps;
+              appliedRepsCount++;
+            }
           }
         });
-      }
-      if (appliedRepsCount === 0 && suggestedReps !== null && suggestedReps !== undefined) {
-        targetExercise.setsDone.forEach((set) => {
-          if (!set.is_warmup) {
-            set.reps = suggestedReps;
-          }
-        });
+
+        // Si ninguna serie estaba vacía, actualizar todas las series de trabajo a la pauta
+        if (appliedWeightCount === 0 && suggestedWeight !== null && suggestedWeight !== undefined) {
+          targetExercise.setsDone.forEach((set) => {
+            if (!set.is_warmup) {
+              set.weight_kg = suggestedWeight;
+            }
+          });
+        }
+        if (appliedRepsCount === 0 && suggestedReps !== null && suggestedReps !== undefined) {
+          targetExercise.setsDone.forEach((set) => {
+            if (!set.is_warmup) {
+              set.reps = suggestedReps;
+            }
+          });
+        }
       }
     }
 
@@ -608,6 +738,7 @@ export const createWorkoutSlice = (set, get) => ({
     };
     set(newState);
     setRestTimerInStorage(newState);
+    startNativeTimer(endTimeMs, get());
   },
 
   setRestTimerMode: (mode) => {
@@ -627,6 +758,7 @@ export const createWorkoutSlice = (set, get) => ({
         restTimerEndTime: newEndTime,
         restTimerRemaining: null,
       };
+      startNativeTimer(newEndTime, get());
     } else {
       const now = Date.now();
       const remaining = restTimerEndTime ? restTimerEndTime - now : 0;
@@ -642,7 +774,7 @@ export const createWorkoutSlice = (set, get) => ({
     setRestTimerInStorage({ ...get(), ...newState });
   },
 
-  addRestTime: (secondsToAdd) => {
+  addRestTime: (secondsToAdd, nativeEndTime) => {
     set((state) => {
       if (state.isRestTimerPaused) {
         const currentRemaining = state.restTimerRemaining || 0;
@@ -657,14 +789,7 @@ export const createWorkoutSlice = (set, get) => ({
       }
 
       if (!state.restTimerEndTime) return {};
-      const now = Date.now();
-      let newEndTime;
-
-      if (state.restTimerEndTime < now) {
-        newEndTime = now + (secondsToAdd * 1000);
-      } else {
-        newEndTime = state.restTimerEndTime + (secondsToAdd * 1000);
-      }
+      const newEndTime = nativeEndTime ?? (Math.max(state.restTimerEndTime, Date.now()) + secondsToAdd * 1000);
 
       const newInitial = (state.restTimerInitialDuration || 0) + secondsToAdd;
 
@@ -673,6 +798,7 @@ export const createWorkoutSlice = (set, get) => ({
         restTimerInitialDuration: Math.max(1, newInitial),
       };
       setRestTimerInStorage({ ...state, ...newState });
+      if (nativeEndTime === undefined) startNativeTimer(newEndTime, state);
 
       return newState;
     });
@@ -684,9 +810,9 @@ export const createWorkoutSlice = (set, get) => ({
     set({ restTimerEndTime: null, restTimerInitialDuration: null, isRestTimerPaused: false, restTimerRemaining: null });
   },
 
-  stopRestTimer: () => {
+  stopRestTimer: ({ notifyNative = true } = {}) => {
     clearRestTimerInStorage();
-    stopNativeTimer();
+    if (notifyNative) stopNativeTimer();
     set({
       isResting: false,
       restTimerEndTime: null,
@@ -703,7 +829,11 @@ export const createWorkoutSlice = (set, get) => ({
     const activeWorkout = state.activeWorkout;
     if (!activeWorkout || !activeWorkout.startTime) return;
 
-    const elapsed = Date.now() - new Date(activeWorkout.startTime).getTime();
+    const elapsed =
+      (state.workoutAccumulatedTime || 0) +
+      (!state.isWorkoutPaused && state.workoutStartTime
+        ? Date.now() - state.workoutStartTime
+        : 0);
     const duration_seconds = Math.floor(elapsed / 1000);
     // Estimación genérica si el usuario no introduce calorías (aprox 400 kcal/h)
     const calories_burned = Math.round((duration_seconds / 3600) * 400);
@@ -719,9 +849,9 @@ export const createWorkoutSlice = (set, get) => ({
     ));
 
     if (!isAnySetFilled) {
-        // Si no hay datos, limpiamos la sesión sin guardarla
+        // Al alcanzar el límite sin datos, cancelamos y retiramos la sesión activa.
         state.clearWorkoutState();
-        return;
+        return { success: false, cancelled: true, message: 'Entrenamiento cancelado sin datos.' };
     }
 
     const safeParseFloat = (value) => parseFloat(String(value).replace(',', '.')) || 0;
@@ -756,10 +886,17 @@ export const createWorkoutSlice = (set, get) => ({
             })),
     };
 
-    await state.logWorkout(workoutData);
+    const result = await state.logWorkout(workoutData);
+    if (result?.success) {
+      // logWorkout limpia el almacenamiento, pero el autolímite también debe
+      // limpiar el estado en memoria para retirar el entrenamiento activo.
+      get().clearWorkoutState();
+    }
+    return result;
   },
 
   logWorkout: async (workoutData) => {
+    let finalWorkoutData = null;
     try {
       const state = get();
       const workoutDate = state.activeWorkout?.startTime || new Date().toISOString();
@@ -776,7 +913,7 @@ export const createWorkoutSlice = (set, get) => ({
           });
       }
 
-      const finalWorkoutData = {
+      finalWorkoutData = {
         ...workoutData,
         details: processedDetails || workoutData.details,
         date: workoutDate, 
@@ -787,9 +924,20 @@ export const createWorkoutSlice = (set, get) => ({
       const responseData = await workoutService.logWorkout(finalWorkoutData);
 
       if (workoutData.routineId) {
-        const current = get().completedRoutineIdsToday;
-        if (!current.includes(workoutData.routineId)) {
-          set({ completedRoutineIdsToday: [...current, workoutData.routineId] });
+        const current = get().completedRoutineIdsToday || [];
+        const normId = workoutData.routineId;
+        if (!current.some(id => String(id) === String(normId))) {
+          const updated = [...current, normId];
+          set({ completedRoutineIdsToday: updated });
+          try {
+            const todayStr = formatDateForQuery(new Date());
+            localStorage.setItem('pro_fitness_completed_routines_today', JSON.stringify({
+              date: todayStr,
+              ids: updated
+            }));
+          } catch (e) {
+            console.warn('Error saving completed routines to storage', e);
+          }
         }
       }
 
@@ -829,8 +977,66 @@ export const createWorkoutSlice = (set, get) => ({
       clearRestTimerInStorage();
       stopNativeTimer();
 
-      return { success: true, message: 'Entrenamiento guardado exitosamente.' };
+      return { success: true, message: 'Entrenamiento guardado exitosamente.', newPRs: responseData?.newPRs || [] };
     } catch (error) {
+      const errMsg = (error?.message || '').toLowerCase();
+      const isNetworkFailure = 
+        (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        errMsg.includes('conexión inestable') ||
+        errMsg.includes('guardado localmente') ||
+        errMsg.includes('failed to fetch') ||
+        errMsg.includes('networkerror') ||
+        errMsg.includes('load failed') ||
+        errMsg.includes('abort') ||
+        errMsg.includes('timeout') ||
+        errMsg.includes('no se pudo conectar');
+
+      if (isNetworkFailure) {
+        console.warn('Guardado en cola offline resiliente (Modo Búnker):', error.message);
+
+        // Aseguramos que esté en la cola de sincronización
+        if (get().addToSyncQueue) {
+          get().addToSyncQueue({
+            endpoint: '/workouts',
+            options: {
+              method: 'POST',
+              body: finalWorkoutData || workoutData
+            }
+          });
+        }
+
+        // Marcamos la rutina como completada en local para hoy
+        if (workoutData.routineId) {
+          const current = get().completedRoutineIdsToday || [];
+          const normId = workoutData.routineId;
+          if (!current.some(id => String(id) === String(normId))) {
+            const updated = [...current, normId];
+            set({ completedRoutineIdsToday: updated });
+            try {
+              const todayStr = formatDateForQuery(new Date());
+              localStorage.setItem('pro_fitness_completed_routines_today', JSON.stringify({
+                date: todayStr,
+                ids: updated
+              }));
+            } catch (e) {
+              console.warn('Error saving completed routines to storage', e);
+            }
+          }
+        }
+
+        // Limpiamos el entrenamiento activo en el dispositivo
+        clearWorkoutInStorage();
+        clearRestTimerInStorage();
+        stopNativeTimer();
+
+        return {
+          success: true,
+          isOffline: true,
+          message: 'Entrenamiento guardado en tu móvil. Se sincronizará automáticamente al recuperar conexión.',
+          finalWorkoutData: finalWorkoutData || workoutData
+        };
+      }
+
       return {
         success: false,
         message: `Error al guardar: ${error.message}`,
@@ -897,6 +1103,11 @@ export const createWorkoutSlice = (set, get) => ({
     clearWorkoutInStorage();
     clearRestTimerInStorage();
     stopNativeTimer();
-    set({ ...initialState, plannedRestTime: null });
+    const currentCompleted = getCompletedRoutinesFromStorage();
+    set({
+      ...initialState,
+      completedRoutineIdsToday: currentCompleted,
+      plannedRestTime: null
+    });
   },
 });

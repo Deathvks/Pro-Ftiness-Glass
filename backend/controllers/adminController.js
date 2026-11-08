@@ -1,8 +1,20 @@
 /* backend/controllers/adminController.js */
 import { Op } from 'sequelize';
+import { Resolver } from 'node:dns/promises';
 import db from '../models/index.js';
-import { createNotification } from '../services/notificationService.js';
+import { createNotification, hasFirebasePush } from '../services/notificationService.js';
 import os from 'os';
+import fs from 'node:fs';
+import { processUploadedFile } from '../services/uploadService.js';
+import { deleteFile } from '../services/imageService.js';
+import { canSendOptionalEmail, sendDomainMailboxTest, sendEmailPreferenceTest } from '../services/emailService.js';
+import { isDomainSmtpConfigured } from '../config/mailContacts.js';
+import { PUSH_PURPOSES } from '../config/pushConsent.js';
+import { isSupportedPushEndpoint } from '../services/pushService.js';
+import {
+  getRetentionRescueOverview,
+  runRetentionRescueBatch,
+} from '../services/retentionRescueService.js';
 
 const User = db.User;
 const SystemSettings = db.SystemSettings;
@@ -10,52 +22,92 @@ const SystemSettings = db.SystemSettings;
 // Obtener configuración del sistema
 export const getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.findAll({
-      attributes: [
-        'id',
-        'name',
-        'email',
-        'role',
-        'is_verified',
-        'username',
-        'profile_image_url',
-        'lastSeen',
-        'level',
-        'xp',
-        // NUEVO: Añadimos los IDs sociales para que el frontend sepa el método de inicio de sesión
-        'google_id',
-        'discord_id',
-        'x_id',
-        'github_id',
-        'spotify_id',
-        'facebook_id',
-        // CORRECCIÓN CRÍTICA: Mapeo explícito de la columna de base de datos al atributo
-        ['created_at', 'createdAt'],
-        // NUEVO: Subconsulta para contar las invitaciones
-        [
-          db.sequelize.literal(`(
-            SELECT COUNT(*)
-            FROM users AS referral
-            WHERE referral.referred_by = User.id
-          )`),
-          'referralCount'
+    const [
+      users,
+      referralCounts,
+      sessionDevices,
+      routineCounts,
+      workoutCounts,
+      nutritionCounts,
+    ] = await Promise.all([
+      User.findAll({
+        attributes: [
+          'id',
+          'name',
+          'email',
+          'role',
+          'is_verified',
+          'username',
+          'profile_image_url',
+          'lastSeen',
+          'level',
+          'xp',
+          'goal',
+          'height',
+          'age',
+          'google_id',
+          'discord_id',
+          'x_id',
+          'github_id',
+          'spotify_id',
+          'facebook_id',
+          ['created_at', 'createdAt'],
         ],
-        // NUEVO: Subconsulta para obtener el último dispositivo / plataforma usada
-        [
-          db.sequelize.literal(`(
-            SELECT device_type
-            FROM user_sessions
-            WHERE user_sessions.user_id = User.id
-            ORDER BY last_active DESC
-            LIMIT 1
-          )`),
-          'latest_device'
-        ]
-      ],
-      // Ordenamos usando el nombre real de la columna en la base de datos
-      order: [['created_at', 'DESC']],
+        order: [['created_at', 'DESC']],
+        raw: true,
+      }),
+      db.sequelize
+        .query(
+          'SELECT referred_by AS user_id, COUNT(*) AS cnt FROM users WHERE referred_by IS NOT NULL GROUP BY referred_by',
+          { type: db.sequelize.QueryTypes.SELECT }
+        )
+        .catch(() => []),
+      db.sequelize
+        .query(
+          'SELECT user_id, device_type FROM user_sessions ORDER BY last_active DESC',
+          { type: db.sequelize.QueryTypes.SELECT }
+        )
+        .catch(() => []),
+      db.sequelize
+        .query('SELECT user_id, COUNT(*) AS cnt FROM routines GROUP BY user_id', {
+          type: db.sequelize.QueryTypes.SELECT,
+        })
+        .catch(() => []),
+      db.sequelize
+        .query('SELECT user_id, COUNT(*) AS cnt FROM workout_logs GROUP BY user_id', {
+          type: db.sequelize.QueryTypes.SELECT,
+        })
+        .catch(() => []),
+      db.sequelize
+        .query('SELECT user_id, COUNT(*) AS cnt FROM nutrition_logs GROUP BY user_id', {
+          type: db.sequelize.QueryTypes.SELECT,
+        })
+        .catch(() => []),
+    ]);
+
+    const refMap = new Map(referralCounts.map(r => [Number(r.user_id), parseInt(r.cnt, 10) || 0]));
+    const devMap = new Map();
+    for (const s of sessionDevices) {
+      const uid = Number(s.user_id);
+      if (!devMap.has(uid) && s.device_type) devMap.set(uid, s.device_type);
+    }
+    const rMap = new Map(routineCounts.map(r => [Number(r.user_id), parseInt(r.cnt, 10) || 0]));
+    const wMap = new Map(workoutCounts.map(w => [Number(w.user_id), parseInt(w.cnt, 10) || 0]));
+    const nMap = new Map(nutritionCounts.map(n => [Number(n.user_id), parseInt(n.cnt, 10) || 0]));
+
+    const enrichedUsers = users.map(u => {
+      const uid = Number(u.id);
+      return {
+        ...u,
+        referralCount: refMap.get(uid) || 0,
+        latest_device: devMap.get(uid) || null,
+        routineCount: rMap.get(uid) || 0,
+        workoutCount: wMap.get(uid) || 0,
+        nutritionCount: nMap.get(uid) || 0,
+      };
     });
-    res.json(users);
+
+    res.json(enrichedUsers);
   } catch (error) {
     next(error);
   }
@@ -200,6 +252,84 @@ export const deleteUser = async (req, res, next) => {
   }
 };
 
+// Actualizar o eliminar la foto de perfil de un entrenador (restringido a entrenadores)
+export const updateTrainerProfileImage = async (req, res, next) => {
+  const { userId } = req.params;
+  try {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      if (req.file) {
+        try {
+          await deleteFile(req.file.path);
+        } catch (e) {
+          // ignorar
+        }
+      }
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // Restriccion estricta: UNICAMENTE para usuarios con rol de entrenador
+    if (user.role !== 'trainer' && user.role !== 'entrenador') {
+      if (req.file) {
+        try {
+          await deleteFile(req.file.path);
+        } catch (e) {
+          // ignorar
+        }
+      }
+      return res.status(403).json({ error: 'Solo se puede asignar o modificar la foto de perfil a entrenadores.' });
+    }
+
+    let newImagePath = null;
+    if (req.file) {
+      try {
+        const processed = await processUploadedFile(req.file);
+        newImagePath = processed.url;
+      } catch (uploadError) {
+        return res.status(400).json({ error: 'Error procesando la imagen: ' + uploadError.message });
+      }
+    } else if (req.body.removeImage === 'true' || req.body.removeImage === true || req.method === 'DELETE') {
+      newImagePath = null;
+    } else {
+      return res.status(400).json({ error: 'No se envio ninguna imagen.' });
+    }
+
+    const oldImageUrl = user.profile_image_url;
+    await user.update({ profile_image_url: newImagePath });
+
+    if (oldImageUrl && oldImageUrl !== newImagePath) {
+      try {
+        await deleteFile(oldImageUrl);
+      } catch (e) {
+        console.warn('Error al eliminar imagen anterior del entrenador:', e.message);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: newImagePath ? 'Foto de perfil del entrenador actualizada correctamente' : 'Foto de perfil eliminada',
+      profile_image_url: newImagePath,
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profile_image_url: newImagePath
+      }
+    });
+  } catch (error) {
+    if (req.file) {
+      try {
+        await deleteFile(req.file.path);
+      } catch (e) {
+        // ignorar
+      }
+    }
+    next(error);
+  }
+};
+
 // Obtener un ajuste del sistema por su clave
 export const getSetting = async (req, res, next) => {
   const { key } = req.params;
@@ -229,7 +359,157 @@ export const updateSetting = async (req, res, next) => {
   }
 };
 
-// Obtener logs de notificaciones push
+const emailTestLabels = { training: 'entrenamiento', activity: 'actividad', coaching: 'asesoría' };
+const notificationReviewChecks = ['registration', 'recovery', 'twoFactor', 'inboxes', 'emailOptOut', 'browser', 'android', 'donDominio', 'firebase', 'activityBasis', 'emailRetention'];
+
+export const getNotificationTestStatus = async (req, res, next) => {
+  const resolver = new Resolver({ timeout: 2000, tries: 1 });
+  const domain = 'profitnessglass.es';
+  const checkDns = async (query, matches) => {
+    try { return matches(await query); }
+    catch (error) { return ['ENODATA', 'ENOTFOUND'].includes(error.code) ? false : null; }
+  };
+  try {
+    const [mx, spf, dkim, dmarc] = await Promise.all([
+      checkDns(resolver.resolveMx(domain), rows => rows.some(row => row.exchange.toLowerCase().replace(/\.$/, '') === 'mx01.dondominio.com')),
+      checkDns(resolver.resolveTxt(domain), rows => rows.some(row => /^v=spf1\s.*include:spf\.dondominio\.com(?:\s|$)/i.test(row.join('')))),
+      checkDns(resolver.resolveTxt(`dddk._domainkey.${domain}`), rows => rows.some(row => /^v=DKIM1;.*\bp=[^;\s]+/i.test(row.join('')))),
+      checkDns(resolver.resolveTxt(`_dmarc.${domain}`), rows => rows.some(row => /^v=DMARC1;/i.test(row.join(''))))
+    ]);
+    return res.set('Cache-Control', 'no-store').json({
+      mx, spf, dkim, dmarc,
+      smtp: isDomainSmtpConfigured,
+      frontendUrl: process.env.FRONTEND_URL?.replace(/\/+$/, '') === 'https://profitnessglass.es',
+      webPush: !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT),
+      androidPush: hasFirebasePush()
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getNotificationReview = async (req, res, next) => {
+  try {
+    const keys = notificationReviewChecks.map(check => `notification_review_${check}`);
+    const rows = await SystemSettings.findAll({ where: { key: { [Op.in]: keys } } });
+    return res.set('Cache-Control', 'no-store').json(Object.fromEntries(rows.filter(row => row.value).map(row => [
+      row.key.replace('notification_review_', ''), JSON.parse(row.value)
+    ])));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateNotificationReview = async (req, res, next) => {
+  const { check, reviewed } = req.body ?? {};
+  if (!notificationReviewChecks.includes(check) || typeof reviewed !== 'boolean') {
+    return res.status(400).json({ error: 'Comprobación no válida.' });
+  }
+  try {
+    const entry = reviewed ? { reviewedAt: new Date().toISOString(), reviewerId: req.user.userId } : null;
+    await SystemSettings.upsert({ key: `notification_review_${check}`, value: entry ? JSON.stringify(entry) : null });
+    return res.json({ check, entry });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getEmailTestAccount = userId => User.findOne({
+  where: { id: userId, role: 'admin' },
+  attributes: ['id', 'email', 'is_verified', 'email_activity_notifications', 'email_marketing_consent', 'email_coaching_consent']
+});
+
+export const getEmailUnsubscribeTestStatus = async (req, res, next) => {
+  try {
+    const user = await getEmailTestAccount(req.user.userId);
+    if (!user) return res.status(403).json({ error: 'Se requiere una cuenta de administrador activa.' });
+
+    const verified = Boolean(user.is_verified && user.email && !/@(?:x-auth\.local|profitnessglass\.internal)$/i.test(user.email));
+    const [training, activity, coaching] = await Promise.all(
+      ['training', 'activity', 'coaching'].map(category => canSendOptionalEmail(user, category))
+    );
+    return res.set('Cache-Control', 'no-store').json({
+      email: user.email,
+      verified,
+      training, activity, coaching
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendEmailUnsubscribeTest = async (req, res, next) => {
+  if (!req.is('application/json')) {
+    return res.status(415).json({ error: 'La solicitud debe enviarse desde el panel de administración.' });
+  }
+
+  const { category = 'training', checkOnly = false } = req.body ?? {};
+  if (typeof category !== 'string' || !Object.hasOwn(emailTestLabels, category) || typeof checkOnly !== 'boolean') {
+    return res.status(400).json({ error: 'Categoría o modo de prueba de correo no válidos.' });
+  }
+  try {
+    const user = await getEmailTestAccount(req.user.userId);
+    if (!user) return res.status(403).json({ error: 'Se requiere una cuenta de administrador activa.' });
+    if (!user.is_verified || !user.email || /@(?:x-auth\.local|profitnessglass\.internal)$/i.test(user.email)) {
+      return res.status(409).json({ error: 'Necesitas una dirección de correo verificada en tu cuenta.' });
+    }
+
+    if (checkOnly === true) {
+      return res.json({ email: user.email, checkedOnly: true, skipped: !(await canSendOptionalEmail(user, category)) });
+    }
+
+    const result = await sendEmailPreferenceTest({ userId: user.id, email: user.email, category, label: emailTestLabels[category] });
+    if (result?.skipped) {
+      return res.json({ email: user.email, skipped: true });
+    }
+    if (!result?.accepted?.length) {
+      return res.status(502).json({ error: 'El servidor de correo no confirmó la aceptación del mensaje.' });
+    }
+
+    return res.json({ email: user.email });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendPushDeviceTest = async (req, res, next) => {
+  const { endpoint, purpose = 'service' } = req.body ?? {};
+  if (!req.is('application/json') || !isSupportedPushEndpoint(endpoint) || !['service', ...PUSH_PURPOSES].includes(purpose)) {
+    return res.status(400).json({ error: 'Dispositivo o categoría de prueba no válidos.' });
+  }
+  try {
+    const user = await getEmailTestAccount(req.user.userId);
+    if (!user) return res.sendStatus(403);
+    const device = await db.PushSubscription.findOne({ where: { user_id: user.id, endpoint }, attributes: ['id'] });
+    if (!device) return res.json({ inAppSaved: false, pushStatus: 'no_subscription' });
+
+    const result = await createNotification(user.id, {
+      type: 'notification_test',
+      title: 'Prueba de notificaciones push',
+      message: 'Prueba solicitada desde el panel de administración para este dispositivo.',
+      pushPurpose: purpose
+    }, { endpoint });
+    return res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendEmailMailboxTest = async (req, res, next) => {
+  if (!req.is('application/json')) {
+    return res.status(415).json({ error: 'La solicitud debe enviarse desde el panel de administración.' });
+  }
+  if (!isDomainSmtpConfigured) {
+    return res.status(409).json({ error: 'Configura el SMTP de notificaciones@profitnessglass.es en el backend antes de enviar la prueba.' });
+  }
+
+  try {
+    return res.json({ results: await sendDomainMailboxTest() });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getEmailLogs = async (req, res, next) => {
   try {
     const { status, page = 1, limit = 50, range = 30 } = req.query;
@@ -330,14 +610,14 @@ export const sendCustomPush = async (req, res, next) => {
     if (target_user_id === 'ALL') {
       const users = await db.User.findAll({ attributes: ['id'] });
       // Responder inmediatamente para no bloquear
-      res.json({ message: `Enviando notificación a ${users.length} usuarios.` });
+      res.json({ message: `Publicando el aviso para ${users.length} usuarios. El push se enviará a quienes hayan activado las novedades.` });
       
       for (const user of users) {
-        await createNotification(user.id, { type: 'info', title, message, data: { url: url || '/' } });
+        await createNotification(user.id, { type: 'info', title, message, data: url ? { url } : null, pushPurpose: 'news' });
       }
     } else {
-      await createNotification(target_user_id, { type: 'info', title, message, data: { url: url || '/' } });
-      res.json({ message: 'Notificación enviada al usuario exitosamente.' });
+      await createNotification(target_user_id, { type: 'info', title, message, data: url ? { url } : null, pushPurpose: 'news' });
+      res.json({ message: 'Aviso publicado. El push requiere que el usuario haya activado las novedades.' });
     }
   } catch (error) {
     next(error);
@@ -534,7 +814,7 @@ export const freeMemory = async (req, res, next) => {
         }
       });
     } else {
-      return res.status(400).json({ success: false, message: 'El recolector de basura (GC) no está expuesto en Zeabur.' });
+      return res.status(400).json({ success: false, message: 'El recolector de basura (GC) no está expuesto en Node.js.' });
     }
   } catch (error) {
     next(error);
@@ -566,6 +846,147 @@ export const getSystemStats = async (req, res, next) => {
   }
 };
 
+// Monitor integral de recursos del servidor (CPU, RAM, Swap, Disco, Uptime, MySQL, PM2)
+export const getServerResources = async (req, res, next) => {
+  try {
+    const cpus = os.cpus();
+    const loadAvg = os.loadavg();
+
+    // Muestreo rápido de uso de CPU (100ms)
+    const getCpuTimes = () => {
+      let idle = 0;
+      let total = 0;
+      for (const cpu of os.cpus()) {
+        for (const [type, time] of Object.entries(cpu.times)) {
+          total += time;
+          if (type === 'idle') idle += time;
+        }
+      }
+      return { idle, total };
+    };
+
+    const first = getCpuTimes();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const second = getCpuTimes();
+    const idleDiff = second.idle - first.idle;
+    const totalDiff = second.total - first.total;
+    const cpuUsagePercent = totalDiff > 0
+      ? Math.min(100, Math.max(0, Math.round((1 - idleDiff / totalDiff) * 100)))
+      : 0;
+
+    // Memoria RAM y Swap
+    let memTotal = os.totalmem();
+    let memFree = os.freemem();
+    let memAvailable = memFree;
+    let swapTotal = 0;
+    let swapFree = 0;
+
+    try {
+      if (fs.existsSync('/proc/meminfo')) {
+        const meminfo = fs.readFileSync('/proc/meminfo', 'utf8');
+        const getVal = (key) => {
+          const m = meminfo.match(new RegExp(`^${key}:\\s+(\\d+)`, 'm'));
+          return m ? parseInt(m[1], 10) * 1024 : 0;
+        };
+        memTotal = getVal('MemTotal') || memTotal;
+        memFree = getVal('MemFree') || memFree;
+        memAvailable = getVal('MemAvailable') || memFree;
+        swapTotal = getVal('SwapTotal');
+        swapFree = getVal('SwapFree');
+      }
+    } catch (_) {}
+
+    const memUsed = Math.max(0, memTotal - memAvailable);
+    const memPercent = memTotal > 0 ? Math.round((memUsed / memTotal) * 100) : 0;
+    const swapUsed = Math.max(0, swapTotal - swapFree);
+    const swapPercent = swapTotal > 0 ? Math.round((swapUsed / swapTotal) * 100) : 0;
+
+    // Disco NVMe
+    let diskTotal = 0;
+    let diskFree = 0;
+    let diskUsed = 0;
+    let diskPercent = 0;
+    try {
+      if (typeof fs.statfsSync === 'function') {
+        const stat = fs.statfsSync('/');
+        diskTotal = stat.bsize * stat.blocks;
+        diskFree = stat.bsize * stat.bavail;
+        diskUsed = Math.max(0, diskTotal - diskFree);
+        diskPercent = diskTotal > 0 ? Math.round((diskUsed / diskTotal) * 100) : 0;
+      }
+    } catch (_) {}
+
+    // Proceso Node
+    const procMem = process.memoryUsage();
+
+    // Estado y latencia de MySQL
+    let dbStatus = 'online';
+    let dbLatencyMs = 0;
+    try {
+      const dbStart = Date.now();
+      await db.sequelize.authenticate();
+      dbLatencyMs = Date.now() - dbStart;
+    } catch (_) {
+      dbStatus = 'error';
+      dbLatencyMs = -1;
+    }
+
+    return res.json({
+      success: true,
+      timestamp: Date.now(),
+      server: {
+        hostname: os.hostname(),
+        platform: os.platform(),
+        release: os.release(),
+        arch: os.arch(),
+        uptimeSeconds: Math.round(os.uptime()),
+        loadAvg: loadAvg.map((l) => parseFloat(l.toFixed(2))),
+        cpu: {
+          model: cpus[0]?.model || 'vCPU',
+          cores: cpus.length,
+          usagePercent: cpuUsagePercent,
+        },
+        ram: {
+          totalMB: Math.round(memTotal / 1024 / 1024),
+          usedMB: Math.round(memUsed / 1024 / 1024),
+          freeMB: Math.round(memAvailable / 1024 / 1024),
+          usagePercent: memPercent,
+        },
+        swap: {
+          totalMB: Math.round(swapTotal / 1024 / 1024),
+          usedMB: Math.round(swapUsed / 1024 / 1024),
+          freeMB: Math.round(swapFree / 1024 / 1024),
+          usagePercent: swapPercent,
+        },
+        disk: {
+          totalGB: (diskTotal / (1024 ** 3)).toFixed(1),
+          usedGB: (diskUsed / (1024 ** 3)).toFixed(1),
+          freeGB: (diskFree / (1024 ** 3)).toFixed(1),
+          usagePercent: diskPercent,
+        },
+      },
+      process: {
+        pid: process.pid,
+        uptimeSeconds: Math.round(process.uptime()),
+        nodeVersion: process.version,
+        heapUsedMB: Math.round(procMem.heapUsed / 1024 / 1024),
+        heapTotalMB: Math.round(procMem.heapTotal / 1024 / 1024),
+        rssMB: Math.round(procMem.rss / 1024 / 1024),
+        gcAvailable: typeof global.gc === 'function',
+      },
+      database: {
+        dialect: 'mysql',
+        status: dbStatus,
+        latencyMs: dbLatencyMs,
+        name: db.sequelize?.config?.database || 'pro_fitness_glass',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 
 export const getUploadLogs = async (req, res, next) => {
   try {
@@ -582,3 +1003,36 @@ export const getUploadLogs = async (req, res, next) => {
 
 
 
+
+// --- RETENCIÓN TEMPRANA Y RESCATE +72H ---
+export const getRetentionRescueDashboard = async (req, res, next) => {
+  try {
+    const data = await getRetentionRescueOverview();
+    res.json(data);
+  } catch (error) {
+    console.error('Error en getRetentionRescueDashboard:', error);
+    next(error);
+  }
+};
+
+export const triggerRetentionRescue = async (req, res, next) => {
+  try {
+    const { userId, limit = 15, onlyEarlyCohort = false } = req.body || {};
+    const batchResult = await runRetentionRescueBatch({
+      isManual: true,
+      specificUserId: userId || null,
+      limit: Math.min(50, Math.max(1, parseInt(limit, 10) || 15)),
+      onlyEarlyCohort: Boolean(onlyEarlyCohort),
+    });
+    const updatedOverview = await getRetentionRescueOverview();
+    res.json({
+      success: true,
+      processedCount: batchResult.processedCount,
+      remainingEligibleCount: batchResult.remainingEligibleCount,
+      overview: updatedOverview,
+    });
+  } catch (error) {
+    console.error('Error en triggerRetentionRescue:', error);
+    next(error);
+  }
+};

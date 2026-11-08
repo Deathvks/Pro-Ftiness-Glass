@@ -7,6 +7,7 @@ const NotFoundPage = ({ navigate }) => {
     <>
       <Helmet>
         <title>Página no encontrada - Pro Fitness Glass</title>
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
       <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center animate-[fade-in_0.3s_ease-out]">

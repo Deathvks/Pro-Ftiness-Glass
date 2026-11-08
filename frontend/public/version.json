@@ -1,5 +1,26 @@
 {
-  "version": "7.4.0",
-  "downloadUrl": "https://github.com/Deathvks/Pro-Ftiness-Glass/releases/download/v7.4.0/app-release.apk",
-  "notes": "Recomendaciones inteligentes de sobrecarga progresiva y ruptura de mesetas, ajuste dinámico de series, nuevos anillos visuales en comunidad e historias, y protección de rachas en fin de semana."
+  "version": "7.16.27",
+  "releaseNotes": "Actualización v7.16.27: Reajuste en tiempo real por fatiga previa entre ejercicios del mismo músculo según objetivo y particularidades del material.",
+  "welcome": {
+    "title": "Aviso de Migración Ultracompacto",
+    "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",
+    "features": [
+      {
+        "title": "Máxima Compactación en Móvil",
+        "description": "El distintivo de migración ahora se integra en línea con el texto, reduciendo la altura del aviso a solo 2 líneas sin tapar la pantalla."
+      },
+      {
+        "title": "Elementos Agrupados en PC",
+        "description": "Distintivo, mensaje explicativo, enlace y botón de cierre aparecen juntos y centrados sin espacios vacíos de lado a lado."
+      },
+      {
+        "title": "Cierre Permanente (X)",
+        "description": "Puedes ocultar el aviso pulsando su botón X en cualquier momento y no volverá a mostrarse."
+      },
+      {
+        "title": "Apertura Superior en Tutoriales",
+        "description": "Al seleccionar cualquier apartado o volver atrás, la vista se posiciona automáticamente arriba del todo."
+      }
+    ]
+  }
 }

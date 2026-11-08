@@ -10,7 +10,7 @@ import LevelBadge from './LevelBadge';
 import { getXPHistory } from '../services/gamificationService';
 import useModalLock from '../hooks/useModalLock';
 
-const XPGuideModal = ({ onClose }) => {
+const XPGuideModal = ({ onClose, targetDays }) => {
   const carouselRef = useRef(null);
 
   // --- Bloquear scroll del fondo y swipe entre páginas ---
@@ -112,8 +112,8 @@ const XPGuideModal = ({ onClose }) => {
                                 </div>
                                 <p className="text-text-secondary text-sm font-medium leading-relaxed">
                                     Gana XP realizando acciones diarias. <br />
-                                    <span className="bg-accent text-accent-contrast px-2 py-0.5 rounded-md inline-block font-extrabold tracking-widest uppercase text-[10px] mt-2 mb-1 shadow-sm">Nota importante:</span> 
-                                    Para mantener tu racha, basta con realizar <strong>cualquiera</strong> de estas acciones al menos una vez al día.
+                                    <span className="bg-accent text-accent-contrast px-2 py-0.5 rounded-md inline-block font-extrabold tracking-widest uppercase text-[10px] mt-2 mb-1 shadow-sm">🛡️ Escudo de Racha Semanal:</span>{' '}
+                                    Cumple tu meta de <strong>{targetDays} {targetDays === 1 ? 'día' : 'días'} de entrenamiento a la semana</strong> para proteger tu racha el resto de la semana. Además, los fines de semana y hasta 2 días laborables de descanso están protegidos.
                                 </p>
                             </div>
 
@@ -269,7 +269,7 @@ const XPGuideModal = ({ onClose }) => {
                                             </div>
                                             <div className="flex flex-col min-w-0">
                                                 <span className="font-extrabold text-sm text-text-primary tracking-tight">Presume tu esfuerzo</span>
-                                                <span className="text-[10px] sm:text-xs font-medium text-text-secondary mt-0.5">Registra un entrenamiento en el mural</span>
+                                                <span className="text-[10px] sm:text-xs font-medium text-text-secondary mt-0.5">Publica un entrenamiento en el Muro (Global, Mi Gimnasio o Amigos)</span>
                                             </div>
                                         </div>
                                         <span className={dailyXpClass}>+25 XP (Reto)</span>
@@ -282,7 +282,7 @@ const XPGuideModal = ({ onClose }) => {
                                             </div>
                                             <div className="flex flex-col min-w-0">
                                                 <span className="font-extrabold text-sm text-text-primary tracking-tight">Conversador</span>
-                                                <span className="text-[10px] sm:text-xs font-medium text-text-secondary mt-0.5">Comenta en publicaciones del mural</span>
+                                                <span className="text-[10px] sm:text-xs font-medium text-text-secondary mt-0.5">Comenta en 2 sesiones del Muro (Global, Mi Gimnasio o Amigos)</span>
                                             </div>
                                         </div>
                                         <span className={dailyXpClass}>+25 XP (Reto)</span>
@@ -294,8 +294,8 @@ const XPGuideModal = ({ onClose }) => {
                                                 <Flame size={20} strokeWidth={2} />
                                             </div>
                                             <div className="flex flex-col min-w-0">
-                                                <span className="font-extrabold text-sm text-text-primary tracking-tight">Buen rollo</span>
-                                                <span className="text-[10px] sm:text-xs font-medium text-text-secondary mt-0.5">Dale like a publicaciones</span>
+                                                <span className="font-extrabold text-sm text-text-primary tracking-tight">Reacciones de Gimnasio</span>
+                                                <span className="text-[10px] sm:text-xs font-medium text-text-secondary mt-0.5">Reacciona con 🔥 Fuego, 💪 Bestia, 🫡 Respeto o 🏆 PR a 2 publicaciones del Muro</span>
                                             </div>
                                         </div>
                                         <span className={dailyXpClass}>+25 XP (Reto)</span>

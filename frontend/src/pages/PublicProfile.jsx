@@ -23,7 +23,12 @@ import {
     Download,
     Folder,
     X,
-    Play
+    Play,
+    MapPin,
+    Eye,
+    EyeOff,
+    Check,
+    Trash2
 } from 'lucide-react';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -39,6 +44,9 @@ import SEOHead from '../components/SEOHead';
 import ExerciseMedia from '../components/ExerciseMedia';
 import ModalPortal from '../components/ModalPortal';
 import { getUserRoleRingConfig } from '../utils/userRoleUtils';
+import { enrichGymWithMedia } from '../utils/gymMedia';
+import GymLocationModal from '../components/GymLocationModal';
+import * as userService from '../services/userService';
 
 // --- CONFIGURACIÓN DE PUERTO ---
 const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'; 
@@ -114,8 +122,6 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     const navigate = useNavigate();
     const { showToast, addToast } = useToast();
 
-    const userId = propUserId || paramUserId;
-
     const { 
         fetchPublicProfile,
         socialViewedProfile: fetchedProfile,
@@ -134,6 +140,20 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         refreshRoutines
      } = useAppStore(useShallow(state => ({ fetchPublicProfile: state.fetchPublicProfile, socialViewedProfile: state.socialViewedProfile, isSocialLoading: state.isSocialLoading, socialError: state.socialError, clearViewedProfile: state.clearViewedProfile, socialFriends: state.socialFriends, socialRequests: state.socialRequests, sendFriendRequest: state.sendFriendRequest, removeFriend: state.removeFriend, userProfile: state.userProfile, gamification: state.gamification, stories: state.stories, fetchStories: state.fetchStories, token: state.token, refreshRoutines: state.refreshRoutines })));
 
+    const effectiveUserId = propUserId || paramUserId || myProfile?.id;
+    const userId = effectiveUserId;
+
+    const [loadTimedOut, setLoadTimedOut] = useState(false);
+    useEffect(() => {
+        let t;
+        if (isSocialLoading) {
+            t = setTimeout(() => setLoadTimedOut(true), 6000);
+        } else {
+            setLoadTimedOut(false);
+        }
+        return () => clearTimeout(t);
+    }, [isSocialLoading]);
+
     const [badgePage, setBadgePage] = useState(0);
     const BADGES_PER_PAGE = 4;
 
@@ -143,6 +163,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
     
     const [viewingStory, setViewingStory] = useState(false);
     const [viewingRoutine, setViewingRoutine] = useState(null);
+
 
     useEffect(() => {
         if (userId) {
@@ -226,7 +247,7 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
     const structuredData = useMemo(() => {
         if (!profile) return null;
-        const baseUrl = 'https://pro-fitness-glass.zeabur.app';
+        const baseUrl = 'https://profitnessglass.es';
         const profileUrl = `${baseUrl}/profile/${profile.id}`;
         const schema = {
             "@context": "https://schema.org",
@@ -248,6 +269,115 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
         }
         return JSON.stringify(schema);
     }, [profile]);
+
+    const [showGymModal, setShowGymModal] = useState(false);
+    const [showRemoveGymConfirm, setShowRemoveGymConfirm] = useState(false);
+    const [localGymUpdate, setLocalGymUpdate] = useState(0);
+
+    useEffect(() => {
+        const handleGymUpdate = (e) => {
+            if (e?.detail === null) {
+                useAppStore.setState((s) => ({
+                    userProfile: s.userProfile ? { ...s.userProfile, gym_data: null } : null,
+                    socialViewedProfile: s.socialViewedProfile ? { ...s.socialViewedProfile, gym: null, gym_data: null } : null
+                }));
+            }
+            setLocalGymUpdate(prev => prev + 1);
+        };
+        window.addEventListener('user-gym-updated', handleGymUpdate);
+        window.addEventListener('storage', handleGymUpdate);
+        return () => {
+            window.removeEventListener('user-gym-updated', handleGymUpdate);
+            window.removeEventListener('storage', handleGymUpdate);
+        };
+    }, []);
+
+    const activeGym = useMemo(() => {
+        if (relationshipStatus === 'me') {
+            const userKey = myProfile?.id ? `user_gym_${myProfile.id}` : 'user_gym';
+            const saved = localStorage.getItem(userKey) || localStorage.getItem('user_gym');
+            if (saved) {
+                try {
+                    return enrichGymWithMedia(JSON.parse(saved));
+                } catch {}
+            }
+            const freshProfile = useAppStore.getState().userProfile;
+            if (freshProfile?.gym_data) {
+                try {
+                    const parsed = typeof freshProfile.gym_data === 'string' ? JSON.parse(freshProfile.gym_data) : freshProfile.gym_data;
+                    if (parsed) return enrichGymWithMedia(parsed);
+                } catch {}
+            }
+            return null;
+        }
+
+        // Para perfiles ajenos, usamos lo que devuelve el backend
+        if (profile?.gym) {
+            return enrichGymWithMedia(profile.gym);
+        }
+        return null;
+    }, [profile?.gym, relationshipStatus, myProfile?.gym_data, localGymUpdate]);
+
+    const handleSaveGym = (gymData) => {
+        const userKey = myProfile?.id ? `user_gym_${myProfile.id}` : 'user_gym';
+        const enriched = enrichGymWithMedia(gymData);
+        localStorage.setItem(userKey, JSON.stringify(enriched));
+        localStorage.setItem('user_gym', JSON.stringify(enriched));
+        useAppStore.setState((s) => ({
+            userProfile: s.userProfile ? { ...s.userProfile, gym_data: enriched } : null,
+            socialViewedProfile: s.socialViewedProfile ? { ...s.socialViewedProfile, gym: enriched, gym_data: enriched } : null
+        }));
+        setLocalGymUpdate(prev => prev + 1);
+        window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: enriched }));
+        userService.updateUserProfile({ gym_data: enriched }).catch(err => {
+            console.warn('Error al guardar gimnasio en backend:', err);
+        });
+        const notify = showToast || addToast;
+        if (typeof notify === 'function') notify('Gimnasio habitual actualizado correctamente', 'success');
+    };
+
+    const handleRemoveGym = async () => {
+        const userKey = myProfile?.id ? `user_gym_${myProfile.id}` : 'user_gym';
+        localStorage.removeItem(userKey);
+        localStorage.removeItem('user_gym');
+        try {
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const k = localStorage.key(i);
+                if (k && (k.startsWith('user_gym_') || k === 'user_gym')) {
+                    localStorage.removeItem(k);
+                }
+            }
+        } catch {}
+
+        // Limpiar estado en memoria inmediatamente
+        useAppStore.setState((s) => ({
+            userProfile: s.userProfile ? { ...s.userProfile, gym_data: null } : null,
+            socialViewedProfile: s.socialViewedProfile ? { ...s.socialViewedProfile, gym: null, gym_data: null } : null
+        }));
+        setLocalGymUpdate(prev => prev + 1);
+        window.dispatchEvent(new CustomEvent('user-gym-updated', { detail: null }));
+
+        try {
+            await userService.updateUserProfile({ gym_data: null });
+        } catch (err) {
+            console.warn('Error al eliminar gimnasio en backend:', err);
+        }
+        const notify = showToast || addToast;
+        if (typeof notify === 'function') notify('Gimnasio desvinculado correctamente', 'info');
+    };
+
+    const handleGoToSocialPrivacy = () => {
+        if (typeof setView === 'function') {
+            setView('settings', { highlight: 'social_privacy' });
+            return;
+        }
+        try {
+            window.history.pushState({ view: 'settings', params: { highlight: 'social_privacy' } }, '', '/settings?highlight=social_privacy');
+            window.dispatchEvent(new PopStateEvent('popstate', { state: { view: 'settings', params: { highlight: 'social_privacy' } } }));
+        } catch (e) {
+            navigate('/settings?highlight=social_privacy');
+        }
+    };
 
 
     const handleSendRequest = async () => {
@@ -567,21 +697,21 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
 
                 <div className="z-10">
                     {(() => {
-                        const roleConfig = getUserRoleRingConfig(profile);
+                        const roleConfig = getUserRoleRingConfig(profile, myProfile);
                         return (
-                            <>
-                                <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary mb-2 flex items-center justify-center gap-3 flex-wrap">
+                            <div className="mb-2 flex items-center justify-center gap-2.5 flex-wrap">
+                                <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary leading-none">
                                     {profile.username}
-                                    <span className={`text-[10px] sm:text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ring-1 ${roleConfig.badgeBg}`}>
-                                        {roleConfig.label}
-                                    </span>
-                                    {userStory && (
-                                        <span className="text-[10px] bg-accent text-accent-contrast px-2 py-1 rounded-full uppercase tracking-widest font-black shadow-md shadow-accent/30">
-                                            Historia
-                                        </span>
-                                    )}
                                 </h2>
-                            </>
+                                <span className={`inline-flex items-center justify-center text-[10px] sm:text-xs font-black uppercase tracking-wider leading-none px-2.5 py-1 rounded-full ring-1 translate-y-[1px] sm:translate-y-[2px] ${roleConfig.badgeBg}`}>
+                                    {roleConfig.label}
+                                </span>
+                                {userStory && (
+                                    <span className="inline-flex items-center justify-center text-[10px] bg-accent text-accent-contrast leading-none px-2.5 py-1 rounded-full uppercase tracking-widest font-black shadow-md shadow-accent/30 translate-y-[1px] sm:translate-y-[2px]">
+                                        Historia
+                                    </span>
+                                )}
+                            </div>
                         );
                     })()}
                     <p className="text-text-secondary text-sm font-medium flex items-center justify-center gap-2">
@@ -644,6 +774,167 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                     </div>
                 )}
             </GlassCard>
+
+            {/* --- GIMNASIO HABITUAL --- */}
+            {(activeGym || relationshipStatus === 'me') && (
+                <GlassCard className="glass p-5 sm:p-6 rounded-[28px] border-none ring-1 ring-black/5 dark:ring-white/10 hover:shadow-lg transition-all flex flex-col gap-3 relative overflow-hidden">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-tertiary">
+                            <MapPin size={15} className="text-accent" />
+                            <span>Gimnasio Habitual</span>
+                        </div>
+                        {relationshipStatus === 'me' && (
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-colors ${
+                                (profile?.show_gym !== false && myProfile?.show_gym !== false)
+                                    ? 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 '
+                                    : 'bg-amber-500/15 text-amber-500 dark:text-amber-400 '
+                            }`}>
+                                {(profile?.show_gym !== false && myProfile?.show_gym !== false) ? (
+                                    <>
+                                        <Eye size={12} /> Visible públicamente
+                                    </>
+                                ) : (
+                                    <>
+                                        <EyeOff size={12} /> Oculto a otros
+                                    </>
+                                )}
+                            </span>
+                        )}
+                    </div>
+
+                    {activeGym ? (
+                        <div className="relative rounded-2xl overflow-hidden shadow-lg group">
+                            {/* Imagen de fondo panorámica en alta resolución con gradiente cinemático */}
+                            <div className="absolute inset-0">
+                                <img
+                                    src={activeGym.image}
+                                    alt={activeGym.name}
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                    loading="lazy"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/85 to-black/60 sm:bg-gradient-to-r sm:from-black/95 sm:via-black/85 sm:to-black/60 backdrop-blur-[0.5px]" />
+                            </div>
+
+                            {/* Contenido sobre la imagen */}
+                            <div className="relative p-4 sm:p-5 flex flex-col gap-3 text-white">
+                                {/* Fila superior: Badges a la izquierda, botones de acción a la derecha */}
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-accent bg-accent/20 px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+                                            <Check size={11} strokeWidth={3} />
+                                            Gimnasio habitual
+                                        </span>
+                                        {activeGym.distanceFormatted && (
+                                            <span className="text-[10px] font-bold text-white/90 bg-white/15 px-2.5 py-1 rounded-full shadow-sm">
+                                                A {activeGym.distanceFormatted}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {relationshipStatus === 'me' && (
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowGymModal(true)}
+                                                className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 text-white text-xs font-bold backdrop-blur-md shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+                                            >
+                                                <span>Cambiar</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowRemoveGymConfirm(true)}
+                                                className="p-1.5 rounded-xl bg-white/10 hover:bg-red-500/80 active:scale-95 text-white/80 hover:text-white backdrop-blur-md shadow-sm transition-all cursor-pointer"
+                                                title="Desvincular gimnasio habitual"
+                                                aria-label="Desvincular gimnasio habitual"
+                                            >
+                                                <Trash2 size={15} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Fila central: Logo + Nombre completo (sin cortar con '...') */}
+                                <div className="flex items-start gap-3.5 pt-0.5">
+                                    <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white/10 backdrop-blur-md p-2 flex items-center justify-center shrink-0 shadow-md overflow-hidden mt-0.5">
+                                        {activeGym.logo ? (
+                                            <img
+                                                src={activeGym.logo}
+                                                alt={activeGym.brand || 'Logo'}
+                                                className="w-full h-full object-contain"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    if (e.currentTarget.nextElementSibling) {
+                                                        e.currentTarget.nextElementSibling.style.display = 'flex';
+                                                    }
+                                                }}
+                                            />
+                                        ) : null}
+                                        <div
+                                            style={{ display: activeGym.logo ? 'none' : 'flex' }}
+                                            className="w-full h-full items-center justify-center text-accent"
+                                        >
+                                            <Dumbbell size={24} />
+                                        </div>
+                                    </div>
+
+                                    <div className="min-w-0 flex-1">
+                                        <h3 className="text-base sm:text-lg md:text-xl font-black text-white drop-shadow-md leading-snug break-words">
+                                            {activeGym.name}
+                                        </h3>
+                                        {activeGym.brand && activeGym.brand.toLowerCase() !== activeGym.name?.toLowerCase() && (
+                                            <span className="text-[11px] font-bold text-white/70 block mt-0.5">
+                                                {activeGym.brand}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Fila inferior: Ubicación completa sin cortar con '...' */}
+                                {(activeGym.address || activeGym.city) && (
+                                    <div className="pt-2 border-t border-white/10 flex items-start gap-2 text-white/85 text-xs sm:text-sm">
+                                        <MapPin size={14} className="text-accent shrink-0 mt-0.5" />
+                                        <span className="leading-snug break-words line-clamp-3">
+                                            {[activeGym.address, activeGym.city].filter(Boolean).join(', ')}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <p className="text-sm text-text-secondary font-medium">
+                                No tienes ningún gimnasio habitual seleccionado en tu perfil.
+                            </p>
+                            {relationshipStatus === 'me' && (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowGymModal(true)}
+                                    className="px-4 py-2 rounded-xl bg-accent text-accent-contrast text-xs font-bold hover:brightness-110 active:scale-95 transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                                >
+                                    <MapPin size={14} />
+                                    Seleccionar gimnasio
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {relationshipStatus === 'me' && (
+                        <button
+                            type="button"
+                            onClick={handleGoToSocialPrivacy}
+                            className="mt-1 w-full flex items-center justify-between p-3 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/10 transition-all group text-left cursor-pointer"
+                        >
+                            <div className="flex items-center gap-2.5 text-xs text-text-secondary">
+                                <Shield size={15} className="text-accent shrink-0" />
+                                <span>
+                                    Puedes cambiar quién ve tu gimnasio desde <strong className="text-text-primary font-bold underline decoration-accent/60 underline-offset-2">Privacidad Social en Ajustes</strong>
+                                </span>
+                            </div>
+                            <ChevronRight size={16} className="text-text-tertiary group-hover:text-text-primary group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                        </button>
+                    )}
+                </GlassCard>
+            )}
 
             {/* --- ESTADÍSTICAS --- */}
             {profile.show_level_xp ? (
@@ -886,6 +1177,31 @@ export default function PublicProfile({ userId: propUserId, onBack, setView }) {
                     onConfirm={confirmRemoveFriend}
                     onCancel={() => setShowDeleteConfirm(false)}
                     isLoading={isDeletingFriend}
+                />
+            )}
+
+            {/* --- MODAL SELECCIONAR / CAMBIAR GIMNASIO --- */}
+            {showGymModal && (
+                <GymLocationModal
+                    isOpen={showGymModal}
+                    onClose={() => setShowGymModal(false)}
+                    currentGym={activeGym}
+                    onSave={handleSaveGym}
+                    onRemove={handleRemoveGym}
+                />
+            )}
+
+            {/* --- MODAL CONFIRMACIÓN DESVINCULAR GIMNASIO --- */}
+            {showRemoveGymConfirm && (
+                <ConfirmationModal
+                    message="¿Seguro que deseas desvincular tu gimnasio habitual de tu perfil?"
+                    confirmText="Desvincular"
+                    cancelText="Cancelar"
+                    onConfirm={() => {
+                        setShowRemoveGymConfirm(false);
+                        handleRemoveGym();
+                    }}
+                    onCancel={() => setShowRemoveGymConfirm(false)}
                 />
             )}
 

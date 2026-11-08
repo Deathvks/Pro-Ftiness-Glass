@@ -1,0 +1,1048 @@
+import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
+/* frontend/src/pages/NewsListPage.jsx */
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import {
+  FaNewspaper,
+  FaMagnifyingGlass,
+  FaClock,
+  FaCalendarDays,
+  FaChevronRight,
+  FaChevronLeft,
+  FaArrowRight,
+  FaMobileScreen,
+  FaLayerGroup,
+  FaBookOpen,
+  FaRightToBracket,
+  FaEye,
+  FaThumbsUp,
+  FaWifi,
+  FaArrowsRotate,
+  FaXmark,
+  FaCalculator,
+  FaUtensils,
+  FaDumbbell,
+  FaFire,
+  FaAppleWhole,
+  FaPills,
+  FaHeartPulse,
+  FaTag
+} from 'react-icons/fa6';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Capacitor } from '@capacitor/core';
+import { Sparkles } from 'lucide-react';
+
+import GlassCard from '../components/GlassCard';
+import Spinner from '../components/Spinner';
+import AdSenseSlot from '../components/News/AdSenseSlot';
+import TrainerAdvisoryCard from '../components/News/TrainerAdvisoryCard';
+import PublicPageFooter from '../components/PublicPageFooter';
+import * as newsService from '../services/newsService';
+import { trackCatalogVisit } from '../utils/newsTracker';
+import useAppStore from '../store/useAppStore';
+
+const DEFAULT_CATEGORIES = ['Todas', 'Entrenamiento', 'Nutrición', 'Suplementación', 'Salud', 'Novedades'];
+
+const getCategoryIcon = (cat) => {
+  switch (cat) {
+    case 'Todas': return <FaLayerGroup className="text-xs shrink-0" />;
+    case 'Entrenamiento': return <FaDumbbell className="text-xs shrink-0" />;
+    case 'Nutrición': return <FaAppleWhole className="text-xs shrink-0" />;
+    case 'Suplementación': return <FaPills className="text-xs shrink-0" />;
+    case 'Salud': return <FaHeartPulse className="text-xs shrink-0" />;
+    case 'Novedades': return <FaFire className="text-xs shrink-0" />;
+    default: return <FaTag className="text-xs shrink-0" />;
+  }
+};
+
+const BASE_URL = 'https://profitnessglass.es';
+
+export default function NewsListPage({ onBack, navigate: customNavigate }) {
+  const navigate = useNavigate();
+  const containerRef = useRef(null);
+  const isAuthenticated = useAppStore(state => state.isAuthenticated);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const currentCategory = searchParams.get('category') || 'Todas';
+  const currentPage = parseInt(searchParams.get('page')) || 1;
+  const currentSearch = searchParams.get('search') || '';
+
+  const [searchInput, setSearchInput] = useState(currentSearch);
+  const isNative = Capacitor.isNativePlatform();
+  const isMobile = typeof window !== 'undefined' && (/android|iphone|ipad|ipod/i.test(navigator.userAgent) || window.innerWidth < 768);
+  const isAndroid = typeof window !== 'undefined' && /android/i.test(navigator.userAgent);
+  const appIntentUrl = isAndroid
+    ? 'intent://profitnessglass.es/noticias#Intent;scheme=https;package=com.profitnessglass.app;end'
+    : 'profitness://noticias';
+
+  // Exactamente 6 art�culos por p�gina (2 filas completas de 3 columnas para una cuadr�cula perfecta)
+  const ITEMS_PER_PAGE = 6;
+
+  // Carga instant�nea SWR (0ms) desde cach� en memoria, sessionStorage o bundle empaquetado
+  const cachedInitial = useMemo(() => {
+    return newsService.getCachedPublicNews({
+      page: currentPage,
+      limit: ITEMS_PER_PAGE,
+      category: currentCategory,
+      search: currentSearch
+    });
+  }, [currentPage, currentCategory, currentSearch]);
+
+  const [news, setNews] = useState(() => cachedInitial?.news || []);
+
+  useEffect(() => {
+    if (cachedInitial?.news && cachedInitial.news.length > 0) {
+      setNews(cachedInitial.news);
+      if (cachedInitial.total) setTotal(cachedInitial.total);
+      if (cachedInitial.totalPages) setTotalPages(cachedInitial.totalPages);
+    }
+  }, [cachedInitial]);
+  const [total, setTotal] = useState(() => cachedInitial?.total || 0);
+  const [totalAll, setTotalAll] = useState(() => cachedInitial?.totalAll || 0);
+  const [totalPages, setTotalPages] = useState(() => cachedInitial?.totalPages || 1);
+  const [categoryCounts, setCategoryCounts] = useState(() => cachedInitial?.categoryCounts || {});
+  const [apiCategories, setApiCategories] = useState(() => cachedInitial?.categories || DEFAULT_CATEGORIES);
+  const [popularNews, setPopularNews] = useState(() => cachedInitial?.popularNews || []);
+  const [isLoading, setIsLoading] = useState(() => !cachedInitial);
+  const [error, setError] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncFeedback, setSyncFeedback] = useState(null);
+  const cachedInitialRef = useRef(cachedInitial);
+  const newsRef = useRef(news);
+  cachedInitialRef.current = cachedInitial;
+  newsRef.current = news;
+
+  const handleRetry = () => {
+    setReloadKey((prev) => prev + 1);
+  };
+
+  const handleManualSync = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    setSyncFeedback('Sincronizando...');
+    try {
+      const data = await newsService.fetchPublicNews({
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+        category: currentCategory,
+        search: currentSearch,
+        bypassCache: true
+      });
+      if (data && Array.isArray(data.news)) {
+        setNews(data.news);
+        setTotal(data.total || 0);
+        setTotalPages(data.totalPages || 1);
+        if (data.totalAll) setTotalAll(data.totalAll);
+        if (data.categories && Array.isArray(data.categories)) setApiCategories(data.categories);
+        if (data.categoryCounts) setCategoryCounts(data.categoryCounts);
+        if (data.popularNews && Array.isArray(data.popularNews)) setPopularNews(data.popularNews);
+        setSyncFeedback('¡Al día!');
+      } else {
+        setSyncFeedback('Completado');
+      }
+    } catch {
+      setSyncFeedback('Sin conexión');
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setSyncFeedback(null), 2500);
+    }
+  };
+
+  // Categorías calculadas dinámicamente: base + cualquier nueva categoría devuelta por la API o categoryCounts
+  const isActuallyLoading = isLoading && (!news || news.length === 0);
+
+  const categories = useMemo(() => {
+    const list = [...DEFAULT_CATEGORIES];
+    if (apiCategories && Array.isArray(apiCategories)) {
+      apiCategories.forEach((cat) => {
+        const trimmed = (cat || '').trim();
+        if (trimmed && !list.includes(trimmed)) {
+          list.push(trimmed);
+        }
+      });
+    }
+    if (categoryCounts && typeof categoryCounts === 'object') {
+      Object.keys(categoryCounts).forEach((cat) => {
+        const trimmed = (cat || '').trim();
+        if (trimmed && !list.includes(trimmed)) {
+          list.push(trimmed);
+        }
+      });
+    }
+    if (currentCategory && currentCategory !== 'Todas' && !list.includes(currentCategory)) {
+      list.push(currentCategory);
+    }
+    return list;
+  }, [apiCategories, categoryCounts, currentCategory]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    }, 2500);
+
+    const loadNews = async () => {
+      if (!cachedInitialRef.current && (!newsRef.current || newsRef.current.length === 0)) {
+        setIsLoading(true);
+      }
+      setError(null);
+      try {
+        const data = await newsService.fetchPublicNews({
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+          category: currentCategory,
+          search: currentSearch,
+          bypassCache: reloadKey > 0
+        });
+        if (isMounted && data) {
+          setNews(data.news || []);
+          setTotal(data.total || 0);
+          setTotalPages(data.totalPages || 1);
+          setCategoryCounts(data.categoryCounts || {});
+          if (data.totalAll) {
+            setTotalAll(data.totalAll);
+          } else if (data.categoryCounts) {
+            const sum = Object.values(data.categoryCounts).reduce((acc, n) => acc + (Number(n) || 0), 0);
+            if (sum > 0) setTotalAll(sum);
+          }
+          if (data.categories && Array.isArray(data.categories)) {
+            setApiCategories(data.categories);
+          }
+          if (data.popularNews && Array.isArray(data.popularNews)) {
+            setPopularNews(data.popularNews);
+          }
+        }
+      } catch (err) {
+        if (isMounted) {
+          if (!cachedInitialRef.current && (!newsRef.current || newsRef.current.length === 0)) {
+            setError(err.message || 'Error al cargar las noticias');
+          }
+        }
+      } finally {
+        if (isMounted) {
+          clearTimeout(safetyTimer);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadNews();
+    return () => {
+      isMounted = false;
+      clearTimeout(safetyTimer);
+    };
+  }, [currentCategory, currentPage, currentSearch, reloadKey]);
+
+  // Precarga agresiva de contenido de los primeros 3 artículos en segundo plano para abrir a 0ms
+  useEffect(() => {
+    if (news && news.length > 0) {
+      news.slice(0, 3).forEach((art) => {
+        if (art?.slug) newsService.prefetchNewsBySlug(art.slug);
+      });
+    }
+  }, [news]);
+
+  // Telemetría & Sniffing de visitas al catálogo
+  useEffect(() => {
+    trackCatalogVisit();
+  }, []);
+
+  const handleSelectCategory = (cat) => {
+    const next = new URLSearchParams(searchParams);
+    if (cat === 'Todas') next.delete('category');
+    else next.set('category', cat);
+    next.delete('page'); // Volver a página 1 al cambiar de tema
+
+    // Sincronización instantánea para que la paginación desaparezca al instante si no hay suficientes artículos
+    if (cat !== 'Todas' && categoryCounts && categoryCounts[cat] !== undefined) {
+      const count = Number(categoryCounts[cat]) || 0;
+      setTotal(count);
+      setTotalPages(Math.max(1, Math.ceil(count / ITEMS_PER_PAGE)));
+    } else if (cat === 'Todas' && totalAll > 0) {
+      setTotal(totalAll);
+      setTotalPages(Math.max(1, Math.ceil(totalAll / ITEMS_PER_PAGE)));
+    }
+
+    setSearchParams(next);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    const next = new URLSearchParams(searchParams);
+    if (searchInput.trim()) next.set('search', searchInput.trim());
+    else next.delete('search');
+    next.delete('page');
+    setSearchParams(next);
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > effectiveTotalPages || newPage === currentPage) return;
+    const next = new URLSearchParams(searchParams);
+    if (newPage === 1) next.delete('page');
+    else next.set('page', newPage.toString());
+    setSearchParams(next);
+
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleArticleClick = (art) => {
+    newsService.prefetchNewsBySlug(art.slug);
+    navigate(`/noticias/${art.slug}`, { state: { previewArticle: art } });
+  };
+
+  const handleGoHome = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    if (customNavigate) {
+      customNavigate(isAuthenticated ? 'hub' : 'dashboard');
+      return;
+    }
+    navigate(isAuthenticated ? '/dashboard' : '/');
+  };
+
+  // Structured Data Schema para página de colección de artículos
+  const collectionSchema = useMemo(() => ({
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    'name': 'Noticias y Artículos de Fitness, Nutrición y Entrenamiento',
+    'description': 'Guías científicas, artículos y novedades sobre hipertrofia, dietética deportiva y fitness en Pro Fitness Glass.',
+    'url': `${BASE_URL}/noticias`,
+    'publisher': {
+      '@type': 'Organization',
+      'name': 'Pro Fitness Glass',
+      'logo': {
+        '@type': 'ImageObject',
+        'url': `${BASE_URL}/logo.webp`
+      }
+    }
+  }), []);
+
+  const isHeroVisible = currentPage === 1 && !currentSearch && news && news.length > 0;
+  const featuredArticle = isHeroVisible ? news[0] : null;
+  const gridArticles = useMemo(() => {
+    if (!news) return [];
+    return isHeroVisible ? news.slice(1) : news;
+  }, [news, isHeroVisible]);
+
+  // Cálculo estricto del total real según la categoría seleccionada
+  const categoryTotal = useMemo(() => {
+    if (currentCategory === 'Todas') {
+      return totalAll || total;
+    }
+    if (categoryCounts && categoryCounts[currentCategory] !== undefined) {
+      return Number(categoryCounts[currentCategory]) || 0;
+    }
+    return total;
+  }, [currentCategory, categoryCounts, totalAll, total]);
+
+  // Si una categoría tiene pocos artículos (ej. <= 6), no hay páginas múltiples
+  const effectiveTotalPages = useMemo(() => {
+    if (currentCategory !== 'Todas') {
+      return Math.max(1, Math.ceil(categoryTotal / ITEMS_PER_PAGE));
+    }
+    return totalPages;
+  }, [currentCategory, categoryTotal, totalPages, ITEMS_PER_PAGE]);
+
+  const visiblePages = useMemo(() => {
+    if (effectiveTotalPages <= 5) {
+      return Array.from({ length: effectiveTotalPages }, (_, i) => i + 1);
+    }
+    const pages = new Set([1, effectiveTotalPages, currentPage, currentPage - 1, currentPage + 1]);
+    return Array.from(pages)
+      .filter((p) => p >= 1 && p <= effectiveTotalPages)
+      .sort((a, b) => a - b);
+  }, [currentPage, effectiveTotalPages]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="fixed inset-0 z-50 bg-bg-primary overflow-y-auto overflow-x-hidden custom-scrollbar"
+      style={{
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'pan-y',
+        paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 2rem)'
+      }}
+    >
+      <div className="min-h-full px-4 sm:px-6 py-6 max-w-6xl mx-auto flex flex-col gap-8 animate-[fade-in_0.4s_ease-out]">
+        {/* SEO HEAD */}
+        <Helmet>
+          <title>Noticias y Artículos de Fitness y Nutrición | Pro Fitness Glass</title>
+          <meta
+            name="description"
+            content="Descubre artículos científicos sobre hipertrofia, suplementación, nutrición deportiva y novedades de Pro Fitness Glass."
+          />
+          <link rel="canonical" href={`${BASE_URL}/noticias`} />
+          <meta name="robots" content="index, follow" />
+          <meta property="og:title" content="Noticias y Artículos de Fitness y Nutrición | Pro Fitness Glass" />
+          <meta property="og:description" content="Guías científicas, suplementación y estrategias de nutrición deportiva contrastadas por la ciencia." />
+          <meta property="og:url" content={`${BASE_URL}/noticias`} />
+          <meta property="og:type" content="website" />
+          <meta property="og:image" content={`${BASE_URL}/og-preview.jpg`} />
+          <meta name="twitter:image" content={`${BASE_URL}/og-preview.jpg`} />
+          <script type="application/ld+json">{JSON.stringify(collectionSchema)}</script>
+        </Helmet>
+
+        {/* HEADER CON FOTO, NOMBRE DE LA APP, BADGE 100% GRATIS Y NAVEGACIÓN */}
+        <header className="flex flex-col gap-3.5 pt-1">
+          {/* Barra superior de marca y acciones (Fila única sin saltos) */}
+          <div className="flex items-center justify-between gap-2.5 w-full">
+            {/* Logo de la app + Nombre + Badge 100% Gratis */}
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 group cursor-pointer min-w-0"
+              title="Pro Fitness Glass - App de Gimnasio 100% Gratis"
+            >
+              <img
+                src="/icons/icon-96.png"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = '/logo.webp';
+                }}
+                alt="Logo Pro Fitness Glass"
+                loading="eager"
+                decoding="async"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-xs ring-1 ring-black/10 dark:ring-white/10 group-hover:scale-105 transition-transform shrink-0"
+              />
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="font-black text-sm sm:text-base tracking-tight text-text-primary leading-none group-hover:text-accent transition-colors truncate">
+                  Pro Fitness Glass
+                </span>
+                <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span className="hidden xs:inline">100%</span> Gratis
+                </span>
+              </div>
+            </Link>
+
+            {/* Acciones principales (Abrir App / Registrarse / Iniciar Sesión / Volver a la App) */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={handleGoHome}
+                  className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ring-1 ring-black/10 dark:ring-white/10 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-xs font-bold text-text-secondary hover:text-text-primary shrink-0 active:scale-95"
+                >
+                  <FaChevronLeft className="text-accent text-[11px] shrink-0" />
+                  <span className="sm:hidden">App</span>
+                  <span className="hidden sm:inline">Volver a la App</span>
+                </button>
+              ) : !isNative && isMobile ? (
+                <a
+                  href={appIntentUrl}
+                  className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent text-accent-contrast font-black text-xs shadow-md shadow-accent/25 hover:scale-105 active:scale-95 transition-all shrink-0"
+                  title="Abrir en la aplicación nativa"
+                >
+                  <FaMobileScreen className="text-xs shrink-0" />
+                  <span>Abrir App</span>
+                </a>
+              ) : (
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/login')}
+                    className="cursor-pointer hidden sm:inline-flex items-center gap-1 px-3 py-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-xs font-bold transition-colors whitespace-nowrap"
+                  >
+                    <FaRightToBracket className="text-xs shrink-0" />
+                    <span>Iniciar Sesión</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/register')}
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-accent text-accent-contrast text-xs font-black shadow-md shadow-accent/25 hover:opacity-90 active:scale-95 transition-all shrink-0 whitespace-nowrap"
+                  >
+                    <span>Empezar Gratis</span>
+                    <FaArrowRight className="text-xs shrink-0" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          <MaintenanceNoticeBanner className="rounded-2xl" />
+
+          {/* Segmented Tool Switcher Pill + Buscador de artículos */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
+            {/* Segmented Glass Switcher Pill (coherente con las calculadoras y ejercicios) */}
+            <nav aria-label="Herramientas públicas" className="grid grid-cols-4 gap-1 sm:gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/[0.04] border border-black/10 dark:border-white/10 backdrop-blur-xl flex-1 max-w-xl w-full overflow-hidden">
+              <Link
+                to="/calculadora-1rm"
+                className="flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors min-w-0"
+              >
+                <FaCalculator className="text-accent text-[11px] sm:text-xs shrink-0" />
+                <span className="truncate sm:hidden">1RM</span>
+                <span className="truncate hidden sm:inline">Calculadora 1RM</span>
+              </Link>
+              <Link
+                to="/calculadora-calorias-macros"
+                className="flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors min-w-0"
+              >
+                <FaUtensils className="text-emerald-400 text-[11px] sm:text-xs shrink-0" />
+                <span className="truncate sm:hidden">Macros</span>
+                <span className="truncate hidden sm:inline">Calorías y Macros</span>
+              </Link>
+              <Link
+                to="/ejercicios"
+                className="flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-bold transition-colors min-w-0"
+              >
+                <FaDumbbell className="text-blue-400 text-[11px] sm:text-xs shrink-0" />
+                <span className="truncate">Ejercicios</span>
+              </Link>
+              <Link
+                to="/noticias"
+                className="flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-xl bg-purple-500/15 text-purple-400 text-[11px] sm:text-xs font-black border border-purple-500/30 shadow-xs min-w-0"
+              >
+                <FaNewspaper className="text-purple-400 text-[11px] sm:text-xs shrink-0" />
+                <span className="truncate sm:hidden">Guías</span>
+                <span className="truncate hidden sm:inline">Guías y Noticias</span>
+              </Link>
+            </nav>
+
+            {/* Buscador de artículos y botón de sincronizar */}
+            <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+              <form onSubmit={handleSearchSubmit} className="relative flex-1 md:w-64">
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Buscar artículos..."
+                  className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-full pl-9 pr-4 py-2 text-xs sm:text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+                />
+                <FaMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none text-xs" />
+              </form>
+              <button
+                type="button"
+                onClick={handleManualSync}
+                disabled={isSyncing}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 text-xs font-bold text-text-secondary hover:text-text-primary transition-all shrink-0 cursor-pointer disabled:opacity-60"
+                title="Sincronizar últimas noticias en tiempo real"
+                aria-label="Sincronizar noticias"
+              >
+                <FaArrowsRotate className={`text-xs ${isSyncing ? 'animate-spin text-accent' : ''}`} />
+                <span className="hidden sm:inline">{syncFeedback || 'Sincronizar'}</span>
+                {syncFeedback && <span className="sm:hidden text-[10px] text-accent font-semibold">{syncFeedback}</span>}
+              </button>
+            </div>
+          </div>
+        </header>
+
+      {/* TITULAR PRINCIPAL */}
+      <section className="pt-1 pb-1">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-text-primary tracking-tight">
+          Guías Científicas y Noticias
+        </h1>
+        <p className="text-xs sm:text-sm text-text-secondary font-medium mt-1 max-w-2xl">
+          Artículos y guías de fitness basados en evidencia para maximizar tu entrenamiento, fuerza y nutrición.
+        </p>
+      </section>
+
+      {/* PORTADA DESTACADA: ÚLTIMA NOTICIA CREADA */}
+      {featuredArticle && (
+        <section aria-label="Noticia destacada reciente" className="w-full">
+          <div className="flex items-center gap-2 mb-2.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
+            </span>
+            <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-accent">
+              Última Noticia Publicada
+            </span>
+          </div>
+
+          <a
+            href={`/noticias/${featuredArticle.slug}`}
+            onClick={(e) => {
+              if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                e.preventDefault();
+                handleArticleClick(featuredArticle);
+              }
+            }}
+            onMouseEnter={() => newsService.prefetchNewsBySlug(featuredArticle.slug)}
+            onTouchStart={() => newsService.prefetchNewsBySlug(featuredArticle.slug)}
+            className="group relative block w-full rounded-[28px] sm:rounded-[36px] overflow-hidden border border-black/10 dark:border-white/10 bg-gradient-to-br from-black/[0.03] to-black/[0.08] dark:from-white/[0.03] dark:to-white/[0.07] backdrop-blur-2xl shadow-xl hover:shadow-2xl hover:border-accent/40 transition-all duration-300 no-underline text-inherit"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-6 items-stretch">
+              
+              {/* Portada en gran formato */}
+              <div className="lg:col-span-7 relative overflow-hidden bg-black/15 min-h-[220px] sm:min-h-[300px] lg:min-h-[360px] aspect-[16/10] lg:aspect-auto">
+                <img
+                  src={featuredArticle.image_url?.includes('photo-1510519138197-06b8628cbf4f')
+                    ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
+                    : (featuredArticle.image_url || '/entrenamiento.png')}
+                  alt={featuredArticle.title}
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                  loading="eager"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = '/entrenamiento.png';
+                  }}
+                />
+
+                {/* Gradiente cinemático de protección de lectura */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-black/10 lg:to-black/30 pointer-events-none" />
+
+                {/* Badges superiores flotantes */}
+                <div className="absolute top-3.5 left-3.5 sm:top-4 sm:left-4 flex flex-wrap items-center gap-2 z-10">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-accent text-accent-contrast shadow-lg shadow-accent/30">
+                    <Sparkles className="text-xs animate-pulse" size={13} />
+                    <span>Destacada</span>
+                  </span>
+                  <span className="px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-black/70 backdrop-blur-md text-white border border-white/20">
+                    {featuredArticle.category}
+                  </span>
+                </div>
+              </div>
+
+              {/* Panel de texto, resumen y acción */}
+              <div className="lg:col-span-5 p-5 sm:p-7 lg:p-6 flex flex-col justify-between gap-4 sm:gap-5">
+                <div className="space-y-2.5 sm:space-y-3.5">
+                  <div className="flex items-center gap-2 text-xs text-text-tertiary font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <FaCalendarDays className="text-accent text-[11px]" />
+                      {format(new Date(featuredArticle.published_at), 'd MMMM yyyy', { locale: es })}
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <FaClock className="text-[11px]" />
+                      {featuredArticle.reading_time || 4} min
+                    </span>
+                  </div>
+
+                  <h2 className="text-lg sm:text-2xl lg:text-2xl xl:text-3xl font-black text-text-primary tracking-tight leading-snug group-hover:text-accent transition-colors line-clamp-3">
+                    {featuredArticle.title}
+                  </h2>
+
+                  <p className="text-xs sm:text-sm text-text-secondary leading-relaxed font-normal line-clamp-3 sm:line-clamp-4">
+                    {featuredArticle.summary}
+                  </p>
+                </div>
+
+                <div className="pt-3.5 sm:pt-4 border-t border-black/5 dark:border-white/10 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <img
+                      src={featuredArticle.author_avatar || "/logo.webp"}
+                      alt="Autor"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/logo.webp';
+                      }}
+                      className="w-7 h-7 rounded-full object-contain bg-black/5 dark:bg-white/5 p-0.5 border border-glass-border shrink-0 shadow-xs"
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold text-text-primary leading-tight truncate">
+                        {featuredArticle.author_name || 'Equipo Científico PFG'}
+                      </span>
+                      <span className="text-[10px] text-text-tertiary">
+                        {(featuredArticle.views_count || 0) > 0 ? `${featuredArticle.views_count} lecturas` : 'Recién publicado'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/25 group-hover:scale-105 active:scale-95 transition-all shrink-0">
+                    <span>Leer artículo</span>
+                    <FaArrowRight className="text-xs group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </a>
+        </section>
+      )}
+
+      {/* SECCIÓN NOTICIAS MÁS VISTAS */}
+      {popularNews.length > 0 && currentCategory === 'Todas' && !currentSearch && currentPage === 1 && (
+        <section className="space-y-4 pt-1 pb-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center">
+                <FaFire className="text-amber-500 text-sm" />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">
+                  Más Vistas
+                </h2>
+                <p className="text-[11px] sm:text-xs text-text-tertiary font-medium">
+                  Artículos destacados y más consultados por la comunidad
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                Tendencias
+              </span>
+              <span className="inline-flex sm:hidden items-center gap-1 text-[11px] font-bold text-text-tertiary">
+                Desliza <FaArrowRight className="text-amber-500 text-xs" />
+              </span>
+            </div>
+          </div>
+
+          <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto sm:overflow-x-visible pb-3 pt-1 px-1 sm:px-0 scrollbar-none snap-x snap-mandatory">
+            {popularNews.map((popArt, idx) => (
+              <a
+                key={popArt.id || popArt.slug}
+                href={`/noticias/${popArt.slug}`}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    handleArticleClick(popArt);
+                  }
+                }}
+                onMouseEnter={() => newsService.prefetchNewsBySlug(popArt.slug)}
+                className="rounded-2xl shadow-lg border backdrop-blur-glass bg-[--glass-bg] border-[--glass-border] p-0 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 sm:hover:ring-accent/40 cursor-pointer group flex flex-col justify-between sm:hover:shadow-lg sm:hover:-translate-y-1 transition-shadow sm:transition-all duration-200 w-[78vw] sm:w-auto min-w-[250px] sm:min-w-0 max-w-[300px] sm:max-w-none shrink-0 snap-start no-underline text-inherit block"
+              >
+                <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/10">
+                  <img
+                    src={popArt.image_url?.includes('photo-1510519138197-06b8628cbf4f')
+                      ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
+                      : (popArt.image_url || '/entrenamiento.png')}
+                    alt={popArt.title}
+                    className="w-full h-full object-cover object-center sm:group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/entrenamiento.png';
+                    }}
+                  />
+                  <div className="absolute top-2 left-2 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-accent text-accent-contrast font-black text-[10px] flex items-center justify-center shadow-md">
+                      #{idx + 1}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-black/70 backdrop-blur-md text-white border border-white/15">
+                      {popArt.category}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 flex flex-col gap-2 grow justify-between">
+                  <h3 className="text-xs sm:text-sm font-bold text-text-primary group-hover:text-accent transition-colors line-clamp-2 leading-snug">
+                    {popArt.title}
+                  </h3>
+
+                  <div className="flex items-center justify-between text-[10px] text-text-tertiary pt-2 border-t border-black/5 dark:border-white/5 font-semibold">
+                    <span className="flex items-center gap-1">
+                      <FaEye className="text-text-secondary text-[11px]" />
+                      {popArt.views_count || 0} lecturas
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <FaClock className="text-[10px]" />
+                      {popArt.reading_time || 3} min
+                    </span>
+                  </div>
+                </div>
+              </a>
+            ))}
+
+
+          </div>
+        </section>
+      )}
+
+      {/* CATEGORÍAS */}
+      <nav
+        aria-label="Categorías de artículos"
+        className="flex flex-nowrap items-center gap-2.5 overflow-x-auto pb-3 pt-1 px-1 -mx-1 scrollbar-none md:flex-wrap md:overflow-visible"
+      >
+        {categories.map((cat) => {
+          const isActive = currentCategory === cat;
+          const allCount = totalAll || Object.values(categoryCounts).reduce((acc, n) => acc + (Number(n) || 0), 0) || total;
+          const count = cat === 'Todas' ? allCount : (categoryCounts[cat] || 0);
+
+          return (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => handleSelectCategory(cat)}
+              className={`shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer select-none outline-none ${
+                isActive
+                  ? 'news-category-active bg-accent text-accent-contrast scale-105'
+                  : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
+              }`}
+            >
+              {getCategoryIcon(cat)}
+              <span>{cat}</span>
+              {count > 0 && (
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-black transition-colors ${
+                    isActive ? 'bg-black/20 text-white' : 'bg-black/5 dark:bg-white/10 text-text-tertiary'
+                  }`}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
+            {/* CONTENIDO PRINCIPAL */}
+      {isActuallyLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="glass p-0 rounded-[28px] overflow-hidden border border-black/5 dark:border-white/10 flex flex-col justify-between"
+            >
+              <div className="h-48 bg-black/10 dark:bg-white/10 animate-pulse" />
+              <div className="p-5 flex flex-col gap-3 flex-1 justify-between">
+                <div className="flex flex-col gap-2">
+                  <div className="h-3.5 w-20 rounded bg-accent/20 animate-pulse" />
+                  <div className="h-5 w-full rounded bg-black/10 dark:bg-white/10 animate-pulse" />
+                  <div className="h-4 w-5/6 rounded bg-black/5 dark:bg-white/5 animate-pulse" />
+                </div>
+                <div className="flex items-center justify-between pt-4 border-t border-black/5 dark:border-white/5">
+                  <div className="h-3 w-20 rounded bg-black/10 dark:bg-white/10 animate-pulse" />
+                  <div className="h-3 w-16 rounded bg-black/10 dark:bg-white/10 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <div className="py-12 px-4 flex flex-col items-center justify-center">
+          <GlassCard className="p-8 max-w-md w-full text-center flex flex-col items-center justify-center gap-4 border-red-500/20 bg-red-500/5">
+            <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+              <FaWifi className="text-2xl" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-text-primary mb-1">
+                No pudimos conectar con el servidor
+              </h3>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                {error}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/20 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+            >
+              <FaArrowsRotate className="text-xs shrink-0" />
+              Reintentar conexión
+            </button>
+          </GlassCard>
+        </div>
+      ) : news.length === 0 ? (
+        <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
+          <FaBookOpen className="text-4xl text-text-muted opacity-40" />
+          <h3 className="text-lg font-bold text-text-primary">No se encontraron artículos</h3>
+          <p className="text-xs text-text-secondary max-w-sm">
+            Prueba a seleccionar otra categoría o cambiar el término de búsqueda.
+          </p>
+          <button
+            onClick={() => {
+              setSearchInput('');
+              setSearchParams(new URLSearchParams());
+            }}
+            className="mt-2 px-4 py-2 rounded-full bg-accent text-accent-contrast font-bold text-xs"
+          >
+            Ver todos los artículos
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* ADSENSE BANNER INTERMEDIO */}
+          <AdSenseSlot slotId="noticias-list-banner" format="auto" />
+
+          {/* GRID DE ARTÍCULOS (Simétrico de 3 columnas) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {gridArticles.map((art) => (
+              <a
+                key={art.id}
+                href={`/noticias/${art.slug}`}
+                onClick={(e) => {
+                  if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    handleArticleClick(art);
+                  }
+                }}
+                onMouseEnter={() => newsService.prefetchNewsBySlug(art.slug)}
+                onTouchStart={() => newsService.prefetchNewsBySlug(art.slug)}
+                className="rounded-2xl shadow-lg border backdrop-blur-glass bg-[--glass-bg] border-[--glass-border] p-0 rounded-[28px] overflow-hidden ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/40 transition-all cursor-pointer group flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 duration-300 no-underline text-inherit block"
+              >
+                <div className="relative aspect-[16/9] w-full overflow-hidden bg-black/10">
+                  <img
+                    src={art.image_url?.includes('photo-1510519138197-06b8628cbf4f')
+                      ? 'https://images.unsplash.com/photo-1576243345690-4e4b79b63288?auto=format&fit=crop&w=1200&q=80'
+                      : (art.image_url || '/entrenamiento.png')}
+                    alt={art.title}
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/entrenamiento.png';
+                    }}
+                  />
+                  <div className="absolute top-3 left-3 flex gap-1.5">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-black/60 backdrop-blur-md text-white border border-white/15">
+                      {art.category}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-5 flex flex-col gap-3 grow justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 text-[11px] text-text-tertiary mb-2 font-medium">
+                      <span>{format(new Date(art.published_at), 'd MMM yyyy', { locale: es })}</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <FaClock className="text-[11px]" />
+                        {art.reading_time} min
+                      </span>
+                    </div>
+
+                    <h3 className="text-base sm:text-lg font-bold text-text-primary group-hover:text-accent transition-colors line-clamp-2 leading-snug">
+                      {art.title}
+                    </h3>
+
+                    <p className="text-xs text-text-secondary mt-2 line-clamp-2 leading-relaxed">
+                      {art.summary}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5 min-w-0 max-w-[150px]">
+                      {(!art.author_name || /pro fitness|equipo cient|nutricionista|redacci|editorial/i.test(art.author_name)) && (
+                        <img src="/logo.webp" alt="PFG" className="w-3.5 h-3.5 object-contain shrink-0 drop-shadow-sm" />
+                      )}
+                      <span className="text-[11px] text-text-tertiary truncate">
+                        {art.author_name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-text-tertiary font-semibold">
+                      {(art.views_count || 0) > 0 && (
+                        <span className="flex items-center gap-0.5">
+                          <FaEye className="text-[11px]" /> {art.views_count}
+                        </span>
+                      )}
+                      {(art.likes_count || 0) > 0 && (
+                        <span className="flex items-center gap-0.5 text-accent">
+                          <FaThumbsUp className="text-[10px]" /> {art.likes_count}
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-bold text-accent inline-flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                      Leer <FaChevronRight className="text-xs" />
+                    </span>
+                  </div>
+                </div>
+              </a>
+            ))}
+
+            {/* Tarjeta de conversión y comunidad de Pro Fitness Glass para cerrar la cuadrícula simétrica */}
+            {featuredArticle && gridArticles.length === 5 && (
+              <div className="rounded-2xl shadow-lg border backdrop-blur-glass bg-gradient-to-br from-accent/10 via-purple-500/5 to-transparent border-accent/20 p-5 sm:p-6 rounded-[28px] overflow-hidden flex flex-col justify-between shadow-sm hover:shadow-xl hover:border-accent/40 transition-all duration-300 group">
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-2xl bg-accent/20 text-accent flex items-center justify-center shadow-inner">
+                    <Sparkles className="animate-pulse" size={20} />
+                  </div>
+                  <span className="inline-block text-[10px] font-black uppercase tracking-widest text-accent">
+                    Ecosistema Deportivo
+                  </span>
+                  <h3 className="text-base sm:text-lg font-black text-text-primary group-hover:text-accent transition-colors leading-snug">
+                    Lleva tu entrenamiento al siguiente nivel con Pro Fitness Glass
+                  </h3>
+                  <p className="text-xs text-text-secondary leading-relaxed">
+                    Sobrecarga progresiva real, calculadora de 1RM, control de macros y biomecánica en vídeo. 100% gratis y sin anuncios.
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-glass-border/40 flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-accent">
+                    {isAuthenticated ? 'Abrir Aplicación' : 'Empezar Gratis'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => navigate(isAuthenticated ? '/dashboard' : '/register')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-accent text-accent-contrast font-black text-xs shadow-md shadow-accent/25 hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
+                  >
+                    <span>{isAuthenticated ? 'Ir al Panel' : 'Registrarme'}</span>
+                    <FaArrowRight className="text-xs group-hover:translate-x-0.5 transition-transform" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* PAGINACIÓN ELEGANTE Y RESPONSIVE (Totalmente adaptada a móviles) */}
+          {effectiveTotalPages > 1 && (
+            <div className="w-full flex flex-col items-center justify-center gap-3 pt-8 pb-10 border-t border-black/5 dark:border-white/5 mt-8 px-1">
+              <div className="flex items-center justify-center gap-1.5 sm:gap-2 max-w-full">
+                <button
+                  type="button"
+                  disabled={currentPage <= 1}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  className="inline-flex items-center justify-center gap-1 px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-bold bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed border border-black/10 dark:border-white/10 transition-all cursor-pointer text-text-primary shrink-0"
+                  aria-label="Página anterior"
+                >
+                  <FaChevronLeft className="text-xs" />
+                  <span className="hidden sm:inline">Anterior</span>
+                </button>
+
+                <div className="flex min-w-0 items-center gap-1 sm:gap-1.5 mx-0.5 sm:mx-1 max-w-full overflow-x-auto px-1 py-0.5 scrollbar-none">
+                  {visiblePages.map((p, idx) => {
+                    const prev = visiblePages[idx - 1];
+                    const showEllipsis = prev && p - prev > 1;
+                    const isActive = currentPage === p;
+
+                    return (
+                      <React.Fragment key={p}>
+                        {showEllipsis && (
+                          <span className="text-text-tertiary text-xs px-0.5 select-none font-bold">…</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handlePageChange(p)}
+                          className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                            isActive
+                              ? 'bg-accent text-accent-contrast shadow-md shadow-accent/25 scale-105'
+                              : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:text-text-primary hover:bg-black/10 dark:hover:bg-white/10 border border-black/5 dark:border-white/10'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={currentPage >= effectiveTotalPages}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  className="inline-flex items-center justify-center gap-1 px-3 sm:px-4 py-2 rounded-xl text-xs font-black bg-accent text-accent-contrast hover:brightness-110 disabled:opacity-25 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md shadow-accent/25 shrink-0"
+                  aria-label="Página siguiente"
+                >
+                  <span className="hidden sm:inline">Siguiente</span>
+                  <FaChevronRight className="text-xs" />
+                </button>
+              </div>
+
+              <span className="text-[11px] font-semibold text-text-tertiary text-center">
+                Página {currentPage} de {effectiveTotalPages} · Mostrando {news.length} de {categoryTotal} artículos
+              </span>
+            </div>
+          )}
+
+          {/* PUERTA DE ENTRADA A ASESORÍA Y ENTRENADORES PERSONALES */}
+          <div className="mt-8 mb-4">
+            <TrainerAdvisoryCard customNavigate={customNavigate} />
+          </div>
+        </>
+      )}
+
+        <PublicPageFooter />
+      </div>
+    </div>
+  );
+}

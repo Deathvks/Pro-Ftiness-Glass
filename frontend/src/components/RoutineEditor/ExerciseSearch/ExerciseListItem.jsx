@@ -56,14 +56,17 @@ const ExerciseListItem = ({
     >
       
       {/* Imagen / Medio (Arriba, ancho completo) */}
-      <div className="w-full aspect-square bg-transparent flex items-center justify-center transition-transform duration-500 group-hover:scale-105 overflow-hidden rounded-t-[24px]">
-        <ExerciseMedia 
-          details={exercise}
-          fitMode="cover"
-          forceAuto={false}
-          disableAnimation={false}
-          className="w-full h-full"
-        />
+      <div className="w-full aspect-[4/5] bg-black/5 dark:bg-white/5 flex items-center justify-center overflow-hidden rounded-t-[24px] relative">
+        <div className="w-full h-full transition-transform duration-500 group-hover:scale-105 flex items-center justify-center">
+          <ExerciseMedia 
+            details={exercise}
+            fitMode="contain"
+            fillContain={true}
+            forceAuto={false}
+            disableAnimation={false}
+            className="w-full h-full rounded-t-[24px]"
+          />
+        </div>
       </div>
       
       {/* Zona de Textos y Botón (Abajo) */}

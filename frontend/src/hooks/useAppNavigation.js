@@ -1,7 +1,10 @@
 /* frontend/src/hooks/useAppNavigation.js */
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import { getPushView } from '../config/pushRoutes';
 
-export const useAppNavigation = (isInitialLoad) => {
+export const useAppNavigation = (navigateRouter) => {
+  const { pathname } = useLocation();
   // 1. Inicialización de estado
   const [view, setView] = useState(() => {
     // PRIORIDAD 0: Recuperar sesión activa de cardio si existe en localStorage
@@ -21,28 +24,38 @@ export const useAppNavigation = (isInitialLoad) => {
         const path = window.location.pathname;
 
     const validPaths = [
-      '/', '/login', '/register', '/forgot-password', '/forgotPassword', '/reset-password', '/privacy', '/terms',
-      '/dashboard', '/progress', '/routines', '/workout', '/nutrition', '/templateDiets',
+      '/', '/login', '/register', '/forgot-password', '/forgotPassword', '/reset-password', '/privacy', '/terms', '/aviso-legal', '/legal',
+      '/dashboard', '/progress', '/routines', '/workout', '/nutrition',
       '/social', '/hub', '/quickCardio', '/active-cardio', '/settings', '/appearance',
       '/support', '/socialLinks', '/challenges', '/physicalProfileEditor', '/profile',
       '/adminPanel', '/securityDashboard', '/trainerPanel', '/twoFactorSetup', '/notifications',
-      '/asesoria'
+      '/asesoria', '/noticias', '/calculadora-1rm', '/calculadora-calorias-macros', '/ejercicios', '/sobre-nosotros', '/faq'
     ];
 
-    if (!validPaths.includes(path) && !path.match(/^\/profile\/\d+$/) && !path.startsWith('/share/routine/')) {
+    if (!validPaths.includes(path) && !path.match(/^\/profile\/\d+$/) && !path.startsWith('/share/routine/') && !path.startsWith('/noticias')) {
         return 'not-found';
     }
 
     // Rutas Deep Linking
     if (path.match(/^\/profile\/\d+$/)) return 'publicProfile';
-    if (path === '/social') return 'social';
-    if (path === '/nutrition') return 'nutrition';
-    if (path === '/routines') return 'routines';
-    if (path === '/progress') return 'progress';
+    if (path === '/dashboard') return 'dashboard';
+    const pushView = getPushView(path);
+    if (pushView) return pushView;
+    if (path === '/hub') return 'hub';
     if (path === '/settings') return 'settings';
-    if (path === '/notifications') return 'notifications';
     if (path === '/active-cardio') return 'active-cardio';
-    if (path === '/asesoria') return 'asesoria';
+    if (path.startsWith('/noticias')) return 'noticias';
+    if (path === '/privacy') return 'privacyPolicy';
+    if (path === '/terms') return 'terms';
+    if (path === '/aviso-legal' || path === '/legal') return 'legalNotice';
+
+    try {
+      const pendingTarget = sessionStorage.getItem('pfg_pending_target_view');
+      if (pendingTarget) {
+        sessionStorage.removeItem('pfg_pending_target_view');
+        return pendingTarget;
+      }
+    } catch (_) {}
 
     const savedView = localStorage.getItem('lastView');
     return savedView || 'dashboard';
@@ -58,7 +71,7 @@ export const useAppNavigation = (isInitialLoad) => {
         if (parsed && parsed.activityId) {
           return { activityId: parsed.activityId };
         }
-      } catch (e) { /* ignore */ }
+      } catch { /* ignore */ }
     }
 
     const path = window.location.pathname;
@@ -67,17 +80,19 @@ export const useAppNavigation = (isInitialLoad) => {
       return { userId: profileMatch[1] };
     }
 
-    if (window.history.state && window.history.state.params) {
-      return window.history.state.params;
-    }
-    return {};
+    return window.history.state?.usr?.params ?? window.history.state?.params ?? {};
   });
 
   const [previousView, setPreviousView] = useState(null);
   const mainContentRef = useRef(null);
+  const isNavigatingRef = useRef(false);
 
   // --- SEGURIDAD ANTI-REDIRECCIÓN ---
   useEffect(() => {
+    if (isNavigatingRef.current) {
+      isNavigatingRef.current = false;
+      return;
+    }
     const path = window.location.pathname;
     const profileMatch = path.match(/^\/profile\/(\d+)$/);
 
@@ -92,7 +107,7 @@ export const useAppNavigation = (isInitialLoad) => {
           setNavParams({ activityId: parsed.activityId });
           return;
         }
-      } catch (e) { }
+      } catch { /* ignore */ }
     }
 
     if (profileMatch) {
@@ -104,41 +119,100 @@ export const useAppNavigation = (isInitialLoad) => {
     else if (path === '/social' && view !== 'social') {
       setView('social');
     }
+    else if (path === '/nutrition' && view !== 'nutrition') {
+      setView('nutrition');
+    }
+    else if (path === '/routines' && view !== 'routines') {
+      setView('routines');
+    }
+    else if (path === '/hub' && view !== 'hub') {
+      setView('hub');
+    }
+    else if (path === '/settings' && view !== 'settings') {
+      setView('settings');
+      const searchHighlight = new URLSearchParams(window.location.search).get('highlight');
+      if (searchHighlight) {
+        setNavParams(prev => ({ ...prev, highlight: searchHighlight }));
+      }
+    }
+    else if (path === '/workout' && view !== 'workout') {
+      setView('workout');
+    }
     else if (path === '/asesoria' && view !== 'asesoria') {
       setView('asesoria');
     }
+    else if (path === '/adminPanel' && view !== 'adminPanel') {
+      setView('adminPanel');
+    }
+    else if (path === '/trainerPanel' && view !== 'trainerPanel') {
+      setView('trainerPanel');
+    }
+    else if (path.startsWith('/noticias') && view !== 'noticias') {
+      setView('noticias');
+    }
+    else if ((path === '/dashboard' || path === '/') && view !== 'dashboard') {
+      setView('dashboard');
+    }
   }, [view, navParams.userId]);
+
+  useEffect(() => {
+    const target = getPushView(pathname);
+    if (target) setView(target);
+  }, [pathname]);
 
   // Función de navegación principal
   const navigate = useCallback((viewName, options = {}) => {
+    isNavigatingRef.current = true;
     if (options.forceTab) {
       localStorage.setItem('routinesForceTab', options.forceTab);
     }
 
     setNavParams(options);
 
-    if (view !== viewName || (viewName === 'publicProfile' && options.userId !== navParams.userId)) {
+    let newPath = '/';
+    switch (viewName) {
+      case 'dashboard': newPath = '/dashboard'; break;
+      case 'publicProfile': {
+        const targetId = options.userId || navParams.userId;
+        if (targetId) newPath = `/profile/${targetId}`;
+        break;
+      }
+      case 'active-cardio': {
+        newPath = '/active-cardio';
+        break;
+      }
+      default: newPath = `/${viewName}`; break;
+    }
+
+    const sectionView = ['settings', 'adminPanel', 'progress'].includes(viewName);
+    if (viewName === 'settings' && options.highlight) newPath += `?highlight=${encodeURIComponent(options.highlight)}`;
+    if ((viewName === 'adminPanel' || viewName === 'progress') && options.section) newPath += `?section=${encodeURIComponent(options.section)}`;
+    if (viewName === 'notifications' && options.notice) newPath += `?notice=${encodeURIComponent(options.notice)}`;
+    if (viewName === 'social' && options.tab) {
+      const params = new URLSearchParams({ tab: options.tab });
+      if (options.highlight) params.set('highlight', options.highlight);
+      newPath += `?${params}`;
+    }
+    const currentPath = window.location.pathname + (sectionView || viewName === 'notifications' || options.tab ? window.location.search : '');
+
+    const needsNavigation =
+      view !== viewName ||
+      (viewName === 'publicProfile' && options.userId !== navParams.userId) ||
+      currentPath !== newPath;
+
+    if (needsNavigation) {
       setPreviousView(view);
       setView(viewName);
 
-      let newPath = '/';
-      switch (viewName) {
-        case 'dashboard': newPath = '/'; break;
-        case 'publicProfile':
-          const targetId = options.userId || navParams.userId;
-          if (targetId) newPath = `/profile/${targetId}`;
-          break;
-        case 'active-cardio':
-          newPath = '/active-cardio';
-          break;
-        default: newPath = `/${viewName}`; break;
-      }
-
-      if (window.location.pathname !== newPath) {
-        window.history.pushState({ view: viewName, params: options }, '', newPath);
+      if (currentPath !== newPath) {
+        if (navigateRouter && typeof navigateRouter === 'function') {
+          navigateRouter(newPath, { state: { view: viewName, params: options } });
+        } else {
+          window.history.pushState({ view: viewName, params: options }, '', newPath);
+        }
       }
     }
-  }, [view, navParams]);
+  }, [view, navParams, navigateRouter]);
 
   const handleBackFromPolicy = useCallback(() => {
     setPreviousView(current => {
@@ -163,10 +237,10 @@ export const useAppNavigation = (isInitialLoad) => {
   
 
   useEffect(() => {
-    if (!isInitialLoad && view !== 'privacyPolicy' && view !== 'publicProfile' && view !== 'active-cardio') {
+    if (view !== 'privacyPolicy' && view !== 'publicProfile' && view !== 'active-cardio') {
       localStorage.setItem('lastView', view);
     }
-  }, [view, isInitialLoad]);
+  }, [view]);
 
   // Manejo de botones Atrás/Adelante del navegador
   useEffect(() => {
@@ -177,8 +251,9 @@ export const useAppNavigation = (isInitialLoad) => {
       const path = window.location.pathname;
       const profileMatch = path.match(/^\/profile\/(\d+)$/);
 
-      if (event.state && event.state.params) {
-        setNavParams(event.state.params);
+      const params = event.state?.usr?.params ?? event.state?.params;
+      if (params || ['/settings', '/adminPanel', '/progress'].includes(path)) {
+        setNavParams(params ?? {});
       }
 
       if (profileMatch) {
@@ -194,10 +269,26 @@ export const useAppNavigation = (isInitialLoad) => {
         setView('progress');
       } else if (path === '/settings') {
         setView('settings');
+        const searchHighlight = new URLSearchParams(window.location.search).get('highlight');
+        if (searchHighlight) {
+          setNavParams(prev => ({ ...prev, highlight: searchHighlight }));
+        }
       } else if (path === '/notifications') {
         setView('notifications');
       } else if (path === '/active-cardio') {
         setView('active-cardio');
+      } else if (path === '/workout') {
+        setView('workout');
+      } else if (path === '/asesoria') {
+        setView('asesoria');
+      } else if (path.startsWith('/noticias')) {
+        setView('noticias');
+      } else if (path === '/hub') {
+        setView('hub');
+      } else if (path === '/trainerPanel') {
+        setView('trainerPanel');
+      } else if (path === '/adminPanel') {
+        setView('adminPanel');
       } else {
         setView('dashboard');
       }

@@ -1,6 +1,6 @@
 ext {
     firebaseMessagingVersion = '23.4.1'
-    minSdkVersion = 23
+    minSdkVersion = 24
     compileSdkVersion = 36
     targetSdkVersion = 36
     androidxActivityVersion = '1.8.0'

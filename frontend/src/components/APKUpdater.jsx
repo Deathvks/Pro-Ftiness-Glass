@@ -6,7 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { APP_VERSION } from '../config/version';
 
 // URL de producción donde se aloja el version.json
-const REMOTE_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
+const REMOTE_BASE_URL = 'https://profitnessglass.es';
 
 const APKUpdater = () => {
   const [updateAvailable, setUpdateAvailable] = useState(null);
@@ -47,6 +47,14 @@ const APKUpdater = () => {
 
   const handleUpdate = () => {
     if (updateAvailable?.downloadUrl) {
+      try {
+        localStorage.setItem('lastView', 'dashboard');
+        localStorage.removeItem('pfg_cached_initial_state_v1');
+        localStorage.removeItem('pfg_cache_version');
+        localStorage.removeItem('pfg_social_feed_cache');
+        localStorage.removeItem('pfg_crash_loop_count');
+        sessionStorage.clear();
+      } catch {}
       window.open(updateAvailable.downloadUrl, '_system');
     }
   };

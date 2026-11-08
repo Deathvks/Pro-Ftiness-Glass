@@ -74,6 +74,14 @@ const HubTourGuide = () => {
                     }
                 },
                 {
+                    element: '#hub-tutorials',
+                    popover: {
+                        title: 'Tutoriales visuales',
+                        description: 'Abre una guía de cada sección. El tutorial resaltará los controles reales de la pantalla y te explicará para qué sirve cada uno.',
+                        side: 'bottom'
+                    }
+                },
+                {
                     element: '#hub-progress',
                     popover: {
                         title: 'Tu Progreso',

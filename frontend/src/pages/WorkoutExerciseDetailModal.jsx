@@ -1,22 +1,81 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { X, Dumbbell, Repeat, Clock, FileText, Image as ImageIcon, Target, Sparkles, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
+import { X, Dumbbell, Repeat, Clock, FileText, Image as ImageIcon, Target, Sparkles, Loader2, AlertCircle, ChevronDown, Play, WifiOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ExerciseMedia from '../components/ExerciseMedia';
 import Spinner from '../components/Spinner';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
-import { normalizeText } from '../utils/helpers';
 import { askTrainerAI } from '../services/aiService';
 import ModalPortal from '../components/ModalPortal';
+import { useToast } from '../hooks/useToast';
 
 const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
-  const { t } = useTranslation(['exercise_names', 'exercise_ui', 'exercise_descriptions', 'exercise_muscles']);
+  const { t } = useTranslation('exercise_ui');
+  const { showToast } = useToast();
 
   const { getOrFetchAllExercises } = useAppStore(useShallow(state => ({
     getOrFetchAllExercises: state.getOrFetchAllExercises,
+    userProfile: state.userProfile,
   })));
 
-  const [localDetails, setLocalDetails] = useState(exercise.exercise_details || {});
+  const [localDetails, setLocalDetails] = useState({ ...exercise, ...(exercise.exercise_details || {}) });
+  const isAdmin = localDetails?.userProfile?.role === 'admin' || exercise?.userProfile?.role === 'admin' || useAppStore.getState().userProfile?.role === 'admin';
+  const [isOffline, setIsOffline] = useState(() => typeof navigator !== 'undefined' ? !navigator.onLine : false);
+
+  const hasVideo = Boolean(
+    localDetails?.video_url ||
+    localDetails?.exercise?.video_url ||
+    localDetails?.exercise_details?.video_url ||
+    exercise?.video_url ||
+    exercise?.exercise?.video_url
+  );
+
+  const hasImages = Boolean(
+    localDetails?.image_url_start ||
+    localDetails?.image_url_end ||
+    localDetails?.image_url ||
+    localDetails?.image ||
+    (Array.isArray(localDetails?.images) && localDetails.images.length > 0) ||
+    (typeof localDetails?.images === 'string' && localDetails.images.trim().length > 2) ||
+    localDetails?.exercise?.image_url_start ||
+    localDetails?.exercise?.image_url_end ||
+    localDetails?.exercise?.image_url ||
+    localDetails?.exercise?.image ||
+    (Array.isArray(localDetails?.exercise?.images) && localDetails.exercise.images.length > 0) ||
+    (typeof localDetails?.exercise?.images === 'string' && localDetails.exercise.images.trim().length > 2) ||
+    exercise?.image_url_start ||
+    exercise?.image_url_end ||
+    exercise?.image_url ||
+    exercise?.image ||
+    (Array.isArray(exercise?.images) && exercise.images.length > 0) ||
+    (typeof exercise?.images === 'string' && exercise.images.trim().length > 2)
+  );
+
+  const [userSelectedMode, setUserSelectedMode] = useState(false);
+  const [mediaMode, setMediaMode] = useState(() => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return 'images';
+    return hasVideo ? 'video' : 'images';
+  });
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => {
+      setIsOffline(true);
+      setMediaMode('images');
+    };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!userSelectedMode && hasVideo && !isOffline) {
+      setMediaMode('video');
+    }
+  }, [hasVideo, isOffline, userSelectedMode]);
 
   // Estados para la IA
   const [aiExplanation, setAiExplanation] = useState(null);
@@ -51,6 +110,7 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     // Actualizamos la fecha
     localStorage.setItem('ai_last_date', today);
   }, []);
+
   // --- FIN DE NUEVA LÓGICA ---
 
   const nameKey = exercise.name;
@@ -71,9 +131,12 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
         const fullDetails = allExercises.find(ex => ex.name === nameKey);
 
         if (fullDetails) {
+          const cleanLocal = Object.fromEntries(
+            Object.entries(localDetails).filter(([_, v]) => v !== null && v !== undefined && v !== '')
+          );
           const mergedDetails = {
             ...fullDetails,
-            ...localDetails,
+            ...cleanLocal,
             name: nameKey,
             description: fullDetails.description_es || fullDetails.description || localDetails.description,
           };
@@ -89,38 +152,19 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
     fetchMissingDetails();
   }, [localIsLoading, nameKey, getOrFetchAllExercises]);
 
-  const getTranslatedDescription = () => {
-    const rawDesc = localDetails.description || localDetails.description_es;
-    if (!rawDesc) return null;
-
-    const descKey = normalizeText(rawDesc);
-
-    const translated = t(descKey, {
-      ns: 'exercise_descriptions',
-      defaultValue: null,
-      nsSeparator: false,
-      keySeparator: false
-    });
-
-    return translated || rawDesc;
-  };
-
-  const description = getTranslatedDescription();
-  const titleKey = localDetails.name || exercise.name;
-  const translatedName = t(titleKey, { ns: 'exercise_names', defaultValue: titleKey });
+  const description = localDetails.description || localDetails.description_es || null;
+  const translatedName = localDetails.name || exercise.name;
 
   // --- CORRECCIÓN DE PRIORIDAD ---
   const rawMuscleGroup =
     exercise.muscle_group || exercise.muscles || exercise.target ||
     localDetails.muscle_group || localDetails.muscles || localDetails.target ||
-    localDetails.category || 'Other';
+    localDetails.category || 'Otro';
 
   const muscleGroupLabel = rawMuscleGroup
     .split(',')
-    .map(m => {
-      const trimmed = m.trim();
-      return t(trimmed, { ns: 'exercise_muscles', defaultValue: trimmed });
-    })
+    .map(m => m.trim())
+    .filter(Boolean)
     .join(', ');
 
   // --- LÓGICA DE LA IA ---
@@ -213,19 +257,69 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
           {/* Contenedor Responsivo: Columna en Móvil, 2 Columnas en PC */}
           <div className="flex flex-col md:flex-row md:items-start md:gap-8">
             
-            {/* Columna Izquierda: Vídeo en Formato Vertical Móvil (Shorts 9:16) */}
+            {/* Columna Izquierda: Vídeo en Formato Vertical Móvil (Shorts 9:16) o Animación de Fotos */}
             <div className="flex flex-col items-center shrink-0 mb-6 md:mb-0 md:sticky md:top-0">
+              {/* Selector Vídeo / Animación si ambos recursos existen */}
+              {hasVideo && hasImages && (
+                <div className="flex items-center p-1 bg-black/5 dark:bg-white/5 rounded-full ring-1 ring-black/5 dark:ring-white/10 mb-3 shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isOffline) {
+                        showToast('El vídeo de YouTube requiere conexión a internet activa', 'warning');
+                        return;
+                      }
+                      setUserSelectedMode(true);
+                      setMediaMode('video');
+                    }}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      mediaMode === 'video'
+                        ? 'bg-accent text-white shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <Play size={11} fill="currentColor" />
+                    <span>Vídeo</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserSelectedMode(true);
+                      setMediaMode('images');
+                    }}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      mediaMode === 'images'
+                        ? 'bg-accent text-white shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <Repeat size={11} />
+                    <span>Animación</span>
+                  </button>
+                </div>
+              )}
+
               <div className="relative mx-auto w-[220px] xs:w-[240px] sm:w-[260px] md:w-[270px] max-w-full aspect-[9/16] max-h-[44vh] md:max-h-[58vh] rounded-[28px] overflow-hidden bg-black ring-1 ring-black/10 dark:ring-white/15 shadow-2xl flex items-center justify-center">
+                {/* Badge sin conexión si estamos offline */}
+                {isOffline && (
+                  <div className="absolute top-3 left-3 z-20 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md text-amber-400 text-[10px] font-bold flex items-center gap-1.5 border border-amber-500/30 shadow-md">
+                    <WifiOff size={11} />
+                    <span>Sin conexión • Animación local</span>
+                  </div>
+                )}
+
                 {localIsLoading ? (
                   <div className="w-full h-full flex items-center justify-center text-text-muted">
                     <Spinner size={32} />
                   </div>
                 ) : (
                   <ExerciseMedia
+                    key={mediaMode}
                     details={localDetails}
-                    fitMode="cover"
-                    playYouTube={true}
-                    className="w-full h-full aspect-[9/16] object-cover"
+                    fitMode={mediaMode === 'video' ? 'cover' : 'contain'}
+                    playYouTube={mediaMode === 'video' && !isOffline}
+                    forceImage={mediaMode === 'images'}
+                    className={`w-full h-full aspect-[9/16] ${mediaMode === 'video' ? 'object-cover' : 'object-contain'}`}
                   />
                 )}
 
@@ -319,12 +413,19 @@ const WorkoutExerciseDetailModal = ({ exercise, onClose }) => {
               {/* Sección del Entrenador IA */}
               <div className="pt-6 border-t border-black/5 dark:border-white/10">
                 <div className="flex justify-between items-center mb-5">
-                  <h3 className="text-lg font-extrabold flex items-center gap-3 text-text-primary tracking-tight">
-                    <div className="p-2 bg-accent/10 rounded-[12px] ring-1 ring-accent/30 text-accent shrink-0">
-                      <Sparkles size={18} strokeWidth={2.5} />
-                    </div>
-                    Técnica y Consejos IA
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-extrabold flex items-center gap-3 text-text-primary tracking-tight">
+                      <div className="p-2 bg-accent/10 rounded-[12px] ring-1 ring-accent/30 text-accent shrink-0">
+                        <Sparkles size={18} strokeWidth={2.5} />
+                      </div>
+                      Técnica y Consejos IA
+                    </h3>
+                    {isAdmin && (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/30">
+                        Gemini 3.6 Flash
+                      </span>
+                    )}
+                  </div>
                   {remainingUses !== null && (
                     <div className="text-right">
                       <span className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider block ${isLimitReached ? 'text-red' : 'text-text-secondary'}`}>

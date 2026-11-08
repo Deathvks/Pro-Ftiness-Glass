@@ -1,48 +1,355 @@
 /* frontend/src/components/MainAppLayout.jsx */
-import React, { Suspense, useEffect, useState, useRef, startTransition } from 'react';
-import { SparklesIcon, BellIcon, Cog8ToothIcon as SettingsIcon, UserIcon, ChevronLeftIcon } from '@heroicons/react/24/outline';
-import { BoltIcon as Zap, CheckCircleIcon } from '@heroicons/react/24/solid';
+import React, { Suspense, lazy, useEffect, useState, useRef, startTransition } from 'react';
+import { createPortal } from 'react-dom';
+import { Cog8ToothIcon as SettingsIcon, UserIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import { FaBrain, FaBell, FaChevronLeft, FaDumbbell } from 'react-icons/fa6';
 import useAppStore from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { APP_VERSION } from '../config/version';
 import { useToast } from '../hooks/useToast';
 import { useOfflineSync } from '../hooks/useOfflineSync';
 import { useAppTheme } from '../hooks/useAppTheme';
+import { useSectionRoute } from '../hooks/useSectionNavigation';
+import { SETTINGS_SECTIONS } from '../config/settingsSections';
+import { ADMIN_SECTIONS } from '../config/adminSections';
+import { PROGRESS_SECTIONS } from '../config/progressSections';
+import { recoverFromChunkError, reloadAppWithoutStaleCache } from '../utils/appRecovery';
 import { initSocket } from '../services/socket';
 import * as userService from '../services/userService';
 
 // Componentes UI
 import Sidebar from './Sidebar';
 import ModalPortal from './ModalPortal';
-import { Palette } from 'lucide-react';
+import { Palette, RefreshCw, AlertTriangle } from 'lucide-react';
 import Spinner from './Spinner';
 import PRToast from './PRToast';
-import ConfirmationModal from './ConfirmationModal';
-import WelcomeModal from './WelcomeModal';
-import EmailVerificationModal from './EmailVerificationModal';
-import EmailVerification from './EmailVerification';
-import CookieConsentBanner from './CookieConsentBanner';
 import AndroidDownloadPrompt from './AndroidDownloadPrompt';
 import APKUpdater from './APKUpdater';
-import AIInfoModal from './AIInfoModal';
-import MilestoneLevelUpModal from './MilestoneLevelUpModal';
-import ReferralSuccessAnimation from './ReferralSuccessAnimation';
-import GlobalRatingPrompt from './GlobalRatingPrompt';
 import UserAvatar from './UserAvatar';
+import MaintenanceNoticeBanner from './MaintenanceNoticeBanner';
+
+import ConfirmationModal from './ConfirmationModal';
+import WelcomeModal from './WelcomeModal';
+const EmailVerificationModal = lazy(() => import('./EmailVerificationModal'));
+const EmailVerification = lazy(() => import('./EmailVerification'));
+const CookieConsentBanner = lazy(() => import('./CookieConsentBanner'));
+import AIInfoModal from './AIInfoModal';
+const MilestoneLevelUpModal = lazy(() => import('./MilestoneLevelUpModal'));
+const ReferralSuccessAnimation = lazy(() => import('./ReferralSuccessAnimation'));
+const GlobalRatingPrompt = lazy(() => import('./GlobalRatingPrompt'));
 
 // Constantes
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
-const LoadingFallback = () => (
-  <div className="flex justify-center items-center h-full pt-20">
-    <Spinner size={40} />
-  </div>
-);
+const ACCENT_UNLOCK_REWARDS = {
+  20: [
+    { name: 'Supernova', gradient: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 35%, #3b82f6 70%, #7c3aed 100%)', isAnimated: true, glow: 'rgba(124, 58, 237, 0.45)' },
+    { name: 'Plasma Cuántico', gradient: 'linear-gradient(135deg, #10b981 0%, #06b6d4 35%, #3b82f6 70%, #10b981 100%)', isAnimated: true, glow: 'rgba(16, 185, 129, 0.45)' },
+    { name: 'Llama Eterna', gradient: 'linear-gradient(135deg, #ef4444 0%, #f97316 35%, #facc15 70%, #ef4444 100%)', isAnimated: true, glow: 'rgba(239, 68, 68, 0.45)' },
+    { name: 'Vórtice Abisal', gradient: 'linear-gradient(135deg, #1d4ed8 0%, #6366f1 35%, #14b8a6 70%, #1d4ed8 100%)', isAnimated: true, glow: 'rgba(29, 78, 216, 0.45)' },
+    { name: 'Oro Cósmico', gradient: 'linear-gradient(135deg, #d97706 0%, #fef08a 35%, #b45309 70%, #d97706 100%)', isAnimated: true, glow: 'rgba(217, 119, 6, 0.45)' },
+  ],
+  15: [
+    { name: 'Aurora Boreal', gradient: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)', glow: 'rgba(16, 185, 129, 0.35)' },
+    { name: 'Sunset Glow', gradient: 'linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)', glow: 'rgba(244, 63, 94, 0.35)' },
+    { name: 'Cyberpunk', gradient: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)', glow: 'rgba(139, 92, 246, 0.35)' },
+    { name: 'Océano Profundo', gradient: 'linear-gradient(135deg, #2563eb 0%, #00f5d4 100%)', glow: 'rgba(37, 99, 235, 0.35)' },
+    { name: 'Oro Imperial', gradient: 'linear-gradient(135deg, #f59e0b 0%, #fde047 100%)', glow: 'rgba(245, 158, 11, 0.35)' },
+  ],
+  10: [
+    { name: 'Rosa Atardecer', bg: '#ff9a9e', glow: 'rgba(255, 154, 158, 0.35)' },
+    { name: 'Pistacho', bg: '#c5e1a5', glow: 'rgba(197, 225, 165, 0.35)' },
+    { name: 'Mango', bg: '#ffbe76', glow: 'rgba(255, 190, 118, 0.35)' },
+    { name: 'Limonada', bg: '#fdfd96', glow: 'rgba(253, 253, 150, 0.35)' },
+    { name: 'Flor de Cerezo', bg: '#fccbcf', glow: 'rgba(252, 203, 207, 0.35)' },
+  ],
+  5: [
+    { name: 'Menta Suave', bg: '#a8e6cf', glow: 'rgba(168, 230, 207, 0.35)' },
+    { name: 'Melocotón', bg: '#ffd3b6', glow: 'rgba(255, 211, 182, 0.35)' },
+    { name: 'Agua de Rosas', bg: '#ffaaa5', glow: 'rgba(255, 170, 165, 0.35)' },
+    { name: 'Lavanda', bg: '#c5a3ff', glow: 'rgba(197, 163, 255, 0.35)' },
+    { name: 'Azul Bebé', bg: '#a2cffe', glow: 'rgba(162, 207, 254, 0.35)' },
+  ],
+};
+
+const LoadingFallback = ({ onGoHome }) => {
+  const [showRescue, setShowRescue] = React.useState(false);
+  const [showProgressHint, setShowProgressHint] = React.useState(false);
+  const [isRepairing, setIsRepairing] = React.useState(false);
+
+  React.useEffect(() => {
+    const hintTimer = setTimeout(() => {
+      setShowProgressHint(true);
+    }, 2500);
+
+    const timer = setTimeout(() => {
+      setShowRescue(true);
+    }, 30000);
+    return () => {
+      clearTimeout(hintTimer);
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const handleRepair = async () => {
+    setIsRepairing(true);
+    if ('caches' in window) {
+      try {
+        await caches.delete('vite-hashed-assets');
+      } catch (_) {}
+    }
+    reloadAppWithoutStaleCache({ force: true });
+  };
+
+  const handleResetSession = () => {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+      if ('caches' in window) {
+        caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
+      }
+    } catch (_) {}
+    window.location.replace('/login');
+  };
+
+  return (
+    <div className="w-full px-4 py-6 max-w-4xl mx-auto space-y-4 relative">
+      <div className="space-y-4 animate-pulse pointer-events-none">
+        <div className="h-36 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 flex items-center justify-center">
+          {showProgressHint && (
+            <div className="flex items-center gap-2.5 text-xs font-semibold text-text-muted animate-[fade-in_0.3s_ease-out]">
+              <RefreshCw className="w-4 h-4 animate-spin text-accent" />
+              <span>Cargando componentes de la sección...</span>
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="h-24 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
+          <div className="h-24 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
+        </div>
+        <div className="h-44 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10" />
+      </div>
+
+      {showRescue && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 dark:bg-black/85 backdrop-blur-md animate-[fade-in_0.2s_ease-out] pointer-events-auto"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100dvh',
+            zIndex: 9999,
+            backgroundColor: 'rgba(0, 0, 0, 0.75)'
+          }}
+        >
+          <div className="w-full max-w-sm p-5 rounded-3xl glass border border-amber-500/30 bg-bg-secondary/95 backdrop-blur-2xl shadow-2xl shadow-black/40 flex flex-col gap-3.5 text-center animate-[scale-in_0.2s_ease-out]">
+            <div className="w-11 h-11 mx-auto rounded-2xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-500">
+              <RefreshCw className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-text-primary">
+                ¿La sección está tardando en cargar?
+              </p>
+              <p className="text-xs text-text-secondary leading-relaxed">
+                Esta sección sigue cargando. La primera apertura en la PWA puede tardar más mientras descarga sus archivos. Si se queda bloqueada, puedes recargarla.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleRepair}
+                disabled={isRepairing}
+                className="w-full py-2.5 px-4 rounded-xl bg-accent text-accent-contrast font-bold text-xs shadow-md shadow-accent/25 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRepairing ? 'animate-spin' : ''}`} />
+                <span>{isRepairing ? 'Recargando...' : 'Recargar vista'}</span>
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onGoHome}
+                  disabled={isRepairing}
+                  className="flex-1 py-2 px-3 rounded-xl bg-accent/10 border border-accent/20 text-accent font-semibold text-xs active:scale-95 transition-all cursor-pointer"
+                >
+                  Ir al inicio
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRescue(false)}
+                  disabled={isRepairing}
+                  className="flex-1 py-2 px-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-secondary hover:text-text-primary font-semibold text-xs active:scale-95 transition-all cursor-pointer"
+                >
+                  Esperar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetSession}
+                  disabled={isRepairing}
+                  className="flex-1 py-2 px-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 font-semibold text-xs active:scale-95 transition-all cursor-pointer"
+                >
+                  Cerrar sesión
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
+
+class ViewErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.warn('[ViewErrorBoundary] Error cargando vista:', error, errorInfo);
+    const errMsg = (error?.message || '').toLowerCase();
+    const isChunk =
+      error?.name === 'ChunkLoadError' ||
+      error?.name === 'ChunkLoadTimeoutError' ||
+      errMsg.includes('failed to fetch dynamically imported module') ||
+      errMsg.includes('loading chunk') ||
+      errMsg.includes('loading css chunk') ||
+      errMsg.includes('importing a module script failed') ||
+      errMsg.includes('dynamically imported module');
+
+    if (isChunk) {
+      recoverFromChunkError();
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.view !== this.props.view && this.state.hasError) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+
+  handleRetry = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
+  handleReload = () => {
+    const errMsg = (this.state.error?.message || '').toLowerCase();
+    const isChunkError =
+      this.state.error?.name === 'ChunkLoadError' ||
+      this.state.error?.name === 'ChunkLoadTimeoutError' ||
+      errMsg.includes('failed to fetch dynamically imported module') ||
+      errMsg.includes('loading chunk') ||
+      errMsg.includes('loading css chunk') ||
+      errMsg.includes('importing a module script failed') ||
+      errMsg.includes('dynamically imported module');
+    if (isChunkError) {
+      recoverFromChunkError({ force: true });
+      return;
+    }
+
+    try {
+      localStorage.removeItem('lastView');
+    } catch {}
+    reloadAppWithoutStaleCache({ path: '/', force: true });
+  };
+
+  handleGoHome = () => {
+    this.setState({ hasError: false, error: null });
+    try {
+      localStorage.setItem('lastView', 'dashboard');
+    } catch {}
+    if (this.props.onGoHome) {
+      this.props.onGoHome();
+    } else if (this.props.navigate) {
+      this.props.navigate('dashboard');
+    } else {
+      window.location.replace(window.location.origin + '/');
+    }
+  };
+
+  render() {
+    if (this.state.hasError) {
+      const err = this.state.error;
+      const errMsg = (err?.message || '').toLowerCase();
+      const isChunkError =
+        err?.name === 'ChunkLoadError' ||
+        err?.name === 'ChunkLoadTimeoutError' ||
+        errMsg.includes('failed to fetch dynamically imported module') ||
+        errMsg.includes('loading chunk') ||
+        errMsg.includes('loading css chunk') ||
+        errMsg.includes('importing a module script failed') ||
+        errMsg.includes('dynamically imported module');
+
+      return (
+        <div className="min-h-[55vh] flex flex-col items-center justify-center p-6 text-center animate-[fade-in_0.3s_ease-out]">
+          <div className="w-16 h-16 rounded-2xl bg-accent/15 text-accent flex items-center justify-center mb-4 shadow-lg shadow-accent/20">
+            {isChunkError ? (
+              <RefreshCw className="animate-spin-slow" size={32} />
+            ) : (
+              <AlertTriangle className="text-accent" size={32} />
+            )}
+          </div>
+          <h2 className="text-xl font-bold text-text-primary mb-2">
+            {isChunkError ? 'Actualización de la App' : 'Problema al cargar la sección'}
+          </h2>
+          <p className="text-sm text-text-secondary max-w-sm mb-6 leading-relaxed">
+            {isChunkError
+              ? (typeof navigator !== 'undefined' && navigator.onLine === false
+                  ? 'No hay conexión para descargar esta sección. Recupera la conexión e inténtalo de nuevo.'
+                  : 'No se pudo descargar esta sección. Pulsa actualizar para volver a intentarlo conservando tu pantalla.')
+              : 'Se ha producido un error inesperado al renderizar este apartado. Puedes reintentar, volver al inicio o recargar la app.'}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {!isChunkError && (
+              <button
+                type="button"
+                onClick={this.handleRetry}
+                className="px-5 py-2.5 rounded-xl bg-accent text-accent-contrast font-bold text-sm shadow-md shadow-accent/25 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+              >
+                Reintentar
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={this.handleReload}
+              className={`px-5 py-2.5 rounded-xl font-bold text-sm shadow-md cursor-pointer hover:scale-105 active:scale-95 transition-all ${
+                isChunkError
+                  ? 'bg-accent text-accent-contrast shadow-accent/25'
+                  : 'bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-primary hover:bg-black/10'
+              }`}
+            >
+              {isChunkError ? 'Actualizar ahora' : 'Recargar aplicación'}
+            </button>
+            <button
+              type="button"
+              onClick={this.handleGoHome}
+              className="px-5 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-secondary hover:text-text-primary font-bold text-sm cursor-pointer hover:scale-105 active:scale-95 transition-all"
+            >
+              Volver al inicio
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 
 export default function MainAppLayout({
   view,
   navigate,
+  navParams,
+  preloadView,
   mainContentRef,
   currentTitle,
   currentViewComponent,
@@ -62,27 +369,57 @@ export default function MainAppLayout({
   profileImgSrc,
 }) {
   const { addToast } = useToast();
+  const { section, closeSection } = useSectionRoute();
+  const sections = view === 'adminPanel' ? ADMIN_SECTIONS
+    : view === 'settings' ? SETTINGS_SECTIONS
+    : view === 'progress' ? PROGRESS_SECTIONS : null;
+  const activeSection = sections?.find(item => item.id === section);
+  const mobileTitle = activeSection?.label ?? currentTitle;
   useOfflineSync();
-  const { activeTheme } = useAppTheme();
+  const { activeTheme, accent } = useAppTheme();
+  const isLevel20Accent = ['supernova', 'plasma', 'eternal-flame', 'abyssal-vortex', 'cosmic-gold'].includes(accent);
+
 
   // Workaround para re-calcular env(safe-area-inset-top) en iOS PWA al cambiar el tema
   useEffect(() => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    if (isStandalone) {
-      setTimeout(() => {
-        document.body.style.paddingTop = '1px';
+    if (!isStandalone) return;
+    let innerTimer = null;
+    const outerTimer = setTimeout(() => {
+      document.body.style.paddingTop = '1px';
+      innerTimer = setTimeout(() => {
+        document.body.style.paddingTop = '0px';
         window.dispatchEvent(new Event('resize'));
-        setTimeout(() => {
-          document.body.style.paddingTop = '0px';
-        }, 50);
-      }, 100);
-    }
+      }, 50);
+    }, 100);
+    return () => {
+      clearTimeout(outerTimer);
+      if (innerTimer) clearTimeout(innerTimer);
+      document.body.style.paddingTop = '0px';
+    };
   }, [activeTheme]);
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return typeof window !== 'undefined' && localStorage.getItem('sidebarCollapsed') === 'true';
+  });
+
+  useEffect(() => {
+    const handleSidebarToggle = () => {
+      setIsSidebarCollapsed(localStorage.getItem('sidebarCollapsed') === 'true');
+    };
+    window.addEventListener('sidebar_toggled', handleSidebarToggle);
+    window.addEventListener('storage', handleSidebarToggle);
+    return () => {
+      window.removeEventListener('sidebar_toggled', handleSidebarToggle);
+      window.removeEventListener('storage', handleSidebarToggle);
+    };
+  }, []);
 
   const {
     userProfile,
     prNotification,
     showWelcomeModal,
+    welcomeRemoteVersion,
     closeWelcomeModal,
     cookieConsent,
     handleAcceptCookies,
@@ -105,6 +442,7 @@ export default function MainAppLayout({
     userProfile: state.userProfile,
     prNotification: state.prNotification,
     showWelcomeModal: state.showWelcomeModal,
+    welcomeRemoteVersion: state.welcomeRemoteVersion,
     closeWelcomeModal: state.closeWelcomeModal,
     cookieConsent: state.cookieConsent,
     handleAcceptCookies: state.handleAcceptCookies,
@@ -158,67 +496,198 @@ export default function MainAppLayout({
   const prevViewRef = useRef(view);
   const SWIPE_THRESHOLD = 60; 
 
-  // --- DETECCIÓN DE SCROLL PARA MATCHEAR LA TRANSPARENCIA DEL NOTCH iOS 27 ---
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+  // --- DETECCIÓN DE SCROLL ULTRA-FLUIDA (60/120 FPS EN COMPOSITOR GPU TIPO APPLE) ---
+  const isHeaderHiddenRef = useRef(false);
+  const isGlobalModalOpenRef = useRef(false);
+  const isScrolledRef = useRef(false);
+  const mobileHeaderRef = useRef(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+
+  const syncMobileHeaderDOM = React.useCallback(() => {
+    const el = mobileHeaderRef.current;
+    if (!el) return;
+    const modalOpen = isGlobalModalOpenRef.current;
+    const hidden = isHeaderHiddenRef.current;
+    const scrolled = isScrolledRef.current;
+
+    if (modalOpen) {
+      el.style.transform = 'translate3d(0, -16px, 0)';
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+    } else if (hidden) {
+      el.style.transform = 'translate3d(0, -100%, 0)';
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+    } else {
+      el.style.transform = 'translate3d(0, 0, 0)';
+      el.style.opacity = '1';
+      el.style.pointerEvents = 'auto';
+    }
+
+    // Efecto de desenfoque glass al hacer scroll hacia abajo (deja de ser transparente antes de desaparecer, sin borde)
+    if (scrolled) {
+      el.classList.add('bg-bg-primary/85', 'backdrop-blur-md');
+      el.classList.remove('bg-transparent', 'border-b', 'border-glass-border/40', 'shadow-sm');
+    } else {
+      el.classList.remove('bg-bg-primary/85', 'backdrop-blur-md', 'border-b', 'border-glass-border/40', 'shadow-sm');
+      el.classList.add('bg-transparent');
+    }
+  }, []);
+
+  useEffect(() => {
+    isGlobalModalOpenRef.current = isGlobalModalOpen;
+    syncMobileHeaderDOM();
+  }, [isGlobalModalOpen, syncMobileHeaderDOM]);
+
+  useEffect(() => {
+    const el = mobileHeaderRef.current;
+    if (!el) return;
+
+    const resetContainerScrollDrift = () => {
+      if (window.scrollY !== 0 || document.documentElement.scrollTop !== 0 || document.body.scrollTop !== 0) {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }
+      const rootEl = document.getElementById('root');
+      if (rootEl && rootEl.scrollTop !== 0) rootEl.scrollTop = 0;
+      if (el.parentElement && el.parentElement.scrollTop !== 0) {
+        el.parentElement.scrollTop = 0;
+      }
+    };
+
+    const updateHeight = () => {
+      resetContainerScrollDrift();
+      if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+        setHeaderHeight(prev => (prev === 0 ? prev : 0));
+        return;
+      }
+      const h = el ? el.offsetHeight : 0;
+      if (h > 0) {
+        setHeaderHeight(prev => (prev === h ? prev : h));
+      } else {
+        setHeaderHeight(prev => (prev === 0 ? prev : 0));
+      }
+    };
+
+    updateHeight();
+    const ro = new ResizeObserver(updateHeight);
+    ro.observe(el);
+    window.addEventListener('resize', updateHeight);
+    window.addEventListener('focusout', resetContainerScrollDrift);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', updateHeight);
+      window.removeEventListener('focusout', resetContainerScrollDrift);
+    };
+  }, [view]);
 
   useEffect(() => {
     const node = mainContentRef?.current;
     if (!node) return;
 
-    // Cuando cambiamos de vista, asegúrate de scrollear arriba del todo de forma instantánea
-    node.scrollTo({ top: 0, behavior: 'auto' });
+    // Cuando cambiamos de vista, asegúrate de scrollear arriba y a la izquierda de forma instantánea
+    node.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    node.scrollLeft = 0;
+    isHeaderHiddenRef.current = false;
+    isScrolledRef.current = false;
+    syncMobileHeaderDOM();
+
+    let lastScrollTop = 0;
+    let accumulatedDown = 0;
+    let accumulatedUp = 0;
+    let scrollRafId = null;
+
+    const updateOnScroll = () => {
+      scrollRafId = null;
+      const currentScrollTop = Math.max(0, node.scrollTop);
+      let needsSync = false;
+
+      // Si volvemos a la zona superior (<= 36px), el header vuelve a desplegarse
+      if (currentScrollTop <= 36) {
+        if (isHeaderHiddenRef.current) {
+          isHeaderHiddenRef.current = false;
+          needsSync = true;
+        }
+        if (currentScrollTop <= 4 && isScrolledRef.current) {
+          isScrolledRef.current = false;
+          needsSync = true;
+        }
+        accumulatedDown = 0;
+        accumulatedUp = 0;
+        lastScrollTop = currentScrollTop;
+        if (needsSync) syncMobileHeaderDOM();
+        return;
+      }
+
+      // Si nos hemos desplazado más allá de 4px, activar desenfoque glass inmediatamente
+      if (!isScrolledRef.current) {
+        isScrolledRef.current = true;
+        needsSync = true;
+      }
+
+      const delta = currentScrollTop - lastScrollTop;
+
+      if (delta > 0) {
+        accumulatedDown += delta;
+        accumulatedUp = 0;
+
+        // Ocultar al deslizar hacia abajo una vez pasado el margen inicial (> 52px)
+        if (accumulatedDown > 14 && currentScrollTop > 52 && !isHeaderHiddenRef.current) {
+          isHeaderHiddenRef.current = true;
+          needsSync = true;
+        }
+      } else if (delta < 0) {
+        // Al subir en medio de la pantalla, NO se despliega el header hasta llegar arriba del todo (<= 36px)
+        accumulatedUp += Math.abs(delta);
+        accumulatedDown = 0;
+      }
+
+      lastScrollTop = currentScrollTop;
+      if (needsSync) syncMobileHeaderDOM();
+    };
 
     const handleScroll = () => {
-      const currentScrollTop = node.scrollTop;
-      setIsScrolled(currentScrollTop > 4);
-      
-      const isAndroid = /Android/i.test(navigator.userAgent);
-      if (!isAndroid) {
-        setIsHeaderHidden(currentScrollTop > 20);
-      } else {
-        setIsHeaderHidden(false);
+      if (scrollRafId === null) {
+        scrollRafId = requestAnimationFrame(updateOnScroll);
       }
     };
 
-    handleScroll();
+    updateOnScroll();
     node.addEventListener('scroll', handleScroll, { passive: true });
 
-    // iOS PWA hack: force WebKit to recalculate env(safe-area-inset-top)
-    // Often it evaluates to 0 on initial PWA launch until a resize or scroll occurs.
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    if (isStandalone) {
-      setTimeout(() => {
-        document.body.style.paddingTop = '1px';
-        window.dispatchEvent(new Event('resize'));
-        setTimeout(() => {
-          document.body.style.paddingTop = '0px';
-        }, 50);
-      }, 100);
-    }
+    return () => {
+      node.removeEventListener('scroll', handleScroll);
+      if (scrollRafId !== null) cancelAnimationFrame(scrollRafId);
+    };
+  }, [mainContentRef, view, syncMobileHeaderDOM]);
 
-    return () => node.removeEventListener('scroll', handleScroll);
-  }, [mainContentRef, view]);
+  const wasSwipeNavRef = useRef(false);
 
-  // OBSERVADOR DE MODALES (Para ocultar Navbar y Header)
+  // OBSERVADOR DE MODALES (Para ocultar Navbar y Header sin recalcular estilos en cada cambio de clase/transform)
   useEffect(() => {
     let rafId;
     const checkModals = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        const overlays = Array.from(document.querySelectorAll('.fixed.inset-0'));
-        const hasModal = overlays.some(el => {
-           const style = window.getComputedStyle(el);
-           const zIndex = parseInt(style.zIndex, 10) || 0;
-           return zIndex >= 40 && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
-        });
-        setIsGlobalModalOpen(hasModal);
+        const overlays = document.querySelectorAll('.fixed.inset-0');
+        let hasModal = false;
+        for (let i = 0; i < overlays.length; i++) {
+          const el = overlays[i];
+          const style = window.getComputedStyle(el);
+          const zIndex = parseInt(style.zIndex, 10) || 0;
+          if (zIndex >= 40 && style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
+            hasModal = true;
+            break;
+          }
+        }
+        setIsGlobalModalOpen(prev => (prev === hasModal ? prev : hasModal));
       });
     };
 
     checkModals();
     const observer = new MutationObserver(() => checkModals());
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+    observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {
       observer.disconnect();
@@ -226,23 +695,25 @@ export default function MainAppLayout({
     };
   }, []);
 
-  const handleNavClick = (itemId) => {
+  const handleNavClick = (itemId, options = {}) => {
+    if (preloadView) preloadView(itemId);
+
     if (itemId === 'routines') {
       localStorage.removeItem('routinesEditingState_v2');
       localStorage.setItem('routinesForceTab', 'myRoutines');
       localStorage.removeItem('quickCardioOrigin');
     }
-    
-    startTransition(() => {
-      if (view === itemId) {
-        if (mainContentRef && mainContentRef.current) {
-          mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-        setViewResetKey(prev => prev + 1);
-      } else {
-        navigate(itemId);
+
+    wasSwipeNavRef.current = Boolean(options.fromSwipe);
+
+    if (view === itemId) {
+      if (mainContentRef && mainContentRef.current) {
+        mainContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       }
-    });
+      setViewResetKey(prev => prev + 1);
+    } else {
+      navigate(itemId);
+    }
   };
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
@@ -259,38 +730,50 @@ export default function MainAppLayout({
     }
   }, [notifications]);
 
-  // EFECTO DE TRANSICIÓN ANIMADA
+  // EFECTO DE TRANSICIÓN ANIMADA (Solo cuando se navega deslizando con el dedo; al pulsar navbar/sidebar es instantáneo)
   useEffect(() => {
     if (prevViewRef.current !== view) {
-      isTransitioningRef.current = true;
-      const prevIndex = navItems.findIndex(i => i.id === prevViewRef.current);
-      const currentIndex = navItems.findIndex(i => i.id === view);
-      
-      let dir = 'right';
-      if (prevIndex !== -1 && currentIndex !== -1) {
-        dir = currentIndex > prevIndex ? 'right' : 'left';
-      }
+      const shouldAnimateSlide = wasSwipeNavRef.current;
+      wasSwipeNavRef.current = false;
 
-      if (swipeContainerRef.current) {
-        swipeContainerRef.current.style.transition = 'none';
-        swipeContainerRef.current.style.transform = `translate3d(${dir === 'right' ? '100vw' : '-100vw'}, 0, 0)`;
-        
-        void swipeContainerRef.current.offsetWidth; 
-        
+      if (shouldAnimateSlide && swipeContainerRef.current) {
+        isTransitioningRef.current = true;
+        const prevIndex = navItems.findIndex(i => i.id === prevViewRef.current);
+        const currentIndex = navItems.findIndex(i => i.id === view);
+        const dir = (prevIndex !== -1 && currentIndex !== -1 && currentIndex < prevIndex) ? 'left' : 'right';
+
+        const container = swipeContainerRef.current;
+        container.style.willChange = 'transform';
+        container.style.transition = 'none';
+        container.style.transform = `translate3d(${dir === 'right' ? '100vw' : '-100vw'}, 0, 0)`;
+
+        // Forzar reflow síncrono para que el navegador fije la posición inicial fuera de pantalla sin tirones
+        void container.offsetWidth;
+
         requestAnimationFrame(() => {
-          swipeContainerRef.current.style.transition = 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)';
+          if (!swipeContainerRef.current) {
+            isTransitioningRef.current = false;
+            return;
+          }
+          swipeContainerRef.current.style.transition = 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)';
           swipeContainerRef.current.style.transform = 'translate3d(0, 0, 0)';
-          
+
           setTimeout(() => {
             isTransitioningRef.current = false;
             if (swipeContainerRef.current) {
               swipeContainerRef.current.style.transform = '';
               swipeContainerRef.current.style.transition = '';
+              swipeContainerRef.current.style.willChange = '';
             }
-          }, 350);
+          }, 320);
         });
       } else {
         isTransitioningRef.current = false;
+        if (swipeContainerRef.current) {
+          swipeContainerRef.current.style.transform = '';
+          swipeContainerRef.current.style.transition = '';
+          swipeContainerRef.current.style.willChange = '';
+        }
       }
       prevViewRef.current = view;
     }
@@ -344,6 +827,7 @@ export default function MainAppLayout({
     contentTouchStartRef.current = {
       x: e.touches[0].clientX,
       y: e.touches[0].clientY,
+      currentIndex,
     };
     isSwipingContentRef.current = false;
   };
@@ -363,12 +847,20 @@ export default function MainAppLayout({
       }
       if (Math.abs(dx) > 10) {
         isSwipingContentRef.current = true;
+        swipeContainerRef.current.style.willChange = 'transform';
         swipeContainerRef.current.style.transition = 'none';
+
+        // Precargar las vistas adyacentes en cuanto empieza el gesto para evitar cualquier tirón al soltar
+        const idx = contentTouchStartRef.current.currentIndex;
+        if (preloadView && idx !== -1) {
+          if (idx + 1 < navItems.length) preloadView(navItems[idx + 1].id);
+          if (idx - 1 >= 0) preloadView(navItems[idx - 1].id);
+        }
       }
     }
 
     if (isSwipingContentRef.current) {
-      const currentIndex = navItems.findIndex(item => item.id === view);
+      const currentIndex = contentTouchStartRef.current.currentIndex;
       let transformX = -dx;
 
       if ((currentIndex === 0 && dx < 0) || (currentIndex === navItems.length - 1 && dx > 0)) {
@@ -386,14 +878,15 @@ export default function MainAppLayout({
 
     const resetSwipe = () => {
       if (swipeContainerRef.current) {
-        swipeContainerRef.current.style.transition = 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)';
+        swipeContainerRef.current.style.transition = 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)';
         swipeContainerRef.current.style.transform = `translate3d(0, 0, 0)`;
         setTimeout(() => {
           if (swipeContainerRef.current) {
             swipeContainerRef.current.style.transform = '';
             swipeContainerRef.current.style.transition = '';
+            swipeContainerRef.current.style.willChange = '';
           }
-        }, 300);
+        }, 280);
       }
     };
 
@@ -404,7 +897,7 @@ export default function MainAppLayout({
     }
 
     const dx = contentTouchStartRef.current.x - contentTouchEndRef.current.x; 
-    const currentIndex = navItems.findIndex(item => item.id === view);
+    const currentIndex = contentTouchStartRef.current.currentIndex ?? navItems.findIndex(item => item.id === view);
     let navigated = false;
     let nextId = null;
 
@@ -419,17 +912,19 @@ export default function MainAppLayout({
     }
 
     if (navigated && nextId) {
+      isTransitioningRef.current = true;
+      if (preloadView) preloadView(nextId);
       const screenWidth = window.innerWidth;
       const exitX = dx > 0 ? -screenWidth : screenWidth;
       
       if (swipeContainerRef.current) {
-        swipeContainerRef.current.style.transition = 'transform 0.2s ease-out';
+        swipeContainerRef.current.style.transition = 'transform 0.18s ease-out';
         swipeContainerRef.current.style.transform = `translate3d(${exitX}px, 0, 0)`;
       }
 
       setTimeout(() => {
-        handleNavClick(nextId);
-      }, 200);
+        handleNavClick(nextId, { fromSwipe: true });
+      }, 180);
     } else {
       resetSwipe();
     }
@@ -643,19 +1138,28 @@ export default function MainAppLayout({
 
   const handleMilestoneClose = () => {
     if (pendingMilestone) {
-      unlockMilestone(pendingMilestone);
+      const milestoneLvl = pendingMilestone;
+      unlockMilestone(milestoneLvl);
       setPendingMilestone(null);
+      if ([5, 10, 15, 20].includes(milestoneLvl)) {
+        setTimeout(() => {
+          setAccentUnlockLevel(milestoneLvl);
+          setShowAccentUnlockModal(true);
+        }, 300);
+      }
     }
   };
 
-  // --- RESTO DE EFECTOS ---
+  // --- RESTO DE EFECTOS (diferidos ligeramente para no saturar conexiones en Ctrl+Shift+R) ---
   useEffect(() => {
-    if (userProfile) {
+    if (!userProfile?.id) return;
+    const timerId = setTimeout(() => {
       fetchNotifications();
       fetchFriendRequests();
       subscribeToSocialEvents();
-    }
-  }, [fetchNotifications, fetchFriendRequests, subscribeToSocialEvents, userProfile]);
+    }, 400);
+    return () => clearTimeout(timerId);
+  }, [fetchNotifications, fetchFriendRequests, subscribeToSocialEvents, userProfile?.id]);
 
   useEffect(() => {
     if (gamificationEvents && gamificationEvents.length > 0) {
@@ -665,14 +1169,28 @@ export default function MainAppLayout({
         } else if (event.type === 'badge') {
           addToast(`¡Insignia Desbloqueada! ${event.badge.name}`, 'success');
         } else if (event.type === 'level_up') {
-            let extraStr = '';
-            if (event.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
-            if (event.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
-            addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel} 🚀${extraStr}`, 'success', 6000);
-          } else if (event.type === 'challenge_completed') {
+          let extraStr = '';
+          if (event.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
+          if (event.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
+          if (event.newLevel === 15) extraStr = ' (¡Nuevos degradados desbloqueados!)';
+          if (event.newLevel === 20) extraStr = ' (¡Nuevos acentos animados desbloqueados!)';
+          addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel}!${extraStr}`, 'success', 6000);
+          if ([5, 10, 15, 20].includes(event.newLevel)) {
+            setTimeout(() => {
+              setAccentUnlockLevel(event.newLevel);
+              setShowAccentUnlockModal(true);
+            }, 500);
+          }
+        } else if (event.type === 'challenge_completed') {
           addToast(`¡Reto completado! ${event.message} (+${event.xpAdded} XP)`, 'success');
           if (event.leveledUp) {
-            addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel} 🏆`, 'success', 6000);
+            addToast(`¡Felicidades! Has subido al Nivel ${event.newLevel}!`, 'success', 6000);
+            if ([5, 10, 15, 20].includes(event.newLevel)) {
+              setTimeout(() => {
+                setAccentUnlockLevel(event.newLevel);
+                setShowAccentUnlockModal(true);
+              }, 500);
+            }
           }
         }
       });
@@ -692,9 +1210,30 @@ export default function MainAppLayout({
 
     const key5 = `accent_unlock_notified_5_${userId}`;
     const key10 = `accent_unlock_notified_10_${userId}`;
+    const key15 = `accent_unlock_notified_15_${userId}`;
+    const key20 = `accent_unlock_notified_20_${userId}`;
 
-    // Priorizar nivel 10 sobre nivel 5
-    if (level >= 10 && localStorage.getItem(key10) !== 'true') {
+    // Priorizar nivel 20 sobre nivel 15, nivel 10 y nivel 5
+    if (level >= 20 && localStorage.getItem(key20) !== 'true') {
+      const timer = setTimeout(() => {
+        setAccentUnlockLevel(20);
+        setShowAccentUnlockModal(true);
+        localStorage.setItem(key20, 'true');
+        localStorage.setItem(key15, 'true');
+        localStorage.setItem(key10, 'true');
+        localStorage.setItem(key5, 'true');
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else if (level >= 15 && localStorage.getItem(key15) !== 'true') {
+      const timer = setTimeout(() => {
+        setAccentUnlockLevel(15);
+        setShowAccentUnlockModal(true);
+        localStorage.setItem(key15, 'true');
+        localStorage.setItem(key10, 'true');
+        localStorage.setItem(key5, 'true');
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else if (level >= 10 && localStorage.getItem(key10) !== 'true') {
       const timer = setTimeout(() => {
         setAccentUnlockLevel(10);
         setShowAccentUnlockModal(true);
@@ -723,11 +1262,9 @@ export default function MainAppLayout({
   ]);
 
   useEffect(() => {
-    if (!userProfile) return;
+    if (!userProfile?.id) return;
     
-    const socket = initSocket();
-    if (!socket) return;
-
+    let activeSocket = null;
     const handleGamificationEvent = async (data) => {
       if (data.type === 'referral_success') {
         useAppStore.getState().addReferralAnimation(data);
@@ -735,16 +1272,17 @@ export default function MainAppLayout({
           let extraStr = '';
           if (data.newLevel === 5) extraStr = ' (¡Nuevos pasteles desbloqueados!)';
           if (data.newLevel === 10) extraStr = ' (¡Nuevos pasteles vibrantes desbloqueados!)';
-          addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel} 🚀${extraStr}`, 'success', 6000);
+          if (data.newLevel === 15) extraStr = ' (¡Nuevos degradados desbloqueados!)';
+          if (data.newLevel === 20) extraStr = ' (¡Nuevos acentos animados desbloqueados!)';
+          addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel}!${extraStr}`, 'success', 6000);
         } else if (data.type === 'challenge_completed') {
         addToast(`¡Reto completado! ${data.message} (+${data.xpAdded} XP)`, 'success');
         if (data.leveledUp) {
-          addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel} 🏆`, 'success', 6000);
+          addToast(`¡Felicidades! Has subido al Nivel ${data.newLevel}!`, 'success', 6000);
         }
       }
       
       if (data.type === 'challenge_completed' || data.type === 'referral_success') {
-        
         try {
           const profileData = await userService.getMyProfile();
           if (profileData && setGamificationData) {
@@ -762,19 +1300,27 @@ export default function MainAppLayout({
       }
     };
 
-      const handleChatEvent = () => {
-        const fetchUnreadChats = useAppStore.getState().fetchUnreadChats;
-        if (fetchUnreadChats) fetchUnreadChats();
-      };
+    const handleChatEvent = () => {
+      const fetchUnreadChats = useAppStore.getState().fetchUnreadChats;
+      if (fetchUnreadChats) fetchUnreadChats();
+    };
 
-      socket.on('GAMIFICATION_EVENT', handleGamificationEvent);
-      socket.on('chat_message', handleChatEvent);
-      
-      return () => {
-        socket.off('GAMIFICATION_EVENT', handleGamificationEvent);
-        socket.off('chat_message', handleChatEvent);
-      };
-    }, [userProfile, addToast, setGamificationData]);
+    const timerId = setTimeout(() => {
+      activeSocket = initSocket();
+      if (!activeSocket) return;
+      activeSocket.on('GAMIFICATION_EVENT', handleGamificationEvent);
+      activeSocket.on('chat_message', handleChatEvent);
+      subscribeToSocialEvents();
+    }, 450);
+
+    return () => {
+      clearTimeout(timerId);
+      if (activeSocket) {
+        activeSocket.off('GAMIFICATION_EVENT', handleGamificationEvent);
+        activeSocket.off('chat_message', handleChatEvent);
+      }
+    };
+  }, [userProfile?.id, addToast, setGamificationData, subscribeToSocialEvents]);
 
   useEffect(() => {
     if (userProfile && userProfile.email && userProfile.email.endsWith('@x-auth.local')) {
@@ -836,12 +1382,47 @@ export default function MainAppLayout({
 
   return (
     <div className="relative flex flex-1 w-full h-full overflow-hidden bg-transparent">
+      {/* ATMÓSFERA AURORA BOREAL LÍQUIDA (NIVEL 20 - TRANQUILITA SOLO ARRIBA) */}
+      {isLevel20Accent && (
+        <div className="aurora-container pointer-events-none fixed top-0 left-0 right-0 h-[40vh] max-h-[360px] z-0 overflow-hidden" aria-hidden="true">
+          <div className="aurora-glow" />
+          <div className="aurora-curtain" />
+        </div>
+      )}
       
-      <GlobalRatingPrompt />
+      <Suspense fallback={null}>
+        <GlobalRatingPrompt
+          userProfile={userProfile}
+          canShow={
+            !showWelcomeModal &&
+            !show2FAPromo &&
+            !tourActive &&
+            cookieConsent !== null &&
+            !showEmailVerificationModal &&
+            !showCodeVerificationModal &&
+            !isGlobalModalOpen &&
+            !showAIModal &&
+            !showAccentUnlockModal &&
+            !showLogoutConfirm &&
+            !pendingMilestone &&
+            !activeWorkout
+          }
+        />
+      </Suspense>
       
+      {/* Banner de Mantenimiento en Desktop: fijo de lado a lado pasando por detrás del Sidebar */}
+      <div className="hidden md:block fixed top-0 left-0 right-0 w-full z-20 pointer-events-none">
+        <MaintenanceNoticeBanner
+          className={`pointer-events-auto transition-all duration-300 ${
+            isSidebarCollapsed ? 'md:pl-[88px]' : 'md:pl-64 lg:pl-72'
+          }`}
+        />
+      </div>
+
       <Sidebar
         view={view}
         navigate={handleNavClick}
+        preloadView={preloadView}
         navItems={navItems}
         userProfile={userProfile}
         BACKEND_BASE_URL={BACKEND_BASE_URL}
@@ -851,29 +1432,54 @@ export default function MainAppLayout({
 
       <div className="flex flex-col flex-1 w-full h-full overflow-hidden relative">
 
-
+        {/* Espaciador de altura para el banner fijo de mantenimiento en Desktop */}
+        <div className="hidden md:block w-full h-[33px] shrink-0 pointer-events-none" aria-hidden="true" />
 
         <header 
-          className={`md:hidden absolute top-0 left-0 w-full z-40 transition-all duration-300 ease-out global-header-element ${isGlobalModalOpen ? 'opacity-0 pointer-events-none -translate-y-4' : isHeaderHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'} ${isScrolled ? 'bg-bg-primary/70 backdrop-blur-xl shadow-sm' : 'bg-transparent'}`}
-          style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
+          ref={mobileHeaderRef}
+          className="md:hidden absolute top-0 left-0 w-full z-40 global-header-element bg-transparent"
+          style={{
+            paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
+            transform: 'translate3d(0, 0, 0)',
+            opacity: 1,
+            willChange: 'transform, opacity',
+            contain: 'layout style paint',
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            transition: 'transform 0.42s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.35s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.22s ease',
+          }}
         >
-          <div className="flex justify-between items-center w-full h-14 px-4">
+          <div className="relative flex justify-between items-center w-full h-14 px-4">
             <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
-              {['settings', 'progress', 'appearance', 'support', 'socialLinks', 'challenges'].includes(view) ? (
+              {['settings', 'adminPanel', 'progress', 'appearance', 'support', 'socialLinks', 'challenges'].includes(view) ? (
                 <button
-                  onClick={() => navigate('hub')}
+                  type="button"
+                  aria-label={activeSection ? 'Volver a los apartados' : 'Volver'}
+                  onClick={() => {
+                    if (activeSection) closeSection();
+                    else if (view === 'settings' && navParams?.returnView) navigate(navParams.returnView, navParams.returnParams);
+                    else navigate('hub');
+                  }}
                   className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <ChevronLeftIcon className="w-6 h-6" />
+                  <FaChevronLeft className="w-5 h-5" />
                 </button>
-              ) : ['profile', 'notifications', 'twoFactorSetup', 'privacyPolicy', 'terms'].includes(view) ? (
+              ) : view === 'twoFactorSetup' ? (
+                <button
+                  onClick={() => navigate('settings')}
+                  className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200"
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
+                >
+                  <FaChevronLeft className="w-5 h-5" />
+                </button>
+              ) : ['profile', 'notifications', 'privacyPolicy', 'terms'].includes(view) ? (
                 <button
                   onClick={() => navigate('dashboard')}
                   className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <ChevronLeftIcon className="w-6 h-6" />
+                  <FaChevronLeft className="w-5 h-5" />
                 </button>
               ) : (
                 <UserAvatar
@@ -886,18 +1492,18 @@ export default function MainAppLayout({
               )}
                 {view !== 'dashboard' && (
                   <span
-                    key={currentTitle}
-                    className="text-2xl sm:text-3xl font-extrabold truncate text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary ml-1"
+                    key={mobileTitle}
+                    className={`font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-primary to-text-secondary ml-1 ${activeSection && ['adminPanel', 'progress'].includes(view) ? 'text-xl leading-tight line-clamp-2' : 'text-2xl sm:text-3xl truncate'}`}
                   >
-                    {currentTitle}
+                    {mobileTitle}
                   </span>
                 )}
               </div>
 
               {/* Logo Central (Solo en Dashboard) */}
               {view === 'dashboard' && (
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none mt-[max(0px,calc(var(--safe-top,0px)/2))]">
-                  <img src="/logo.webp" alt="Pro Fitness Glass" className="h-8 w-auto object-contain drop-shadow-md rounded-lg" />
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                  <img src="/logo.webp" alt="Pro Fitness Glass" className="h-8 w-auto object-contain rounded-lg" />
                 </div>
               )}
 
@@ -905,16 +1511,16 @@ export default function MainAppLayout({
               <div className="flex items-center justify-center mr-1 sm:mr-2">
                 <button
                     onClick={() => setShowAIModal(true)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold transition-all outline-none focus:outline-none ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold transition-colors outline-none focus:outline-none ${
                       isAILimitReached 
                         ? 'bg-bg-secondary text-text-muted border border-glass-border opacity-70' 
-                        : 'bg-accent text-accent-contrast shadow-md shadow-accent/30 hover:shadow-accent/50 hover:scale-105 border border-transparent'
+                        : 'bg-accent text-accent-contrast shadow-sm border border-transparent'
                     }`}
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                     title="Créditos IA"
                   >
-                    <SparklesIcon className={`w-3.5 h-3.5 ${isAILimitReached ? '' : 'text-accent-contrast drop-shadow-md animate-pulse'}`} />
-                    <span className={isAILimitReached ? '' : 'drop-shadow-md'}>{aiRemaining}/{aiLimit}</span>
+                    <FaBrain className={`w-3.5 h-3.5 ${isAILimitReached ? '' : 'text-accent-contrast'}`} />
+                    <span>{aiRemaining}/{aiLimit}</span>
                   </button>
               </div>
 
@@ -922,11 +1528,13 @@ export default function MainAppLayout({
                 className={`flex items-center justify-center overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${view === 'notifications' ? 'w-0 opacity-0 mr-0 translate-x-4' : 'w-10 opacity-100 mr-0 translate-x-0'}`}
               >
                 <button
+                  onMouseEnter={() => preloadView && preloadView('notifications')}
+                  onTouchStart={() => preloadView && preloadView('notifications')}
                   onClick={() => handleNavClick('notifications')}
                   className="relative w-10 h-10 rounded-full flex items-center justify-center text-text-primary hover:bg-bg-secondary/50 transition-colors z-20 active:scale-95 duration-200 outline-none focus:outline-none"
                   style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <BellIcon className="w-6 h-6" />
+                  <FaBell className="w-5 h-5" />
                   {unreadCount > 0 && <span className="absolute top-1.5 right-2 w-3 h-3 bg-accent rounded-full z-10 border-2 border-[--glass-bg]"></span>}
                 </button>
               </div>
@@ -934,6 +1542,7 @@ export default function MainAppLayout({
 
             </div>
           </div>
+          <MaintenanceNoticeBanner />
         </header>
 
         <main
@@ -941,30 +1550,41 @@ export default function MainAppLayout({
             if (mainContentRef) mainContentRef.current = el;
             swipeContainerRef.current = el;
           }}
-          className="flex-1 overflow-y-auto overflow-x-hidden relative" style={{ paddingTop: 'calc(var(--safe-top) + 3.5rem)', backgroundColor: 'transparent', touchAction: 'pan-y' }}
+          className="flex-1 overflow-y-auto overflow-x-hidden relative pt-[var(--mobile-header-pt,calc(var(--safe-top,0px)+5.25rem))] md:pt-4"
+          style={{
+            backgroundColor: 'transparent',
+            touchAction: 'pan-y',
+            ...(headerHeight > 0 ? { '--mobile-header-pt': `${headerHeight + 4}px` } : {})
+          }}
           onTouchStart={handleContentTouchStart}
           onTouchMove={handleContentTouchMove}
           onTouchEnd={handleContentTouchEnd}
           onTouchCancel={handleContentTouchEnd}
         >
           {['appearance', 'support', 'socialLinks', 'emotional-onboarding'].includes(view) && (
-            <div className="hidden md:flex items-center px-4 sm:px-6 pt-2 pb-4 w-full max-w-4xl mx-auto">
+            <div className={`hidden md:flex items-center pt-2 pb-2 w-full mx-auto ${
+              view === 'appearance' 
+                ? 'max-w-4xl lg:max-w-6xl xl:max-w-7xl px-4 md:px-8' 
+                : 'max-w-4xl px-4 sm:px-6'
+            }`}>
               <button
                 onClick={() => navigate('hub')}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-text-primary hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95 shadow-sm"
               >
-                <ChevronLeftIcon className="w-5 h-5" />
+                <FaChevronLeft className="w-4 h-4" />
                 <span className="font-bold text-sm">Atrás</span>
               </button>
             </div>
           )}
 
           <div className="w-full relative">
-            <Suspense fallback={<LoadingFallback />}>
+            <ViewErrorBoundary view={view} navigate={navigate} onGoHome={() => handleNavClick('dashboard')}>
+            <Suspense fallback={<LoadingFallback onGoHome={() => handleNavClick('dashboard')} />}>
               <React.Fragment key={`${view}-${viewResetKey}`}>
                 {currentViewComponent}
               </React.Fragment>
             </Suspense>
+            </ViewErrorBoundary>
 
             <div className="md:hidden w-full shrink-0" style={{ height: 'calc(80px + var(--safe-bottom))' }}></div>
           </div>
@@ -972,20 +1592,33 @@ export default function MainAppLayout({
 
       </div>
 
-      {/* ESPACIO INFERIOR DIFUMINADO (Optimizado para Android de gama baja) */}
+      {/* Capa de desenfoque y difuminado inferior estrictamente DEBAJO del navbar (sin solapar la cápsula flotante) */}
       <div
-        className={`md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-40 bg-gradient-to-t from-bg-primary via-bg-primary/80 to-transparent transition-opacity duration-300 ${isGlobalModalOpen ? 'opacity-0' : 'opacity-100'}`}
+        className={`md:hidden fixed bottom-0 left-0 w-full pointer-events-none z-30 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          isGlobalModalOpen ? 'opacity-0 translate-y-8' : 'opacity-100 translate-y-0'
+        }`}
         style={{
-          height: 'calc(var(--safe-bottom) + 100px)',
+          height: 'calc(var(--safe-bottom) + 16px)',
+          background:
+            'linear-gradient(to top, rgba(var(--bg-primary-rgb, 15, 23, 42), 0.85) 0%, rgba(var(--bg-primary-rgb, 15, 23, 42), 0.40) 65%, transparent 100%)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          maskImage:
+            'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 60%, rgba(0,0,0,0) 100%)',
+          WebkitMaskImage:
+            'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 60%, rgba(0,0,0,0) 100%)',
           transform: 'translateZ(0)',
+          willChange: 'transform, opacity',
         }}
-      ></div>
+        aria-hidden="true"
+      />
 
+      {/* Navbar Móvil Flotante Liquid Glass */}
       <div
         className={`md:hidden fixed left-0 w-full pointer-events-none z-50 flex justify-center px-4 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isGlobalModalOpen ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
         style={{ bottom: 'calc(var(--safe-bottom) + 12px)' }}
       >
-        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative glass rounded-full px-3">
+        <div className="pointer-events-auto flex items-center w-full max-w-sm h-16 relative liquid-glass-navbar px-3">
           
           <nav 
             ref={navRef} 
@@ -998,16 +1631,12 @@ export default function MainAppLayout({
             
             <div
               ref={dropRef}
-              className="absolute top-1/2 w-[60px] h-12 rounded-[24px] pointer-events-none z-[1] flex items-start justify-center"
+              className="absolute top-1/2 w-[60px] h-12 pointer-events-none z-[1] flex items-start justify-center liquid-glass-drop"
               style={{
                 left: 0,
                 transform: `translate3d(calc(${dragX}px - 50%), -50%, 0) ${isJumping ? 'scaleX(1.3) scaleY(0.75)' : 'scaleX(1) scaleY(1)'}`,
                 opacity: isDropVisible ? 1 : 0,
                 transition: (isDraggingDrop || isInitialRender) ? 'none' : 'transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease',
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%)',
-                backdropFilter: 'blur(8px) brightness(1.1)',
-                WebkitBackdropFilter: 'blur(8px) brightness(1.1)',
-                boxShadow: 'inset 0px 1px 1px rgba(255,255,255,0.25), inset 0px -1px 2px rgba(0,0,0,0.15), 0px 4px 10px rgba(0,0,0,0.15)',
                 willChange: 'transform'
               }}
             >
@@ -1024,14 +1653,20 @@ export default function MainAppLayout({
               return (
                 <button
                   key={item.id}
+                  onMouseEnter={() => preloadView && preloadView(item.id)}
+                  onTouchStart={() => preloadView && preloadView(item.id)}
                   onClick={() => handleNavClick(item.id)}
-                  className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-colors duration-300 ease-out active:scale-90 outline-none focus:outline-none ring-0 ${isVisuallyActive ? '' : 'text-text-secondary'}`}
+                  className={`group relative z-[2] flex flex-col items-center justify-center flex-1 h-full transition-colors duration-200 ease-out active:scale-95 outline-none focus:outline-none ring-0 ${isVisuallyActive ? '' : 'text-text-primary/75 hover:text-text-primary'}`}
                   style={{ color: isVisuallyActive ? 'var(--color-accent)' : undefined, animationDelay: `${index * 100}ms`, animationFillMode: 'both', WebkitTapHighlightColor: 'transparent' }}
                 >
-                  <div className={`transition-transform duration-300 ${isVisuallyActive ? 'scale-125' : 'group-hover:scale-110'} relative`} style={{ WebkitBackfaceVisibility: 'hidden' }}>
+                  <div className={`transition-transform duration-200 ease-out ${isVisuallyActive ? 'scale-110' : 'group-hover:scale-105'} relative`} style={{ WebkitBackfaceVisibility: 'hidden', transform: 'translateZ(0)' }}>
                     {typeof item.icon === 'function' ? item.icon(isVisuallyActive) : item.icon}
-                    {pendingCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border-2 border-[--glass-bg]"></span>}
-                    {pendingCount === 0 && item.badge && <span className="absolute -top-1 -right-2 w-2 h-2 bg-accent rounded-full animate-pulse shadow-[0_0_8px_var(--color-accent-transparent)]"></span>}
+                    {pendingCount > 0 && <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-accent rounded-full border-[1.5px] border-bg-primary z-10 pointer-events-none"></span>}
+                    {pendingCount === 0 && item.badge && (
+                      <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-accent rounded-full border-[1.5px] border-bg-primary z-10 pointer-events-none">
+                        <span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-75"></span>
+                      </span>
+                    )}
                   </div>
                 </button>
               );
@@ -1041,43 +1676,45 @@ export default function MainAppLayout({
         </div>
       </div>
 
-      {pendingMilestone && (
-        <MilestoneLevelUpModal 
-          level={pendingMilestone} 
-          onClose={handleMilestoneClose} 
-        />
-      )}
+      <Suspense fallback={null}>
+        {pendingMilestone && (
+          <MilestoneLevelUpModal 
+            level={pendingMilestone} 
+            onClose={handleMilestoneClose} 
+          />
+        )}
 
-      <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
+        <PRToast newPRs={prNotification} onClose={() => useAppStore.setState({ prNotification: null })} />
 
-      {showWelcomeModal && cookieConsent !== null && !show2FAPromo && !tourActive && (
-        <WelcomeModal onClose={closeWelcomeModal} />
-      )}
-      
-      {showAIModal && (
-        <AIInfoModal onClose={() => setShowAIModal(false)} />
-      )}
+        {showWelcomeModal && cookieConsent !== null && !show2FAPromo && !tourActive && (
+          <WelcomeModal onClose={closeWelcomeModal} />
+        )}
+        
+        {showAIModal && (
+          <AIInfoModal onClose={() => setShowAIModal(false)} />
+        )}
 
-      {cookieConsent === null && (
-        <CookieConsentBanner 
-          onAccept={handleAcceptCookies} 
-          onDecline={handleDeclineCookies} 
-          onShowPolicy={handleShowPolicy} 
-        />
-      )}
+        {cookieConsent === null && (
+          <CookieConsentBanner 
+            onAccept={handleAcceptCookies} 
+            onDecline={handleDeclineCookies} 
+            onShowPolicy={handleShowPolicy} 
+          />
+        )}
 
-      {showLogoutConfirm && (
-        <ConfirmationModal message="¿Estás seguro de que quieres cerrar sesión?" onConfirm={confirmLogout} onCancel={() => setShowLogoutConfirm(false)} confirmText="Cerrar Sesión" />
-      )}
+        {showLogoutConfirm && (
+          <ConfirmationModal message="¿Estás seguro de que quieres cerrar sesión?" onConfirm={confirmLogout} onCancel={() => setShowLogoutConfirm(false)} confirmText="Cerrar Sesión" />
+        )}
+      </Suspense>
 
       {/* Botón "Volver al Entreno" — bottom usa --safe-bottom en lugar de env() directo */}
-      {activeWorkout && workoutStartTime && view !== 'workout' && (
+      {Boolean(activeWorkout) && view !== 'workout' && (
         <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(5.5rem+var(--safe-bottom))] md:left-auto md:transform-none md:bottom-10 md:right-10 z-[60]">
           <button
             onClick={() => handleNavClick('workout')}
             className="animate-[fade-in-up_0.5s_ease-out] flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-accent text-bg-secondary font-bold text-base shadow-[0_8px_30px_rgba(0,0,0,0.2)] whitespace-nowrap transition-transform hover:scale-105"
           >
-            <Zap size={20} className="animate-pulse" />
+            <FaDumbbell className="w-5 h-5 animate-pulse" />
             <span>Volver al Entreno</span>
           </button>
         </div>
@@ -1087,13 +1724,15 @@ export default function MainAppLayout({
         v{APP_VERSION}
       </div>
 
-      {showEmailVerificationModal && userProfile && (
-        <EmailVerificationModal currentEmail={verificationEmail} onEmailUpdated={(newEmail) => { setVerificationEmail(newEmail); setShowEmailVerificationModal(false); setShowCodeVerificationModal(true); }} onCodeSent={() => { setShowEmailVerificationModal(false); setShowCodeVerificationModal(true); }} />
-      )}
+      <Suspense fallback={null}>
+        {showEmailVerificationModal && userProfile && (
+          <EmailVerificationModal currentEmail={verificationEmail} onEmailUpdated={(newEmail) => { setVerificationEmail(newEmail); setShowEmailVerificationModal(false); setShowCodeVerificationModal(true); }} onCodeSent={() => { setShowEmailVerificationModal(false); setShowCodeVerificationModal(true); }} />
+        )}
 
-      {showCodeVerificationModal && (
-        <EmailVerification email={verificationEmail} onSuccess={() => { setShowCodeVerificationModal(false); fetchInitialData(); }} onBack={() => { setShowCodeVerificationModal(false); setShowEmailVerificationModal(true); }} backButtonText="Volver" />
-      )}
+        {showCodeVerificationModal && (
+          <EmailVerification email={verificationEmail} onSuccess={() => { setShowCodeVerificationModal(false); fetchInitialData(); }} onBack={() => { setShowCodeVerificationModal(false); setShowEmailVerificationModal(true); }} backButtonText="Volver" />
+        )}
+      </Suspense>
 
       <AndroidDownloadPrompt />
       <APKUpdater />
@@ -1109,39 +1748,52 @@ export default function MainAppLayout({
                   <Palette className="text-accent" size={28} />
                 </div>
                 <h3 className="text-xl font-black mb-2 text-text-primary">
-                  {accentUnlockLevel === 10 ? '¡10 Nuevos Colores!' : '¡5 Nuevos Colores!'}
+                  {accentUnlockLevel === 20 ? (
+                    <>¡Acentos <span className="text-accent">Animados Nivel 20</span>!</>
+                  ) : accentUnlockLevel === 15 ? (
+                    <>¡Acentos con <span className="text-accent">Degradado</span>!</>
+                  ) : accentUnlockLevel === 10 ? '¡5 Colores Pastel!' : '¡5 Nuevos Colores Pastel!'}
                 </h3>
               </div>
 
               {/* Contenido */}
               <div className="px-5 sm:px-6 pb-6 pt-2 text-center">
                 <p className="text-text-secondary mb-2 text-sm">
-                  {accentUnlockLevel === 10
-                    ? 'Al alcanzar el Nivel 10 has desbloqueado 5 colores pastel adicionales. ¡Junto con los del Nivel 5, ya tienes los 10 disponibles!'
+                  {accentUnlockLevel === 20
+                    ? '¡Hito épico alcanzado! Al llegar al Nivel 20 has desbloqueado 5 acentos dinámicos animados con flujo continuo (Supernova, Plasma Cuántico, Llama Eterna, Vórtice Abisal y Oro Cósmico).'
+                    : accentUnlockLevel === 15
+                    ? 'Al alcanzar el Nivel 15 has desbloqueado 5 acentos exclusivos con degradado dinámico (Aurora, Sunset, Cyberpunk, Océano y Oro Imperial).'
+                    : accentUnlockLevel === 10
+                    ? 'Al alcanzar el Nivel 10 has desbloqueado 5 colores pastel adicionales para tu personalización.'
                     : 'Al alcanzar el Nivel 5 has desbloqueado 5 nuevos colores pastel para personalizar tu app.'}
                 </p>
                 <p className="text-text-muted text-xs mb-5">
                   Ve a <strong>Hub → Personalización</strong> para aplicarlos.
                 </p>
-                <div className="flex gap-2.5 justify-center mb-6 flex-wrap">
-                  {accentUnlockLevel >= 5 && (
-                    <>
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#a8e6cf' }} title="Menta Suave" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffd3b6' }} title="Melocotón" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffaaa5' }} title="Agua de Rosas" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#c5a3ff' }} title="Lavanda" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#a2cffe' }} title="Azul Bebé" />
-                    </>
-                  )}
-                  {accentUnlockLevel >= 10 && (
-                    <>
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ff9a9e' }} title="Rosa Atardecer" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#c5e1a5' }} title="Pistacho" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#ffbe76' }} title="Mango" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fdfd96' }} title="Limonada" />
-                      <span className="w-9 h-9 rounded-full shadow-md ring-1 ring-black/5" style={{ background: '#fccbcf' }} title="Flor de Cerezo" />
-                    </>
-                  )}
+                <div className="grid grid-cols-5 gap-2 sm:gap-2.5 justify-center mb-6 w-full">
+                  {(ACCENT_UNLOCK_REWARDS[accentUnlockLevel] || []).map((item) => (
+                    <div key={item.name} className="flex flex-col items-center">
+                      <div className="relative w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center">
+                        <span
+                          className={`w-full h-full rounded-full shadow-md ring-1 ring-black/10 dark:ring-white/10 ${
+                            item.isAnimated ? 'living-accent-preview' : ''
+                          }`}
+                          style={{
+                            background: item.gradient || item.bg,
+                            backgroundColor: item.bg,
+                            boxShadow: `0 4px 12px ${item.glow}`,
+                          }}
+                          title={item.name}
+                        />
+                        {item.isAnimated && (
+                          <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/30 to-transparent pointer-events-none animate-[pulse_2s_ease-in-out_infinite]" />
+                        )}
+                      </div>
+                      <span className="text-[10px] sm:text-[11px] font-bold text-text-primary mt-1.5 text-center leading-tight line-clamp-2 px-0.5">
+                        {item.name}
+                      </span>
+                    </div>
+                  ))}
                 </div>
                 <button
                   onClick={() => {
@@ -1164,7 +1816,9 @@ export default function MainAppLayout({
         </ModalPortal>
       )}
 
-      <ReferralSuccessAnimation />
+      <Suspense fallback={null}>
+        <ReferralSuccessAnimation />
+      </Suspense>
     </div>
   );
 }

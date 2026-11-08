@@ -7,9 +7,9 @@ import {
     ChevronRight, ChevronLeft, Plus, Camera, Image as ImageIcon,
     Globe, Zap, ShieldAlert, Clock, Lock, Video as VideoIcon,
     Settings, Shield, PlusCircle, Hash, Copy, ArrowLeft, LogOut, Trash2,
-    Activity, Crop
+    Activity, Crop, Flame
 } from 'lucide-react';
-import Cropper from 'react-easy-crop';
+const Cropper = React.lazy(() => import('react-easy-crop'));
 import { Capacitor } from '@capacitor/core';
 import { Camera as CapCamera } from '@capacitor/camera';
 import useAppStore from '../store/useAppStore';
@@ -20,11 +20,12 @@ import Spinner from '../components/Spinner';
 import ModalPortal from '../components/ModalPortal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import UserAvatar from '../components/UserAvatar';
-import StoryViewer from '../components/StoryViewer';
+const StoryViewer = React.lazy(() => import('../components/StoryViewer'));
 import socialService from '../services/socialService';
 import Feed from '../components/Feed';
-import PermissionModal from '../components/PermissionModal';
-import SocialTourGuide from '../components/SocialTourGuide';
+import ViewErrorBoundary from '../components/ViewErrorBoundary';
+const PermissionModal = React.lazy(() => import('../components/PermissionModal'));
+const SocialTourGuide = React.lazy(() => import('../components/SocialTourGuide'));
 import LevelBadge from '../components/LevelBadge';
 
 // --- CONFIGURACIÓN DE PUERTO (Backend default 3001) ---
@@ -63,7 +64,7 @@ const PrivacyBanner = ({ privacy, onNavigate }) => {
                             <p>Actualmente <strong>todo el mundo puede ver tu perfil</strong> y estadísticas.</p>
                             <p className="flex items-center gap-1.5 opacity-90">
                                 <Check size={14} className="text-accent shrink-0" />
-                                <span>Apareces en el <strong>Ranking Global</strong> y búsquedas.</span>
+                                <span>Apareces en el <strong>Muro Global, Mi Gimnasio, Ranking</strong> y búsquedas.</span>
                             </p>
                         </>
                     ) : (
@@ -71,7 +72,7 @@ const PrivacyBanner = ({ privacy, onNavigate }) => {
                             <p>Actualmente <strong>solo tus amigos</strong> pueden ver tu actividad.</p>
                             <p className="flex items-center gap-1.5 opacity-90">
                                 <X size={14} className="text-red-500 shrink-0" />
-                                <span><strong>No apareces</strong> en el Ranking Global ni en búsquedas.</span>
+                                <span><strong>No apareces</strong> en el Muro Global, Ranking ni en búsquedas.</span>
                             </p>
                         </>
                     )}
@@ -209,9 +210,9 @@ const StoryTermsModal = ({ onAccept, onReject }) => {
     );
 };
 
-/// Helper para extraer la imagen recortada en formato 9:16 vertical
+/// Helper para extraer la imagen recortada en formato 9:16 vertical sin bordes negros
 const getCroppedImg = async (imageSrc, pixelCrop) => {
-    if (!pixelCrop) throw new Error('Área de recorte no definida');
+    if (!pixelCrop) throw new Error('Area de recorte no definida');
 
     const image = new Image();
     image.crossOrigin = 'anonymous';
@@ -221,15 +222,31 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
         image.onerror = reject;
     });
 
+    const naturalWidth = image.naturalWidth || image.width;
+    const naturalHeight = image.naturalHeight || image.height;
+
+    // Asegurar que las coordenadas y dimensiones de recorte se mantengan estrictamente
+    // dentro de los limites reales de la imagen, evitando desfases o margenes vacios/negros
+    const cropX = Math.max(0, Math.min(Math.round(pixelCrop.x), naturalWidth - 1));
+    const cropY = Math.max(0, Math.min(Math.round(pixelCrop.y), naturalHeight - 1));
+    const cropWidth = Math.max(1, Math.min(Math.round(pixelCrop.width), naturalWidth - cropX));
+    const cropHeight = Math.max(1, Math.min(Math.round(pixelCrop.height), naturalHeight - cropY));
+
+    // El canvas de destino coincide exactamente con la region recortada
     const canvas = document.createElement('canvas');
-    canvas.width = Math.round(pixelCrop.width);
-    canvas.height = Math.round(pixelCrop.height);
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
     const ctx = canvas.getContext('2d');
+
+    if (!ctx) throw new Error('No se pudo inicializar el contexto del lienzo');
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     ctx.drawImage(
         image,
-        Math.round(pixelCrop.x), Math.round(pixelCrop.y), Math.round(pixelCrop.width), Math.round(pixelCrop.height),
-        0, 0, Math.round(pixelCrop.width), Math.round(pixelCrop.height)
+        cropX, cropY, cropWidth, cropHeight,
+        0, 0, cropWidth, cropHeight
     );
 
     return new Promise((resolve, reject) => {
@@ -247,11 +264,46 @@ const getCroppedImg = async (imageSrc, pixelCrop) => {
 const StoryCropModal = ({ imageSrc, onComplete, onCancel }) => {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
+    const [minZoom, setMinZoom] = useState(1);
+    const [mediaAspect, setMediaAspect] = useState(null);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
     const onCropCompleteCallback = (croppedArea, pixels) => {
         setCroppedAreaPixels(pixels);
     };
+
+    const updateMediaDimensions = (nw, nh) => {
+        if (!nw || !nh) return;
+        const aspect = nw / nh;
+        setMediaAspect(aspect);
+        const targetAspect = 9 / 16;
+        // Si la imagen es mas estrecha que 9:16, calculamos el zoom minimo para que el ancho
+        // cubra completamente el marco 9:16 sin dejar franjas negras a los lados al desplazarla
+        if (aspect < targetAspect) {
+            const requiredMinZoom = Math.max(1, targetAspect / aspect);
+            setMinZoom(requiredMinZoom);
+            setZoom((prev) => Math.max(prev, requiredMinZoom));
+        } else {
+            setMinZoom(1);
+        }
+    };
+
+    const handleMediaLoaded = (mediaSize) => {
+        const nw = mediaSize?.naturalWidth || mediaSize?.width;
+        const nh = mediaSize?.naturalHeight || mediaSize?.height;
+        updateMediaDimensions(nw, nh);
+    };
+
+    useEffect(() => {
+        if (!imageSrc) return;
+        const img = new Image();
+        img.src = imageSrc;
+        img.onload = () => {
+            updateMediaDimensions(img.naturalWidth || img.width, img.naturalHeight || img.height);
+        };
+    }, [imageSrc]);
+
+    const maxZoomCalculated = Math.max(minZoom * 3, 3);
 
     return createPortal(
         <div 
@@ -273,24 +325,30 @@ const StoryCropModal = ({ imageSrc, onComplete, onCancel }) => {
 
             {/* Cropper Container */}
             <div className="relative flex-1 bg-black overflow-hidden">
-                <Cropper
-                    image={imageSrc}
-                    crop={crop}
-                    zoom={zoom}
-                    aspect={9 / 16}
-                    cropShape="rect"
-                    showGrid={true}
-                    objectFit="cover"
-                    minZoom={1}
-                    maxZoom={3}
-                    zoomWithScroll={true}
-                    onCropChange={setCrop}
-                    onCropComplete={onCropCompleteCallback}
-                    onZoomChange={setZoom}
-                />
+                <React.Suspense fallback={<div className="w-full h-full flex items-center justify-center text-white"><Spinner size={32} /></div>}>
+                    <Cropper
+                        image={imageSrc}
+                        crop={crop}
+                        zoom={zoom}
+                        aspect={9 / 16}
+                        cropShape="rect"
+                        showGrid={true}
+                        restrictPosition={true}
+                        roundCropAreaPixels={true}
+                        objectFit={mediaAspect && mediaAspect < 9 / 16 ? 'horizontal-cover' : 'cover'}
+                        minZoom={minZoom}
+                        maxZoom={maxZoomCalculated}
+                        zoomWithScroll={true}
+                        onCropChange={setCrop}
+                        onCropComplete={onCropCompleteCallback}
+                        onCropAreaChange={onCropCompleteCallback}
+                        onZoomChange={setZoom}
+                        onMediaLoaded={handleMediaLoaded}
+                    />
+                </React.Suspense>
             </div>
 
-            {/* Controles y Botones de acción */}
+            {/* Controles y Botones de accion */}
             <div 
                 className="bg-bg-primary/95 dark:bg-[#121214]/95 backdrop-blur-xl border-t border-black/5 dark:border-white/10 p-5 pb-8 flex flex-col gap-4 z-10 shrink-0"
                 style={{ paddingBottom: 'calc(1.5rem + var(--safe-bottom,env(safe-area-inset-bottom,0px)))' }}
@@ -299,8 +357,8 @@ const StoryCropModal = ({ imageSrc, onComplete, onCancel }) => {
                     <span className="text-xs text-text-secondary font-bold shrink-0">Zoom</span>
                     <input
                         type="range"
-                        min={1}
-                        max={3}
+                        min={minZoom}
+                        max={maxZoomCalculated}
                         step={0.05}
                         value={zoom}
                         onChange={(e) => setZoom(Number(e.target.value))}
@@ -639,11 +697,13 @@ const UploadStoryModal = ({ onClose, onUpload, isUploading }) => {
                 />
             )}
 
-            <PermissionModal
-                isOpen={showPermissionModal}
-                onClose={() => setShowPermissionModal(false)}
-                permissionName="Galería / Cámara"
-            />
+            <React.Suspense fallback={null}>
+                <PermissionModal
+                    isOpen={showPermissionModal}
+                    onClose={() => setShowPermissionModal(false)}
+                    permissionName="Galería / Cámara"
+                />
+            </React.Suspense>
         </>
     );
 };
@@ -655,7 +715,7 @@ const TabButton = ({ id, icon: Icon, label, badge, isActive, onClick }) => (
         onClick={() => onClick(id)}
         className={`flex items-center gap-2 py-2.5 px-5 rounded-full font-bold text-sm whitespace-nowrap transition-all duration-300 flex-shrink-0 outline-none
         ${isActive
-                ? 'bg-accent text-accent-contrast shadow-md shadow-accent/30 scale-105'
+                ? 'bg-accent text-accent-contrast scale-105'
                 : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
             }`}
     >
@@ -765,15 +825,21 @@ export default function Social({ setView }) {
         subscribeToSocialEvents
      } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, socialFriends: state.socialFriends, socialRequests: state.socialRequests, socialSearchResults: state.socialSearchResults, socialLeaderboard: state.socialLeaderboard, isSocialLoading: state.isSocialLoading, searchUsers: state.searchUsers, fetchFriends: state.fetchFriends, fetchFriendRequests: state.fetchFriendRequests, sendFriendRequest: state.sendFriendRequest, respondFriendRequest: state.respondFriendRequest, removeFriend: state.removeFriend, fetchLeaderboard: state.fetchLeaderboard, stories: state.stories, myStories: state.myStories, fetchStories: state.fetchStories, uploadStory: state.uploadStory, subscribeToStories: state.subscribeToStories, subscribeToSocialEvents: state.subscribeToSocialEvents })));
 
-    // Carga inicial (sin las historias)
+    // Carga inicial (sin las historias ni leaderboard innecesario)
     useEffect(() => {
         fetchFriends();
         fetchFriendRequests();
-        fetchLeaderboard();
         subscribeToStories();
         subscribeToSocialEvents();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Cargar leaderboard solo al acceder a la pestaña de ranking
+    useEffect(() => {
+        if (activeTab === 'leaderboard') {
+            fetchLeaderboard();
+        }
+    }, [activeTab, fetchLeaderboard]);
 
     // Carga de historias EXACTAMENTE cuando ya tenemos nuestro ID
     useEffect(() => {
@@ -957,15 +1023,18 @@ export default function Social({ setView }) {
     };
 
     const visibleStories = useMemo(() => {
+        if (!Array.isArray(stories)) return [];
+        const friendsList = Array.isArray(socialFriends) ? socialFriends : [];
         return stories.filter(storyUser => {
-            const isFriend = socialFriends.some(f => f.id === storyUser.userId);
-            const hasPublicStories = storyUser.items?.some(item => item.privacy === 'public');
+            if (!storyUser) return false;
+            const isFriend = friendsList.some(f => f && f.id === storyUser.userId);
+            const hasPublicStories = Array.isArray(storyUser.items) && storyUser.items.some(item => item && item.privacy === 'public');
             return isFriend || hasPublicStories;
         });
     }, [stories, socialFriends]);
 
     const myStoriesUnseen = useMemo(() => {
-        return myStories && myStories.some(s => !s.viewed);
+        return Array.isArray(myStories) && myStories.some(s => s && !s.viewed);
     }, [myStories]);
 
     // --- Acciones de Amigos ---
@@ -1002,9 +1071,10 @@ export default function Social({ setView }) {
 
     // --- Renderers de Contenido ---
     const renderFriends = () => {
-        const totalFriends = socialFriends.length;
+        const friendsList = Array.isArray(socialFriends) ? socialFriends : [];
+        const totalFriends = friendsList.length;
         const totalPages = Math.ceil(totalFriends / FRIENDS_PER_PAGE);
-        const paginatedFriends = socialFriends.slice((friendsPage - 1) * FRIENDS_PER_PAGE, friendsPage * FRIENDS_PER_PAGE);
+        const paginatedFriends = friendsList.slice((friendsPage - 1) * FRIENDS_PER_PAGE, friendsPage * FRIENDS_PER_PAGE);
 
         return (
             <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10">
@@ -1042,8 +1112,8 @@ export default function Social({ setView }) {
     };
 
     const renderRequests = () => {
-        const received = socialRequests?.received || [];
-        const sent = socialRequests?.sent || [];
+        const received = Array.isArray(socialRequests?.received) ? socialRequests.received : [];
+        const sent = Array.isArray(socialRequests?.sent) ? socialRequests.sent : [];
         return (
             <div className="space-y-8">
                 <GlassCard className="glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10">
@@ -1082,9 +1152,10 @@ export default function Social({ setView }) {
     };
 
     const renderSearch = () => {
-        const totalResults = socialSearchResults.length;
+        const resultsList = Array.isArray(socialSearchResults) ? socialSearchResults : [];
+        const totalResults = resultsList.length;
         const totalPages = Math.ceil(totalResults / ITEMS_PER_PAGE);
-        const paginatedResults = socialSearchResults.slice((searchPage - 1) * ITEMS_PER_PAGE, searchPage * ITEMS_PER_PAGE);
+        const paginatedResults = resultsList.slice((searchPage - 1) * ITEMS_PER_PAGE, searchPage * ITEMS_PER_PAGE);
 
         return (
             <div className="space-y-6 mx-auto w-full">
@@ -1092,7 +1163,7 @@ export default function Social({ setView }) {
                     <GlassCard className="glass p-3 rounded-full flex items-center gap-3 focus-within:ring-2 focus-within:ring-accent/50 transition-all border-none ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
                         <Search size={22} className="text-text-muted ml-3 shrink-0" />
                         <input type="text" placeholder="Buscar por nombre de usuario..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-transparent border-none outline-none text-text-primary flex-1 min-w-0 font-medium placeholder:text-text-muted py-2" />
-                        <button type="submit" disabled={isSocialLoading} className="bg-accent text-accent-contrast font-bold px-6 py-3 rounded-full active:scale-95 transition-all shadow-md shadow-accent/20 shrink-0">
+                        <button type="submit" disabled={isSocialLoading} className="bg-accent text-accent-contrast font-bold px-6 py-3 rounded-full active:scale-95 transition-all shrink-0">
                             {isSocialLoading ? <Spinner size={20} color="#fff" /> : 'Buscar'}
                         </button>
                     </GlassCard>
@@ -1106,8 +1177,8 @@ export default function Social({ setView }) {
                         <div className="flex flex-col">
                             {paginatedResults.map((user) => {
                                 const isMe = user.id === userProfile?.id;
-                                const isFriend = socialFriends.some(f => f.id === user.id);
-                                const hasSentRequest = socialRequests?.sent?.some(r => r.addressee_id === user.id);
+                                const isFriend = Array.isArray(socialFriends) && socialFriends.some(f => f && f.id === user.id);
+                                const hasSentRequest = Array.isArray(socialRequests?.sent) && socialRequests.sent.some(r => r && r.addressee_id === user.id);
                                 return (
                                     <UserListItem key={user.id} user={user} onNavigate={goToProfile} action={
                                         !isMe && !isFriend && !hasSentRequest ? (
@@ -1151,9 +1222,9 @@ export default function Social({ setView }) {
             
             <div className="flex flex-col">
                 <div className="flex text-[10px] sm:text-xs text-text-muted pb-3 mb-2 uppercase tracking-widest font-bold border-b border-black/5 dark:border-white/10 px-1 sm:px-2">
-                    <span className="w-6 sm:w-10 text-center">#</span><span className="flex-1 pl-2">Atleta</span><span className="w-12 sm:w-16 text-right">Nivel</span><span className="w-16 sm:w-24 text-right">XP</span>
+                    <span className="w-6 sm:w-10 text-center">#</span><span className="flex-1 pl-2">Atleta</span><span className="w-12 sm:w-16 text-right">Nivel</span><span className="w-12 sm:w-20 text-right">Racha</span><span className="w-16 sm:w-24 text-right">XP</span>
                 </div>
-                {socialLeaderboard.map((user, index) => {
+                {(Array.isArray(socialLeaderboard) ? socialLeaderboard : []).map((user, index) => {
                     const isMe = user.id === userProfile?.id;
                     const fixedUser = { ...user, avatar: getFullImageUrl(user.profile_image_url || user.avatar) };
 
@@ -1170,6 +1241,9 @@ export default function Social({ setView }) {
                                 <div className="scale-[0.55] sm:scale-[0.65] origin-right">
                                     <LevelBadge level={user.level || 1} size="sm" />
                                 </div>
+                            </div>
+                            <div className="w-12 sm:w-20 text-right text-[11px] sm:text-sm text-orange-500 font-extrabold flex items-center justify-end gap-1 shrink-0">
+                                <Flame size={13} className="shrink-0" fill="currentColor" /> {user.streak || 0}
                             </div>
                             <div className="w-16 sm:w-24 text-right text-xs sm:text-sm text-text-primary font-mono font-bold tracking-tight shrink-0">{user.xp?.toLocaleString()}</div>
                         </div>
@@ -1248,7 +1322,7 @@ export default function Social({ setView }) {
                                         </div>
                                     </div>
                                     <div className="w-14 sm:w-24 text-right text-xs sm:text-base text-orange-500 font-extrabold flex items-center justify-end gap-1 sm:gap-1.5 shrink-0">
-                                        🔥 {user.streak || 0}
+                                        <Flame size={14} className="shrink-0" fill="currentColor" /> {user.streak || 0}
                                     </div>
                                     <div className="w-16 sm:w-24 text-right text-xs sm:text-base text-text-primary font-mono font-bold tracking-tight shrink-0">{user.xp?.toLocaleString() || 0}</div>
                                 </div>
@@ -1313,7 +1387,9 @@ export default function Social({ setView }) {
 
     return (
         <div className="w-full max-w-7xl mx-auto px-4 pt-6 pb-28 md:pb-8 animate-[fade-in_0.5s_ease-out]">
-            <SocialTourGuide />
+            <React.Suspense fallback={null}>
+                <SocialTourGuide />
+            </React.Suspense>
 
             {/* --- Modales --- */}
             {deleteConfirmation.isOpen && (
@@ -1354,7 +1430,9 @@ export default function Social({ setView }) {
             
             {/* Visor de Historias */}
             {viewingStoryUserId && (
-                <StoryViewer userId={viewingStoryUserId} onClose={() => setViewingStoryUserId(null)} />
+                <React.Suspense fallback={null}>
+                    <StoryViewer userId={viewingStoryUserId} onClose={() => setViewingStoryUserId(null)} />
+                </React.Suspense>
             )}
 
             {/* Modal Crear Grupo */}
@@ -1448,14 +1526,15 @@ export default function Social({ setView }) {
                             avatar: getFullImageUrl(userProfile?.profile_image_url || userProfile?.avatar)
                         }}
                         isMe={true}
-                        hasStories={myStories.length > 0}
+                        hasStories={Array.isArray(myStories) && myStories.length > 0}
                         hasUnseen={myStoriesUnseen}
                         onClick={handleMyStoryClick}
                         onAdd={initiateStoryUpload}
                     />
 
                     {/* Historias de Amigos */}
-                    {visibleStories.map(storyUser => {
+                    {(Array.isArray(visibleStories) ? visibleStories : []).map(storyUser => {
+                        if (!storyUser) return null;
                         const rawUser = storyUser.user || storyUser;
                         const username = storyUser.username || rawUser.username || 'Usuario';
                         const avatarPath = storyUser.profile_image_url || rawUser.profile_image_url || storyUser.avatar || rawUser.avatar;
@@ -1501,7 +1580,11 @@ export default function Social({ setView }) {
 
             {/* --- Contenido Principal --- */}
             <div className="min-h-[400px] max-w-3xl mx-auto w-full">
-                {activeTab === 'feed' && <Feed setView={setView} visibleStories={visibleStories} myStories={myStories} />}
+                {activeTab === 'feed' && (
+                    <ViewErrorBoundary viewName="Muro de Comunidad">
+                        <Feed setView={setView} visibleStories={visibleStories} myStories={myStories} />
+                    </ViewErrorBoundary>
+                )}
                 {activeTab === 'leaderboard' && renderLeaderboard()}
                 {activeTab === 'friends' && renderFriends()}
                 {activeTab === 'squads' && renderSquads()}

@@ -4,62 +4,98 @@ self.__WB_DISABLE_DEV_LOGS = true;
 
 import { precacheAndRoute, cleanupOutdatedCaches, matchPrecache } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { StaleWhileRevalidate, NetworkFirst, NetworkOnly } from 'workbox-strategies';
+import { StaleWhileRevalidate, NetworkFirst, NetworkOnly, CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
+import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import { BackgroundSyncPlugin } from 'workbox-background-sync';
 import { clientsClaim } from 'workbox-core';
 
-// 1. Tomar control inmediato de la página y forzar actualización automática
-self.skipWaiting(); // <-- Obliga a instalar la nueva versión sin esperar
+const emailUnsubscribePath = '/api/email-preferences/unsubscribe';
+
+// 1. El nuevo Service Worker toma el control en cuanto se activa
 clientsClaim();
 
-// 2. Limpieza de cachés antiguas y precarga
+// 1. Activar de inmediato el nuevo Service Worker para que nunca queden workers
+// en espera indefinida sirviendo index.html desfasados con chunks 404
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      try {
+        if ('caches' in self) {
+          await caches.delete('api-read-cache');
+        }
+      } catch (e) {
+        console.warn('[SW] Error eliminando api-read-cache en activación:', e);
+      }
+    })()
+  );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  if (event.data && (event.data.type === 'CLEAR_CACHES' || event.data.type === 'PURGE_CACHES')) {
+    event.waitUntil(
+      caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+    );
+  }
+});
+
+// 2. Navegación HTML: SIEMPRE intentar red primero (y forzar no-store cuando se pide actualizar versión),
+// usando matchPrecache('/index.html') únicamente si el dispositivo está sin conexión.
 registerRoute(
-  ({ request, url }) => request.mode === 'navigate' && !url.pathname.startsWith('/sitemap.xml') && !url.pathname.startsWith('/robots.txt'),
-  async ({ request }) => {
+  ({ request, url }) =>
+    request.mode === 'navigate' &&
+    url.pathname !== emailUnsubscribePath &&
+    !url.pathname.startsWith('/sitemap.xml') &&
+    !url.pathname.startsWith('/robots.txt'),
+  async ({ request, url }) => {
+    const isExplicitBust = url.searchParams.has('rescue') || url.searchParams.has('updated') || url.searchParams.has('reset') || url.searchParams.has('clean') || url.searchParams.has('pfg_fresh');
     try {
-      const response = await matchPrecache('/index.html') || await fetch(request);
-      if (!response) return fetch(request);
-      
-      const html = await response.text();
-      
-      const cookieStr = request.headers.get('cookie') || '';
-      const match = cookieStr.match(/app_theme=([^;]+)/);
-      const theme = match ? match[1] : 'system';
-      
-      let lightColor = '#f8fafc';
-      let darkColor = '#0f172a';
-      
-      if (theme === 'light') { lightColor = '#f8fafc'; darkColor = '#f8fafc'; }
-      else if (theme === 'dark') { lightColor = '#0f172a'; darkColor = '#0f172a'; }
-      else if (theme === 'oled') { lightColor = '#000000'; darkColor = '#000000'; }
-      else if (theme === 'galaxy') { lightColor = '#000000'; darkColor = '#000000'; }
-      else if (theme === 'desert') { lightColor = '#fff1e6'; darkColor = '#2c1e16'; }
-      
-      const modifiedHtml = html.replace(
-        /<meta[^>]*id="theme-color-light"[^>]*>/i,
-        `<meta name="theme-color" media="(prefers-color-scheme: light)" content="${lightColor}" id="theme-color-light" />`
-      ).replace(
-        /<meta[^>]*id="theme-color-dark"[^>]*>/i,
-        `<meta name="theme-color" media="(prefers-color-scheme: dark)" content="${darkColor}" id="theme-color-dark" />`
-      );
-      
-      const headers = new Headers(response.headers);
-      headers.set('Content-Type', 'text/html');
-      
-      return new Response(modifiedHtml, {
-        headers: headers,
-        status: response.status,
-        statusText: response.statusText
-      });
-    } catch (e) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      try {
+        const cleanPath = url.pathname || '/';
+        const fetchTarget = isExplicitBust ? `${cleanPath}${cleanPath.includes('?') ? '&' : '?'}_cb=${Date.now()}` : request;
+        const networkResponse = await fetch(fetchTarget, {
+          signal: controller.signal,
+          cache: 'no-store',
+          headers: isExplicitBust
+            ? { 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' }
+            : undefined
+        });
+        clearTimeout(timeoutId);
+        if (networkResponse && networkResponse.ok) {
+          return networkResponse;
+        }
+      } catch (_) {
+        clearTimeout(timeoutId);
+      }
+
+      // Si la red falla (modo sin conexión real), recurrir a index.html precacheado
+      const cachedResponse = await matchPrecache('/index.html');
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
       return fetch(request);
+    } catch (_) {
+      return (await matchPrecache('/index.html')) || fetch(request);
     }
   }
 );
 
 cleanupOutdatedCaches();
-precacheAndRoute(self.__WB_MANIFEST || []);
+const rawManifest = self.__WB_MANIFEST || [];
+const deduplicatedManifest = Array.from(
+  new Map(rawManifest.filter((e) => e && e.url).map((e) => [e.url, e])).values()
+);
+precacheAndRoute(deduplicatedManifest);
 
 // --- 3. ESTRATEGIAS DE CACHÉ (RUNTIME) ---
 
@@ -74,38 +110,128 @@ registerRoute(
   })
 );
 
+// A2. Chunks secundarios con hash (/assets/*.js y /assets/*.css) -> CacheFirst instantáneo
+registerRoute(
+  ({ url, request }) =>
+    url.origin === self.location.origin &&
+    url.pathname.startsWith('/assets/') &&
+    (request.destination === 'script' || request.destination === 'style' || /\.(js|css)$/i.test(url.pathname)),
+  new CacheFirst({
+    cacheName: 'vite-hashed-assets',
+    plugins: [
+      {
+        fetchDidSucceed: async ({ response }) => {
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('text/html')) {
+            return new Response('Chunk no encontrado (nueva versión)', {
+              status: 404,
+              statusText: 'Not Found',
+              headers: { 'Content-Type': 'text/plain' }
+            });
+          }
+          return response;
+        },
+        cacheWillUpdate: async ({ response }) => {
+          if (!response || response.status !== 200) return null;
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('text/html')) return null;
+          return response;
+        },
+      },
+      new ExpirationPlugin({ maxEntries: 120, maxAgeSeconds: 30 * 24 * 60 * 60 }),
+    ],
+  })
+);
+
 // B. Imágenes estáticas LOCALES (logo, iconos, etc.)
-// IMPORTANTE: Excluimos '/uploads/', VÍDEOS y ORÍGENES EXTERNOS para evitar errores de CORS/Opaque.
+// IMPORTANTE: Excluimos VÍDEOS y ORÍGENES EXTERNOS para evitar errores de CORS/Opaque.
 registerRoute(
   ({ request, url }) => {
     // 1. EXCLUSIÓN CRÍTICA: Si la imagen NO es de nuestro propio dominio, IGNORAR.
-    // Esto soluciona el error "opaque response" con imágenes de Google/lh3.googleusercontent.com
     if (url.origin !== self.location.origin) return false;
 
-    // 2. Si viene de /uploads/ (imágenes subidas por usuarios), ignorar (suelen ser dinámicas o requieren auth fresca)
-    if (url.pathname.startsWith('/uploads/')) return false;
-
-    // 3. CRÍTICO: Si es un video (.mp4, .mov, etc.), IGNORAR.
-    // Safari requiere 'Range Requests' (206 Partial Content).
+    // 2. Si es un video (.mp4, .mov, etc.), IGNORAR. Safari requiere Range Requests (206 Partial Content).
     if (url.pathname.match(/\.(mp4|mov|webm|mkv)$/i)) return false;
 
-    // 4. Interceptamos solo imágenes reales del propio sitio
-    return request.destination === 'image' || url.pathname.startsWith('/images/');
+    // 3. Interceptamos imágenes locales (logo, iconos, etc.)
+    return (
+      request.destination === 'image' ||
+      url.pathname.startsWith('/images/') ||
+      url.pathname.startsWith('/icons/') ||
+      /\.(png|jpe?g|webp|svg|ico)$/i.test(url.pathname)
+    );
   },
   new StaleWhileRevalidate({
     cacheName: 'local-images-cache',
     plugins: [
       new ExpirationPlugin({
-        maxEntries: 50,
+        maxEntries: 100,
         maxAgeSeconds: 30 * 24 * 60 * 60, // 30 días
       }),
     ],
   })
 );
 
-// C. API - Lectura (GET) -> NetworkFirst (Intenta red, si falla usa caché)
+// B2. Avatares e imágenes de usuarios (/uploads/) -> StaleWhileRevalidate para que carguen siempre instantáneamente
 registerRoute(
-  ({ url, request }) => url.pathname.startsWith('/api/') && request.method === 'GET',
+  ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/uploads/'),
+  new StaleWhileRevalidate({
+    cacheName: 'user-uploads-cache',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 100,
+        maxAgeSeconds: 14 * 24 * 60 * 60, // 14 días
+      }),
+    ],
+  })
+);
+
+// B3. Imágenes servidas desde el backend u otros dominios: conservarlas para uso offline.
+// Las respuestas opacas (status 0) son comunes cuando el servidor externo no expone CORS.
+registerRoute(
+  ({ request, url }) => request.destination === 'image' && url.origin !== self.location.origin,
+  new CacheFirst({
+    cacheName: 'remote-exercise-images-cache',
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({
+        maxEntries: 1200,
+        maxAgeSeconds: 90 * 24 * 60 * 60,
+      }),
+    ],
+  })
+);
+
+// C. API - Lectura (GET) -> NetworkFirst (Intenta red, si falla usa caché)
+// NOTA CRÍTICA: Excluimos explícitamente endpoints dinámicos, autenticación, admin, chat, asesorías y notificaciones
+// para garantizar que NUNCA se sirvan datos desfasados, bloqueos o errores de timeout prematuro desde caché.
+registerRoute(
+  ({ url, request }) => {
+    if (request.method !== 'GET') return false;
+    if (!url.pathname.startsWith('/api/') || url.pathname === emailUnsubscribePath) return false;
+    if (
+      url.pathname.startsWith('/api/auth') ||
+      url.pathname.startsWith('/api/users') ||
+      url.pathname.startsWith('/api/social') ||
+      url.pathname.startsWith('/api/admin') ||
+      url.pathname.startsWith('/api/chat') ||
+      url.pathname.startsWith('/api/trainer') ||
+      url.pathname.startsWith('/api/notifications') ||
+      url.pathname.startsWith('/api/reports') ||
+      url.pathname.startsWith('/api/ratings') ||
+      url.pathname.startsWith('/api/sessions') ||
+      url.pathname.startsWith('/api/stories') ||
+      url.pathname.startsWith('/api/ai') ||
+      url.pathname.startsWith('/api/2fa') ||
+      url.pathname.startsWith('/api/exercise-list') ||
+      url.pathname.startsWith('/api/exercises') ||
+      url.pathname.startsWith('/api/news') ||
+      url.pathname.startsWith('/api/system-settings')
+    ) {
+      return false;
+    }
+    return true;
+  },
   new NetworkFirst({
     cacheName: 'api-read-cache',
     plugins: [
@@ -114,13 +240,16 @@ registerRoute(
         maxAgeSeconds: 24 * 60 * 60, // 24 horas
       }),
     ],
-    networkTimeoutSeconds: 5, // Si tarda más de 5s, usa caché
+    networkTimeoutSeconds: 3, // Reducido a 3s para nunca congelar ni retrasar la navegación
   })
 );
 
 // D. API - Escritura (POST, PUT, DELETE) -> Background Sync
 registerRoute(
-  ({ url, request }) => url.pathname.startsWith('/api/') && request.method !== 'GET',
+  ({ url, request }) =>
+    url.pathname.startsWith('/api/') &&
+    url.pathname !== emailUnsubscribePath &&
+    request.method !== 'GET',
   new NetworkOnly({
     plugins: [
       new BackgroundSyncPlugin('api-mutation-queue', {
@@ -131,6 +260,14 @@ registerRoute(
 );
 
 // --- 4. LÓGICA DE PUSH NOTIFICATIONS ---
+
+const getPushDestination = path => {
+  try {
+    const url = new URL(path || '/notifications', self.location.origin);
+    if (url.origin === self.location.origin) return url.href;
+  } catch { /* Volver a la bandeja si el enlace no es válido. */ }
+  return new URL('/notifications', self.location.origin).href;
+};
 
 self.addEventListener('push', (event) => {
   if (!event.data) return;
@@ -149,8 +286,9 @@ self.addEventListener('push', (event) => {
     badge: payload.badge || '/pwa-192x192.png',
     tag: payload.tag || `notif-${Date.now()}`,
     vibrate: payload.vibrate || [100, 50, 100],
+    actions: payload.data?.manage ? [{ action: 'push-settings', title: 'Gestionar avisos' }] : [],
     data: {
-      url: (payload.data && payload.data.url) ? payload.data.url : '/',
+      url: getPushDestination(payload.data?.url),
     },
   };
 
@@ -161,7 +299,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const urlToOpen = new URL(event.notification.data.url || '/', self.location.origin).href;
+  const urlToOpen = getPushDestination(event.action === 'push-settings' ? '/settings?highlight=notifications' : event.notification.data?.url);
 
   event.waitUntil(
     self.clients.matchAll({
@@ -179,13 +317,3 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
-
-
-
-
-
-
-
-
-
-

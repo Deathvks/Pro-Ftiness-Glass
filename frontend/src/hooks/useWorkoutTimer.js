@@ -18,11 +18,13 @@ export const useWorkoutTimer = () => {
     workoutStartTime, 
     isWorkoutPaused, 
     workoutAccumulatedTime,
+    activeWorkout,
     finishWorkout
   } = useAppStore(state => ({
     workoutStartTime: state.workoutStartTime,
     isWorkoutPaused: state.isWorkoutPaused,
     workoutAccumulatedTime: state.workoutAccumulatedTime,
+    activeWorkout: state.activeWorkout,
     finishWorkout: state.finishWorkout,
   }));
 
@@ -42,8 +44,14 @@ export const useWorkoutTimer = () => {
           const handleAutoFinish = async () => {
             if (finishWorkout) {
               try {
-                await finishWorkout();
-                addToast('Entrenamiento guardado automáticamente (Límite de 4h)', 'info');
+                const result = await finishWorkout();
+                const workoutKey = activeWorkout?.startTime;
+                const toastShownFor = localStorage.getItem('autoWorkoutLimitToastShownFor');
+
+                if (result?.success && workoutKey && toastShownFor !== workoutKey) {
+                  localStorage.setItem('autoWorkoutLimitToastShownFor', workoutKey);
+                  addToast('Entrenamiento guardado automáticamente (Límite de 4h)', 'info');
+                }
               } catch (error) {
                 console.error("Error en autoguardado:", error);
               }
@@ -60,7 +68,7 @@ export const useWorkoutTimer = () => {
     }
 
     return () => clearInterval(interval);
-  }, [workoutStartTime, isWorkoutPaused, workoutAccumulatedTime, finishWorkout, addToast]);
+  }, [workoutStartTime, isWorkoutPaused, workoutAccumulatedTime, activeWorkout, finishWorkout, addToast]);
 
   return timer;
 };

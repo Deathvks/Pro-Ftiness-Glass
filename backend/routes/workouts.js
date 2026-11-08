@@ -22,6 +22,10 @@ const workoutLogValidationRules = [
 
 // CAMBIO: '/workouts' -> '/'
 router.get('/', workoutController.getWorkoutHistory);
+// Exportar historial en CSV
+router.get('/export/csv', workoutController.exportWorkoutsCSV);
+// Importar historial desde CSV (Hevy / Strong / Pro Fitness Glass)
+router.post('/import', workoutController.importWorkouts);
 // CAMBIO: '/workouts' -> '/'
 router.post('/', workoutLogValidationRules, workoutController.logWorkoutSession);
 // CAMBIO: '/workouts/:workoutId' -> '/:workoutId'

@@ -3,12 +3,16 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
     Dumbbell, Activity, Shield, ChevronRight, ChevronLeft, Utensils,
     LineChart, Users, Zap, Smartphone, Trophy, ArrowRight,
-    Instagram, Youtube, Github, Globe, Download, Sparkles, Bot, Apple, Check, ShieldCheck
+    Instagram, Youtube, Github, Globe, Download, Sparkles, Bot, Apple, Check, ShieldCheck, Newspaper, Calculator, HelpCircle
 } from 'lucide-react';
 import { FaGooglePlay } from 'react-icons/fa';
+import { FaCalculator, FaDumbbell, FaUtensils, FaNewspaper, FaCircleQuestion, FaTrophy, FaHeartPulse } from 'react-icons/fa6';
+import { Helmet } from 'react-helmet-async';
 
 import packageJson from '../../package.json';
 import socialService from '../services/socialService';
+import MaintenanceNoticeBanner from '../components/MaintenanceNoticeBanner';
+import PublicPageFooter from '../components/PublicPageFooter';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
@@ -68,7 +72,7 @@ const useIntersectionObserver = (options = {}) => {
 
 // --- ANIMACIONES SVG FLOTANTES ---
 const FloatingHeroElements = () => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-10 hidden sm:block transform-gpu" aria-hidden="true">
+    <div className="landing-floating-elements absolute inset-0 pointer-events-none overflow-hidden z-10 hidden sm:block transform-gpu" aria-hidden="true">
         <style>{`
             @keyframes float-1 {
                 0% { transform: translateY(0px) rotate(0deg) translateZ(0); }
@@ -137,19 +141,19 @@ const FloatingHeroElements = () => (
 const GymBot = ({ isDocked }) => (
     <div
         aria-hidden="true"
-        className={`fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-top sm:origin-right transform-gpu will-change-transform
+        className={`landing-gym-bot fixed z-30 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none origin-top sm:origin-right transform-gpu will-change-transform
             ${isDocked
-                ? 'top-1/2 -translate-y-1/2 right-8 sm:right-10 lg:right-10 scale-[0.25] sm:scale-[0.40] opacity-20 sm:opacity-40 translate-x-0' 
-                : 'top-28 sm:top-[25%] right-1/2 translate-x-1/2 sm:translate-x-0 sm:right-16 lg:right-24 scale-50 sm:scale-100 opacity-100'
+                ? 'top-1/2 -translate-y-1/2 right-4 sm:right-10 lg:right-10 scale-[0.22] sm:scale-[0.40] opacity-20 sm:opacity-40 translate-x-0' 
+                : 'top-[calc(var(--safe-top,0px)+116px)] sm:top-[22%] right-1/2 translate-x-1/2 sm:translate-x-0 sm:right-16 lg:right-24 scale-[0.40] sm:scale-100 opacity-100'
             }
         `}
     >
         <style>{`
             @keyframes gymbot-roam {
                 0% { transform: translate(0, 0) rotate(0deg) translateZ(0); }
-                25% { transform: translate(-15px, -10px) rotate(-3deg) translateZ(0); }
-                50% { transform: translate(0, 15px) rotate(0deg) translateZ(0); }
-                75% { transform: translate(10px, -10px) rotate(3deg) translateZ(0); }
+                25% { transform: translate(-8px, -5px) rotate(-3deg) translateZ(0); }
+                50% { transform: translate(0, 6px) rotate(0deg) translateZ(0); }
+                75% { transform: translate(8px, -5px) rotate(3deg) translateZ(0); }
                 100% { transform: translate(0, 0) rotate(0deg) translateZ(0); }
             }
         `}</style>
@@ -235,7 +239,7 @@ const ScrollRevealCard = ({ children, delay = 0, className = "" }) => {
 
 const FeatureCard = ({ icon: Icon, title, desc, delay }) => (
     <ScrollRevealCard delay={delay} className="h-full">
-        <div className="h-full p-6 sm:p-8 rounded-[32px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl flex flex-col items-center text-center hover:ring-accent/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
+        <div className="landing-liquid-glass h-full p-6 sm:p-8 rounded-[32px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl flex flex-col items-center text-center hover:ring-accent/50 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
             <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform-gpu" />
             <div className="relative z-10 p-4 rounded-[20px] bg-accent/10 text-accent mb-6 group-hover:bg-accent group-hover:text-accent-contrast transition-all duration-500 group-hover:scale-110 ring-1 ring-accent/30 shadow-sm transform-gpu">
                 <Icon size={32} strokeWidth={1.5} />
@@ -248,7 +252,7 @@ const FeatureCard = ({ icon: Icon, title, desc, delay }) => (
 
 const BentoCard = ({ children, className = "", delay = 0, bgIcon: BgIcon, bgIconColor = "text-text-primary" }) => (
     <ScrollRevealCard delay={delay} className={className}>
-        <div className="h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl hover:ring-accent/50 transition-all duration-500 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
+        <div className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 border-none ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl hover:ring-accent/50 transition-all duration-500 hover:shadow-2xl hover:shadow-accent/10 group relative overflow-hidden transform-gpu">
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none transform-gpu"></div>
 
             {BgIcon && (
@@ -265,14 +269,14 @@ const BentoCard = ({ children, className = "", delay = 0, bgIcon: BgIcon, bgIcon
 const MockupGallery = () => {
     const scrollRef = useRef(null);
     const images = [
-        { src: '/aver.jpg', alt: 'Dashboard' },
-        { src: '/entrenamiento.png', alt: 'Entrenamiento' },
-        { src: '/graficas.png', alt: 'Gráficas' },
-        { src: '/nutrición.png', alt: 'Nutrición' },
-        { src: '/social.png', alt: 'Social' },
-        { src: '/perfil.png', alt: 'Perfil' },
-        { src: '/ajustes.png', alt: 'Ajustes' },
-        { src: '/mapa.png', alt: 'Mapa' }
+        { src: '/aver.jpg', alt: 'Panel de inicio y resumen diario de progreso en Pro Fitness Glass' },
+        { src: '/entrenamiento.png', alt: 'Registro de entrenamientos, series, repeticiones y pesos en el gimnasio' },
+        { src: '/graficas.png', alt: 'Gráficas de evolución de fuerza, volumen y peso corporal' },
+        { src: '/nutrición.png', alt: 'Seguimiento nutricional de calorías, proteínas, carbohidratos, grasas e hidratación con IA' },
+        { src: '/social.png', alt: 'Comunidad fitness, ranking de amigos, rachas y retos semanales' },
+        { src: '/perfil.png', alt: 'Perfil de atleta con nivel XP, insignias desbloqueadas y récords personales' },
+        { src: '/ajustes.png', alt: 'Personalización de temas visuales Liquid Glass, Galaxia, OLED y acentos dinámicos' },
+        { src: '/mapa.png', alt: 'Mapa térmico anatómico de fatiga y recuperación muscular' }
     ];
 
     const scroll = (direction) => {
@@ -313,6 +317,7 @@ const MockupGallery = () => {
                                 alt={img.alt}
                                 className="w-full h-auto object-contain rounded-[3rem]"
                                 loading="lazy"
+                                decoding="async"
                             />
                         </div>
                     ))}
@@ -333,8 +338,13 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
     const [isVisible, setIsVisible] = useState(false);
     const [isDocked, setIsDocked] = useState(false);
-    const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+    const isDockedRef = useRef(false);
+    const isHeaderHiddenRef = useRef(false);
+    const landingNavRef = useRef(null);
+    const scrollRafRef = useRef(null);
     const lastScrollY = useRef(0);
+    const accumulatedDownRef = useRef(0);
+    const accumulatedUpRef = useRef(0);
     const [communityUsers, setCommunityUsers] = useState([]);
     const [apkDownloadUrl, setApkDownloadUrl] = useState(null);
     const containerRef = useRef(null);
@@ -381,24 +391,70 @@ const LandingPage = ({ onLogin, onRegister }) => {
         fetchVersionInfo();
     }, []);
 
+    const syncLandingNavDOM = () => {
+        const nav = landingNavRef.current;
+        if (!nav) return;
+        if (isHeaderHiddenRef.current) {
+            nav.style.transform = 'translate3d(0, -100%, 0)';
+            nav.style.opacity = '0';
+            nav.style.pointerEvents = 'none';
+        } else {
+            nav.style.transform = 'translate3d(0, 0, 0)';
+            nav.style.opacity = '1';
+            nav.style.pointerEvents = 'auto';
+        }
+    };
+
     const handleScroll = (e) => {
-        const scrollTop = e.target.scrollTop;
-        const shouldBeDocked = scrollTop > 50;
+        const target = e.currentTarget;
+        if (scrollRafRef.current !== null) return;
+        scrollRafRef.current = requestAnimationFrame(() => {
+            scrollRafRef.current = null;
+            const scrollTop = Math.max(0, target.scrollTop);
+            const shouldBeDocked = scrollTop > 50;
 
-        if (isDocked !== shouldBeDocked) {
-            setIsDocked(shouldBeDocked);
-        }
+            if (isDockedRef.current !== shouldBeDocked) {
+                isDockedRef.current = shouldBeDocked;
+                setIsDocked(shouldBeDocked);
+            }
 
-        if (scrollTop > lastScrollY.current + 10 && scrollTop > 100) {
-            setIsHeaderHidden(true);
-        } else if (scrollTop < lastScrollY.current - 10 || scrollTop < 50) {
-            setIsHeaderHidden(false);
-        }
-        lastScrollY.current = scrollTop;
+            if (scrollTop <= 36) {
+                if (isHeaderHiddenRef.current) {
+                    isHeaderHiddenRef.current = false;
+                    syncLandingNavDOM();
+                }
+                accumulatedDownRef.current = 0;
+                accumulatedUpRef.current = 0;
+                lastScrollY.current = scrollTop;
+                return;
+            }
+
+            const delta = scrollTop - lastScrollY.current;
+            if (delta > 0) {
+                accumulatedDownRef.current += delta;
+                accumulatedUpRef.current = 0;
+                if (accumulatedDownRef.current > 14 && scrollTop > 52 && !isHeaderHiddenRef.current) {
+                    isHeaderHiddenRef.current = true;
+                    syncLandingNavDOM();
+                }
+            } else if (delta < 0) {
+                accumulatedUpRef.current += Math.abs(delta);
+                accumulatedDownRef.current = 0;
+            }
+            lastScrollY.current = scrollTop;
+        });
     };
 
     return (
-        <div className="absolute inset-0 z-[100] bg-bg-primary overflow-hidden">
+        <div className="landing-page absolute inset-0 z-[100] bg-bg-primary overflow-hidden">
+            <Helmet>
+                <title>Pro Fitness Glass | App de Gimnasio Gratis, Rutinas de Pesas, Diario de Entrenamiento y Nutrición con IA</title>
+                <meta
+                    name="description"
+                    content="Registra tus entrenamientos de gimnasio, aplica sobrecarga progresiva en tus rutinas de hipertrofia y fuerza, calcula tu 1RM y controla calorías y macros con IA gratis."
+                />
+                <link rel="canonical" href="https://profitnessglass.es/" />
+            </Helmet>
 
             {/* Fondo de cristal eliminado por optimización de rendimiento */}
 
@@ -425,65 +481,114 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                 <div className="relative z-10 flex flex-col min-h-full">
 
-                    {/* --- Círculos de colores (Optimizados sin animación pesada) --- */}
-                    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
-                        <div className="absolute top-[0%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 transform-gpu" style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }} />
-                        <div className="absolute top-[20%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 transform-gpu" style={{ background: 'radial-gradient(circle, #3b82f6, transparent)' }} />
-                        <div className="absolute top-[40%] left-[-5%] w-[700px] h-[700px] rounded-full blur-[150px] opacity-10 dark:opacity-15 transform-gpu" style={{ background: 'radial-gradient(circle, #a855f7, transparent)' }} />
-                        <div className="absolute top-[65%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 transform-gpu" style={{ background: 'radial-gradient(circle, #10b981, transparent)' }} />
-                        <div className="absolute top-[85%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[150px] opacity-15 dark:opacity-20 transform-gpu" style={{ background: 'radial-gradient(circle, rgb(var(--accent-r), var(--accent-g), var(--accent-b)), transparent)' }} />
-                        <div className="absolute bottom-[0%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] opacity-10 dark:opacity-15 transform-gpu" style={{ background: 'radial-gradient(circle, #f59e0b, transparent)' }} />
+                    {/* Fondo atmosférico estático: gradientes nativos, sin seis capas con blur */}
+                    <div
+                        className="landing-ambient-bg absolute inset-0 pointer-events-none z-0"
+                        aria-hidden="true"
+                        style={{
+                            backgroundImage: [
+                                'radial-gradient(ellipse 42% 18% at 12% 6%, var(--color-accent-transparent), transparent 100%)',
+                                'radial-gradient(ellipse 38% 16% at 88% 24%, rgba(59, 130, 246, 0.12), transparent 100%)',
+                                'radial-gradient(ellipse 45% 18% at 16% 53%, rgba(168, 85, 247, 0.12), transparent 100%)',
+                                'radial-gradient(ellipse 42% 18% at 82% 82%, rgba(16, 185, 129, 0.10), transparent 100%)',
+                                'radial-gradient(ellipse 40% 18% at 88% 100%, rgba(245, 158, 11, 0.09), transparent 100%)'
+                            ].join(', ')
+                        }}
+                    >
                     </div>
 
                     {/* --- NAVBAR --- */}
                     <nav 
-                        className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ease-out transform-gpu ${isHeaderHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'} ${isDocked ? 'bg-bg-primary/80 backdrop-blur-xl border-b border-black/5 dark:border-white/10 shadow-sm' : 'bg-transparent border-transparent'}`} 
+                        ref={landingNavRef}
+                        className="fixed top-0 left-0 w-full z-50 border-b bg-transparent border-transparent"
                         aria-label="Navegación principal"
-                        style={{ paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))' }}
+                        style={{
+                            paddingTop: 'var(--safe-top, env(safe-area-inset-top, 0px))',
+                            transform: 'translate3d(0, 0, 0)',
+                            opacity: 1,
+                            willChange: 'transform, opacity',
+                            contain: 'layout style paint',
+                            backfaceVisibility: 'hidden',
+                            WebkitBackfaceVisibility: 'hidden',
+                            transition: 'transform 0.52s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.42s cubic-bezier(0.32, 0.72, 0, 1)',
+                        }}
                     >
-                        <div className="flex justify-between items-center p-4 sm:px-8 max-w-7xl mx-auto w-full relative z-10">
+                        <div className="flex justify-between items-center p-3 sm:p-4 md:px-8 max-w-7xl mx-auto w-full relative z-10 flex-nowrap">
                             <div
-                                className="flex items-center gap-4 cursor-pointer group"
+                                className="flex items-center gap-2.5 sm:gap-4 cursor-pointer group shrink-0"
                                 onClick={() => containerRef.current.scrollTo({ top: 0, behavior: 'smooth' })}
                             >
-                                <img src="/logo.webp" alt="Pro Fitness Glass Logo" className="w-10 h-10 group-hover:scale-110 transition-transform duration-300" />
-                                <span className="font-black text-xl tracking-tighter hidden sm:block bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary group-hover:to-accent transition-all duration-500">
+                                <img src="/logo.webp" alt="Pro Fitness Glass Logo" className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg group-hover:scale-110 transition-transform duration-300 shrink-0" />
+                                <span className="font-black text-lg sm:text-xl tracking-tighter hidden md:block bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary group-hover:to-accent transition-all duration-500">
                                     PRO FITNESS GLASS
                                 </span>
                             </div>
 
-                            <div className="flex items-center gap-3 sm:gap-5">
+                            <div className="flex items-center gap-1.5 sm:gap-3 flex-nowrap shrink-0">
+                                <a
+                                    href="/calculadora-1rm"
+                                    className="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
+                                    title="Calculadora de 1RM y Fuerza"
+                                >
+                                    <FaCalculator className="text-accent shrink-0 text-sm" />
+                                    <span className="uppercase tracking-wider text-xs">Calculadora 1RM</span>
+                                </a>
+
+                                <a
+                                    href="/calculadora-calorias-macros"
+                                    className="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
+                                    title="Calculadora de Calorías y Macros"
+                                >
+                                    <FaUtensils className="text-emerald-400 shrink-0 text-sm" />
+                                    <span className="uppercase tracking-wider text-xs">Calculadora Macros</span>
+                                </a>
+
+                                <a
+                                    href="/noticias"
+                                    className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary hover:text-accent transition-colors text-xs font-bold shrink-0 border border-black/5 dark:border-white/10"
+                                    title="Noticias y Artículos de Fitness"
+                                >
+                                    <Newspaper size={15} className="text-accent shrink-0" />
+                                    <span className="hidden sm:inline uppercase tracking-wider text-[11px] sm:text-xs">Noticias</span>
+                                </a>
+
                                 <a
                                     href="/privacy"
-                                    className="flex items-center gap-2.5 text-xs font-bold text-text-secondary hover:text-accent transition-colors mr-1 outline-none border-none focus:outline-none"
+                                    className="hidden md:flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-text-secondary hover:text-accent transition-colors shrink-0"
                                     title="Política de Privacidad"
                                 >
-                                    <Shield size={16} className="md:hidden" />
-                                    <span className="hidden md:inline uppercase tracking-wider">Privacidad</span>
+                                    <Shield size={15} />
+                                    <span className="uppercase tracking-wider text-xs">Privacidad</span>
                                 </a>
 
                                 <button
                                     onClick={onLogin}
-                                    className="text-sm font-bold text-text-primary hover:text-accent transition-colors px-5 py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-[16px] active:scale-95"
+                                    className="text-xs sm:text-sm font-bold text-text-primary hover:text-accent transition-colors px-3 sm:px-4 py-1.5 sm:py-2.5 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10 rounded-xl sm:rounded-2xl active:scale-95 shrink-0 whitespace-nowrap"
                                 >
-                                    Iniciar Sesión
+                                    <span className="inline sm:hidden">Entrar</span>
+                                    <span className="hidden sm:inline">Iniciar Sesión</span>
                                 </button>
 
                                 <button
                                     onClick={onRegister}
-                                    className="text-sm font-bold bg-accent hover:bg-accent/90 text-accent-contrast px-6 py-2.5 rounded-[16px] transition-all shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-2"
+                                    className="text-xs sm:text-sm font-bold bg-accent hover:bg-accent/90 text-accent-contrast px-3.5 sm:px-6 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl transition-all shadow-md sm:shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-1 sm:gap-2 shrink-0 whitespace-nowrap"
                                 >
-                                    Empezar
-                                    <ChevronRight size={18} strokeWidth={3} />
+                                    <span>Empezar</span>
+                                    <ChevronRight size={15} strokeWidth={3} className="shrink-0" />
                                 </button>
                             </div>
                         </div>
+                        <MaintenanceNoticeBanner />
                     </nav>
 
                     {/* --- HERO SECTION --- */}
-                    <main className="flex-grow flex flex-col items-center px-4 pt-12 pb-24 text-center w-full max-w-7xl mx-auto overflow-x-hidden relative z-10">
+                    <main 
+                        className="flex-grow flex flex-col items-center px-4 pb-24 text-center w-full max-w-7xl mx-auto overflow-x-hidden relative z-10"
+                        style={{ paddingTop: 'calc(var(--safe-top, 0px) + 7.75rem)' }}
+                    >
 
-                        <div className="h-32 sm:h-28 md:h-12 lg:h-6 w-full mb-8 sm:mb-16 md:mb-6 lg:mb-4 pointer-events-none" aria-hidden="true"></div>
+                        {/* Espaciador reservado para la mascota GymBot entre el Header y la Versión */}
+                        <div className="h-24 sm:h-24 md:h-12 lg:h-8 w-full mb-4 sm:mb-6 pointer-events-none" aria-hidden="true"></div>
 
                         <div className={`inline-flex items-center gap-3 px-5 py-2 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 mb-8 backdrop-blur-xl shadow-sm transition-all duration-1000 delay-100 transform-gpu ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                             <span className="relative flex h-2.5 w-2.5">
@@ -501,7 +606,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                 </span>
                             </h1>
                             <p className="text-lg sm:text-xl md:text-2xl text-text-secondary max-w-2xl mx-auto leading-relaxed font-medium z-20 relative">
-                                La única plataforma que combina <strong>entrenamiento inteligente</strong>, <strong>nutrición precisa</strong> y <strong>análisis de datos</strong> en una experiencia de cristal.
+                                La <strong>app de gimnasio gratuita</strong> que une <strong>diario de entrenamiento de pesas</strong>, <strong>rutinas de hipertrofia y fuerza</strong>, <strong>sobrecarga progresiva</strong> y <strong>contador de calorías y macros con IA</strong> en una experiencia de cristal.
                             </p>
                         </div>
 
@@ -590,14 +695,14 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                                 <BentoCard className="md:col-span-2" delay={100} bgIcon={Dumbbell} bgIconColor="text-blue-500">
                                     <div className="w-14 h-14 bg-blue-500/10 text-blue-500 rounded-[20px] ring-1 ring-blue-500/30 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
-                                        <Dumbbell size={28} strokeWidth={2} />
+                                        <FaDumbbell className="text-2xl" />
                                     </div>
-                                    <h3 className="text-3xl font-extrabold tracking-tight text-text-primary mb-4 group-hover:text-blue-400 transition-colors relative z-10">Rutinas Avanzadas</h3>
+                                    <h3 className="text-3xl font-extrabold tracking-tight text-text-primary mb-4 group-hover:text-blue-400 transition-colors relative z-10">Diario de Gimnasio y Rutinas de Pesas</h3>
                                     <p className="text-text-secondary font-medium mb-8 max-w-md text-lg leading-relaxed relative z-10">
-                                        Diseña entrenamientos con superseries, dropsets y descansos personalizados. Registra pesos, RPE y notas en tiempo real.
+                                        Diseña rutinas de hipertrofia y fuerza (Push Pull Legs, Torso Pierna o Full Body) con superseries, dropsets y descansos automáticos. Aplica sobrecarga progresiva registrando pesos, repeticiones, RPE y tu 1RM en tiempo real.
                                     </p>
                                     <div className="flex gap-3 flex-wrap relative z-10">
-                                        {['Superseries', 'Historial', '1RM Estimado'].map(tag => (
+                                        {['Sobrecarga Progresiva', 'Hipertrofia y Fuerza', 'Superseries', '1RM Estimado'].map(tag => (
                                             <span key={tag} className="px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded-md text-[10px] font-black uppercase tracking-wider text-text-secondary ring-1 ring-black/5 dark:ring-white/10 group-hover:ring-blue-500/30 group-hover:text-blue-400 transition-colors">
                                                 {tag}
                                             </span>
@@ -620,7 +725,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                                 <BentoCard delay={300} bgIcon={Apple} bgIconColor="text-green-500">
                                     <div className="w-14 h-14 bg-green-500/10 text-green-500 rounded-[20px] ring-1 ring-green-500/30 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-green-500 group-hover:text-white transition-all duration-300 shadow-sm relative z-10">
-                                        <Utensils size={28} strokeWidth={2} />
+                                        <FaUtensils className="text-2xl" />
                                     </div>
                                     <h3 className="text-2xl font-extrabold tracking-tight text-text-primary mb-4 group-hover:text-green-400 transition-colors relative z-10">Nutrición & Macros</h3>
                                     <p className="text-text-secondary font-medium mb-4 leading-relaxed relative z-10">
@@ -657,6 +762,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                                                 src={userImage}
                                                                 alt={`Usuario ${index + 1}`}
                                                                 className="w-full h-full object-cover"
+                                                                loading="lazy"
+                                                                decoding="async"
                                                                 onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
                                                             />
                                                         ) : null}
@@ -683,7 +790,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                     <div className="w-full rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 relative hover:ring-accent/50 transition-all duration-700 text-left isolate">
                                         
                                         {/* Capa de cristal y recorte */}
-                                        <div className="absolute inset-0 rounded-[32px] bg-black/5 dark:bg-white/5 backdrop-blur-xl overflow-hidden pointer-events-none -z-10">
+                                        <div className="landing-liquid-glass absolute inset-0 rounded-[32px] bg-black/5 dark:bg-white/5 backdrop-blur-xl overflow-hidden pointer-events-none -z-10">
                                             <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-transparent to-purple-500/10 opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
                                             <div className="absolute -top-24 -right-24 opacity-[0.04] group-hover:opacity-[0.08] group-hover:scale-110 group-hover:rotate-12 transition-all duration-700 text-accent">
                                                 <ShieldCheck size={400} />
@@ -763,7 +870,7 @@ const LandingPage = ({ onLogin, onRegister }) => {
                                 
                                 <div className="shrink-0 relative group">
                                     <div className="w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden ring-4 ring-accent/20 bg-accent/5 shadow-2xl relative z-10 transition-transform duration-700 group-hover:scale-[1.03]">
-                                        <img src="/trainer-profile.jpg" alt="Entrenador" className="w-full h-full object-cover rounded-full" />
+                                                    <img src="/trainer-profile.jpg" alt="Entrenador" loading="lazy" decoding="async" className="w-full h-full object-cover rounded-full" />
                                     </div>
                                     <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-accent text-accent-contrast px-6 py-2 rounded-full font-black text-sm tracking-widest uppercase shadow-lg whitespace-nowrap z-20 flex items-center gap-2">
                                         <ShieldCheck size={16} /> Preparador Oficial
@@ -821,10 +928,229 @@ const LandingPage = ({ onLogin, onRegister }) => {
                             </div>
                         </div>
 
+                        {/* --- SECCIÓN: HERRAMIENTAS GRATUITAS DE GIMNASIO (SEO HUB) --- */}
+                        <div className="w-full mt-32 relative z-10 text-left">
+                            <ScrollRevealCard>
+                                <div className="text-center max-w-3xl mx-auto mb-14">
+                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 ring-1 ring-accent/30 mb-4">
+                                        <FaCalculator className="text-accent text-xs" />
+                                        <span className="text-xs font-black uppercase tracking-widest text-accent">Acceso Libre sin Registro</span>
+                                    </div>
+                                    <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-text-primary mb-4">
+                                        Herramientas Gratuitas de <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-blue-400">Gimnasio y Nutrición</span>
+                                    </h2>
+                                    <p className="text-text-secondary font-medium text-base sm:text-lg leading-relaxed">
+                                        Calcula tus cargas de entrenamiento, planifica tu déficit calórico o volumen muscular y aprende fisiología aplicada al gimnasio con nuestras herramientas públicas.
+                                    </p>
+                                </div>
+                            </ScrollRevealCard>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <ScrollRevealCard delay={100} className="h-full">
+                                    <a
+                                        href="/calculadora-1rm"
+                                        className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-accent/60 backdrop-blur-xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-accent/15 group relative overflow-hidden"
+                                    >
+                                        <div>
+                                            <div className="w-14 h-14 rounded-[20px] bg-accent/15 text-accent ring-1 ring-accent/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-accent group-hover:text-accent-contrast transition-all duration-300">
+                                                <FaDumbbell className="text-2xl" />
+                                            </div>
+                                            <span className="inline-block text-[11px] font-black uppercase tracking-widest text-accent mb-2">Fuerza e Hipertrofia</span>
+                                            <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-accent transition-colors">
+                                                Calculadora de 1RM y Porcentajes
+                                            </h3>
+                                            <p className="text-sm font-medium text-text-secondary leading-relaxed mb-6">
+                                                Calcula tu repetición máxima (1RM) en Press de Banca, Sentadilla, Peso Muerto o Press Militar con las fórmulas de Epley, Brzycki y Lander y descubre tus cargas exactas del 60% al 100%.
+                                            </p>
+                                        </div>
+                                        <span className="inline-flex items-center gap-2 text-sm font-black text-accent group-hover:translate-x-1 transition-transform">
+                                            Abrir Calculadora 1RM <ArrowRight size={16} />
+                                        </span>
+                                    </a>
+                                </ScrollRevealCard>
+
+                                <ScrollRevealCard delay={200} className="h-full">
+                                    <a
+                                        href="/calculadora-calorias-macros"
+                                        className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-emerald-500/60 backdrop-blur-xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-500/15 group relative overflow-hidden"
+                                    >
+                                        <div>
+                                            <div className="w-14 h-14 rounded-[20px] bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all duration-300">
+                                                <FaUtensils className="text-2xl" />
+                                            </div>
+                                            <span className="inline-block text-[11px] font-black uppercase tracking-widest text-emerald-400 mb-2">Nutrición Deportiva</span>
+                                            <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-emerald-400 transition-colors">
+                                                Calculadora de Calorías y Macros
+                                            </h3>
+                                            <p className="text-sm font-medium text-text-secondary leading-relaxed mb-6">
+                                                Conoce tu gasto energético diario (TDEE), metabolismo basal (TMB) y tus gramos exactos de proteína, carbohidratos, grasas, agua y creatina para definición o volumen limpio.
+                                            </p>
+                                        </div>
+                                        <span className="inline-flex items-center gap-2 text-sm font-black text-emerald-400 group-hover:translate-x-1 transition-transform">
+                                            Calcular Calorías y Macros <ArrowRight size={16} />
+                                        </span>
+                                    </a>
+                                </ScrollRevealCard>
+
+                                <ScrollRevealCard delay={300} className="h-full">
+                                    <a
+                                        href="/noticias"
+                                        className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-purple-500/60 backdrop-blur-xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/15 group relative overflow-hidden"
+                                    >
+                                        <div>
+                                            <div className="w-14 h-14 rounded-[20px] bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-purple-500 group-hover:text-white transition-all duration-300">
+                                                <FaNewspaper className="text-2xl" />
+                                            </div>
+                                            <span className="inline-block text-[11px] font-black uppercase tracking-widest text-purple-400 mb-2">Evidencia Científica</span>
+                                            <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-purple-400 transition-colors">
+                                                Guías de Gimnasio, Hipertrofia y Suplementos
+                                            </h3>
+                                            <p className="text-sm font-medium text-text-secondary leading-relaxed mb-6">
+                                                Artículos directos y prácticos sobre sobrecarga progresiva, descanso entre series, creatina monohidrato, déficit calórico inteligente y biomecánica en el gimnasio.
+                                            </p>
+                                        </div>
+                                        <span className="inline-flex items-center gap-2 text-sm font-black text-purple-400 group-hover:translate-x-1 transition-transform">
+                                            Explorar Artículos y Guías <ArrowRight size={16} />
+                                        </span>
+                                    </a>
+                                </ScrollRevealCard>
+
+                                <ScrollRevealCard delay={400} className="h-full">
+                                    <a
+                                        href="/ejercicios"
+                                        className="landing-liquid-glass h-full p-8 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 hover:ring-blue-500/60 backdrop-blur-xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/15 group relative overflow-hidden"
+                                    >
+                                        <div>
+                                            <div className="w-14 h-14 rounded-[20px] bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
+                                                <FaHeartPulse className="text-2xl" />
+                                            </div>
+                                            <span className="inline-block text-[11px] font-black uppercase tracking-widest text-blue-400 mb-2">Técnica y Rutinas</span>
+                                            <h3 className="text-2xl font-black text-text-primary mb-3 group-hover:text-blue-400 transition-colors">
+                                                Enciclopedia de Ejercicios y Splits
+                                            </h3>
+                                            <p className="text-sm font-medium text-text-secondary leading-relaxed mb-6">
+                                                Técnica paso a paso de Press de Banca, Sentadilla Búlgara, Peso Muerto Rumano, Dominadas y plantillas semanales Push Pull Legs y Torso Pierna.
+                                            </p>
+                                        </div>
+                                        <span className="inline-flex items-center gap-2 text-sm font-black text-blue-400 group-hover:translate-x-1 transition-transform">
+                                            Ver Guía de Ejercicios <ArrowRight size={16} />
+                                        </span>
+                                    </a>
+                                </ScrollRevealCard>
+                            </div>
+                        </div>
+
+                        {/* --- SECCIÓN: COMPARATIVA FRENTE A OTRAS APPS DE GIMNASIO (SEO) --- */}
+                        <div className="w-full mt-32 max-w-5xl mx-auto px-4 text-left relative z-10">
+                            <ScrollRevealCard>
+                                <div className="text-center mb-12">
+                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/10 ring-1 ring-accent/30 mb-4">
+                                        <FaTrophy className="text-accent text-xs" />
+                                        <span className="text-xs font-black uppercase tracking-widest text-accent">Todo en Uno Sin Límites</span>
+                                    </div>
+                                    <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-text-primary mb-4">
+                                        La Alternativa Gratuita a las <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-blue-400">Apps de Gimnasio de Pago</span>
+                                    </h2>
+                                    <p className="text-text-secondary font-medium text-base sm:text-lg max-w-2xl mx-auto">
+                                        Mientras que otras aplicaciones limitan cuántas rutinas puedes guardar o cobran suscripciones mensuales por el escáner de códigos de barras y gráficas, en <strong>Pro Fitness Glass</strong> tienes todo desbloqueado.
+                                    </p>
+                                </div>
+
+                                <div className="landing-liquid-glass rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="border-b border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 text-xs font-black uppercase tracking-wider text-text-secondary">
+                                                    <th className="py-4 px-5">Función de Entrenamiento y Nutrición</th>
+                                                    <th className="py-4 px-5 text-accent">Pro Fitness Glass</th>
+                                                    <th className="py-4 px-5 text-text-tertiary">Apps Tradicionales (Versión Gratis)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-black/5 dark:divide-white/5 text-sm font-medium">
+                                                <tr>
+                                                    <td className="py-3.5 px-5 font-bold text-text-primary">Rutinas de Gimnasio Personalizadas</td>
+                                                    <td className="py-3.5 px-5 text-emerald-400 font-black">Ilimitadas Gratis</td>
+                                                    <td className="py-3.5 px-5 text-text-tertiary">Limitado a 3 o 4 rutinas</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="py-3.5 px-5 font-bold text-text-primary">Entrenador IA de Sobrecarga Progresiva</td>
+                                                    <td className="py-3.5 px-5 text-emerald-400 font-black">Incluido Gratis</td>
+                                                    <td className="py-3.5 px-5 text-text-tertiary">Solo en suscripción Pro</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="py-3.5 px-5 font-bold text-text-primary">Contador de Calorías, Macros y Escáner con IA</td>
+                                                    <td className="py-3.5 px-5 text-emerald-400 font-black">Integrado en la misma App</td>
+                                                    <td className="py-3.5 px-5 text-text-tertiary">Requiere instalar otra app de pago</td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="py-3.5 px-5 font-bold text-text-primary">Mapa Térmico de Fatiga Muscular y 1RM</td>
+                                                    <td className="py-3.5 px-5 text-emerald-400 font-black">100% Desbloqueado</td>
+                                                    <td className="py-3.5 px-5 text-text-tertiary">De pago mensual / anual</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </ScrollRevealCard>
+                        </div>
+
+                        {/* --- SECCIÓN: PREGUNTAS FRECUENTES DE GIMNASIO (SEO FAQ) --- */}
+                        <div className="w-full mt-32 max-w-5xl mx-auto px-4 text-left relative z-10">
+                            <ScrollRevealCard>
+                                <div className="text-center mb-12">
+                                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 ring-1 ring-purple-500/30 mb-4">
+                                        <FaCircleQuestion className="text-purple-400 text-xs" />
+                                        <span className="text-xs font-black uppercase tracking-widest text-purple-400">Dudas Resueltas</span>
+                                    </div>
+                                    <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-text-primary">
+                                        Preguntas Frecuentes sobre <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-purple-400">Gimnasio y Entrenamiento</span>
+                                    </h2>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="landing-liquid-glass p-6 sm:p-7 rounded-[28px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
+                                        <h3 className="text-lg font-black text-text-primary mb-2">
+                                            ¿Cuál es la mejor app gratis para apuntar pesos y rutinas en el gimnasio?
+                                        </h3>
+                                        <p className="text-sm font-medium text-text-secondary leading-relaxed">
+                                            <strong>Pro Fitness Glass</strong> permite crear rutinas personalizadas (Push Pull Legs, Torso Pierna, Full Body), registrar series, repeticiones, pesos y RPE sin límite, calcular tu 1RM automáticamente y visualizar tu mapa térmico de fatiga muscular de forma 100% gratuita en Web, Android e iOS.
+                                        </p>
+                                    </div>
+
+                                    <div className="landing-liquid-glass p-6 sm:p-7 rounded-[28px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
+                                        <h3 className="text-lg font-black text-text-primary mb-2">
+                                            ¿Cómo aplicar la sobrecarga progresiva para ganar masa muscular?
+                                        </h3>
+                                        <p className="text-sm font-medium text-text-secondary leading-relaxed">
+                                            La sobrecarga progresiva consiste en aumentar gradualmente la tensión mecánica en tus ejercicios de gimnasio: subiendo de 1,25 a 2,5 kg en la barra, logrando 1 o 2 repeticiones extra con el mismo peso o mejorando tu control técnico. La app compara cada serie con tu sesión anterior en tiempo real.
+                                        </p>
+                                    </div>
+
+                                    <div className="landing-liquid-glass p-6 sm:p-7 rounded-[28px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
+                                        <h3 className="text-lg font-black text-text-primary mb-2">
+                                            ¿Cómo saber cuántas calorías y proteínas tomar para hipertrofia o definición?
+                                        </h3>
+                                        <p className="text-sm font-medium text-text-secondary leading-relaxed">
+                                            Puedes usar nuestra <a href="/calculadora-calorias-macros" className="text-accent underline font-bold">Calculadora de Calorías y Macros</a> gratuita basada en la ecuación de Mifflin-St Jeor. Para ganar músculo o perder grasa preservando tu fuerza, se recomiendan entre 1,8 y 2,2 g de proteína por kilo de peso corporal al día.
+                                        </p>
+                                    </div>
+
+                                    <div className="landing-liquid-glass p-6 sm:p-7 rounded-[28px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
+                                        <h3 className="text-lg font-black text-text-primary mb-2">
+                                            ¿Cómo calcular mi 1RM (repetición máxima) sin riesgo de lesión?
+                                        </h3>
+                                        <p className="text-sm font-medium text-text-secondary leading-relaxed">
+                                            No necesitas levantar tu peso límite a 1 sola repetición. Con nuestra <a href="/calculadora-1rm" className="text-accent underline font-bold">Calculadora de 1RM</a> puedes introducir un peso que muevas entre 3 y 10 repeticiones y obtener al instante tu fuerza máxima estimada y tu tabla de porcentajes de entrenamiento.
+                                        </p>
+                                    </div>
+                                </div>
+                            </ScrollRevealCard>
+                        </div>
+
                         {/* --- SECCIÓN: TRANSPARENCIA Y USO DE DATOS --- */}
                         <div className="w-full mt-32 max-w-5xl mx-auto px-4 text-left relative z-10">
                             <ScrollRevealCard>
-                                <div className="p-8 md:p-12 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl relative overflow-hidden transform-gpu">
+                                <div className="landing-liquid-glass p-8 md:p-12 rounded-[32px] bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 backdrop-blur-xl relative overflow-hidden transform-gpu">
                                     <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
                                         <Shield size={200} />
                                     </div>
@@ -920,43 +1246,8 @@ const LandingPage = ({ onLogin, onRegister }) => {
 
                     
 
-                    {/* --- FOOTER LEGAL Y SOCIAL --- */}
-                    <footer className="p-10 pb-16 text-center border-t border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 backdrop-blur-xl relative z-20 transform-gpu">
-
-                        <div className="flex flex-wrap justify-center gap-6 sm:gap-8 mb-8 px-4">
-                            <a href="https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-[#4285F4] transition-all transform hover:scale-125 hover:-translate-y-1">
-                                <FaGooglePlay size={26} />
-                            </a>
-                            <a href="https://www.instagram.com/pro_fitness_glass/" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-[#E1306C] transition-all transform hover:scale-125 hover:-translate-y-1">
-                                <Instagram size={28} />
-                            </a>
-                            <a href="https://www.tiktok.com/@pro_fitness_glass" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-[#00f2fe] transition-all transform hover:scale-125 hover:-translate-y-1">
-                                <TikTokIcon size={28} />
-                            </a>
-                            <a href="https://www.youtube.com/@ProFitnessGlass" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-[#FF0000] transition-all transform hover:scale-125 hover:-translate-y-1">
-                                <Youtube size={28} />
-                            </a>
-                            <a href="https://github.com/Deathvks/Pro-Ftiness-Glass" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-text-primary transition-all transform hover:scale-125 hover:-translate-y-1">
-                                <Github size={28} />
-                            </a>
-                            <a href="https://pro-fitness-glass.zeabur.app" target="_blank" rel="noopener noreferrer" className="text-text-secondary hover:text-accent transition-all transform hover:scale-125 hover:-translate-y-1">
-                                <Globe size={28} />
-                            </a>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row justify-center gap-6 text-sm text-text-secondary font-bold mb-8 tracking-wide">
-                            <a href="/privacy" className="hover:text-accent transition-colors flex items-center justify-center gap-3">
-                                Política de Privacidad
-                            </a>
-                            <span className="hidden sm:block text-text-secondary/30">•</span>
-                            <a href="/terms" className="hover:text-accent transition-colors flex items-center justify-center gap-3">
-                                Términos del Servicio
-                            </a>
-                        </div>
-                        <p className="text-xs font-bold text-text-tertiary uppercase tracking-widest opacity-60">
-                            © {currentYear} Pro Fitness Glass. Desarrollado con pasión y cafeína. v{appVersion}
-                        </p>
-                    </footer>
+                    {/* --- FOOTER UNIFICADO (PublicPageFooter) --- */}
+                    <PublicPageFooter className="relative z-20" />
 
                 </div>
             </div>

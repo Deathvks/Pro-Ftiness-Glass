@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { 
-  Palette, Sun, Moon, MonitorCog, Smartphone, Check, ChevronLeft, ChevronRight, LockOpen, Lock, Info, Vibrate, Droplet
+  Palette, Sun, Moon, MonitorCog, Smartphone, Check, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, LockOpen, Lock, Info, Droplet, Sparkles, Battery, Gauge, X
 } from 'lucide-react';
 import { FaMeteor } from 'react-icons/fa6'; 
 import useAppStore from '../store/useAppStore';
@@ -11,6 +11,46 @@ import GlassCard from '../components/GlassCard';
 import { useToast } from '../hooks/useToast';
 import LevelBadge from '../components/LevelBadge';
 import ConfirmationModal from '../components/ConfirmationModal';
+import ModalPortal from '../components/ModalPortal';
+import useModalLock from '../hooks/useModalLock';
+
+const GalaxyEffectsWarningModal = ({ onConfirm, onCancel }) => {
+  useModalLock();
+
+  return (
+    <ModalPortal>
+      <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 !pt-[calc(1rem+var(--safe-top))]" onClick={onCancel}>
+        <section
+          aria-labelledby="galaxy-effects-title"
+          className="relative mt-auto w-full max-w-sm rounded-t-[32px] rounded-b-none border border-glass-border bg-bg-primary p-6 pt-3 pb-[calc(1.5rem+var(--safe-bottom))] text-center shadow-2xl animate-[slide-up_0.3s_ease-out] sm:mt-0 sm:rounded-[32px] sm:p-8 sm:animate-[scale-in_0.3s_ease-out]"
+          onClick={event => event.stopPropagation()}
+        >
+          <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-black/10 dark:bg-white/20 sm:hidden" aria-hidden="true" />
+          <button type="button" onClick={onCancel} aria-label="Cerrar" className="absolute right-4 top-4 rounded-full p-2 text-text-secondary transition hover:bg-black/5 hover:text-text-primary dark:hover:bg-white/5 sm:right-5 sm:top-5">
+            <X size={20} />
+          </button>
+          <div className="mb-5 flex justify-center">
+            <div className="rounded-[20px] bg-accent/10 p-4 text-accent ring-1 ring-accent/20">
+              <Sparkles size={30} strokeWidth={1.8} />
+            </div>
+          </div>
+          <h2 id="galaxy-effects-title" className="mb-3 text-xl font-extrabold tracking-tight text-text-primary">Efectos animados de Galaxia</h2>
+          <p className="mb-5 text-sm leading-relaxed text-text-secondary">
+            Las estrellas en movimiento y los meteoros pueden exigir más al dispositivo, aumentar el consumo de batería y reducir la fluidez en algunos móviles. Puedes desactivarlos cuando quieras desde Personalización.
+          </p>
+          <div className="mb-6 flex items-center justify-center gap-5 text-[11px] font-semibold text-text-muted">
+            <span className="inline-flex items-center gap-1.5"><Gauge size={15} className="text-accent" /> Más carga gráfica</span>
+            <span className="inline-flex items-center gap-1.5"><Battery size={15} className="text-accent" /> Consumo de batería</span>
+          </div>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row">
+            <button type="button" onClick={onCancel} className="w-full rounded-xl bg-black/5 px-5 py-3 text-sm font-bold text-text-secondary transition hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10">Ahora no</button>
+            <button type="button" onClick={onConfirm} className="w-full rounded-xl bg-accent px-5 py-3 text-sm font-bold text-accent-contrast shadow-lg shadow-accent/20 transition hover:brightness-110">Activar efectos</button>
+          </div>
+        </section>
+      </div>
+    </ModalPortal>
+  );
+};
 
 // --- Constantes de Apariencia ---
 const ACCENT_OPTIONS = [
@@ -44,6 +84,16 @@ const ACCENT_OPTIONS = [
   { id: 'mango', label: 'Mango Pastel', hex: '#ffbe76', reqLevel: 10 },
   { id: 'lemonade', label: 'Limonada', hex: '#fdfd96', reqLevel: 10 },
   { id: 'cherry-blossom', label: 'Cerezo', hex: '#fccbcf', reqLevel: 10 },
+  { id: 'aurora', label: 'Aurora Boreal', hex: '#10b981', gradient: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)', reqLevel: 15 },
+  { id: 'sunset', label: 'Sunset Glow', hex: '#f43f5e', gradient: 'linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)', reqLevel: 15 },
+  { id: 'cyberpunk', label: 'Cyberpunk', hex: '#8b5cf6', gradient: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)', reqLevel: 15 },
+  { id: 'deep-ocean', label: 'Océano Profundo', hex: '#2563eb', gradient: 'linear-gradient(135deg, #2563eb 0%, #00f5d4 100%)', reqLevel: 15 },
+  { id: 'imperial-gold', label: 'Oro Imperial', hex: '#f59e0b', gradient: 'linear-gradient(135deg, #f59e0b 0%, #fde047 100%)', reqLevel: 15 },
+  { id: 'supernova', label: 'Supernova', hex: '#8b5cf6', gradient: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 35%, #3b82f6 70%, #7c3aed 100%)', reqLevel: 20, isAnimated: true },
+  { id: 'plasma', label: 'Plasma Cuántico', hex: '#10b981', gradient: 'linear-gradient(135deg, #10b981 0%, #06b6d4 35%, #3b82f6 70%, #10b981 100%)', reqLevel: 20, isAnimated: true },
+  { id: 'eternal-flame', label: 'Llama Eterna', hex: '#f97316', gradient: 'linear-gradient(135deg, #ef4444 0%, #f97316 35%, #facc15 70%, #ef4444 100%)', reqLevel: 20, isAnimated: true },
+  { id: 'abyssal-vortex', label: 'Vórtice Abisal', hex: '#3b82f6', gradient: 'linear-gradient(135deg, #1d4ed8 0%, #6366f1 35%, #14b8a6 70%, #1d4ed8 100%)', reqLevel: 20, isAnimated: true },
+  { id: 'cosmic-gold', label: 'Oro Cósmico', hex: '#f59e0b', gradient: 'linear-gradient(135deg, #d97706 0%, #fef08a 35%, #b45309 70%, #d97706 100%)', reqLevel: 20, isAnimated: true },
 ];
 
 const isIOS = () => {
@@ -88,8 +138,53 @@ const SwitchItem = ({ icon: Icon, title, subtitle, checked, onChange, disabled }
   </div>
 );
 
+const AccentButton = ({ opt, isLocked, isSelected, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    title={opt.label + (isLocked ? ` (Nivel ${opt.reqLevel})` : '')}
+    className={`group flex flex-col items-center justify-start w-full focus:outline-none select-none transition-all ${
+      isLocked ? 'opacity-40 grayscale-[0.3]' : ''
+    }`}
+  >
+    <div className="relative flex justify-center items-center w-full aspect-square">
+      <span
+        className={`w-full h-full rounded-full transition-all duration-300 group-hover:scale-105 shrink-0 ${
+          opt.isAnimated ? 'living-accent-preview' : ''
+        }`}
+        style={{
+          background: opt.gradient || opt.hex,
+          backgroundColor: opt.hex,
+          boxShadow: isSelected
+            ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80`
+            : 'none',
+        }}
+      />
+      {isSelected && (
+        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
+          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
+        </span>
+      )}
+      {isLocked && (
+        <span className="absolute inset-0 flex items-center justify-center text-black/40 dark:text-black/60 pointer-events-none drop-shadow-sm">
+          <Lock size={16} strokeWidth={2.5} />
+        </span>
+      )}
+    </div>
+    <span
+      className={`h-7 sm:h-8 flex items-center justify-center text-center text-[10px] sm:text-[11px] leading-[1.15] mt-1.5 transition-colors line-clamp-2 w-full px-0.5 ${
+        isSelected
+          ? 'text-accent font-bold'
+          : 'text-text-secondary group-hover:text-text-primary font-medium'
+      }`}
+    >
+      {opt.label}
+    </span>
+  </button>
+);
+
 export default function AppearanceScreen({ setView }) {
-  const { userProfile, hapticsEnabled, setHapticsEnabled } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, hapticsEnabled: state.hapticsEnabled, setHapticsEnabled: state.setHapticsEnabled })));
+  const { userProfile, galaxyEffectsEnabled, setGalaxyEffectsEnabled } = useAppStore(useShallow(state => ({ userProfile: state.userProfile, galaxyEffectsEnabled: state.galaxyEffectsEnabled, setGalaxyEffectsEnabled: state.setGalaxyEffectsEnabled })));
   const { addToast } = useToast();
   const { 
     theme, activeTheme, setTheme, accent, setAccent, 
@@ -99,6 +194,16 @@ export default function AppearanceScreen({ setView }) {
   
   const [showThemeReloadModal, setShowThemeReloadModal] = useState(false);
   const [pendingThemeAction, setPendingThemeAction] = useState(null);
+  const [showGalaxyEffectsWarning, setShowGalaxyEffectsWarning] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(() => typeof window !== 'undefined' && window.matchMedia('(hover: none), (pointer: coarse)').matches);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(hover: none), (pointer: coarse)');
+    const updateTouchDevice = event => setIsTouchDevice(event.matches);
+    setIsTouchDevice(mediaQuery.matches);
+    mediaQuery.addEventListener?.('change', updateTouchDevice);
+    return () => mediaQuery.removeEventListener?.('change', updateTouchDevice);
+  }, []);
 
   const isGalaxyUnlocked = (userProfile?.referralCount || 0) >= 5 || userProfile?.role === 'admin';
   const isGalaxyActive = activeTheme === 'galaxy';
@@ -112,12 +217,7 @@ export default function AppearanceScreen({ setView }) {
   
 
   const handleThemeClick = (mode) => {
-    if (isIOS()) {
-      setPendingThemeAction({ type: 'apply', payload: mode });
-      setShowThemeReloadModal(true);
-    } else {
-      setTheme(mode);
-    }
+    setTheme(mode);
   };
 
   const confirmThemeReload = () => {
@@ -132,23 +232,40 @@ export default function AppearanceScreen({ setView }) {
     setPendingThemeAction(null);
   };
 
-  const glassCardClass = "glass p-6 sm:p-8 rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300 mb-6";
+  const [isMyThemesOpenMobile, setIsMyThemesOpenMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('my_themes_expanded_mobile');
+      if (saved !== null) return saved === 'true';
+    }
+    return isGalaxyActive || isDesertActive || isOceanActive || isTestingTheme;
+  });
+
+  const toggleMyThemesMobile = () => {
+    setIsMyThemesOpenMobile(prev => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('my_themes_expanded_mobile', String(next));
+      }
+      return next;
+    });
+  };
+
+  const glassCardClass = "glass p-5 sm:p-7 lg:p-8 rounded-[28px] sm:rounded-[32px] border-none ring-1 ring-black/5 dark:ring-white/10 flex flex-col relative overflow-hidden transition-all duration-300";
 
   return (
-    <div className="px-4 pt-6 pb-28 md:pb-8 md:p-8 max-w-4xl mx-auto animate-[fade-in_0.3s_ease-out]">
+    <div className="px-4 md:px-8 pt-4 md:pt-2 pb-28 md:pb-8 max-w-4xl lg:max-w-6xl xl:max-w-7xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <Helmet>
         <title>Apariencia - Pro Fitness Glass</title>
       </Helmet>
-      
 
-
-      <div className="w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <GlassCard className={glassCardClass}>
+        {/* 1) Apariencia de la App: a la izquierda en PC, abajo en móvil */}
+        <GlassCard id="tutorial-appearance-panel" className={`${glassCardClass} order-2 lg:order-1 lg:col-span-7 xl:col-span-7`}>
           <SectionTitle icon={Palette} title="Apariencia de la App" />
 
           {/* Temas Base */}
-          <div className="mb-8">
+          <div id="tutorial-appearance-base-themes" className="mb-8">
             <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 ml-1">Tema Principal</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {['system', 'light', 'dark', 'oled'].map((mode) => (
@@ -172,36 +289,22 @@ export default function AppearanceScreen({ setView }) {
             </div>
           </div>
 
-          {/* Acentos */}
-          <div className="mb-8">
+                    {/* Acentos */}
+          <div id="tutorial-appearance-accents" className="mb-8">
             <div className={`transition-all duration-300 ${isGalaxyActive || isDesertActive || isOceanActive ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
               
               {/* Por defecto */}
               <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 ml-1">Acento de Color</h3>
-              <div className="grid grid-cols-6 gap-3 sm:gap-4 mb-6">
-                {ACCENT_OPTIONS.filter(o => !o.reqLevel).map(opt => {
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => setAccent(opt.id)}
-                      title={opt.label}
-                      className="group relative flex justify-center items-center w-full aspect-square"
-                    >
-                      <span
-                        className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
-                        style={{
-                          backgroundColor: opt.hex,
-                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
-                        }}
-                      />
-                      {accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && (
-                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
-                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+              <div className="grid grid-cols-5 gap-y-4 gap-x-2.5 sm:gap-4 mb-6">
+                {ACCENT_OPTIONS.filter(o => !o.reqLevel).map(opt => (
+                  <AccentButton
+                    key={opt.id}
+                    opt={opt}
+                    isLocked={false}
+                    isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive}
+                    onClick={() => setAccent(opt.id)}
+                  />
+                ))}
               </div>
 
               {/* Por niveles */}
@@ -209,17 +312,20 @@ export default function AppearanceScreen({ setView }) {
               
               {/* Nivel 5 */}
               <div className="flex items-center gap-2 mb-3 ml-1 mt-6">
-                  <div className="scale-[0.6] origin-left -my-3">
-                    <LevelBadge level={5} size="sm" />
-                  </div>
-                  <h4 className="text-sm font-black text-text-primary tracking-tight">Nivel 5</h4>
+                <div className="scale-[0.6] origin-left -my-3">
+                  <LevelBadge level={5} size="sm" />
                 </div>
-              <div className="grid grid-cols-5 gap-3 sm:gap-4 mb-6">
+                <h4 className="text-sm font-black text-text-primary tracking-tight">Nivel 5</h4>
+              </div>
+              <div className="grid grid-cols-5 gap-y-4 gap-x-2.5 sm:gap-4 mb-6">
                 {ACCENT_OPTIONS.filter(o => o.reqLevel === 5).map(opt => {
                   const isLocked = (userProfile?.level || 1) < 5 && userProfile?.role !== 'admin';
                   return (
-                    <button
+                    <AccentButton
                       key={opt.id}
+                      opt={opt}
+                      isLocked={isLocked}
+                      isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked}
                       onClick={() => {
                         if (isLocked) {
                           addToast(`Requiere nivel 5 para aplicarlo`, 'info', 'lock');
@@ -227,44 +333,27 @@ export default function AppearanceScreen({ setView }) {
                           setAccent(opt.id);
                         }
                       }}
-                      title={opt.label + (isLocked ? ` (Nivel 5)` : '')}
-                      className={`group relative flex justify-center items-center w-full aspect-square ${isLocked ? 'opacity-40 grayscale-[0.3]' : ''}`}
-                    >
-                      <span
-                        className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
-                        style={{
-                          backgroundColor: opt.hex,
-                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
-                        }}
-                      />
-                      {accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked && (
-                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
-                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
-                        </span>
-                      )}
-                      {isLocked && (
-                        <span className="absolute inset-0 flex items-center justify-center text-black/40 dark:text-black/60 pointer-events-none drop-shadow-sm">
-                          <Lock size={16} strokeWidth={2.5} />
-                        </span>
-                      )}
-                    </button>
+                    />
                   );
                 })}
               </div>
 
               {/* Nivel 10 */}
               <div className="flex items-center gap-2 mb-3 ml-1 mt-6">
-                  <div className="scale-[0.6] origin-left -my-3">
-                    <LevelBadge level={10} size="sm" />
-                  </div>
-                  <h4 className="text-sm font-black text-text-primary tracking-tight">Nivel 10</h4>
+                <div className="scale-[0.6] origin-left -my-3">
+                  <LevelBadge level={10} size="sm" />
                 </div>
-              <div className="grid grid-cols-5 gap-3 sm:gap-4 mb-2">
+                <h4 className="text-sm font-black text-text-primary tracking-tight">Nivel 10</h4>
+              </div>
+              <div className="grid grid-cols-5 gap-y-4 gap-x-2.5 sm:gap-4 mb-6">
                 {ACCENT_OPTIONS.filter(o => o.reqLevel === 10).map(opt => {
                   const isLocked = (userProfile?.level || 1) < 10 && userProfile?.role !== 'admin';
                   return (
-                    <button
+                    <AccentButton
                       key={opt.id}
+                      opt={opt}
+                      isLocked={isLocked}
+                      isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked}
                       onClick={() => {
                         if (isLocked) {
                           addToast(`Requiere nivel 10 para aplicarlo`, 'info', 'lock');
@@ -272,56 +361,141 @@ export default function AppearanceScreen({ setView }) {
                           setAccent(opt.id);
                         }
                       }}
-                      title={opt.label + (isLocked ? ` (Nivel 10)` : '')}
-                      className={`group relative flex justify-center items-center w-full aspect-square ${isLocked ? 'opacity-40 grayscale-[0.3]' : ''}`}
-                    >
-                      <span
-                        className="w-full h-full rounded-full transition-all duration-300 hover:scale-110 shrink-0"
-                        style={{
-                          backgroundColor: opt.hex,
-                          boxShadow: accent === opt.id && !isGalaxyActive ? `0 0 0 3px var(--bg-primary), 0 0 0 5px ${opt.hex}, 0 4px 10px ${opt.hex}80` : 'none'
-                        }}
-                      />
-                      {accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked && (
-                        <span className="absolute inset-0 flex items-center justify-center text-white pointer-events-none drop-shadow-sm">
-                          <Check size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" />
-                        </span>
-                      )}
-                      {isLocked && (
-                        <span className="absolute inset-0 flex items-center justify-center text-black/40 dark:text-black/60 pointer-events-none drop-shadow-sm">
-                          <Lock size={16} strokeWidth={2.5} />
-                        </span>
-                      )}
-                    </button>
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Nivel 15 · Degradados */}
+              <div className="flex items-center gap-2 mb-3 ml-1 mt-6">
+                <div className="scale-[0.6] origin-left -my-3">
+                  <LevelBadge level={15} size="sm" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-black text-text-primary tracking-tight leading-none">Nivel 15</h4>
+                  <span className="inline-flex items-center justify-center text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 tracking-wider leading-none">
+                    <span className="text-accent leading-none">Degradados</span>
+                  </span>
+                </div>
+              </div>
+              <div className="grid grid-cols-5 gap-y-4 gap-x-2.5 sm:gap-4 mb-6">
+                {ACCENT_OPTIONS.filter(o => o.reqLevel === 15).map(opt => {
+                  const isLocked = (userProfile?.level || 1) < 15 && userProfile?.role !== 'admin';
+                  return (
+                    <AccentButton
+                      key={opt.id}
+                      opt={opt}
+                      isLocked={isLocked}
+                      isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked}
+                      onClick={() => {
+                        if (isLocked) {
+                          addToast(`Requiere nivel 15 para aplicarlo`, 'info', 'lock');
+                        } else {
+                          setAccent(opt.id);
+                        }
+                      }}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Nivel 20 · Dinámicos Animados */}
+              <div className="flex items-center gap-2 mb-3 ml-1 mt-6">
+                <div className="scale-[0.6] origin-left -my-3">
+                  <LevelBadge level={20} size="sm" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-black text-text-primary tracking-tight leading-none">Nivel 20</h4>
+                  <span className="inline-flex items-center justify-center text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 tracking-wider leading-none">
+                    <span className="text-accent leading-none">Animados</span>
+                  </span>
+                </div>
+              </div>
+              <div className="grid grid-cols-5 gap-y-4 gap-x-2.5 sm:gap-4 mb-2">
+                {ACCENT_OPTIONS.filter(o => o.reqLevel === 20).map(opt => {
+                  const isLocked = (userProfile?.level || 1) < 20 && userProfile?.role !== 'admin';
+                  return (
+                    <AccentButton
+                      key={opt.id}
+                      opt={opt}
+                      isLocked={isLocked}
+                      isSelected={accent === opt.id && !isGalaxyActive && !isDesertActive && !isOceanActive && !isLocked}
+                      onClick={() => {
+                        if (isLocked) {
+                          addToast(`Requiere nivel 20 para aplicarlo`, 'info', 'lock');
+                        } else {
+                          setAccent(opt.id);
+                        }
+                      }}
+                    />
                   );
                 })}
               </div>
             </div>
           </div>
           
-          {/* Vibración UI */}
-          <div>
-            <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 ml-1">Experiencia UX</h3>
-            <SwitchItem
-              icon={Vibrate}
-              title="Vibración Háptica"
-              subtitle="Feedback táctil al pulsar botones y completar series"
-              checked={hapticsEnabled}
-              onChange={() => {
-                const newValue = !hapticsEnabled;
-                setHapticsEnabled(newValue);
-                addToast(newValue ? 'Vibración activada' : 'Vibración desactivada', 'success');
-              }}
-            />
-          </div>
+          
         </GlassCard>
 
-        {/* Mis Temas (Desbloqueables) */}
-        <GlassCard className={glassCardClass}>
-          <SectionTitle icon={FaMeteor} title="Mis Temas" />
-          <p className="text-sm text-text-secondary mb-6 ml-1">
-            Temas exclusivos desbloqueados mediante retos y progreso en la aplicación.
-          </p>
+        {/* 2) Mis Temas: a la derecha en PC, arriba y desplegable/solapable en móvil */}
+        <GlassCard id="tutorial-appearance-my-themes" className={`${glassCardClass} order-1 lg:order-2 lg:col-span-5 xl:col-span-5`}>
+          {/* Cabecera / Trigger Móvil de Desplegar/Solapar */}
+          <div 
+            onClick={() => {
+              if (typeof window !== 'undefined' && window.innerWidth < 1024) toggleMyThemesMobile();
+            }}
+            className="flex items-center justify-between cursor-pointer select-none lg:cursor-default"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-[16px] bg-black/5 dark:bg-white/5 text-accent shrink-0">
+                <FaMeteor size={24} strokeWidth={2.5} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">Mis Temas</h2>
+                  {(isGalaxyActive || isDesertActive || isOceanActive) && (
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-accent/15 text-accent tracking-wider">
+                      {isGalaxyActive ? 'Galaxia' : isDesertActive ? 'Desierto' : 'Océano'}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-text-secondary mt-0.5 hidden lg:block">
+                  Temas exclusivos desbloqueados mediante retos y progreso en la aplicación.
+                </p>
+                <p className="text-[11px] text-text-muted mt-0.5 lg:hidden block">
+                  {isMyThemesOpenMobile ? 'Toca para solapar' : '3 temas exclusivos · Toca para desplegar'}
+                </p>
+              </div>
+            </div>
+
+            {/* Controles móviles para desplegar/solapar */}
+            <div className="flex items-center gap-2 lg:hidden">
+              {!isMyThemesOpenMobile && (
+                <div className="flex -space-x-1 items-center mr-1 opacity-90">
+                  <span className="w-5 h-5 rounded-full bg-[#a855f7]/20 flex items-center justify-center text-[10px] ring-1 ring-white/10" title="Galaxia">🌌</span>
+                  <span className="w-5 h-5 rounded-full bg-[#f59e0b]/20 flex items-center justify-center text-[10px] ring-1 ring-white/10" title="Desierto">🏜️</span>
+                  <span className="w-5 h-5 rounded-full bg-[#0ea5e9]/20 flex items-center justify-center text-[10px] ring-1 ring-white/10" title="Océano">🌊</span>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleMyThemesMobile();
+                }}
+                className="p-2 rounded-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-text-secondary transition-all active:scale-95"
+                aria-label={isMyThemesOpenMobile ? "Solapar mis temas" : "Desplegar mis temas"}
+              >
+                <ChevronDown 
+                  size={18} 
+                  className={`transition-transform duration-300 ${isMyThemesOpenMobile ? 'rotate-180' : 'rotate-0'}`} 
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Contenido: Desplegable en móvil, Siempre visible en PC */}
+          <div className={`${isMyThemesOpenMobile ? 'block' : 'hidden'} lg:block transition-all duration-300 ${isMyThemesOpenMobile ? 'mt-5' : 'mt-4'}`}>
 
           <div className={`p-4 rounded-[20px] transition-all duration-500 border ${theme === 'galaxy' || isTestingTheme ? 'bg-[#a855f7]/10 border-[#a855f7]/30 shadow-lg shadow-[#a855f7]/20 scale-[1.02]' : 'bg-black/5 dark:bg-white/5 border-transparent'}`}>
             <div className="flex items-center justify-between">
@@ -373,6 +547,20 @@ export default function AppearanceScreen({ setView }) {
               <p className="text-[10px] sm:text-xs text-[#a855f7] font-bold mt-4 ml-1 flex items-center gap-1.5">
                 <Info size={14} /> El Tema Galaxia usa su propio acento estelar (desactiva el acento manual).
               </p>
+            )}
+            {isTouchDevice && isGalaxyActive && (
+              <div className="mt-4 border-t border-[#a855f7]/15 pt-4">
+                <SwitchItem
+                  icon={FaMeteor}
+                  title="Estrellas animadas y meteoros"
+                  subtitle="Añade movimiento al fondo del tema Galaxia"
+                  checked={galaxyEffectsEnabled}
+                  onChange={() => {
+                    if (galaxyEffectsEnabled) setGalaxyEffectsEnabled(false);
+                    else setShowGalaxyEffectsWarning(true);
+                  }}
+                />
+              </div>
             )}
           </div>
 
@@ -529,7 +717,19 @@ export default function AppearanceScreen({ setView }) {
               </p>
             )}
           </div>
-        </GlassCard>
+
+          {/* Botón inferior móvil para solapar */}
+          <div className="mt-5 pt-3 border-t border-black/5 dark:border-white/5 flex justify-center lg:hidden">
+            <button
+              type="button"
+              onClick={toggleMyThemesMobile}
+              className="text-xs font-bold text-text-muted hover:text-text-primary flex items-center gap-1.5 py-1.5 px-4 rounded-full bg-black/5 dark:bg-white/5 active:scale-95 transition-all"
+            >
+              <ChevronUp size={14} /> Solapar Mis Temas
+            </button>
+          </div>
+        </div>
+      </GlassCard>
 
         {showThemeReloadModal && (
           <ConfirmationModal
@@ -541,6 +741,15 @@ export default function AppearanceScreen({ setView }) {
               setPendingThemeAction(null);
             }}
             confirmText="Recargar"
+          />
+        )}
+        {showGalaxyEffectsWarning && (
+          <GalaxyEffectsWarningModal
+            onConfirm={() => {
+              setGalaxyEffectsEnabled(true);
+              setShowGalaxyEffectsWarning(false);
+            }}
+            onCancel={() => setShowGalaxyEffectsWarning(false)}
           />
         )}
       </div>

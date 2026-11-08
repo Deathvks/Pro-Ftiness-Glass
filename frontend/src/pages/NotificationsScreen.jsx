@@ -1,6 +1,6 @@
 /* frontend/src/pages/NotificationsScreen.jsx */
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import useAppStore from '../store/useAppStore';
 import { useToast } from '../hooks/useToast';
 import { useShallow } from 'zustand/react/shallow';
@@ -11,14 +11,14 @@ import {
   Filter, ChevronDown, ChevronRight, Loader2, Smartphone, Globe, Clock, Shield, ChevronLeft,
   UserPlus, Users, Zap, Award, Settings, MessageCircle
 } from 'lucide-react';
-import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import GlassCard from '../components/GlassCard';
+import { getNotification, markAsRead } from '../services/notificationService';
 
 // --- Imports de Modales Separados ---
 import DeleteNotificationModal from '../components/DeleteNotificationModal';
 import DeleteAllNotificationsModal from '../components/DeleteAllNotificationsModal';
-import { useLocalNotifications } from '../hooks/useLocalNotifications';
+import { cancelLocalReminders, localReminderKey, useLocalNotifications } from '../hooks/useLocalNotifications';
 
 // --- Utilidad para fechas Robustecida ---
 const parseDateSafe = (dateStr) => {
@@ -102,33 +102,27 @@ const ToggleSwitch = ({ checked, onChange, label, description }) => (
 );
 
 // --- Sub-componente: Modal de Configuración ---
-const NotificationSettingsModal = ({ onClose, scheduleEngagement, scheduleDaily }) => {
-  const [engagement, setEngagement] = useState(() => localStorage.getItem('notif_engagement') !== 'false');
-  const [daily, setDaily] = useState(() => localStorage.getItem('notif_daily') !== 'false');
+const NotificationSettingsModal = ({ onClose, userId }) => {
+  const { requestPermissions, scheduleEngagementNotifications, scheduleDailyReminders } = useLocalNotifications();
+  const { addToast } = useToast();
+  const [engagement, setEngagement] = useState(() => localStorage.getItem(localReminderKey(userId, 'engagement')) === 'true');
+  const [daily, setDaily] = useState(() => localStorage.getItem(localReminderKey(userId, 'daily')) === 'true');
 
-  const handleEngagementChange = async (val) => {
-    setEngagement(val);
-    localStorage.setItem('notif_engagement', val);
-    if (Capacitor.isNativePlatform()) {
-      if (val) {
-        await scheduleEngagement();
-      } else {
-        const pending = await LocalNotifications.getPending();
-        const ids = pending.notifications.filter(n => n.id >= 2000 && n.id < 2100).map(n => ({ id: n.id }));
-        if (ids.length) await LocalNotifications.cancel({ notifications: ids });
-      }
+  const changeReminder = async (category, enabled) => {
+    if (enabled && !(await requestPermissions())) {
+      addToast('El dispositivo no ha concedido el permiso de notificaciones.', 'warning');
+      return;
     }
-  };
+    localStorage.setItem(localReminderKey(userId, category), String(enabled));
+    if (category === 'engagement') setEngagement(enabled);
+    else setDaily(enabled);
 
-  const handleDailyChange = async (val) => {
-    setDaily(val);
-    localStorage.setItem('notif_daily', val);
-    if (Capacitor.isNativePlatform()) {
-      if (val) {
-        await scheduleDaily();
-      } else {
-        await LocalNotifications.cancel({ notifications: [{ id: 1001 }, { id: 1002 }] });
-      }
+    if (!enabled) {
+      await cancelLocalReminders({ engagement: category === 'engagement', daily: category === 'daily' });
+    } else if (category === 'engagement') {
+      await scheduleEngagementNotifications();
+    } else {
+      await scheduleDailyReminders();
     }
   };
 
@@ -146,13 +140,13 @@ const NotificationSettingsModal = ({ onClose, scheduleEngagement, scheduleDaily 
         <div className="bg-black/5 dark:bg-white/5 rounded-[24px] p-5 space-y-1">
           <ToggleSwitch 
             checked={engagement} 
-            onChange={handleEngagementChange} 
+            onChange={enabled => changeReminder('engagement', enabled)}
             label="Motivación Diaria" 
             description="Frases, consejos y recordatorios de hidratación."
           />
           <ToggleSwitch 
             checked={daily} 
-            onChange={handleDailyChange} 
+            onChange={enabled => changeReminder('daily', enabled)}
             label="Recordatorios Rutinarios" 
             description="Avisos para registrar comidas y login diario."
           />
@@ -169,20 +163,84 @@ const NotificationSettingsModal = ({ onClose, scheduleEngagement, scheduleDaily 
   );
 };
 
-// --- Sub-componente: Modal de Detalles de Login ---
-const LoginDetailsModal = ({ notification, onClose, timeZone }) => {
-  if (!notification || !notification.data) return null;
 
-  const { ip, userAgent, date } = notification.data;
+export const formatXpReasonClient = (reason) => {
+  if (!reason || typeof reason !== 'string') return 'tu actividad';
+  const trimmed = reason.trim();
+  if (/^login\s*diario$/i.test(trimmed)) return 'iniciar sesión hoy';
+  if (/^peso\s*registrado(\s*\(perfil\))?$/i.test(trimmed)) return 'registrar tu peso corporal';
+  if (/^medida\s*registrada:\s*(.+)$/i.test(trimmed)) {
+    const m = trimmed.match(/^medida\s*registrada:\s*(.+)$/i);
+    return 'registrar tu medida de ' + m[1].toLowerCase();
+  }
+  if (/^rutina\s*creada$/i.test(trimmed)) return 'crear una nueva rutina';
+  if (/fue descargada/i.test(trimmed)) return 'que un atleta descargó tu rutina';
+  if (/^comida\s*registrada$/i.test(trimmed)) return 'registrar tu comida';
+  if (/^creatina\s*registrada$/i.test(trimmed)) return 'registrar tu toma de creatina';
+  if (/^agua\s*registrada$/i.test(trimmed) || /^reto:\s*objetivo de agua$/i.test(trimmed)) return 'cumplir tu objetivo de agua diario';
+  if (/^objetivo\s*de\s*calor[ií]as\s*cumplido$/i.test(trimmed)) return 'cumplir tu objetivo de calorías de hoy';
+  if (/completado$/i.test(trimmed)) return 'completar tu ' + trimmed.toLowerCase();
+  if (/^reto\s*infinito:\s*(.+)$/i.test(trimmed)) {
+    const m = trimmed.match(/^reto\s*infinito:\s*(.+)$/i);
+    return 'completar el reto "' + m[1] + '"';
+  }
+  if (/^reto:\s*(.+)$/i.test(trimmed)) {
+    const m = trimmed.match(/^reto:\s*(.+)$/i);
+    return 'completar el reto "' + m[1] + '"';
+  }
+  if (/^sobrecarga\s*progresiva:\s*(.+)$/i.test(trimmed)) {
+    const m = trimmed.match(/^sobrecarga\s*progresiva:\s*(.+)$/i);
+    return 'lograr sobrecarga progresiva en ' + m[1];
+  }
+  if (/^insignia:\s*(.+)$/i.test(trimmed)) {
+    const m = trimmed.match(/^insignia:\s*(.+)$/i);
+    return 'desbloquear la insignia "' + m[1] + '"';
+  }
+  if (/^por\s+/i.test(trimmed)) {
+    return trimmed.replace(/^por\s+/i, '');
+  }
+  return trimmed;
+};
+
+export const getNotificationDisplay = (n) => {
+  if (!n) return { title: '', message: '' };
+  let title = n.title;
+  let message = n.message;
+
+  const isXp = n.data?.type === 'xp' || /^\+\d+\s*XP/i.test(n.title);
+  if (isXp) {
+    const amount = n.data?.amount || n.title?.match(/\+(\d+)\s*XP/i)?.[1];
+    const rawReason = n.data?.reason;
+    if (amount) {
+      title = '+' + amount + ' XP';
+      if (rawReason) {
+        message = 'Has ganado ' + amount + ' XP por ' + formatXpReasonClient(rawReason) + '.';
+      } else if (message && message.includes('Motivo:')) {
+        const parts = message.split('Motivo:');
+        message = 'Has ganado ' + amount + ' XP por ' + formatXpReasonClient(parts[1]?.trim()) + '.';
+      } else if (message && message.toLowerCase().includes('tu actividad te ha dado puntos')) {
+        message = 'Has ganado ' + amount + ' XP en tu última actividad.';
+      }
+    }
+  }
+
+  return { title, message };
+};
+
+const NotificationDetailsModal = ({ notification, onClose, timeZone }) => {
+  const display = getNotificationDisplay(notification);
+  const { ip, userAgent, date } = notification.data ?? {};
+  const hasSessionDetails = Boolean(ip || userAgent);
   const loginDate = date ? parseDateSafe(date) : parseDateSafe(notification.created_at);
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-[fade-in_0.2s_ease-out]">
       <div className="absolute inset-0" onClick={onClose} />
-      <GlassCard className="glass w-full max-w-md p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10">
+      <GlassCard role="dialog" aria-modal="true" aria-label={notification.title} className="glass w-full max-w-md max-h-[90dvh] overflow-y-auto p-6 sm:p-8 relative z-10 animate-[slide-up_0.3s_ease-out] rounded-[32px] shadow-2xl border-none ring-1 ring-black/5 dark:ring-white/10">
 
         <button
           onClick={onClose}
+          aria-label="Cerrar aviso"
           className="absolute top-5 right-5 text-text-secondary hover:text-text-primary transition-colors p-2 hover:bg-black/10 dark:hover:bg-white/10 rounded-full"
         >
           <X size={20} />
@@ -190,15 +248,15 @@ const LoginDetailsModal = ({ notification, onClose, timeZone }) => {
 
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-16 h-16 rounded-[20px] bg-accent/10 flex items-center justify-center text-accent mb-4 ring-2 ring-accent/30">
-            <Shield size={32} strokeWidth={1.5} />
+            {hasSessionDetails ? <Shield size={32} strokeWidth={1.5} /> : <Bell size={32} strokeWidth={1.5} />}
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-text-primary">Detalles de Inicio</h3>
-          <p className="text-text-secondary text-xs sm:text-sm mt-2">
-            Información del dispositivo registrado
+          <h3 className="break-words text-xl sm:text-2xl font-bold text-text-primary">{display.title}</h3>
+          <p className="text-text-secondary text-xs sm:text-sm mt-2 whitespace-pre-wrap break-words">
+            {display.message}
           </p>
         </div>
 
-        <div className="space-y-4 bg-black/5 dark:bg-white/5 rounded-[24px] p-5">
+        {hasSessionDetails && <div className="space-y-4 bg-black/5 dark:bg-white/5 rounded-[24px] p-5">
           {/* Dispositivo */}
           <div className="flex gap-4 items-center">
             <div className="p-2.5 bg-blue-500/10 rounded-[14px] text-blue-500 shrink-0">
@@ -237,7 +295,7 @@ const LoginDetailsModal = ({ notification, onClose, timeZone }) => {
               </p>
             </div>
           </div>
-        </div>
+        </div>}
 
         <button
           onClick={onClose}
@@ -256,6 +314,7 @@ const NotificationsScreen = ({ setView }) => {
     notifications,
     unreadCount,
     notificationsLoading,
+    notificationsError,
     notificationPage,
     notificationTotalPages,
     fetchNotifications,
@@ -264,9 +323,20 @@ const NotificationsScreen = ({ setView }) => {
     removeNotification,
     clearAllNotifications,
     userProfile
-   } = useAppStore(useShallow(state => ({ notifications: state.notifications, unreadCount: state.unreadCount, notificationsLoading: state.notificationsLoading, notificationPage: state.notificationPage, notificationTotalPages: state.notificationTotalPages, fetchNotifications: state.fetchNotifications, markNotificationAsRead: state.markNotificationAsRead, markAllNotificationsAsRead: state.markAllNotificationsAsRead, removeNotification: state.removeNotification, clearAllNotifications: state.clearAllNotifications, userProfile: state.userProfile })));
-
-  const { scheduleEngagementNotifications, scheduleDailyReminders } = useLocalNotifications();
+   } = useAppStore(useShallow(state => ({
+     notifications: state.notifications,
+     unreadCount: state.unreadCount,
+     notificationsLoading: state.notificationsLoading,
+     notificationsError: state.notificationsError,
+     notificationPage: state.notificationPage,
+     notificationTotalPages: state.notificationTotalPages,
+     fetchNotifications: state.fetchNotifications,
+     markNotificationAsRead: state.markNotificationAsRead,
+     markAllNotificationsAsRead: state.markAllNotificationsAsRead,
+     removeNotification: state.removeNotification,
+     clearAllNotifications: state.clearAllNotifications,
+     userProfile: state.userProfile
+   })));
 
   const { addToast } = useToast();
   const [activeFilter, setActiveFilter] = useState('all');
@@ -274,6 +344,8 @@ const NotificationsScreen = ({ setView }) => {
 
   // Estados para modales
   const [selectedNotification, setSelectedNotification] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const noticeId = searchParams.get('notice');
   const [deleteAction, setDeleteAction] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -293,6 +365,33 @@ const NotificationsScreen = ({ setView }) => {
   useEffect(() => {
     fetchNotifications(1);
   }, [fetchNotifications]);
+
+  useEffect(() => {
+    if (!noticeId || !/^\d+$/.test(noticeId) || !userProfile?.id) return;
+    let active = true;
+    setSelectedNotification(null);
+    getNotification(noticeId).then(notice => {
+      if (!active) return;
+      setSelectedNotification(notice);
+      if (!notice.is_read) {
+        void markAsRead(notice.id).then(() => {
+          if (active) void fetchNotifications(1);
+        }).catch(() => {});
+      }
+    }).catch(() => {
+      if (active) addToast('No se pudo abrir este aviso. Puedes consultar tus avisos en la lista.', 'warning');
+    });
+    return () => { active = false; };
+  }, [noticeId, userProfile?.id, fetchNotifications, addToast]);
+
+  const closeNotice = () => {
+    setSelectedNotification(null);
+    if (noticeId) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('notice');
+      setSearchParams(next, { replace: true });
+    }
+  };
 
   const handleNotificationClick = (notification) => {
     if (!notification.is_read) markNotificationAsRead(notification.id);
@@ -410,27 +509,44 @@ const NotificationsScreen = ({ setView }) => {
     return <div className="flex justify-center items-center h-full min-h-[50vh]"><Spinner size="large" /></div>;
   }
 
+  if (notificationsError && notifications.length === 0) {
+    return (
+      <div className="flex flex-col justify-center items-center h-full min-h-[50vh] p-6 text-center animate-[fade-in_0.3s_ease-out]">
+        <div className="p-3 bg-red-500/10 text-red-500 rounded-full mb-3">
+          <AlertCircle size={28} />
+        </div>
+        <p className="text-sm font-semibold text-text-primary mb-1">No se pudieron cargar las notificaciones</p>
+        <p className="text-xs text-text-muted mb-4">{notificationsError}</p>
+        <button
+          onClick={() => fetchNotifications(1)}
+          className="px-5 py-2.5 bg-accent text-accent-contrast font-bold text-xs rounded-full hover:brightness-110 active:scale-95 transition-all shadow-md shadow-accent/20"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
   const hasNotifications = notifications.length > 0;
   const isListEmpty = filteredList.length === 0;
   const canLoadMore = notificationPage < notificationTotalPages && activeFilter === 'all';
 
   return (
-    <div className="pb-28 md:pb-8 pt-6 px-4 max-w-3xl mx-auto min-h-full relative animate-[fade-in_0.5s_ease-out]">
+    <div id="tutorial-notifications-main" className="pb-28 md:pb-8 pt-6 px-4 max-w-3xl mx-auto min-h-full relative animate-[fade-in_0.5s_ease-out]">
 
       {/* Modales */}
       {selectedNotification && (
-        <LoginDetailsModal
+        <NotificationDetailsModal
           notification={selectedNotification}
-          onClose={() => setSelectedNotification(null)}
+          onClose={closeNotice}
           timeZone={userTimezone}
         />
       )}
 
-      {showSettings && (
+      {showSettings && userProfile?.id && (
         <NotificationSettingsModal 
           onClose={() => setShowSettings(false)}
-          scheduleEngagement={scheduleEngagementNotifications}
-          scheduleDaily={scheduleDailyReminders}
+          userId={userProfile.id}
         />
       )}
 
@@ -505,6 +621,10 @@ const NotificationsScreen = ({ setView }) => {
         )}
       </div>
 
+      <button type="button" onClick={() => setView?.('settings', { highlight: 'notifications', returnView: 'notifications' })} className="mb-4 text-xs font-semibold text-accent hover:underline">
+        Gestionar notificaciones push
+      </button>
+
       {/* Filtros Píldoras Flotantes sin bordes */}
       {hasNotifications && (
         <div className="flex overflow-x-auto pb-4 pt-1 px-1 -mx-1 gap-2.5 no-scrollbar mask-linear-fade items-center mb-6">
@@ -514,7 +634,7 @@ const NotificationsScreen = ({ setView }) => {
               onClick={() => setActiveFilter(f.id)}
               className={`px-5 py-2.5 text-sm font-bold rounded-full transition-all duration-300 whitespace-nowrap outline-none flex items-center gap-2 ${
                   activeFilter === f.id
-                      ? 'bg-accent text-accent-contrast shadow-md shadow-accent/30 scale-105'
+                      ? 'bg-accent text-accent-contrast scale-105'
                       : 'bg-black/5 dark:bg-white/5 text-text-secondary hover:bg-black/10 dark:hover:bg-white/10 hover:text-text-primary'
               }`}
             >
@@ -550,7 +670,9 @@ const NotificationsScreen = ({ setView }) => {
                   {key === 'hoy' ? 'Hoy' : key === 'ayer' ? 'Ayer' : 'Anterior'}
                 </h3>
                 <div className="space-y-3">
-                  {list.map((n) => (
+                  {list.map((n) => {
+                    const display = getNotificationDisplay(n);
+                    return (
                     <GlassCard
                       key={n.id}
                       onClick={() => handleNotificationClick(n)}
@@ -567,10 +689,10 @@ const NotificationsScreen = ({ setView }) => {
 
                           <div className="flex-1 min-w-0 flex flex-col justify-center">
                             <p className={`text-sm sm:text-base font-bold mb-1 break-words whitespace-normal ${n.is_read ? 'text-text-secondary' : 'text-text-primary'}`}>
-                              {n.title}
+                              {display.title}
                             </p>
                             <p className={`text-xs sm:text-sm font-medium leading-relaxed break-words whitespace-normal ${n.is_read ? 'text-text-muted' : 'text-text-secondary'}`}>
-                              {n.message}
+                              {display.message}
                             </p>
 
                             {/* Indicadores de acción */}
@@ -600,7 +722,8 @@ const NotificationsScreen = ({ setView }) => {
                         </button>
                       </div>
                     </GlassCard>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )

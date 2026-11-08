@@ -1,9 +1,8 @@
 /* frontend/src/App.jsx */
-import React, { useState, lazy, useMemo, useCallback, useEffect, Suspense } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, Suspense, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { AlertTriangle } from 'lucide-react';
-import { HomeIcon as HomeOutline, UsersIcon as UsersOutline, ChartBarIcon as ChartOutline, FireIcon as FireOutline, UserIcon as UserOutline, BoltIcon as BoltOutline, Squares2X2Icon as SquaresOutline } from '@heroicons/react/24/outline';
-import { HomeIcon as HomeSolid, UsersIcon as UsersSolid, ChartBarIcon as ChartSolid, FireIcon as FireSolid, UserIcon as UserSolid, BoltIcon as BoltSolid, Squares2X2Icon as SquaresSolid } from '@heroicons/react/24/solid';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { FaHouse, FaUsers, FaUtensils, FaDumbbell, FaCompass } from 'react-icons/fa6';
 import { useTranslation } from 'react-i18next';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -17,58 +16,175 @@ import { useAppNavigation } from './hooks/useAppNavigation';
 import { useAppTheme } from './hooks/useAppTheme';
 import { useWorkoutTimer } from './hooks/useWorkoutTimer';
 import { useAppInitialization } from './hooks/useAppInitialization';
-import { useLocalNotifications } from './hooks/useLocalNotifications';
+import { cancelLocalReminders, localReminderKey, useLocalNotifications } from './hooks/useLocalNotifications';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { getPushTarget } from './config/pushRoutes';
 
 import AuthScreens from './components/AuthScreens';
 import MainAppLayout from './components/MainAppLayout';
 import InitialLoadingSkeleton from './components/InitialLoadingSkeleton';
-import TwoFactorPromoModal from './components/TwoFactorPromoModal';
+import NewsLoadingSkeleton from './components/News/NewsLoadingSkeleton';
+import LandingLoadingSkeleton from './components/LandingLoadingSkeleton';
 import RestTimerModal from './components/RestTimerModal';
 import DynamicIslandTimer from './components/DynamicIslandTimer';
+import DomainMigrationModal from './components/DomainMigrationModal';
 import VersionUpdater from './components/VersionUpdater';
 import APKUpdater from './components/APKUpdater';
 import AndroidDownloadPrompt from './components/AndroidDownloadPrompt';
+import OfflineDownloadFloatingBar from './components/OfflineDownloadFloatingBar';
 import SEOHead from './components/SEOHead';
-import StoryViewer from './components/StoryViewer';
-import SecurityDashboard from './pages/SecurityDashboard';
 import PermissionModal from './components/PermissionModal'; 
-
-import OnboardingScreen from './pages/OnboardingScreen';
-import LandingPage from './pages/LandingPage'; 
-import AsesoriaScreen from './pages/AsesoriaScreen';
 import NotFoundPage from './pages/NotFoundPage';
+import NewsListPage from './pages/NewsListPage';
+import NewsDetailPage from './pages/NewsDetailPage';
+import OneRMCalculatorPage from './pages/OneRMCalculatorPage';
+import MacroCalculatorPage from './pages/MacroCalculatorPage';
+import PublicExercisesPage from './pages/PublicExercisesPage';
+import AboutUsPage from './pages/AboutUsPage';
+import FAQPage from './pages/FAQPage';
+import MaintenanceInfoPage from './pages/MaintenanceInfoPage';
+import { reloadAppWithoutStaleCache } from './utils/appRecovery';
+import { lazyWithRetry } from './utils/lazyWithRetry';
+import ViewErrorBoundary from './components/ViewErrorBoundary';
+import { getExerciseList } from './services/exerciseService';
 
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Progress = lazy(() => import('./pages/Progress'));
-const Routines = lazy(() => import('./pages/Routines'));
-const Workout = lazy(() => import('./pages/Workout'));
-const Nutrition = lazy(() => import('./pages/Nutrition'));
-const TemplateDiets = lazy(() => import('./pages/TemplateDiets'));
-const SettingsScreen = lazy(() => import('./pages/SettingsScreen'));
-const PhysicalProfileEditor = lazy(() => import('./pages/PhysicalProfileEditor'));
-const AdminPanel = lazy(() => import('./pages/AdminPanel'));
-const AdminNotifications = lazy(() => import('./pages/AdminNotifications'));
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
-const TermsPage = lazy(() => import('./pages/TermsPage'));
-const Profile = lazy(() => import('./pages/Profile'));
-const TwoFactorSetup = lazy(() => import('./pages/TwoFactorSetup'));
-const NotificationsScreen = lazy(() => import('./pages/NotificationsScreen'));
-const Social = lazy(() => import('./pages/Social'));
-const PublicProfile = lazy(() => import('./pages/PublicProfile'));
-const QuickCardio = lazy(() => import('./pages/QuickCardio'));
-const ActiveCardioSession = lazy(() => import('./pages/ActiveCardioSession'));
-const TrainerPanel = lazy(() => import('./components/TrainerPanel/TrainerPanel'));
-const Hub = lazy(() => import('./pages/Hub'));
-const ResetPasswordScreen = lazy(() => import('./pages/ResetPasswordScreen'));
-const SharedRoutinePreview = lazy(() => import('./pages/SharedRoutinePreview'));
-const AppearanceScreen = lazy(() => import('./pages/AppearanceScreen'));
-const SupportScreen = lazy(() => import('./pages/SupportScreen'));
-const SocialLinksScreen = lazy(() => import('./pages/SocialLinksScreen'));
-const ChallengesScreen = lazy(() => import('./pages/ChallengesScreen'));
+const TwoFactorPromoModal = lazyWithRetry(() => import('./components/TwoFactorPromoModal'), 'twoFactorPromo');
+const StoryViewer = lazyWithRetry(() => import('./components/StoryViewer'), 'storyViewer');
+const SecurityDashboard = lazyWithRetry(() => import('./pages/SecurityDashboard'), 'securityDashboard');
+const PageTutorialPlayback = lazyWithRetry(() => import('./components/PageTutorialPlayback'), 'pageTutorial');
+const OnboardingScreen = lazyWithRetry(() => import('./pages/OnboardingScreen'), 'onboardingScreen');
+const LandingPage = lazyWithRetry(() => import('./pages/LandingPage'), 'landingPage');
 
-const CANONICAL_BASE_URL = 'https://pro-fitness-glass.zeabur.app';
-const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/logo.webp`;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const VIEW_CHUNK_LOADERS = {
+  landingPage: () => import('./pages/LandingPage'),
+  dashboard: () => import('./pages/Dashboard'),
+  progress: () => import('./pages/Progress'),
+  routines: () => import('./pages/Routines'),
+  workout: () => import('./pages/Workout'),
+  nutrition: () => import('./pages/Nutrition'),
+  settings: () => import('./pages/SettingsScreen'),
+  physicalProfileEditor: () => import('./pages/PhysicalProfileEditor'),
+  adminPanel: () => import('./pages/AdminPanel'),
+  adminNotifications: () => import('./pages/AdminNotifications'),
+  privacyPolicy: () => import('./pages/PrivacyPolicy'),
+  terms: () => import('./pages/TermsPage'),
+  legalNotice: () => import('./pages/LegalNoticePage'),
+  profile: () => import('./pages/Profile'),
+  twoFactorSetup: () => import('./pages/TwoFactorSetup'),
+  notifications: () => import('./pages/NotificationsScreen'),
+  social: () => import('./pages/Social'),
+  publicProfile: () => import('./pages/PublicProfile'),
+  quickCardio: () => import('./pages/QuickCardio'),
+  'active-cardio': () => import('./pages/ActiveCardioSession'),
+  trainerPanel: () => import('./components/TrainerPanel/TrainerPanel'),
+  hub: () => import('./pages/Hub'),
+  resetPassword: () => import('./pages/ResetPasswordScreen'),
+  sharedRoutine: () => import('./pages/SharedRoutinePreview'),
+  appearance: () => import('./pages/AppearanceScreen'),
+  support: () => import('./pages/SupportScreen'),
+  socialLinks: () => import('./pages/SocialLinksScreen'),
+  challenges: () => import('./pages/ChallengesScreen'),
+  asesoria: () => import('./pages/AsesoriaScreen'),
+  noticias: () => Promise.resolve({ default: NewsListPage }),
+  noticiaDetalle: () => Promise.resolve({ default: NewsDetailPage }),
+  calculadora1rm: () => Promise.resolve({ default: OneRMCalculatorPage }),
+  calculadoraMacros: () => Promise.resolve({ default: MacroCalculatorPage }),
+  ejercicios: () => Promise.resolve({ default: PublicExercisesPage }),
+  sobreNosotros: () => Promise.resolve({ default: AboutUsPage }),
+  faq: () => Promise.resolve({ default: FAQPage }),
+};
+
+const preloadedViews = new Map();
+export const preloadViewChunk = (viewId) => {
+  if (!viewId) return Promise.resolve(false);
+  if (preloadedViews.has(viewId)) return preloadedViews.get(viewId);
+  const loader = VIEW_CHUNK_LOADERS[viewId];
+  if (!loader) return Promise.resolve(false);
+
+  const preloadPromise = Promise.resolve()
+    .then(loader)
+    .then(() => true)
+    .catch(() => {
+      preloadedViews.delete(viewId);
+      return false;
+    });
+  preloadedViews.set(viewId, preloadPromise);
+
+  if (viewId === 'noticias') {
+    // Importar el servicio silenciosamente sin disparar peticiones de red prematuras
+    import('./services/newsService').catch(() => {});
+  }
+
+  return preloadPromise;
+};
+
+// Disparo inmediato en tiempo de evaluación del módulo para evitar cascada React -> Router -> Suspense
+if (typeof window !== 'undefined' && window.location) {
+  const initialPath = window.location.pathname;
+  if (initialPath === '/calculadora-1rm') preloadViewChunk('calculadora1rm');
+  else if (initialPath === '/calculadora-calorias-macros') preloadViewChunk('calculadoraMacros');
+  else if (initialPath === '/ejercicios') preloadViewChunk('ejercicios');
+  else if (initialPath === '/sobre-nosotros') preloadViewChunk('sobreNosotros');
+  else if (initialPath === '/faq') preloadViewChunk('faq');
+  else if (initialPath === '/noticias') preloadViewChunk('noticias');
+  else if (initialPath.startsWith('/noticias/')) preloadViewChunk('noticiaDetalle');
+  else if (initialPath === '/privacy' || initialPath === '/privacidad' || initialPath === '/politica-de-privacidad' || initialPath === '/politica-privacidad' || initialPath === '/eliminar-cuenta' || initialPath === '/delete-account') preloadViewChunk('privacyPolicy');
+  else if (initialPath === '/terms' || initialPath === '/terminos' || initialPath === '/terminos-y-condiciones') preloadViewChunk('terms');
+  else if (initialPath === '/aviso-legal' || initialPath === '/legal') preloadViewChunk('legalNotice');
+  else if (initialPath === '/') {
+    // Con sesión iniciada, `/` abre el Dashboard (o la última vista): empezar a descargarlo ya,
+    // en paralelo al arranque, en lugar de gastar ancho de banda en la landing pública.
+    let hasSession = false;
+    try { hasSession = !!localStorage.getItem('pro_fitness_token'); } catch {}
+    if (hasSession) {
+      preloadViewChunk('dashboard');
+      try {
+        const lastView = localStorage.getItem('lastView');
+        if (lastView && lastView !== 'dashboard' && VIEW_CHUNK_LOADERS[lastView]) preloadViewChunk(lastView);
+      } catch {}
+    } else {
+      preloadViewChunk('landingPage');
+    }
+  }
+  else if (initialPath === '/login' || initialPath === '/register' || initialPath === '/forgot-password' || initialPath === '/reset-password') {
+    preloadViewChunk('privacyPolicy');
+    preloadViewChunk('terms');
+    preloadViewChunk('legalNotice');
+  }
+}
+
+const Dashboard = lazyWithRetry(VIEW_CHUNK_LOADERS.dashboard, 'dashboard');
+const Progress = lazyWithRetry(VIEW_CHUNK_LOADERS.progress, 'progress');
+const Routines = lazyWithRetry(VIEW_CHUNK_LOADERS.routines, 'routines');
+const Workout = lazyWithRetry(VIEW_CHUNK_LOADERS.workout, 'workout');
+const Nutrition = lazyWithRetry(VIEW_CHUNK_LOADERS.nutrition, 'nutrition');
+const SettingsScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.settings, 'settings');
+const PhysicalProfileEditor = lazyWithRetry(VIEW_CHUNK_LOADERS.physicalProfileEditor, 'physicalProfileEditor');
+const AdminPanel = lazyWithRetry(VIEW_CHUNK_LOADERS.adminPanel, 'adminPanel');
+const AdminNotifications = lazyWithRetry(VIEW_CHUNK_LOADERS.adminNotifications, 'adminNotifications');
+const PrivacyPolicy = lazyWithRetry(VIEW_CHUNK_LOADERS.privacyPolicy, 'privacyPolicy');
+const TermsPage = lazyWithRetry(VIEW_CHUNK_LOADERS.terms, 'terms');
+const LegalNoticePage = lazyWithRetry(VIEW_CHUNK_LOADERS.legalNotice, 'legalNotice');
+const Profile = lazyWithRetry(VIEW_CHUNK_LOADERS.profile, 'profile');
+const TwoFactorSetup = lazyWithRetry(VIEW_CHUNK_LOADERS.twoFactorSetup, 'twoFactorSetup');
+const NotificationsScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.notifications, 'notifications');
+const Social = lazyWithRetry(VIEW_CHUNK_LOADERS.social, 'social');
+const PublicProfile = lazyWithRetry(VIEW_CHUNK_LOADERS.publicProfile, 'publicProfile');
+const QuickCardio = lazyWithRetry(VIEW_CHUNK_LOADERS.quickCardio, 'quickCardio');
+const ActiveCardioSession = lazyWithRetry(VIEW_CHUNK_LOADERS['active-cardio'], 'active-cardio');
+const TrainerPanel = lazyWithRetry(VIEW_CHUNK_LOADERS.trainerPanel, 'trainerPanel');
+const Hub = lazyWithRetry(VIEW_CHUNK_LOADERS.hub, 'hub');
+const ResetPasswordScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.resetPassword, 'resetPassword');
+const SharedRoutinePreview = lazyWithRetry(VIEW_CHUNK_LOADERS.sharedRoutine, 'sharedRoutine');
+const AppearanceScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.appearance, 'appearance');
+const SupportScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.support, 'support');
+const SocialLinksScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.socialLinks, 'socialLinks');
+const ChallengesScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.challenges, 'challenges');
+const AsesoriaScreen = lazyWithRetry(VIEW_CHUNK_LOADERS.asesoria, 'asesoria');
+
+const CANONICAL_BASE_URL = 'https://profitnessglass.es';
+const DEFAULT_OG_IMAGE = `${CANONICAL_BASE_URL}/og-preview.jpg`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const BACKEND_BASE_URL = API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL;
 
 export default function App() {
@@ -90,7 +206,7 @@ export default function App() {
     handleBackFromPolicy,
     handleCancelProfile,
     handleShowPolicy
-  } = useAppNavigation();
+  } = useAppNavigation(navigate);
 
   const { theme, setTheme, accent, setAccent, resolvedTheme, themeColor, headerColor } = useAppTheme();
   
@@ -98,7 +214,6 @@ export default function App() {
   const { t } = useTranslation('translation');
 
   const { 
-    requestPermissions: requestNotificationPermissions, 
     scheduleEngagementNotifications, 
     scheduleDailyReminders 
   } = useLocalNotifications();
@@ -119,6 +234,7 @@ export default function App() {
     isAuthenticated,
     userProfile,
     isLoading,
+    initialDataPending,
     handleLogout: performLogout,
     fetchInitialData,
     isResting,
@@ -135,6 +251,7 @@ export default function App() {
     isAuthenticated: state.isAuthenticated,
     userProfile: state.userProfile,
     isLoading: state.isLoading,
+    initialDataPending: state.initialDataPending,
     handleLogout: state.handleLogout,
     fetchInitialData: state.fetchInitialData,
     isResting: state.isResting,
@@ -149,11 +266,29 @@ export default function App() {
     checkWelcomeModal: state.checkWelcomeModal,
   })));
 
+  const computeHasSeenAllHubHighlights = useCallback(() => {
+    if (!userProfile?.id) return true;
+    const uid = userProfile.id;
+    const hubSeen = localStorage.getItem(`visited_hub_${uid}`) === 'true';
+    const tutorialsSeen = localStorage.getItem(`tutorials_opened_from_hub_${uid}`) === 'true';
+    const challengesSeen = localStorage.getItem(`visited_challenges_v2_${uid}`) === 'true';
+    const asesoriaSeen = ['trainer', 'admin'].includes(userProfile?.role) || localStorage.getItem(`visited_asesoria_${uid}`) === 'true';
+    return hubSeen && tutorialsSeen && challengesSeen && asesoriaSeen;
+  }, [userProfile?.id, userProfile?.role]);
+
   useEffect(() => {
-    if (userProfile?.id) {
-      setVisitedHub(localStorage.getItem(`visited_hub_${userProfile.id}`) === 'true');
-    }
-  }, [userProfile?.id]);
+    if (!userProfile?.id) return;
+    const syncHubBadge = () => {
+      setVisitedHub(computeHasSeenAllHubHighlights());
+    };
+    syncHubBadge();
+    window.addEventListener('hub-badges-updated', syncHubBadge);
+    window.addEventListener('storage', syncHubBadge);
+    return () => {
+      window.removeEventListener('hub-badges-updated', syncHubBadge);
+      window.removeEventListener('storage', syncHubBadge);
+    };
+  }, [userProfile?.id, computeHasSeenAllHubHighlights]);
 
   const isInstalledApp = useMemo(() => {
     return Capacitor.isNativePlatform() || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
@@ -180,8 +315,62 @@ export default function App() {
     };
   }, [isAuthenticated, sessionExpired]);
 
+  // Descarga el catálogo en un momento ocioso para que sus animaciones puedan
+  // guardarse mientras hay conexión, sin retrasar la apertura del dashboard.
+  useEffect(() => {
+    if (!isAuthenticated || sessionExpired) return;
+
+    let cancelled = false;
+    let idleId = null;
+    let timerId = null;
+
+    const loadExerciseCatalog = () => {
+      if (!navigator.onLine || cancelled) return;
+      const load = () => {
+        if (!cancelled) getExerciseList().catch(() => {});
+      };
+
+      if ('requestIdleCallback' in window) {
+        idleId = window.requestIdleCallback(load, { timeout: 20000 });
+      } else {
+        timerId = window.setTimeout(load, 8000);
+      }
+    };
+
+    loadExerciseCatalog();
+    window.addEventListener('online', loadExerciseCatalog);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('online', loadExerciseCatalog);
+      if (idleId && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleId);
+      if (timerId) window.clearTimeout(timerId);
+    };
+  }, [isAuthenticated, sessionExpired]);
+
+  const [isCheckingLaunchUrl, setIsCheckingLaunchUrl] = useState(() => {
+    return Capacitor.isNativePlatform() && window.location.pathname === '/';
+  });
+
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
+      // 1. Cold start deep link (cuando la app arranca desde cerrada)
+      CapApp.getLaunchUrl().then(launchUrl => {
+        if (launchUrl?.url) {
+          try {
+            const url = new URL(launchUrl.url);
+            if (url.pathname && url.pathname !== '/') {
+              navigate(url.pathname + url.search, { replace: true });
+              return;
+            }
+          } catch (e) {
+            console.error('Error parseando deep link en cold start:', e);
+          }
+        }
+      }).catch(() => {}).finally(() => {
+        setIsCheckingLaunchUrl(false);
+      });
+
+      // 2. Warm start deep link (cuando la app ya estaba abierta en segundo plano)
       const listener = CapApp.addListener('appUrlOpen', data => {
         try {
           const url = new URL(data.url);
@@ -232,17 +421,27 @@ export default function App() {
   }, [themeColor, headerColor, resolvedTheme]);
 
   useEffect(() => {
-    if (isAuthenticated && !isLoading && Capacitor.isNativePlatform()) {
-      const initNotifications = async () => {
-        const granted = await requestNotificationPermissions();
-        if (granted) {
-          await scheduleEngagementNotifications();
-          await scheduleDailyReminders(false, false);
-        }
-      };
-      initNotifications();
-    }
-  }, [isAuthenticated, isLoading, requestNotificationPermissions, scheduleEngagementNotifications, scheduleDailyReminders]);
+    if (isLoading || !Capacitor.isNativePlatform()) return;
+    const userId = isAuthenticated ? userProfile?.id : null;
+    const engagement = !!userId && localStorage.getItem(localReminderKey(userId, 'engagement')) === 'true';
+    const daily = !!userId && localStorage.getItem(localReminderKey(userId, 'daily')) === 'true';
+    void cancelLocalReminders({ engagement: !engagement, daily: !daily });
+    if (engagement) void scheduleEngagementNotifications();
+    if (daily) void scheduleDailyReminders();
+  }, [isAuthenticated, isLoading, userProfile?.id, scheduleEngagementNotifications, scheduleDailyReminders]);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const listener = PushNotifications.addListener('pushNotificationActionPerformed', ({ notification }) => {
+      const target = getPushTarget(notification.data?.url, window.location.origin);
+      if (!useAppStore.getState().isAuthenticated) {
+        navigate('/login', { state: { from: target?.path ?? '/notifications' } });
+        return;
+      }
+      navigateInternal(target?.view ?? 'notifications', target?.options);
+    });
+    return () => { void listener.then(handle => handle.remove()).catch(() => {}); };
+  }, [navigate, navigateInternal]);
 
   useEffect(() => {
     if (isAuthenticated && userProfile && !isLoading) {
@@ -254,7 +453,7 @@ export default function App() {
         setShow2FAPromo(true);
       }
     }
-  }, [isAuthenticated, userProfile, isLoading, cookieConsent, showWelcomeModal]);
+  }, [isAuthenticated, userProfile, isLoading, cookieConsent]);
 
   const handleLogoutClick = useCallback(() => setShowLogoutConfirm(true), []);
 
@@ -284,18 +483,18 @@ export default function App() {
   }, [myStories, navigateInternal]);
 
   useEffect(() => {
-    if (view === 'hub' && !visitedHub && userProfile?.id) {
+    if (view === 'hub' && userProfile?.id) {
       localStorage.setItem(`visited_hub_${userProfile.id}`, 'true');
-      setVisitedHub(true);
+      setVisitedHub(computeHasSeenAllHubHighlights());
     }
-  }, [view, visitedHub, userProfile?.id]);
+  }, [view, userProfile?.id, computeHasSeenAllHubHighlights]);
 
   const currentTitle = useMemo(() => {
     const titleMap = {
       dashboard: { key: 'Dashboard', default: 'Dashboard' },
       challenges: { key: 'Retos', default: 'Retos' },
       nutrition: { key: 'Nutrición', default: 'Nutrición' },
-      progress: { key: 'Progreso', default: 'Progreso' },
+      progress: { key: 'Tu progreso', default: 'Tu progreso' },
       routines: { key: 'Rutinas', default: 'Rutinas' },
       settings: { key: 'Ajustes', default: 'Ajustes' },
       appearance: { key: 'Apariencia', default: 'Apariencia' },
@@ -311,12 +510,12 @@ export default function App() {
       terms: { key: 'Términos del Servicio', default: 'Términos del Servicio' },
       twoFactorSetup: { key: 'Seguridad 2FA', default: 'Seguridad 2FA' },
       notifications: { key: 'Notificaciones', default: 'Notificaciones' },
-      templateDiets: { key: 'Dietas Plantilla', default: 'Dietas Plantilla' },
       social: { key: 'Comunidad', default: 'Comunidad' },
       publicProfile: { key: 'Perfil Público', default: 'Perfil Público' },
       quickCardio: { key: 'Cardio Rápido', default: 'Cardio Rápido' },
       'active-cardio': { key: 'Sesión Activa', default: 'Sesión Activa' },
       asesoria: { key: 'Asesoría', default: 'Asesoría' },
+      noticias: { key: 'Noticias y Artículos', default: 'Noticias y Artículos' },
     };
     const titleInfo = titleMap[view];
     if (titleInfo) return t(titleInfo.key, { defaultValue: titleInfo.default });
@@ -337,18 +536,116 @@ export default function App() {
   }, [view, t]);
 
   const fullPageTitle = `${currentTitle} - Pro Fitness Glass`;
+  const workoutTimer = view === 'workout' ? timer : 0;
+
+  useEffect(() => {
+    if (view) preloadViewChunk(view);
+  }, [view]);
+
+  // Calentar de forma gradual las pantallas necesarias para entrenar sin conexión.
+  // Solo se hace en una conexión razonable y cuando el usuario está inactivo.
+  useEffect(() => {
+    const offlineCoreViews = ['hub', 'routines', 'workout', 'nutrition'];
+    if (
+      !isAuthenticated || isLoading || isInitialLoad ||
+      !['dashboard', 'hub', 'routines', 'workout', 'nutrition'].includes(view) ||
+      typeof navigator === 'undefined' || navigator.onLine === false
+    ) return;
+
+    const connection = navigator.connection;
+    if (
+      connection?.saveData ||
+      ['slow-2g', '2g', '3g'].includes(connection?.effectiveType) ||
+      (typeof connection?.downlink === 'number' && connection.downlink < 1.5)
+    ) return;
+
+    let cancelled = false;
+    let index = 0;
+    let timerId = null;
+    let idleId = null;
+    let isLoadingChunk = false;
+    let pauseUntil = 0;
+
+    const clearScheduledWork = () => {
+      if (timerId !== null) clearTimeout(timerId);
+      if (idleId !== null && 'cancelIdleCallback' in window) window.cancelIdleCallback(idleId);
+      timerId = null;
+      idleId = null;
+    };
+
+    const scheduleNext = (delay = 0) => {
+      clearScheduledWork();
+      if (cancelled || document.visibilityState !== 'visible' || navigator.onLine === false) return;
+
+      timerId = setTimeout(() => {
+        timerId = null;
+        const loadOneChunk = async () => {
+          idleId = null;
+          if (cancelled || document.visibilityState !== 'visible' || navigator.onLine === false) return;
+          const remainingPause = pauseUntil - Date.now();
+          if (remainingPause > 0) {
+            scheduleNext(remainingPause);
+            return;
+          }
+
+          const nextView = offlineCoreViews[index];
+          if (!nextView) return;
+          isLoadingChunk = true;
+          const loaded = await preloadViewChunk(nextView);
+          isLoadingChunk = false;
+          if (loaded) index += 1;
+          if (index < offlineCoreViews.length) {
+            scheduleNext(loaded ? Math.max(2500, pauseUntil - Date.now()) : 15000);
+          }
+        };
+
+        if ('requestIdleCallback' in window) {
+          idleId = window.requestIdleCallback(loadOneChunk, { timeout: 5000 });
+        } else {
+          loadOneChunk();
+        }
+      }, delay);
+    };
+
+    const pauseForUserActivity = () => {
+      pauseUntil = Date.now() + 8000;
+      if (!isLoadingChunk) scheduleNext(8000);
+    };
+    const handleVisibility = () => scheduleNext(document.visibilityState === 'visible' ? 1000 : 0);
+    const handleOnline = () => scheduleNext(3000);
+
+    window.addEventListener('pointerdown', pauseForUserActivity, { passive: true });
+    window.addEventListener('keydown', pauseForUserActivity);
+    window.addEventListener('online', handleOnline);
+    document.addEventListener('visibilitychange', handleVisibility);
+    scheduleNext(12000);
+
+    return () => {
+      cancelled = true;
+      clearScheduledWork();
+      window.removeEventListener('pointerdown', pauseForUserActivity);
+      window.removeEventListener('keydown', pauseForUserActivity);
+      window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [isAuthenticated, isInitialLoad, isLoading, view]);
 
   const currentViewComponent = useMemo(() => {
     switch (view) {
       case 'dashboard': return <Dashboard setView={navigateInternal} />;
-      case 'progress': return <Progress darkMode={resolvedTheme !== 'light'} setView={navigateInternal} />;
-      case 'routines': return <Routines setView={navigateInternal} />;
-      case 'workout': return <Workout timer={timer} setView={navigateInternal} />;
-      case 'nutrition': return <Nutrition setView={navigateInternal} />;
-      case 'templateDiets': return <TemplateDiets setView={navigateInternal} />;
-      case 'social': return <Social setView={navigateInternal} />;
-      case 'publicProfile': return <PublicProfile userId={navParams?.userId} onBack={() => navigateInternal('social')} />;
+      case 'progress': return <Progress darkMode={resolvedTheme !== 'light'} setView={navigateInternal} scrollRef={mainContentRef} />;
+      case 'routines': return <Routines setView={navigateInternal} mainContentRef={mainContentRef} />;
+      case 'workout': return <Workout timer={workoutTimer} setView={navigateInternal} navParams={navParams} />;
+      case 'nutrition': return <Nutrition setView={navigateInternal} navParams={navParams} />;
+      case 'social':
+        return (
+          <ViewErrorBoundary viewName="Comunidad" onGoHome={() => navigateInternal('dashboard')}>
+            <Social setView={navigateInternal} />
+          </ViewErrorBoundary>
+        );
+      case 'publicProfile': return <PublicProfile userId={navParams?.userId} onBack={() => navigateInternal('social')} setView={navigateInternal} />;
       case 'hub': return <Hub setView={navigateInternal} />;
+      case 'noticias': return <NewsListPage onBack={() => navigateInternal('hub')} navigate={navigateInternal} />;
       case 'quickCardio': return <QuickCardio onBack={() => navigateInternal('dashboard')} setView={navigateInternal} />;
       case 'active-cardio': return <ActiveCardioSession activityId={navParams?.activityId} setView={navigateInternal} />;
       case 'settings':
@@ -360,7 +657,9 @@ export default function App() {
             setAccent={setAccent}
             setView={navigateInternal}
             onLogoutClick={handleLogoutClick}
-            highlight={navParams?.highlight}
+            returnView={navParams?.returnView}
+            returnParams={navParams?.returnParams}
+            scrollRef={mainContentRef}
           />
         );
       case 'appearance': return <AppearanceScreen setView={navigateInternal} />;
@@ -369,19 +668,52 @@ export default function App() {
       case 'challenges': return <ChallengesScreen setView={navigateInternal} />;
       case 'physicalProfileEditor': return <PhysicalProfileEditor onDone={() => navigateInternal('settings')} />;
       case 'profile': return <Profile onCancel={handleCancelProfile} navigate={navigateInternal} />;
-      case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigateInternal('hub')} navigate={navigateInternal} /> : <Dashboard setView={navigateInternal} />;
+      case 'adminPanel': return userProfile?.role === 'admin' ? <AdminPanel onCancel={() => navigateInternal('hub')} navigate={navigateInternal} scrollRef={mainContentRef} /> : <Dashboard setView={navigateInternal} />;
       case 'adminNotifications': return userProfile?.role === 'admin' ? <AdminNotifications /> : <Dashboard setView={navigateInternal} />;
       case 'securityDashboard': return userProfile?.role === 'admin' ? <SecurityDashboard onBack={() => navigateInternal('adminPanel')} /> : <Dashboard setView={navigateInternal} />;
       case 'trainerPanel': return (userProfile?.role === 'admin' || userProfile?.role === 'trainer') ? <TrainerPanel setView={navigateInternal} /> : <Dashboard setView={navigateInternal} />;
       case 'privacyPolicy': return <PrivacyPolicy onBack={handleBackFromPolicy} />;
-      case 'terms': return <TermsPage />;
+      case 'terms': return <TermsPage onBack={handleBackFromPolicy} />;
+      case 'legalNotice': return <LegalNoticePage onBack={handleBackFromPolicy} />;
       case 'twoFactorSetup': return <TwoFactorSetup setView={navigateInternal} />;
       case 'notifications': return <NotificationsScreen setView={navigateInternal} />;
-      case 'asesoria': return <AsesoriaScreen onBack={() => navigateInternal('hub')} />;
+      case 'asesoria': {
+        const handleBackFromAsesoria = () => {
+          let returnTarget = null;
+          if (navParams?.returnView) {
+            returnTarget = {
+              view: navParams.returnView,
+              params: navParams.returnParams || {}
+            };
+          } else {
+            try {
+              const saved = sessionStorage.getItem('asesoria_return_context');
+              if (saved) {
+                returnTarget = JSON.parse(saved);
+              }
+            } catch (e) {
+              console.warn('Error recuperando contexto de retorno de asesoría', e);
+            }
+          }
+
+          if (returnTarget?.view) {
+            try {
+              sessionStorage.removeItem('asesoria_return_context');
+            } catch (e) {}
+            navigateInternal(
+              returnTarget.view, 
+              returnTarget.params || (returnTarget.reopenCoachExercise ? { reopenCoachExercise: returnTarget.reopenCoachExercise } : {})
+            );
+          } else {
+            navigateInternal('hub');
+          }
+        };
+        return <AsesoriaScreen onBack={handleBackFromAsesoria} onOpenNotificationSettings={() => navigateInternal('settings', { highlight: 'notifications', returnView: 'asesoria' })} />;
+      }
       case 'not-found': return <NotFoundPage navigate={navigateInternal} />;
       default: return <Dashboard setView={navigateInternal} />;
     }
-  }, [view, navigateInternal, theme, resolvedTheme, timer, accent, handleLogoutClick, userProfile, handleBackFromPolicy, handleCancelProfile, navParams]);
+  }, [view, navigateInternal, theme, resolvedTheme, workoutTimer, accent, handleLogoutClick, userProfile, handleBackFromPolicy, handleCancelProfile, navParams]);
 
   const profileImgSrc = useMemo(() => {
     if (!userProfile?.profile_image_url) return null;
@@ -396,43 +728,92 @@ export default function App() {
     return rawUrl;
   }, [userProfile]);
 
-  const hasStories = useMemo(() => myStories && myStories.length > 0, [myStories]);
-  const hasUnseen = useMemo(() => hasStories && myStories.some(s => !s.viewed), [hasStories, myStories]);
+  const hasStories = useMemo(() => Array.isArray(myStories) && myStories.length > 0, [myStories]);
+  const hasUnseen = useMemo(() => hasStories && Array.isArray(myStories) && myStories.some(s => s && !s.viewed), [hasStories, myStories]);
 
   const navItems = useMemo(() => [
-    { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: (active) => active ? <HomeSolid className="w-6 h-6" /> : <HomeOutline className="w-6 h-6" /> },
-    { id: 'social', label: t('Comunidad', { defaultValue: 'Comunidad' }), icon: (active) => active ? <UsersSolid className="w-6 h-6" /> : <UsersOutline className="w-6 h-6" /> },
-    { id: 'nutrition', label: t('Nutrición', { defaultValue: 'Nutrición' }), icon: (active) => active ? <FireSolid className="w-6 h-6" /> : <FireOutline className="w-6 h-6" /> },
-    { id: 'routines', label: t('Rutinas', { defaultValue: 'Rutinas' }), icon: (active) => active ? <BoltSolid className="w-6 h-6" /> : <BoltOutline className="w-6 h-6" /> },
-    { id: 'hub', label: t('Menú', { defaultValue: 'Menú' }), badge: !visitedHub || (unreadChats > 0), icon: (active) => active ? <SquaresSolid className="w-6 h-6" /> : <SquaresOutline className="w-6 h-6" /> },
+    { id: 'dashboard', label: t('Dashboard', { defaultValue: 'Dashboard' }), icon: <FaHouse className="w-5 h-5" /> },
+    { id: 'social', label: t('Comunidad', { defaultValue: 'Comunidad' }), icon: <FaUsers className="w-5 h-5" /> },
+    { id: 'nutrition', label: t('Nutrición', { defaultValue: 'Nutrición' }), icon: <FaUtensils className="w-5 h-5" /> },
+    { id: 'routines', label: t('Rutinas', { defaultValue: 'Rutinas' }), icon: <FaDumbbell className="w-5 h-5" /> },
+    { id: 'hub', label: t('Menú', { defaultValue: 'Menú' }), badge: !visitedHub || (unreadChats > 0), icon: <FaCompass className="w-5 h-5" /> },
   ], [t, visitedHub, unreadChats]);
 
-    const mainViews = useMemo(() => ({
-      dashboard: <Dashboard setView={navigateInternal} />,
-      social: <Social navigate={navigateInternal} />,
-      nutrition: <Nutrition setView={navigateInternal} />,
-      routines: <Routines setView={navigateInternal} />,
-      hub: <Hub setView={navigateInternal} />
-    }), [navigateInternal]);
+  // Auto-recuperar perfil si el usuario está autenticado pero userProfile aún no tiene 'role' (ej: viniendo de noticias públicas o tras reload)
+  const recoveryAttemptedRef = useRef(false);
+  useEffect(() => {
+    if (isAuthenticated && (!userProfile || !('role' in userProfile)) && !recoveryAttemptedRef.current) {
+      recoveryAttemptedRef.current = true;
+      fetchInitialData().catch(() => {});
+    }
+  }, [isAuthenticated, userProfile, fetchInitialData]);
 
   const AuthenticatedAppContent = useMemo(() => {
-    // Si el perfil no tiene la propiedad 'role', significa que es el objeto parcial del login
-    // y todava no se ha ejecutado fetchInitialData. Mostramos el skeleton para evitar parpadeos.
+    // Si el perfil no tiene la propiedad 'role', mostramos skeleton mientras se completa la carga
     if (!userProfile || !('role' in userProfile) || (isLoading && !userProfile.goal)) {
-      return <InitialLoadingSkeleton />;
+      if (isLoading || isInitialLoad || initialDataPending) {
+        return <InitialLoadingSkeleton />;
+      }
+      return (
+          <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-bg-primary">
+            <div className="w-16 h-16 rounded-2xl bg-accent/15 text-accent flex items-center justify-center mb-4 shadow-lg shadow-accent/20">
+              <RefreshCw className="animate-spin-slow" size={32} />
+            </div>
+            <h2 className="text-xl font-bold text-text-primary mb-2">Conectando con tu cuenta...</h2>
+            <p className="text-sm text-text-secondary max-w-sm mb-6">
+              No hemos podido cargar los datos de tu perfil. Comprueba tu conexión a internet o reintenta.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  useAppStore.getState().fetchInitialData();
+                }}
+                className="px-5 py-2.5 rounded-xl bg-accent text-accent-contrast font-bold text-sm shadow-md shadow-accent/20 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+              >
+                Reintentar
+              </button>
+              <button
+                type="button"
+                onClick={() => reloadAppWithoutStaleCache({ path: '/', force: true })}
+                className="px-5 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-text-primary font-bold text-sm cursor-pointer hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Reparar caché</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  useAppStore.getState().handleLogout();
+                }}
+                className="px-5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 font-bold text-sm cursor-pointer hover:scale-105 active:scale-95 transition-all"
+              >
+                Cerrar sesión
+              </button>
+            </div>
+          </div>
+        );
     }
 
     if (!userProfile.goal && userProfile.role !== 'trainee') {
-      return <OnboardingScreen />;
+      return (
+        <Suspense fallback={<InitialLoadingSkeleton />}>
+          <OnboardingScreen />
+        </Suspense>
+      );
     }
 
     if (view === 'active-cardio') {
-      return <ActiveCardioSession activityId={navParams?.activityId} setView={navigateInternal} />;
+      return (
+        <Suspense fallback={<InitialLoadingSkeleton />}>
+          <ActiveCardioSession activityId={navParams?.activityId} setView={navigateInternal} />
+        </Suspense>
+      );
     }
 
     const userProfileWithStory = {
         ...userProfile,
-        hasStories: myStories && myStories.length > 0
+        hasStories: Array.isArray(myStories) && myStories.length > 0
     };
 
     return (
@@ -440,10 +821,11 @@ export default function App() {
         <MainAppLayout
           view={view}
           navigate={navigateInternal}
+          navParams={navParams}
+          preloadView={preloadViewChunk}
           mainContentRef={mainContentRef}
           currentTitle={currentTitle}
           currentViewComponent={currentViewComponent}
-          mainViews={mainViews}
           navItems={navItems}
           handleLogoutClick={handleLogoutClick}
           showLogoutConfirm={showLogoutConfirm}
@@ -456,20 +838,27 @@ export default function App() {
           userProfile={userProfileWithStory}
           profileImgSrc={profileImgSrc}
         />
+        <Suspense fallback={null}>
+          <PageTutorialPlayback view={view} navParams={navParams} setView={navigateInternal} />
+        </Suspense>
         {isResting && (
-          restTimerMode === 'minimized' ? <DynamicIslandTimer /> : <RestTimerModal />
+          restTimerMode === 'minimized' ? <DynamicIslandTimer /> : <RestTimerModal onNavigate={navigateInternal} />
         )}
         {show2FAPromo && (
-          <TwoFactorPromoModal
-            onClose={handleClose2FAPromo}
-            onConfigure={handleConfigure2FA}
-          />
+          <Suspense fallback={null}>
+            <TwoFactorPromoModal
+              onClose={handleClose2FAPromo}
+              onConfigure={handleConfigure2FA}
+            />
+          </Suspense>
         )}
         {viewingMyStory && (
+          <Suspense fallback={null}>
             <StoryViewer 
-                userId={userProfile.id} 
-                onClose={() => setViewingMyStory(false)} 
+              userId={userProfile.id} 
+              onClose={() => setViewingMyStory(false)} 
             />
+          </Suspense>
         )}
 
         <PermissionModal 
@@ -480,7 +869,7 @@ export default function App() {
       </>
     );
   }, [
-    userProfile, isLoading, view, navParams, navigateInternal,
+    userProfile, isLoading, isInitialLoad, initialDataPending, view, navParams, navigateInternal,
     performLogout, mainContentRef, currentTitle, currentViewComponent,
     navItems, handleLogoutClick, showLogoutConfirm, confirmLogout, handleShowPolicy,
     fetchInitialData, verificationProps, handleHeaderAvatarClick, myStories,
@@ -494,15 +883,15 @@ export default function App() {
     if (isLandingPage) return true;
     if (!isAuthenticated) return false;
 
-    const viewsWithInternalSEO = ['dashboard', 'publicProfile', 'privacyPolicy', 'terms'];
+    const viewsWithInternalSEO = ['dashboard', 'publicProfile', 'privacyPolicy', 'terms', 'legalNotice'];
     return !viewsWithInternalSEO.includes(view);
   }, [isAuthenticated, view, isLandingPage]);
 
   const seoConfig = useMemo(() => {
     if (isLandingPage) {
         return {
-            title: "Pro Fitness Glass - Tu Entrenador Personal Inteligente",
-            description: "Alcanza tus objetivos fitness con rutinas personalizadas, seguimiento de nutrición y análisis de progreso. Únete a la comunidad Pro Fitness Glass hoy mismo.",
+            title: "Pro Fitness Glass | App de Gimnasio Gratis, Rutinas de Pesas, Diario de Entrenamiento y Nutrición con IA",
+            description: "Registra tus entrenamientos de gimnasio, aplica sobrecarga progresiva en tus rutinas de hipertrofia y fuerza, calcula tu 1RM y controla calorías y macros con IA gratis.",
             noIndex: false
         };
     }
@@ -513,39 +902,56 @@ export default function App() {
     };
   }, [isLandingPage, fullPageTitle, currentDescription]);
 
-  if (isInitialLoad) {
-    return <InitialLoadingSkeleton />;
-  }
+  const isPublicRoute =
+    location.pathname.startsWith('/noticias') ||
+    location.pathname === '/calculadora-1rm' ||
+    location.pathname === '/calculadora-calorias-macros' ||
+    location.pathname === '/ejercicios' ||
+    location.pathname === '/sobre-nosotros' ||
+    location.pathname === '/faq' ||
+    location.pathname === '/mantenimiento' ||
+    location.pathname === '/migracion' ||
+    location.pathname === '/privacy' ||
+    location.pathname === '/terms' ||
+    location.pathname === '/aviso-legal' ||
+    location.pathname === '/legal' ||
+    location.pathname.startsWith('/share/') ||
+    location.pathname === '/reset-password';
 
   return (
     <>
-      {shouldRenderGlobalSEO && (
-        <SEOHead 
-            title={seoConfig.title} 
-            description={seoConfig.description} 
-            route={view} 
-            noIndex={seoConfig.noIndex} 
-        />
-      )}
-
-      <Helmet>
-        <html lang="es" />
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
-        <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
-        <meta property="og:site_name" content="Pro Fitness Glass" />
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
-        
-      </Helmet>
-
+      <DomainMigrationModal />
       <VersionUpdater />
       <APKUpdater />
       <AndroidDownloadPrompt />
+      <OfflineDownloadFloatingBar navigate={navigateInternal} />
 
-      {sessionExpired && (
+      {((isInitialLoad && !isPublicRoute) || isCheckingLaunchUrl) ? (
+        <InitialLoadingSkeleton />
+      ) : (
+        <>
+          {shouldRenderGlobalSEO && (
+            <SEOHead 
+                title={seoConfig.title} 
+                description={seoConfig.description} 
+                route={view} 
+                noIndex={seoConfig.noIndex} 
+            />
+          )}
+
+          <Helmet>
+            <html lang="es" />
+            <meta charSet="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover" />
+            <meta name="keywords" content="fitness, gym, entrenamiento, nutrición, rutinas, pesas, calorías, macros, salud, deporte, tracker" />
+            <meta property="og:type" content="website" />
+            <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+            <meta property="og:site_name" content="Pro Fitness Glass" />
+            <meta property="twitter:card" content="summary_large_image" />
+            <meta property="twitter:image" content={DEFAULT_OG_IMAGE} />
+          </Helmet>
+
+      {sessionExpired && !isPublicRoute && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fade-in_0.3s_ease-out]">
           <div className="bg-bg-primary border border-glass-border p-8 max-w-sm w-full rounded-2xl shadow-2xl text-center flex flex-col items-center animate-[scale-in_0.3s_ease-out]">
             <AlertTriangle size={48} className="text-red mb-4 drop-shadow-md" />
@@ -553,29 +959,123 @@ export default function App() {
               Sesión Caducada
             </h2>
             <p className="text-text-secondary mb-8 text-[15px] leading-relaxed">
-              Tu sesión ha expirado por seguridad o has cerrado sesión. Por favor, recarga para continuar.
+              Tu sesión ha expirado por seguridad o se ha cerrado. Inicia sesión de nuevo para continuar.
             </p>
             <button 
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                performLogout();
+                navigate('/login', { replace: true });
+              }}
               className="w-full bg-accent text-accent-contrast font-bold py-3.5 px-4 rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-md shadow-accent/20"
             >
-              Recargar Aplicación
+              Volver a iniciar sesión
             </button>
           </div>
         </div>
       )}
 
       <Routes>
-        <Route path="/privacy" element={
-            <Suspense fallback={<div className="p-10">Cargando política...</div>}>
-                <PrivacyPolicy onBack={() => navigate('/')} />
+        {['/privacy', '/privacidad', '/politica-de-privacidad', '/politica-privacidad', '/eliminar-cuenta', '/delete-account'].map((path) => (
+          <Route key={path} path={path} element={
+              <Suspense fallback={<div className="p-10">Cargando política...</div>}>
+                  <PrivacyPolicy onBack={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }} />
+              </Suspense>
+          } />
+        ))}
+        {['/terms', '/terminos', '/terminos-y-condiciones'].map((path) => (
+          <Route key={path} path={path} element={
+              <Suspense fallback={<div className="p-10">Cargando términos...</div>}>
+                  <TermsPage />
+              </Suspense>
+          } />
+        ))}
+        <Route path="/aviso-legal" element={
+            <Suspense fallback={<div className="p-10">Cargando aviso legal...</div>}>
+                <LegalNoticePage />
             </Suspense>
         } />
-        <Route path="/terms" element={
-            <Suspense fallback={<div className="p-10">Cargando términos...</div>}>
-                <TermsPage />
+        <Route path="/legal" element={
+            <Suspense fallback={<div className="p-10">Cargando aviso legal...</div>}>
+                <LegalNoticePage />
             </Suspense>
         } />
+        <Route path="/noticias" element={
+            <Suspense fallback={<NewsLoadingSkeleton />}>
+                <NewsListPage
+                  onBack={() => {
+                    if (isAuthenticated) {
+                      navigateInternal('hub');
+                    } else {
+                      navigate('/');
+                    }
+                  }}
+                  navigate={navigateInternal}
+                />
+            </Suspense>
+        } />
+        <Route path="/noticias/:slug" element={
+            <Suspense fallback={<NewsLoadingSkeleton isDetail={true} />}>
+                <NewsDetailPage
+                  onBack={() => navigate('/noticias')}
+                  navigate={navigateInternal}
+                />
+            </Suspense>
+        } />
+        <Route path="/calculadora-1rm" element={
+            <Suspense fallback={<NewsLoadingSkeleton />}>
+                <OneRMCalculatorPage
+                  onBack={() => {
+                    if (isAuthenticated) {
+                      navigateInternal('hub');
+                    } else {
+                      navigate('/');
+                    }
+                  }}
+                />
+            </Suspense>
+        } />
+        <Route path="/calculadora-calorias-macros" element={
+            <Suspense fallback={<NewsLoadingSkeleton />}>
+                <MacroCalculatorPage
+                  onBack={() => {
+                    if (isAuthenticated) {
+                      navigateInternal('hub');
+                    } else {
+                      navigate('/');
+                    }
+                  }}
+                />
+            </Suspense>
+        } />
+        <Route path="/ejercicios" element={
+            <Suspense fallback={<NewsLoadingSkeleton />}>
+                <PublicExercisesPage
+                  onBack={() => {
+                    if (isAuthenticated) {
+                      navigateInternal('hub');
+                    } else {
+                      navigate('/');
+                    }
+                  }}
+                />
+            </Suspense>
+        } />
+        <Route path="/sobre-nosotros" element={
+            <Suspense fallback={<NewsLoadingSkeleton />}>
+                <AboutUsPage />
+            </Suspense>
+        } />
+        <Route path="/faq" element={
+            <Suspense fallback={<NewsLoadingSkeleton />}>
+                <FAQPage />
+            </Suspense>
+        } />
+        <Route path="/mantenimiento" element={
+            <Suspense fallback={<NewsLoadingSkeleton />}>
+                <MaintenanceInfoPage />
+            </Suspense>
+        } />
+        <Route path="/migracion" element={<Navigate to="/mantenimiento" replace />} />
         <Route path="/reset-password" element={
             <Suspense fallback={<InitialLoadingSkeleton />}>
                  <ResetPasswordScreen showLogin={() => navigate('/login')} />
@@ -590,15 +1090,19 @@ export default function App() {
 
         <Route path="/" element={
             !isAuthenticated ? (
-                isInstalledApp ? <Navigate to="/login" replace /> : <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
+                isInstalledApp ? <Navigate to="/login" replace /> : (
+                  <Suspense fallback={<LandingLoadingSkeleton />}>
+                    <LandingPage onLogin={() => navigate('/login')} onRegister={() => navigate('/register')} />
+                  </Suspense>
+                )
             ) : (
-                <Navigate to="/dashboard" replace />
+                AuthenticatedAppContent
             )
         } />
 
         <Route path="/login" element={
             !isAuthenticated ? (
-                <AuthScreens authView="login" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => navigate('/')} />
+                <AuthScreens authView="login" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }} />
             ) : (
                 <Navigate to={location.state?.from || "/dashboard"} replace />
             )
@@ -606,7 +1110,7 @@ export default function App() {
 
         <Route path="/register" element={
             !isAuthenticated ? (
-                <AuthScreens authView="register" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => navigate('/')} />
+                <AuthScreens authView="register" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }} />
             ) : (
                 <Navigate to={location.state?.from || "/dashboard"} replace />
             )
@@ -614,21 +1118,39 @@ export default function App() {
 
         <Route path="/forgotPassword" element={
             !isAuthenticated ? (
-                <AuthScreens authView="forgotPassword" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => navigate('/')} />
+                <AuthScreens authView="forgotPassword" setAuthView={(v) => navigate(`/${v}`, { state: location.state })} onBack={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }} />
             ) : (
                 <Navigate to={location.state?.from || "/dashboard"} replace />
             )
         } />
          <Route path="/forgot-password" element={<Navigate to="/forgotPassword" replace />} />
 
+        {/* Rutas autenticadas conocidas: si no hay sesión activa, redirigen a /login */}
+        {[
+          '/dashboard', '/workout', '/routines', '/nutrition', '/progress',
+          '/social', '/hub', '/settings', '/profile', '/profile/:userId', '/appearance',
+          '/support', '/socialLinks', '/challenges', '/physicalProfileEditor',
+          '/adminPanel', '/securityDashboard', '/trainerPanel', '/twoFactorSetup',
+          '/notifications', '/asesoria', '/quickCardio', '/active-cardio'
+        ].map(p => (
+          <Route
+            key={p}
+            path={p}
+            element={isAuthenticated ? AuthenticatedAppContent : <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />}
+          />
+        ))}
+
+        {/* Catch-all: Si está autenticado, lo maneja la app. Si no está autenticado, muestra NotFoundPage con noindex para evitar Soft 404 en Googlebot */}
         <Route path="/*" element={
             isAuthenticated ? (
                 AuthenticatedAppContent
             ) : (
-                <Navigate to="/login" replace />
+                <NotFoundPage navigate={(route) => navigate(`/${route}`)} />
             )
         } />
       </Routes>
+        </>
+      )}
     </>
   );
 }

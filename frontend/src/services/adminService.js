@@ -40,6 +40,28 @@ export const createUser = (userData) => {
     });
 };
 
+/**
+ * Actualiza la foto de perfil de un entrenador.
+ * @param {number} userId - ID del entrenador.
+ * @param {FormData} formData - Objeto FormData con 'profileImage'.
+ */
+export const updateTrainerProfileImage = (userId, formData) => {
+    return apiClient(`/admin/users/${userId}/profile-image`, {
+        method: 'POST',
+        body: formData,
+    });
+};
+
+/**
+ * Elimina la foto de perfil de un entrenador.
+ * @param {number} userId - ID del entrenador.
+ */
+export const deleteTrainerProfileImage = (userId) => {
+    return apiClient(`/admin/users/${userId}/profile-image`, {
+        method: 'DELETE',
+    });
+};
+
 export const getSetting = (key) => {
     return apiClient(`/admin/settings/${key}`);
 };
@@ -92,4 +114,51 @@ export const getEmailLogs = (params = {}) => {
 export const getEmailStats = (params = {}) => {
     const qs = new URLSearchParams(params).toString();
     return apiClient('/admin/email-stats?' + qs);
+};
+
+export const getEmailUnsubscribeTestStatus = () => apiClient('/admin/email-unsubscribe-test', { cache: 'no-store' });
+
+export const sendEmailUnsubscribeTest = (category, checkOnly) => apiClient('/admin/email-unsubscribe-test', {
+    method: 'POST',
+    body: { category, checkOnly },
+    queueWhenOffline: false,
+    timeout: 30000
+});
+
+export const getNotificationTestStatus = () => apiClient('/admin/notification-tests/status', { cache: 'no-store' });
+
+export const getNotificationReview = () => apiClient('/admin/notification-tests/review', { cache: 'no-store' });
+
+export const updateNotificationReview = (check, reviewed) => apiClient('/admin/notification-tests/review', {
+    method: 'PUT', body: { check, reviewed }, queueWhenOffline: false
+});
+
+export const sendPushDeviceTest = (endpoint, purpose) => apiClient('/admin/notification-tests/push', {
+    method: 'POST', body: { endpoint, purpose }, queueWhenOffline: false, timeout: 30000
+});
+
+export const sendEmailMailboxTest = () => apiClient('/admin/email-mailbox-test', {
+    method: 'POST',
+    body: {},
+    queueWhenOffline: false,
+    timeout: 30000
+});
+
+
+export const getRetentionRescueDashboard = () => {
+    return apiClient('/admin/retention-rescue');
+};
+
+export const triggerRetentionRescue = (payload = {}) => {
+    return apiClient('/admin/retention-rescue/send', {
+        method: 'POST',
+        body: payload,
+    });
+};
+
+/**
+ * Obtiene el estado y métricas detalladas de los recursos del servidor VPS.
+ */
+export const getServerResources = () => {
+    return apiClient('/admin/server-resources');
 };

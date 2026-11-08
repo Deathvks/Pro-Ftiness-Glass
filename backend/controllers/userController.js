@@ -7,6 +7,9 @@ import { createNotification } from '../services/notificationService.js';
 import { processUploadedFile } from '../services/uploadService.js';
 import { deleteFile } from '../services/imageService.js';
 import { addXp, syncUserStreak, WEIGHT_UPDATE_XP } from '../services/gamificationService.js';
+import { sanitizePlainText } from '../utils/sanitizer.js';
+import { EMAIL_CONSENT_VERSION, updateEmailConsents } from '../services/emailConsentService.js';
+import { getWeeklyTrainingTarget } from '../utils/weeklyTraining.js';
 
 const {
   User,
@@ -54,7 +57,7 @@ const deleteAllUserFiles = async (userId, userInstance) => {
 export const getMyProfile = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.user.userId, {
-      attributes: { exclude: ['password_hash'] },
+      attributes: { exclude: ['password_hash', 'two_factor_secret'] },
     });
 
     if (!user) {
@@ -77,6 +80,7 @@ export const getMyProfile = async (req, res, next) => {
     const userWithPass = await User.findByPk(req.user.userId, { attributes: ['password_hash'], raw: true });
     
     const userData = user.toJSON();
+    userData.weeklyTrainingTarget = getWeeklyTrainingTarget(user.activity_level);
     userData.hasPassword = !!(userWithPass && userWithPass.password_hash);
     userData.referralCount = referralCount;
     userData.referral_code = user.referral_code;
@@ -86,6 +90,17 @@ export const getMyProfile = async (req, res, next) => {
       if (!isNaN(d.getTime())) {
         userData.last_activity_date = d.toISOString().split('T')[0];
       }
+    }
+
+    if (userData.gym_data && typeof userData.gym_data === 'string') {
+      try {
+        userData.gym_data = JSON.parse(userData.gym_data);
+      } catch (e) {
+        // mantener
+      }
+    }
+    if (typeof userData.show_gym !== 'boolean') {
+      userData.show_gym = true;
     }
 
     if (typeof userData.unlocked_badges === 'string') {
@@ -110,7 +125,7 @@ export const exportMyData = async (req, res, next) => {
     const format = req.query.format || 'json';
 
     const [user, bodyWeightLogs, nutritionLogs, personalRecords, workoutLogs] = await Promise.all([
-      User.findByPk(userId, { attributes: { exclude: ['password_hash'] } }),
+      User.findByPk(userId, { attributes: { exclude: ['password_hash', 'two_factor_secret'] } }),
       BodyWeightLog.findAll({ where: { user_id: userId }, order: [['log_date', 'DESC']], raw: true }),
       NutritionLog.findAll({ where: { user_id: userId }, order: [['log_date', 'DESC']], raw: true }),
       PersonalRecord.findAll({ where: { user_id: userId }, raw: true }),
@@ -193,7 +208,7 @@ export const updateGamificationStats = async (req, res, next) => {
     if (reason === 'Login Diario') {
       const todayStr = new Date().toISOString().split('T')[0];
       const xpResult = await addXp(userId, 25, 'Login Diario', { userInstance: user });
-      await syncUserStreak(user, todayStr);
+      await syncUserStreak(user);
 
       await user.reload({ attributes: ['xp', 'level', 'streak', 'last_activity_date', 'unlocked_badges'] });
 
@@ -210,12 +225,14 @@ export const updateGamificationStats = async (req, res, next) => {
       return res.json({
         message: xpResult.xpAdded > 0 ? 'Login diario procesado (+XP)' : 'Login diario ya registrado hoy',
         success: true,
+        xpAdded: xpResult.xpAdded || 0,
         data: {
           xp: user.xp,
           level: user.level,
           streak: user.streak,
           last_activity_date: returnDate,
-          unlocked_badges: currentBadges
+          unlocked_badges: currentBadges,
+          xpAdded: xpResult.xpAdded || 0
         },
         ignored: xpResult.xpAdded === 0
       });
@@ -294,25 +311,51 @@ export const updateMyProfile = async (req, res, next) => {
     const { userId } = req.user;
     const {
       gender, age, height, activityLevel, goal, weight, login_email_notifications,
-      is_public_profile, show_level_xp, show_badges, timezone
+      email_activity_notifications, email_marketing_consent, email_coaching_consent, emailConsentVersion,
+      is_public_profile, show_level_xp, show_badges, show_gym, gym_data, timezone
     } = req.body;
 
-    const user = await User.findByPk(userId);
+    if ((email_marketing_consent === true || email_coaching_consent === true) &&
+        emailConsentVersion !== EMAIL_CONSENT_VERSION) {
+      await t.rollback();
+      return res.status(409).json({ error: 'Actualiza la aplicación para consultar el consentimiento vigente.' });
+    }
+
+    const user = await User.findByPk(userId, { transaction: t, lock: t.LOCK.UPDATE });
     if (!user) {
       await t.rollback();
       return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
 
     const updateData = {
-      gender, age, height, activity_level: activityLevel, goal, login_email_notifications
+      gender, age, height, activity_level: activityLevel, goal: goal ? sanitizePlainText(goal) : goal,
+      login_email_notifications
     };
+
+    if (typeof email_activity_notifications === 'boolean') {
+      updateData.email_activity_notifications = email_activity_notifications;
+      updateData.email_preferences_updated_at = new Date();
+    }
 
     if (timezone) updateData.timezone = timezone;
     if (typeof is_public_profile !== 'undefined') updateData.is_public_profile = is_public_profile;
     if (typeof show_level_xp !== 'undefined') updateData.show_level_xp = show_level_xp;
     if (typeof show_badges !== 'undefined') updateData.show_badges = show_badges;
+    if (typeof show_gym !== 'undefined') updateData.show_gym = show_gym;
+    if (typeof gym_data !== 'undefined') {
+      if (typeof gym_data === 'object' && gym_data !== null) {
+        const cleanedGym = {};
+        for (const [k, v] of Object.entries(gym_data)) {
+          cleanedGym[k] = typeof v === 'string' ? sanitizePlainText(v) : v;
+        }
+        updateData.gym_data = JSON.stringify(cleanedGym);
+      } else {
+        updateData.gym_data = gym_data === null ? null : sanitizePlainText(String(gym_data));
+      }
+    }
 
     await user.update(updateData, { transaction: t });
+    await updateEmailConsents(user, { email_marketing_consent, email_coaching_consent }, 'settings', t);
 
     let weightUpdated = false;
     if (weight) {
@@ -345,7 +388,7 @@ export const updateMyProfile = async (req, res, next) => {
       });
     }
 
-    const updatedUser = await User.findByPk(userId, { attributes: { exclude: ['password_hash'] } });
+    const updatedUser = await User.findByPk(userId, { attributes: { exclude: ['password_hash', 'two_factor_secret'] } });
     const userWithPass = await User.findByPk(userId, { attributes: ['password_hash'], raw: true });
     const userData = updatedUser.toJSON();
     userData.hasPassword = !!(userWithPass && userWithPass.password_hash);
@@ -409,11 +452,11 @@ export const updateMyAccount = async (req, res, next) => {
     }
 
     if (name !== undefined && name !== user.name) {
-      fieldsToUpdate.name = name;
+      fieldsToUpdate.name = sanitizePlainText(name);
       changes.push('nombre');
     }
     if (username !== undefined && username !== user.username) {
-      fieldsToUpdate.username = username;
+      fieldsToUpdate.username = sanitizePlainText(username).replace(/[^a-zA-Z0-9_.-]/g, '');
       changes.push(`usuario`);
     }
     if (email !== undefined && email !== user.email) {
@@ -443,7 +486,7 @@ export const updateMyAccount = async (req, res, next) => {
     }
 
     await user.reload();
-    const { password_hash, ...userWithoutPassword } = user.get({ plain: true });
+    const { password_hash, two_factor_secret, ...userWithoutPassword } = user.get({ plain: true });
     userWithoutPassword.hasPassword = !!user.password_hash;
     userWithoutPassword.referral_code = user.referral_code;
 

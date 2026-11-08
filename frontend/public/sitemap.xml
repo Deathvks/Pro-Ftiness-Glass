@@ -1,25 +1,249 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
+  <!-- Portada / Landing -->
   <url>
-    <loc>https://pro-fitness-glass.zeabur.app/</loc>
-    <lastmod>2026-02-11</lastmod>
-    <changefreq>weekly</changefreq>
+    <loc>https://profitnessglass.es/</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
+  <!-- Quiénes Somos / Sobre Nosotros -->
   <url>
-    <loc>https://pro-fitness-glass.zeabur.app/privacy</loc>
-    <lastmod>2026-02-11</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
+    <loc>https://profitnessglass.es/sobre-nosotros</loc>
+    <lastmod>2026-10-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- Preguntas Frecuentes (FAQ) -->
+  <url>
+    <loc>https://profitnessglass.es/faq</loc>
+    <lastmod>2026-10-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- Herramientas y Calculadoras Públicas de Gimnasio y Nutrición -->
+  <url>
+    <loc>https://profitnessglass.es/calculadora-1rm</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://pro-fitness-glass.zeabur.app/terms</loc>
-    <lastmod>2026-02-11</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
+    <loc>https://profitnessglass.es/calculadora-calorias-macros</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/ejercicios</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Hub de Noticias & Artículos -->
+  <url>
+    <loc>https://profitnessglass.es/noticias</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Artículos Científicos de Fitness, Nutrición y Salud -->
+  <url>
+    <loc>https://profitnessglass.es/noticias/deficit-calorico-inteligente-perder-grasa-preservar-musculo</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/sobrecarga-progresiva-principio-hipertrofia-muscular</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/guia-cientifica-creatina-monohidrato-dosis-beneficios-mitos</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/pro-fitness-glass-v7-8-novedades-motor-liquid-glass</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/magnesio-bisglicinato-recuperacion-sueno-profundo</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/nuevo-sistema-calificacion-feedback-pro-fitness-glass</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/cafeina-preentreno-dosis-milimetrica-rendimiento-fuerza</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/futuro-del-fitness-inteligencia-artificial-biosensores</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/carbohidratos-por-la-noche-engordan-mitos-metabolismo</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/rango-movimiento-completo-rom-estiramiento-hipertrofia</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/tiempo-descanso-entre-series-hipertrofia-fuerza</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/cuanta-agua-beber-con-creatina-hidratacion-celular</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/sentadilla-profunda-vs-paralela-hipertrofia-biomecanica</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/citrulina-malato-oxido-nitrico-congestion-fuerza</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/fallo-muscular-mito-hipertrofia-rir-optimo</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/cardio-en-ayunas-quema-grasa-evidencia-cientifica</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/ventana-anabolica-mito-batido-post-entreno</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/bcaas-aminoacidos-ramificados-mito-o-dinero-tirado</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/dieta-flexible-iifym-vs-comer-limpio-adherencia-psicologia</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/omega-3-hipertrofia-recuperacion-muscular-evidencia</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/proteina-vegetal-vs-animal-perfil-aminoacidos-leucina</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/dolor-lumbar-peso-muerto-sentadilla-butt-wink-solucion</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/cortisol-estres-cronico-testosterona-ganancia-muscular</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/noticias/grelina-leptina-hormonas-hambre-estrategias-definicion</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Legal & Privacidad -->
+  <url>
+    <loc>https://profitnessglass.es/privacy</loc>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/terms</loc>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/aviso-legal</loc>
+    <lastmod>2026-11-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+    <lastmod>2026-10-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
   </url>
 
 </urlset>

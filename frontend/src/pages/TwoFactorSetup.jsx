@@ -317,7 +317,7 @@ const TwoFactorSetup = ({ setView }) => {
         <div className="p-4 md:p-8 max-w-2xl mx-auto animate-[fade-in_0.3s_ease-out]">
           <button 
             onClick={() => setView('settings')} 
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors mb-6 w-fit"
+            className="hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors mb-6 w-fit"
           >
             <ArrowLeft size={18} strokeWidth={2.5} /> Volver
           </button>
@@ -356,7 +356,7 @@ const TwoFactorSetup = ({ setView }) => {
         <div className="p-4 md:p-8 max-w-3xl mx-auto animate-[fade-in_0.3s_ease-out]">
           <button 
             onClick={handleBack} 
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors mb-6 w-fit"
+            className="hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors mb-6 w-fit"
           >
             <ArrowLeft size={18} strokeWidth={2.5} /> Volver
           </button>
@@ -431,7 +431,7 @@ const TwoFactorSetup = ({ setView }) => {
     <div className="p-4 md:p-8 max-w-2xl mx-auto animate-[fade-in_0.3s_ease-out]">
       <button 
         onClick={handleBack} 
-        className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors mb-6 w-fit"
+        className="hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 text-text-secondary font-bold hover:bg-black/10 dark:hover:bg-white/10 transition-colors mb-6 w-fit"
       >
         <ArrowLeft size={18} strokeWidth={2.5} /> Cancelar
       </button>
@@ -491,6 +491,14 @@ const TwoFactorSetup = ({ setView }) => {
             className="w-full bg-accent text-accent-contrast font-bold text-lg py-4 rounded-[20px] hover:shadow-lg hover:shadow-accent/20 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isLoading ? <Loader2 size={24} className="animate-spin" /> : 'Verificar y Activar'}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleBack}
+            className="w-full mt-3 py-2.5 text-text-secondary hover:text-text-primary text-sm font-bold transition-colors text-center md:hidden"
+          >
+            Cancelar
           </button>
         </div>
       </GlassCard>

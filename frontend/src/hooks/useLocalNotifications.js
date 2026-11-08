@@ -18,6 +18,21 @@ const ENGAGEMENT_MESSAGES = [
 const ID_LOGIN_REMINDER = 1001;
 const ID_MEAL_REMINDER = 1002;
 
+export const localReminderKey = (userId, category) => `pfg_local_reminder_v2:${userId}:${category}`;
+
+export const cancelLocalReminders = async ({ engagement = true, daily = true } = {}) => {
+  if (!Capacitor.isNativePlatform()) return;
+  try {
+    const pending = await LocalNotifications.getPending();
+    const notifications = pending.notifications.filter(({ id }) =>
+      (engagement && id >= 2000 && id < 2100) || (daily && [ID_LOGIN_REMINDER, ID_MEAL_REMINDER].includes(id))
+    ).map(({ id }) => ({ id }));
+    if (notifications.length) await LocalNotifications.cancel({ notifications });
+  } catch (error) {
+    console.warn('Error al cancelar recordatorios locales:', error);
+  }
+};
+
 // Usamos el diccionario infalible por localStorage para que funcione incluso con el DOM congelado en segundo plano
 const getAccentHexColor = () => {
   try {
@@ -84,6 +99,7 @@ export const useLocalNotifications = () => {
   const scheduleEngagementNotifications = useCallback(async () => {
     if (!isNative) return;
     try {
+      if ((await LocalNotifications.checkPermissions()).display !== 'granted') return;
       const pending = await LocalNotifications.getPending();
       const engagementIds = pending.notifications
         .filter(n => n.id >= 2000 && n.id < 2100)
@@ -122,6 +138,7 @@ export const useLocalNotifications = () => {
   const scheduleDailyReminders = useCallback(async (hasLoggedMeals = false, hasClaimedXP = false) => {
     if (!isNative) return;
     try {
+      if ((await LocalNotifications.checkPermissions()).display !== 'granted') return;
       const notifications = [];
       const now = new Date();
 

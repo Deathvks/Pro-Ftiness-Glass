@@ -7,6 +7,7 @@ import { UAParser } from 'ua-parser-js'; // Importación necesaria
 import db from '../models/index.js';
 import { generateVerificationCode, sendVerificationEmail, sendLoginAlertEmail } from '../services/emailService.js';
 import { createNotification } from '../services/notificationService.js';
+import { setAuthCookie } from '../utils/authCookies.js';
 
 const { User, UserSession } = db;
 
@@ -293,6 +294,7 @@ export const verifyLogin2FA = async (req, res, next) => {
       });
     }
 
+    setAuthCookie(res, jwtToken);
     res.json({
       message: 'Verificación exitosa.',
       token: jwtToken,
