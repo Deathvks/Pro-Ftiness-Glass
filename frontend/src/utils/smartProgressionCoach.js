@@ -1,6 +1,7 @@
 /* frontend/src/utils/smartProgressionCoach.js */
 import { calculate1RM } from './helpers';
 import { getAppliedCoachStrategy, evaluateExerciseFollowUpAndRecovery, formatTargetText } from './coachAppliedHistory';
+import { DB_TO_HEATMAP_MAP, guessMuscleFromText, MUSCLE_NAMES_ES } from './muscleUtils';
 
 /**
  * Normaliza y clasifica el objetivo del usuario del perfil / onboarding.
@@ -333,20 +334,21 @@ export const detectExerciseEquipmentType = (exercise, allExercises = []) => {
   if (rawName.includes('barra') || rawName.includes('barbell') || rawName.includes('multipower') || rawName.includes('smith')) return 'barbell';
 
   // 2. Clasificación por el campo de material / equipamiento ("barra", "polea" / "poleas", "mancuerna", "máquina", etc.)
-  if (rawEquipment) {
-    if (rawEquipment.includes('polea') || rawEquipment.includes('cable') || rawEquipment.includes('cuerda')) {
+  const normEq = rawEquipment.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (normEq) {
+    if (normEq.includes('polea') || normEq.includes('cable') || normEq.includes('cuerda')) {
       return 'pulley';
     }
-    if (rawEquipment.includes('mancuerna') || rawEquipment.includes('dumbbell') || rawEquipment.includes('pesa rusa') || rawEquipment.includes('kettlebell')) {
+    if (normEq.includes('mancuerna') || normEq.includes('dumbbell') || normEq.includes('pesa rusa') || normEq.includes('kettlebell')) {
       return 'dumbbell';
     }
-    if (rawEquipment.includes('barra') || rawEquipment.includes('barbell') || rawEquipment.includes('ez') || rawEquipment.includes('multipower') || rawEquipment.includes('smith')) {
+    if (normEq.includes('barra') || normEq.includes('barbell') || normEq.includes('ez') || normEq.includes('multipower') || normEq.includes('smith')) {
       return 'barbell';
     }
-    if (rawEquipment.includes('máquina') || rawEquipment.includes('maquina') || rawEquipment.includes('machine') || rawEquipment.includes('disco') || rawEquipment.includes('placa')) {
+    if (normEq.includes('maquina') || normEq.includes('machine') || normEq.includes('disco') || normEq.includes('placa') || normEq.includes('prensa')) {
       return 'machine';
     }
-    if (rawEquipment.includes('corporal') || rawEquipment.includes('bodyweight') || rawEquipment.includes('ninguno')) {
+    if (normEq.includes('corporal') || normEq.includes('bodyweight') || normEq.includes('ninguno') || normEq.includes('libre')) {
       return 'bodyweight';
     }
   }
@@ -359,6 +361,413 @@ export const detectExerciseEquipmentType = (exercise, allExercises = []) => {
   if (BODYWEIGHT_EXERCISE_LIST.some((kw) => rawName.includes(kw))) return 'bodyweight';
 
   return 'other';
+};
+
+/**
+ * Clusters musculares estándar para agrupar músculos anatómicos relacionados
+ * y detectar solapamiento de fatiga intra-sesión.
+ */
+export const MUSCLE_CLUSTERS = [
+  { key: 'chest', label: 'Pecho', matches: ['chest'] },
+  { key: 'upper-back', label: 'Espalda Alta', matches: ['upper-back', 'lats'] },
+  { key: 'lower-back', label: 'Lumbares / Espalda Baja', matches: ['lower-back'] },
+  { key: 'shoulders', label: 'Hombros', matches: ['front-deltoids', 'back-deltoids'] },
+  { key: 'biceps', label: 'Bíceps', matches: ['biceps'] },
+  { key: 'triceps', label: 'Tríceps', matches: ['triceps'] },
+  { key: 'forearm', label: 'Antebrazos', matches: ['forearm'] },
+  { key: 'quadriceps', label: 'Cuádriceps', matches: ['quadriceps'] },
+  { key: 'hamstring', label: 'Femoral / Isquios', matches: ['hamstring'] },
+  { key: 'gluteal', label: 'Glúteos', matches: ['gluteal'] },
+  { key: 'calves', label: 'Gemelos', matches: ['calves'] },
+  { key: 'trapezius', label: 'Trapecios', matches: ['trapezius'] },
+  { key: 'abs', label: 'Abdominales / Core', matches: ['abs', 'obliques'] },
+  { key: 'adductor', label: 'Aductores / Abductores', matches: ['adductor', 'abductors'] }
+];
+
+/**
+ * Extrae las claves anatómicas de los músculos implicados en un ejercicio.
+ */
+export const getExerciseMuscleKeys = (exercise, allExercises = []) => {
+  if (!exercise) return [];
+  const keys = new Set();
+
+  const normalizeAndAdd = (val) => {
+    if (!val) return;
+    const parts = Array.isArray(val) ? val : String(val).split(/[,;/+]/);
+    for (const p of parts) {
+      const clean = String(p).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      if (!clean) continue;
+      if (DB_TO_HEATMAP_MAP[clean]) {
+        DB_TO_HEATMAP_MAP[clean].forEach(m => keys.add(m));
+      } else {
+        for (const [k, mapped] of Object.entries(DB_TO_HEATMAP_MAP)) {
+          const kn = k.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          if (kn === clean || clean.includes(kn) || kn.includes(clean)) {
+            mapped.forEach(m => keys.add(m));
+          }
+        }
+      }
+    }
+  };
+
+  normalizeAndAdd(exercise.muscle_group);
+  normalizeAndAdd(exercise.muscle);
+  normalizeAndAdd(exercise.exercise_details?.muscle_group);
+  normalizeAndAdd(exercise.exercise_details?.muscle);
+  normalizeAndAdd(exercise.Exercise?.muscle_group);
+  normalizeAndAdd(exercise.Exercise?.muscle);
+
+  const rawName = String(exercise.name || exercise.exercise_name || '').toLowerCase().trim();
+  if (keys.size === 0 && Array.isArray(allExercises) && allExercises.length > 0 && rawName) {
+    const matched = allExercises.find(
+      (ex) => String(ex?.name || '').toLowerCase().trim() === rawName
+    );
+    if (matched) {
+      normalizeAndAdd(matched.muscle_group);
+      normalizeAndAdd(matched.muscle);
+    }
+  }
+
+  const guessed = guessMuscleFromText(rawName);
+  guessed.forEach(m => keys.add(m));
+
+  return Array.from(keys);
+};
+
+/**
+ * Obtiene los clusters musculares a los que pertenece un ejercicio.
+ */
+export const getExerciseMuscleClusters = (exercise, allExercises = []) => {
+  const keys = getExerciseMuscleKeys(exercise, allExercises);
+  const matched = [];
+  for (const cluster of MUSCLE_CLUSTERS) {
+    if (cluster.matches.some(m => keys.includes(m))) {
+      matched.push(cluster);
+    }
+  }
+  return matched;
+};
+
+/**
+ * Determina qué clusters musculares comparten dos ejercicios.
+ */
+export const getSharedMuscleClusters = (clustersA, clustersB) => {
+  const shared = [];
+  for (const cA of clustersA) {
+    if (clustersB.some(cB => cB.key === cA.key)) {
+      shared.push(cA);
+    }
+  }
+  return shared;
+};
+
+/**
+ * Información biomecánica y reglas de progresión específicas según el tipo de material / equipamiento.
+ */
+export const getEquipmentDetails = (equipmentType) => {
+  switch (equipmentType) {
+    case 'pulley':
+      return {
+        key: 'pulley',
+        label: 'Poleas / Cables',
+        iconName: 'Cable',
+        tensionType: 'Tensión continua y constante en todo el recorrido (sin punto muerto de descarga articular).',
+        progressionRule: 'Saltos finos (+1.25 a +2.5 kg con micro-pesa o selector). Si en tu gimnasio la torre da saltos grandes de 5 kg entre placas, progresa primero sumando repeticiones (hasta 12-15 reps) antes de bajar el pin a la siguiente placa.',
+        fatigueBehavior: 'A diferencia de las mancuernas, en poleas no hay fatiga de estabilizadores tridimensionales ni riesgo de quedar atrapado bajo la barra. Sin embargo, la tensión constante quema las fibras antes al final del recorrido.',
+        badgeClass: 'bg-cyan-500/15 text-cyan-500 border-cyan-500/30'
+      };
+    case 'dumbbell':
+      return {
+        key: 'dumbbell',
+        label: 'Mancuernas',
+        iconName: 'Dumbbell',
+        tensionType: 'Carga libre tridimensional e independiente en cada brazo.',
+        progressionRule: 'Progresión doble estricta: consolidar primero el extremo alto de repeticiones (ej. 10-12 reps limpias en todas las series) antes de saltar de mancuerna, ya que cualquier incremento es doble al aplicarse por mano (+2 kg por mancuerna = +4 kg totales para el torso).',
+        fatigueBehavior: 'Los músculos estabilizadores (manguito rotador, serrato, deltoides) fallan mucho antes que el motor primario; forzar el peso con fatiga previa causa tirones con inercia o descompensaciones lesivas.',
+        badgeClass: 'bg-purple-500/15 text-purple-400 border-purple-500/30'
+      };
+    case 'barbell':
+      return {
+        key: 'barbell',
+        label: 'Barra',
+        iconName: 'Barbell',
+        tensionType: 'Carga bilateral rígida con máximo tonelaje absoluto.',
+        progressionRule: 'Salto mínimo simétrico con discos de 1.25 kg es de +2.5 kg en total (1.25 kg a cada lado de la barra). Solo subir cuando todas las series se dominen con RIR >= 1-2.',
+        fatigueBehavior: 'Máxima exigencia de fuerza neural y soporte espinal. Si vienes con fatiga previa en el mismo músculo, fallar bajo la barra es peligroso; ajustar en múltiplos limpios de 2.5 kg manteniendo RIR 1-2.',
+        badgeClass: 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+      };
+    case 'machine':
+      return {
+        key: 'machine',
+        label: 'Máquina Guiada',
+        iconName: 'Machine',
+        tensionType: 'Trayectoria fija asistida sin balanceo ni exigencia a estabilizadores.',
+        progressionRule: 'Incrementos por selector de placas o discos con total aislamiento.',
+        fatigueBehavior: 'Es el equipamiento más seguro para entrenar tras fatiga previa: permite exprimir el músculo hasta RIR 0-1 sin riesgo de que la carga se descontrole.',
+        badgeClass: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+      };
+    case 'bodyweight':
+      return {
+        key: 'bodyweight',
+        label: 'Peso Corporal',
+        iconName: 'User',
+        tensionType: 'Carga anatómica de propio peso corporal.',
+        progressionRule: 'Sobrecarga mediante repeticiones estrictas, mayor tiempo bajo tensión (tempo excéntrico de 3 seg) o añadir lastre ligero (+1.25 a +2.5 kg) tras superar 12 reps.',
+        fatigueBehavior: 'Bajo fatiga previa, reducir 1-2 repeticiones del objetivo o usar apoyo elástico antes de romper la técnica.',
+        badgeClass: 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+      };
+    default:
+      return {
+        key: 'other',
+        label: 'Material Estándar',
+        iconName: 'Dumbbell',
+        tensionType: 'Carga estándar',
+        progressionRule: 'Incrementos moderados respetando la técnica estricta.',
+        fatigueBehavior: 'Ajustar carga según tolerancia muscular y técnica.',
+        badgeClass: 'bg-accent/15 text-accent border-accent/30'
+      };
+  }
+};
+
+/**
+ * Detecta en tiempo real sin recargar si en la sesión activa actual el usuario realizó
+ * un ejercicio previo del mismo músculo donde no levantó lo previsto (menos peso, menos reps, o fallo prematuro).
+ */
+export const detectIntraSessionMuscleFatigue = (currentExercise, activeWorkout, allExercises = [], userProfile = {}) => {
+  if (!currentExercise || !activeWorkout || !Array.isArray(activeWorkout.exercises) || activeWorkout.exercises.length === 0) {
+    return { hasFatigue: false };
+  }
+
+  const currentIdx = activeWorkout.exercises.findIndex(e => {
+    if (currentExercise.id && e.id && String(e.id) === String(currentExercise.id)) return true;
+    const n1 = String(e.name || '').toLowerCase().trim();
+    const n2 = String(currentExercise.name || '').toLowerCase().trim();
+    return n1 && n2 && n1 === n2;
+  });
+
+  if (currentIdx <= 0) {
+    return { hasFatigue: false };
+  }
+
+  const currentClusters = getExerciseMuscleClusters(currentExercise, allExercises);
+  if (currentClusters.length === 0) {
+    return { hasFatigue: false };
+  }
+
+  const currentEquipment = detectExerciseEquipmentType(currentExercise, allExercises);
+  const goalInfo = normalizeUserGoal(userProfile?.goal);
+
+  // Escanear ejercicios previos en orden cronológico inverso (el más inmediato primero)
+  const priorExercises = activeWorkout.exercises.slice(0, currentIdx);
+
+  for (let i = priorExercises.length - 1; i >= 0; i--) {
+    const prevEx = priorExercises[i];
+    const prevClusters = getExerciseMuscleClusters(prevEx, allExercises);
+    const sharedClusters = getSharedMuscleClusters(currentClusters, prevClusters);
+
+    if (sharedClusters.length === 0) {
+      continue;
+    }
+
+    const setsDone = prevEx.setsDone || [];
+    const workingSets = setsDone.filter(s => {
+      const isWarmup = s.is_warmup === true || s.is_warmup === 'true' || s.is_warmup === 1;
+      const reps = parseInt(s.reps, 10) || 0;
+      const weight = parseFloat(s.weight_kg) || 0;
+      return !isWarmup && (reps > 0 || weight > 0);
+    });
+
+    if (workingSets.length === 0) {
+      continue;
+    }
+
+    const rawPrevReps = String(prevEx.reps || '10');
+    const prevTargetReps = parseInt(rawPrevReps.split('-')[0], 10) || 10;
+    const prevPlannedWeight = parseFloat(prevEx.weight) || 0;
+
+    const actualRepsList = workingSets.map(s => parseInt(s.reps, 10) || 0).filter(r => r > 0);
+    const actualWeightsList = workingSets.map(s => parseFloat(s.weight_kg) || 0);
+    const topWeight = actualWeightsList.length > 0 ? Math.max(...actualWeightsList) : 0;
+    const minReps = actualRepsList.length > 0 ? Math.min(...actualRepsList) : 0;
+    const maxReps = actualRepsList.length > 0 ? Math.max(...actualRepsList) : 0;
+    const avgReps = actualRepsList.length > 0 ? (actualRepsList.reduce((a, b) => a + b, 0) / actualRepsList.length) : 0;
+    const lastReps = actualRepsList.length > 0 ? actualRepsList[actualRepsList.length - 1] : 0;
+
+    const validRirs = workingSets
+      .map(s => (s.rir !== null && s.rir !== undefined && s.rir !== '') ? parseFloat(s.rir) : null)
+      .filter(r => r !== null && !isNaN(r));
+    const minRir = validRirs.length > 0 ? Math.min(...validRirs) : null;
+
+    const missedReps = (avgReps > 0 && avgReps <= (prevTargetReps - 1.5)) || (minReps > 0 && minReps <= (prevTargetReps - 2));
+    const repCollapse = (maxReps >= 8 && lastReps > 0 && (maxReps - lastReps) >= 3 && (lastReps / maxReps) <= 0.72);
+    const droppedWeight = (prevPlannedWeight > 0 && topWeight > 0 && topWeight < (prevPlannedWeight * 0.94));
+    const failureShort = (minRir !== null && minRir <= 0 && minReps < prevTargetReps);
+    const usedDropset = workingSets.some(s => s.is_dropset === true || s.is_dropset === 'true');
+
+    const hasUnderperformed = missedReps || repCollapse || droppedWeight || failureShort || usedDropset;
+
+    if (hasUnderperformed) {
+      const sharedMuscleName = sharedClusters[0].label;
+      const prevExName = prevEx.displayName || prevEx.name;
+
+      let performanceSummary = '';
+      if (missedReps) {
+        performanceSummary = `completaste ${Math.round(avgReps * 10) / 10} reps de media (mínimo ${minReps}) frente a las ${prevTargetReps} previstas`;
+      } else if (repCollapse) {
+        performanceSummary = `sufriste una caída de ${maxReps} a ${lastReps} reps por agotamiento muscular`;
+      } else if (droppedWeight) {
+        performanceSummary = `levantaste ${topWeight} kg frente a los ${prevPlannedWeight} kg planificados (-${Math.round((1 - topWeight / prevPlannedWeight) * 100)}%)`;
+      } else if (failureShort) {
+        performanceSummary = `llegaste al fallo técnico antes de alcanzar las ${prevTargetReps} reps previstas`;
+      } else {
+        performanceSummary = `acumulaste fatiga máxima y requirió dropset`;
+      }
+
+      const severity = (missedReps && minReps <= (prevTargetReps - 3)) || (droppedWeight && topWeight < (prevPlannedWeight * 0.85)) || repCollapse
+        ? 'high'
+        : 'moderate';
+
+      return {
+        hasFatigue: true,
+        severity,
+        fatiguedExerciseName: prevExName,
+        sharedMuscleKey: sharedClusters[0].key,
+        sharedMuscleName,
+        performanceSummary,
+        missedReps,
+        repCollapse,
+        droppedWeight,
+        failureShort,
+        usedDropset,
+        prevTargetReps,
+        actualAvgReps: Math.round(avgReps * 10) / 10,
+        currentEquipment,
+        goalKey: goalInfo.key,
+        goalLabel: goalInfo.label
+      };
+    }
+  }
+
+  return { hasFatigue: false };
+};
+
+/**
+ * Calcula el reajuste dinámico de carga, repeticiones y descansos según el objetivo
+ * y las características del material cuando se detecta fatiga del mismo músculo.
+ */
+export const calculateIntraSessionFatigueAdjustment = ({
+  baseWeight = 0,
+  targetReps = 10,
+  equipmentType = 'other',
+  goalKey = 'gain',
+  severity = 'moderate',
+  fatigueInfo = {}
+}) => {
+  const isBW = baseWeight === 0 || equipmentType === 'bodyweight';
+
+  let reductionPct = 0.08;
+  let adjustedReps = targetReps;
+  let suggestedRest = '90 - 120 seg';
+  let suggestedRir = '1-2 reps en recámara';
+
+  if (goalKey === 'gain') {
+    reductionPct = severity === 'high' ? 0.10 : 0.07;
+    suggestedRest = '90 - 120 seg';
+    suggestedRir = '1-2 reps en recámara';
+  } else if (goalKey === 'strength') {
+    reductionPct = severity === 'high' ? 0.07 : 0.04;
+    suggestedRest = '150 - 180 seg';
+    suggestedRir = '2 reps en recámara';
+  } else if (goalKey === 'lose') {
+    reductionPct = severity === 'high' ? 0.12 : 0.09;
+    suggestedRest = '90 - 120 seg';
+    suggestedRir = '2 reps en recámara';
+  } else {
+    reductionPct = severity === 'high' ? 0.08 : 0.06;
+    suggestedRest = '90 - 120 seg';
+    suggestedRir = '1-2 reps en recámara';
+  }
+
+  let adjustedWeight = 0;
+
+  if (isBW) {
+    adjustedWeight = 0;
+    adjustedReps = Math.max(4, targetReps - (severity === 'high' ? 2 : 1));
+  } else {
+    const rawAdjusted = baseWeight * (1 - reductionPct);
+
+    if (equipmentType === 'barbell') {
+      const step = baseWeight >= 25 ? 2.5 : 1.25;
+      adjustedWeight = Math.max(step, Math.floor(rawAdjusted / step) * step);
+      if (adjustedWeight >= baseWeight) {
+        adjustedWeight = Math.max(step, baseWeight - step);
+      }
+    } else if (equipmentType === 'dumbbell') {
+      const step = baseWeight >= 20 ? 2.5 : (baseWeight >= 10 ? 2 : 1);
+      adjustedWeight = Math.max(step, Math.floor(rawAdjusted / step) * step);
+      if (adjustedWeight >= baseWeight) {
+        adjustedWeight = Math.max(step, baseWeight - step);
+      }
+    } else if (equipmentType === 'pulley') {
+      const step = baseWeight < 15 ? 1.25 : 2.5;
+      adjustedWeight = Math.max(step, Math.round(rawAdjusted / step) * step);
+      if (adjustedWeight >= baseWeight) {
+        adjustedWeight = Math.max(step, baseWeight - step);
+      }
+    } else if (equipmentType === 'machine') {
+      const step = baseWeight >= 40 ? 5 : 2.5;
+      adjustedWeight = Math.max(step, Math.round(rawAdjusted / step) * step);
+      if (adjustedWeight >= baseWeight) {
+        adjustedWeight = Math.max(step, baseWeight - step);
+      }
+    } else {
+      adjustedWeight = roundToWeightStep(rawAdjusted);
+      if (adjustedWeight >= baseWeight) {
+        adjustedWeight = Math.max(1.25, baseWeight - 1.25);
+      }
+    }
+  }
+
+  adjustedWeight = Math.round(adjustedWeight * 10) / 10;
+  const actualReductionKg = Math.round((baseWeight - adjustedWeight) * 10) / 10;
+  const actualReductionPct = baseWeight > 0 ? Math.round((actualReductionKg / baseWeight) * 100) : 0;
+
+  let goalExplanation = '';
+  if (goalKey === 'gain') {
+    goalExplanation = `Para tu objetivo de Hipertrofia, el estímulo clave es acumular tensión mecánica en el rango de 8-12 reps con cadencia controlada. Si forzáramos la carga habitual con el músculo ya fatigado, la serie se cortaría a 4-6 reps con mala técnica y pérdida de tensión. Reducimos ${actualReductionKg > 0 ? `-${actualReductionKg} kg (${actualReductionPct}%)` : 'repeticiones'} para que completes todas tus series dentro de la ventana óptima de hipertrofia.`;
+  } else if (goalKey === 'strength') {
+    goalExplanation = `Para tu objetivo de Fuerza, necesitas un reclutamiento neural de máxima calidad sin fallo técnico ni compensaciones. Al venir el músculo con fatiga neuromuscular de ${fatigueInfo.fatiguedExerciseName || 'el ejercicio anterior'}, forzar la carga máxima aumentaría el riesgo articular. Ajustamos la carga a ${adjustedWeight} kg y ampliamos descansos a ${suggestedRest} para asegurar levantamientos limpios.`;
+  } else if (goalKey === 'lose') {
+    goalExplanation = `En definición y déficit calórico, la recuperación entre ejercicios es más lenta y el riesgo articular se incrementa. Ajustamos la carga un ${actualReductionPct}% (a ${adjustedWeight} kg) para preservar el estímulo de retención muscular sin sobrecargar tendones ni quemar fibras de soporte.`;
+  } else {
+    goalExplanation = `Ajustamos la carga a ${adjustedWeight} kg (${actualReductionPct}% de descarga) para garantizar una ejecución fluida y evitar sobreesfuerzo articular tras el desgaste previo.`;
+  }
+
+  let equipmentExplanation = '';
+  if (equipmentType === 'dumbbell') {
+    equipmentExplanation = `Al usar mancuernas, cada mano estabiliza de forma independiente en 3 dimensiones y cualquier incremento se aplica en ambas manos (+2 kg por mancuerna son +4 kg totales para el torso). Bajo fatiga previa, los estabilizadores del hombro y codo fallan antes que el músculo principal; bajar a ${adjustedWeight} kg por mancuerna evita balanceos e inercias lesivas.`;
+  } else if (equipmentType === 'pulley') {
+    equipmentExplanation = `Al usar poleas, la tensión mecánica es continua durante todo el recorrido (no hay punto muerto de descanso en el bloqueo como en peso libre). Aunque no sufres fatiga de estabilizadores, la resistencia continua quema las fibras más rápido; ajustar a ${adjustedWeight} kg en el selector te permite ejecutar el rango completo y la contracción final con técnica estricta.`;
+  } else if (equipmentType === 'barbell') {
+    equipmentExplanation = `Al usar barra, el salto mínimo simétrico con discos de 1.25 kg es de +2.5 kg en total. Con fatiga acumulada en ${fatigueInfo.sharedMuscleName || 'este músculo'}, fallar bajo la barra es peligroso; ajustamos a ${adjustedWeight} kg en múltiplos seguros de 2.5 kg para mantener velocidad y margen de seguridad (RIR 1-2).`;
+  } else if (equipmentType === 'machine') {
+    equipmentExplanation = `Al usar máquina guiada, la trayectoria es fija y no dependes de estabilizadores fatigados. Esto te permite seguir exprimiendo el músculo de forma segura; ajustamos a ${adjustedWeight} kg para mantener repeticiones completas sin forzar la articulación.`;
+  } else if (equipmentType === 'bodyweight') {
+    equipmentExplanation = `En peso corporal, ajustamos a ${adjustedReps} repeticiones parando 1-2 antes del fallo muscular para mantener cadencia perfecta.`;
+  } else {
+    equipmentExplanation = `Ajustamos la carga a ${adjustedWeight} kg respetando la escala de incremento de tu equipamiento.`;
+  }
+
+  return {
+    adjustedWeight,
+    adjustedReps,
+    suggestedRest,
+    suggestedRir,
+    actualReductionKg,
+    actualReductionPct,
+    goalExplanation,
+    equipmentExplanation
+  };
 };
 
 /**
@@ -907,7 +1316,9 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     currentRoutineId = null, 
     currentRoutineName = null, 
     difficultyFeedback = 'normal',
-    allExercises = []
+    allExercises = [],
+    activeWorkout = null,
+    allRoutineExercises = []
   } = (typeof options === 'object' && options !== null) ? options : {};
 
   const equipmentType = detectExerciseEquipmentType(exercise, allExercises);
@@ -1084,13 +1495,13 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     plateNote = {
       standardJump: realisticIncrement,
       equipmentType,
-      title: `Saltos de discos en barra (+${realisticIncrement} kg)`,
-      text: `Nota sobre barra: Como los discos pequeños parten de 1.25 kg, en barra el salto mínimo simétrico es de +2.5 kg en total (1.25 kg a cada lado). El sistema solo te recomienda dar este salto cuando ve en tu historial que dominas todas tus series con margen; si hoy te pesa demasiado, usa "+1 Repetición".`
+      title: `Sobrecarga en barra (+${realisticIncrement} kg)`,
+      text: `Nota sobre barra: Como los discos pequeños estándar parten de 1.25 kg, en barra el salto mínimo simétrico es de +2.5 kg en total (1.25 kg a cada lado de la barra). Permite mover el tonelaje absoluto más alto con palanca rígida. Sube discos solo cuando domines todas tus series con RIR >= 1-2; si vienes con fatiga previa o te cuesta, consolida repeticiones.`
     };
     repsOptionMotive = `Si añadir un disco de 1.25 kg a cada lado de la barra (+2.5 kg totales) te resulta todavía pesado, consolidar 1 repetición más con los mismos ${currentTopWeight} kg aumenta el tonelaje efectivo con cero riesgo articular.`;
     repsOptionDescription = `Mantén los ${currentTopWeight} kg y busca 1 repetición adicional (${targetReps + 1} reps) por serie antes de añadir más discos a la barra.`;
   } else if (equipmentType === 'pulley') {
-    coachingEquipmentHint = `Al ser un ejercicio en polea, puedes subir +${realisticIncrement} kg usando el selector intermedio o acoplando una micro-pesa en la torre; si tu polea da saltos más grandes entre placas, progresa sumando repeticiones.`;
+    coachingEquipmentHint = `Al trabajar en polea, la tensión mecánica es continua a lo largo de todo el movimiento (sin inercia ni descarga en el bloqueo, a diferencia de las mancuernas). No cuesta lo mismo progresar aquí porque no dependes de estabilizadores 3D libres; puedes subir +${realisticIncrement} kg con micro-pesa o selector gradual, o consolidar repeticiones si la torre salta de 5 en 5 kg.`;
     linearDetailMotive = `Subir +${realisticIncrement} kg en la polea en todas tus series introduce una tensión mecánica constante, el estímulo principal para forzar nueva síntesis proteica muscular.`;
     linearDetailDescription = `Sube a ${nextWeight} kg en todas tus series de trabajo (+${realisticIncrement} kg en el selector de la polea o con micro-pesa).`;
     repsOptionMotive = `En muchas poleas el salto de una placa a la siguiente es de 2.5 a 5 kg; consolidar 1 repetición más con los mismos ${currentTopWeight} kg aumenta tu fuerza sin forzar un salto brusco de placa.`;
@@ -1098,11 +1509,11 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     plateNote = {
       standardJump: realisticIncrement,
       equipmentType,
-      title: `Saltos de carga en polea (+${realisticIncrement} kg)`,
-      text: `Nota sobre poleas: El incremento ideal sugerido es de +${realisticIncrement} kg en total usando el selector gradual o una micro-pesa acoplable sobre las placas. Si la torre de tu gimnasio salta de 5 en 5 kg y no tiene ajuste intermedio, elige la opción de "+1 Repetición" con tu peso actual.`
+      title: `Sobrecarga en polea (+${realisticIncrement} kg)`,
+      text: `Nota sobre poleas: La polea proporciona tensión continua y uniforme durante todo el recorrido angular. No cuesta lo mismo progresar en polea que en mancuernas, ya que la polea no demanda estabilidad tridimensional por mano ni sufre el riesgo de que la carga caiga sobre ti. El incremento ideal sugerido es de +${realisticIncrement} kg con el selector gradual o micro-pesa acoplable. Si la torre de tu gimnasio tiene placas grandes que saltan de 5 en 5 kg, progresa consolidando primero repeticiones (+1 a +2 reps) con tu placa actual antes de dar el salto.`
     };
   } else if (equipmentType === 'dumbbell') {
-    coachingEquipmentHint = `Al trabajar con mancuernas, busca un incremento de +${realisticIncrement} kg pasando a la siguiente mancuerna disponible; si el salto en el rack de tu gimnasio es mayor y te resulta muy pesado, progresa sumando repeticiones.`;
+    coachingEquipmentHint = `Al trabajar con mancuernas, cada mano estabiliza la carga de forma independiente en 3 dimensiones. Cualquier salto es doble al aplicarse por mano (+2 kg por mancuerna son +4 kg totales para el torso). No cuesta lo mismo progresar con mancuernas que en poleas porque los estabilizadores se fatigan antes. La progresión óptima es la progresión doble: primero gana repeticiones antes de cambiar de mancuernas.`;
     linearDetailMotive = `Subir +${realisticIncrement} kg con las mancuernas en todas tus series introduce una tensión mecánica constante, el estímulo principal para forzar nueva síntesis proteica muscular.`;
     linearDetailDescription = `Sube a ${nextWeight} kg en todas tus series de trabajo (+${realisticIncrement} kg pasando a la siguiente mancuerna).`;
     repsOptionMotive = `Cuando el salto al siguiente par de mancuernas del gimnasio es demasiado exigente, sumar 1 repetición más con los mismos ${currentTopWeight} kg consolida tu fuerza con total control articular.`;
@@ -1110,8 +1521,8 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     plateNote = {
       standardJump: realisticIncrement,
       equipmentType,
-      title: `Saltos de carga en mancuernas (+${realisticIncrement} kg)`,
-      text: `Nota sobre mancuernas: El incremento sugerido es de +${realisticIncrement} kg. Si el rack de mancuernas de tu gimnasio salta de 2 en 2 kg o de 2.5 en 2.5 kg y notas el cambio muy brusco, la opción óptima es elegir "+1 Repetición" con tus mancuernas actuales hasta dominar el peso.`
+      title: `Sobrecarga en mancuernas (+${realisticIncrement} kg por mano)`,
+      text: `Nota sobre mancuernas: En mancuernas no cuesta lo mismo progresar que en poleas o máquinas: cada incremento se aplica POR MANO (+2 kg con mancuernas representa +4 kg en total para el torso, un salto de +12.5% a +25%) y los músculos estabilizadores se fatigan mucho más rápido. Por ello, la regla de oro en mancuernas es la progresión doble: primero exprimir repeticiones (ej. completar 10-12 reps limpias con tu par actual) antes de dar el salto al siguiente par del rack.`
     };
   } else if (equipmentType === 'machine') {
     coachingEquipmentHint = `Al ser un ejercicio en máquina, sube +${realisticIncrement} kg en total en el selector o soporte de carga; si el salto mínimo de la máquina es mayor, progresa sumando repeticiones.`;
@@ -1122,8 +1533,8 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     plateNote = {
       standardJump: realisticIncrement,
       equipmentType,
-      title: `Saltos de carga en máquina (+${realisticIncrement} kg)`,
-      text: `Nota sobre máquinas: El incremento recomendado es de +${realisticIncrement} kg en total. Si tu máquina es de placas con saltos mayores, utiliza el selector gradual si dispone de él o elige la opción de "+1 Repetición" con tu carga actual.`
+      title: `Sobrecarga en máquina (+${realisticIncrement} kg)`,
+      text: `Nota sobre máquinas: En máquina guiada la trayectoria es fija y no dependes de estabilizadores fatigados. Es el equipamiento más seguro para sobrecargar y para entrenar tras fatiga previa. El incremento recomendado es de +${realisticIncrement} kg en total; si tu máquina es de placas con saltos mayores, utiliza el selector gradual si dispone de él o elige la opción de "+1 Repetición" con tu carga actual.`
     };
   } else if (equipmentType === 'bodyweight' || currentTopWeight === 0) {
     coachingEquipmentHint = 'Al ser un ejercicio de peso corporal (calistenia), la sobrecarga progresiva se logra sumando repeticiones limpias o aumentando el control excéntrico antes de añadir lastre.';
@@ -1149,6 +1560,33 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
       title: `Salto de carga recomendado (+${realisticIncrement} kg)`,
       text: `Nota sobre progresión: El incremento recomendado es de +${realisticIncrement} kg en total (no por lado). Si el material que utilizas tiene saltos mínimos mayores, elige la opción de "+1 Repetición" con tu peso actual para progresar con seguridad.`
     };
+  }
+
+  // Detección en tiempo real de fatiga acumulada en la sesión activa por ejercicios del mismo músculo
+  const sessionWorkout = activeWorkout || (allRoutineExercises.length > 0 ? { exercises: allRoutineExercises } : null);
+  const intraSessionFatigue = detectIntraSessionMuscleFatigue(exercise, sessionWorkout, allExercises, userProfile);
+
+  let fatigueAdjustment = null;
+  if (intraSessionFatigue.hasFatigue) {
+    fatigueAdjustment = calculateIntraSessionFatigueAdjustment({
+      baseWeight: currentTopWeight,
+      targetReps,
+      equipmentType,
+      goalKey: goalInfo.key,
+      severity: intraSessionFatigue.severity,
+      fatigueInfo: intraSessionFatigue
+    });
+    intraSessionFatigue.equipmentDetails = getEquipmentDetails(equipmentType);
+    intraSessionFatigue.originalSuggestedWeight = currentTopWeight;
+    intraSessionFatigue.adjustedSuggestedWeight = fatigueAdjustment.adjustedWeight;
+    intraSessionFatigue.originalSuggestedReps = targetReps;
+    intraSessionFatigue.adjustedSuggestedReps = fatigueAdjustment.adjustedReps;
+    intraSessionFatigue.suggestedRest = fatigueAdjustment.suggestedRest;
+    intraSessionFatigue.suggestedRir = fatigueAdjustment.suggestedRir;
+    intraSessionFatigue.actualReductionKg = fatigueAdjustment.actualReductionKg;
+    intraSessionFatigue.actualReductionPct = fatigueAdjustment.actualReductionPct;
+    intraSessionFatigue.goalExplanation = fatigueAdjustment.goalExplanation;
+    intraSessionFatigue.equipmentExplanation = fatigueAdjustment.equipmentExplanation;
   }
 
   let suggestedWeight = currentTopWeight;
@@ -2173,6 +2611,46 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     }
   }
 
+  // Si se detectó fatiga en un ejercicio previo del mismo músculo y el usuario no está forzando "struggling" ni "cannot_reach"
+  if (intraSessionFatigue?.hasFatigue && !isAlreadyAppliedInSession && difficultyFeedback === 'normal' && fatigueAdjustment) {
+    suggestedWeight = fatigueAdjustment.adjustedWeight;
+    suggestedReps = fatigueAdjustment.adjustedReps;
+    suggestedRest = fatigueAdjustment.suggestedRest;
+    suggestedRir = fatigueAdjustment.suggestedRir;
+    actionDirection = 'down';
+    intensityLabel = 'Adaptación por Fatiga Previa';
+    intensityDesc = `${fatigueAdjustment.suggestedRir} · Músculo pre-fatigado`;
+    weightChangeNote = isBodyweight 
+      ? `${fatigueAdjustment.adjustedReps} reps (adaptado)` 
+      : `-${fatigueAdjustment.actualReductionKg} kg (${fatigueAdjustment.actualReductionPct}%)`;
+    actionTitle = isBodyweight
+      ? `Ajuste en Tiempo Real: ${fatigueAdjustment.adjustedReps} reps por fatiga en ${intraSessionFatigue.sharedMuscleName}`
+      : `Ajuste en Tiempo Real: ${fatigueAdjustment.adjustedWeight} kg por fatiga en ${intraSessionFatigue.sharedMuscleName}`;
+    coachingAdvice = `⚡ En tu ejercicio anterior (${intraSessionFatigue.fatiguedExerciseName}), que también entrena ${intraSessionFatigue.sharedMuscleName}, ${intraSessionFatigue.performanceSummary}.\n\n${fatigueAdjustment.goalExplanation}\n\n${fatigueAdjustment.equipmentExplanation}`;
+    actionSteps = [
+      `Ajusta a ${fatigueAdjustment.adjustedWeight > 0 ? `${fatigueAdjustment.adjustedWeight} kg` : `${fatigueAdjustment.adjustedReps} reps`} para trabajar dentro del rango óptimo de ${goalInfo.label}.`,
+      `Respeta el descanso de ${fatigueAdjustment.suggestedRest} para permitir recuperación neuromuscular.`,
+      `Detén la serie dejando ${fatigueAdjustment.suggestedRir} para evitar fallos técnicos lesivos.`
+    ];
+
+    const fatigueStrategyOption = {
+      id: 'strat_intra_session_fatigue_adapted',
+      title: `⚡ Ajuste por Fatiga Previa (${fatigueAdjustment.adjustedWeight > 0 ? `${fatigueAdjustment.adjustedWeight} kg` : `${fatigueAdjustment.adjustedReps} reps`})`,
+      tag: 'Recomendada (Tiempo Real)',
+      badge: fatigueAdjustment.adjustedWeight > 0 ? `${fatigueAdjustment.adjustedWeight}kg · Adaptado` : `${fatigueAdjustment.adjustedReps} reps`,
+      suggestedWeight: fatigueAdjustment.adjustedWeight,
+      suggestedReps: fatigueAdjustment.adjustedReps,
+      suggestedSets: plannedSets,
+      suggestedRir: fatigueAdjustment.suggestedRir,
+      suggestedRest: fatigueAdjustment.suggestedRest,
+      isFatigueAdjusted: true,
+      motive: `En ${intraSessionFatigue.fatiguedExerciseName} levantaste menos de lo previsto (${intraSessionFatigue.performanceSummary}). Al compartir ${intraSessionFatigue.sharedMuscleName}, forzar la carga habitual comprometería tu objetivo de ${goalInfo.label}. Ajustamos a ${fatigueAdjustment.adjustedWeight > 0 ? `${fatigueAdjustment.adjustedWeight} kg` : `${fatigueAdjustment.adjustedReps} reps`} teniendo en cuenta que trabajas con ${intraSessionFatigue.equipmentDetails?.label || 'tu equipamiento'}.`,
+      description: `Carga adaptada automáticamente en tiempo real sin recargar para proteger tu técnica y asegurar estímulo efectivo.`
+    };
+
+    strategyOptions = [fatigueStrategyOption, ...strategyOptions.filter(o => o.id !== 'strat_intra_session_fatigue_adapted')];
+  }
+
   // Celebraciones contextuales según tendencia
   if (trend.status === 'progressing') {
     celebrationData = {
@@ -2203,6 +2681,7 @@ export const generateSmartCoachPlan = (exercise, userProfile, workoutLog, option
     difficultyFeedback,
     missedTargetInPrevious,
     actualPreviousReps,
+    intraSessionFatigue: intraSessionFatigue?.hasFatigue ? intraSessionFatigue : null,
     targets: {
       suggestedWeight,
       suggestedSets,

@@ -1,12 +1,18 @@
 import ModalPortal from '../ModalPortal';
 /* frontend/src/components/Workout/WorkoutExerciseCard.jsx */
 import React, { useState, useMemo } from 'react';
-import { Repeat, Flame, History, Target, Bell, Sparkles, AlertTriangle, CheckCircle2, Clock, ChevronRight, TrendingUp, Calendar } from 'lucide-react';
+import { Repeat, Flame, History, Target, Bell, Sparkles, AlertTriangle, CheckCircle2, Clock, ChevronRight, TrendingUp, Calendar, Zap } from 'lucide-react';
 import ExerciseMedia from '../ExerciseMedia';
 import WorkoutSetGrid from './WorkoutSetGrid';
 import useAppStore from '../../store/useAppStore';
 import { calculate1RM } from '../../utils/helpers';
-import { getExerciseHistorySessions, diagnoseExerciseTrend } from '../../utils/smartProgressionCoach';
+import { 
+  getExerciseHistorySessions, 
+  diagnoseExerciseTrend, 
+  detectIntraSessionMuscleFatigue, 
+  calculateIntraSessionFatigueAdjustment, 
+  getEquipmentDetails 
+} from '../../utils/smartProgressionCoach';
 import { getAppliedCoachStrategy, evaluateExerciseFollowUpAndRecovery } from '../../utils/coachAppliedHistory';
 
 const WorkoutExerciseCard = ({
@@ -33,7 +39,8 @@ const WorkoutExerciseCard = ({
     setExerciseReminder: state.setExerciseReminder,
     userProfile: state.userProfile,
     workoutLog: state.workoutLog,
-    activeWorkout: state.activeWorkout
+    activeWorkout: state.activeWorkout,
+    allExercises: state.allExercises || []
   }));
 
   const [appliedTick, setAppliedTick] = useState(0);
@@ -70,8 +77,44 @@ const WorkoutExerciseCard = ({
       lastApplied,
       userProfile
     });
-    return { trend: diagnosedTrend, followUp: evaluatedFollowUp };
-  }, [exercise?.name, workoutLog, userProfile, activeWorkout?.routine_id, activeWorkout?.routineId, activeWorkout?.id, activeWorkout?.routine_name, activeWorkout?.routineName, activeWorkout?.name, appliedTick]);
+    // Detección en tiempo real de fatiga acumulada en la sesión activa por ejercicios del mismo músculo
+    const fatigue = detectIntraSessionMuscleFatigue(exercise, activeWorkout, allExercises, userProfile);
+
+    let effectiveFollowUp = evaluatedFollowUp;
+    if (fatigue?.hasFatigue && evaluatedFollowUp?.type !== 'ok_green') {
+      const equip = getEquipmentDetails(fatigue.currentEquipment);
+      const adj = calculateIntraSessionFatigueAdjustment({
+        baseWeight: fatigue.currentEquipment === 'bodyweight' ? 0 : (parseFloat(exercise.weight) || 0),
+        targetReps: parseInt(String(exercise.reps || '10').split('-')[0], 10) || 10,
+        equipmentType: fatigue.currentEquipment,
+        goalKey: fatigue.goalKey,
+        severity: fatigue.severity,
+        fatigueInfo: fatigue
+      });
+
+      effectiveFollowUp = {
+        type: 'intra_session_fatigue',
+        badge: `⚡ Fatiga (${fatigue.sharedMuscleName})`,
+        badgeShort: '⚡ Ajustado',
+        title: `Ajuste en tiempo real (${fatigue.sharedMuscleName})`,
+        message: `En ${fatigue.fatiguedExerciseName} levantaste por debajo de lo previsto (${fatigue.performanceSummary}). Carga recalculada a ${adj.adjustedWeight > 0 ? `${adj.adjustedWeight} kg` : `${adj.adjustedReps} reps`} para tu objetivo de ${fatigue.goalLabel} y material (${equip.label}).`,
+        actionHint: 'Toca para ver el desglose y aplicar la carga adaptada.',
+        color: 'amber',
+        intraSessionFatigue: { ...fatigue, ...adj, equipmentDetails: equip }
+      };
+    }
+
+    return { trend: diagnosedTrend, followUp: effectiveFollowUp };
+  }, [
+    exercise?.name, 
+    exercise?.weight,
+    exercise?.reps,
+    workoutLog, 
+    userProfile, 
+    activeWorkout, 
+    allExercises, 
+    appliedTick
+  ]);
 
   const isInAsesoria = Boolean(
     userProfile?.trainer_id ||
@@ -208,6 +251,8 @@ const WorkoutExerciseCard = ({
                 className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer shadow-sm group ${
                   followUp.type === 'ok_green'
                     ? 'bg-emerald-500/15 hover:bg-emerald-500/25 ring-1 ring-emerald-500/40 text-emerald-600 dark:text-emerald-400'
+                    : followUp.type === 'intra_session_fatigue'
+                    ? 'bg-amber-500/20 hover:bg-amber-500/30 ring-1 ring-amber-500/50 text-amber-600 dark:text-amber-400 animate-pulse'
                     : followUp.type === 'recovery_warning'
                     ? 'bg-amber-500/15 hover:bg-amber-500/25 ring-1 ring-amber-500/40 text-amber-600 dark:text-amber-400 animate-pulse'
                     : followUp.type === 'recovery_notice'
@@ -220,6 +265,8 @@ const WorkoutExerciseCard = ({
               >
                 {followUp.type === 'ok_green' ? (
                   <CheckCircle2 size={15} strokeWidth={2.5} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                ) : followUp.type === 'intra_session_fatigue' ? (
+                  <Zap size={15} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 shrink-0 animate-pulse" />
                 ) : followUp.type === 'inactivity_warning' ? (
                   <Calendar size={15} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 shrink-0 animate-pulse" />
                 ) : followUp.type === 'recovery_warning' ? (
@@ -254,6 +301,8 @@ const WorkoutExerciseCard = ({
           className={`group/alert relative overflow-hidden rounded-[22px] p-3.5 sm:p-4 transition-all duration-300 cursor-pointer active:scale-[0.99] shadow-sm backdrop-blur-md ${
             followUp.type === 'ok_green'
               ? 'bg-emerald-500/10 hover:bg-emerald-500/15 ring-1 ring-emerald-500/30'
+              : followUp.type === 'intra_session_fatigue'
+              ? 'bg-gradient-to-r from-amber-500/15 via-accent/10 to-amber-500/15 hover:brightness-105 ring-1 ring-amber-500/40'
               : followUp.type === 'inactivity_warning' || followUp.type === 'recovery_warning'
               ? 'bg-amber-500/15 hover:bg-amber-500/20 ring-1 ring-amber-500/40'
               : followUp.type === 'recovery_notice'
@@ -269,6 +318,8 @@ const WorkoutExerciseCard = ({
                 className={`p-2 rounded-[14px] shrink-0 mt-0.5 transition-transform group-hover/alert:scale-105 ${
                   followUp.type === 'ok_green'
                     ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                    : followUp.type === 'intra_session_fatigue'
+                    ? 'bg-amber-500/25 text-amber-600 dark:text-amber-400'
                     : followUp.type === 'inactivity_warning' || followUp.type === 'recovery_warning'
                     ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
                     : followUp.type === 'recovery_notice'
@@ -280,6 +331,8 @@ const WorkoutExerciseCard = ({
               >
                 {followUp.type === 'ok_green' ? (
                   <CheckCircle2 size={18} strokeWidth={2.5} />
+                ) : followUp.type === 'intra_session_fatigue' ? (
+                  <Zap size={18} strokeWidth={2.5} className="animate-pulse" />
                 ) : followUp.type === 'inactivity_warning' ? (
                   <Calendar size={18} strokeWidth={2.5} className="animate-pulse" />
                 ) : followUp.type === 'recovery_warning' ? (
@@ -300,6 +353,8 @@ const WorkoutExerciseCard = ({
                   <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
                     followUp.type === 'ok_green'
                       ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                      : followUp.type === 'intra_session_fatigue'
+                      ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30'
                       : followUp.type === 'recovery_warning'
                       ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
                       : followUp.type === 'recovery_notice'
@@ -363,6 +418,8 @@ const WorkoutExerciseCard = ({
             className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-[20px] transition-all duration-300 active:scale-95 outline-none font-bold group relative ${
               followUp?.type === 'ok_green'
                 ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20'
+                : followUp?.type === 'intra_session_fatigue'
+                ? 'text-amber-600 dark:text-amber-400 bg-amber-500/15 ring-1 ring-amber-500/30 hover:bg-amber-500/25'
                 : followUp?.type === 'recovery_warning'
                 ? 'text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
                 : followUp?.type === 'recovery_notice'
@@ -377,6 +434,11 @@ const WorkoutExerciseCard = ({
           >
             {followUp?.type === 'ok_green' ? (
               <CheckCircle2 size={20} strokeWidth={2.5} className="text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+            ) : followUp?.type === 'intra_session_fatigue' ? (
+              <div className="relative">
+                <Zap size={20} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform animate-pulse" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 dark:bg-amber-400 rounded-full animate-ping" />
+              </div>
             ) : followUp?.type === 'recovery_warning' ? (
               <div className="relative">
                 <AlertTriangle size={20} strokeWidth={2.5} className="text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />

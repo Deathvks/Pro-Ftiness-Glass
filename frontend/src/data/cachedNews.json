@@ -11,14 +11,14 @@
     "author_name": "Equipo Científico Pro Fitness Glass",
     "author_avatar": null,
     "reading_time": 2,
-    "views_count": 5,
+    "views_count": 6,
     "likes_count": 0,
     "is_published": true,
     "published_at": "2026-11-07T09:00:52.000Z",
     "seo_title": "Series Cluster: Fuerza e Hipertrofia sin Fatiga Central",
     "seo_description": "Aprende a estructurar las series cluster para mover más peso con técnica perfecta y maximizar el estímulo hipertrófico sin sobrecargar tu sistema nervioso.",
     "createdAt": "2026-11-07T09:00:52.000Z",
-    "updatedAt": "2026-11-07T18:39:34.000Z"
+    "updatedAt": "2026-11-07T21:42:01.000Z"
   },
   {
     "id": 35,
@@ -754,5 +754,21 @@
     "seo_description": "Estrategias nutricionales y de saciedad (Índice de Holt) para mantener a raya las hormonas del apetito durante el déficit calórico.",
     "createdAt": "2026-10-21T16:50:06.000Z",
     "updatedAt": "2026-10-29T01:27:48.000Z"
+  },
+  {
+    "id": 37,
+    "slug": "hrv-variabilidad-frecuencia-cardiaca-recuperacion-entrenamiento",
+    "title": "HRV y Recuperación: El Indicador Biológico para Saber Cuándo Entrenar Fuerte",
+    "summary": "Aprende a utilizar la Variabilidad de la Frecuencia Cardíaca (HRV) para autorregular tus entrenamientos y maximizar la hipertrofia sin caer en el sobreentrenamiento. Descubre cómo esta métrica de biohacking optimiza tu recuperación muscular de forma científica.",
+    "image_url": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1200&q=80",
+    "category": "Biohacking",
+    "tags": "HRV, biohacking, recuperación muscular, sistema nervioso, autorregulación, hipertrofia",
+    "author_name": "Equipo Científico Pro Fitness Glass",
+    "author_avatar": null,
+    "reading_time": 2,
+    "views_count": 0,
+    "likes_count": 0,
+    "published_at": "2026-11-08T08:00:13.000Z",
+    "updatedAt": "2026-11-08T08:00:13.000Z"
   }
 ]

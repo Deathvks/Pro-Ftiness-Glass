@@ -28,7 +28,8 @@ import {
   ChevronUp,
   Layers,
   RefreshCw,
-  CornerDownRight
+  CornerDownRight,
+  Zap
 } from 'lucide-react';
 import ModalPortal from '../ModalPortal';
 import useAppStore from '../../store/useAppStore';
@@ -74,9 +75,10 @@ const SmartExerciseCoachModal = ({
       currentRoutineName,
       difficultyFeedback,
       allExercises,
+      activeWorkout,
       allRoutineExercises: activeWorkout?.exercises || []
     });
-  }, [exercise, userProfile, workoutLog, currentRoutineId, currentRoutineName, difficultyFeedback, allExercises, activeWorkout?.exercises]);
+  }, [exercise, userProfile, workoutLog, currentRoutineId, currentRoutineName, difficultyFeedback, allExercises, activeWorkout]);
 
   // Selección de estrategia interactiva
   const [selectedStrategyId, setSelectedStrategyId] = useState(null);
@@ -258,6 +260,13 @@ const SmartExerciseCoachModal = ({
                   </span>
                 )}
 
+                {plan.intraSessionFatigue?.hasFatigue && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
+                    <Zap size={12} className="shrink-0" />
+                    <span>Ajuste por Fatiga ({plan.intraSessionFatigue.sharedMuscleName})</span>
+                  </span>
+                )}
+
                 {readOnly && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-black/5 dark:bg-white/10 text-text-secondary">
                     <span>Guía de Progreso</span>
@@ -398,6 +407,69 @@ const SmartExerciseCoachModal = ({
                     <span>{followUp.actionHint}</span>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* AVISO DE AJUSTE EN TIEMPO REAL POR FATIGA PREVIA (MISMO MÚSCULO & MATERIAL) */}
+            {plan.intraSessionFatigue?.hasFatigue && (
+              <div className="p-3.5 sm:p-4 rounded-[22px] bg-gradient-to-br from-amber-500/15 via-accent/10 to-amber-500/10 ring-1 ring-amber-500/40 flex flex-col gap-3 shadow-md animate-[fade-in_0.2s_ease-out]">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-[10px] bg-amber-500/25 text-amber-600 dark:text-amber-400 shrink-0">
+                      <Zap size={16} strokeWidth={2.5} className="animate-pulse" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                      Ajuste en Tiempo Real · Fatiga en {plan.intraSessionFatigue.sharedMuscleName}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                    Sesión activa
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black text-text-primary leading-tight">
+                      Ajustado por fatiga previa en <span className="text-amber-600 dark:text-amber-400 underline underline-offset-2">{plan.intraSessionFatigue.fatiguedExerciseName}</span>
+                    </h4>
+                    <p className="text-[11px] sm:text-xs text-text-secondary leading-relaxed mt-1">
+                      En tu ejercicio anterior (<strong className="text-text-primary font-bold">{plan.intraSessionFatigue.fatiguedExerciseName}</strong>), que también trabaja <strong className="text-text-primary font-bold">{plan.intraSessionFatigue.sharedMuscleName}</strong>, {plan.intraSessionFatigue.performanceSummary}. Al compartir fibras musculares, arrastras fatiga neuromuscular acumulada en esta misma rutina.
+                    </p>
+                  </div>
+
+                  {/* Motivo según Objetivo */}
+                  <div className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-1">
+                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-accent">
+                      <Target size={12} strokeWidth={2.5} />
+                      <span>Por qué se modifica para tu objetivo ({plan.intraSessionFatigue.goalLabel})</span>
+                    </div>
+                    <p className="text-[11px] text-text-secondary leading-snug">
+                      {plan.intraSessionFatigue.goalExplanation}
+                    </p>
+                  </div>
+
+                  {/* Particularidad del Material */}
+                  <div className="p-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-1">
+                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-purple-500 dark:text-purple-400">
+                      <Dumbbell size={12} strokeWidth={2.5} />
+                      <span>Particularidad del material ({plan.intraSessionFatigue.equipmentDetails?.label || 'Equipamiento'})</span>
+                    </div>
+                    <p className="text-[11px] text-text-secondary leading-snug">
+                      {plan.intraSessionFatigue.equipmentExplanation}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-amber-500/25 flex items-center justify-between gap-2 text-[11px]">
+                  <span className="text-text-muted font-medium">
+                    Carga recalculada sin recargar:
+                  </span>
+                  <span className="font-black text-amber-600 dark:text-amber-400 text-xs sm:text-sm">
+                    {plan.intraSessionFatigue.adjustedSuggestedWeight > 0 
+                      ? `${plan.intraSessionFatigue.adjustedSuggestedWeight} kg (${plan.intraSessionFatigue.adjustedSuggestedReps} reps)`
+                      : `${plan.intraSessionFatigue.adjustedSuggestedReps} reps (peso corporal)`}
+                  </span>
+                </div>
               </div>
             )}
 
