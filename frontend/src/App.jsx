@@ -128,7 +128,7 @@ if (typeof window !== 'undefined' && window.location) {
   else if (initialPath === '/faq') preloadViewChunk('faq');
   else if (initialPath === '/noticias') preloadViewChunk('noticias');
   else if (initialPath.startsWith('/noticias/')) preloadViewChunk('noticiaDetalle');
-  else if (initialPath === '/privacy' || initialPath === '/privacidad' || initialPath === '/politica-de-privacidad' || initialPath === '/politica-privacidad' || initialPath === '/eliminar-cuenta' || initialPath === '/delete-account') preloadViewChunk('privacyPolicy');
+  else if (initialPath === '/privacy' || initialPath === '/privacidad' || initialPath === '/politica-de-privacidad' || initialPath === '/politica-privacidad' || initialPath === '/eliminar-cuenta' || initialPath === '/delete-account' || initialPath === '/cookies' || initialPath === '/politica-cookies' || initialPath === '/politica-de-cookies') preloadViewChunk('privacyPolicy');
   else if (initialPath === '/terms' || initialPath === '/terminos' || initialPath === '/terminos-y-condiciones') preloadViewChunk('terms');
   else if (initialPath === '/aviso-legal' || initialPath === '/legal') preloadViewChunk('legalNotice');
   else if (initialPath === '/') {
@@ -912,6 +912,9 @@ export default function App() {
     location.pathname === '/mantenimiento' ||
     location.pathname === '/migracion' ||
     location.pathname === '/privacy' ||
+    location.pathname === '/cookies' ||
+    location.pathname === '/politica-cookies' ||
+    location.pathname === '/politica-de-cookies' ||
     location.pathname === '/terms' ||
     location.pathname === '/aviso-legal' ||
     location.pathname === '/legal' ||
@@ -975,7 +978,7 @@ export default function App() {
       )}
 
       <Routes>
-        {['/privacy', '/privacidad', '/politica-de-privacidad', '/politica-privacidad', '/eliminar-cuenta', '/delete-account'].map((path) => (
+        {['/privacy', '/privacidad', '/politica-de-privacidad', '/politica-privacidad', '/eliminar-cuenta', '/delete-account', '/cookies', '/politica-cookies', '/politica-de-cookies'].map((path) => (
           <Route key={path} path={path} element={
               <Suspense fallback={<div className="p-10">Cargando política...</div>}>
                   <PrivacyPolicy onBack={() => { if (window.history.length > 1) navigate(-1); else navigate('/'); }} />

@@ -4,25 +4,49 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, Cookie, Camera, Shield, Bell, Globe, Trash2, 
-  Mail, Clock, Users, HeartHandshake, MapPin, ShieldCheck, ExternalLink 
+  Mail, Clock, Users, HeartHandshake, MapPin, ShieldCheck, ExternalLink,
+  Database, RotateCcw, Info
 } from 'lucide-react';
 import SEOHead from '../components/SEOHead';
 import { mailProvider, privacyEmail } from '../config/mailContacts';
+import useAppStore from '../store/useAppStore';
+import { useToast } from '../hooks/useToast';
 
 const PrivacyPolicy = ({ onBack }) => {
   // Permitimos usar la prop onBack si se pasa (para el bypass en App.jsx) o useNavigate por defecto
   const navigate = useNavigate();
   const handleBack = onBack || (() => navigate(-1));
+  const resetCookieConsent = useAppStore(state => state.resetCookieConsent);
+  const { addToast } = useToast();
+
+  const isCookiesView = typeof window !== 'undefined' && (
+    window.location.pathname.startsWith('/cookies') ||
+    window.location.pathname.startsWith('/politica-cookies') ||
+    window.location.pathname.startsWith('/politica-de-cookies') ||
+    window.location.hash === '#cookies'
+  );
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.hash) {
-      const id = window.location.hash.replace('#', '');
-      const el = document.getElementById(id);
-      if (el) {
-        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    if (typeof window !== 'undefined') {
+      const isCookiesPath = window.location.pathname === '/cookies' || 
+                            window.location.pathname === '/politica-cookies' || 
+                            window.location.pathname === '/politica-de-cookies';
+      const hashId = window.location.hash ? window.location.hash.replace('#', '') : null;
+      const targetId = hashId || (isCookiesPath ? 'cookies' : null);
+
+      if (targetId) {
+        const el = document.getElementById(targetId);
+        if (el) {
+          setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+        }
       }
     }
   }, []);
+
+  const handleResetCookies = () => {
+    resetCookieConsent();
+    addToast('Preferencia de cookies restablecida. El aviso volverá a mostrarse al navegar.', 'info');
+  };
 
   // Fecha actual formateada en español
   const currentDate = new Date().toLocaleDateString('es-ES', {
@@ -32,9 +56,9 @@ const PrivacyPolicy = ({ onBack }) => {
   });
 
   // Componente interno para las tarjetas con los estilos específicos
-  const PolicyCard = ({ children, className = "", highlight = false }) => {
+  const PolicyCard = ({ children, className = "", highlight = false, id }) => {
     return (
-      <div className={`
+      <div id={id} className={`
         rounded-[32px] p-6 sm:p-8 transition-all duration-300 backdrop-blur-xl ring-1 shadow-lg hover:-translate-y-1
         ${highlight 
           ? 'bg-accent/5 ring-accent/30 hover:ring-accent/50 hover:shadow-accent/10' 
@@ -50,9 +74,9 @@ const PrivacyPolicy = ({ onBack }) => {
   return (
     <div className="fixed inset-0 z-[110] bg-bg-primary overflow-y-auto custom-scrollbar transition-colors duration-300">
       <SEOHead 
-        title="Política de Privacidad y Eliminación de Datos - Pro Fitness Glass" 
-        description="Conoce cómo protegemos tus datos y los pasos para solicitar la eliminación de tu cuenta."
-        route="privacy-policy" 
+        title={isCookiesView ? "Política de Cookies y Almacenamiento Local - Pro Fitness Glass" : "Política de Privacidad y Eliminación de Datos - Pro Fitness Glass"} 
+        description={isCookiesView ? "Conoce el inventario completo de cookies técnicas y almacenamiento local de Pro Fitness Glass conforme al Art. 22.2 LSSI-CE y la AEPD." : "Conoce cómo protegemos tus datos y los pasos para solicitar la eliminación de tu cuenta."}
+        route={isCookiesView ? "cookies" : "privacy-policy"} 
       />
 
       <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-10 animate-[fade-in_0.5s_ease-out] sm:mt-0" style={{ paddingTop: 'calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 1rem)' }}>
@@ -284,28 +308,162 @@ const PrivacyPolicy = ({ onBack }) => {
               </ul>
             </PolicyCard>
 
-            {/* --- TARJETA: Almacenamiento Local --- */}
-            <PolicyCard>
-              <div className="flex items-center gap-4 mb-5">
-                <div className="p-3 bg-accent/10 text-accent rounded-[16px] ring-1 ring-accent/30 shadow-sm">
-                  <Cookie size={24} strokeWidth={2.5} />
+            {/* --- SECCIÓN COMPLETA: POLÍTICA DE COOKIES Y ALMACENAMIENTO LOCAL (LSSI-CE ART. 22.2 & AEPD) --- */}
+            <div id="cookies" className="md:col-span-2 scroll-mt-24">
+              <PolicyCard highlight={true} className="border border-accent/20">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-black/5 dark:border-white/10">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3.5 bg-accent text-accent-contrast rounded-[20px] shadow-lg shadow-accent/30 ring-1 ring-white/20 shrink-0">
+                      <Cookie size={28} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                      <span className="text-[10px] sm:text-xs font-black tracking-widest text-accent uppercase block">
+                        Segunda Capa Informativa — Art. 22.2 LSSI-CE y Guía de Cookies AEPD
+                      </span>
+                      <h2 className="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">
+                        Política de Cookies y Almacenamiento Local
+                      </h2>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleResetCookies}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-accent/10 border border-black/10 dark:border-white/10 hover:border-accent/30 text-text-secondary hover:text-accent font-bold text-xs transition-all w-fit shrink-0 cursor-pointer active:scale-95"
+                    title="Borra la preferencia guardada en este navegador y vuelve a mostrar el banner de elección"
+                  >
+                    <RotateCcw size={14} />
+                    <span>Restablecer consentimiento</span>
+                  </button>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary tracking-tight">Tus Preferencias</h2>
-              </div>
-              <p className="text-text-secondary font-medium text-sm leading-relaxed mb-4">
-                Usamos la memoria de tu dispositivo para recordar cosas simples y mejorar tu experiencia, sin rastreo publicitario.
-              </p>
-              <ul className="text-sm font-medium text-text-secondary space-y-3 list-none">
-                <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
-                  <span><strong>Personalización:</strong> Tu tema (Oscuro/Claro) y colores favoritos.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
-                  <span><strong>Sesión Activa:</strong> Para que no tengas que escribir tu contraseña cada vez que entras.</span>
-                </li>
-              </ul>
-            </PolicyCard>
+
+                {/* Explicación didáctica y principios de privacidad */}
+                <div className="space-y-4 text-sm sm:text-base font-medium text-text-secondary leading-relaxed mb-6">
+                  <p>
+                    En <strong className="text-text-primary">Pro Fitness Glass</strong> estamos comprometidos con tu privacidad digital. Por principio ético de diseño, <strong className="text-text-primary">NO utilizamos cookies publicitarias, no realizamos perfilado comercial para terceros ni vendemos tus datos a redes de anuncios</strong>.
+                  </p>
+                  <p>
+                    De acuerdo con el artículo 22.2 de la <strong>Ley 34/2002 (LSSI-CE)</strong> y las directrices de la <strong>Agencia Española de Protección de Datos (AEPD)</strong>, a continuación te informamos con total claridad sobre las tecnologías de almacenamiento que utiliza nuestra aplicación web y progresiva (PWA):
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs sm:text-sm">
+                    <div className="p-4 rounded-2xl bg-bg-primary/80 border border-black/5 dark:border-white/10 space-y-1">
+                      <strong className="text-text-primary block font-bold">1. Cookies Técnicas</strong>
+                      <p className="text-text-tertiary">Datos indispensables para verificar tu identidad y mantener abierta tu sesión segura.</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-bg-primary/80 border border-black/5 dark:border-white/10 space-y-1">
+                      <strong className="text-text-primary block font-bold">2. LocalStorage</strong>
+                      <p className="text-text-tertiary">Memoria local en tu dispositivo para recordar tu tema visual y opciones sin consultar al servidor.</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-bg-primary/80 border border-black/5 dark:border-white/10 space-y-1">
+                      <strong className="text-text-primary block font-bold">3. IndexedDB (Offline)</strong>
+                      <p className="text-text-tertiary">Caché de ejercicios y rutinas para que la app responda a 0 ms sin gastar datos en el gimnasio.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* TABLA DE COOKIES Y ALMACENAMIENTO (REQUISITO EXIGIDO POR LA AEPD) */}
+                <div className="mt-6 mb-8">
+                  <h3 className="text-lg font-bold text-text-primary mb-3 flex items-center gap-2">
+                    <Database size={18} className="text-accent" />
+                    <span>Inventario Detallado de Cookies y Almacenamiento Local</span>
+                  </h3>
+                  
+                  <div className="overflow-x-auto custom-scrollbar rounded-2xl border border-glass-border bg-bg-primary/60 shadow-sm">
+                    <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                      <thead>
+                        <tr className="border-b border-glass-border bg-black/5 dark:bg-white/5 text-[11px] font-black uppercase tracking-wider text-text-primary">
+                          <th className="p-3.5 sm:p-4">Identificador / Clave</th>
+                          <th className="p-3.5 sm:p-4">Titular</th>
+                          <th className="p-3.5 sm:p-4">Finalidad y Uso</th>
+                          <th className="p-3.5 sm:p-4">Tipo Legal</th>
+                          <th className="p-3.5 sm:p-4">Duración</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-black/5 dark:divide-white/10 text-text-secondary font-medium">
+                        <tr className="hover:bg-accent/5 transition-colors">
+                          <td className="p-3.5 sm:p-4 font-mono font-bold text-accent text-xs">pro_fitness_token / auth</td>
+                          <td className="p-3.5 sm:p-4 text-text-primary font-bold">Pro Fitness Glass (Propia)</td>
+                          <td className="p-3.5 sm:p-4">Mantiene la sesión de usuario iniciada de forma cifrada y segura al navegar entre páginas.</td>
+                          <td className="p-3.5 sm:p-4"><span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">Técnica (Exenta)</span></td>
+                          <td className="p-3.5 sm:p-4">Hasta cerrar sesión o caducidad del token</td>
+                        </tr>
+                        <tr className="hover:bg-accent/5 transition-colors">
+                          <td className="p-3.5 sm:p-4 font-mono font-bold text-accent text-xs">theme / accent</td>
+                          <td className="p-3.5 sm:p-4 text-text-primary font-bold">Pro Fitness Glass (Propia)</td>
+                          <td className="p-3.5 sm:p-4">Recuerda la apariencia elegida (modo oscuro/claro y color de acento) en este navegador.</td>
+                          <td className="p-3.5 sm:p-4"><span className="px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold text-[11px]">Personalización</span></td>
+                          <td className="p-3.5 sm:p-4">Persistente (LocalStorage)</td>
+                        </tr>
+                        <tr className="hover:bg-accent/5 transition-colors">
+                          <td className="p-3.5 sm:p-4 font-mono font-bold text-accent text-xs">cookie_consent</td>
+                          <td className="p-3.5 sm:p-4 text-text-primary font-bold">Pro Fitness Glass (Propia)</td>
+                          <td className="p-3.5 sm:p-4">Registra la elección del usuario (Aceptado o Rechazado) para no mostrar el banner en cada visita.</td>
+                          <td className="p-3.5 sm:p-4"><span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">Técnica / Legal</span></td>
+                          <td className="p-3.5 sm:p-4">1 año o hasta borrado</td>
+                        </tr>
+                        <tr className="hover:bg-accent/5 transition-colors">
+                          <td className="p-3.5 sm:p-4 font-mono font-bold text-accent text-xs">pfg_notification_offer:*</td>
+                          <td className="p-3.5 sm:p-4 text-text-primary font-bold">Pro Fitness Glass (Propia)</td>
+                          <td className="p-3.5 sm:p-4">Guarda la fecha del recordatorio de avisos para aplicar un enfriamiento (cooldown de 21 días) y no molestar al usuario en cada entrenamiento.</td>
+                          <td className="p-3.5 sm:p-4"><span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 font-bold text-[11px]">Funcional</span></td>
+                          <td className="p-3.5 sm:p-4">21 días</td>
+                        </tr>
+                        <tr className="hover:bg-accent/5 transition-colors">
+                          <td className="p-3.5 sm:p-4 font-mono font-bold text-accent text-xs">IndexedDB (pfg_cache / offline)</td>
+                          <td className="p-3.5 sm:p-4 text-text-primary font-bold">Pro Fitness Glass (Propia)</td>
+                          <td className="p-3.5 sm:p-4">Guarda localmente la biblioteca de ejercicios, GIFs y rutinas en la memoria del dispositivo para permitir entrenar sin internet y ahorrar datos móviles.</td>
+                          <td className="p-3.5 sm:p-4"><span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">Técnica (Offline)</span></td>
+                          <td className="p-3.5 sm:p-4">Persistente en memoria local (Borrable en Ajustes)</td>
+                        </tr>
+                        <tr className="hover:bg-accent/5 transition-colors">
+                          <td className="p-3.5 sm:p-4 font-mono font-bold text-accent text-xs">pfg_crash_loop_count</td>
+                          <td className="p-3.5 sm:p-4 text-text-primary font-bold">Pro Fitness Glass (Propia)</td>
+                          <td className="p-3.5 sm:p-4">Mecanismo de seguridad técnica que previene bucles de recarga infinitos si ocurre un corte de red durante una actualización.</td>
+                          <td className="p-3.5 sm:p-4"><span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">Seguridad</span></td>
+                          <td className="p-3.5 sm:p-4">Sesión temporal (Se borra tras carga limpia)</td>
+                        </tr>
+                        <tr className="hover:bg-accent/5 transition-colors">
+                          <td className="p-3.5 sm:p-4 font-mono font-bold text-accent text-xs">Google Identity Services (GSI)</td>
+                          <td className="p-3.5 sm:p-4 text-text-primary font-bold">Google LLC (Terceros)</td>
+                          <td className="p-3.5 sm:p-4">Facilita el inicio de sesión rápido con Google únicamente si el usuario pulsa deliberadamente en el botón "Continuar con Google".</td>
+                          <td className="p-3.5 sm:p-4"><span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold text-[11px]">Autenticación Externa</span></td>
+                          <td className="p-3.5 sm:p-4">Gestionada por Google según su política</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Cómo gestionar o bloquear cookies en los navegadores */}
+                <div className="p-5 rounded-2xl bg-black/5 dark:bg-white/5 border border-glass-border space-y-3">
+                  <h4 className="text-sm font-bold text-text-primary flex items-center gap-2">
+                    <Info size={16} className="text-accent" />
+                    <span>¿Cómo desactivar o borrar estas tecnologías en tu navegador?</span>
+                  </h4>
+                  <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
+                    Puedes permitir, bloquear o eliminar los datos instalados en tu equipo mediante la configuración de las opciones de tu navegador web. En caso de bloquear el almacenamiento técnico indispensable (como el token de sesión), es posible que no puedas iniciar sesión ni utilizar las funciones personalizadas:
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
+                    <a href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-bg-primary/80 hover:bg-accent/10 border border-black/5 dark:border-white/10 hover:border-accent/30 text-text-secondary hover:text-accent font-semibold flex items-center justify-between gap-1 transition-all">
+                      <span>Google Chrome</span>
+                      <ExternalLink size={12} />
+                    </a>
+                    <a href="https://support.mozilla.org/es/kb/habilitar-y-deshabilitar-cookies-sitios-web-rastrear-preferencias" target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-bg-primary/80 hover:bg-accent/10 border border-black/5 dark:border-white/10 hover:border-accent/30 text-text-secondary hover:text-accent font-semibold flex items-center justify-between gap-1 transition-all">
+                      <span>Mozilla Firefox</span>
+                      <ExternalLink size={12} />
+                    </a>
+                    <a href="https://support.apple.com/es-es/guide/safari/sfri11471/mac" target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-bg-primary/80 hover:bg-accent/10 border border-black/5 dark:border-white/10 hover:border-accent/30 text-text-secondary hover:text-accent font-semibold flex items-center justify-between gap-1 transition-all">
+                      <span>Apple Safari</span>
+                      <ExternalLink size={12} />
+                    </a>
+                    <a href="https://support.microsoft.com/es-es/microsoft-edge/eliminar-las-cookies-en-microsoft-edge-63947406-40ac-c3b8-57b9-2a946a29ae09" target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-bg-primary/80 hover:bg-accent/10 border border-black/5 dark:border-white/10 hover:border-accent/30 text-text-secondary hover:text-accent font-semibold flex items-center justify-between gap-1 transition-all">
+                      <span>Microsoft Edge</span>
+                      <ExternalLink size={12} />
+                    </a>
+                  </div>
+                </div>
+              </PolicyCard>
+            </div>
 
             {/* --- TARJETA: Google Auth --- */}
             <PolicyCard>

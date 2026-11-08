@@ -23,11 +23,20 @@ const CookieConsentBanner = ({ onAccept, onDecline, onShowPolicy }) => {
             <p className="text-xs text-text-secondary mt-2">
               Podrás cambiar esta configuración siempre desde <strong>Ajustes</strong>. Consulta nuestra{' '}
               <button 
-                onClick={onShowPolicy} 
-                className="underline hover:text-accent transition font-medium outline-none focus:text-accent"
+                type="button"
+                onClick={() => onShowPolicy('privacy')} 
+                className="underline hover:text-accent transition font-medium outline-none focus:text-accent cursor-pointer"
               >
-                Política de Privacidad.
+                Política de Privacidad
               </button>
+              {' '}y nuestra{' '}
+              <button 
+                type="button"
+                onClick={() => onShowPolicy('cookies')} 
+                className="underline hover:text-accent transition font-medium outline-none focus:text-accent cursor-pointer"
+              >
+                Política de Cookies
+              </button>.
             </p>
           </div>
 

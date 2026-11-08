@@ -227,7 +227,14 @@
   <!-- Legal & Privacidad -->
   <url>
     <loc>https://profitnessglass.es/privacy</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <url>
+    <loc>https://profitnessglass.es/cookies</loc>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>

@@ -216,6 +216,15 @@ export default function PublicPageFooter({ className = '' }) {
                 </Link>
               </li>
               <li>
+                <Link 
+                  to="/cookies" 
+                  className="flex items-center gap-2 py-2 px-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 hover:text-accent transition-colors"
+                >
+                  <span className="w-3.5 h-3.5 rounded-full bg-accent/20 text-accent shrink-0 inline-flex items-center justify-center text-[10px] font-bold">🍪</span>
+                  <span className="font-semibold">Política de Cookies</span>
+                </Link>
+              </li>
+              <li>
                 <a 
                   href="https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419" 
                   target="_blank" 

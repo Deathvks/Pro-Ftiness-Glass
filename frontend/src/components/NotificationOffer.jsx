@@ -8,6 +8,9 @@ import { getPushPreferences, updatePushPreferences } from '../services/notificat
 import { updateUserProfile } from '../services/userService';
 import useAppStore from '../store/useAppStore';
 
+const COOLDOWN_DAYS = 21; // 3 semanas de cortesía entre avisos para no saturar al usuario
+const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+
 const offers = {
   training: {
     field: 'email_marketing_consent',
@@ -23,53 +26,116 @@ const offers = {
   }
 };
 
-const trainingPushDetails = PUSH_OPTIONS.find(({ purpose }) => purpose === 'training').description;
+const getPushDetails = (purpose) => PUSH_OPTIONS.find(opt => opt.purpose === purpose)?.description || '';
 
-function wasDismissed(key) {
-  try { return localStorage.getItem(key) === '1'; } catch { return false; }
+function isOfferInCooldown(dismissKey, shownKey, cooldownMs = COOLDOWN_MS) {
+  try {
+    if (dismissKey) {
+      const dismissVal = localStorage.getItem(dismissKey);
+      if (dismissVal) {
+        const num = Number(dismissVal);
+        if (!Number.isNaN(num) && num > 1000000 && (Date.now() - num) < cooldownMs) {
+          return true;
+        }
+      }
+    }
+    if (shownKey) {
+      const shownVal = localStorage.getItem(shownKey);
+      if (shownVal) {
+        const num = Number(shownVal);
+        if (!Number.isNaN(num) && num > 1000000 && (Date.now() - num) < cooldownMs) {
+          return true;
+        }
+      }
+    }
+    return false;
+  } catch {
+    return false;
+  }
 }
 
-export default function NotificationOffer({ purpose, offerPush = true, offerEmail = true }) {
+export default function NotificationOffer({ purpose, offerPush = true, offerEmail = true, cooldownDays = COOLDOWN_DAYS }) {
   const profile = useAppStore(state => state.userProfile);
   if (!profile?.id) return null;
 
   const storageKey = `pfg_notification_offer:${profile.id}:${purpose}`;
-  const emailKey = `pfg_email_reminder_offer:${profile.id}:${purpose}`;
-  const emailAvailable = !!(offerEmail && profile.is_verified && profile.email && !profile.email.endsWith('@x-auth.local')
-    && !profile[offers[purpose].field] && !wasDismissed(emailKey));
-  return <OfferCard key={storageKey} purpose={purpose} userId={profile.id} storageKey={storageKey} offerPush={offerPush} emailAvailable={emailAvailable} />;
+  const shownKey = `pfg_notification_offer_shown:${profile.id}:${purpose}`;
+  const cooldownMs = cooldownDays * 24 * 60 * 60 * 1000;
+
+  // En entrenamiento comprobamos tanto si fue descartado ("Ahora no") como si ya se mostró
+  // recientemente en un entrenamiento. En coaching solo evaluamos el descarte explícito ("Ahora no")
+  // para mantener el aviso visible de forma natural mientras el alumno espera respuesta en el chat.
+  const inCooldown = purpose === 'training'
+    ? isOfferInCooldown(storageKey, shownKey, cooldownMs)
+    : isOfferInCooldown(storageKey, null, cooldownMs);
+
+  if (inCooldown) return null;
+
+  const emailField = offers[purpose]?.field;
+  const emailAvailable = !!(
+    offerEmail &&
+    profile.is_verified &&
+    profile.email &&
+    !profile.email.endsWith('@x-auth.local') &&
+    emailField &&
+    !profile[emailField]
+  );
+
+  return (
+    <OfferCard
+      key={storageKey}
+      purpose={purpose}
+      userId={profile.id}
+      storageKey={storageKey}
+      shownKey={shownKey}
+      offerPush={offerPush}
+      emailAvailable={emailAvailable}
+    />
+  );
 }
 
-function OfferCard({ purpose, userId, storageKey, offerPush, emailAvailable }) {
+function OfferCard({ purpose, userId, storageKey, shownKey, offerPush, emailAvailable }) {
   const isTraining = purpose === 'training';
-  const [hidden, setHidden] = useState(() => wasDismissed(storageKey));
+  const [hidden, setHidden] = useState(false);
   const [channel, setChannel] = useState(null);
   const [saving, setSaving] = useState(null);
   const [waitingForDevice, setWaitingForDevice] = useState(false);
-  const [trainingPushEnabled, setTrainingPushEnabled] = useState(null);
+  const [purposePushEnabled, setPurposePushEnabled] = useState(null);
   const [error, setError] = useState('');
   const detailsId = useId();
   const { addToast } = useToast();
   const { field, title, description, action } = offers[purpose];
   const { isSubscribed, isSupported, isLoading, permission, subscribe } = usePushNotifications(!hidden && (offerPush || waitingForDevice));
-  const canCheckTrainingPush = offerPush && isTraining && !hidden && isSupported && permission !== 'denied';
+
+  const canCheckPushPref = offerPush && !hidden && isSupported && permission !== 'denied';
   const pushAvailable = offerPush && isSupported && permission !== 'denied'
-    && (isTraining ? trainingPushEnabled !== null && (!trainingPushEnabled || !isSubscribed) : !isSubscribed);
+    && (purposePushEnabled !== null ? (!purposePushEnabled || !isSubscribed) : !isSubscribed);
   const showPush = pushAvailable || saving === 'push' || waitingForDevice;
 
   useEffect(() => {
-    if (!canCheckTrainingPush) return;
+    if (!canCheckPushPref) return;
     let active = true;
     getPushPreferences().then(preferences => {
-      if (active) setTrainingPushEnabled(preferences.training === true);
+      if (active) setPurposePushEnabled(preferences?.[purpose] === true);
     }).catch(() => {});
     return () => { active = false; };
-  }, [canCheckTrainingPush]);
+  }, [canCheckPushPref, purpose]);
+
+  // Si se muestra activamente la oferta en entrenamiento, registrar la fecha para que
+  // no salte en cada sesión de entrenamiento diaria.
+  useEffect(() => {
+    if (hidden || (!showPush && !emailAvailable)) return;
+    if (isTraining && shownKey) {
+      try {
+        localStorage.setItem(shownKey, String(Date.now()));
+      } catch {}
+    }
+  }, [hidden, showPush, emailAvailable, isTraining, shownKey]);
 
   const hideOffer = () => {
     setHidden(true);
     try {
-      localStorage.setItem(storageKey, '1');
+      localStorage.setItem(storageKey, String(Date.now()));
     } catch { /* La tarjeta se oculta durante esta visita. */ }
   };
 
@@ -86,7 +152,12 @@ function OfferCard({ purpose, userId, storageKey, offerPush, emailAvailable }) {
 
       hideOffer();
       useAppStore.setState(state => ({ userProfile: { ...state.userProfile, [field]: true } }));
-      addToast('Preferencia de correo activada.', 'success');
+      addToast(
+        isTraining
+          ? 'Recordatorios de entrenamiento por correo activados.'
+          : 'Seguimiento de asesoría por correo activado.',
+        'success'
+      );
     } catch {
       setError('No pudimos guardar la preferencia. Vuelve a intentarlo.');
     } finally {
@@ -98,26 +169,34 @@ function OfferCard({ purpose, userId, storageKey, offerPush, emailAvailable }) {
     if (!waitingForDevice || isLoading) return;
     setWaitingForDevice(false);
     if (!isSubscribed) return;
-    if (!isTraining || trainingPushEnabled) setHidden(true);
-    else setSaving('push');
-  }, [waitingForDevice, isLoading, isSubscribed, isTraining, trainingPushEnabled]);
+    if (purposePushEnabled) {
+      hideOffer();
+    } else {
+      setSaving('push');
+    }
+  }, [waitingForDevice, isLoading, isSubscribed, purposePushEnabled]);
 
   useEffect(() => {
     if (saving !== 'push' || useAppStore.getState().userProfile?.id !== userId) return;
     let active = true;
-    updatePushPreferences('training', true, PUSH_CONSENT_VERSION).then(preferences => {
-      if (preferences?.training !== true) throw new Error('El servidor no confirmó el cambio.');
+    updatePushPreferences(purpose, true, PUSH_CONSENT_VERSION).then(preferences => {
+      if (preferences?.[purpose] !== true) throw new Error('El servidor no confirmó el cambio.');
       if (!active || useAppStore.getState().userProfile?.id !== userId) return;
-      setTrainingPushEnabled(true);
-      setHidden(true);
-      addToast('Recordatorios de entrenamiento por push activados.', 'success');
+      setPurposePushEnabled(true);
+      hideOffer();
+      addToast(
+        isTraining
+          ? 'Recordatorios de entrenamiento por push activados.'
+          : 'Seguimiento de asesoría por push activado.',
+        'success'
+      );
     }).catch(() => {
       if (active) setError('No pudimos guardar los recordatorios push. Vuelve a intentarlo.');
     }).finally(() => {
       if (active) setSaving(null);
     });
     return () => { active = false; };
-  }, [saving, userId, addToast]);
+  }, [saving, userId, addToast, purpose, isTraining]);
 
   const activatePush = () => {
     if (saving || waitingForDevice || isLoading || !pushAvailable || useAppStore.getState().userProfile?.id !== userId) return;
@@ -145,6 +224,7 @@ function OfferCard({ purpose, userId, storageKey, offerPush, emailAvailable }) {
   const Icon = showPush ? BellRing : Mail;
   const choiceClass = 'min-h-11 rounded-lg px-2 text-xs font-bold text-accent hover:bg-accent/10 disabled:opacity-50';
   const primaryClass = 'min-h-11 rounded-xl bg-accent px-3 text-xs font-bold text-accent-contrast disabled:opacity-50';
+  const pushDetails = getPushDetails(purpose);
 
   return (
     <aside className="glass mx-auto flex w-full max-w-sm items-start gap-2.5 rounded-2xl px-3 pb-1.5 pt-3 text-left sm:px-4">
@@ -161,12 +241,12 @@ function OfferCard({ purpose, userId, storageKey, offerPush, emailAvailable }) {
         <div className="mt-1 flex flex-wrap items-center gap-x-2">
           {coachingPush && <button type="button" disabled={isBusy || isLoading} onClick={activatePush} className={primaryClass}>{waitingForDevice ? 'Activando…' : 'Activar avisos'}</button>}
           {isTraining && showPush && <button type="button" disabled={isBusy} aria-expanded={showPushDetails} aria-controls={detailsId} onClick={() => toggleChannel('push')} className={choiceClass}>Push</button>}
-          {emailAvailable && <button type="button" disabled={isBusy} aria-expanded={showEmailDetails} aria-controls={detailsId} onClick={() => toggleChannel('email')} className={choiceClass}>{coachingPush ? 'Seguimiento por correo' : 'Correo electrónico'}</button>}
+          {emailAvailable && <button type="button" disabled={isBusy} aria-expanded={showEmailDetails} aria-controls={detailsId} onClick={() => toggleChannel('email')} className={choiceClass}>{!isTraining ? 'Seguimiento por correo' : 'Correo electrónico'}</button>}
           <button type="button" disabled={isBusy} onClick={hideOffer} className="min-h-11 rounded-lg px-2 text-xs font-semibold text-text-secondary hover:text-text-primary disabled:opacity-50">Ahora no</button>
         </div>
         <div id={detailsId} hidden={!showEmailDetails && !showPushDetails} className="space-y-2 pb-2">
           <p className="text-xs leading-relaxed text-text-secondary">
-            {showPushDetails ? `${trainingPushDetails} Puedes retirarlos en Ajustes.${isSubscribed ? '' : ' También se activarán los avisos de servicio de este dispositivo.'}` : EMAIL_CONSENT_TEXT[purpose]}
+            {showPushDetails ? `${pushDetails} Puedes retirarlos en Ajustes.${isSubscribed ? '' : ' También se activarán los avisos de servicio de este dispositivo.'}` : EMAIL_CONSENT_TEXT[purpose]}
           </p>
           {error && <p role="alert" className="mt-1 text-xs text-red">{error}</p>}
           <button type="button" disabled={isBusy || (showPushDetails && isLoading)} onClick={showPushDetails ? activatePush : activateEmail} className={primaryClass}>

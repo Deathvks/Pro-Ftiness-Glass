@@ -20,6 +20,9 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
         path === '/sobre-nosotros' ||
         path === '/faq' ||
         path === '/privacy' ||
+        path === '/cookies' ||
+        path === '/politica-cookies' ||
+        path === '/politica-de-cookies' ||
         path === '/terms' ||
         path === '/aviso-legal' ||
         path === '/legal' ||
@@ -110,6 +113,9 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
           window.location.pathname === '/sobre-nosotros' ||
           window.location.pathname === '/faq' ||
           window.location.pathname === '/privacy' ||
+          window.location.pathname === '/cookies' ||
+          window.location.pathname === '/politica-cookies' ||
+          window.location.pathname === '/politica-de-cookies' ||
           window.location.pathname === '/terms' ||
           window.location.pathname === '/aviso-legal' ||
           window.location.pathname === '/legal' ||
@@ -148,6 +154,9 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
           window.location.pathname === '/sobre-nosotros' ||
           window.location.pathname === '/faq' ||
           window.location.pathname === '/privacy' ||
+          window.location.pathname === '/cookies' ||
+          window.location.pathname === '/politica-cookies' ||
+          window.location.pathname === '/politica-de-cookies' ||
           window.location.pathname === '/terms' ||
           window.location.pathname === '/aviso-legal' ||
           window.location.pathname === '/legal' ||
@@ -170,6 +179,9 @@ export const useAppInitialization = ({ setView, setAuthView, view }) => {
           window.location.pathname === '/sobre-nosotros' ||
           window.location.pathname === '/faq' ||
       window.location.pathname === '/privacy' ||
+      window.location.pathname === '/cookies' ||
+      window.location.pathname === '/politica-cookies' ||
+      window.location.pathname === '/politica-de-cookies' ||
       window.location.pathname === '/terms' ||
       window.location.pathname === '/aviso-legal' ||
       window.location.pathname === '/legal' ||

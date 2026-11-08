@@ -556,7 +556,7 @@ const Workout = ({ timer, setView, navParams }) => {
             {showWorkoutSummaryModal && completedWorkoutData && (
                 <WorkoutSummaryModal
                     workoutData={completedWorkoutData}
-                    showReminderOffer={completedWorkoutData.isFirstWorkout}
+                    showReminderOffer={true}
                     onClose={async () => {
                         setShowWorkoutSummaryModal(false);
                         setCompletedWorkoutData(null);

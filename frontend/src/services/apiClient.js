@@ -114,6 +114,9 @@ const apiClient = async (endpoint, options = {}) => {
                                  currentPath === '/sobre-nosotros' ||
                                  currentPath === '/faq' ||
                                  currentPath === '/privacy' ||
+                                 currentPath === '/cookies' ||
+                                 currentPath === '/politica-cookies' ||
+                                 currentPath === '/politica-de-cookies' ||
                                  currentPath === '/terms' ||
                                  currentPath === '/aviso-legal' ||
                                  currentPath === '/legal' ||

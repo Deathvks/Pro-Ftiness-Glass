@@ -225,7 +225,7 @@ const LegalNoticePage = ({ onBack }) => {
                 Para consultar información completa sobre los fines del tratamiento, las bases jurídicas, los plazos de conservación y los mecanismos para ejercer sus derechos de acceso, rectificación, supresión, limitación y portabilidad, acceda a nuestra <a href="/privacy" className="text-accent underline font-bold inline-flex items-center gap-1">Política de Privacidad <ExternalLink size={12} /></a> y a los <a href="/terms" className="text-accent underline font-bold inline-flex items-center gap-1">Términos del Servicio <ExternalLink size={12} /></a>.
               </p>
               <p className="text-sm sm:text-base font-medium text-text-secondary leading-relaxed">
-                Asimismo, la utilización de cookies e identificadores locales (LocalStorage/IndexedDB) para la sesión y preferencias del usuario cumple rigurosamente con el artículo 22.2 de la LSSI-CE y la Directiva ePrivacy 2002/58/CE, disponiendo el usuario de un panel de configuración de consentimiento en todo momento.
+                Asimismo, la utilización de cookies e identificadores locales (LocalStorage/IndexedDB) para la sesión y preferencias del usuario cumple rigurosamente con el artículo 22.2 de la LSSI-CE y la Directiva ePrivacy 2002/58/CE, disponiendo el usuario de una <a href="/cookies" className="text-accent underline font-bold inline-flex items-center gap-1">Política de Cookies y Almacenamiento Local detallada <ExternalLink size={12} /></a> y panel de configuración de consentimiento en todo momento.
               </p>
             </section>
 

@@ -522,7 +522,7 @@ export default function AsesoriaScreen({ onBack, onOpenNotificationSettings }) {
         
         {/* Promo View para No-Trainees */}
         {showPromo && renderPromo()}
-        {showNotificationOffer && <NotificationOffer purpose="coaching" offerPush={waitingForCoach} offerEmail={userProfile.role === 'user'} />}
+        {showNotificationOffer && <NotificationOffer purpose="coaching" offerPush={waitingForCoach} offerEmail={['user', 'trainee'].includes(userProfile?.role)} />}
 
         <div ref={messagesEndRef} />
       </div>

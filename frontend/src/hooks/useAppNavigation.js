@@ -25,6 +25,7 @@ export const useAppNavigation = (navigateRouter) => {
 
     const validPaths = [
       '/', '/login', '/register', '/forgot-password', '/forgotPassword', '/reset-password', '/privacy', '/terms', '/aviso-legal', '/legal',
+      '/cookies', '/politica-cookies', '/politica-de-cookies',
       '/dashboard', '/progress', '/routines', '/workout', '/nutrition',
       '/social', '/hub', '/quickCardio', '/active-cardio', '/settings', '/appearance',
       '/support', '/socialLinks', '/challenges', '/physicalProfileEditor', '/profile',
@@ -45,7 +46,7 @@ export const useAppNavigation = (navigateRouter) => {
     if (path === '/settings') return 'settings';
     if (path === '/active-cardio') return 'active-cardio';
     if (path.startsWith('/noticias')) return 'noticias';
-    if (path === '/privacy') return 'privacyPolicy';
+    if (path === '/privacy' || path === '/cookies' || path === '/politica-cookies' || path === '/politica-de-cookies') return 'privacyPolicy';
     if (path === '/terms') return 'terms';
     if (path === '/aviso-legal' || path === '/legal') return 'legalNotice';
 
@@ -230,7 +231,10 @@ export const useAppNavigation = (navigateRouter) => {
     });
   }, [navigate]);
 
-  const handleShowPolicy = useCallback(() => {
+  const handleShowPolicy = useCallback((target = 'privacy') => {
+    if (typeof window !== 'undefined' && target === 'cookies') {
+      window.location.hash = 'cookies';
+    }
     navigate('privacyPolicy');
   }, [navigate]);
 
