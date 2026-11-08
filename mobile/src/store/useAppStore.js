@@ -27,14 +27,30 @@ const clearThemeTestInterval = () => {
     }
 };
 
+
+export const applyNativeColorScheme = (pref, resolved) => {
+    try {
+        const active = resolved || resolveTheme(pref);
+        const isDark = !['light', 'ocean', 'desert'].includes(active);
+        if (pref === 'system') {
+            Appearance.setColorScheme('unspecified');
+        } else {
+            Appearance.setColorScheme(isDark ? 'dark' : 'light');
+        }
+    } catch (e) {
+        // no-op
+    }
+};
+
 const initialThemePref = (typeof localStorage !== 'undefined' ? localStorage.getItem('theme') : null) || 'oled';
+applyNativeColorScheme(initialThemePref, resolveTheme(initialThemePref));
 
 const useAppStore = create((set, get) => ({
     hydrateFromStorage: () => {
         if (typeof localStorage === 'undefined') return;
         
         const theme = localStorage.getItem('theme');
-        if (theme) set({ themePreference: theme, theme: resolveTheme(theme) });
+        if (theme) { const resolved = resolveTheme(theme); applyNativeColorScheme(theme, resolved); set({ themePreference: theme, theme: resolved }); }
         
         const accent = localStorage.getItem('accent');
         if (accent) set({ accent });
@@ -80,14 +96,18 @@ const useAppStore = create((set, get) => ({
     theme: resolveTheme(initialThemePref),
     setTheme: (pref) => {
         clearThemeTestInterval();
-        set({ themePreference: pref, theme: resolveTheme(pref), themeTest: null });
+        const resolved = resolveTheme(pref);
+        applyNativeColorScheme(pref, resolved);
+        set({ themePreference: pref, theme: resolved, themeTest: null });
         if (typeof localStorage !== 'undefined') localStorage.setItem('theme', pref);
     },
     // Re-sincroniza el tema cuando el usuario usa "Sistema" y cambia el modo del dispositivo
     syncSystemTheme: () => {
         const { themePreference, themeTest } = get();
         if (themePreference === 'system' && !themeTest) {
-            set({ theme: resolveTheme('system') });
+            const resolved = resolveTheme('system');
+            applyNativeColorScheme('system', resolved);
+            set({ theme: resolved });
         }
     },
 
@@ -95,6 +115,7 @@ const useAppStore = create((set, get) => ({
     themeTest: null, // { name, timeLeft }
     startThemeTest: (name = 'galaxy', durationSecs = 10) => {
         clearThemeTestInterval();
+        applyNativeColorScheme(name, name);
         set({ theme: name, themeTest: { name, timeLeft: durationSecs } });
         themeTestInterval = setInterval(() => {
             const current = get().themeTest;
@@ -105,7 +126,10 @@ const useAppStore = create((set, get) => ({
             const left = current.timeLeft - 1;
             if (left <= 0) {
                 clearThemeTestInterval();
-                set({ themeTest: null, theme: resolveTheme(get().themePreference) });
+                const pref = get().themePreference || 'oled';
+                const resolved = resolveTheme(pref);
+                applyNativeColorScheme(pref, resolved);
+                set({ themeTest: null, theme: resolved });
             } else {
                 set({ themeTest: { ...current, timeLeft: left } });
             }
@@ -113,7 +137,10 @@ const useAppStore = create((set, get) => ({
     },
     cancelThemeTest: () => {
         clearThemeTestInterval();
-        set({ themeTest: null, theme: resolveTheme(get().themePreference) });
+        const pref = get().themePreference || 'oled';
+        const resolved = resolveTheme(pref);
+        applyNativeColorScheme(pref, resolved);
+        set({ themeTest: null, theme: resolved });
     },
     accent: (typeof localStorage !== 'undefined' && (typeof localStorage !== 'undefined' ? localStorage.getItem('accent') : null)) || '#3b82f6',
     setAccent: (accent) => {

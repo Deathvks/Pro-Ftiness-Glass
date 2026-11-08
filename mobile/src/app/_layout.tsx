@@ -1,3 +1,4 @@
+import { StatusBar } from 'expo-status-bar';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme, Appearance } from 'react-native';
@@ -6,7 +7,7 @@ import { Stack, useRouter, useSegments, usePathname } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { initLocalStorage } from '@/utils/localStoragePolyfill';
-import useAppStore, { resolveTheme } from '@/store/useAppStore';
+import useAppStore, { resolveTheme, applyNativeColorScheme } from '@/store/useAppStore';
 import ThemeBackground from '@/components/ThemeBackground';
 import { useAppColors } from '@/hooks/useAppColors';
 
@@ -114,7 +115,12 @@ export default function RootLayout() {
 
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme);
-  const isDark = ['dark', 'ocean-dark', 'desert-dark', 'galaxy'].includes(theme) || theme === 'oled' || theme === 'galaxy' || theme === 'ocean-dark' || theme === 'desert-dark';
+  const themePreference = useAppStore(state => state.themePreference);
+  const isDark = !['light', 'ocean', 'desert'].includes(theme);
+
+  useEffect(() => {
+    applyNativeColorScheme(themePreference, theme);
+  }, [themePreference, theme]);
 
   const NavigationTheme = isDark ? { ...DarkTheme, colors: { ...DarkTheme.colors, primary: colors.tint, background: 'transparent' } } : { ...DefaultTheme, colors: { ...DefaultTheme.colors, primary: colors.tint, background: 'transparent' } };
 
@@ -125,6 +131,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background === 'transparent' ? (isDark ? '#0a0a1a' : '#f8fafc') : colors.background }}>
       <ThemeProvider value={NavigationTheme}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
         <ThemeBackground />
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
