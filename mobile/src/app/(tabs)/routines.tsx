@@ -1,58 +1,93 @@
 /* mobile/src/app/(tabs)/routines.tsx */
 import React, { useState, useMemo } from 'react';
-import { 
-  View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, 
-  Dimensions, Share as NativeShare, Platform 
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+  Platform,
 } from 'react-native';
-import { 
-  Search, Plus, Trash2, Globe, Sparkles, Folder, Dumbbell, 
-  BookCopy, Compass, Flame 
+import {
+  Search,
+  Plus,
+  Trash2,
+  Globe,
+  Sparkles,
+  Folder,
+  FileSpreadsheet,
+  TrendingUp,
+  ChevronRight,
+  X,
 } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { GlassView } from 'expo-glass-effect';
+import * as Haptics from 'expo-haptics';
+
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import GlobalHeader from '@/components/GlobalHeader';
+import AnimatedScreen from '@/components/AnimatedScreen';
+import { GlassButton } from '@/components/ui/GlassButton';
 import { RoutinesTabs, TabKey } from '@/components/routines/RoutinesTabs';
 import { FolderList } from '@/components/routines/FolderList';
 import { RoutineCard } from '@/components/routines/RoutineCard';
-import GlobalHeader from '@/components/GlobalHeader';
-import AnimatedScreen from '@/components/AnimatedScreen';
-import { GlassView } from 'expo-glass-effect';
-import { GlassButton } from '@/components/ui/GlassButton';
+import { PromoBanner } from '@/components/nutrition/PromoBanner';
+import {
+  WeeklyMuscleVolumeCard,
+  RoutineVolumeFilterModal,
+  useWeeklyVolumeExclusions,
+  getRoutineInclusionStats,
+} from '@/components/routines/WeeklyMuscleVolumeCard';
+import { TemplateRoutinesView } from '@/components/routines/TemplateRoutinesView';
+import { ManualExercisesView } from '@/components/routines/ManualExercisesView';
+import { WorkoutDataTransferModal } from '@/components/modals/WorkoutDataTransferModal';
 import { PrivacyModal } from '@/components/modals/PrivacyModal';
 import { RoutineShareSettingsModal } from '@/components/modals/RoutineShareSettingsModal';
 import { RoutineAIGeneratorModal } from '@/components/modals/RoutineAIGeneratorModal';
+import { WorkoutSummaryModal } from '@/components/workout/WorkoutSummaryModal';
 import { getContrastTextColor } from '@/utils/routineHelpers';
-import { useRouter } from 'expo-router';
 
 export default function RoutinesScreen() {
   const router = useRouter();
-  const theme = useAppStore(state => state.theme);
+  const theme = useAppStore((state) => state.theme);
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const iconBadgeBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
 
   // Zustand Store
-  const routines = useAppStore(state => state.routines || []);
-  const workoutLog = useAppStore(state => state.workoutLog || []);
-  const completedRoutineIdsToday = useAppStore(state => state.completedRoutineIdsToday || []);
-  const activeWorkout = useAppStore(state => state.activeWorkout);
-  const startWorkout = useAppStore(state => state.startWorkout);
-  const deleteRoutine = useAppStore(state => state.deleteRoutine);
-  const deleteAllRoutines = useAppStore(state => state.deleteAllRoutines);
-  const createRoutine = useAppStore(state => state.createRoutine);
-  const updateRoutine = useAppStore(state => state.updateRoutine);
-  const setRoutineEditorState = useAppStore(state => state.setRoutineEditorState);
+  const routines = useAppStore((state) => state.routines || []);
+  const workoutLog = useAppStore((state) => state.workoutLog || []);
+  const completedRoutineIdsToday = useAppStore((state) => state.completedRoutineIdsToday || []);
+  const activeWorkout = useAppStore((state) => state.activeWorkout);
+  const startWorkout = useAppStore((state) => state.startWorkout);
+  const deleteRoutine = useAppStore((state) => state.deleteRoutine);
+  const deleteAllRoutines = useAppStore((state) => state.deleteAllRoutines);
+  const createRoutine = useAppStore((state) => state.createRoutine);
+  const updateRoutine = useAppStore((state) => state.updateRoutine);
+  const setRoutineEditorState = useAppStore((state) => state.setRoutineEditorState);
+  const userProfile = useAppStore((state) => state.userProfile);
+
+  // Volume Exclusions Hook
+  const { exclusions } = useWeeklyVolumeExclusions();
 
   // Local State
   const [activeTab, setActiveTab] = useState<TabKey>('myRoutines');
   const [selectedFolder, setSelectedFolder] = useState<string>('all');
   const [query, setQuery] = useState('');
+
+  // Modals state
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [showDataTransferModal, setShowDataTransferModal] = useState(false);
   const [sharingRoutine, setSharingRoutine] = useState<any | null>(null);
+  const [volumeFilterRoutine, setVolumeFilterRoutine] = useState<any | null>(null);
+  const [shareData, setShareData] = useState<any | null>(null);
 
   const isAnyWorkoutActive = activeWorkout !== null && activeWorkout !== undefined;
 
-  // Mapa de última fecha de uso por rutina (idéntico al frontend)
+  // Mapa de última fecha de uso por rutina
   const lastUsedMap = useMemo(() => {
     const map = new Map<string | number, Date>();
     (workoutLog || []).forEach((log: any) => {
@@ -74,16 +109,17 @@ export default function RoutinesScreen() {
     return Array.from(new Set(folders)).sort();
   }, [routines]);
 
-  // Rutinas filtradas y ordenadas por último uso (idéntico al frontend)
+  // Rutinas filtradas y ordenadas por último uso
   const filteredSorted = useMemo(() => {
     const q = query.trim().toLowerCase();
 
     let list = (routines || []).filter((r: any) => {
       if (!r) return false;
-      const matchesQuery = !q ||
+      const matchesQuery =
+        !q ||
         r.name?.toLowerCase().includes(q) ||
         r.description?.toLowerCase().includes(q);
-      
+
       let matchesFolder = true;
       if (selectedFolder === 'uncategorized') {
         matchesFolder = !r.folder || r.folder.trim() === '';
@@ -130,8 +166,8 @@ export default function RoutinesScreen() {
             onPress: async () => {
               if (startWorkout) await startWorkout(routine);
               router.push('/workout');
-            }
-          }
+            },
+          },
         ]
       );
     } else {
@@ -160,8 +196,8 @@ export default function RoutinesScreen() {
       exercises: exercises.map((ex: any) => ({
         ...ex,
         exercise_id: ex.exercise_list_id || ex.exercise_id || ex.id || null,
-        is_manual: ex.is_manual || (ex.exercise_list_id === null)
-      }))
+        is_manual: ex.is_manual || ex.exercise_list_id === null,
+      })),
     };
 
     setRoutineEditorState(normalizedRoutine);
@@ -179,9 +215,9 @@ export default function RoutinesScreen() {
         image_url: routine.image_url || routine.imageUrl || null,
         is_trainer_template: false,
         exercises: exercises.map((ex: any, index: number) => {
-          const isManual = ex.is_manual || (ex.exercise_list_id === null);
+          const isManual = ex.is_manual || ex.exercise_list_id === null;
           return {
-            exercise_list_id: isManual ? null : (ex.exercise_list_id || ex.exercise_id || ex.id),
+            exercise_list_id: isManual ? null : ex.exercise_list_id || ex.exercise_id || ex.id,
             name: ex.name,
             muscle_group: isManual ? ex.muscle_group : undefined,
             sets: parseInt(String(ex.sets), 10) || 3,
@@ -189,13 +225,16 @@ export default function RoutinesScreen() {
             rest_seconds: parseInt(String(ex.rest_seconds), 10) || 60,
             exercise_order: index,
           };
-        })
+        }),
       };
 
       const result = await createRoutine(copy);
       if (result && !result.success) {
         Alert.alert('Error', result.message || 'No se pudo duplicar la rutina.');
       } else {
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {}
         Alert.alert('Éxito', 'Rutina duplicada correctamente.');
       }
     } catch (e: any) {
@@ -203,15 +242,8 @@ export default function RoutinesScreen() {
     }
   };
 
-  // Eliminar rutina
+  // Eliminar rutina individual
   const handleDeleteRoutine = (routineId: string | number) => {
-    if (Platform.OS === 'web') {
-      const ok = typeof window !== 'undefined' && window.confirm('¿Estás seguro de que deseas eliminar esta rutina? Esta acción no se puede deshacer.');
-      if (ok) {
-        deleteRoutine(routineId);
-      }
-      return;
-    }
     Alert.alert(
       'Eliminar Rutina',
       '¿Estás seguro de que deseas eliminar esta rutina? Esta acción no se puede deshacer.',
@@ -224,9 +256,13 @@ export default function RoutinesScreen() {
             const res = await deleteRoutine(routineId);
             if (res && !res.success) {
               Alert.alert('Error', res.message || 'No se pudo eliminar la rutina.');
+            } else {
+              try {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              } catch {}
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -234,16 +270,9 @@ export default function RoutinesScreen() {
   // Borrar todas las rutinas
   const handleDeleteAll = () => {
     if (routines.length === 0) return;
-    if (Platform.OS === 'web') {
-      const ok = typeof window !== 'undefined' && window.confirm('¿Estás seguro? Perderás todas tus rutinas y esta acción NO se puede deshacer.');
-      if (ok && deleteAllRoutines) {
-        deleteAllRoutines();
-      }
-      return;
-    }
     Alert.alert(
       'Eliminar Todas las Rutinas',
-      '¿Estás seguro? Perderás todas tus rutinas y esta acción NO se puede deshacer.',
+      '¿Estás completamente seguro? Perderás todas tus rutinas y esta acción NO se puede deshacer.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -252,9 +281,12 @@ export default function RoutinesScreen() {
           onPress: async () => {
             if (deleteAllRoutines) {
               await deleteAllRoutines();
+              try {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              } catch {}
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -268,14 +300,14 @@ export default function RoutinesScreen() {
         'Tienes una rutina en proceso. ¿Deseas continuarla o empezar de cero?',
         [
           { text: 'Continuar', onPress: () => router.push('/routine-editor') },
-          { 
-            text: 'Empezar de cero', 
-            style: 'destructive', 
+          {
+            text: 'Empezar de cero',
+            style: 'destructive',
             onPress: () => {
               useAppStore.getState().clearRoutineEditorState();
               router.push('/routine-editor');
-            }
-          }
+            },
+          },
         ]
       );
     } else {
@@ -284,16 +316,66 @@ export default function RoutinesScreen() {
     }
   };
 
-  // Compartir rutina nativo
-  const handleShareRoutine = async (routine: any) => {
-    try {
-      const shareUrl = `https://pro-fitness-glass.zeabur.app/share/routine/${routine.id}`;
-      await NativeShare.share({
-        title: `Rutina: ${routine.name}`,
-        message: `¡Mira mi rutina "${routine.name}" en Pro Fitness Glass!\n${shareUrl}`,
-        url: shareUrl,
+  // Compartir en Stories (Instagram Story summary)
+  const handleStoriesShare = (routine: any) => {
+    if (!workoutLog) return;
+    const now = Date.now();
+
+    const routineLogs = (workoutLog || [])
+      .filter((log: any) => String(log?.routine_id) === String(routine.id))
+      .sort((a: any, b: any) => new Date(b.workout_date).getTime() - new Date(a.workout_date).getTime());
+
+    let selectedLog = routineLogs.find((log: any) => {
+      if (!log?.workout_date) return false;
+      const start = new Date(log.workout_date).getTime();
+      const end = start + (log.duration_seconds || 0) * 1000;
+      return now - end < 24 * 60 * 60 * 1000 && now >= start;
+    });
+
+    if (!selectedLog && routineLogs.length > 0) {
+      selectedLog = routineLogs[0];
+    }
+
+    if (selectedLog) {
+      const rawDetails = selectedLog.details || selectedLog.WorkoutLogDetails || [];
+      const normalizedDetails = rawDetails.map((ex: any) => {
+        let rawSets = ex.setsDone || ex.sets_done || ex.sets || ex.Sets || ex.WorkoutLogSets || [];
+        if (typeof rawSets === 'string') {
+          try {
+            rawSets = JSON.parse(rawSets);
+          } catch {
+            rawSets = [];
+          }
+        }
+        if (!Array.isArray(rawSets)) rawSets = [];
+
+        const normalizedSets = rawSets.map((s: any) => ({
+          weight_kg: parseFloat(s.weight_kg || s.weight || 0),
+          reps: parseFloat(s.reps || 0),
+          is_dropset: !!(s.is_dropset || s.isDropset),
+          is_warmup: !!(s.is_warmup || s.isWarmup),
+          set_number: parseInt(s.set_number || s.setNumber || 0, 10),
+        }));
+
+        const exName = ex.exercise_name || ex.exerciseName || ex.name || 'Ejercicio';
+        return { exerciseName: exName, setsDone: normalizedSets };
       });
-    } catch (e) {}
+
+      setShareData({
+        routineName: routine.name || selectedLog.routine_name || 'Mi Rutina',
+        duration_seconds: selectedLog.duration_seconds || 0,
+        calories_burned: selectedLog.calories_burned || 0,
+        details: normalizedDetails,
+        notes: selectedLog.notes,
+        workout_date: selectedLog.workout_date,
+        newPRs: selectedLog.newPRs || selectedLog.PersonalRecords || [],
+      });
+    } else {
+      Alert.alert(
+        'Sin entrenamientos',
+        'Esta rutina aún no tiene entrenamientos registrados para compartir en Stories.'
+      );
+    }
   };
 
   // Actualizar visibilidad de rutina
@@ -304,13 +386,12 @@ export default function RoutinesScreen() {
     await updateRoutine(routineId, {
       ...target,
       visibility: newVisibility,
-      exercises: exercises.map((ex: any) => ({ ...ex }))
+      exercises: exercises.map((ex: any) => ({ ...ex })),
     });
   };
 
   return (
     <AnimatedScreen header={<GlobalHeader />}>
-      
       {/* 1. TÍTULO Y SUBTÍTULO */}
       <View style={styles.headerTitleContainer}>
         <Text style={[styles.mainTitle, { color: colors.text }]}>Rutinas</Text>
@@ -319,79 +400,162 @@ export default function RoutinesScreen() {
         </Text>
       </View>
 
-      {/* 2. BOTONES DE ACCIÓN (BORRAR TODAS, MURO, IA, CREAR RUTINA) */}
-      <View style={styles.actionsRow}>
-        {/* Borrar todas */}
-        {routines.length > 0 && (
-          <GlassButton 
+      {/* 2. PROMO BANNER */}
+      <PromoBanner type="routines" onPress={() => router.push('/chat' as any)} />
+
+      {/* 3. BOTONES DE ACCIÓN (2 FILAS - IDÉNTICO AL FRONTEND) */}
+      <View style={styles.actionButtonsContainer}>
+        {/* Fila 1: Crear Rutina (destacado) + IA */}
+        <View style={styles.actionRow1}>
+          <GlassButton
             noShadow={true}
             theme={theme}
-            color="rgba(239, 68, 68, 0.15)"
-            onPress={handleDeleteAll}
-            style={styles.trashAllBtn}
+            color={colors.tint}
+            onPress={handleCreateRoutineClick}
+            style={styles.createRoutineBtn}
           >
-            <Trash2 size={18} color="#ef4444" />
+            <View style={styles.createRoutineInner}>
+              <Plus size={18} color={getContrastTextColor(colors.tint)} style={{ marginRight: 6 }} strokeWidth={2.5} />
+              <Text
+                style={[styles.createRoutineBtnText, { color: getContrastTextColor(colors.tint) }]}
+                numberOfLines={1}
+              >
+                Crear Rutina
+              </Text>
+            </View>
           </GlassButton>
-        )}
 
-        {/* Muro (Privacidad global) */}
-        <GlassButton 
-          noShadow={true}
-          theme={theme}
-          onPress={() => setShowPrivacyModal(true)}
-          style={styles.actionPillBtn}
-        >
-          <View style={styles.actionPillInner}>
-            <Globe size={18} color={colors.textSecondary} style={{ marginRight: 6 }} />
-            <Text style={[styles.actionPillBtnText, { color: colors.text }]}>Muro</Text>
-          </View>
-        </GlassButton>
+          <GlassButton
+            noShadow={true}
+            theme={theme}
+            color={colors.tint + '20'}
+            onPress={() => setShowAIGenerator(true)}
+            style={styles.aiBtn}
+          >
+            <View style={styles.aiBtnInner}>
+              <Sparkles size={16} color={colors.tint} style={{ marginRight: 6 }} />
+              <Text style={[styles.aiBtnText, { color: colors.tint }]}>IA</Text>
+            </View>
+          </GlassButton>
+        </View>
 
-        {/* IA */}
-        <GlassButton 
-          noShadow={true}
-          theme={theme}
-          color={colors.tint + '20'}
-          onPress={() => setShowAIGenerator(true)}
-          style={styles.actionPillBtn}
-        >
-          <View style={styles.actionPillInner}>
-            <Sparkles size={18} color={colors.tint} style={{ marginRight: 6 }} />
-            <Text style={[styles.actionPillBtnText, { color: colors.tint }]}>IA</Text>
-          </View>
-        </GlassButton>
+        {/* Fila 2: Importar CSV + Muro + Papelera */}
+        <View style={styles.actionRow2}>
+          <GlassButton
+            noShadow={true}
+            theme={theme}
+            onPress={() => setShowDataTransferModal(true)}
+            style={styles.toolBtn}
+          >
+            <View style={styles.toolBtnInner}>
+              <FileSpreadsheet size={15} color={colors.tint} style={{ marginRight: 6 }} />
+              <Text style={[styles.toolBtnText, { color: colors.text }]}>Importar CSV</Text>
+            </View>
+          </GlassButton>
 
-        {/* Crear Rutina */}
-        <GlassButton 
-          noShadow={true}
-          theme={theme}
-          color={colors.tint}
-          onPress={handleCreateRoutineClick}
-          style={styles.createRoutineBtn}
-        >
-          <View style={styles.createRoutineInner}>
-            <Plus size={18} color={getContrastTextColor(colors.tint)} style={{ marginRight: 6 }} />
-            <Text style={[styles.createRoutineBtnText, { color: getContrastTextColor(colors.tint) }]} numberOfLines={1}>
-              Crear Rutina
-            </Text>
-          </View>
-        </GlassButton>
+          <GlassButton
+            noShadow={true}
+            theme={theme}
+            onPress={() => setShowPrivacyModal(true)}
+            style={styles.toolBtn}
+          >
+            <View style={styles.toolBtnInner}>
+              <Globe size={15} color={colors.textSecondary} style={{ marginRight: 6 }} />
+              <Text style={[styles.toolBtnText, { color: colors.text }]}>Muro</Text>
+            </View>
+          </GlassButton>
+
+          {routines.length > 0 && (
+            <GlassButton
+              noShadow={true}
+              theme={theme}
+              color="rgba(239, 68, 68, 0.12)"
+              onPress={handleDeleteAll}
+              style={styles.trashBtn}
+            >
+              <Trash2 size={16} color="#ef4444" />
+            </GlassButton>
+          )}
+        </View>
       </View>
 
-      {/* 3. TABS PRINCIPALES (MIS RUTINAS, EXPLORAR, MANUALES, CARDIO RÁPIDO) */}
+      {/* 4. TABS PRINCIPALES (MIS RUTINAS, EXPLORAR, MANUALES, CARDIO RÁPIDO) */}
       <View style={styles.tabsRow}>
-        <RoutinesTabs 
-          activeTab={activeTab} 
-          onChangeTab={setActiveTab} 
+        <RoutinesTabs
+          activeTab={activeTab}
+          onChangeTab={setActiveTab}
           onQuickCardio={() => router.push('/workout')}
         />
       </View>
 
-      {/* 4. CONTENIDO SEGÚN LA PESTAÑA ACTIVA */}
+      {/* 5. CONTENIDO DE PESTAÑA: MIS RUTINAS */}
       {activeTab === 'myRoutines' && (
         <>
-          {/* Barra de búsqueda */}
-          <View style={[styles.searchContainer, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)', borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
+          {/* BANNER "VER TU PROGRESO" */}
+          <TouchableOpacity
+            activeOpacity={0.88}
+            onPress={() => router.push('/(tabs)/hub')}
+            style={[styles.progressBanner, { borderColor: colors.tint + '35' }]}
+          >
+            <GlassView
+              style={StyleSheet.absoluteFill}
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+            />
+            <View
+              style={[
+                styles.progressGlow,
+                { backgroundColor: colors.tint + (isDark ? '15' : '08') },
+              ]}
+              pointerEvents="none"
+            />
+            <View style={styles.progressInner}>
+              <View style={[styles.progressIconBox, { backgroundColor: colors.tint }]}>
+                <TrendingUp size={20} color="#000" strokeWidth={2.5} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <View style={styles.progressTitleRow}>
+                  <Text style={[styles.progressTitle, { color: colors.text }]}>
+                    Ver Tu Progreso
+                  </Text>
+                  <View style={[styles.progressBadge, { backgroundColor: colors.tint + '20' }]}>
+                    <Text style={[styles.progressBadgeText, { color: colors.tint }]}>
+                      Gráficas & Récords
+                    </Text>
+                  </View>
+                </View>
+                <Text
+                  style={[styles.progressDesc, { color: colors.textSecondary }]}
+                  numberOfLines={2}
+                >
+                  Evolución de cargas, Récords Personales (PR), peso corporal y analítica
+                </Text>
+              </View>
+              <ChevronRight size={18} color={colors.textSecondary} />
+            </View>
+          </TouchableOpacity>
+
+          {/* VOLUMEN SEMANAL POR GRUPO MUSCULAR */}
+          <WeeklyMuscleVolumeCard
+            routines={routines}
+            goal={userProfile?.goal || 'gain'}
+            onOpenSettings={() => {
+              if (routines.length > 0) {
+                setVolumeFilterRoutine(routines[0]);
+              }
+            }}
+          />
+
+          {/* BARRA DE BÚSQUEDA */}
+          <View
+            style={[
+              styles.searchContainer,
+              {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+              },
+            ]}
+          >
             <Search size={18} color={colors.textSecondary} style={{ marginRight: 10 }} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
@@ -400,9 +564,14 @@ export default function RoutinesScreen() {
               value={query}
               onChangeText={setQuery}
             />
+            {query.length > 0 && (
+              <TouchableOpacity onPress={() => setQuery('')}>
+                <X size={16} color={colors.textSecondary} />
+              </TouchableOpacity>
+            )}
           </View>
 
-          {/* Subpestañas de carpetas */}
+          {/* SELECTOR DE CARPETAS */}
           {routines && routines.length > 0 && (
             <View style={styles.foldersContainer}>
               <FolderList
@@ -413,7 +582,7 @@ export default function RoutinesScreen() {
             </View>
           )}
 
-          {/* Listado de Rutinas */}
+          {/* LISTADO DE RUTINAS */}
           <View style={styles.routinesList}>
             {filteredSorted && filteredSorted.length > 0 ? (
               filteredSorted.map((routine: any) => {
@@ -421,6 +590,7 @@ export default function RoutinesScreen() {
                 const isActive = activeWorkout && activeWorkout.routineId === routine.id;
                 const isBlocked = isAnyWorkoutActive && !isActive;
                 const lastUsed = lastUsedMap.get(routine.id);
+                const inclusionStats = getRoutineInclusionStats(exclusions, routine);
 
                 return (
                   <RoutineCard
@@ -430,8 +600,10 @@ export default function RoutinesScreen() {
                     onPressEdit={() => handleEditRoutine(routine)}
                     onPressDuplicate={() => handleDuplicateRoutine(routine)}
                     onPressDelete={() => handleDeleteRoutine(routine.id)}
-                    onPressShare={() => handleShareRoutine(routine)}
+                    onPressShare={() => handleStoriesShare(routine)}
                     onPressPrivacy={() => setSharingRoutine(routine)}
+                    onPressVolumeFilter={() => setVolumeFilterRoutine(routine)}
+                    volumeInclusionStats={inclusionStats}
                     isCompletedToday={isCompleted}
                     isActive={isActive}
                     isBlockedByOtherWorkout={isBlocked}
@@ -441,58 +613,70 @@ export default function RoutinesScreen() {
               })
             ) : (
               /* ESTADO VACÍO */
-              <View style={[styles.emptyCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
+              <GlassView
+                style={[
+                  styles.emptyCard,
+                  {
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                  },
+                ]}
+                glassEffectStyle="regular"
+                tintColor={isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'}
+              >
                 <View style={[styles.emptyIconBox, { backgroundColor: iconBadgeBg }]}>
                   <Folder size={32} color={colors.textSecondary} />
                 </View>
                 <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
                   {routines && routines.length > 0
-                    ? `No hay rutinas en la carpeta "${selectedFolder === 'uncategorized' ? 'Otros' : selectedFolder}".`
+                    ? `No hay rutinas en la carpeta "${
+                        selectedFolder === 'uncategorized' ? 'Otros' : selectedFolder
+                      }".`
                     : 'Aún no has creado ninguna rutina.'}
                 </Text>
-                <TouchableOpacity onPress={handleCreateRoutineClick} activeOpacity={0.8} style={{ marginTop: 12 }}>
+                <TouchableOpacity
+                  onPress={handleCreateRoutineClick}
+                  activeOpacity={0.8}
+                  style={{ marginTop: 14 }}
+                >
                   <Text style={[styles.emptyActionText, { color: colors.text }]}>
                     ¡Haz clic en <Text style={{ color: colors.tint }}>"Crear Rutina"</Text> para empezar!
                   </Text>
                 </TouchableOpacity>
-              </View>
+              </GlassView>
             )}
           </View>
         </>
       )}
 
-      {/* PESTAÑA EXPLORAR */}
-      {activeTab === 'explore' && (
-        <View style={[styles.tabContentCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
-          <View style={[styles.emptyIconBox, { backgroundColor: colors.tint + '15' }]}>
-            <Compass size={32} color={colors.tint} />
-          </View>
-          <Text style={[styles.tabContentTitle, { color: colors.text }]}>Explorar Plantillas</Text>
-          <Text style={[styles.tabContentDesc, { color: colors.textSecondary }]}>
-            Descubre y copia rutinas de entrenamiento prediseñadas creadas por entrenadores expertos.
-          </Text>
-        </View>
-      )}
+      {/* 6. CONTENIDO DE PESTAÑA: EXPLORAR */}
+      {activeTab === 'explore' && <TemplateRoutinesView />}
 
-      {/* PESTAÑA EJERCICIOS MANUALES */}
-      {activeTab === 'manualExercises' && (
-        <View style={[styles.tabContentCard, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
-          <View style={[styles.emptyIconBox, { backgroundColor: colors.tint + '15' }]}>
-            <Dumbbell size={32} color={colors.tint} />
-          </View>
-          <Text style={[styles.tabContentTitle, { color: colors.text }]}>Ejercicios Manuales</Text>
-          <Text style={[styles.tabContentDesc, { color: colors.textSecondary }]}>
-            Gestiona tus ejercicios personalizados creados fuera del catálogo general de la biblioteca.
-          </Text>
-        </View>
-      )}
+      {/* 7. CONTENIDO DE PESTAÑA: EJERCICIOS MANUALES */}
+      {activeTab === 'manualExercises' && <ManualExercisesView />}
 
-      {/* MODALES */}
-      <PrivacyModal 
-        visible={showPrivacyModal} 
-        onClose={() => setShowPrivacyModal(false)} 
+      {/* ==========================================
+          MODALES
+         ========================================== */}
+      {/* Modal de Importar/Exportar CSV (Hevy, Strong, PFG) */}
+      <WorkoutDataTransferModal
+        visible={showDataTransferModal}
+        onClose={() => setShowDataTransferModal(false)}
       />
 
+      {/* Modal de Exclusión/Inclusión de Volumen Semanal */}
+      <RoutineVolumeFilterModal
+        visible={!!volumeFilterRoutine}
+        routine={volumeFilterRoutine}
+        onClose={() => setVolumeFilterRoutine(null)}
+      />
+
+      {/* Modal de Privacidad Global del Muro */}
+      <PrivacyModal
+        visible={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+      />
+
+      {/* Modal de Privacidad y Enlace de Rutina Individual */}
       <RoutineShareSettingsModal
         visible={!!sharingRoutine}
         routine={sharingRoutine}
@@ -500,6 +684,7 @@ export default function RoutinesScreen() {
         onUpdateVisibility={handleUpdateVisibility}
       />
 
+      {/* Modal Generador de Rutinas con IA */}
       <RoutineAIGeneratorModal
         visible={showAIGenerator}
         onClose={() => setShowAIGenerator(false)}
@@ -516,13 +701,19 @@ export default function RoutinesScreen() {
         }}
       />
 
+      {/* Modal Resumen para Compartir en Stories */}
+      <WorkoutSummaryModal
+        visible={!!shareData}
+        workoutData={shareData}
+        onClose={() => setShareData(null)}
+      />
     </AnimatedScreen>
   );
 }
 
 const styles = StyleSheet.create({
   headerTitleContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   mainTitle: {
     fontSize: 32,
@@ -534,39 +725,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 4,
   },
-  actionsRow: {
+  actionButtonsContainer: {
+    marginBottom: 16,
+    gap: 8,
+  },
+  actionRow1: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 20,
-  },
-  trashAllBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionPillBtn: {
-    height: 44,
-    paddingHorizontal: 16,
-    borderRadius: 22,
-  },
-  actionPillInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionPillBtnText: {
-    fontSize: 13,
-    fontWeight: '800',
   },
   createRoutineBtn: {
     flex: 1,
-    height: 44,
-    paddingHorizontal: 16,
-    borderRadius: 22,
+    height: 46,
+    borderRadius: 20,
   },
   createRoutineInner: {
     flexDirection: 'row',
@@ -574,20 +745,114 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   createRoutineBtnText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '900',
   },
+  aiBtn: {
+    paddingHorizontal: 18,
+    height: 46,
+    borderRadius: 20,
+  },
+  aiBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  aiBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  actionRow2: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  toolBtn: {
+    flex: 1,
+    height: 40,
+    borderRadius: 16,
+  },
+  toolBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  trashBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tabsRow: {
-    marginBottom: 20,
+    marginBottom: 16,
+  },
+  progressBanner: {
+    borderRadius: 22,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  progressGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  progressInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    gap: 12,
+  },
+  progressIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  progressTitle: {
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: -0.2,
+  },
+  progressBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  progressBadgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  progressDesc: {
+    fontSize: 11,
+    fontWeight: '500',
+    lineHeight: 15,
+    marginTop: 2,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
-    borderRadius: 22,
+    height: 46,
+    borderRadius: 18,
     borderWidth: 1,
-    paddingHorizontal: 16,
-    marginBottom: 16,
+    paddingHorizontal: 14,
+    marginBottom: 14,
   },
   searchInput: {
     flex: 1,
@@ -595,26 +860,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   foldersContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   routinesList: {
     paddingBottom: 24,
   },
   emptyCard: {
-    borderRadius: 32,
+    borderRadius: 28,
     borderWidth: 1,
     padding: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
+    marginTop: 8,
   },
   emptyIconBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   emptyMessage: {
     fontSize: 14,
@@ -626,25 +891,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     textAlign: 'center',
-  },
-  tabContentCard: {
-    borderRadius: 32,
-    borderWidth: 1,
-    padding: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-  },
-  tabContentTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    marginBottom: 8,
-  },
-  tabContentDesc: {
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-    lineHeight: 18,
-    maxWidth: 280,
   },
 });

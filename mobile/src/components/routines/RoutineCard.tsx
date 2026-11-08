@@ -1,11 +1,12 @@
 /* mobile/src/components/routines/RoutineCard.tsx */
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { 
   Play, Globe, Users, Lock, Clock, Dumbbell, CalendarClock, 
-  CheckCircle, Edit, Copy, Trash2, Share2, Folder, Link2 
+  CheckCircle, Edit, Copy, Trash2, Share2, Folder, Link2, Activity 
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
@@ -24,6 +25,8 @@ interface RoutineCardProps {
   onPressDelete: () => void;
   onPressShare?: () => void;
   onPressPrivacy: () => void;
+  onPressVolumeFilter?: () => void;
+  volumeInclusionStats?: { included: number; total: number; status: 'all' | 'partial' | 'none' };
   isCompletedToday: boolean;
   isActive: boolean;
   isBlockedByOtherWorkout: boolean;
@@ -38,6 +41,8 @@ export function RoutineCard({
   onPressDelete,
   onPressShare,
   onPressPrivacy,
+  onPressVolumeFilter,
+  volumeInclusionStats,
   isCompletedToday,
   isActive,
   isBlockedByOtherWorkout,
@@ -94,14 +99,15 @@ export function RoutineCard({
       { 
         overflow: 'hidden',
         borderColor: isActive ? colors.tint : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
-        backgroundColor: 'transparent',
+        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.65)',
         borderWidth: isActive ? 2 : 1,
       }
     ]}>
+      {/* iOS Liquid Glass Effect Background */}
       <GlassView 
         glassEffectStyle="regular" 
-        colorScheme={['light', 'ocean', 'desert'].includes(theme) ? 'light' : 'dark'} 
-        style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} 
+        colorScheme={isDark ? 'dark' : 'light'} 
+        style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} 
       />
 
       {/* 1. IMAGEN DE CABECERA (SI TIENE) */}
@@ -110,8 +116,10 @@ export function RoutineCard({
           <Image 
             source={{ uri: imageSrc }} 
             style={styles.imageCover} 
-            resizeMode="cover" 
+            contentFit="cover"
+            transition={200}
           />
+          <View style={styles.imageOverlay} />
           {routine.folder ? (
             <View style={styles.floatingFolderTag}>
               <Folder size={11} color="#ffffff" style={{ marginRight: 4 }} />
@@ -157,12 +165,24 @@ export function RoutineCard({
 
         {/* STATS ROW (TIEMPO, EJERCICIOS, ÚLTIMA FECHA, COMPLETADA) */}
         <View style={styles.statsPillsRow}>
-          {isCompletedToday && (
-            <View style={[styles.statPill, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
-              <CheckCircle size={12} color="#22c55e" style={{ marginRight: 4 }} />
-              <Text style={[styles.statPillText, { color: '#22c55e' }]}>Completada</Text>
+          {isCompletedToday ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={[styles.statPill, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                <CheckCircle size={12} color="#22c55e" style={{ marginRight: 4 }} />
+                <Text style={[styles.statPillText, { color: '#22c55e' }]}>Completada</Text>
+              </View>
+              {onPressShare && (
+                <TouchableOpacity
+                  onPress={onPressShare}
+                  activeOpacity={0.75}
+                  style={[styles.storiesPill, { backgroundColor: colors.tint + '20' }]}
+                >
+                  <Share2 size={11} color={colors.tint} style={{ marginRight: 4 }} />
+                  <Text style={[styles.storiesPillText, { color: colors.tint }]}>Stories</Text>
+                </TouchableOpacity>
+              )}
             </View>
-          )}
+          ) : null}
 
           <View style={[styles.statPill, { backgroundColor: iconBadgeBg }]}>
             <Clock size={12} color={colors.textSecondary} style={{ marginRight: 4 }} />
@@ -182,33 +202,36 @@ export function RoutineCard({
           </View>
         </View>
 
-        {/* BARRA DE ACCIONES INLINE (PRIVACIDAD, COMPARTIR, EDITAR, DUPLICAR, ELIMINAR) */}
+        {/* BARRA DE ACCIONES INLINE */}
         <View style={styles.actionsBar}>
           {/* Privacidad */}
           <TouchableOpacity 
             style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
             onPress={onPressPrivacy}
             activeOpacity={0.7}
+            accessibilityLabel="Privacidad de rutina"
           >
             <Globe size={16} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          {/* Compartir entreno (si completada hoy) */}
-          {isCompletedToday && onPressShare ? (
+          {/* Compartir entreno */}
+          {onPressShare && (
             <TouchableOpacity 
               style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
               onPress={onPressShare}
               activeOpacity={0.7}
+              accessibilityLabel="Compartir entreno"
             >
               <Share2 size={16} color={colors.textSecondary} />
             </TouchableOpacity>
-          ) : null}
+          )}
 
           {/* Editar */}
           <TouchableOpacity 
             style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
             onPress={onPressEdit}
             activeOpacity={0.7}
+            accessibilityLabel="Editar rutina"
           >
             <Edit size={16} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -218,9 +241,61 @@ export function RoutineCard({
             style={[styles.actionBtn, { backgroundColor: iconBadgeBg }]} 
             onPress={onPressDuplicate}
             activeOpacity={0.7}
+            accessibilityLabel="Duplicar rutina"
           >
             <Copy size={16} color={colors.textSecondary} />
           </TouchableOpacity>
+
+          {/* Recuento de series semanales pill */}
+          {onPressVolumeFilter && (
+            <TouchableOpacity
+              onPress={onPressVolumeFilter}
+              activeOpacity={0.75}
+              style={[
+                styles.volumePillBtn,
+                {
+                  backgroundColor:
+                    volumeInclusionStats?.status === 'all'
+                      ? colors.tint + '18'
+                      : volumeInclusionStats?.status === 'partial'
+                      ? 'rgba(245, 158, 11, 0.18)'
+                      : iconBadgeBg,
+                },
+              ]}
+            >
+              <Activity
+                size={13}
+                color={
+                  volumeInclusionStats?.status === 'all'
+                    ? colors.tint
+                    : volumeInclusionStats?.status === 'partial'
+                    ? '#f59e0b'
+                    : colors.textSecondary
+                }
+              />
+              <Text
+                style={[
+                  styles.volumePillText,
+                  {
+                    color:
+                      volumeInclusionStats?.status === 'all'
+                        ? colors.tint
+                        : volumeInclusionStats?.status === 'partial'
+                        ? '#f59e0b'
+                        : colors.textSecondary,
+                  },
+                ]}
+              >
+                {volumeInclusionStats
+                  ? volumeInclusionStats.status === 'all'
+                    ? `Series: Todas (${volumeInclusionStats.total})`
+                    : volumeInclusionStats.status === 'none'
+                    ? 'Series: 0'
+                    : `Series: ${volumeInclusionStats.included}/${volumeInclusionStats.total}`
+                  : 'Series sem.'}
+              </Text>
+            </TouchableOpacity>
+          )}
 
           <View style={{ flex: 1 }} />
 
@@ -229,14 +304,45 @@ export function RoutineCard({
             style={[styles.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]} 
             onPress={onPressDelete}
             activeOpacity={0.7}
+            accessibilityLabel="Eliminar rutina"
           >
             <Trash2 size={16} color="#ef4444" />
           </TouchableOpacity>
         </View>
 
-        {/* LISTA PREVIA DE EJERCICIOS CON SUPERSERIES */}
+        {/* LISTA PREVIA DE EJERCICIOS CON SUPERSERIES Y BANNER DE RECUENTO */}
         {exerciseGroups.length > 0 && (
           <View style={[styles.previewBox, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)', borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)', borderWidth: 1 }]}>
+            {onPressVolumeFilter && (
+              <TouchableOpacity
+                onPress={onPressVolumeFilter}
+                style={[
+                  styles.volumeHeaderRow,
+                  { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
+                ]}
+                activeOpacity={0.7}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Activity size={13} color={colors.tint} />
+                  <Text style={[styles.volumeHeaderTitle, { color: colors.textSecondary }]}>
+                    Recuento semanal:{' '}
+                    <Text style={{ color: colors.text, fontWeight: '800' }}>
+                      {volumeInclusionStats
+                        ? volumeInclusionStats.status === 'all'
+                          ? `Todos (${volumeInclusionStats.total})`
+                          : volumeInclusionStats.status === 'none'
+                          ? 'Ninguno (0)'
+                          : `${volumeInclusionStats.included} de ${volumeInclusionStats.total}`
+                        : 'Todos'}
+                    </Text>
+                  </Text>
+                </View>
+                <View style={[styles.choosePill, { backgroundColor: colors.tint + '20' }]}>
+                  <Text style={[styles.choosePillText, { color: colors.tint }]}>Elegir</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+
             {exerciseGroups.map((group, gIdx) => {
               const isSuperset = group.length > 1;
 
@@ -315,52 +421,50 @@ export function RoutineCard({
             colorScheme={isDark ? 'dark' : 'light'}
             style={StyleSheet.absoluteFill}
           />
-          {/* Specular highlight strip on top of button for Liquid Glass reflection */}
+          {/* Reflejo superior Liquid Glass */}
           <View
             style={[
-              styles.liquidSpecularTop,
+              styles.buttonHighlight,
               {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.45)',
-              }
+                backgroundColor: isDark
+                  ? 'rgba(255, 255, 255, 0.22)'
+                  : 'rgba(255, 255, 255, 0.45)',
+              },
             ]}
           />
 
-          {isCompletedToday ? (
-            <View style={styles.buttonContentRow}>
-              <CheckCircle size={18} color="#22c55e" style={{ marginRight: 8 }} />
-              <Text style={[styles.mainButtonText, { color: isDark ? '#4ade80' : '#15803d' }]}>
-                Entrenamiento Completado
-              </Text>
-            </View>
-          ) : isActive ? (
-            <View style={styles.buttonContentRow}>
-              <Clock size={18} color={startTextColor} style={{ marginRight: 8 }} />
-              <Text style={[styles.mainButtonText, { color: startTextColor }]}>
-                Continuar Entrenamiento
-              </Text>
-            </View>
-          ) : isBlockedByOtherWorkout ? (
-            <View style={styles.buttonContentRow}>
-              <Lock size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
-              <Text style={[styles.mainButtonText, { color: colors.textSecondary }]}>
-                Entrenamiento en Curso
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.buttonContentRow}>
-              <Play 
-                size={18} 
-                color={startTextColor} 
-                fill={startTextColor} 
-                style={{ marginRight: 8 }} 
-              />
-              <Text style={[styles.mainButtonText, { color: startTextColor }]}>
-                Empezar Entrenamiento
-              </Text>
-            </View>
-          )}
+          <View style={styles.mainButtonInner}>
+            {isActive ? (
+              <>
+                <Clock size={18} color={startTextColor} style={{ marginRight: 8 }} />
+                <Text style={[styles.mainButtonText, { color: startTextColor }]}>
+                  Continuar Entrenamiento
+                </Text>
+              </>
+            ) : isBlockedByOtherWorkout ? (
+              <>
+                <Lock size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <Text style={[styles.mainButtonText, { color: colors.textSecondary }]}>
+                  Entrenamiento en Curso
+                </Text>
+              </>
+            ) : isCompletedToday ? (
+              <>
+                <CheckCircle size={18} color="#22c55e" style={{ marginRight: 8 }} />
+                <Text style={[styles.mainButtonText, { color: '#22c55e' }]}>
+                  Completado hoy
+                </Text>
+              </>
+            ) : (
+              <>
+                <Play size={18} color={startTextColor} fill={startTextColor} style={{ marginRight: 8 }} />
+                <Text style={[styles.mainButtonText, { color: startTextColor }]}>
+                  Empezar Entrenamiento
+                </Text>
+              </>
+            )}
+          </View>
         </TouchableOpacity>
-
       </View>
     </View>
   );
@@ -368,37 +472,39 @@ export function RoutineCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 24,
-    borderWidth: 1,
-    overflow: 'hidden',
+    borderRadius: 28,
     marginBottom: 16,
+    position: 'relative',
   },
   imageContainer: {
-    height: 140,
     width: '100%',
+    height: 140,
     position: 'relative',
-    backgroundColor: '#1f1f23',
+    overflow: 'hidden',
   },
   imageCover: {
     width: '100%',
     height: '100%',
   },
+  imageOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  },
   floatingFolderTag: {
     position: 'absolute',
     top: 12,
     right: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
   floatingFolderText: {
     color: '#ffffff',
     fontSize: 11,
-    fontWeight: '800',
-    maxWidth: 120,
+    fontWeight: '700',
   },
   cardBody: {
     padding: 18,
@@ -407,36 +513,38 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
     marginBottom: 8,
   },
   folderTextNoImg: {
     fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
+    fontWeight: '700',
   },
   titleRow: {
-    marginBottom: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 6,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '900',
+    flex: 1,
     letterSpacing: -0.3,
   },
   badgesInline: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 6,
+    gap: 4,
   },
   badgePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
     borderRadius: 8,
   },
   badgePillText: {
@@ -445,106 +553,148 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   description: {
-    fontSize: 13,
+    fontSize: 12.5,
+    fontWeight: '500',
     lineHeight: 18,
-    marginTop: 6,
+    marginBottom: 12,
   },
   statsPillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginTop: 12,
     marginBottom: 14,
   },
   statPill: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
   statPillText: {
     fontSize: 11,
     fontWeight: '700',
   },
+  storiesPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  storiesPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
   actionsBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
+    gap: 6,
+    marginBottom: 14,
+    flexWrap: 'wrap',
   },
   actionBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  volumePillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    borderRadius: 12,
+  },
+  volumePillText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
   previewBox: {
     borderRadius: 18,
-    padding: 14,
-    marginBottom: 16,
+    padding: 12,
+    marginBottom: 14,
+  },
+  volumeHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 8,
+    marginBottom: 8,
+    borderBottomWidth: 1,
+  },
+  volumeHeaderTitle: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  choosePill: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  choosePillText: {
+    fontSize: 10,
+    fontWeight: '800',
   },
   supersetTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   supersetTagText: {
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '900',
     letterSpacing: 0.5,
   },
   groupContainer: {
-    gap: 8,
+    gap: 6,
   },
   exerciseRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 2,
   },
   exerciseName: {
-    flex: 1,
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
+    flex: 1,
     marginRight: 8,
   },
   repsPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
   repsPillText: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   mainButton: {
-    height: 52,
-    borderRadius: 22,
-    marginTop: 4,
+    height: 48,
+    borderRadius: 20,
     overflow: 'hidden',
     position: 'relative',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  liquidSpecularTop: {
+  buttonHighlight: {
     position: 'absolute',
     top: 0,
-    left: 12,
-    right: 12,
-    height: 1,
+    left: 14,
+    right: 14,
+    height: 1.5,
     borderRadius: 1,
   },
-  buttonContentRow: {
+  mainButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
   },
   mainButtonText: {
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: 0.2,
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: -0.2,
   },
 });

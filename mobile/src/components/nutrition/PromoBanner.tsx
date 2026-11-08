@@ -15,7 +15,7 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 
 interface PromoBannerProps {
-  type?: 'nutrition' | 'training';
+  type?: 'nutrition' | 'training' | 'routines';
   onPress: () => void;
 }
 
