@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 
 export type PeriodType = '7D' | '14D' | '1M' | '3M' | '6M' | '1A' | 'Todo';
 
@@ -21,7 +21,7 @@ export function PeriodFilter({
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const activeTextColor = getContrastColor(colors.tint, theme);
+  const activeTextColor = getContrastTextColor(colors.tint);
 
   const handleSelect = (p: PeriodType) => {
     if (p === activePeriod) return;

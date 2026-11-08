@@ -9,13 +9,13 @@ import {
   BodyMeasurementModal,
   MEASUREMENT_TYPES,
 } from './BodyMeasurementModal';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 
 export function MeasurementsProgressView() {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const accentText = getContrastColor(colors.tint, theme);
+  const accentContrastText = getContrastTextColor(colors.tint);
 
   const bodyMeasurementsLog = useAppStore(state => state.bodyMeasurementsLog) || [];
   const logBodyMeasurement = useAppStore(state => state.logBodyMeasurement);
@@ -86,7 +86,7 @@ export function MeasurementsProgressView() {
                   style={[
                     styles.zonePillText,
                     {
-                      color: isSelected ? accentText : colors.text,
+                      color: isSelected ? accentContrastText : colors.text,
                       fontWeight: isSelected ? '800' : '600',
                     },
                   ]}
@@ -108,8 +108,8 @@ export function MeasurementsProgressView() {
           }}
           style={[styles.addBtn, { backgroundColor: colors.tint }]}
         >
-          <Plus size={18} color={accentText} strokeWidth={2.5} />
-          <Text style={[styles.addBtnText, { color: accentText }]}>
+          <Plus size={18} color={accentContrastText} strokeWidth={2.5} />
+          <Text style={[styles.addBtnText, { color: accentContrastText }]}>
             Registrar Medida
           </Text>
         </TouchableOpacity>
@@ -136,34 +136,37 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   topRow: {
-    gap: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   zonesScroll: {
-    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingRight: 8,
   },
   zonePill: {
     paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
   },
   zonePillText: {
-    fontSize: 13,
+    fontSize: 12,
+    letterSpacing: -0.2,
   },
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 6,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 18,
+    flexShrink: 0,
   },
   addBtnText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '800',
   },
 });

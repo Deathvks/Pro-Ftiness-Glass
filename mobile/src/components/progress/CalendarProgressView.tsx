@@ -24,13 +24,13 @@ import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { DailyDetailModal } from './DailyDetailModal';
 import { StatBadge } from './StatBadge';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 
 export function CalendarProgressView() {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const accentText = getContrastColor(colors.tint, theme);
+  const accentText = getContrastTextColor(colors.tint);
 
   const workoutLog = useAppStore(state => state.workoutLog) || [];
   const routines = useAppStore(state => state.routines) || [];

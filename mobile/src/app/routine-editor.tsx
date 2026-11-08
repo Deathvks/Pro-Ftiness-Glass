@@ -1,4 +1,4 @@
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ScrollView, Image, Alert, Modal, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -313,8 +313,8 @@ export default function RoutineEditorScreen() {
       <View style={{ gap: 12, width: '100%' }}>
         {/* AI Analizer */}
         <GlassButton noShadow color={colors.tint} theme={theme} colors={colors} onPress={() => Alert.alert('IA', 'Próximamente')} style={[styles.aiButton, { overflow: 'hidden' }]}>
-          <Sparkles size={20} color={getContrastColor(colors.tint, theme)} />
-          <Text style={[styles.aiButtonText, { color: getContrastColor(colors.tint, theme) }]}>Analizar Rutina con IA</Text>
+          <Sparkles size={20} color={getContrastTextColor(colors.tint)} />
+          <Text style={[styles.aiButtonText, { color: getContrastTextColor(colors.tint) }]}>Analizar Rutina con IA</Text>
         </GlassButton>
 
         {/* Add from Library */}
@@ -331,8 +331,8 @@ export default function RoutineEditorScreen() {
 
         {/* Save */}
         <GlassButton color={colors.tint} noShadow theme={theme} colors={colors} onPress={handleSave} style={[styles.libraryBtn, { marginTop: 12, overflow: 'hidden' }]}>
-          <Save size={20} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 8 }} />
-          <Text style={{ color: getContrastColor(colors.tint, theme), fontWeight: 'bold', fontSize: 16 }}>
+          <Save size={20} color={getContrastTextColor(colors.tint)} style={{ marginRight: 8 }} />
+          <Text style={{ color: getContrastTextColor(colors.tint), fontWeight: 'bold', fontSize: 16 }}>
             {routineId ? 'Guardar Cambios' : 'Crear Rutina'}
           </Text>
         </GlassButton>
@@ -396,8 +396,8 @@ export default function RoutineEditorScreen() {
                         })}
                       >
                         <Text style={{ color: colors.textSecondary, fontSize: 13, marginRight: 6 }}>Músculo:</Text>
-                        <Text style={{ color: getContrastColor(colors.tint, theme), fontSize: 13, fontWeight: 'bold' }}>{item.muscle_group || 'Otro'}</Text>
-                        <ChevronDown size={14} color={getContrastColor(colors.tint, theme)} style={{ marginLeft: 6 }} />
+                        <Text style={{ color: colors.tint, fontSize: 13, fontWeight: 'bold' }}>{item.muscle_group || 'Otro'}</Text>
+                        <ChevronDown size={14} color={colors.tint} style={{ marginLeft: 6 }} />
                       </TouchableOpacity>
                     </View>
                   ) : (

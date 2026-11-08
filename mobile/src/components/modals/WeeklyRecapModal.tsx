@@ -13,7 +13,7 @@ import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import useAppStore from '@/store/useAppStore';
 import { 
   getFunWeightComparison, 
@@ -248,11 +248,11 @@ export const WeeklyRecapModal: React.FC<WeeklyRecapModalProps> = ({
                 activeOpacity={0.85}
               >
                 {isSharing ? (
-                  <ActivityIndicator color={getContrastColor(colors.tint, theme)} />
+                  <ActivityIndicator color={getContrastTextColor(colors.tint)} />
                 ) : (
                   <>
-                    <Share2 size={18} color={getContrastColor(colors.tint, theme)} style={{ marginRight: 8 }} />
-                    <Text style={[styles.shareBtnText, { color: getContrastColor(colors.tint, theme) }]}>
+                    <Share2 size={18} color={getContrastTextColor(colors.tint)} style={{ marginRight: 8 }} />
+                    <Text style={[styles.shareBtnText, { color: getContrastTextColor(colors.tint) }]}>
                       Compartir Resumen
                     </Text>
                   </>

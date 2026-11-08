@@ -54,7 +54,7 @@ import { useRouter } from 'expo-router';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastColor, getContrastTextColor } from '@/utils/colorUtils';
 import { isSameDay } from '@/utils/helpers';
 import { getTrainingWeek, trainingDateFormatter } from '@/utils/weeklyTraining';
 import { enrichGymWithMedia } from '@/utils/gymMedia';
@@ -155,6 +155,7 @@ export default function Dashboard() {
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const accentText = getContrastColor(colors.tint, theme);
+  const tintContrastText = getContrastTextColor(colors.tint);
   const iconBadgeBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
 
   // Store
@@ -512,7 +513,7 @@ export default function Dashboard() {
           <Text style={[styles.mainTitle, { color: colors.text }]}>Dashboard</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
             <Text style={{ fontSize: 18, color: colors.textSecondary }}>Hola, </Text>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', color: accentText }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.tint }}>
               {userProfile?.username || 'Atleta'}
             </Text>
           </View>
@@ -649,7 +650,7 @@ export default function Dashboard() {
             />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
               <View style={[styles.activeWorkoutIcon, { backgroundColor: colors.tint }]}>
-                <Dumbbell size={22} color={accentText} />
+                <Dumbbell size={22} color={tintContrastText} />
               </View>
               <View style={{ flex: 1 }}>
                 <View style={[styles.activeTag, { backgroundColor: colors.tint + '20' }]}>
@@ -670,8 +671,8 @@ export default function Dashboard() {
                 style={[styles.resumeBtn, { backgroundColor: colors.tint }]}
                 activeOpacity={0.85}
               >
-                <Play size={15} color={accentText} fill={accentText} />
-                <Text style={[styles.resumeBtnText, { color: accentText }]}>Continuar entreno</Text>
+                <Play size={15} color={tintContrastText} fill={tintContrastText} />
+                <Text style={[styles.resumeBtnText, { color: tintContrastText }]}>Continuar entreno</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setShowDiscardWorkoutModal(true)}

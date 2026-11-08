@@ -11,20 +11,20 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
-import { BookOpen, ChevronDown, Search, X, Dumbbell, TrendingUp } from 'lucide-react-native';
+import { BookOpen, ChevronDown, Search, X, Dumbbell, TrendingUp, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { ExerciseChart } from './ProgressCharts';
 import { ExerciseHistoryModal } from './ExerciseHistoryModal';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 
 export function ExerciseProgressionView() {
   const router = useRouter();
   const colors = useAppColors();
   const theme = useAppStore((state: any) => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const accentText = getContrastColor(colors.tint, theme);
+  const accentText = getContrastTextColor(colors.tint);
 
   const workoutLog = useAppStore((state: any) => state.workoutLog) || [];
 
@@ -283,11 +283,13 @@ export function ExerciseProgressionView() {
                           {
                             color: isSelected ? colors.tint : colors.text,
                             fontWeight: isSelected ? '800' : '500',
+                            flex: 1,
                           },
                         ]}
                       >
                         {ex}
                       </Text>
+                      {isSelected && <Check size={18} color={colors.tint} strokeWidth={2.5} />}
                     </TouchableOpacity>
                   );
                 })}
@@ -395,6 +397,9 @@ const styles = StyleSheet.create({
     maxHeight: 320,
   },
   optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 14,
@@ -415,6 +420,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
     padding: 24,
+    minHeight: 340,
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 12,

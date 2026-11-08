@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, ActivityInd
 import { Sparkles, X, Zap, Loader2, AlertCircle } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import { GlassView } from 'expo-glass-effect';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { askTrainerAI } from '@/services/aiService';
@@ -191,8 +191,8 @@ export function RoutineAIGeneratorModal({ visible, onClose, onGenerate }: Routin
                   >
                     {isLoading ? (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <ActivityIndicator color={getContrastColor(colors.tint, theme)} size="small" />
-                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: getContrastColor(colors.tint, theme) }}>Diseñando...</Text>
+                        <ActivityIndicator color={getContrastTextColor(colors.tint)} size="small" />
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: getContrastTextColor(colors.tint) }}>Diseñando...</Text>
                       </View>
                     ) : isLimitReached ? (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -201,8 +201,8 @@ export function RoutineAIGeneratorModal({ visible, onClose, onGenerate }: Routin
                       </View>
                     ) : (
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <Sparkles size={20} color={getContrastColor(colors.tint, theme)} />
-                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: getContrastColor(colors.tint, theme) }}>Generar Rutina</Text>
+                        <Sparkles size={20} color={getContrastTextColor(colors.tint)} />
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: getContrastTextColor(colors.tint) }}>Generar Rutina</Text>
                       </View>
                     )}
                   </GlassButton>

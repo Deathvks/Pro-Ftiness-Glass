@@ -16,7 +16,7 @@ import { X, Ruler } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 
 export const MEASUREMENT_TYPES = [
   { value: 'cintura', label: 'Cintura' },
@@ -44,7 +44,7 @@ export function BodyMeasurementModal({
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const accentText = getContrastColor(colors.tint, theme);
+  const accentText = getContrastTextColor(colors.tint);
 
   const [measureType, setMeasureType] = useState('cintura');
   const [val, setVal] = useState('');

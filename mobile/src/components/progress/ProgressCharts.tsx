@@ -181,7 +181,8 @@ export function BodyWeightChart({
   }, [filteredData]);
 
   const { width: windowWidth } = useWindowDimensions();
-  const chartWidth = Math.max(windowWidth - 64, 220);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const chartWidth = containerWidth > 0 ? containerWidth : Math.max(windowWidth - 64, 220);
   const chartHeight = 180;
   const paddingX = 24;
   const paddingY = 28;
@@ -296,7 +297,15 @@ export function BodyWeightChart({
           )}
         </View>
       ) : (
-        <View style={{ width: chartWidth, height: chartHeight }}>
+        <View
+          onLayout={e => {
+            const w = e.nativeEvent.layout.width;
+            if (w > 0 && Math.abs(w - containerWidth) > 2) {
+              setContainerWidth(w);
+            }
+          }}
+          style={{ width: '100%', height: chartHeight, alignItems: 'center' }}
+        >
           <Svg width={chartWidth} height={chartHeight}>
             <Defs>
               <LinearGradient id="pesoGrad" x1="0" y1="0" x2="0" y2="1">
@@ -436,7 +445,8 @@ export function ExerciseChart({
   }, [filteredData]);
 
   const { width: windowWidth } = useWindowDimensions();
-  const chartWidth = Math.max(windowWidth - 64, 220);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const chartWidth = containerWidth > 0 ? containerWidth : Math.max(windowWidth - 64, 220);
   const chartHeight = 180;
   const paddingX = 24;
   const paddingY = 28;
@@ -581,7 +591,15 @@ export function ExerciseChart({
           )}
         </View>
       ) : (
-        <View style={{ width: chartWidth, height: chartHeight }}>
+        <View
+          onLayout={e => {
+            const w = e.nativeEvent.layout.width;
+            if (w > 0 && Math.abs(w - containerWidth) > 2) {
+              setContainerWidth(w);
+            }
+          }}
+          style={{ width: '100%', height: chartHeight, alignItems: 'center' }}
+        >
           <Svg width={chartWidth} height={chartHeight}>
             {/* PR Reference Line */}
             {svgPaths.prY !== null && (
@@ -741,7 +759,8 @@ export function NutritionCharts({
   }, [chartData]);
 
   const { width: windowWidth } = useWindowDimensions();
-  const chartWidth = Math.max(windowWidth - 64, 220);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const chartWidth = containerWidth > 0 ? containerWidth : Math.max(windowWidth - 64, 220);
   const chartHeight = 150;
   const paddingX = 16;
   const paddingY = 20;
@@ -1080,7 +1099,8 @@ export function MeasurementChart({
   }, [filteredData]);
 
   const { width: windowWidth } = useWindowDimensions();
-  const chartWidth = Math.max(windowWidth - 64, 220);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const chartWidth = containerWidth > 0 ? containerWidth : Math.max(windowWidth - 64, 220);
   const chartHeight = 180;
   const paddingX = 24;
   const paddingY = 28;
@@ -1159,7 +1179,15 @@ export function MeasurementChart({
           </Text>
         </View>
       ) : (
-        <View style={{ width: chartWidth, height: chartHeight }}>
+        <View
+          onLayout={e => {
+            const w = e.nativeEvent.layout.width;
+            if (w > 0 && Math.abs(w - containerWidth) > 2) {
+              setContainerWidth(w);
+            }
+          }}
+          style={{ width: '100%', height: chartHeight, alignItems: 'center' }}
+        >
           <Svg width={chartWidth} height={chartHeight}>
             <Defs>
               <LinearGradient id="medidaGrad" x1="0" y1="0" x2="0" y2="1">
