@@ -97,7 +97,7 @@ export const MealSection: React.FC<MealSectionProps> = ({
                   ]}
                   activeOpacity={0.7}
                 >
-                  <Copy size={15} color={colors.textSecondary} />
+                  <Copy size={18} color={colors.textSecondary} />
                 </TouchableOpacity>
               )}
 

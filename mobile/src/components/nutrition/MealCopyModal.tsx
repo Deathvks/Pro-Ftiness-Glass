@@ -1,5 +1,5 @@
 /* mobile/src/components/nutrition/MealCopyModal.tsx */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,16 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Pressable,
 } from 'react-native';
 import {
   X,
   Copy,
-  Calendar,
-  Utensils,
+  CalendarDays,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Utensils,
   Check,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
@@ -29,11 +31,43 @@ import * as nutritionService from '@/services/nutritionService';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 import { FoodLogItem } from './MealSection';
 
-const MEAL_LABELS: Record<string, string> = {
+export const MEAL_TYPE_LABELS: Record<string, string> = {
   breakfast: 'Desayuno',
   lunch: 'Almuerzo',
   dinner: 'Cena',
-  snack: 'Snacks',
+  snack: 'Snack',
+};
+
+const parseLocalDate = (value: string): Date => {
+  if (!value) return new Date();
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const toDateValue = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formatSpanishDate = (dateStr: string): string => {
+  const d = parseLocalDate(dateStr);
+  const months = [
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre',
+  ];
+  return `${d.getDate()} de ${months[d.getMonth()]} de ${d.getFullYear()}`;
 };
 
 interface MealCopyModalProps {
@@ -63,11 +97,25 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isCopying, setIsCopying] = useState<boolean>(false);
 
+  // Pickers toggle
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState<boolean>(false);
+  const [isMealSelectOpen, setIsMealSelectOpen] = useState<boolean>(false);
+
+  // Month navigation for date picker
+  const [visibleMonth, setVisibleMonth] = useState<Date>(() => {
+    const d = parseLocalDate(destinationDate);
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+
   // Reset state when opening
   useEffect(() => {
     if (visible) {
       setSourceDate(destinationDate);
       setSourceMealType(destinationMealType);
+      setIsDatePickerOpen(false);
+      setIsMealSelectOpen(false);
+      const d = parseLocalDate(destinationDate);
+      setVisibleMonth(new Date(d.getFullYear(), d.getMonth(), 1));
     }
   }, [visible, destinationDate, destinationMealType]);
 
@@ -84,6 +132,8 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
 
     let isMounted = true;
     setIsLoading(true);
+    setSourceLogs([]);
+
     nutritionService
       .getNutritionLogsByDate(sourceDate)
       .then(data => {
@@ -105,14 +155,59 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
     };
   }, [visible, sourceDate, sourceMealType, destinationDate, currentDayLogs]);
 
-  const handleShiftDate = (days: number) => {
+  // Calendar calculations
+  const maxDateObj = useMemo(() => parseLocalDate(destinationDate), [destinationDate]);
+
+  const calendarDays = useMemo(() => {
+    const year = visibleMonth.getFullYear();
+    const month = visibleMonth.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    // Monday as first day: (getDay() + 6) % 7
+    const leadingDays = (new Date(year, month, 1).getDay() + 6) % 7;
+    const items: { key: string; date: Date | null }[] = [];
+
+    for (let i = 0; i < leadingDays; i++) {
+      items.push({ key: `empty-${i}`, date: null });
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      const d = new Date(year, month, i);
+      items.push({ key: toDateValue(d), date: d });
+    }
+    return items;
+  }, [visibleMonth]);
+
+  const monthLabel = useMemo(() => {
+    const months = [
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
+    ];
+    return `${months[visibleMonth.getMonth()]} ${visibleMonth.getFullYear()}`;
+  }, [visibleMonth]);
+
+  const moveMonth = (amount: number) => {
     try {
       Haptics.selectionAsync();
     } catch {}
-    const d = new Date(sourceDate);
-    d.setDate(d.getDate() + days);
-    setSourceDate(d.toISOString().split('T')[0]);
+    setVisibleMonth(current => new Date(current.getFullYear(), current.getMonth() + amount, 1));
   };
+
+  const isAfterMaxMonth = useMemo(() => {
+    return (
+      visibleMonth.getFullYear() > maxDateObj.getFullYear() ||
+      (visibleMonth.getFullYear() === maxDateObj.getFullYear() &&
+        visibleMonth.getMonth() >= maxDateObj.getMonth())
+    );
+  }, [visibleMonth, maxDateObj]);
 
   const getFullImageUrl = (url?: string) => {
     if (!url) return null;
@@ -123,8 +218,28 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
   const isSameSourceAndDest =
     sourceDate === destinationDate && sourceMealType === destinationMealType;
 
+  // Quick select helper
+  const handleSelectQuickDate = (daysAgo: number) => {
+    try {
+      Haptics.selectionAsync();
+    } catch {}
+    const d = parseLocalDate(destinationDate);
+    d.setDate(d.getDate() - daysAgo);
+    const dateStr = toDateValue(d);
+    setSourceDate(dateStr);
+    setVisibleMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+    setIsDatePickerOpen(false);
+  };
+
   const handleCopy = async () => {
-    if (isCopying || sourceLogs.length === 0 || isSameSourceAndDest) return;
+    if (
+      isCopying ||
+      isLoading ||
+      sourceLogs.length === 0 ||
+      isSameSourceAndDest
+    ) {
+      return;
+    }
 
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -133,41 +248,50 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
     setIsCopying(true);
 
     try {
-      const results = await Promise.allSettled(
-        sourceLogs.map(item =>
+      const responses = await Promise.allSettled(
+        sourceLogs.map(log =>
           nutritionService.addFoodLog({
-            description: item.description,
-            calories: item.calories,
-            protein_g: item.protein_g,
-            carbs_g: item.carbs_g,
-            fats_g: item.fats_g,
-            sugars_g: item.sugars_g ?? item.sugar_g,
-            weight_g: item.weight_g,
-            image_url: item.image_url,
-            calories_per_100g: item.calories_per_100g,
-            protein_per_100g: item.protein_per_100g,
-            carbs_per_100g: item.carbs_per_100g,
-            fat_per_100g: item.fat_per_100g,
-            sugars_per_100g: item.sugars_per_100g,
+            description: log.description,
+            calories: log.calories,
+            protein_g: log.protein_g,
+            carbs_g: log.carbs_g,
+            fats_g: log.fats_g,
+            sugars_g: log.sugars_g ?? log.sugar_g,
+            weight_g: log.weight_g,
+            image_url: log.image_url,
+            micronutrients: log.micronutrients,
+            calories_per_100g: log.calories_per_100g,
+            protein_per_100g: log.protein_per_100g,
+            carbs_per_100g: log.carbs_per_100g,
+            fat_per_100g: log.fat_per_100g,
+            sugars_per_100g: log.sugars_per_100g,
             log_date: destinationDate,
             meal_type: destinationMealType,
           })
         )
       );
 
-      const successfulCount = results.filter(r => r.status === 'fulfilled').length;
+      const copiedCount = responses.filter(r => r.status === 'fulfilled').length;
 
-      if (successfulCount > 0) {
+      if (copiedCount > 0) {
         try {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {}
         await onCopySuccess();
+        const destinationName =
+          MEAL_TYPE_LABELS[destinationMealType]?.toLowerCase() || destinationMealType;
+        Alert.alert(
+          'Comida copiada',
+          copiedCount === sourceLogs.length
+            ? `Se copiaron ${copiedCount} alimentos al ${destinationName}.`
+            : `Se copiaron ${copiedCount} de ${sourceLogs.length} alimentos al ${destinationName}.`
+        );
         onClose();
       } else {
         Alert.alert('Error', 'No se pudieron copiar los alimentos.');
       }
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Error al copiar los alimentos.');
+      Alert.alert('Error', e.message || 'No se pudieron copiar los alimentos.');
     } finally {
       setIsCopying(false);
     }
@@ -175,25 +299,24 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
 
   if (!visible) return null;
 
+  const destinationName =
+    MEAL_TYPE_LABELS[destinationMealType]?.toLowerCase() || destinationMealType;
+  const sourceMealName =
+    MEAL_TYPE_LABELS[sourceMealType]?.toLowerCase() || sourceMealType;
+
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <TouchableOpacity
+        <Pressable
           style={StyleSheet.absoluteFill}
-          activeOpacity={1}
           onPress={() => !isCopying && onClose()}
         />
 
         <View
           style={[
-            styles.container,
+            styles.modalCard,
             {
-              backgroundColor: isDark ? 'rgba(20, 20, 22, 0.96)' : 'rgba(250, 250, 252, 0.98)',
+              backgroundColor: isDark ? 'rgba(20, 20, 22, 0.98)' : 'rgba(255, 255, 255, 0.98)',
               borderColor: colors.border,
             },
           ]}
@@ -205,7 +328,7 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
             style={StyleSheet.absoluteFill}
           />
 
-          {/* Grabber */}
+          {/* Grabber Bar */}
           <View style={styles.grabberContainer}>
             <View
               style={[
@@ -215,174 +338,337 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
             />
           </View>
 
-          {/* Header */}
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              <View style={styles.titleRow}>
-                <Copy size={18} color={colors.tint} style={{ marginRight: 6 }} />
-                <Text style={[styles.title, { color: colors.text }]}>Copiar Comida</Text>
-              </View>
+          {/* Header (Matching frontend 1:1) */}
+          <View style={styles.header}>
+            <View style={styles.headerTextGroup}>
+              <Text style={[styles.title, { color: colors.text }]}>Copiar comida</Text>
               <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                Añadir al {MEAL_LABELS[destinationMealType]?.toLowerCase()} del {destinationDate}
+                Añade los alimentos a {destinationName} del {destinationDate}.
               </Text>
             </View>
-
             <TouchableOpacity
               onPress={onClose}
               disabled={isCopying}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={[
-                styles.closeButton,
+                styles.closeBtn,
                 { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' },
               ]}
-              activeOpacity={0.7}
             >
               <X size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          {/* Body */}
           <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* 1. Date Selector */}
-            <View style={styles.sectionBlock}>
-              <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-                COPIAR DESDE LA FECHA:
+            {/* 1. Selector de Fecha con Calendario Desplegable */}
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                Copiar desde la fecha
               </Text>
 
-              <View
+              {/* Trigger Button */}
+              <TouchableOpacity
+                onPress={() => {
+                  try {
+                    Haptics.selectionAsync();
+                  } catch {}
+                  setIsDatePickerOpen(prev => !prev);
+                  setIsMealSelectOpen(false);
+                }}
+                activeOpacity={0.75}
                 style={[
-                  styles.dateRow,
+                  styles.triggerBtn,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                    borderColor: colors.border,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+                    borderColor: isDatePickerOpen ? colors.tint : colors.border,
                   },
                 ]}
               >
-                <TouchableOpacity
-                  onPress={() => handleShiftDate(-1)}
-                  style={styles.arrowBtn}
-                  activeOpacity={0.7}
-                >
-                  <ChevronLeft size={20} color={colors.text} />
-                </TouchableOpacity>
-
-                <View style={styles.dateInfo}>
-                  <Calendar size={16} color={colors.tint} style={{ marginRight: 6 }} />
-                  <Text style={[styles.dateText, { color: colors.text }]}>
-                    {sourceDate === destinationDate
-                      ? `Hoy (${sourceDate})`
-                      : sourceDate}
+                <View style={styles.triggerLeft}>
+                  <CalendarDays size={18} color={colors.tint} />
+                  <Text style={[styles.triggerText, { color: colors.text }]}>
+                    {formatSpanishDate(sourceDate)}
                   </Text>
                 </View>
+                <ChevronDown
+                  size={16}
+                  color={colors.textSecondary}
+                  style={isDatePickerOpen ? { transform: [{ rotate: '180deg' }] } : undefined}
+                />
+              </TouchableOpacity>
 
-                <TouchableOpacity
-                  onPress={() => handleShiftDate(1)}
-                  style={styles.arrowBtn}
-                  activeOpacity={0.7}
-                >
-                  <ChevronRight size={20} color={colors.text} />
-                </TouchableOpacity>
-              </View>
-            </View>
+              {/* Quick Date Pills */}
+              <View style={styles.quickPillsRow}>
+                {[
+                  { label: 'Hoy', days: 0 },
+                  { label: 'Ayer', days: 1 },
+                  { label: '-2 días', days: 2 },
+                  { label: '-3 días', days: 3 },
+                  { label: '-7 días', days: 7 },
+                ].map(pill => {
+                  const pillDateObj = parseLocalDate(destinationDate);
+                  pillDateObj.setDate(pillDateObj.getDate() - pill.days);
+                  const pillDateStr = toDateValue(pillDateObj);
+                  const isPillActive = sourceDate === pillDateStr;
 
-            {/* 2. Source Meal Type Selector */}
-            <View style={styles.sectionBlock}>
-              <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-                TIPO DE COMIDA A COPIAR:
-              </Text>
-
-              <View style={styles.mealTypesRow}>
-                {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(key => {
-                  const isSelected = sourceMealType === key;
                   return (
                     <TouchableOpacity
-                      key={key}
-                      onPress={() => {
-                        try {
-                          Haptics.selectionAsync();
-                        } catch {}
-                        setSourceMealType(key);
-                      }}
+                      key={pill.label}
+                      onPress={() => handleSelectQuickDate(pill.days)}
                       style={[
-                        styles.mealChip,
+                        styles.quickPill,
                         {
-                          backgroundColor: isSelected
+                          backgroundColor: isPillActive
                             ? colors.tint + '22'
                             : isDark
                             ? 'rgba(255, 255, 255, 0.05)'
                             : 'rgba(0, 0, 0, 0.03)',
-                          borderColor: isSelected ? colors.tint : colors.border,
+                          borderColor: isPillActive ? colors.tint : colors.border,
                         },
                       ]}
                       activeOpacity={0.7}
                     >
                       <Text
                         style={[
-                          styles.mealChipText,
+                          styles.quickPillText,
                           {
-                            color: isSelected ? colors.tint : colors.textSecondary,
-                            fontWeight: isSelected ? '800' : '600',
+                            color: isPillActive ? colors.tint : colors.textSecondary,
+                            fontWeight: isPillActive ? '800' : '600',
                           },
                         ]}
                       >
-                        {MEAL_LABELS[key]}
+                        {pill.label}
                       </Text>
                     </TouchableOpacity>
                   );
                 })}
               </View>
+
+              {/* Calendario Mensual Desplegable */}
+              {isDatePickerOpen && (
+                <View
+                  style={[
+                    styles.calendarPopup,
+                    {
+                      backgroundColor: isDark ? 'rgba(30, 30, 34, 0.98)' : 'rgba(250, 250, 252, 0.98)',
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  {/* Mes / Año + Flechas */}
+                  <View style={styles.monthHeaderRow}>
+                    <TouchableOpacity
+                      onPress={() => moveMonth(-1)}
+                      style={styles.monthArrow}
+                      activeOpacity={0.7}
+                    >
+                      <ChevronLeft size={20} color={colors.text} />
+                    </TouchableOpacity>
+
+                    <Text style={[styles.monthLabelText, { color: colors.text }]}>
+                      {monthLabel}
+                    </Text>
+
+                    <TouchableOpacity
+                      onPress={() => moveMonth(1)}
+                      disabled={isAfterMaxMonth}
+                      style={[styles.monthArrow, isAfterMaxMonth && { opacity: 0.3 }]}
+                      activeOpacity={0.7}
+                    >
+                      <ChevronRight size={20} color={colors.text} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Días de la semana */}
+                  <View style={styles.weekDaysRow}>
+                    {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((d, i) => (
+                      <Text key={i} style={[styles.weekDayText, { color: colors.textMuted }]}>
+                        {d}
+                      </Text>
+                    ))}
+                  </View>
+
+                  {/* Grid de días */}
+                  <View style={styles.daysGrid}>
+                    {calendarDays.map(item => {
+                      if (!item.date) {
+                        return <View key={item.key} style={styles.dayCellEmpty} />;
+                      }
+
+                      const dateVal = toDateValue(item.date);
+                      const isSelected = dateVal === sourceDate;
+                      const isFuture = item.date.getTime() > maxDateObj.getTime();
+
+                      return (
+                        <TouchableOpacity
+                          key={item.key}
+                          disabled={isFuture}
+                          onPress={() => {
+                            try {
+                              Haptics.selectionAsync();
+                            } catch {}
+                            setSourceDate(dateVal);
+                            setIsDatePickerOpen(false);
+                          }}
+                          style={[
+                            styles.dayCell,
+                            isSelected && { backgroundColor: colors.tint },
+                            isFuture && { opacity: 0.25 },
+                          ]}
+                          activeOpacity={0.7}
+                        >
+                          <Text
+                            style={[
+                              styles.dayCellText,
+                              {
+                                color: isSelected
+                                  ? '#000'
+                                  : isFuture
+                                  ? colors.textMuted
+                                  : colors.text,
+                                fontWeight: isSelected ? '900' : '600',
+                              },
+                            ]}
+                          >
+                            {item.date.getDate()}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
             </View>
 
-            {/* Same source and dest warning */}
-            {isSameSourceAndDest && (
-              <Text style={[styles.warningText, { color: '#f59e0b' }]}>
-                Selecciona otra comida o fecha para copiar.
-              </Text>
-            )}
-
-            {/* 3. Source Items Preview List */}
-            <View style={styles.sectionBlock}>
-              <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-                ALIMENTOS ENCONTRADOS:
+            {/* 2. Selector de Tipo de Comida (CustomSelect) */}
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+                Tipo de comida que quieres copiar
               </Text>
 
-              <View
+              <TouchableOpacity
+                onPress={() => {
+                  try {
+                    Haptics.selectionAsync();
+                  } catch {}
+                  setIsMealSelectOpen(prev => !prev);
+                  setIsDatePickerOpen(false);
+                }}
+                activeOpacity={0.75}
                 style={[
-                  styles.previewBox,
+                  styles.triggerBtn,
                   {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
-                    borderColor: colors.border,
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+                    borderColor: isMealSelectOpen ? colors.tint : colors.border,
                   },
                 ]}
               >
-                {isLoading ? (
-                  <View style={styles.loadingBox}>
-                    <ActivityIndicator size="small" color={colors.tint} />
-                    <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-                      Cargando alimentos...
-                    </Text>
-                  </View>
-                ) : sourceLogs.length > 0 ? (
-                  <View style={styles.logsList}>
-                    <Text style={[styles.countBadge, { color: colors.tint }]}>
-                      {sourceLogs.length} alimentos de {MEAL_LABELS[sourceMealType]?.toLowerCase()}
-                    </Text>
+                <View style={styles.triggerLeft}>
+                  <Utensils size={18} color={colors.tint} />
+                  <Text style={[styles.triggerText, { color: colors.text }]}>
+                    {MEAL_TYPE_LABELS[sourceMealType]}
+                  </Text>
+                </View>
+                <ChevronDown
+                  size={16}
+                  color={colors.textSecondary}
+                  style={isMealSelectOpen ? { transform: [{ rotate: '180deg' }] } : undefined}
+                />
+              </TouchableOpacity>
 
+              {/* Dropdown Options */}
+              {isMealSelectOpen && (
+                <View
+                  style={[
+                    styles.selectPopup,
+                    {
+                      backgroundColor: isDark ? 'rgba(30, 30, 34, 0.98)' : 'rgba(250, 250, 252, 0.98)',
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map(key => {
+                    const isSelected = sourceMealType === key;
+                    return (
+                      <TouchableOpacity
+                        key={key}
+                        onPress={() => {
+                          try {
+                            Haptics.selectionAsync();
+                          } catch {}
+                          setSourceMealType(key);
+                          setIsMealSelectOpen(false);
+                        }}
+                        style={[
+                          styles.selectOption,
+                          isSelected && {
+                            backgroundColor: colors.tint + '18',
+                          },
+                        ]}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.selectOptionText,
+                            {
+                              color: isSelected ? colors.tint : colors.text,
+                              fontWeight: isSelected ? '800' : '600',
+                            },
+                          ]}
+                        >
+                          {MEAL_TYPE_LABELS[key]}
+                        </Text>
+                        {isSelected && <Check size={16} color={colors.tint} strokeWidth={2.5} />}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+
+            {/* Aviso si origen y destino son idénticos */}
+            {isSameSourceAndDest && (
+              <Text style={styles.sameWarningText}>
+                Selecciona otra fecha o tipo de comida para realizar la copia.
+              </Text>
+            )}
+
+            {/* 3. Preview Box (Matching Frontend: rounded-[16px] bg-black/5 dark:bg-white/5 p-3 min-h-14) */}
+            <View
+              style={[
+                styles.previewBox,
+                {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              {isLoading ? (
+                <View style={styles.spinnerWrap}>
+                  <ActivityIndicator size="small" color={colors.tint} />
+                </View>
+              ) : sourceLogs.length > 0 ? (
+                <View style={styles.logsContainer}>
+                  <Text style={[styles.previewCountTitle, { color: colors.text }]}>
+                    {sourceLogs.length} alimentos de {sourceMealName}
+                  </Text>
+
+                  <View style={styles.logsScrollList}>
                     {sourceLogs.map(log => {
                       const img = getFullImageUrl(log.image_url);
                       return (
                         <View
                           key={log.id}
                           style={[
-                            styles.logItem,
+                            styles.previewItemRow,
                             {
                               backgroundColor: isDark
-                                ? 'rgba(255, 255, 255, 0.05)'
+                                ? 'rgba(255, 255, 255, 0.06)'
                                 : 'rgba(0, 0, 0, 0.03)',
-                              borderColor: colors.border,
                             },
                           ]}
                         >
@@ -399,70 +685,76 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
                             {img ? (
                               <Image
                                 source={{ uri: img }}
-                                style={styles.itemThumbImg}
+                                style={styles.thumbImage}
                                 resizeMode="cover"
                               />
                             ) : (
-                              <Utensils size={16} color={colors.textMuted} />
+                              <Utensils size={18} color={colors.textMuted} />
                             )}
                           </View>
 
-                          <View style={styles.itemDetails}>
+                          <View style={styles.itemInfo}>
                             <Text
                               style={[styles.itemTitle, { color: colors.text }]}
                               numberOfLines={1}
                             >
                               {log.description}
                             </Text>
-                            <Text style={[styles.itemSub, { color: colors.textSecondary }]}>
-                              {Math.round(log.calories)} kcal • {Math.round(log.weight_g || 0)}g
+                            <Text style={[styles.itemKcal, { color: colors.textSecondary }]}>
+                              {Math.round(log.calories || 0)} kcal
+                              {log.weight_g ? ` • ${Math.round(log.weight_g)}g` : ''}
                             </Text>
                           </View>
                         </View>
                       );
                     })}
                   </View>
-                ) : (
-                  <View style={styles.emptyBox}>
-                    <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                      No hay alimentos registrados en esa comida y fecha.
-                    </Text>
-                  </View>
-                )}
-              </View>
+                </View>
+              ) : (
+                <Text style={[styles.emptyPreviewText, { color: colors.textMuted }]}>
+                  No hay alimentos de ese tipo en esa fecha.
+                </Text>
+              )}
             </View>
           </ScrollView>
 
-          {/* Footer Buttons */}
-          <View style={[styles.footer, { borderTopColor: colors.border }]}>
+          {/* 4. Footer Buttons (Matching Frontend: flex gap-3 mt-5) */}
+          <View style={styles.footerRow}>
             <TouchableOpacity
               onPress={onClose}
               disabled={isCopying}
               style={[
-                styles.cancelButton,
+                styles.cancelBtn,
                 {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)',
                 },
               ]}
               activeOpacity={0.7}
             >
-              <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>
+              <Text style={[styles.cancelBtnText, { color: colors.textSecondary }]}>
                 Cancelar
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={handleCopy}
-              disabled={isCopying || isLoading || sourceLogs.length === 0 || isSameSourceAndDest}
+              disabled={
+                isCopying ||
+                isLoading ||
+                sourceLogs.length === 0 ||
+                isSameSourceAndDest
+              }
               style={[
-                styles.copyButton,
+                styles.copyBtn,
                 {
-                  backgroundColor:
-                    sourceLogs.length > 0 && !isSameSourceAndDest
-                      ? colors.tint
-                      : isDark
-                      ? 'rgba(255, 255, 255, 0.12)'
-                      : 'rgba(0, 0, 0, 0.08)',
+                  backgroundColor: colors.tint,
+                  opacity:
+                    isCopying ||
+                    isLoading ||
+                    sourceLogs.length === 0 ||
+                    isSameSourceAndDest
+                      ? 0.5
+                      : 1,
                 },
               ]}
               activeOpacity={0.8}
@@ -472,17 +764,7 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
               ) : (
                 <>
                   <Copy size={16} color="#000" strokeWidth={2.5} style={{ marginRight: 6 }} />
-                  <Text
-                    style={[
-                      styles.copyButtonText,
-                      {
-                        color:
-                          sourceLogs.length > 0 && !isSameSourceAndDest
-                            ? '#000'
-                            : colors.textMuted,
-                      },
-                    ]}
-                  >
+                  <Text style={styles.copyBtnText}>
                     Copiar {sourceLogs.length > 0 ? sourceLogs.length : ''}
                   </Text>
                 </>
@@ -501,12 +783,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.65)',
     justifyContent: 'flex-end',
   },
-  container: {
-    maxHeight: '88%',
+  modalCard: {
+    maxHeight: '90%',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     borderWidth: 1,
     overflow: 'hidden',
+    paddingBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.35,
@@ -525,30 +808,28 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
+    paddingTop: 10,
     paddingBottom: 14,
-    borderBottomWidth: 1,
   },
-  headerLeft: {
+  headerTextGroup: {
     flex: 1,
     marginRight: 10,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   title: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
-    marginTop: 2,
+    marginTop: 3,
+    lineHeight: 18,
   },
-  closeButton: {
+  closeBtn: {
     width: 34,
     height: 34,
     borderRadius: 17,
@@ -559,148 +840,214 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   scrollContent: {
-    padding: 18,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 10,
     gap: 16,
   },
-  sectionBlock: {
-    gap: 8,
+  fieldGroup: {
+    gap: 6,
   },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 2,
   },
-  dateRow: {
+  triggerBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 10,
-    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderRadius: 16,
     borderWidth: 1,
   },
-  arrowBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dateInfo: {
+  triggerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
+    flex: 1,
   },
-  dateText: {
+  triggerText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  mealTypesRow: {
+  quickPillsRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
+    marginTop: 6,
     flexWrap: 'wrap',
   },
-  mealChip: {
-    flex: 1,
-    minWidth: '22%',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 14,
+  quickPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4.5,
+    borderRadius: 12,
     borderWidth: 1,
+  },
+  quickPillText: {
+    fontSize: 11,
+  },
+  calendarPopup: {
+    marginTop: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  monthHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  monthArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mealChipText: {
-    fontSize: 12,
+  monthLabelText: {
+    fontSize: 14,
+    fontWeight: '800',
+    textTransform: 'capitalize',
   },
-  warningText: {
-    fontSize: 12,
+  weekDaysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 6,
+  },
+  weekDayText: {
+    width: 32,
+    textAlign: 'center',
+    fontSize: 11,
     fontWeight: '700',
+  },
+  daysGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
+  dayCell: {
+    width: '14.28%',
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+  },
+  dayCellEmpty: {
+    width: '14.28%',
+    height: 36,
+  },
+  dayCellText: {
+    fontSize: 13,
+  },
+  selectPopup: {
+    marginTop: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  selectOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  selectOptionText: {
+    fontSize: 13.5,
+  },
+  sameWarningText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#f59e0b',
     textAlign: 'center',
   },
   previewBox: {
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
     padding: 12,
-    minHeight: 100,
+    minHeight: 64,
+    justifyContent: 'center',
   },
-  loadingBox: {
+  spinnerWrap: {
+    paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 20,
+  },
+  logsContainer: {
     gap: 8,
   },
-  loadingText: {
+  previewCountTitle: {
     fontSize: 12,
-    fontWeight: '500',
-  },
-  logsList: {
-    gap: 8,
-  },
-  countBadge: {
-    fontSize: 11.5,
     fontWeight: '800',
     marginBottom: 4,
   },
-  logItem: {
+  logsScrollList: {
+    maxHeight: 180,
+    gap: 6,
+  },
+  previewItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
-    borderRadius: 14,
-    borderWidth: 1,
+    padding: 8,
+    borderRadius: 12,
     gap: 10,
   },
   itemThumb: {
-    width: 38,
-    height: 38,
+    width: 44,
+    height: 44,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  itemThumbImg: {
+  thumbImage: {
     width: '100%',
     height: '100%',
   },
-  itemDetails: {
+  itemInfo: {
     flex: 1,
   },
   itemTitle: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '700',
   },
-  itemSub: {
+  itemKcal: {
     fontSize: 11,
     fontWeight: '500',
     marginTop: 2,
   },
-  emptyBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 24,
-  },
-  emptyText: {
+  emptyPreviewText: {
     fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
+    paddingVertical: 6,
   },
-  footer: {
+  footerRow: {
     flexDirection: 'row',
     gap: 12,
-    padding: 16,
-    borderTopWidth: 1,
+    paddingHorizontal: 20,
+    marginTop: 14,
   },
-  cancelButton: {
+  cancelBtn: {
     flex: 1,
     paddingVertical: 14,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelButtonText: {
+  cancelBtnText: {
     fontSize: 14,
     fontWeight: '700',
   },
-  copyButton: {
-    flex: 1.4,
+  copyBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -712,8 +1059,9 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  copyButtonText: {
+  copyBtnText: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '900',
+    color: '#000',
   },
 });
