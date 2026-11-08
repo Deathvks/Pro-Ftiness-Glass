@@ -43,6 +43,7 @@ import { forkRoutine } from '@/services/routineService';
 import { enrichGymWithMedia } from '@/utils/gymMedia';
 import { getSocket } from '@/services/socket';
 import { SocialUserAvatar } from './SocialUserAvatar';
+import { Image as ExpoImage } from 'expo-image';
 import { GymLocationModal } from '@/components/modals/GymLocationModal';
 import { getContrastTextColor } from '@/utils/routineHelpers';
 
@@ -818,8 +819,28 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
         {/* Gym info top - Responsive */}
         <View style={styles.gymInfoTopRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
-            <View style={[styles.gymBadgeIcon, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-              <Dumbbell size={20} color="#10b981" />
+            <View style={styles.gymThumbBoxMini}>
+              {activeGym.image ? (
+                <ExpoImage
+                  source={{ uri: activeGym.image }}
+                  style={styles.gymThumbImg}
+                  contentFit="cover"
+                  transition={200}
+                />
+              ) : (
+                <View style={[styles.gymBadgeIcon, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                  <Dumbbell size={20} color="#10b981" />
+                </View>
+              )}
+              {activeGym.logo ? (
+                <View style={styles.logoBadgeCornerMini}>
+                  <ExpoImage
+                    source={{ uri: activeGym.logo }}
+                    style={styles.logoBadgeImg}
+                    contentFit="contain"
+                  />
+                </View>
+              ) : null}
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -1855,6 +1876,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
+  },
+  gymThumbBoxMini: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    overflow: 'hidden',
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+  },
+  gymThumbImg: {
+    width: '100%',
+    height: '100%',
+  },
+  logoBadgeCornerMini: {
+    position: 'absolute',
+    bottom: 1,
+    right: 1,
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  logoBadgeImg: {
+    width: '100%',
+    height: '100%',
   },
   gymBadgeIcon: {
     width: 42,

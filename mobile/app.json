@@ -8,7 +8,10 @@
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Permite a ProFitnessGlass acceder a tu ubicación para encontrar los gimnasios más cercanos a ti."
+      }
     },
     "android": {
       "versionCode": 377,
@@ -57,7 +60,13 @@
       "expo-sharing",
       "expo-video",
       "expo-font",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permite a ProFitnessGlass acceder a tu ubicación para encontrar los gimnasios más cercanos a ti."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

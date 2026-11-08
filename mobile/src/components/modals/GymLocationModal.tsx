@@ -9,10 +9,10 @@ import {
   Pressable,
   TextInput,
   ScrollView,
-  Image,
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import {
   X,
   MapPin,
@@ -343,9 +343,13 @@ export function GymLocationModal({
       await searchGyms(query || 'gimnasio', loc);
     } catch (err: any) {
       console.warn('GPS no disponible:', err);
-      setLocationError(
-        'No pudimos acceder a tu ubicación actual. Puedes buscarlo por nombre o ciudad.'
-      );
+      const msg =
+        err?.message ||
+        'No pudimos acceder a tu ubicación actual. Puedes buscarlo por nombre o ciudad.';
+      setLocationError(msg);
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      } catch {}
     } finally {
       setIsLocating(false);
     }
@@ -518,7 +522,12 @@ export function GymLocationModal({
                 ]}
               >
                 {activeGym.image ? (
-                  <Image source={{ uri: activeGym.image }} style={styles.currentGymBg} />
+                  <Image
+                    source={{ uri: activeGym.image }}
+                    style={styles.currentGymBg}
+                    contentFit="cover"
+                    transition={200}
+                  />
                 ) : null}
                 <View style={styles.currentGymOverlay}>
                   <View style={styles.currentGymTopRow}>
@@ -552,7 +561,8 @@ export function GymLocationModal({
                         <Image
                           source={{ uri: activeGym.logo }}
                           style={styles.currentLogoImg}
-                          resizeMode="contain"
+                          contentFit="contain"
+                          transition={150}
                         />
                       ) : (
                         <Dumbbell size={20} color={colors.tint} />
@@ -636,7 +646,9 @@ export function GymLocationModal({
                   ]}
                   numberOfLines={1}
                 >
-                  {userCoords
+                  {isLocating
+                    ? 'Obteniendo ubicación GPS...'
+                    : userCoords
                     ? 'Ubicación GPS activada (Buscar cerca de mí)'
                     : 'Buscar gimnasios cerca de mi ubicación actual'}
                 </Text>
@@ -703,7 +715,12 @@ export function GymLocationModal({
                         ]}
                       >
                         {gym.image ? (
-                          <Image source={{ uri: gym.image }} style={styles.gymThumbImg} />
+                          <Image
+                            source={{ uri: gym.image }}
+                            style={styles.gymThumbImg}
+                            contentFit="cover"
+                            transition={180}
+                          />
                         ) : (
                           <Dumbbell size={18} color={colors.textSecondary} />
                         )}
@@ -712,7 +729,7 @@ export function GymLocationModal({
                             <Image
                               source={{ uri: gym.logo }}
                               style={styles.logoBadgeImg}
-                              resizeMode="contain"
+                              contentFit="contain"
                             />
                           </View>
                         ) : null}
@@ -791,7 +808,12 @@ export function GymLocationModal({
                 >
                   <View style={styles.customThumb}>
                     {customPreview.image ? (
-                      <Image source={{ uri: customPreview.image }} style={styles.gymThumbImg} />
+                      <Image
+                        source={{ uri: customPreview.image }}
+                        style={styles.gymThumbImg}
+                        contentFit="cover"
+                        transition={180}
+                      />
                     ) : (
                       <Building2 size={20} color={colors.tint} />
                     )}
@@ -800,7 +822,7 @@ export function GymLocationModal({
                         <Image
                           source={{ uri: customPreview.logo }}
                           style={styles.logoBadgeImg}
-                          resizeMode="contain"
+                          contentFit="contain"
                         />
                       </View>
                     ) : null}
@@ -847,7 +869,7 @@ export function GymLocationModal({
                   </Text>
                   <Text style={[styles.initialDesc, { color: colors.textMuted }]}>
                     Catálogo nacional con más de 3.100 gimnasios en todas las provincias de España,
-                    Canarias y Baleares, con marcas oficiales y distancia GPS en tiempo real.
+                    Canarias y Baleares, con fotos reales, marcas oficiales y distancia GPS en tiempo real.
                   </Text>
                 </View>
 
@@ -855,47 +877,92 @@ export function GymLocationModal({
                   CADENAS POPULARES EN ESPAÑA
                 </Text>
 
-                {GYM_BRANDS.slice(0, 8).map(brand => (
-                  <TouchableOpacity
-                    key={brand.name}
-                    onPress={() => handleSelectBrand(brand)}
-                    style={[
-                      styles.brandRow,
-                      {
-                        backgroundColor: isDark
-                          ? 'rgba(255, 255, 255, 0.04)'
-                          : 'rgba(255, 255, 255, 0.65)',
-                        borderColor: colors.border,
-                      },
-                    ]}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.brandInfo}>
-                      <View
-                        style={[
-                          styles.brandIcon,
-                          { backgroundColor: brand.color + '20' },
-                        ]}
-                      >
-                        <Dumbbell size={18} color={brand.color} />
-                      </View>
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <Text style={[styles.brandName, { color: colors.text }]} numberOfLines={1}>
-                          {brand.name}
-                        </Text>
-                        <Text
-                          style={[styles.brandDomain, { color: colors.textSecondary }]}
-                          numberOfLines={1}
+                {GYM_BRANDS.slice(0, 8).map(brand => {
+                  const brandLogo = brand.domain
+                    ? `https://www.google.com/s2/favicons?domain=${brand.domain}&sz=128`
+                    : null;
+
+                  return (
+                    <TouchableOpacity
+                      key={brand.name}
+                      onPress={() => handleSelectBrand(brand)}
+                      style={[
+                        styles.brandRow,
+                        {
+                          backgroundColor: isDark
+                            ? 'rgba(255, 255, 255, 0.04)'
+                            : 'rgba(255, 255, 255, 0.65)',
+                          borderColor: colors.border,
+                        },
+                      ]}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.brandInfo}>
+                        {/* Thumbnail con foto real de la cadena y logo oficial */}
+                        <View
+                          style={[
+                            styles.gymThumbBox,
+                            {
+                              backgroundColor: isDark
+                                ? 'rgba(255, 255, 255, 0.08)'
+                                : 'rgba(0, 0, 0, 0.05)',
+                            },
+                          ]}
                         >
-                          {brand.domain}
-                        </Text>
+                          {brand.image ? (
+                            <Image
+                              source={{ uri: brand.image }}
+                              style={styles.gymThumbImg}
+                              contentFit="cover"
+                              transition={180}
+                            />
+                          ) : (
+                            <View
+                              style={[
+                                styles.brandIcon,
+                                { backgroundColor: brand.color + '20' },
+                              ]}
+                            >
+                              <Dumbbell size={18} color={brand.color} />
+                            </View>
+                          )}
+                          {brandLogo ? (
+                            <View style={styles.logoBadgeCorner}>
+                              <Image
+                                source={{ uri: brandLogo }}
+                                style={styles.logoBadgeImg}
+                                contentFit="contain"
+                              />
+                            </View>
+                          ) : null}
+                        </View>
+
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Text style={[styles.brandName, { color: colors.text }]} numberOfLines={1}>
+                              {brand.name}
+                            </Text>
+                            <View style={[styles.verifiedPill, { backgroundColor: colors.tint + '18' }]}>
+                              <BadgeCheck size={11} color={colors.tint} strokeWidth={2.5} />
+                              <Text style={[styles.verifiedText, { color: colors.tint }]}>
+                                Oficial
+                              </Text>
+                            </View>
+                          </View>
+                          <Text
+                            style={[styles.brandDomain, { color: colors.textSecondary }]}
+                            numberOfLines={1}
+                          >
+                            {brand.domain}
+                          </Text>
+                        </View>
                       </View>
-                    </View>
-                    <View style={[styles.selectPill, { backgroundColor: colors.tint + '15' }]}>
-                      <Text style={[styles.selectPillText, { color: colors.tint }]}>Elegir</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
+                      <View style={[styles.selectPill, { backgroundColor: colors.tint + '15' }]}>
+                        <Text style={[styles.selectPillText, { color: colors.tint }]}>Elegir</Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             ) : null}
           </ScrollView>
@@ -1012,7 +1079,7 @@ const styles = StyleSheet.create({
   },
   currentGymOverlay: {
     padding: 14,
-    backgroundColor: 'rgba(0, 0, 0, 0.82)',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
     justifyContent: 'space-between',
     minHeight: 110,
     gap: 10,
@@ -1174,15 +1241,20 @@ const styles = StyleSheet.create({
   },
   logoBadgeCorner: {
     position: 'absolute',
-    bottom: 1,
-    right: 1,
-    width: 16,
-    height: 16,
-    borderRadius: 4,
-    backgroundColor: '#000',
+    bottom: 2,
+    right: 2,
+    width: 17,
+    height: 17,
+    borderRadius: 5,
+    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 1,
+    padding: 1.5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 3,
   },
   logoBadgeImg: {
     width: '100%',
@@ -1299,8 +1371,8 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   brandIcon: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',

@@ -60,6 +60,7 @@ import { getTrainingWeek, trainingDateFormatter } from '@/utils/weeklyTraining';
 import { enrichGymWithMedia } from '@/utils/gymMedia';
 import * as nutritionService from '@/services/nutritionService';
 import * as userService from '@/services/userService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import LevelBadge from '@/components/LevelBadge';
 import CircularProgress from '@/components/CircularProgress';
@@ -220,20 +221,34 @@ export default function Dashboard() {
         const remote = typeof userProfile.gym_data === 'string' ? JSON.parse(userProfile.gym_data) : userProfile.gym_data;
         return enrichGymWithMedia(remote);
       }
-      const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('user_gym') : null;
-      return saved ? enrichGymWithMedia(JSON.parse(saved)) : null;
+      return null;
     } catch {
       return null;
     }
   });
 
+  useEffect(() => {
+    if (userProfile?.gym_data) {
+      try {
+        const remote = typeof userProfile.gym_data === 'string' ? JSON.parse(userProfile.gym_data) : userProfile.gym_data;
+        setCurrentGym(enrichGymWithMedia(remote));
+      } catch {}
+    } else {
+      AsyncStorage.getItem('user_gym').then(saved => {
+        if (saved) {
+          try {
+            setCurrentGym(enrichGymWithMedia(JSON.parse(saved)));
+          } catch {}
+        }
+      }).catch(() => {});
+    }
+  }, [userProfile?.gym_data]);
+
   const handleSaveGym = (gymData: any) => {
     const enriched = enrichGymWithMedia(gymData);
     setCurrentGym(enriched);
     try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('user_gym', JSON.stringify(enriched));
-      }
+      AsyncStorage.setItem('user_gym', JSON.stringify(enriched)).catch(() => {});
       if (typeof (useAppStore.getState() as any).setUserProfile === 'function') {
         const cur = (useAppStore.getState() as any).userProfile;
         if (cur) (useAppStore.getState() as any).setUserProfile({ ...cur, gym_data: enriched });
@@ -250,9 +265,7 @@ export default function Dashboard() {
   const handleRemoveGym = () => {
     setCurrentGym(null);
     try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('user_gym');
-      }
+      AsyncStorage.removeItem('user_gym').catch(() => {});
       if (typeof (useAppStore.getState() as any).setUserProfile === 'function') {
         const cur = (useAppStore.getState() as any).userProfile;
         if (cur) (useAppStore.getState() as any).setUserProfile({ ...cur, gym_data: null });
@@ -399,7 +412,7 @@ export default function Dashboard() {
     const targetPR = selectedPR || (latestPRs.length === 1 ? latestPRs[0] : null);
     if (!targetPR) return null;
 
-    const previousRecord = personalRecords.find(r =>
+    const previousRecord = personalRecords.find((r: any) =>
       (r.exercise_name || r.exerciseName) === (targetPR.exercise_name || targetPR.exerciseName) &&
       r.id !== targetPR.id &&
       new Date(r.date).getTime() < new Date(targetPR.date).getTime()
