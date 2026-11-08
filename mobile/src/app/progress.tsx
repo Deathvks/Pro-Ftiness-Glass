@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
+import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
@@ -21,17 +22,15 @@ import { RecordsProgressView } from '@/components/progress/RecordsProgressView';
 import { BodyWeightProgressView } from '@/components/progress/BodyWeightProgressView';
 import { MeasurementsProgressView } from '@/components/progress/MeasurementsProgressView';
 import { CalendarProgressView } from '@/components/progress/CalendarProgressView';
-import { getContrastColor } from '@/utils/colorUtils';
 
 export default function ProgressScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ section?: string }>();
   const colors = useAppColors();
-  const theme = useAppStore(state => state.theme) || 'oled';
+  const theme = useAppStore((state: any) => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const accentText = getContrastColor(colors.tint, theme);
 
-  const getOrFetchAllExercises = useAppStore(state => state.getOrFetchAllExercises);
+  const getOrFetchAllExercises = useAppStore((state: any) => state.getOrFetchAllExercises);
 
   // Validate initial section from query param
   const initialSection = (
@@ -44,8 +43,6 @@ export default function ProgressScreen() {
   const [activeSection, setActiveSection] = useState<ProgressSectionId | null>(
     initialSection
   );
-
-  const tabsScrollRef = useRef<any>(null);
 
   useEffect(() => {
     if (getOrFetchAllExercises) {
@@ -84,17 +81,14 @@ export default function ProgressScreen() {
       edges={['top', 'bottom']}
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
-      {/* Top Header */}
-      <View
-        style={[
-          styles.headerBar,
-          {
-            borderBottomColor: isDark
-              ? 'rgba(255, 255, 255, 0.08)'
-              : 'rgba(0, 0, 0, 0.06)',
-          },
-        ]}
-      >
+      {/* Top Header - Authentic Apple Liquid Glass (no border lines) */}
+      <View style={styles.headerBar}>
+        <GlassView
+          glassEffectStyle="regular"
+          colorScheme={isDark ? 'dark' : 'light'}
+          style={StyleSheet.absoluteFill}
+        />
+
         <TouchableOpacity
           onPress={handleBack}
           activeOpacity={0.7}
@@ -105,8 +99,8 @@ export default function ProgressScreen() {
                 ? 'rgba(255, 255, 255, 0.08)'
                 : 'rgba(0, 0, 0, 0.05)',
               borderColor: isDark
-                ? 'rgba(255, 255, 255, 0.1)'
-                : 'rgba(0, 0, 0, 0.06)',
+                ? 'rgba(255, 255, 255, 0.12)'
+                : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
@@ -116,72 +110,13 @@ export default function ProgressScreen() {
           </Text>
         </TouchableOpacity>
 
-        {activeSection !== null && (
-          <Text
-            style={[styles.screenTitle, { color: colors.text }]}
-            numberOfLines={1}
-          >
-            {activeSectionObj?.label}
-          </Text>
-        )}
+        <Text
+          style={[styles.screenTitle, { color: colors.text }]}
+          numberOfLines={1}
+        >
+          {activeSection !== null ? activeSectionObj?.label : 'Tu Progreso'}
+        </Text>
       </View>
-
-      {/* Horizontal Pills (only when a section is active) */}
-      {activeSection !== null && (
-        <View style={styles.pillsContainer}>
-          <ScrollView
-            ref={tabsScrollRef}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.pillsContent}
-          >
-            {PROGRESS_SECTIONS.map(s => {
-              const isActive = activeSection === s.id;
-              const Icon = s.icon;
-
-              return (
-                <TouchableOpacity
-                  key={s.id}
-                  activeOpacity={0.8}
-                  onPress={() => handleSelectSection(s.id)}
-                  style={[
-                    styles.pillBtn,
-                    {
-                      backgroundColor: isActive
-                        ? colors.tint
-                        : isDark
-                        ? 'rgba(255, 255, 255, 0.06)'
-                        : 'rgba(0, 0, 0, 0.04)',
-                      borderColor: isActive
-                        ? colors.tint
-                        : isDark
-                        ? 'rgba(255, 255, 255, 0.1)'
-                        : 'rgba(0, 0, 0, 0.06)',
-                    },
-                  ]}
-                >
-                  <Icon
-                    size={14}
-                    color={isActive ? accentText : colors.textSecondary}
-                    strokeWidth={2.2}
-                  />
-                  <Text
-                    style={[
-                      styles.pillText,
-                      {
-                        color: isActive ? accentText : colors.textSecondary,
-                        fontWeight: isActive ? '800' : '600',
-                      },
-                    ]}
-                  >
-                    {s.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-      )}
 
       {/* Main Content Area */}
       <ScrollView
@@ -210,12 +145,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerBar: {
+    position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
+    paddingVertical: 12,
     gap: 12,
+    overflow: 'hidden',
   },
   backBtn: {
     flexDirection: 'row',
@@ -231,37 +167,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   screenTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
     flex: 1,
-  },
-  pillsContainer: {
-    paddingVertical: 8,
-  },
-  pillsContent: {
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  pillBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  pillText: {
-    fontSize: 13,
-    letterSpacing: -0.2,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
+    paddingBottom: 40,
   },
 });

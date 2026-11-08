@@ -6,6 +6,7 @@ import {
   Dimensions,
   TouchableOpacity,
   ScrollView,
+  useWindowDimensions,
 } from 'react-native';
 import Svg, {
   Path,
@@ -179,7 +180,8 @@ export function BodyWeightChart({
     return { current, start, delta, min, max, avg, count: weights.length };
   }, [filteredData]);
 
-  const chartWidth = Math.max(SCREEN_WIDTH - 64, 300);
+  const { width: windowWidth } = useWindowDimensions();
+  const chartWidth = Math.max(windowWidth - 64, 220);
   const chartHeight = 180;
   const paddingX = 24;
   const paddingY = 28;
@@ -275,6 +277,23 @@ export function BodyWeightChart({
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             Sin registros de peso en este período
           </Text>
+          {period !== 'Todo' && (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setPeriod('Todo')}
+              style={[
+                styles.seeAllBtn,
+                {
+                  backgroundColor: colors.tint + '18',
+                  borderColor: colors.tint + '35',
+                },
+              ]}
+            >
+              <Text style={[styles.seeAllText, { color: colors.tint }]}>
+                Ver todo el historial
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <View style={{ width: chartWidth, height: chartHeight }}>
@@ -416,7 +435,8 @@ export function ExerciseChart({
     return { lastWeight, gain, count: filteredData.length };
   }, [filteredData]);
 
-  const chartWidth = Math.max(SCREEN_WIDTH - 64, 300);
+  const { width: windowWidth } = useWindowDimensions();
+  const chartWidth = Math.max(windowWidth - 64, 220);
   const chartHeight = 180;
   const paddingX = 24;
   const paddingY = 28;
@@ -542,6 +562,23 @@ export function ExerciseChart({
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
             Sin entrenamientos registrados para este ejercicio
           </Text>
+          {period !== 'Todo' && (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setPeriod('Todo')}
+              style={[
+                styles.seeAllBtn,
+                {
+                  backgroundColor: colors.tint + '18',
+                  borderColor: colors.tint + '35',
+                },
+              ]}
+            >
+              <Text style={[styles.seeAllText, { color: colors.tint }]}>
+                Ver todo el historial
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <View style={{ width: chartWidth, height: chartHeight }}>
@@ -703,7 +740,8 @@ export function NutritionCharts({
     return { avgL, goalMet, count: waters.length };
   }, [chartData]);
 
-  const chartWidth = Math.max(SCREEN_WIDTH - 64, 300);
+  const { width: windowWidth } = useWindowDimensions();
+  const chartWidth = Math.max(windowWidth - 64, 220);
   const chartHeight = 150;
   const paddingX = 16;
   const paddingY = 20;
@@ -1041,7 +1079,8 @@ export function MeasurementChart({
     return { current, delta, min, max, count: vals.length };
   }, [filteredData]);
 
-  const chartWidth = Math.max(SCREEN_WIDTH - 64, 300);
+  const { width: windowWidth } = useWindowDimensions();
+  const chartWidth = Math.max(windowWidth - 64, 220);
   const chartHeight = 180;
   const paddingX = 24;
   const paddingY = 28;
@@ -1179,12 +1218,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
+    gap: 12,
     marginBottom: 14,
-    flexWrap: 'wrap',
   },
   titleRow: {
     flexDirection: 'row',
@@ -1230,6 +1265,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  seeAllBtn: {
+    marginTop: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  seeAllText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   axisRow: {
     flexDirection: 'row',

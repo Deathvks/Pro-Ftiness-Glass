@@ -9,20 +9,24 @@ import {
   ScrollView,
   Pressable,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
-import { BookOpen, ChevronDown, Search, X } from 'lucide-react-native';
+import { BookOpen, ChevronDown, Search, X, Dumbbell, TrendingUp } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { ExerciseChart } from './ProgressCharts';
 import { ExerciseHistoryModal } from './ExerciseHistoryModal';
+import { getContrastColor } from '@/utils/colorUtils';
 
 export function ExerciseProgressionView() {
+  const router = useRouter();
   const colors = useAppColors();
-  const theme = useAppStore(state => state.theme) || 'oled';
+  const theme = useAppStore((state: any) => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const accentText = getContrastColor(colors.tint, theme);
 
-  const workoutLog = useAppStore(state => state.workoutLog) || [];
+  const workoutLog = useAppStore((state: any) => state.workoutLog) || [];
 
   // Extract all exercises executed in logs
   const executedExercises = useMemo(() => {
@@ -91,68 +95,112 @@ export function ExerciseProgressionView() {
 
   return (
     <View style={styles.container}>
-      {/* Top Controls: Exercise Selector & History Button */}
-      <View style={styles.controlsRow}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => {
-            try {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            } catch {}
-            setShowPicker(true);
-          }}
+      {executedExercises.length === 0 ? (
+        /* Empty State Responsivo con Liquid Glass cuando no hay datos */
+        <View
           style={[
-            styles.selectorBtn,
+            styles.emptyCard,
             {
-              backgroundColor: isDark
-                ? 'rgba(255, 255, 255, 0.06)'
-                : 'rgba(0, 0, 0, 0.04)',
-              borderColor: isDark
-                ? 'rgba(255, 255, 255, 0.12)'
-                : 'rgba(0, 0, 0, 0.08)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
-          <Text
-            style={[
-              styles.selectorText,
-              { color: selectedExercise ? colors.text : colors.textSecondary },
-            ]}
-            numberOfLines={1}
-          >
-            {selectedExercise || 'Elige un ejercicio'}
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
+          />
+          <View style={[styles.emptyIconCircle, { backgroundColor: colors.tint + '18' }]}>
+            <Dumbbell size={32} color={colors.tint} strokeWidth={2.2} />
+          </View>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            Sin progresión de ejercicios aún
           </Text>
-          <ChevronDown size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+          <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>
+            A medida que completes entrenamientos registrando tus series de pesas, aquí podrás consultar la evolución histórica de cargas, cálculo automático de 1RM y récords personales (PR) de cada ejercicio.
+          </Text>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch {}
+              router.push('/(tabs)/routines' as any);
+            }}
+            style={[styles.emptyCtaBtn, { backgroundColor: colors.tint }]}
+          >
+            <TrendingUp size={18} color={accentText} strokeWidth={2.5} />
+            <Text style={[styles.emptyCtaText, { color: accentText }]}>
+              Ir a Mis Rutinas
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          {/* Top Controls: Exercise Selector & History Button */}
+          <View style={styles.controlsRow}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch {}
+                setShowPicker(true);
+              }}
+              style={[
+                styles.selectorBtn,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255, 255, 255, 0.06)'
+                    : 'rgba(0, 0, 0, 0.04)',
+                  borderColor: isDark
+                    ? 'rgba(255, 255, 255, 0.12)'
+                    : 'rgba(0, 0, 0, 0.08)',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.selectorText,
+                  { color: selectedExercise ? colors.text : colors.textSecondary },
+                ]}
+                numberOfLines={1}
+              >
+                {selectedExercise || 'Elige un ejercicio'}
+              </Text>
+              <ChevronDown size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          activeOpacity={0.8}
-          disabled={!selectedExercise}
-          onPress={() => {
-            try {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            } catch {}
-            setShowHistory(true);
-          }}
-          style={[
-            styles.historyBtn,
-            {
-              backgroundColor: isDark
-                ? 'rgba(255, 255, 255, 0.08)'
-                : 'rgba(0, 0, 0, 0.05)',
-              borderColor: isDark
-                ? 'rgba(255, 255, 255, 0.12)'
-                : 'rgba(0, 0, 0, 0.08)',
-            },
-            !selectedExercise && { opacity: 0.4 },
-          ]}
-        >
-          <BookOpen size={20} color={colors.tint} />
-        </TouchableOpacity>
-      </View>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              disabled={!selectedExercise}
+              onPress={() => {
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch {}
+                setShowHistory(true);
+              }}
+              style={[
+                styles.historyBtn,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(0, 0, 0, 0.05)',
+                  borderColor: isDark
+                    ? 'rgba(255, 255, 255, 0.12)'
+                    : 'rgba(0, 0, 0, 0.08)',
+                },
+                !selectedExercise && { opacity: 0.4 },
+              ]}
+            >
+              <BookOpen size={20} color={colors.tint} />
+            </TouchableOpacity>
+          </View>
 
-      {/* Chart */}
-      <ExerciseChart data={exerciseProgressData} exerciseName={selectedExercise} />
+          {/* Chart */}
+          <ExerciseChart data={exerciseProgressData} exerciseName={selectedExercise} />
+        </>
+      )}
 
       {/* Exercise Picker Modal */}
       <Modal visible={showPicker} transparent animationType="fade" onRequestClose={() => setShowPicker(false)}>
@@ -201,58 +249,54 @@ export function ExerciseProgressionView() {
                 <TextInput
                   value={searchQuery}
                   onChangeText={setSearchQuery}
-                  placeholder="Buscar ejercicio..."
+                  placeholder="Buscar en historial..."
                   placeholderTextColor={colors.textSecondary}
                   style={[styles.searchInput, { color: colors.text }]}
                   clearButtonMode="while-editing"
                 />
               </View>
 
-              <ScrollView
-                style={{ flex: 1 }}
-                contentContainerStyle={{ paddingBottom: 20, gap: 6 }}
-              >
-                {filteredOptions.length === 0 ? (
-                  <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 13, color: colors.textSecondary }}>
-                      No se encontraron ejercicios
-                    </Text>
-                  </View>
-                ) : (
-                  filteredOptions.map(ex => {
-                    const isSelected = selectedExercise === ex;
-                    return (
-                      <TouchableOpacity
-                        key={ex}
-                        activeOpacity={0.7}
-                        onPress={() => {
-                          try {
-                            Haptics.selectionAsync();
-                          } catch {}
-                          setSelectedExercise(ex);
-                          setShowPicker(false);
-                        }}
+              <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={false}>
+                {filteredOptions.map(ex => {
+                  const isSelected = selectedExercise === ex;
+                  return (
+                    <TouchableOpacity
+                      key={ex}
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        try {
+                          Haptics.selectionAsync();
+                        } catch {}
+                        setSelectedExercise(ex);
+                        setShowPicker(false);
+                      }}
+                      style={[
+                        styles.optionItem,
+                        isSelected && {
+                          backgroundColor: colors.tint + '18',
+                        },
+                      ]}
+                    >
+                      <Text
                         style={[
-                          styles.exerciseOption,
-                          isSelected && {
-                            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                          styles.optionText,
+                          {
+                            color: isSelected ? colors.tint : colors.text,
+                            fontWeight: isSelected ? '800' : '500',
                           },
                         ]}
                       >
-                        <Text
-                          style={[
-                            styles.exerciseOptionText,
-                            {
-                              color: isSelected ? colors.tint : colors.text,
-                              fontWeight: isSelected ? '800' : '600',
-                            },
-                          ]}
-                        >
-                          {ex}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })
+                        {ex}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+                {filteredOptions.length === 0 && (
+                  <View style={styles.emptySearch}>
+                    <Text style={[styles.emptySearchText, { color: colors.textSecondary }]}>
+                      No se encontraron ejercicios ejecutados
+                    </Text>
+                  </View>
                 )}
               </ScrollView>
             </View>
@@ -287,9 +331,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 18,
+    paddingVertical: 12,
+    borderRadius: 20,
     borderWidth: 1,
   },
   selectorText: {
@@ -299,9 +343,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   historyBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 18,
+    padding: 12,
+    borderRadius: 20,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -310,13 +353,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    padding: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
   },
   pickerCard: {
     width: '100%',
-    maxWidth: 420,
-    height: '75%',
+    maxHeight: '75%',
     borderRadius: 32,
     borderWidth: 1,
     overflow: 'hidden',
@@ -329,38 +371,86 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   pickerTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
-    letterSpacing: -0.3,
   },
   pickerCloseBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 4,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 14,
-    gap: 8,
-    marginBottom: 14,
+    borderRadius: 16,
+    marginBottom: 12,
   },
   searchInput: {
     flex: 1,
     fontSize: 14,
-    paddingVertical: 4,
+    padding: 0,
   },
-  exerciseOption: {
+  optionsList: {
+    maxHeight: 320,
+  },
+  optionItem: {
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 14,
+    marginBottom: 4,
   },
-  exerciseOptionText: {
+  optionText: {
     fontSize: 14,
+  },
+  emptySearch: {
+    paddingVertical: 30,
+    alignItems: 'center',
+  },
+  emptySearchText: {
+    fontSize: 13,
+  },
+  emptyCard: {
+    borderRadius: 28,
+    borderWidth: 1,
+    overflow: 'hidden',
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 12,
+  },
+  emptyIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: -0.3,
+  },
+  emptyDesc: {
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+    marginBottom: 20,
+    maxWidth: 320,
+  },
+  emptyCtaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 22,
+  },
+  emptyCtaText: {
+    fontSize: 14,
+    fontWeight: '800',
   },
 });
