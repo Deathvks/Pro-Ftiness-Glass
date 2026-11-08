@@ -1032,7 +1032,8 @@ const styles = StyleSheet.create({
   privacyLabel: {
     fontSize: 13,
     fontWeight: '700',
-    marginBottom: 8,
+    marginTop: 4,
+    marginBottom: 10,
   },
   privacyRow: {
     flexDirection: 'row',
@@ -1158,10 +1159,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 18,
     borderWidth: 1,
-    marginTop: 12,
+    marginTop: 14,
+    marginBottom: 20,
   },
   aiNoticeText: {
     fontSize: 12,

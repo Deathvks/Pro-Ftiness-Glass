@@ -8,32 +8,53 @@ import apiClient from '@/services/apiClient';
 import LevelBadge from '@/components/LevelBadge';
 import { SocialUserAvatar } from './SocialUserAvatar';
 
-export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId: any) => void }) {
-  const theme = useAppStore(state => state.theme) || 'oled';
+interface LeaderboardProps {
+  onNavigateProfile?: (userId: any) => void;
+}
+
+export function Leaderboard({ onNavigateProfile }: LeaderboardProps) {
+  const theme = useAppStore((state: any) => state.theme) || 'oled';
   const colors = useAppColors();
-  const userProfile = useAppStore(state => state.userProfile);
+  const userProfile = useAppStore((state: any) => state.userProfile);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const socialLeaderboard = useAppStore((state: any) => state.socialLeaderboard);
+  const fetchLeaderboard = useAppStore((state: any) => state.fetchLeaderboard);
 
-  const loadLeaderboard = async () => {
+  const [localLeaderboard, setLocalLeaderboard] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loadLeaderboardData = async () => {
+    if (fetchLeaderboard) {
+      try {
+        await fetchLeaderboard();
+      } catch (e) {
+        console.warn('Leaderboard fetch from store failed, falling back to direct API', e);
+      }
+    }
     try {
       const data = await apiClient('/social/leaderboard');
       const list = Array.isArray(data) ? data : (data?.data || []);
-      setLeaderboard(list);
+      setLocalLeaderboard(list);
     } catch (error) {
-      console.error(error);
+      console.error('Error loading leaderboard:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadLeaderboard();
+    if (!socialLeaderboard || !Array.isArray(socialLeaderboard) || socialLeaderboard.length === 0) {
+      setIsLoading(true);
+    }
+    loadLeaderboardData();
   }, []);
 
-  if (isLoading) {
+  const items = (Array.isArray(socialLeaderboard) && socialLeaderboard.length > 0)
+    ? socialLeaderboard
+    : localLeaderboard;
+
+  if (isLoading && items.length === 0) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.tint} />
@@ -46,7 +67,7 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
       <View style={styles.headerTop}>
         <View style={styles.titleGroup}>
           <View style={styles.trophyBadge}>
-            <Trophy size={20} color="#f59e0b" />
+            <Trophy size={20} color="#eab308" />
           </View>
           <Text style={[styles.title, { color: colors.text }]}>Ranking Global</Text>
         </View>
@@ -55,12 +76,29 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
         </View>
       </View>
 
-      <View style={[styles.tableColumns, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' }]}>
-        <Text style={[styles.colHeader, { width: 30, textAlign: 'center' }]}>#</Text>
-        <Text style={[styles.colHeader, { flex: 1, paddingLeft: 6 }]}>Atleta</Text>
-        <Text style={[styles.colHeader, { width: 50, textAlign: 'right' }]}>Nivel</Text>
-        <Text style={[styles.colHeader, { width: 48, textAlign: 'right' }]}>Racha</Text>
-        <Text style={[styles.colHeader, { width: 64, textAlign: 'right' }]}>XP</Text>
+      <View
+        style={[
+          styles.tableColumns,
+          {
+            borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+          },
+        ]}
+      >
+        <View style={styles.rankCol}>
+          <Text style={styles.colHeaderCenter}>#</Text>
+        </View>
+        <View style={styles.athleteColHeader}>
+          <Text style={styles.colHeaderLeft}>Atleta</Text>
+        </View>
+        <View style={styles.levelCol}>
+          <Text style={styles.colHeaderRight}>Nivel</Text>
+        </View>
+        <View style={styles.streakCol}>
+          <Text style={styles.colHeaderRight}>Racha</Text>
+        </View>
+        <View style={styles.xpCol}>
+          <Text style={styles.colHeaderRight}>XP</Text>
+        </View>
       </View>
     </View>
   );
@@ -72,22 +110,22 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
       ? user.username.split('@')[0]
       : user.username || user.name || 'Usuario';
 
-    let rankIcon = null;
+    let rankNode = null;
     if (index === 0) {
-      rankIcon = <Medal size={20} color="#f59e0b" />;
+      rankNode = <Medal size={20} color="#facc15" />;
     } else if (index === 1) {
-      rankIcon = <Medal size={20} color="#9ca3af" />;
+      rankNode = <Medal size={20} color="#9ca3af" />;
     } else if (index === 2) {
-      rankIcon = <Medal size={20} color="#b45309" />;
+      rankNode = <Medal size={20} color="#b45309" />;
     } else {
-      rankIcon = (
+      rankNode = (
         <Text style={[styles.rankNum, { color: colors.textSecondary }]}>
           #{index + 1}
         </Text>
       );
     }
 
-    const itemKey = user.id ? String(user.id) : String(index);
+    const itemKey = user.id ? `user-${user.id}` : `idx-${index}`;
 
     return (
       <TouchableOpacity
@@ -98,19 +136,20 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
           styles.row,
           {
             backgroundColor: isMe
-              ? colors.tint + '15'
+              ? colors.tint + '18'
               : isDark
               ? 'rgba(255, 255, 255, 0.03)'
               : 'rgba(0, 0, 0, 0.02)',
-            borderWidth: isMe ? 1 : 0,
-            borderColor: isMe ? colors.tint + '40' : 'transparent',
+            borderWidth: isMe ? 1.5 : 0,
+            borderColor: isMe ? colors.tint + '50' : 'transparent',
+            marginVertical: isMe ? 3 : 0,
           },
         ]}
       >
-        <View style={styles.rankCol}>{rankIcon}</View>
+        <View style={styles.rankCol}>{rankNode}</View>
 
         <View style={styles.athleteCol}>
-          <SocialUserAvatar user={user} size={32} />
+          <SocialUserAvatar user={user} size={30} />
           <Text
             style={[
               styles.athleteName,
@@ -126,9 +165,7 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
         </View>
 
         <View style={styles.levelCol}>
-          <View style={styles.levelScale}>
-            <LevelBadge level={Number(user.level) || 1} size="sm" bgTheme={colors.card} />
-          </View>
+          <LevelBadge level={Number(user.level) || 1} size="sm" />
         </View>
 
         <View style={styles.streakCol}>
@@ -138,7 +175,7 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
 
         <View style={styles.xpCol}>
           <Text style={[styles.xpText, { color: colors.text }]}>
-            {Number(user.xp || 0).toLocaleString()}
+            {Number(user.xp || 0).toLocaleString('es-ES')}
           </Text>
         </View>
       </TouchableOpacity>
@@ -147,17 +184,31 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
 
   return (
     <View style={styles.container}>
-      <View style={[styles.card, { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' }]}>
+      <View
+        style={[
+          styles.card,
+          {
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+          },
+        ]}
+      >
         <GlassView
           glassEffectStyle="regular"
           colorScheme={isDark ? 'dark' : 'light'}
-          style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
+          style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
         />
 
         {renderHeader()}
 
         <View style={styles.list}>
-          {leaderboard.map((user, idx) => renderItem(user, idx))}
+          {items.map((user, idx) => renderItem(user, idx))}
+          {items.length === 0 && !isLoading && (
+            <View style={styles.emptyState}>
+              <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+                No hay atletas en el ranking todavía.
+              </Text>
+            </View>
+          )}
         </View>
       </View>
     </View>
@@ -167,10 +218,10 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   card: {
-    borderRadius: 28,
+    borderRadius: 32,
     borderWidth: 1,
     overflow: 'hidden',
     padding: 16,
@@ -181,7 +232,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   header: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
   headerTop: {
     flexDirection: 'row',
@@ -198,7 +249,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    backgroundColor: 'rgba(234, 179, 8, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -220,28 +271,46 @@ const styles = StyleSheet.create({
   tableColumns: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingBottom: 8,
+    paddingHorizontal: 8,
+    paddingBottom: 10,
     borderBottomWidth: 1,
+    marginBottom: 8,
   },
-  colHeader: {
+  colHeaderCenter: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#9ca3af',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  colHeaderLeft: {
     fontSize: 11,
     fontWeight: '800',
     color: '#9ca3af',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  colHeaderRight: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#9ca3af',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    textAlign: 'right',
+  },
   list: {
-    gap: 6,
+    gap: 4,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 8,
     paddingVertical: 8,
-    paddingHorizontal: 10,
     borderRadius: 16,
   },
   rankCol: {
-    width: 30,
+    width: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -250,27 +319,30 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     opacity: 0.6,
   },
+  athleteColHeader: {
+    flex: 1,
+    paddingLeft: 6,
+    justifyContent: 'center',
+  },
   athleteCol: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingLeft: 4,
+    paddingLeft: 6,
+    paddingRight: 6,
   },
   athleteName: {
     fontSize: 13,
     flex: 1,
   },
   levelCol: {
-    width: 50,
+    width: 40,
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
-  levelScale: {
-    transform: [{ scale: 0.7 }],
-  },
   streakCol: {
-    width: 48,
+    width: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
@@ -282,7 +354,7 @@ const styles = StyleSheet.create({
     color: '#f97316',
   },
   xpCol: {
-    width: 64,
+    width: 60,
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
@@ -290,5 +362,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
+  },
+  emptyState: {
+    paddingVertical: 30,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 13,
   },
 });
