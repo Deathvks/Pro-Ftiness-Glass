@@ -53,7 +53,7 @@ export default function SocialScreen() {
   const colors = useAppColors();
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
-  const tabsScrollRef = useRef<ScrollView>(null);
+  const tabsScrollRef = useRef<any>(null);
   const mainScrollRef = useRef<any>(null);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
@@ -380,7 +380,7 @@ export default function SocialScreen() {
           </View>
 
           {/* Tab Content */}
-          {activeTab === 'feed' && <Feed onNavigateProfile={navigateToProfile} />}
+          {activeTab === 'feed' && <Feed onNavigateProfile={navigateToProfile} visibleStories={visibleStories} myStories={myStories} />}
           {activeTab === 'leaderboard' && (
             <Leaderboard onNavigateProfile={navigateToProfile} />
           )}

@@ -90,13 +90,26 @@ const socialService = {
 
     // --- FEED / MURO ---
 
-    getFeed: async () => {
-        return await apiClient('/social/feed');
+    getFeed: async (params = {}) => {
+        const query = new URLSearchParams();
+        if (params?.scope) {
+            query.append('scope', params.scope);
+        }
+        if (params?.gymFilter && params.gymFilter !== 'all') {
+            query.append('gymFilter', params.gymFilter);
+        }
+        if (params?.includeOlder) {
+            query.append('includeOlder', 'true');
+        }
+        query.append('_t', String(Date.now()));
+        const qs = query.toString() ? `?${query.toString()}` : '';
+        return await apiClient(`/social/feed${qs}`);
     },
 
-    toggleLike: async (workoutId) => {
+    toggleLike: async (workoutId, reactionType = 'fire') => {
         return await apiClient(`/social/workout/${workoutId}/like`, {
-            method: 'POST'
+            method: 'POST',
+            body: { reactionType }
         });
     },
 

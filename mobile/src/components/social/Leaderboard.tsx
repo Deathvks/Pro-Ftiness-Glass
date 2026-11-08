@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Trophy, Medal } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Trophy, Medal, Flame } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -56,15 +56,16 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
       </View>
 
       <View style={[styles.tableColumns, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' }]}>
-        <Text style={[styles.colHeader, { width: 34, textAlign: 'center' }]}>#</Text>
-        <Text style={[styles.colHeader, { flex: 1, paddingLeft: 8 }]}>Atleta</Text>
-        <Text style={[styles.colHeader, { width: 56, textAlign: 'right' }]}>Nivel</Text>
-        <Text style={[styles.colHeader, { width: 72, textAlign: 'right' }]}>XP</Text>
+        <Text style={[styles.colHeader, { width: 30, textAlign: 'center' }]}>#</Text>
+        <Text style={[styles.colHeader, { flex: 1, paddingLeft: 6 }]}>Atleta</Text>
+        <Text style={[styles.colHeader, { width: 50, textAlign: 'right' }]}>Nivel</Text>
+        <Text style={[styles.colHeader, { width: 48, textAlign: 'right' }]}>Racha</Text>
+        <Text style={[styles.colHeader, { width: 64, textAlign: 'right' }]}>XP</Text>
       </View>
     </View>
   );
 
-  const renderItem = ({ item: user, index }: { item: any; index: number }) => {
+  const renderItem = (user: any, index: number) => {
     if (!user) return null;
     const isMe = String(user.id) === String(userProfile?.id);
     const displayName = user.username?.includes('@')
@@ -109,7 +110,7 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
         <View style={styles.rankCol}>{rankIcon}</View>
 
         <View style={styles.athleteCol}>
-          <SocialUserAvatar user={user} size={34} />
+          <SocialUserAvatar user={user} size={32} />
           <Text
             style={[
               styles.athleteName,
@@ -130,6 +131,11 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
           </View>
         </View>
 
+        <View style={styles.streakCol}>
+          <Flame size={13} color="#f97316" fill="#f97316" />
+          <Text style={styles.streakText}>{user.streak || 0}</Text>
+        </View>
+
         <View style={styles.xpCol}>
           <Text style={[styles.xpText, { color: colors.text }]}>
             {Number(user.xp || 0).toLocaleString()}
@@ -148,11 +154,10 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
           style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
         />
 
-        <View style={{ padding: 18, paddingBottom: 30 }}>
-          {renderHeader()}
-          <View style={{ gap: 4 }}>
-            {Array.isArray(leaderboard) && leaderboard.map((item, index) => renderItem({ item, index }))}
-          </View>
+        {renderHeader()}
+
+        <View style={styles.list}>
+          {leaderboard.map((user, idx) => renderItem(user, idx))}
         </View>
       </View>
     </View>
@@ -162,23 +167,21 @@ export function Leaderboard({ onNavigateProfile }: { onNavigateProfile?: (userId
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    paddingBottom: 40,
-    flex: 1,
-  },
-  loadingContainer: {
-    padding: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 20,
   },
   card: {
     borderRadius: 28,
     borderWidth: 1,
     overflow: 'hidden',
-    backgroundColor: 'transparent',
-    flex: 1,
+    padding: 16,
+  },
+  loadingContainer: {
+    paddingVertical: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   header: {
-    marginBottom: 10,
+    marginBottom: 12,
   },
   headerTop: {
     flexDirection: 'row',
@@ -192,15 +195,15 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   trophyBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
   },
   topPill: {
@@ -212,30 +215,33 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   tableColumns: {
     flexDirection: 'row',
+    alignItems: 'center',
     paddingBottom: 8,
     borderBottomWidth: 1,
   },
   colHeader: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
     color: '#9ca3af',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  list: {
+    gap: 6,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 18,
-    marginBottom: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 16,
   },
   rankCol: {
-    width: 34,
+    width: 30,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -248,28 +254,41 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 6,
     gap: 8,
+    paddingLeft: 4,
   },
   athleteName: {
     fontSize: 13,
-    flexShrink: 1,
+    flex: 1,
   },
   levelCol: {
-    width: 56,
+    width: 50,
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
   levelScale: {
-    transform: [{ scale: 0.44 }],
+    transform: [{ scale: 0.7 }],
+  },
+  streakCol: {
+    width: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 3,
+  },
+  streakText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#f97316',
   },
   xpCol: {
-    width: 72,
+    width: 64,
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
   xpText: {
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
 });

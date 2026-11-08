@@ -1,3 +1,10 @@
+/* frontend/src/utils/gymMedia.js */
+
+/**
+ * Catálogo de marcas de gimnasios populares (España e internacional)
+ * con sus dominios oficiales para obtener sus logos en alta resolución (Google Favicon CDN)
+ * y fotografías seleccionadas de sus clubes / instalaciones.
+ */
 export const GYM_BRANDS = [
   {
     name: 'Fitness Park',
@@ -53,95 +60,120 @@ export const GYM_BRANDS = [
     matches: ['brooklyn fitboxing', 'brooklyn boxing', 'fitboxing'],
     domain: 'brooklynfitboxing.com',
     image: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?auto=format&fit=crop&w=1200&q=85',
-    color: '#F97316',
+    color: '#18181B',
   },
   {
     name: 'CrossFit',
-    matches: ['crossfit', 'cross fit'],
+    matches: ['crossfit', 'cross fit', 'box crossfit'],
     domain: 'crossfit.com',
-    image: 'https://images.unsplash.com/photo-1517963879433-6ad2b056d712?auto=format&fit=crop&w=1200&q=85',
-    color: '#DC2626',
+    image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=85',
+    color: '#E11D48',
   },
   {
     name: 'Anytime Fitness',
     matches: ['anytime fitness', 'anytime'],
     domain: 'anytimefitness.es',
-    image: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=1200&q=85',
+    image: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1200&q=85',
     color: '#8B5CF6',
+  },
+  {
+    name: 'GO fit',
+    matches: ['go fit', 'gofit'],
+    domain: 'go-fit.es',
+    image: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=1200&q=85',
+    color: '#2563EB',
+  },
+  {
+    name: 'MacroFit',
+    matches: ['macrofit', 'macro fit'],
+    domain: 'macrofit.es',
+    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=85',
+    color: '#0EA5E9',
   },
   {
     name: 'Metropolitan',
     matches: ['metropolitan', 'club metropolitan'],
     domain: 'clubmetropolitan.net',
     image: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1200&q=85',
-    color: '#1E293B',
+    color: '#0F172A',
   },
   {
-    name: 'GO fit',
-    matches: ['go fit', 'gofit'],
-    domain: 'go-fit.es',
-    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=85',
-    color: '#2563EB',
+    name: 'Snap Fitness',
+    matches: ['snap fitness', 'snapfitness'],
+    domain: 'snapfitness.com',
+    image: 'https://images.unsplash.com/photo-1593079831268-3381b0db4a77?auto=format&fit=crop&w=1200&q=85',
+    color: '#DC2626',
+  },
+  {
+    name: 'Holiday Gym',
+    matches: ['holiday gym'],
+    domain: 'holidaygym.es',
+    image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1200&q=85',
+    color: '#EA580C',
   },
   {
     name: 'Forus',
     matches: ['forus'],
     domain: 'forus.es',
     image: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=1200&q=85',
-    color: '#0D9488',
-  },
-  {
-    name: 'Supera',
-    matches: ['supera', 'c.d. supera'],
-    domain: 'centrosupera.com',
-    image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=85',
     color: '#0284C7',
   },
   {
-    name: 'BeOne',
-    matches: ['beone', 'be one'],
-    domain: 'beone.es',
-    image: 'https://images.unsplash.com/photo-1593079831268-3381b0db4a77?auto=format&fit=crop&w=1200&q=85',
-    color: '#16A34A',
+    name: 'Supera',
+    matches: ['supera', 'centro supera'],
+    domain: 'centrosupera.com',
+    image: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=1200&q=85',
+    color: '#059669',
   },
   {
-    name: 'DIR',
-    matches: ['clubs dir', 'club dir', ' dir '],
-    domain: 'dir.cat',
-    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=85',
-    color: '#3B82F6',
-  },
-  {
-    name: 'Macrofit',
-    matches: ['macrofit'],
-    domain: 'macrofit.es',
-    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=85',
-    color: '#10B981',
+    name: 'Smart Fit',
+    matches: ['smart fit', 'smartfit'],
+    domain: 'smartfit.com.br',
+    image: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1200&q=85',
+    color: '#F59E0B',
   },
 ];
 
+/**
+ * Galería de imágenes de alta resolución de gimnasios modernos para gimnasios
+ * locales o independientes, asignadas de forma determinista para que cada
+ * centro tenga siempre la misma foto.
+ */
 export const GENERIC_GYM_PHOTOS = [
   'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=85',
   'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=1200&q=85',
-  'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=85',
+  'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1200&q=85',
   'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=1200&q=85',
   'https://images.unsplash.com/photo-1593079831268-3381b0db4a77?auto=format&fit=crop&w=1200&q=85',
-  'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=1200&q=85',
-  'https://images.unsplash.com/photo-1517963879433-6ad2b056d712?auto=format&fit=crop&w=1200&q=85',
+  'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=85',
+  'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=85',
   'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=1200&q=85',
 ];
 
-export const getGymPhotoForName = (name: string): string => {
-  if (!name) return GENERIC_GYM_PHOTOS[0];
+/**
+ * Calcula un hash numérico estable para un string
+ */
+export const hashString = (str = '') => {
   let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash << 5) - hash + name.charCodeAt(i);
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
     hash |= 0;
   }
-  const index = Math.abs(hash) % GENERIC_GYM_PHOTOS.length;
+  return Math.abs(hash);
+};
+
+/**
+ * Obtiene la foto genérica asignada de forma estable para un nombre de gimnasio
+ */
+export const getGymPhotoForName = (name = '') => {
+  const index = hashString(name) % GENERIC_GYM_PHOTOS.length;
   return GENERIC_GYM_PHOTOS[index];
 };
 
+/**
+ * Obtiene la información visual (imagen de club, logo oficial de cadena y color de marca)
+ * para un gimnasio o nombre de gimnasio.
+ */
 export const getGymMedia = (gymOrName: any) => {
   if (!gymOrName) {
     return {
@@ -175,6 +207,9 @@ export const getGymMedia = (gymOrName: any) => {
   };
 };
 
+/**
+ * Enriquece un objeto de gimnasio con sus propiedades de imagen y logo
+ */
 export const enrichGymWithMedia = (gym: any) => {
   if (!gym) return gym;
   const media = getGymMedia(gym);
