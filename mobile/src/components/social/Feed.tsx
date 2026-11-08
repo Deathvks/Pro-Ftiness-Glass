@@ -58,7 +58,8 @@ export function Feed({ onNavigateProfile }: { onNavigateProfile?: (userId: any) 
   const loadFeed = async () => {
     try {
       const data = await socialService.getFeed();
-      setFeed(data || []);
+      const posts = Array.isArray(data) ? data : (data?.feed || []);
+      setFeed(posts);
     } catch (error) {
       console.error(error);
     } finally {
@@ -71,16 +72,17 @@ export function Feed({ onNavigateProfile }: { onNavigateProfile?: (userId: any) 
   }, []);
 
   const handleToggleLike = async (workoutId: string) => {
-    setFeed(prev =>
-      prev.map(item => {
+    setFeed(prev => {
+      const arr = Array.isArray(prev) ? prev : [];
+      return arr.map(item => {
         if (item.id === workoutId) {
           const hasLiked = !item.hasLiked;
           const likesCount = (item.likesCount || 0) + (hasLiked ? 1 : -1);
           return { ...item, hasLiked, likesCount: Math.max(0, likesCount) };
         }
         return item;
-      })
-    );
+      });
+    });
 
     try {
       await socialService.toggleLike(workoutId);
@@ -142,7 +144,9 @@ export function Feed({ onNavigateProfile }: { onNavigateProfile?: (userId: any) 
     );
   }
 
-  if (feed.length === 0) {
+  const feedList = Array.isArray(feed) ? feed : [];
+
+  if (feedList.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <View
@@ -443,7 +447,7 @@ export function Feed({ onNavigateProfile }: { onNavigateProfile?: (userId: any) 
 
   return (
     <View style={{ paddingHorizontal: 16, paddingBottom: 60, gap: 16 }}>
-      {feed.map(item => (
+      {feedList.map(item => (
         <View key={item.id.toString()}>
           {renderItem({ item })}
         </View>
