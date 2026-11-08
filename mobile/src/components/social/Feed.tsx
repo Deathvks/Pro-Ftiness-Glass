@@ -123,6 +123,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
   const [pendingRequestsLocal, setPendingRequestsLocal] = useState<{ [id: string]: boolean }>({});
   const [sendingRequestId, setSendingRequestId] = useState<any>(null);
   const [showGymModal, setShowGymModal] = useState(false);
+  const [gymLogoError, setGymLogoError] = useState(false);
 
   const scopeRef = useRef(scope);
   const gymFilterRef = useRef(gymFilter);
@@ -817,51 +818,60 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
         />
 
         {/* Gym info top - Responsive */}
-        <View style={styles.gymInfoTopRow}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
-            <View style={styles.gymThumbBoxMini}>
-              {activeGym.image ? (
+        <View style={styles.gymInfoTopCol}>
+          <View style={styles.gymMainInfoWrapper}>
+            <View
+              style={[
+                styles.gymBadgeIconBox,
+                {
+                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                  borderColor: 'rgba(16, 185, 129, 0.3)',
+                },
+              ]}
+            >
+              {activeGym.logo && !gymLogoError ? (
                 <ExpoImage
-                  source={{ uri: activeGym.image }}
-                  style={styles.gymThumbImg}
-                  contentFit="cover"
-                  transition={200}
+                  source={{ uri: activeGym.logo }}
+                  style={styles.gymLogoImg}
+                  contentFit="contain"
+                  onError={() => setGymLogoError(true)}
+                  transition={180}
                 />
               ) : (
-                <View style={[styles.gymBadgeIcon, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                  <Dumbbell size={20} color="#10b981" />
-                </View>
+                <Dumbbell size={22} color="#10b981" />
               )}
-              {activeGym.logo ? (
-                <View style={styles.logoBadgeCornerMini}>
-                  <ExpoImage
-                    source={{ uri: activeGym.logo }}
-                    style={styles.logoBadgeImg}
-                    contentFit="contain"
-                  />
-                </View>
-              ) : null}
             </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+
+            <View style={styles.gymInfoDetails}>
+              <View style={styles.gymTitleRow}>
                 <Text style={[styles.gymNameTitle, { color: colors.text }]} numberOfLines={1}>
                   {activeGym.name || 'Mi Gimnasio'}
                 </Text>
                 {activeGym.isVerified && <CheckCircle2 size={15} color={colors.tint} />}
               </View>
+
               <View style={styles.gymMetaBadgesRow}>
                 {activeGym.city && (
-                  <Text style={[styles.gymCityText, { color: colors.textSecondary }]}>
-                    {activeGym.city}
-                  </Text>
+                  <View style={styles.gymMetaBadge}>
+                    <Building2 size={11} color={colors.textSecondary} />
+                    <Text style={[styles.gymCityText, { color: colors.textSecondary }]}>
+                      {activeGym.city}
+                    </Text>
+                  </View>
                 )}
-                <Text style={styles.sameGymBadgeText}>
-                  {sameGymCount} en tu gym
-                </Text>
-                {sameCityCount > 0 && (
-                  <Text style={styles.sameCityBadgeText}>
-                    {sameCityCount} en tu ciudad
+                <View style={styles.gymMetaBadge}>
+                  <Dumbbell size={11} color="#10b981" />
+                  <Text style={styles.sameGymBadgeText}>
+                    {sameGymCount} en tu gym
                   </Text>
+                </View>
+                {sameCityCount > 0 && (
+                  <View style={styles.gymMetaBadge}>
+                    <Building2 size={11} color="#3b82f6" />
+                    <Text style={styles.sameCityBadgeText}>
+                      {sameCityCount} en tu ciudad
+                    </Text>
+                  </View>
                 )}
               </View>
             </View>
@@ -874,7 +884,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
               styles.changeGymBtn,
               {
                 backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.7)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
               },
             ]}
           >
@@ -883,6 +893,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
               colorScheme={isDark ? 'dark' : 'light'}
               style={[StyleSheet.absoluteFill, { borderRadius: 14 }]}
             />
+            <RefreshCw size={11} color={colors.tint} />
             <Text style={[styles.changeGymText, { color: colors.tint }]}>Cambiar gym</Text>
           </TouchableOpacity>
         </View>
@@ -1871,53 +1882,37 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 14,
   },
-  gymInfoTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  gymInfoTopCol: {
     gap: 10,
   },
-  gymThumbBoxMini: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+  gymMainInfoWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  gymBadgeIconBox: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     overflow: 'hidden',
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    padding: 6,
   },
-  gymThumbImg: {
+  gymLogoImg: {
     width: '100%',
     height: '100%',
   },
-  logoBadgeCornerMini: {
-    position: 'absolute',
-    bottom: 1,
-    right: 1,
-    width: 16,
-    height: 16,
-    borderRadius: 4,
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
+  gymInfoDetails: {
+    flex: 1,
+    minWidth: 0,
     justifyContent: 'center',
-    padding: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
   },
-  logoBadgeImg: {
-    width: '100%',
-    height: '100%',
-  },
-  gymBadgeIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+  gymTitleRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 6,
   },
   gymNameTitle: {
     fontSize: 15,
@@ -1927,8 +1922,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 2,
+    marginTop: 3,
     flexWrap: 'wrap',
+  },
+  gymMetaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   gymCityText: {
     fontSize: 11,
@@ -1945,6 +1945,10 @@ const styles = StyleSheet.create({
     color: '#3b82f6',
   },
   changeGymBtn: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
