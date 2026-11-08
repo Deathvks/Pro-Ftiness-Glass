@@ -68,6 +68,7 @@ import BentoStatCard from '@/components/BentoStatCard';
 import DashboardInsights from '@/components/DashboardInsights';
 import AnimatedScreen from '@/components/AnimatedScreen';
 import GlobalHeader from '@/components/GlobalHeader';
+import { useToast } from '@/hooks/useToast';
 
 import { PRShareModal } from '@/components/modals/PRShareModal';
 import { PRListModal } from '@/components/modals/PRListModal';
@@ -194,25 +195,8 @@ export default function Dashboard() {
   const [showDiscardWorkoutModal, setShowDiscardWorkoutModal] = useState(false);
   const [isSavingWater, setIsSavingWater] = useState(false);
 
-  // Toast state
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const toastAnim = useRef(new Animated.Value(0)).current;
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = (message: string) => {
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    setToastMessage(message);
-    Animated.timing(toastAnim, { toValue: 1, duration: 220, useNativeDriver: true }).start();
-    toastTimer.current = setTimeout(() => {
-      Animated.timing(toastAnim, { toValue: 0, duration: 220, useNativeDriver: true }).start(() => {
-        setToastMessage(null);
-      });
-    }, 3500);
-  };
-
-  useEffect(() => () => {
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-  }, []);
+  // Global Toast Hook (Rendered at Root above all headers and modals)
+  const { showToast } = useToast();
 
   // Gym Management
   const [currentGym, setCurrentGym] = useState<any>(() => {
@@ -1384,41 +1368,7 @@ export default function Dashboard() {
         </View>
       </View>
 
-      {/* FLOATING TOAST BANNER */}
-      {toastMessage && (
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.floatingToastWrap,
-            {
-              top: insets.top + 16,
-              opacity: toastAnim,
-              transform: [
-                {
-                  translateY: toastAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-20, 0],
-                  }),
-                },
-              ],
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.floatingToast,
-              {
-                backgroundColor: isDark ? 'rgba(20, 20, 20, 0.92)' : 'rgba(255, 255, 255, 0.94)',
-                borderColor: colors.tint + '50',
-              },
-            ]}
-          >
-            <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill} />
-            <Info size={16} color={colors.tint} style={{ marginRight: 8 }} />
-            <Text style={[styles.floatingToastText, { color: colors.text }]}>{toastMessage}</Text>
-          </View>
-        </Animated.View>
-      )}
+
 
       {/* MODALES DE LA VISTA */}
       <WeeklyRecapModal

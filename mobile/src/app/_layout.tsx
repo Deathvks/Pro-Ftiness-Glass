@@ -10,6 +10,7 @@ import { initLocalStorage } from '@/utils/localStoragePolyfill';
 import useAppStore, { resolveTheme, applyNativeColorScheme } from '@/store/useAppStore';
 import ThemeBackground from '@/components/ThemeBackground';
 import { useAppColors } from '@/hooks/useAppColors';
+import { ToastContainer } from '@/components/ui/ToastContainer';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -146,6 +147,7 @@ export default function RootLayout() {
           <Stack.Screen name="legal-notice" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="cookies" options={{ headerShown: false, animation: 'slide_from_right' }} />
         </Stack>
+        <ToastContainer />
       </ThemeProvider>
     </GestureHandlerRootView>
   );
