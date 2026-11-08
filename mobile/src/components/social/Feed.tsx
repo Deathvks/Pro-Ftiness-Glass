@@ -388,17 +388,27 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
 
   const totalGymAthletes = (gymMeta?.sameGymCount || 0) + (gymMeta?.sameCityCount || 0);
 
-  // 1. Scope Selector + Info
+  // 1. Scope Selector + Info (Apple Liquid Glass)
   const renderScopeSelector = () => (
     <View style={styles.scopeSection}>
+      {/* Top row with info button */}
       <View style={styles.scopeInfoRow}>
         <TouchableOpacity
           onPress={() => setShowFeedInfo(v => !v)}
+          activeOpacity={0.7}
           style={[
             styles.infoToggleBtn,
-            { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)' },
+            {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.65)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
+            },
           ]}
         >
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+          />
           <Info size={14} color={colors.tint} />
           <Text style={[styles.infoToggleText, { color: colors.textSecondary }]}>
             {showFeedInfo ? 'Ocultar información' : '¿Cómo funciona el Muro?'}
@@ -406,223 +416,327 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
         </TouchableOpacity>
       </View>
 
+      {/* Info Card (Liquid Glass) */}
       {showFeedInfo && (
         <View
           style={[
             styles.infoBox,
             {
-              backgroundColor: colors.tint + '10',
-              borderColor: colors.tint + '25',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
-          <View style={styles.infoCardItem}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Flame size={15} color="#f97316" fill="#f97316" />
-              <Text style={[styles.infoCardTitle, { color: colors.text }]}>Global</Text>
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: 22 }]}
+          />
+          <View style={styles.infoBoxInner}>
+            <View style={[styles.infoCardItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.5)' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Flame size={15} color="#f97316" fill="#f97316" />
+                <Text style={[styles.infoCardTitle, { color: colors.text }]}>Global</Text>
+              </View>
+              <Text style={[styles.infoCardDesc, { color: colors.textSecondary }]}>
+                Publicaciones públicas de toda la comunidad. Los entrenamientos privados no aparecen aquí.
+              </Text>
             </View>
-            <Text style={[styles.infoCardDesc, { color: colors.textSecondary }]}>
-              Publicaciones públicas de toda la comunidad. Los entrenamientos privados no aparecen aquí.
-            </Text>
-          </View>
 
-          <View style={styles.infoCardItem}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <MapPin size={15} color="#10b981" />
-              <Text style={[styles.infoCardTitle, { color: colors.text }]}>Mi Gimnasio / Ciudad</Text>
+            <View style={[styles.infoCardItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.5)' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <MapPin size={15} color="#10b981" />
+                <Text style={[styles.infoCardTitle, { color: colors.text }]}>Mi Gimnasio / Ciudad</Text>
+              </View>
+              <Text style={[styles.infoCardDesc, { color: colors.textSecondary }]}>
+                Publicaciones públicas de atletas de tu gimnasio o ciudad. Puedes filtrar por tu centro específico o tu ciudad entera.
+              </Text>
             </View>
-            <Text style={[styles.infoCardDesc, { color: colors.textSecondary }]}>
-              Publicaciones públicas de atletas de tu gimnasio o ciudad. Puedes filtrar por tu centro específico o tu ciudad entera.
-            </Text>
-          </View>
 
-          <View style={styles.infoCardItem}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Users size={15} color="#3b82f6" />
-              <Text style={[styles.infoCardTitle, { color: colors.text }]}>Amigos</Text>
+            <View style={[styles.infoCardItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.5)' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Users size={15} color="#3b82f6" />
+                <Text style={[styles.infoCardTitle, { color: colors.text }]}>Amigos</Text>
+              </View>
+              <Text style={[styles.infoCardDesc, { color: colors.textSecondary }]}>
+                Actividad exclusiva tuya y de tus amigos con permiso de visualización.
+              </Text>
             </View>
-            <Text style={[styles.infoCardDesc, { color: colors.textSecondary }]}>
-              Actividad exclusiva tuya y de tus amigos con permiso de visualización.
-            </Text>
           </View>
         </View>
       )}
 
-      {/* 3 Scope Pills */}
+      {/* 3 Scope Liquid Glass Pills */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scopePillsContainer}>
-        {/* Global */}
+        {/* Global Pill */}
         <TouchableOpacity
           onPress={() => handleScopeChange('global')}
+          activeOpacity={0.8}
           style={[
-            styles.scopePill,
-            scope === 'global'
-              ? { backgroundColor: colors.tint, borderColor: colors.tint }
-              : {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                },
+            styles.scopeGlassPill,
+            {
+              borderColor: scope === 'global'
+                ? colors.tint
+                : isDark
+                ? 'rgba(255, 255, 255, 0.15)'
+                : 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: scope === 'global'
+                ? colors.tint
+                : isDark
+                ? 'rgba(255, 255, 255, 0.06)'
+                : 'rgba(255, 255, 255, 0.65)',
+            },
           ]}
         >
-          <Flame
-            size={16}
-            color={scope === 'global' ? accentTextColor : '#f97316'}
-            fill={scope === 'global' ? accentTextColor : '#f97316'}
+          <GlassView
+            glassEffectStyle={scope === 'global' ? 'clear' : 'regular'}
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
           />
-          <Text
-            style={[
-              styles.scopePillText,
-              { color: scope === 'global' ? accentTextColor : colors.text },
-            ]}
-          >
-            Global
-          </Text>
-          <View
-            style={[
-              styles.scopePillBadge,
-              {
-                backgroundColor: scope === 'global' ? 'rgba(0,0,0,0.2)' : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-              },
-            ]}
-          >
+          <View style={styles.scopePillInner}>
+            <Flame
+              size={16}
+              color={scope === 'global' ? accentTextColor : '#f97316'}
+              fill={scope === 'global' ? accentTextColor : '#f97316'}
+            />
             <Text
               style={[
-                styles.scopePillBadgeText,
-                { color: scope === 'global' ? accentTextColor : colors.textSecondary },
+                styles.scopePillText,
+                { color: scope === 'global' ? accentTextColor : colors.text },
               ]}
             >
-              Comunidad
+              Global
             </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Mi Gimnasio */}
-        <TouchableOpacity
-          onPress={() => handleScopeChange('gym')}
-          style={[
-            styles.scopePill,
-            scope === 'gym'
-              ? { backgroundColor: colors.tint, borderColor: colors.tint }
-              : {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                },
-          ]}
-        >
-          <MapPin size={16} color={scope === 'gym' ? accentTextColor : '#10b981'} />
-          <Text
-            style={[
-              styles.scopePillText,
-              { color: scope === 'gym' ? accentTextColor : colors.text },
-            ]}
-          >
-            Mi Gimnasio
-          </Text>
-          {totalGymAthletes > 0 && (
             <View
               style={[
                 styles.scopePillBadge,
                 {
-                  backgroundColor: scope === 'gym' ? 'rgba(0,0,0,0.2)' : 'rgba(16, 185, 129, 0.15)',
+                  backgroundColor: scope === 'global'
+                    ? 'rgba(0, 0, 0, 0.2)'
+                    : isDark
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(0, 0, 0, 0.06)',
                 },
               ]}
             >
               <Text
                 style={[
                   styles.scopePillBadgeText,
-                  { color: scope === 'gym' ? accentTextColor : '#10b981' },
+                  { color: scope === 'global' ? accentTextColor : colors.textSecondary },
                 ]}
               >
-                {totalGymAthletes}
+                Comunidad
               </Text>
             </View>
-          )}
+          </View>
         </TouchableOpacity>
 
-        {/* Amigos */}
+        {/* Mi Gimnasio Pill */}
         <TouchableOpacity
-          onPress={() => handleScopeChange('friends')}
+          onPress={() => handleScopeChange('gym')}
+          activeOpacity={0.8}
           style={[
-            styles.scopePill,
-            scope === 'friends'
-              ? { backgroundColor: colors.tint, borderColor: colors.tint }
-              : {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                },
-          ]}
-        >
-          <Users size={16} color={scope === 'friends' ? accentTextColor : '#3b82f6'} />
-          <Text
-            style={[
-              styles.scopePillText,
-              { color: scope === 'friends' ? accentTextColor : colors.text },
-            ]}
-          >
-            Amigos
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* Contextual Sub-bar */}
-      {scope === 'global' && (
-        <View
-          style={[
-            styles.subContextBar,
+            styles.scopeGlassPill,
             {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+              borderColor: scope === 'gym'
+                ? colors.tint
+                : isDark
+                ? 'rgba(255, 255, 255, 0.15)'
+                : 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: scope === 'gym'
+                ? colors.tint
+                : isDark
+                ? 'rgba(255, 255, 255, 0.06)'
+                : 'rgba(255, 255, 255, 0.65)',
             },
           ]}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-            <Globe size={14} color={colors.tint} />
-            <Text style={[styles.subContextText, { color: colors.textSecondary }]} numberOfLines={1}>
-              Entrenos públicos y debates de la comunidad
+          <GlassView
+            glassEffectStyle={scope === 'gym' ? 'clear' : 'regular'}
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+          />
+          <View style={styles.scopePillInner}>
+            <MapPin size={16} color={scope === 'gym' ? accentTextColor : '#10b981'} />
+            <Text
+              style={[
+                styles.scopePillText,
+                { color: scope === 'gym' ? accentTextColor : colors.text },
+              ]}
+            >
+              Mi Gimnasio
+            </Text>
+            {totalGymAthletes > 0 && (
+              <View
+                style={[
+                  styles.scopePillBadge,
+                  {
+                    backgroundColor: scope === 'gym' ? 'rgba(0, 0, 0, 0.2)' : 'rgba(16, 185, 129, 0.15)',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.scopePillBadgeText,
+                    { color: scope === 'gym' ? accentTextColor : '#10b981' },
+                  ]}
+                >
+                  {totalGymAthletes}
+                </Text>
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+
+        {/* Amigos Pill */}
+        <TouchableOpacity
+          onPress={() => handleScopeChange('friends')}
+          activeOpacity={0.8}
+          style={[
+            styles.scopeGlassPill,
+            {
+              borderColor: scope === 'friends'
+                ? colors.tint
+                : isDark
+                ? 'rgba(255, 255, 255, 0.15)'
+                : 'rgba(0, 0, 0, 0.08)',
+              backgroundColor: scope === 'friends'
+                ? colors.tint
+                : isDark
+                ? 'rgba(255, 255, 255, 0.06)'
+                : 'rgba(255, 255, 255, 0.65)',
+            },
+          ]}
+        >
+          <GlassView
+            glassEffectStyle={scope === 'friends' ? 'clear' : 'regular'}
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+          />
+          <View style={styles.scopePillInner}>
+            <Users size={16} color={scope === 'friends' ? accentTextColor : '#3b82f6'} />
+            <Text
+              style={[
+                styles.scopePillText,
+                { color: scope === 'friends' ? accentTextColor : colors.text },
+              ]}
+            >
+              Amigos
             </Text>
           </View>
-          {myCurrentGym?.name ? (
-            <TouchableOpacity onPress={() => handleScopeChange('gym')}>
-              <Text style={[styles.subContextLink, { color: colors.tint }]} numberOfLines={1}>
-                {myCurrentGym.name}
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* Contextual Sub-bar with Liquid Glass & Responsive Layout */}
+      {scope === 'global' && (
+        <View
+          style={[
+            styles.subContextCard,
+            {
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+            },
+          ]}
+        >
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+          />
+          <View style={styles.subContextContent}>
+            <View style={styles.subContextTextRow}>
+              <View style={[styles.subContextIconCircle, { backgroundColor: colors.tint + '18' }]}>
+                <Globe size={14} color={colors.tint} />
+              </View>
+              <Text style={[styles.subContextText, { color: colors.textSecondary }]}>
+                Entrenos públicos y debates de la comunidad
               </Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity onPress={() => setShowGymModal(true)}>
-              <Text style={[styles.subContextLink, { color: colors.tint }]}>
-                + Vincular mi gym
-              </Text>
-            </TouchableOpacity>
-          )}
+            </View>
+
+            {myCurrentGym?.name ? (
+              <TouchableOpacity
+                onPress={() => handleScopeChange('gym')}
+                activeOpacity={0.7}
+                style={[
+                  styles.subContextPillBtn,
+                  {
+                    backgroundColor: colors.tint + '18',
+                    borderColor: colors.tint + '35',
+                  },
+                ]}
+              >
+                <MapPin size={12} color={colors.tint} />
+                <Text style={[styles.subContextPillText, { color: colors.tint }]} numberOfLines={1}>
+                  {myCurrentGym.name}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={() => setShowGymModal(true)}
+                activeOpacity={0.7}
+                style={[
+                  styles.subContextPillBtn,
+                  {
+                    backgroundColor: colors.tint + '18',
+                    borderColor: colors.tint + '35',
+                  },
+                ]}
+              >
+                <MapPin size={12} color={colors.tint} />
+                <Text style={[styles.subContextPillText, { color: colors.tint }]}>
+                  Vincular mi gym
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       )}
 
       {scope === 'friends' && (
         <View
           style={[
-            styles.subContextBar,
+            styles.subContextCard,
             {
-              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-            <Users size={14} color="#3b82f6" />
-            <Text style={[styles.subContextText, { color: colors.textSecondary }]} numberOfLines={1}>
-              Mostrando actividad tuya y de tus amigos
-            </Text>
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+          />
+          <View style={styles.subContextContent}>
+            <View style={styles.subContextTextRow}>
+              <View style={[styles.subContextIconCircle, { backgroundColor: 'rgba(59, 130, 246, 0.18)' }]}>
+                <Users size={14} color="#3b82f6" />
+              </View>
+              <Text style={[styles.subContextText, { color: colors.textSecondary }]}>
+                Mostrando actividad tuya y de tus amigos
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => handleScopeChange('global')}
+              activeOpacity={0.7}
+              style={[
+                styles.subContextPillBtn,
+                {
+                  backgroundColor: colors.tint + '18',
+                  borderColor: colors.tint + '35',
+                },
+              ]}
+            >
+              <Flame size={12} color={colors.tint} fill={colors.tint} />
+              <Text style={[styles.subContextPillText, { color: colors.tint }]}>
+                Explorar Global
+              </Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={() => handleScopeChange('global')}>
-            <Text style={[styles.subContextLink, { color: colors.tint }]}>
-              Explorar Global
-            </Text>
-          </TouchableOpacity>
         </View>
       )}
     </View>
   );
 
-  // 2. Gym Section
+  // 2. Gym Section (Apple Liquid Glass)
   const renderGymSection = () => {
     if (scope !== 'gym') return null;
 
@@ -632,7 +746,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
           style={[
             styles.gymCtaCard,
             {
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
             },
           ]}
         >
@@ -653,6 +767,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
           <View style={styles.gymCtaButtons}>
             <TouchableOpacity
               onPress={() => setShowGymModal(true)}
+              activeOpacity={0.8}
               style={[styles.primaryBtn, { backgroundColor: colors.tint }]}
             >
               <MapPin size={16} color={accentTextColor} />
@@ -662,10 +777,12 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleScopeChange('global')}
+              activeOpacity={0.8}
               style={[
                 styles.secondaryBtn,
                 {
                   backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
                 },
               ]}
             >
@@ -688,7 +805,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
         style={[
           styles.gymHeaderCard,
           {
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
           },
         ]}
       >
@@ -697,13 +814,14 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
           colorScheme={isDark ? 'dark' : 'light'}
           style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
         />
-        {/* Gym info top */}
+
+        {/* Gym info top - Responsive */}
         <View style={styles.gymInfoTopRow}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
             <View style={[styles.gymBadgeIcon, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
               <Dumbbell size={20} color="#10b981" />
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Text style={[styles.gymNameTitle, { color: colors.text }]} numberOfLines={1}>
                   {activeGym.name || 'Mi Gimnasio'}
@@ -730,29 +848,50 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
 
           <TouchableOpacity
             onPress={() => setShowGymModal(true)}
+            activeOpacity={0.7}
             style={[
               styles.changeGymBtn,
               {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.7)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
               },
             ]}
           >
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: 14 }]}
+            />
             <Text style={[styles.changeGymText, { color: colors.tint }]}>Cambiar gym</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Subfilter pills */}
+        {/* Subfilter pills (Liquid Glass) */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.gymSubfilters}>
           <TouchableOpacity
             onPress={() => setGymFilter('all')}
+            activeOpacity={0.7}
             style={[
               styles.gymSubfilterPill,
-              gymFilter === 'all'
-                ? { backgroundColor: colors.tint }
-                : { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)' },
+              {
+                borderColor: gymFilter === 'all'
+                  ? colors.tint
+                  : isDark
+                  ? 'rgba(255, 255, 255, 0.12)'
+                  : 'rgba(0, 0, 0, 0.08)',
+                backgroundColor: gymFilter === 'all'
+                  ? colors.tint
+                  : isDark
+                  ? 'rgba(255, 255, 255, 0.05)'
+                  : 'rgba(255, 255, 255, 0.65)',
+              },
             ]}
           >
+            <GlassView
+              glassEffectStyle={gymFilter === 'all' ? 'clear' : 'regular'}
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+            />
             <Globe size={13} color={gymFilter === 'all' ? accentTextColor : colors.textSecondary} />
             <Text
               style={[
@@ -766,13 +905,28 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
 
           <TouchableOpacity
             onPress={() => setGymFilter('same_gym')}
+            activeOpacity={0.7}
             style={[
               styles.gymSubfilterPill,
-              gymFilter === 'same_gym'
-                ? { backgroundColor: '#10b981' }
-                : { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)' },
+              {
+                borderColor: gymFilter === 'same_gym'
+                  ? '#10b981'
+                  : isDark
+                  ? 'rgba(255, 255, 255, 0.12)'
+                  : 'rgba(0, 0, 0, 0.08)',
+                backgroundColor: gymFilter === 'same_gym'
+                  ? '#10b981'
+                  : isDark
+                  ? 'rgba(255, 255, 255, 0.05)'
+                  : 'rgba(255, 255, 255, 0.65)',
+              },
             ]}
           >
+            <GlassView
+              glassEffectStyle={gymFilter === 'same_gym' ? 'clear' : 'regular'}
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+            />
             <Dumbbell size={13} color={gymFilter === 'same_gym' ? '#ffffff' : colors.textSecondary} />
             <Text
               style={[
@@ -787,13 +941,28 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
           {activeGym.city && (
             <TouchableOpacity
               onPress={() => setGymFilter('same_city')}
+              activeOpacity={0.7}
               style={[
                 styles.gymSubfilterPill,
-                gymFilter === 'same_city'
-                  ? { backgroundColor: '#3b82f6' }
-                  : { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)' },
+                {
+                  borderColor: gymFilter === 'same_city'
+                    ? '#3b82f6'
+                    : isDark
+                    ? 'rgba(255, 255, 255, 0.12)'
+                    : 'rgba(0, 0, 0, 0.08)',
+                  backgroundColor: gymFilter === 'same_city'
+                    ? '#3b82f6'
+                    : isDark
+                    ? 'rgba(255, 255, 255, 0.05)'
+                    : 'rgba(255, 255, 255, 0.65)',
+                },
               ]}
             >
+              <GlassView
+                glassEffectStyle={gymFilter === 'same_city' ? 'clear' : 'regular'}
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+              />
               <Building2 size={13} color={gymFilter === 'same_city' ? '#ffffff' : colors.textSecondary} />
               <Text
                 style={[
@@ -807,7 +976,7 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
           )}
         </ScrollView>
 
-        {/* Horizontal Athletes in Zone Carousel */}
+        {/* Horizontal Athletes in Zone Carousel (Liquid Glass) */}
         {filteredGymMembers.length > 0 && (
           <View style={styles.athletesCarouselSection}>
             <Text style={[styles.athletesCarouselTitle, { color: colors.textSecondary }]}>
@@ -822,14 +991,20 @@ export function Feed({ onNavigateProfile, visibleStories = [], myStories = [] }:
                   <TouchableOpacity
                     key={member.id}
                     onPress={() => onNavigateProfile && onNavigateProfile(member.id)}
+                    activeOpacity={0.7}
                     style={[
                       styles.athleteCard,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.6)',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
                       },
                     ]}
                   >
+                    <GlassView
+                      glassEffectStyle="regular"
+                      colorScheme={isDark ? 'dark' : 'light'}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                    />
                     <SocialUserAvatar user={member} size={38} />
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={[styles.athleteCardName, { color: colors.text }]} numberOfLines={1}>
@@ -1495,8 +1670,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   infoToggleText: {
     fontSize: 12,
@@ -1505,11 +1682,16 @@ const styles = StyleSheet.create({
   infoBox: {
     borderRadius: 22,
     borderWidth: 1,
+    overflow: 'hidden',
+  },
+  infoBoxInner: {
     padding: 14,
-    gap: 12,
+    gap: 10,
   },
   infoCardItem: {
     gap: 4,
+    padding: 10,
+    borderRadius: 14,
   },
   infoCardTitle: {
     fontSize: 13,
@@ -1524,14 +1706,17 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 2,
   },
-  scopePill: {
+  scopeGlassPill: {
+    borderRadius: 24,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  scopePillInner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 24,
-    borderWidth: 1,
   },
   scopePillText: {
     fontSize: 13,
@@ -1546,23 +1731,55 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
   },
-  subContextBar: {
+  subContextCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginTop: 4,
+  },
+  subContextContent: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 18,
-    borderWidth: 1,
+    gap: 8,
+  },
+  subContextTextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+    minWidth: 200,
+  },
+  subContextIconCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   subContextText: {
     fontSize: 12,
     fontWeight: '600',
+    flex: 1,
+    lineHeight: 16,
   },
-  subContextLink: {
+  subContextPillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    maxWidth: 180,
+    alignSelf: 'center',
+  },
+  subContextPillText: {
     fontSize: 11,
     fontWeight: '800',
-    textDecorationLine: 'underline',
   },
   gymCtaCard: {
     borderRadius: 28,
@@ -1619,6 +1836,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 18,
+    borderWidth: 1,
   },
   secondaryBtnText: {
     fontSize: 13,
@@ -1673,8 +1891,9 @@ const styles = StyleSheet.create({
   changeGymBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
+    overflow: 'hidden',
   },
   changeGymText: {
     fontSize: 11,
@@ -1690,6 +1909,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   gymSubfilterText: {
     fontSize: 11,
@@ -1714,8 +1935,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     padding: 10,
-    borderRadius: 18,
+    borderRadius: 20,
     borderWidth: 1,
+    overflow: 'hidden',
     minWidth: 190,
     maxWidth: 220,
   },

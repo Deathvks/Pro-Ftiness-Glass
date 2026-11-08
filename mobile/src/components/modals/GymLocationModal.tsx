@@ -22,7 +22,6 @@ import {
   Building2,
   Navigation,
   BadgeCheck,
-  Globe,
 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
@@ -30,8 +29,8 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
 import { GYM_BRANDS, enrichGymWithMedia } from '@/utils/gymMedia';
-import { searchLocalGyms, cleanSearchTokens, normalizeGymText, SpainGymItem } from '@/utils/spainGymsData';
-import { getCurrentLocation, calculateDistance, formatDistance } from '@/utils/gpsUtils';
+import { searchLocalGyms, normalizeGymText, SpainGymItem } from '@/utils/spainGymsData';
+import { getCurrentLocation } from '@/utils/gpsUtils';
 
 interface GymLocationModalProps {
   visible: boolean;
@@ -82,14 +81,12 @@ export function GymLocationModal({
 
     setIsSearching(true);
     try {
-      // 1. Instant search from verified local database (3,100+ gyms in Spain)
       const localMatches = q ? searchLocalGyms(q, activeCoords) : [];
       let localNearby: SpainGymItem[] = [];
       if (!q && activeCoords?.lat && activeCoords?.lng) {
         localNearby = searchLocalGyms('gimnasio', activeCoords).slice(0, 10);
       }
 
-      // Combine and enrich
       const combined = [...localMatches, ...localNearby];
       const seen = new Set<string>();
       const unique: SpainGymItem[] = [];
@@ -248,21 +245,27 @@ export function GymLocationModal({
               style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
             />
 
-            {/* Header */}
+            {/* Header - Fully responsive with no collision */}
             <View style={[styles.header, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)' }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={styles.headerInfoGroup}>
                 <View style={[styles.iconWrap, { backgroundColor: colors.tint }]}>
                   <MapPin size={20} color={accentText} />
                 </View>
-                <View>
-                  <Text style={[styles.title, { color: colors.text }]}>Tu Gimnasio Habitual</Text>
-                  <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+                <View style={styles.headerTitles}>
+                  <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
+                    Tu Gimnasio Habitual
+                  </Text>
+                  <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
                     Encuentra atletas de tu zona y centro
                   </Text>
                 </View>
               </View>
-              <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <X size={20} color={colors.textSecondary} />
+              <TouchableOpacity
+                onPress={onClose}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={styles.closeBtn}
+              >
+                <X size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -275,9 +278,9 @@ export function GymLocationModal({
                   )}
                   <View style={styles.currentGymOverlay}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
                         <MapPin size={16} color={colors.tint} />
-                        <Text style={{ fontSize: 11, fontWeight: '800', color: colors.tint, textTransform: 'uppercase' }}>
+                        <Text style={{ fontSize: 11, fontWeight: '800', color: colors.tint, textTransform: 'uppercase' }} numberOfLines={1}>
                           Gimnasio Seleccionado
                         </Text>
                       </View>
@@ -285,11 +288,11 @@ export function GymLocationModal({
                         <Trash2 size={16} color="#ef4444" />
                       </TouchableOpacity>
                     </View>
-                    <Text style={{ fontSize: 18, fontWeight: '900', color: '#fff', marginTop: 8 }}>
+                    <Text style={{ fontSize: 18, fontWeight: '900', color: '#fff', marginTop: 8 }} numberOfLines={1}>
                       {currentGym.name}
                     </Text>
                     {(currentGym.address || currentGym.city) && (
-                      <Text style={{ fontSize: 12, fontWeight: '500', color: 'rgba(255, 255, 255, 0.8)', marginTop: 2 }}>
+                      <Text style={{ fontSize: 12, fontWeight: '500', color: 'rgba(255, 255, 255, 0.8)', marginTop: 2 }} numberOfLines={1}>
                         {[currentGym.address, currentGym.city].filter(Boolean).join(' • ')}
                       </Text>
                     )}
@@ -297,7 +300,7 @@ export function GymLocationModal({
                 </View>
               )}
 
-              {/* Buscador + Botón GPS */}
+              {/* Buscador + Botón GPS (Liquid Glass) */}
               <View style={{ gap: 8 }}>
                 <View style={[styles.searchWrap, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)', borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)' }]}>
                   <Search size={18} color={colors.textSecondary} style={{ marginRight: 10 }} />
@@ -319,25 +322,45 @@ export function GymLocationModal({
                   ) : null}
                 </View>
 
-                {/* Botón Detectar Ubicación */}
+                {/* Botón Detectar Ubicación (Liquid Glass Capsule) */}
                 <TouchableOpacity
                   onPress={handleDetectLocation}
                   disabled={isLocating}
+                  activeOpacity={0.75}
                   style={[
                     styles.gpsBtn,
                     {
-                      backgroundColor: userCoords ? 'rgba(16, 185, 129, 0.12)' : isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
-                      borderColor: userCoords ? 'rgba(16, 185, 129, 0.3)' : isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                      backgroundColor: userCoords
+                        ? 'rgba(16, 185, 129, 0.12)'
+                        : isDark
+                        ? 'rgba(255, 255, 255, 0.05)'
+                        : 'rgba(255, 255, 255, 0.7)',
+                      borderColor: userCoords
+                        ? 'rgba(16, 185, 129, 0.35)'
+                        : isDark
+                        ? 'rgba(255, 255, 255, 0.1)'
+                        : 'rgba(0, 0, 0, 0.08)',
                     },
                   ]}
                 >
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 16 }]}
+                  />
                   {isLocating ? (
                     <ActivityIndicator size="small" color={colors.tint} />
                   ) : (
                     <Navigation size={16} color={userCoords ? '#10b981' : colors.tint} />
                   )}
-                  <Text style={[styles.gpsBtnText, { color: userCoords ? '#10b981' : colors.text }]}>
-                    {userCoords ? 'Ubicación GPS activa' : 'Buscar gimnasios cerca de mí'}
+                  <Text
+                    style={[
+                      styles.gpsBtnText,
+                      { color: userCoords ? '#10b981' : colors.text },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {userCoords ? 'Ubicación GPS detectada' : 'Buscar gimnasios cerca de mí'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -355,17 +378,22 @@ export function GymLocationModal({
                       style={[
                         styles.brandRow,
                         {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.65)',
                           borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
                         },
                       ]}
                       activeOpacity={0.7}
                     >
+                      <GlassView
+                        glassEffectStyle="regular"
+                        colorScheme={isDark ? 'dark' : 'light'}
+                        style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                      />
                       <View style={styles.brandInfo}>
                         <View style={[styles.brandIcon, { backgroundColor: (gym.brandColor || colors.tint) + '20' }]}>
                           <Dumbbell size={18} color={gym.brandColor || colors.tint} />
                         </View>
-                        <View style={{ flex: 1 }}>
+                        <View style={{ flex: 1, minWidth: 0 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                             <Text style={[styles.brandName, { color: colors.text }]} numberOfLines={1}>
                               {gym.name}
@@ -403,19 +431,24 @@ export function GymLocationModal({
                       style={[
                         styles.brandRow,
                         {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)',
+                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.65)',
                           borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
                         },
                       ]}
                       activeOpacity={0.7}
                     >
+                      <GlassView
+                        glassEffectStyle="regular"
+                        colorScheme={isDark ? 'dark' : 'light'}
+                        style={[StyleSheet.absoluteFill, { borderRadius: 20 }]}
+                      />
                       <View style={styles.brandInfo}>
                         <View style={[styles.brandIcon, { backgroundColor: brand.color + '20' }]}>
                           <Dumbbell size={18} color={brand.color} />
                         </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.brandName, { color: colors.text }]}>{brand.name}</Text>
-                          <Text style={[styles.brandDomain, { color: colors.textSecondary }]}>{brand.domain}</Text>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text style={[styles.brandName, { color: colors.text }]} numberOfLines={1}>{brand.name}</Text>
+                          <Text style={[styles.brandDomain, { color: colors.textSecondary }]} numberOfLines={1}>{brand.domain}</Text>
                         </View>
                       </View>
                       <View style={[styles.selectPill, { backgroundColor: colors.tint + '15' }]}>
@@ -437,7 +470,7 @@ export function GymLocationModal({
                     >
                       <View style={styles.brandInfo}>
                         <Building2 size={20} color={colors.tint} style={{ marginRight: 12 }} />
-                        <Text style={[styles.brandName, { color: colors.text }]}>Guardar "{query.trim()}"</Text>
+                        <Text style={[styles.brandName, { color: colors.text }]} numberOfLines={1}>Guardar "{query.trim()}"</Text>
                       </View>
                       <Check size={18} color={colors.tint} />
                     </TouchableOpacity>
@@ -471,8 +504,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
     borderBottomWidth: 1,
+  },
+  headerInfoGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+    minWidth: 0,
+    marginRight: 10,
+  },
+  headerTitles: {
+    flex: 1,
+    minWidth: 0,
   },
   iconWrap: {
     width: 38,
@@ -480,6 +526,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   title: {
     fontSize: 17,
@@ -489,6 +536,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
     marginTop: 2,
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   scrollContent: {
     padding: 20,
@@ -503,7 +558,11 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   currentGymBg: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     opacity: 0.35,
   },
   currentGymOverlay: {
@@ -536,14 +595,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 10,
+    paddingVertical: 11,
     paddingHorizontal: 14,
     borderRadius: 16,
     borderWidth: 1,
+    overflow: 'hidden',
   },
   gpsBtnText: {
     fontSize: 12,
     fontWeight: '700',
+    flexShrink: 1,
   },
   sectionTitle: {
     fontSize: 11,
@@ -557,12 +618,14 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 20,
     borderWidth: 1,
+    overflow: 'hidden',
   },
   brandInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
     gap: 12,
+    minWidth: 0,
   },
   brandIcon: {
     width: 36,
@@ -570,6 +633,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   brandName: {
     fontSize: 14,
@@ -584,6 +648,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
+    flexShrink: 0,
   },
   selectPillText: {
     fontSize: 12,
@@ -593,6 +658,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
+    flexShrink: 0,
   },
   distText: {
     fontSize: 11,
