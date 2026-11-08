@@ -163,7 +163,72 @@ const NotificationSettingsModal = ({ onClose, userId }) => {
   );
 };
 
+
+export const formatXpReasonClient = (reason) => {
+  if (!reason || typeof reason !== 'string') return 'tu actividad';
+  const trimmed = reason.trim();
+  if (/^login\s*diario$/i.test(trimmed)) return 'iniciar sesión hoy';
+  if (/^peso\s*registrado(\s*\(perfil\))?$/i.test(trimmed)) return 'registrar tu peso corporal';
+  if (/^medida\s*registrada:\s*(.+)$/i.test(trimmed)) {
+    const m = trimmed.match(/^medida\s*registrada:\s*(.+)$/i);
+    return 'registrar tu medida de ' + m[1].toLowerCase();
+  }
+  if (/^rutina\s*creada$/i.test(trimmed)) return 'crear una nueva rutina';
+  if (/fue descargada/i.test(trimmed)) return 'que un atleta descargó tu rutina';
+  if (/^comida\s*registrada$/i.test(trimmed)) return 'registrar tu comida';
+  if (/^creatina\s*registrada$/i.test(trimmed)) return 'registrar tu toma de creatina';
+  if (/^agua\s*registrada$/i.test(trimmed) || /^reto:\s*objetivo de agua$/i.test(trimmed)) return 'cumplir tu objetivo de agua diario';
+  if (/^objetivo\s*de\s*calor[ií]as\s*cumplido$/i.test(trimmed)) return 'cumplir tu objetivo de calorías de hoy';
+  if (/completado$/i.test(trimmed)) return 'completar tu ' + trimmed.toLowerCase();
+  if (/^reto\s*infinito:\s*(.+)$/i.test(trimmed)) {
+    const m = trimmed.match(/^reto\s*infinito:\s*(.+)$/i);
+    return 'completar el reto "' + m[1] + '"';
+  }
+  if (/^reto:\s*(.+)$/i.test(trimmed)) {
+    const m = trimmed.match(/^reto:\s*(.+)$/i);
+    return 'completar el reto "' + m[1] + '"';
+  }
+  if (/^sobrecarga\s*progresiva:\s*(.+)$/i.test(trimmed)) {
+    const m = trimmed.match(/^sobrecarga\s*progresiva:\s*(.+)$/i);
+    return 'lograr sobrecarga progresiva en ' + m[1];
+  }
+  if (/^insignia:\s*(.+)$/i.test(trimmed)) {
+    const m = trimmed.match(/^insignia:\s*(.+)$/i);
+    return 'desbloquear la insignia "' + m[1] + '"';
+  }
+  if (/^por\s+/i.test(trimmed)) {
+    return trimmed.replace(/^por\s+/i, '');
+  }
+  return trimmed;
+};
+
+export const getNotificationDisplay = (n) => {
+  if (!n) return { title: '', message: '' };
+  let title = n.title;
+  let message = n.message;
+
+  const isXp = n.data?.type === 'xp' || /^\+\d+\s*XP/i.test(n.title);
+  if (isXp) {
+    const amount = n.data?.amount || n.title?.match(/\+(\d+)\s*XP/i)?.[1];
+    const rawReason = n.data?.reason;
+    if (amount) {
+      title = '+' + amount + ' XP';
+      if (rawReason) {
+        message = 'Has ganado ' + amount + ' XP por ' + formatXpReasonClient(rawReason) + '.';
+      } else if (message && message.includes('Motivo:')) {
+        const parts = message.split('Motivo:');
+        message = 'Has ganado ' + amount + ' XP por ' + formatXpReasonClient(parts[1]?.trim()) + '.';
+      } else if (message && message.toLowerCase().includes('tu actividad te ha dado puntos')) {
+        message = 'Has ganado ' + amount + ' XP en tu última actividad.';
+      }
+    }
+  }
+
+  return { title, message };
+};
+
 const NotificationDetailsModal = ({ notification, onClose, timeZone }) => {
+  const display = getNotificationDisplay(notification);
   const { ip, userAgent, date } = notification.data ?? {};
   const hasSessionDetails = Boolean(ip || userAgent);
   const loginDate = date ? parseDateSafe(date) : parseDateSafe(notification.created_at);
@@ -185,9 +250,9 @@ const NotificationDetailsModal = ({ notification, onClose, timeZone }) => {
           <div className="w-16 h-16 rounded-[20px] bg-accent/10 flex items-center justify-center text-accent mb-4 ring-2 ring-accent/30">
             {hasSessionDetails ? <Shield size={32} strokeWidth={1.5} /> : <Bell size={32} strokeWidth={1.5} />}
           </div>
-          <h3 className="break-words text-xl sm:text-2xl font-bold text-text-primary">{notification.title}</h3>
+          <h3 className="break-words text-xl sm:text-2xl font-bold text-text-primary">{display.title}</h3>
           <p className="text-text-secondary text-xs sm:text-sm mt-2 whitespace-pre-wrap break-words">
-            {notification.message}
+            {display.message}
           </p>
         </div>
 
@@ -605,7 +670,9 @@ const NotificationsScreen = ({ setView }) => {
                   {key === 'hoy' ? 'Hoy' : key === 'ayer' ? 'Ayer' : 'Anterior'}
                 </h3>
                 <div className="space-y-3">
-                  {list.map((n) => (
+                  {list.map((n) => {
+                    const display = getNotificationDisplay(n);
+                    return (
                     <GlassCard
                       key={n.id}
                       onClick={() => handleNotificationClick(n)}
@@ -622,10 +689,10 @@ const NotificationsScreen = ({ setView }) => {
 
                           <div className="flex-1 min-w-0 flex flex-col justify-center">
                             <p className={`text-sm sm:text-base font-bold mb-1 break-words whitespace-normal ${n.is_read ? 'text-text-secondary' : 'text-text-primary'}`}>
-                              {n.title}
+                              {display.title}
                             </p>
                             <p className={`text-xs sm:text-sm font-medium leading-relaxed break-words whitespace-normal ${n.is_read ? 'text-text-muted' : 'text-text-secondary'}`}>
-                              {n.message}
+                              {display.message}
                             </p>
 
                             {/* Indicadores de acción */}
@@ -655,7 +722,8 @@ const NotificationsScreen = ({ setView }) => {
                         </button>
                       </div>
                     </GlassCard>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )

@@ -1,6 +1,7 @@
 /* backend/services/gamificationService.js */
 import models from '../models/index.js';
 import { createNotification } from './notificationService.js';
+import { formatXpReason } from '../config/pushContent.js';
 import { getWeeklyTrainingTarget, trainingDateFormatter, trainingDateKey } from '../utils/weeklyTraining.js';
 
 const { User, NutritionLog, XpLog, WorkoutLog, Sequelize, sequelize } = models;
@@ -162,7 +163,7 @@ export const addXp = async (userId, amount, reason = 'Actividad completada', opt
             createNotification(userId, {
                 type: 'success',
                 title: `+${amount} XP`,
-                message: `Has ganado ${amount} XP. Motivo: ${reason}`,
+                message: `Has ganado ${amount} XP por ${formatXpReason(reason)}.`,
                 data: { type: 'xp', amount, reason }
             });
         }

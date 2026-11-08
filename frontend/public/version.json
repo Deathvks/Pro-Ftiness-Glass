@@ -1,6 +1,6 @@
 {
-  "version": "7.16.25",
-  "releaseNotes": "Actualización v7.16.25: Aviso de migración completamente centrado y agrupado en móvil con el botón de cierre integrado.",
+  "version": "7.16.26",
+  "releaseNotes": "Actualización v7.16.26: Notificaciones de experiencia detalladas con puntos de XP y motivo exacto.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",
