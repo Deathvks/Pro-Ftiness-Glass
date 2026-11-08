@@ -34,7 +34,19 @@ const getHeaderThemeBg = (theme: string) => {
     }
 };
 
-export default function GlobalHeader({ title, scrollY, showBackButton, hideRightButtons }: { title?: string, scrollY?: Animated.Value, showBackButton?: boolean, hideRightButtons?: boolean }) {
+export default function GlobalHeader({ 
+    title, 
+    scrollY, 
+    showBackButton, 
+    hideRightButtons,
+    onBackPress,
+}: { 
+    title?: string, 
+    scrollY?: Animated.Value, 
+    showBackButton?: boolean, 
+    hideRightButtons?: boolean,
+    onBackPress?: () => void,
+}) {
     const [showAiModal, setShowAiModal] = React.useState(false);
     const insets = useSafeAreaInsets();
     const router = useRouter();
@@ -157,10 +169,12 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                 }}
             >
             {/* Left: Profile or Back Button & Title */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, marginRight: 8 }}>
                 {showBackButton ? (
                     <GlassButton onPress={() => {
-                        if (router.canGoBack()) {
+                        if (onBackPress) {
+                            onBackPress();
+                        } else if (router.canGoBack()) {
                             router.back();
                         } else {
                             router.replace('/');
@@ -183,7 +197,7 @@ export default function GlobalHeader({ title, scrollY, showBackButton, hideRight
                     </GlassButton>
                 )}
                 {title && (
-                    <Text style={{ color: colors.text, fontSize: 24, fontWeight: '900', letterSpacing: -0.5 }}>{title}</Text>
+                    <Text numberOfLines={1} style={{ color: colors.text, fontSize: 22, fontWeight: '900', letterSpacing: -0.5, flexShrink: 1 }}>{title}</Text>
                 )}
             </View>
 

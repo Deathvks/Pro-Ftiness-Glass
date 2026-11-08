@@ -125,7 +125,7 @@ export function ExerciseProgressionView() {
               try {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               } catch {}
-              router.push('/(tabs)/routines' as any);
+              router.push('/routines' as any);
             }}
             style={[styles.emptyCtaBtn, { backgroundColor: colors.tint }]}
           >

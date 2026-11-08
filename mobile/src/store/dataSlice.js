@@ -365,13 +365,14 @@ export const createDataSlice = (set, get) => ({
 
   logBodyWeight: async (weightData) => {
     try {
-      await bodyWeightService.logWeight(weightData);
+      const payload = typeof weightData === 'number' ? { weight: weightData } : weightData;
+      await bodyWeightService.logWeight(payload);
       const history = await bodyWeightService.getHistory();
       set({ bodyWeightLog: history });
 
-      if (weightData.weight) {
+      if (payload && payload.weight) {
         set(state => ({
-          userProfile: { ...state.userProfile, weight: weightData.weight }
+          userProfile: { ...state.userProfile, weight: payload.weight }
         }));
       }
 
@@ -380,6 +381,7 @@ export const createDataSlice = (set, get) => ({
 
       return { success: true, message: 'Peso registrado con éxito.' };
     } catch (error) {
+      console.error("Error al registrar peso corporal:", error);
       return { success: false, message: error.message };
     }
   },

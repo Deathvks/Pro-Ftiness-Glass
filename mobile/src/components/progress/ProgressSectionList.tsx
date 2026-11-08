@@ -27,7 +27,6 @@ export function ProgressSectionList({ onSelectSection }: ProgressSectionListProp
     <View style={styles.container}>
       {/* Header Info */}
       <View style={styles.header}>
-        <Text style={[styles.heading, { color: colors.text }]}>Tu Progreso</Text>
         <Text style={[styles.subheading, { color: colors.textSecondary }]}>
           Analítica, evolución y métricas de entrenamiento
         </Text>

@@ -39,7 +39,7 @@ export function BodyWeightProgressView() {
 
   const handleSaveWeight = (data: { weight: number }) => {
     if (logBodyWeight) {
-      logBodyWeight(data.weight);
+      logBodyWeight({ weight: data.weight });
     }
   };
 
