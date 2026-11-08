@@ -55,7 +55,9 @@
       "expo-web-browser",
       "expo-asset",
       "expo-sharing",
-      "expo-video"
+      "expo-video",
+      "expo-font",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,
