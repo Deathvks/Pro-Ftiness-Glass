@@ -33,7 +33,7 @@ import { getThemeBaseBackground } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import ThemeBackground from '@/components/ThemeBackground';
 import { BugReportModal } from '@/components/modals/BugReportModal';
-import { APP_VERSION } from '@/config/version';
+import { APP_VERSION, isRemoteNewer } from '@/config/version';
 
 const SUPPORT_EMAIL = 'soporte@profitnessglass.es';
 const GOOGLE_PLAY_URL = 'https://play.google.com/store/apps/details?id=com.profitnessglass.app&hl=es_419';
@@ -157,8 +157,45 @@ export default function SupportScreen() {
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const glassBorder = isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)';
 
+  const [appVersion, setAppVersion] = useState<string>(APP_VERSION);
   const [apkDownloadUrl, setApkDownloadUrl] = useState<string | null>(null);
+  const [isUpToDate, setIsUpToDate] = useState<boolean>(true);
   const [showBugModal, setShowBugModal] = useState<boolean>(false);
+
+  // Sincronización automática de versión y enlace de descarga desde version.json
+  useEffect(() => {
+    let isMounted = true;
+    const fetchVersionInfo = async () => {
+      try {
+        const response = await fetch(`https://profitnessglass.es/version.json?t=${Date.now()}`, {
+          headers: { 'Cache-Control': 'no-cache' },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (isMounted && data) {
+            if (data.downloadUrl) {
+              setApkDownloadUrl(data.downloadUrl);
+            }
+            if (data.version) {
+              if (isRemoteNewer(APP_VERSION, data.version)) {
+                setIsUpToDate(false);
+                setAppVersion(data.version);
+              } else {
+                setIsUpToDate(true);
+                setAppVersion(APP_VERSION);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // En ausencia de red, conserva la versión configurada en la app
+      }
+    };
+    fetchVersionInfo();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Auto-abrir modal si existía un borrador previo guardado (igual que en frontend)
   useEffect(() => {
@@ -334,13 +371,22 @@ export default function SupportScreen() {
             <View style={styles.itemTextCol}>
               <Text style={[styles.itemTitle, { color: colors.text }]}>Versión de App</Text>
               <Text style={[styles.itemSubtitle, { color: colors.textSecondary }]}>
-                v{APP_VERSION} · Native {Platform.OS.toUpperCase()}
+                v{appVersion} · Native {Platform.OS.toUpperCase()}
               </Text>
             </View>
 
-            <View style={[styles.statusBadge, { backgroundColor: '#10b98120', borderColor: '#10b98140' }]}>
-              <CheckCircle2 size={12} color="#10b981" />
-              <Text style={styles.statusBadgeText}>Actualizada</Text>
+            <View
+              style={[
+                styles.statusBadge,
+                isUpToDate
+                  ? { backgroundColor: '#10b98120', borderColor: '#10b98140' }
+                  : { backgroundColor: '#f59e0b20', borderColor: '#f59e0b40' },
+              ]}
+            >
+              <CheckCircle2 size={12} color={isUpToDate ? '#10b981' : '#f59e0b'} />
+              <Text style={[styles.statusBadgeText, { color: isUpToDate ? '#10b981' : '#f59e0b' }]}>
+                {isUpToDate ? 'Actualizada' : 'Nueva versión'}
+              </Text>
             </View>
           </View>
         </GlassSurface>
