@@ -538,6 +538,7 @@ export default function NutritionScreen() {
             totalCalories={mealTotals[mealKey] || 0}
             logs={meals[mealKey]}
             onAddFood={() => setModal({ type: 'food', data: { mealType: mealKey } })}
+            onScanBarcode={() => setModal({ type: 'food', data: { mealType: mealKey, initialScan: true } })}
             onEditFood={item => setModal({ type: 'food', data: { ...item, mealType: mealKey } })}
             onDeleteFood={item => setLogToDelete(item)}
             onClearMeal={() => setMealGroupToDelete(mealKey)}
@@ -608,6 +609,7 @@ export default function NutritionScreen() {
           visible={true}
           mealType={modal.data?.mealType || 'breakfast'}
           logToEdit={modal.data?.id ? modal.data : null}
+          initialScan={Boolean(modal.data?.initialScan)}
           isLoading={isSubmitting}
           onClose={() => setModal({ type: null, data: null })}
           onSave={handleSaveFood}

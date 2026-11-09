@@ -31,7 +31,9 @@ import {
   ArrowLeft,
   ChevronRight,
   Flame,
+  ScanBarcode,
 } from 'lucide-react-native';
+import { BarcodeScannerModal } from './BarcodeScannerModal';
 import { GlassView } from 'expo-glass-effect';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -47,6 +49,7 @@ interface NutritionLogModalProps {
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   logToEdit?: FoodLogItem | null;
   isLoading?: boolean;
+  initialScan?: boolean;
   onClose: () => void;
   onSave: (foodData: any) => Promise<void>;
 }
@@ -80,6 +83,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
   mealType,
   logToEdit,
   isLoading = false,
+  initialScan = false,
   onClose,
   onSave,
 }) => {
@@ -95,6 +99,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
 
   // Active tab state
   const [activeTab, setActiveTab] = useState<TabType>(logToEdit ? 'manual' : 'search');
+  const [showScanner, setShowScanner] = useState(false);
 
   // Search state (Enter-only)
   const [searchTerm, setSearchTerm] = useState('');
@@ -130,6 +135,9 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
   // Initialize or reset when modal opens / closes / editing changes
   useEffect(() => {
     if (visible) {
+      if (initialScan) {
+        setShowScanner(true);
+      }
       if (logToEdit) {
         setActiveTab('manual');
         setItemsToAdd([]);
@@ -181,6 +189,21 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
     if (!url) return null;
     if (url.startsWith('http') || url.startsWith('file://')) return url;
     return `${BACKEND_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const handleFoodScanned = (food: any) => {
+    setShowScanner(false);
+    handleOpenDetail(food);
+  };
+
+  const handleManualCreateFromBarcode = (barcode: string) => {
+    setShowScanner(false);
+    setActiveTab('manual');
+    setManualForm(prev => ({
+      ...prev,
+      description: `Producto [${barcode}]`,
+    }));
+    setIsPer100g(true);
   };
 
   // ==================== SEARCH (ENTER-ONLY) ====================
@@ -1224,6 +1247,33 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                         <TouchableOpacity
                           onPress={() => {
                             try {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            } catch {}
+                            setShowScanner(true);
+                          }}
+                          style={styles.tabItem}
+                          activeOpacity={0.8}
+                        >
+                          <ScanBarcode
+                            size={14}
+                            color={colors.tint}
+                            strokeWidth={2.5}
+                          />
+                          <Text
+                            style={[
+                              styles.tabText,
+                              {
+                                color: colors.tint,
+                                fontWeight: '700',
+                              },
+                            ]}
+                          >
+                            Escanear
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => {
+                            try {
                               Haptics.selectionAsync();
                             } catch {}
                             setActiveTab('favorites');
@@ -1361,6 +1411,27 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                           </TouchableOpacity>
                         )}
 
+                        <TouchableOpacity
+                          onPress={() => {
+                            try {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            } catch {}
+                            setShowScanner(true);
+                          }}
+                          style={[
+                            styles.searchActionBtn,
+                            {
+                              backgroundColor: isDark
+                                ? 'rgba(255, 255, 255, 0.08)'
+                                : 'rgba(0, 0, 0, 0.05)',
+                              marginRight: 6,
+                            },
+                          ]}
+                          activeOpacity={0.8}
+                          accessibilityLabel="Escanear código de barras"
+                        >
+                          <ScanBarcode size={17} color={colors.tint} strokeWidth={2.3} />
+                        </TouchableOpacity>
                         <TouchableOpacity
                           onPress={executeSearch}
                           style={[
@@ -2224,6 +2295,13 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
             </Pressable>
           </Pressable>
         </KeyboardAvoidingView>
+        {/* Full Native Barcode Scanner Modal */}
+        <BarcodeScannerModal
+          visible={showScanner}
+          onClose={() => setShowScanner(false)}
+          onFoodScanned={handleFoodScanned}
+          onManualCreate={handleManualCreateFromBarcode}
+        />
       </GlassView>
     </Modal>
   );

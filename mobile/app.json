@@ -10,7 +10,8 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Permite a ProFitnessGlass acceder a tu ubicación para encontrar los gimnasios más cercanos a ti."
+        "NSLocationWhenInUseUsageDescription": "Permite a ProFitnessGlass acceder a tu ubicación para encontrar los gimnasios más cercanos a ti.",
+        "NSCameraUsageDescription": "Permite a ProFitnessGlass escanear códigos de barras de alimentos para registrar tus comidas rápidamente."
       }
     },
     "android": {
@@ -65,6 +66,12 @@
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Permite a ProFitnessGlass acceder a tu ubicación para encontrar los gimnasios más cercanos a ti."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permite a ProFitnessGlass escanear códigos de barras de alimentos para registrar tus comidas rápidamente."
         }
       ]
     ],

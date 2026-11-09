@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Plus, Trash2, Edit2, Utensils, Copy } from 'lucide-react-native';
+import { Plus, Trash2, Edit2, Utensils, Copy, ScanBarcode } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
@@ -33,6 +33,7 @@ interface MealSectionProps {
   onClearMeal: () => void;
   onViewFood: (log: FoodLogItem) => void;
   onCopyMeal?: (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => void;
+  onScanBarcode?: () => void;
 }
 
 export const MealSection: React.FC<MealSectionProps> = ({
@@ -46,6 +47,7 @@ export const MealSection: React.FC<MealSectionProps> = ({
   onClearMeal,
   onViewFood,
   onCopyMeal,
+  onScanBarcode,
 }) => {
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
@@ -117,6 +119,29 @@ export const MealSection: React.FC<MealSectionProps> = ({
                 </TouchableOpacity>
               )}
 
+              {onScanBarcode && (
+                <TouchableOpacity
+                  onPress={() => {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch {}
+                    onScanBarcode();
+                  }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={[
+                    styles.actionIconBtn,
+                    {
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
+                      borderColor: colors.border,
+                      borderWidth: 1,
+                    },
+                  ]}
+                  activeOpacity={0.7}
+                  accessibilityLabel="Escanear código de barras"
+                >
+                  <ScanBarcode size={17} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
               <TouchableOpacity
                 onPress={() => {
                   try {
