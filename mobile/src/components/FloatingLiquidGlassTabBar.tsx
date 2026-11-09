@@ -36,8 +36,8 @@ const TAB_CONFIG: Record<string, { label: string; icon: any }> = {
 
 const TAB_KEYS = ['index', 'social', 'nutrition', 'routines', 'hub'];
 const PADDING_H = 10;
-const DROP_WIDTH = 44;
-const DROP_HEIGHT = 42;
+const DROP_WIDTH = 48;
+const DROP_HEIGHT = 44;
 
 interface TabItemProps {
   route: any;
@@ -46,6 +46,7 @@ interface TabItemProps {
   activeColor: string;
   inactiveColor: string;
   onPress: (index: number) => void;
+  onLayout: (index: number, x: number, width: number) => void;
 }
 
 const TabItem = React.memo(function TabItem({
@@ -55,6 +56,7 @@ const TabItem = React.memo(function TabItem({
   activeColor,
   inactiveColor,
   onPress,
+  onLayout,
 }: TabItemProps) {
   const tabInfo = TAB_CONFIG[route.name];
   if (!tabInfo) return null;
@@ -63,6 +65,12 @@ const TabItem = React.memo(function TabItem({
   return (
     <Pressable
       onPress={() => onPress(index)}
+      onLayout={(e) => {
+        const { x, width } = e.nativeEvent.layout;
+        if (width > 0) {
+          onLayout(index, x, width);
+        }
+      }}
       hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
       style={styles.tabButton}
     >
@@ -98,16 +106,31 @@ export function FloatingLiquidGlassTabBar({
   // Pestaña visual activa (soporta arrastre táctil)
   const [activeHoverIndex, setActiveHoverIndex] = useState<number | null>(null);
 
-  // Cálculo matemático del centro exacto de cada pestaña
-  const innerWidth = Math.max(0, capsuleWidth - PADDING_H * 2);
-  const tabWidth = innerWidth / TAB_KEYS.length;
+  // Mediciones físicas exactas de cada botón (píxel a píxel del layout del dispositivo)
+  const tabCentersRef = useRef<number[]>([]);
+  const [measuredCount, setMeasuredCount] = useState(0);
 
+  const handleTabLayout = useCallback((index: number, x: number, width: number) => {
+    const center = x + width / 2;
+    if (Math.abs((tabCentersRef.current[index] || 0) - center) > 0.5) {
+      tabCentersRef.current[index] = center;
+      setMeasuredCount(prev => prev + 1);
+    }
+  }, []);
+
+  // Centro sub-píxel de cada icono: usa la posición física real medida en pantalla
   const getDropLeft = useCallback(
     (idx: number) => {
+      const measured = tabCentersRef.current[idx];
+      if (typeof measured === 'number' && measured > 0) {
+        return measured - DROP_WIDTH / 2;
+      }
+      const innerWidth = Math.max(0, capsuleWidth - PADDING_H * 2);
+      const tabWidth = innerWidth / (state.routes.length || 5);
       const center = PADDING_H + (idx + 0.5) * tabWidth;
-      return Math.round(center - DROP_WIDTH / 2);
+      return center - DROP_WIDTH / 2;
     },
-    [tabWidth]
+    [capsuleWidth, state.routes.length]
   );
 
   const activeIndex = state.index >= 0 ? state.index : 0;
@@ -216,12 +239,12 @@ export function FloatingLiquidGlassTabBar({
     [emitter, navigation, navigateToTab, state.routes]
   );
 
-  // Sincronizar posición SOLO si cambia externamente (sin arrastrar y sin doble trigger)
+  // Sincronizar posición exacta cuando se miden los layouts físicos o cambia la pestaña activa
   useEffect(() => {
-    if (!isDraggingRef.current && currentTargetIdxRef.current !== activeIndex) {
-      snapToTab(activeIndex);
+    if (!isDraggingRef.current) {
+      snapToTab(activeIndex, true);
     }
-  }, [activeIndex, capsuleWidth, snapToTab]);
+  }, [activeIndex, measuredCount, capsuleWidth, snapToTab]);
 
   // Gestos táctiles de arrastre fluido a 60-120fps (PanResponder optimizado)
   const panResponder = useRef(
@@ -247,12 +270,22 @@ export function FloatingLiquidGlassTabBar({
       },
       onPanResponderMove: (_evt, gestureState) => {
         const minX = getDropLeft(0);
-        const maxX = getDropLeft(TAB_KEYS.length - 1);
+        const maxX = getDropLeft(state.routes.length - 1);
         const newX = Math.max(minX, Math.min(startDragXRef.current + gestureState.dx, maxX));
         translateX.setValue(newX);
 
-        // Feedback háptico al sobrevolar un icono distinto
-        const hoverIdx = Math.max(0, Math.min(TAB_KEYS.length - 1, Math.round((newX - minX) / tabWidth)));
+        // Feedback háptico al sobrevolar un icono distinto comparando distancias reales
+        let hoverIdx = 0;
+        let minDistance = Infinity;
+        state.routes.forEach((_: any, idx: number) => {
+          const targetX = getDropLeft(idx);
+          const dist = Math.abs(newX - targetX);
+          if (dist < minDistance) {
+            minDistance = dist;
+            hoverIdx = idx;
+          }
+        });
+
         if (hoverIdx !== hoverIndexRef.current) {
           hoverIndexRef.current = hoverIdx;
           try {
@@ -262,8 +295,18 @@ export function FloatingLiquidGlassTabBar({
         }
       },
       onPanResponderRelease: () => {
-        const minX = getDropLeft(0);
-        const nearestIdx = Math.max(0, Math.min(TAB_KEYS.length - 1, Math.round((currentXRef.current - minX) / tabWidth)));
+        // Encontrar el tab más cercano según las distancias reales medidas
+        let nearestIdx = 0;
+        let minDistance = Infinity;
+        state.routes.forEach((_: any, idx: number) => {
+          const targetX = getDropLeft(idx);
+          const dist = Math.abs(currentXRef.current - targetX);
+          if (dist < minDistance) {
+            minDistance = dist;
+            nearestIdx = idx;
+          }
+        });
+
         setActiveHoverIndex(null);
         snapToTab(nearestIdx, true);
 
@@ -484,6 +527,7 @@ export function FloatingLiquidGlassTabBar({
                   activeColor={activeColor}
                   inactiveColor={inactiveColor}
                   onPress={handleTabPress}
+                  onLayout={handleTabLayout}
                 />
               );
             })}
@@ -529,9 +573,10 @@ const styles = StyleSheet.create({
   },
   liquidDrop: {
     position: 'absolute',
-    top: 9, // (60 - 42) / 2 = 9
+    top: '50%',
+    marginTop: -DROP_HEIGHT / 2,
     left: 0,
-    borderRadius: 21,
+    borderRadius: DROP_HEIGHT / 2,
     borderWidth: 0.5,
     borderTopWidth: 1,
     overflow: 'hidden',
@@ -540,7 +585,7 @@ const styles = StyleSheet.create({
   },
   liquidDropGradient: {
     ...StyleSheet.absoluteFill,
-    borderRadius: 21,
+    borderRadius: DROP_HEIGHT / 2,
   },
   tabButton: {
     flex: 1,
@@ -550,6 +595,8 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   iconContainer: {
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
