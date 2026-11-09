@@ -1,24 +1,45 @@
+import React from 'react';
 import { Platform } from 'react-native';
 import { NativeTabs } from 'expo-router/native-tabs';
+import { Tabs } from 'expo-router';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { getThemeBaseBackground } from '@/constants/theme';
+import { FloatingLiquidGlassTabBar } from '@/components/FloatingLiquidGlassTabBar';
 
 export default function AppTabs() {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
-  // Blur effect y color de interfaz adaptados a cada tema
+  // En Android: usamos el navbar flotante Liquid Glass idéntico al frontend
+  if (Platform.OS === 'android') {
+    return (
+      <Tabs
+        key={`android_${theme}_${colors.tint}`}
+        tabBar={(props) => <FloatingLiquidGlassTabBar {...props} />}
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: {
+            display: 'none',
+          },
+        }}
+      >
+        <Tabs.Screen name="index" options={{ title: 'Dashboard' }} />
+        <Tabs.Screen name="social" options={{ title: 'Comunidad' }} />
+        <Tabs.Screen name="nutrition" options={{ title: 'Nutrición' }} />
+        <Tabs.Screen name="routines" options={{ title: 'Rutinas' }} />
+        <Tabs.Screen name="hub" options={{ title: 'Menú' }} />
+      </Tabs>
+    );
+  }
+
+  // Blur effect y color de interfaz adaptados a cada tema en iOS
   const blurEffect = theme === 'oled'
     ? 'none'
     : (isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight');
 
   const userInterfaceStyle = isDark ? 'dark' : 'light';
-  const baseBg = getThemeBaseBackground(theme);
-  const tabBarBg = Platform.OS === 'android'
-    ? (isDark ? (theme === 'oled' ? '#000000' : (colors.tabBar?.startsWith('rgba') ? baseBg : colors.tabBar)) : colors.tabBar)
-    : colors.tabBar;
 
   return (
     <NativeTabs
@@ -27,7 +48,7 @@ export default function AppTabs() {
       indicatorColor="transparent"
       disableIndicator={true}
       rippleColor="transparent"
-      backgroundColor={tabBarBg}
+      backgroundColor={colors.tabBar}
       blurEffect={blurEffect}
       disableTransparentOnScrollEdge={true}
       shadowColor={isDark ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.08)'}
