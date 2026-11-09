@@ -18,7 +18,8 @@ export default function AppTabs() {
     <NativeTabs
       key={`${theme}_${colors.tint}_${userInterfaceStyle}`}
       tintColor={colors.tint}
-      indicatorColor={colors.tint}
+      indicatorColor="transparent"
+      disableIndicator={true}
       backgroundColor={colors.tabBar}
       blurEffect={blurEffect}
       disableTransparentOnScrollEdge={true}

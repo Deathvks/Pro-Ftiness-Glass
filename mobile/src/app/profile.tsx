@@ -21,6 +21,7 @@ import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
@@ -102,11 +103,21 @@ function GlassSurface({
   const innerRadius = Math.max(0, radius - 1);
   return (
     <View style={[{ borderRadius: radius, borderWidth: 1, borderColor }, style]}>
-      <GlassView
-        glassEffectStyle="regular"
-        colorScheme={isDark ? 'dark' : 'light'}
-        style={[StyleSheet.absoluteFill, { borderRadius: innerRadius }]}
-      />
+      {Platform.OS === 'ios' ? (
+        <GlassView
+          pointerEvents="none"
+          glassEffectStyle="regular"
+          colorScheme={isDark ? 'dark' : 'light'}
+          style={[StyleSheet.absoluteFill, { borderRadius: innerRadius }]}
+        />
+      ) : (
+        <BlurView
+          pointerEvents="none"
+          intensity={Platform.OS === 'android' ? 60 : 30}
+          tint={isDark ? 'dark' : 'light'}
+          style={[StyleSheet.absoluteFill, { borderRadius: innerRadius, overflow: 'hidden' }]}
+        />
+      )}
       {tintColor ? (
         <View
           pointerEvents="none"

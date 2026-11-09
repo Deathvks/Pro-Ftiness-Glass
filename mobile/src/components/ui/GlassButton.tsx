@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Pressable, Animated, StyleSheet, ViewStyle } from 'react-native';
+import { View, Pressable, Animated, StyleSheet, ViewStyle, Platform } from 'react-native';
 import { GlassView } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
 
 const AnimatedGlassBackground = Animated.createAnimatedComponent(View);
 
@@ -102,12 +103,21 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
                 borderWidth: finalStyle.borderWidth !== undefined ? finalStyle.borderWidth : 1,
                 borderColor: finalStyle.borderColor !== undefined ? finalStyle.borderColor : (isLight ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.12)'),
             }]}>
-                <GlassView 
-                    pointerEvents="none"
-                    glassEffectStyle="regular"
-                    colorScheme={isLight ? 'light' : 'dark'}
-                    style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius }]} 
-                />
+                {Platform.OS === 'ios' ? (
+                    <GlassView 
+                        pointerEvents="none"
+                        glassEffectStyle="regular"
+                        colorScheme={isLight ? 'light' : 'dark'}
+                        style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius }]} 
+                    />
+                ) : (
+                    <BlurView
+                        pointerEvents="none"
+                        intensity={Platform.OS === 'android' ? 50 : 25}
+                        tint={isLight ? 'light' : 'dark'}
+                        style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius, overflow: 'hidden' }]}
+                    />
+                )}
                 <Animated.View 
                     pointerEvents="none"
                     style={[
