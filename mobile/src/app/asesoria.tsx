@@ -747,13 +747,13 @@ export default function AsesoriaScreen() {
                       )}
 
                       {/* Video attachment */}
-                      {msg.attachment_url && msg.attachment_type?.startsWith('video/') && (
+                      {Boolean(msg.attachment_url && msg.attachment_type?.startsWith('video/')) ? (
                         <ChatVideoMessage
-                          url={getFullMediaUrl(msg.attachment_url) || msg.attachment_url}
+                          url={getFullMediaUrl(msg.attachment_url) || msg.attachment_url || ''}
                           accentColor={isMe ? accentText : colors.tint}
                           onOpenFullscreen={url => setFullscreenVideo(url)}
                         />
-                      )}
+                      ) : null}
 
                       {/* Content */}
                       {msg.content ? renderMessageContent(msg, isMe) : null}

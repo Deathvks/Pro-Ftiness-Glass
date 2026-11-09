@@ -51,18 +51,18 @@ const HubButton = ({ icon: Icon, title, description, onPress, badge = false, isC
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Text style={{ fontSize: 17, fontWeight: 'bold', color: colors.text }}>{title}</Text>
-          {isComingSoon && (
+          {Boolean(isComingSoon) ? (
             <View style={{ backgroundColor: colors.tint + '20', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 }}>
               <Text style={{ fontSize: 10, fontWeight: 'bold', color: colors.tint, textTransform: 'uppercase' }}>Pronto</Text>
             </View>
-          )}
-          {badge && !isComingSoon && (
+          ) : null}
+          {Boolean(badge) && !isComingSoon ? (
             <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.tint }} />
-          )}
+          ) : null}
         </View>
-        {description && (
+        {Boolean(description) ? (
           <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 4 }}>{description}</Text>
-        )}
+        ) : null}
       </View>
     </View>
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -166,7 +166,7 @@ export default function Hub() {
               title="Asesoría"
               description="Habla con tu entrenador"
               colors={colors}
-              badge={!visitedAsesoria || (unreadChats && unreadChats > 0)}
+              badge={Boolean(!visitedAsesoria || (Number(unreadChats) > 0))}
               onPress={() => {
                 if (userProfile?.id) {
                   AsyncStorage.setItem(`visited_asesoria_${userProfile.id}`, 'true');
