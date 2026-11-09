@@ -329,36 +329,14 @@ export function FloatingLiquidGlassTabBar({
   const inactiveColor = colors.tabBarInactive || colors.textSecondary;
 
   return (
-    <>
-      {/* 1. DIFUMINADO INFERIOR SUAVE (Dock Backdrop con aceleración por hardware) */}
-      <View
-        pointerEvents="none"
-        style={[
-          styles.bottomDockBackdrop,
-          {
-            height: bottomOffset + 68,
-          },
-        ]}
-      >
-        <LinearGradient
-          colors={
-            isDark
-              ? ['transparent', 'rgba(0, 0, 0, 0.20)', 'rgba(0, 0, 0, 0.65)']
-              : ['transparent', 'rgba(255, 255, 255, 0.30)', 'rgba(255, 255, 255, 0.85)']
-          }
-          style={StyleSheet.absoluteFill}
-        />
-      </View>
-
-      {/* 2. BARRA FLOTANTE CON CÁPSULA DE VIDRIO LÍQUIDO */}
-      <View style={[styles.outerWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
+    <View style={[styles.outerWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
         {/* Contenedor de sombra ambiental suave */}
         <View
           style={[
             styles.shadowContainer,
             {
               shadowColor: '#000',
-              shadowOpacity: isDark ? 0.32 : 0.12,
+              shadowOpacity: isDark ? 0.08 : 0.03,
             },
           ]}
         >
@@ -368,8 +346,8 @@ export function FloatingLiquidGlassTabBar({
               pointerEvents="none"
               colors={
                 isDark
-                  ? ['transparent', 'rgba(0, 0, 0, 0.22)', 'rgba(0, 0, 0, 0.06)', 'transparent']
-                  : ['transparent', 'rgba(0, 0, 0, 0.08)', 'rgba(0, 0, 0, 0.02)', 'transparent']
+                  ? ['transparent', 'rgba(0, 0, 0, 0.05)', 'transparent']
+                  : ['transparent', 'rgba(0, 0, 0, 0.02)', 'transparent']
               }
               start={{ x: 0.5, y: 0.3 }}
               end={{ x: 0.5, y: 1 }}
@@ -474,18 +452,10 @@ export function FloatingLiquidGlassTabBar({
           </View>
         </View>
       </View>
-    </>
   );
 }
 
 const styles = StyleSheet.create({
-  bottomDockBackdrop: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 990,
-  },
   outerWrapper: {
     position: 'absolute',
     left: 16,
@@ -499,18 +469,18 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     // Sombra suave en iOS, sin elevation tosco en Android
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 18,
-    shadowOpacity: Platform.OS === 'ios' ? 0.25 : 0,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
+    shadowOpacity: Platform.OS === 'ios' ? 0.08 : 0,
     elevation: 0,
     position: 'relative',
   },
   androidSoftShadow: {
     ...StyleSheet.absoluteFill,
-    top: 10,
-    bottom: -10,
-    left: 6,
-    right: 6,
+    top: 4,
+    bottom: -2,
+    left: 12,
+    right: 12,
     borderRadius: 30,
   },
   capsuleInner: {
