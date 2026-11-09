@@ -40,7 +40,7 @@ import apiClient, { BACKEND_BASE_URL } from '@/services/apiClient';
 import { initSocket } from '@/services/socket';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 import ThemeBackground from '@/components/ThemeBackground';
 import TrainerProfileModal from '@/components/TrainerProfileModal';
 import ChatVideoMessage from '@/components/chat/ChatVideoMessage';
@@ -113,7 +113,7 @@ export default function AsesoriaScreen() {
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const accentText = getContrastColor(colors.tint, theme);
+  const contrastText = getContrastTextColor(colors.tint);
 
   const userProfile = useAppStore(state => state.userProfile);
   const userId = userProfile?.id;
@@ -432,7 +432,7 @@ export default function AsesoriaScreen() {
       const parts = msg.content.split('[notificaciones push]');
       if (parts.length > 1) {
         return (
-          <Text style={[styles.messageText, { color: isMe ? accentText : colors.text }]}>
+          <Text style={[styles.messageText, { color: isMe ? contrastText : colors.text }]}>
             {parts[0]}
             <Text
               style={[styles.linkText, { color: colors.tint }]}
@@ -447,7 +447,7 @@ export default function AsesoriaScreen() {
     }
 
     return (
-      <Text style={[styles.messageText, { color: isMe ? accentText : colors.text }]}>
+      <Text style={[styles.messageText, { color: isMe ? contrastText : colors.text }]}>
         {msg.content}
       </Text>
     );
@@ -512,7 +512,7 @@ export default function AsesoriaScreen() {
           onPress={handleRequestInfo}
           activeOpacity={0.85}
         >
-          <Text style={[styles.requestBtnText, { color: accentText }]}>
+          <Text style={[styles.requestBtnText, { color: contrastText }]}>
             Solicitar hablar sin compromiso
           </Text>
         </TouchableOpacity>
@@ -642,8 +642,8 @@ export default function AsesoriaScreen() {
               onPress={fetchData}
               activeOpacity={0.8}
             >
-              <RefreshCw size={16} color={accentText} />
-              <Text style={[styles.retryBtnText, { color: accentText }]}>Reintentar conexión</Text>
+              <RefreshCw size={16} color={contrastText} />
+              <Text style={[styles.retryBtnText, { color: contrastText }]}>Reintentar conexión</Text>
             </TouchableOpacity>
           </View>
         ) : messages.length === 0 && !showPromo ? (
@@ -750,7 +750,7 @@ export default function AsesoriaScreen() {
                       {Boolean(msg.attachment_url && msg.attachment_type?.startsWith('video/')) ? (
                         <ChatVideoMessage
                           url={getFullMediaUrl(msg.attachment_url) || msg.attachment_url || ''}
-                          accentColor={isMe ? accentText : colors.tint}
+                          accentColor={isMe ? contrastText : colors.tint}
                           onOpenFullscreen={url => setFullscreenVideo(url)}
                         />
                       ) : null}
@@ -763,7 +763,11 @@ export default function AsesoriaScreen() {
                         <Text
                           style={[
                             styles.timeText,
-                            { color: isMe ? accentText + 'bb' : colors.textSecondary },
+                            {
+                              color: isMe
+                                ? (contrastText === '#000000' ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.75)')
+                                : colors.textSecondary,
+                            },
                           ]}
                         >
                           {formatTime(msg.created_at || new Date().toISOString())}
@@ -772,11 +776,15 @@ export default function AsesoriaScreen() {
                         {isMe && (
                           <View style={styles.receiptWrap}>
                             {msg.read_at ? (
-                              <CheckCheck size={14} color="#38bdf8" strokeWidth={2.5} />
+                              <CheckCheck
+                                size={14}
+                                color={contrastText === '#000000' ? '#0284c7' : '#38bdf8'}
+                                strokeWidth={2.5}
+                              />
                             ) : (
                               <Check
                                 size={14}
-                                color={accentText + '88'}
+                                color={contrastText === '#000000' ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.7)'}
                                 strokeWidth={2}
                               />
                             )}
@@ -872,7 +880,7 @@ export default function AsesoriaScreen() {
               ]}
               activeOpacity={0.8}
             >
-              <Send size={18} color={accentText} />
+              <Send size={18} color={contrastText} />
             </TouchableOpacity>
           </View>
         )}

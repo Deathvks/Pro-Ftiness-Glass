@@ -28,7 +28,7 @@ import {
 } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastColor } from '@/utils/colorUtils';
+import { getContrastTextColor } from '@/utils/colorUtils';
 
 interface TrainerProfileModalProps {
   visible: boolean;
@@ -64,7 +64,7 @@ export default function TrainerProfileModal({
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const accentText = getContrastColor(colors.tint, theme);
+  const contrastText = getContrastTextColor(colors.tint);
 
   const [headerOpacity, setHeaderOpacity] = useState(0);
   const scrollRef = useRef<any>(null);
@@ -205,8 +205,8 @@ export default function TrainerProfileModal({
 
               {/* Official preparer badge */}
               <View style={[styles.officialBadge, { backgroundColor: colors.tint }]}>
-                <Flame size={18} color={accentText} />
-                <Text style={[styles.officialBadgeText, { color: accentText }]}>
+                <Flame size={18} color={contrastText} />
+                <Text style={[styles.officialBadgeText, { color: contrastText }]}>
                   PREPARADOR OFICIAL
                 </Text>
               </View>
