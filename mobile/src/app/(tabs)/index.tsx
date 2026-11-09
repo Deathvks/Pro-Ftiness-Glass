@@ -54,6 +54,7 @@ import { useRouter } from 'expo-router';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { getContrastColor, getContrastTextColor } from '@/utils/colorUtils';
 import { isSameDay } from '@/utils/helpers';
 import { getTrainingWeek, trainingDateFormatter } from '@/utils/weeklyTraining';
@@ -157,6 +158,9 @@ export default function Dashboard() {
   const accentText = getContrastColor(colors.tint, theme);
   const tintContrastText = getContrastTextColor(colors.tint);
   const iconBadgeBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
+  const isIOS = Platform.OS === 'ios';
+  const useGlass = shouldUseContentGlass(theme);
+  const iosCardSurface = isIOS ? getAppleCardSurfaceStyle(theme, 20) : null;
 
   // Store
   const userProfile = useAppStore(state => state.userProfile || (state as any).user);
@@ -594,7 +598,7 @@ export default function Dashboard() {
         onPress={() => setShowXPModal(true)}
         activeOpacity={0.8}
         style={[
-          styles.glassCardBase,
+          styles.glassCardBase, iosCardSurface,
           {
             borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             padding: 20,
@@ -602,11 +606,13 @@ export default function Dashboard() {
           },
         ]}
       >
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-        />
+        {useGlass && (
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 32 }]}
+          />
+          )}
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <LevelBadge level={levelData.level} bgTheme={isDark ? '#111111' : '#FFFFFF'} />
 
@@ -674,7 +680,7 @@ export default function Dashboard() {
         <View style={{ marginBottom: 16 }}>
           <View
             style={[
-              styles.glassCardBase,
+              styles.glassCardBase, iosCardSurface,
               {
                 borderColor: colors.tint + '60',
                 borderWidth: 1.5,
@@ -683,11 +689,13 @@ export default function Dashboard() {
               },
             ]}
           >
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-            />
+            {useGlass && (
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+              />
+              )}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
               <View style={[styles.activeWorkoutIcon, { backgroundColor: colors.tint }]}>
                 <Dumbbell size={22} color={tintContrastText} />
@@ -736,7 +744,7 @@ export default function Dashboard() {
             if (canOpenWeeklyRecap) setShowWeeklyRecap(true);
           }}
           style={[
-            styles.glassCardBase,
+            styles.glassCardBase, iosCardSurface,
             styles.recapCard,
             {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
@@ -744,11 +752,13 @@ export default function Dashboard() {
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-          />
+          {useGlass && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+            />
+            )}
           <View
             style={[
               styles.recapIconWrap,
@@ -783,7 +793,7 @@ export default function Dashboard() {
           activeOpacity={latestPRs.length > 0 ? 0.7 : 1}
           onPress={handlePRCardClick}
           style={[
-            styles.glassCardBase,
+            styles.glassCardBase, iosCardSurface,
             styles.recapCard,
             {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
@@ -791,11 +801,13 @@ export default function Dashboard() {
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-          />
+          {useGlass && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+            />
+            )}
           <View
             style={[
               styles.recapIconWrap,
@@ -831,16 +843,18 @@ export default function Dashboard() {
             onPress={showStreakTimeRemaining}
             activeOpacity={0.8}
             style={[
-              styles.glassCardBase,
+              styles.glassCardBase, iosCardSurface,
               styles.statCardBase,
               { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
             ]}
           >
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-            />
+            {useGlass && (
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+              />
+              )}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View
                 style={[
@@ -969,7 +983,7 @@ export default function Dashboard() {
       {/* 7. NUTRICIÓN (5 ANILLOS CIRCULARES CON ALERTAS Y MODALES) */}
       <View
         style={[
-          styles.glassCardBase,
+          styles.glassCardBase, iosCardSurface,
           {
             borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             padding: 22,
@@ -977,11 +991,13 @@ export default function Dashboard() {
           },
         ]}
       >
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-        />
+        {useGlass && (
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 32 }]}
+          />
+          )}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <View style={[styles.iconWrapSm, { backgroundColor: iconBadgeBg }]}>
@@ -1094,17 +1110,19 @@ export default function Dashboard() {
           <TouchableOpacity
             onPress={() => handleStartCardio('Cinta')}
             style={[
-              styles.glassCardBase,
+              styles.glassCardBase, iosCardSurface,
               styles.cardioCard,
               { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
             ]}
             activeOpacity={0.75}
           >
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-            />
+            {useGlass && (
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 24 }]}
+              />
+              )}
             <View style={[styles.cardioIconWrap, { backgroundColor: iconBadgeBg }]}>
               <Footprints size={26} color={colors.tint} />
             </View>
@@ -1115,17 +1133,19 @@ export default function Dashboard() {
           <TouchableOpacity
             onPress={() => handleStartCardio('Bici')}
             style={[
-              styles.glassCardBase,
+              styles.glassCardBase, iosCardSurface,
               styles.cardioCard,
               { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
             ]}
             activeOpacity={0.75}
           >
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-            />
+            {useGlass && (
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 24 }]}
+              />
+              )}
             <View style={[styles.cardioIconWrap, { backgroundColor: iconBadgeBg }]}>
               <Bike size={26} color={colors.tint} />
             </View>
@@ -1136,17 +1156,19 @@ export default function Dashboard() {
           <TouchableOpacity
             onPress={() => router.push('/workout')}
             style={[
-              styles.glassCardBase,
+              styles.glassCardBase, iosCardSurface,
               styles.cardioCard,
               { borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)' },
             ]}
             activeOpacity={0.75}
           >
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-            />
+            {useGlass && (
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 24 }]}
+              />
+              )}
             <View style={[styles.cardioIconWrap, { backgroundColor: colors.tint + '15' }]}>
               <LayoutGrid size={26} color={colors.tint} />
             </View>
@@ -1218,7 +1240,7 @@ export default function Dashboard() {
                   }
                 }}
                 style={[
-                  styles.glassCardBase,
+                  styles.glassCardBase, iosCardSurface,
                   {
                     borderColor: isActive
                       ? colors.tint
@@ -1230,11 +1252,13 @@ export default function Dashboard() {
                 ]}
                 activeOpacity={0.8}
               >
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-                />
+                {useGlass && (
+                  <GlassView
+                    glassEffectStyle="regular"
+                    colorScheme={isDark ? 'dark' : 'light'}
+                    style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+                  />
+                  )}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 }}>
                     <View
@@ -1286,7 +1310,7 @@ export default function Dashboard() {
         ) : (
           <View
             style={[
-              styles.glassCardBase,
+              styles.glassCardBase, iosCardSurface,
               {
                 borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
                 padding: 28,
@@ -1295,11 +1319,13 @@ export default function Dashboard() {
               },
             ]}
           >
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-            />
+            {useGlass && (
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+              />
+              )}
             <Text style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 12 }}>Sin rutinas creadas.</Text>
             <TouchableOpacity
               onPress={() => router.push('/routines')}
@@ -1314,7 +1340,7 @@ export default function Dashboard() {
         <TouchableOpacity
           onPress={() => setShowExerciseLibrary(true)}
           style={[
-            styles.glassCardBase,
+            styles.glassCardBase, iosCardSurface,
             {
               borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
               padding: 16,
@@ -1326,11 +1352,13 @@ export default function Dashboard() {
           ]}
           activeOpacity={0.8}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-          />
+          {useGlass && (
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]}
+            />
+            )}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 }}>
             <View style={[styles.routineIconWrap, { backgroundColor: iconBadgeBg }]}>
               <ListFilter size={22} color={colors.tint} />
@@ -1349,7 +1377,7 @@ export default function Dashboard() {
       {/* 10. PESO CORPORAL */}
       <View
         style={[
-          styles.glassCardBase,
+          styles.glassCardBase, iosCardSurface,
           {
             borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
             padding: 22,
@@ -1357,11 +1385,13 @@ export default function Dashboard() {
           },
         ]}
       >
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-        />
+        {useGlass && (
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 32 }]}
+          />
+          )}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Scale size={22} color={colors.tint} />
@@ -1541,9 +1571,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   mainTitle: {
-    fontSize: 32,
-    fontWeight: '900',
-    letterSpacing: -0.5,
+    fontSize: Platform.OS === 'ios' ? 34 : 32,
+    fontWeight: Platform.OS === 'ios' ? '700' : '900',
+    letterSpacing: Platform.OS === 'ios' ? -0.4 : -0.5,
   },
   dateSubtitle: {
     fontSize: 11,

@@ -9,6 +9,7 @@ import {
   ViewStyle,
   StyleProp,
   Modal,
+  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,7 +39,7 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
 import { getContrastTextColor } from '@/utils/routineHelpers';
-import { getThemeBaseBackground } from '@/constants/theme';
+import { getThemeBaseBackground, getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import LevelBadge from '@/components/LevelBadge';
 import ThemeBackground from '@/components/ThemeBackground';
@@ -189,9 +190,65 @@ function GlassSurface({
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
 }) {
-  const innerRadius = Math.max(0, radius - 1);
+  const theme = useAppStore(state => state.theme) || 'oled';
+  const isIOS = Platform.OS === 'ios';
+  const useGlass = shouldUseContentGlass(theme);
+  const isLargeCard = radius >= 24;
+  const effectiveRadius = isIOS && isLargeCard ? 20 : radius;
+  const innerRadius = Math.max(0, effectiveRadius - 1);
+
+  if (isIOS && !useGlass) {
+    if (isLargeCard) {
+      return (
+        <View style={[getAppleCardSurfaceStyle(theme, 20), style]}>
+          {tintColor ? (
+            <View
+              pointerEvents="none"
+              style={[
+                StyleSheet.absoluteFill,
+                { borderRadius: 20, borderCurve: 'continuous', backgroundColor: tintColor, opacity: tintOpacity },
+              ]}
+            />
+          ) : null}
+          {children}
+        </View>
+      );
+    }
+    const pillBg =
+      tintOpacity > 0.4 && tintColor
+        ? tintColor
+        : isDark
+        ? '#2C2C2E'
+        : '#F2F2F7';
+    return (
+      <View
+        style={[
+          {
+            borderRadius: effectiveRadius,
+            borderCurve: 'continuous',
+            backgroundColor: pillBg,
+            borderWidth: tintOpacity > 0.4 ? 0 : StyleSheet.hairlineWidth,
+            borderColor,
+          },
+          style,
+        ]}
+      >
+        {tintColor && tintOpacity <= 0.4 ? (
+          <View
+            pointerEvents="none"
+            style={[
+              StyleSheet.absoluteFill,
+              { borderRadius: innerRadius, borderCurve: 'continuous', backgroundColor: tintColor, opacity: tintOpacity },
+            ]}
+          />
+        ) : null}
+        {children}
+      </View>
+    );
+  }
+
   return (
-    <View style={[{ borderRadius: radius, borderWidth: 1, borderColor }, style]}>
+    <View style={[{ borderRadius: effectiveRadius, borderCurve: 'continuous', borderWidth: 1, borderColor }, style]}>
       <GlassView
         glassEffectStyle="regular"
         colorScheme={isDark ? 'dark' : 'light'}

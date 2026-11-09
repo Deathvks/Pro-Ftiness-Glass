@@ -68,7 +68,7 @@ import { LiquidGlassSwitch } from '@/components/ui/LiquidGlassSwitch';
 import { WorkoutDataTransferModal } from '@/components/modals/WorkoutDataTransferModal';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getThemeBaseBackground } from '@/constants/theme';
+import { getThemeBaseBackground, getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import * as userService from '@/services/userService';
 import * as sessionService from '@/services/sessionService';
@@ -106,14 +106,28 @@ function GlassSurface({
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
 }) {
-  const innerRadius = Math.max(0, radius - 1);
+  const theme = useAppStore(state => state.theme) || 'oled';
+  const isIOS = Platform.OS === 'ios';
+  const useGlass = shouldUseContentGlass(theme);
+  const effectiveRadius = isIOS ? 20 : radius;
+  const innerRadius = Math.max(0, effectiveRadius - 1);
+
   return (
-    <View style={[{ borderRadius: radius, borderWidth: 1, borderColor, overflow: 'hidden' }, style]}>
-      <GlassView
-        glassEffectStyle="regular"
-        colorScheme={isDark ? 'dark' : 'light'}
-        style={[StyleSheet.absoluteFill, { borderRadius: innerRadius }]}
-      />
+    <View
+      style={[
+        isIOS
+          ? [getAppleCardSurfaceStyle(theme, 20), { overflow: 'hidden' }]
+          : { borderRadius: radius, borderWidth: 1, borderColor, overflow: 'hidden' },
+        style,
+      ]}
+    >
+      {useGlass && (
+        <GlassView
+          glassEffectStyle="regular"
+          colorScheme={isDark ? 'dark' : 'light'}
+          style={[StyleSheet.absoluteFill, { borderRadius: innerRadius }]}
+        />
+      )}
       {children}
     </View>
   );
@@ -161,7 +175,7 @@ export default function SettingsScreen() {
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
   const glassBorder = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
-  const subtleItemBg = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)';
+  const subtleItemBg = Platform.OS === 'ios' && !shouldUseContentGlass(theme) ? (isDark ? '#2C2C2E' : '#F2F2F7') : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)');
   const activeTintContrast = getContrastTextColor(colors.tint);
 
   const params = useLocalSearchParams<{ section?: string }>();
@@ -671,8 +685,20 @@ export default function SettingsScreen() {
                 {SETTINGS_SECTIONS.map((section, idx) => {
                   const isLast = idx === SETTINGS_SECTIONS.length - 1;
                   const isDanger = Boolean(section.danger);
-                  const iconBg = isDanger ? 'rgba(239, 68, 68, 0.12)' : colors.tint + '1A';
-                  const iconColor = isDanger ? '#ef4444' : colors.tint;
+                  const iosColorsMap: Record<string, string> = {
+                    workout: colors.tint,
+                    offline: '#0A84FF',
+                    account: '#5E5CE6',
+                    notifications: '#FF9F0A',
+                    privacy: '#30D158',
+                    social: '#BF5AF2',
+                    session: '#FF453A',
+                  };
+                  const isIOS = Platform.OS === 'ios';
+                  const iconBg = isIOS
+                    ? (iosColorsMap[section.id] || colors.tint)
+                    : (isDanger ? 'rgba(239, 68, 68, 0.12)' : colors.tint + '1A');
+                  const iconColor = isIOS ? '#FFFFFF' : (isDanger ? '#ef4444' : colors.tint);
 
                   return (
                     <TouchableOpacity
@@ -682,8 +708,8 @@ export default function SettingsScreen() {
                       style={[
                         styles.menuRow,
                         !isLast && {
-                          borderBottomWidth: 1,
-                          borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                          borderBottomWidth: Platform.OS === 'ios' ? StyleSheet.hairlineWidth : 1,
+                          borderBottomColor: Platform.OS === 'ios' ? (isDark ? 'rgba(84, 84, 88, 0.45)' : 'rgba(60, 60, 67, 0.16)') : (isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'),
                         },
                       ]}
                     >
@@ -2129,7 +2155,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   menuCard: {
-    padding: 6,
+    padding: Platform.OS === 'ios' ? 0 : 6,
     marginBottom: 20,
   },
   menuList: {
@@ -2143,17 +2169,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   menuIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
+    width: Platform.OS === 'ios' ? 34 : 38,
+    height: Platform.OS === 'ios' ? 34 : 38,
+    borderRadius: Platform.OS === 'ios' ? 9 : 14,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
   },
   menuRowTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: -0.2,
+    fontSize: Platform.OS === 'ios' ? 17 : 15,
+    fontWeight: Platform.OS === 'ios' ? '600' : '800',
+    letterSpacing: Platform.OS === 'ios' ? -0.35 : -0.2,
   },
   menuRowSubtitle: {
     fontSize: 12,

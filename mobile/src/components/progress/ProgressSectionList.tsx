@@ -1,20 +1,33 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { GlassView } from 'expo-glass-effect';
 import { ChevronRight } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { PROGRESS_SECTIONS, ProgressSectionId } from '@/config/progressSections';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import useAppStore from '@/store/useAppStore';
 
 interface ProgressSectionListProps {
   onSelectSection: (sectionId: ProgressSectionId) => void;
 }
 
+const IOS_SECTION_COLORS: Record<string, string> = {
+  summary: '#30D158',
+  weight: '#0A84FF',
+  volume: '#BF5AF2',
+  records: '#FF9F0A',
+  muscle: '#FF375F',
+  exercises: '#5E5CE6',
+  frequency: '#64D2FF',
+};
+
 export function ProgressSectionList({ onSelectSection }: ProgressSectionListProps) {
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
+  const useGlass = shouldUseContentGlass(theme);
 
   const handlePress = (id: ProgressSectionId) => {
     try {
@@ -32,51 +45,85 @@ export function ProgressSectionList({ onSelectSection }: ProgressSectionListProp
         </Text>
       </View>
 
-      {/* Grouped Liquid Glass Section List */}
+      {/* Grouped Section List */}
       <View
         style={[
           styles.listCard,
-          {
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-          },
+          isIOS
+            ? getAppleCardSurfaceStyle(theme, 20)
+            : {
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+              },
         ]}
       >
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
-        />
+        {useGlass && (
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
 
         {PROGRESS_SECTIONS.map((section, index) => {
           const Icon = section.icon;
           const isLast = index === PROGRESS_SECTIONS.length - 1;
+          const iosBadgeBg = IOS_SECTION_COLORS[section.id] || colors.tint;
 
           return (
             <React.Fragment key={section.id}>
               <TouchableOpacity
-                activeOpacity={0.7}
+                activeOpacity={0.65}
                 onPress={() => handlePress(section.id)}
                 style={styles.itemRow}
               >
                 <View
                   style={[
                     styles.iconBox,
-                    {
-                      backgroundColor: isDark
-                        ? 'rgba(255, 255, 255, 0.08)'
-                        : 'rgba(0, 0, 0, 0.05)',
-                    },
+                    isIOS
+                      ? {
+                          width: 34,
+                          height: 34,
+                          borderRadius: 9,
+                          borderCurve: 'continuous',
+                          backgroundColor: iosBadgeBg,
+                        }
+                      : {
+                          backgroundColor: isDark
+                            ? 'rgba(255, 255, 255, 0.08)'
+                            : 'rgba(0, 0, 0, 0.05)',
+                        },
                   ]}
                 >
-                  <Icon size={20} color={colors.tint} strokeWidth={2.2} />
+                  <Icon
+                    size={isIOS ? 19 : 20}
+                    color={isIOS ? '#FFFFFF' : colors.tint}
+                    strokeWidth={2.2}
+                  />
                 </View>
 
                 <View style={styles.textWrap}>
-                  <Text style={[styles.itemTitle, { color: colors.text }]}>
+                  <Text
+                    style={[
+                      styles.itemTitle,
+                      {
+                        color: colors.text,
+                        fontSize: isIOS ? 17 : 16,
+                        fontWeight: isIOS ? '600' : '700',
+                        letterSpacing: isIOS ? -0.35 : -0.2,
+                      },
+                    ]}
+                  >
                     {section.label}
                   </Text>
                   <Text
-                    style={[styles.itemDesc, { color: colors.textSecondary }]}
+                    style={[
+                      styles.itemDesc,
+                      {
+                        color: colors.textSecondary,
+                        fontSize: isIOS ? 13 : 12,
+                        fontWeight: isIOS ? '400' : '500',
+                      },
+                    ]}
                     numberOfLines={1}
                   >
                     {section.description}
@@ -84,9 +131,10 @@ export function ProgressSectionList({ onSelectSection }: ProgressSectionListProp
                 </View>
 
                 <ChevronRight
-                  size={18}
+                  size={isIOS ? 17 : 18}
                   color={colors.textSecondary}
-                  strokeWidth={2}
+                  style={{ opacity: isIOS ? 0.4 : 0.7 }}
+                  strokeWidth={2.2}
                 />
               </TouchableOpacity>
 
@@ -95,7 +143,13 @@ export function ProgressSectionList({ onSelectSection }: ProgressSectionListProp
                   style={[
                     styles.divider,
                     {
-                      backgroundColor: isDark
+                      height: isIOS ? StyleSheet.hairlineWidth : 1,
+                      marginLeft: isIOS ? 64 : 70,
+                      backgroundColor: isIOS
+                        ? isDark
+                          ? 'rgba(84, 84, 88, 0.45)'
+                          : 'rgba(60, 60, 67, 0.16)'
+                        : isDark
                         ? 'rgba(255, 255, 255, 0.07)'
                         : 'rgba(0, 0, 0, 0.06)',
                     },
@@ -117,8 +171,9 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   header: {
-    marginBottom: 20,
-    marginTop: 8,
+    marginBottom: 16,
+    marginTop: 4,
+    paddingHorizontal: 4,
   },
   heading: {
     fontSize: 28,
@@ -126,10 +181,9 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   subheading: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginTop: 4,
-    lineHeight: 20,
+    fontSize: 13,
+    fontWeight: '400',
+    lineHeight: 18,
   },
   listCard: {
     borderRadius: 24,
@@ -139,7 +193,7 @@ const styles = StyleSheet.create({
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 13,
     paddingHorizontal: 16,
   },
   iconBox: {
@@ -162,7 +216,7 @@ const styles = StyleSheet.create({
   itemDesc: {
     fontSize: 12,
     fontWeight: '500',
-    marginTop: 2,
+    marginTop: 1,
   },
   divider: {
     height: 1,

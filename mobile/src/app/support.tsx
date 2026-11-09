@@ -29,7 +29,7 @@ import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getThemeBaseBackground } from '@/constants/theme';
+import { getThemeBaseBackground, getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import ThemeBackground from '@/components/ThemeBackground';
 import { BugReportModal } from '@/components/modals/BugReportModal';
@@ -57,14 +57,27 @@ function GlassSurface({
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
 }) {
-  const innerRadius = Math.max(0, radius - 1);
+  const theme = useAppStore(state => state.theme) || 'oled';
+  const isIOS = Platform.OS === 'ios';
+  const useGlass = shouldUseContentGlass(theme);
+  const innerRadius = Math.max(0, (isIOS ? 20 : radius) - 1);
+
   return (
-    <View style={[{ borderRadius: radius, borderWidth: 1, borderColor }, style]}>
-      <GlassView
-        glassEffectStyle="regular"
-        colorScheme={isDark ? 'dark' : 'light'}
-        style={[StyleSheet.absoluteFill, { borderRadius: innerRadius }]}
-      />
+    <View
+      style={[
+        isIOS
+          ? getAppleCardSurfaceStyle(theme, radius)
+          : { borderRadius: radius, borderWidth: 1, borderColor },
+        style,
+      ]}
+    >
+      {useGlass && (
+        <GlassView
+          glassEffectStyle="regular"
+          colorScheme={isDark ? 'dark' : 'light'}
+          style={[StyleSheet.absoluteFill, { borderRadius: innerRadius }]}
+        />
+      )}
       {tintColor ? (
         <View
           pointerEvents="none"
@@ -88,6 +101,7 @@ interface SupportItemProps {
   isDark: boolean;
   colors: any;
   iconColor?: string;
+  isLast?: boolean;
 }
 
 function SupportItem({
@@ -99,49 +113,101 @@ function SupportItem({
   isDark,
   colors,
   iconColor,
+  isLast = false,
 }: SupportItemProps) {
   const Component = onPress ? TouchableOpacity : View;
+  const isIOS = Platform.OS === 'ios';
+  const badgeColor = iconColor || colors.tint;
 
   return (
-    <Component
-      onPress={onPress}
-      activeOpacity={0.7}
-      style={[
-        styles.itemRow,
-        {
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-        },
-      ]}
-    >
-      <View
+    <View>
+      <Component
+        onPress={onPress}
+        activeOpacity={0.65}
         style={[
-          styles.itemIconBox,
-          {
-            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-          },
+          styles.itemRow,
+          isIOS
+            ? {
+                backgroundColor: 'transparent',
+                borderWidth: 0,
+                borderRadius: 0,
+                paddingVertical: 13,
+                paddingHorizontal: 16,
+              }
+            : {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+              },
         ]}
       >
-        <Icon size={20} color={iconColor || colors.tint} strokeWidth={2.2} />
-      </View>
+        <View
+          style={[
+            styles.itemIconBox,
+            isIOS
+              ? {
+                  width: 34,
+                  height: 34,
+                  borderRadius: 9,
+                  borderCurve: 'continuous',
+                  backgroundColor: badgeColor,
+                }
+              : {
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                },
+          ]}
+        >
+          <Icon size={isIOS ? 18 : 20} color={isIOS ? '#FFFFFF' : badgeColor} strokeWidth={2.2} />
+        </View>
 
-      <View style={styles.itemTextCol}>
-        <Text style={[styles.itemTitle, { color: colors.text }]} numberOfLines={1}>
-          {title}
-        </Text>
-        {subtitle && (
-          <Text style={[styles.itemSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
-            {subtitle}
+        <View style={styles.itemTextCol}>
+          <Text
+            style={[
+              styles.itemTitle,
+              {
+                color: colors.text,
+                fontSize: isIOS ? 16 : 14,
+                fontWeight: isIOS ? '600' : '700',
+                letterSpacing: isIOS ? -0.3 : 0,
+              },
+            ]}
+            numberOfLines={1}
+          >
+            {title}
           </Text>
-        )}
-      </View>
+          {subtitle && (
+            <Text
+              style={[
+                styles.itemSubtitle,
+                {
+                  color: colors.textSecondary,
+                  fontSize: isIOS ? 13 : 11,
+                  fontWeight: isIOS ? '400' : '500',
+                },
+              ]}
+              numberOfLines={1}
+            >
+              {subtitle}
+            </Text>
+          )}
+        </View>
 
-      {rightAction ? (
-        <View style={styles.itemRightWrap}>{rightAction}</View>
-      ) : onPress ? (
-        <ChevronRight size={18} color={colors.textSecondary} style={{ opacity: 0.6 }} />
-      ) : null}
-    </Component>
+        {rightAction ? (
+          <View style={styles.itemRightWrap}>{rightAction}</View>
+        ) : onPress ? (
+          <ChevronRight size={isIOS ? 17 : 18} color={colors.textSecondary} style={{ opacity: isIOS ? 0.4 : 0.6 }} />
+        ) : null}
+      </Component>
+
+      {isIOS && !isLast && (
+        <View
+          style={{
+            height: StyleSheet.hairlineWidth,
+            marginLeft: 62,
+            backgroundColor: isDark ? 'rgba(84, 84, 88, 0.45)' : 'rgba(60, 60, 67, 0.16)',
+          }}
+        />
+      )}
+    </View>
   );
 }
 
@@ -151,6 +217,7 @@ export default function SupportScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const isMobile = windowWidth < 600;
+  const isIOS = Platform.OS === 'ios';
 
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
@@ -244,7 +311,7 @@ export default function SupportScreen() {
 
       <Animated.ScrollView
         contentContainerStyle={{
-          paddingHorizontal: isMobile ? 14 : Math.max(16, (windowWidth - 640) / 2),
+          paddingHorizontal: isMobile ? 16 : Math.max(16, (windowWidth - 640) / 2),
           paddingTop: insets.top + 52,
           paddingBottom: insets.bottom + 40,
         }}
@@ -255,27 +322,46 @@ export default function SupportScreen() {
         scrollEventThrottle={16}
       >
         {/* ================= 1. AYUDA Y COMUNIDAD ================= */}
+        {isIOS && (
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: '600',
+              color: colors.textSecondary,
+              textTransform: 'uppercase',
+              letterSpacing: 0.4,
+              marginLeft: 16,
+              marginBottom: 8,
+              marginTop: 6,
+            }}
+          >
+            Ayuda y Comunidad
+          </Text>
+        )}
+
         <GlassSurface
           radius={28}
           isDark={isDark}
           borderColor={glassBorder}
-          style={[styles.card, { padding: isMobile ? 16 : 22 }]}
+          style={[styles.card, { padding: isIOS ? 0 : isMobile ? 16 : 22 }]}
         >
-          {/* Section Header */}
-          <View style={styles.sectionTitleRow}>
-            <View style={[styles.sectionIconBox, { backgroundColor: colors.tint + '1A' }]}>
-              <Info size={22} color={colors.tint} strokeWidth={2.4} />
+          {/* Section Header (Android / Web) */}
+          {!isIOS && (
+            <View style={styles.sectionTitleRow}>
+              <View style={[styles.sectionIconBox, { backgroundColor: colors.tint + '1A' }]}>
+                <Info size={22} color={colors.tint} strokeWidth={2.4} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Ayuda y Comunidad</Text>
+                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+                  Encuentra descargas, reporta problemas y contacta con soporte.
+                </Text>
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Ayuda y Comunidad</Text>
-              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-                Encuentra descargas, reporta problemas y contacta con soporte.
-              </Text>
-            </View>
-          </View>
+          )}
 
           {/* Items de Soporte */}
-          <View style={styles.itemsList}>
+          <View style={[styles.itemsList, isIOS && { gap: 0 }]}>
             {/* Google Play */}
             <SupportItem
               icon={Play}
@@ -284,7 +370,7 @@ export default function SupportScreen() {
               onPress={() => handleOpenUrl(GOOGLE_PLAY_URL)}
               isDark={isDark}
               colors={colors}
-              iconColor="#38bdf8"
+              iconColor="#0A84FF"
             />
 
             {/* Descargar APK Android */}
@@ -311,7 +397,7 @@ export default function SupportScreen() {
               }}
               isDark={isDark}
               colors={colors}
-              iconColor="#ef4444"
+              iconColor="#FF453A"
             />
 
             {/* Contactar Soporte */}
@@ -322,55 +408,112 @@ export default function SupportScreen() {
               onPress={handleMailSupport}
               isDark={isDark}
               colors={colors}
-              iconColor="#10b981"
+              iconColor="#30D158"
+              isLast
             />
           </View>
         </GlassSurface>
 
         {/* ================= 2. APP INFO ================= */}
+        {isIOS && (
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: '600',
+              color: colors.textSecondary,
+              textTransform: 'uppercase',
+              letterSpacing: 0.4,
+              marginLeft: 16,
+              marginBottom: 8,
+              marginTop: 24,
+            }}
+          >
+            Información del Sistema
+          </Text>
+        )}
+
         <GlassSurface
           radius={28}
           isDark={isDark}
           borderColor={glassBorder}
-          style={[styles.card, { padding: isMobile ? 16 : 22, marginTop: 16 }]}
+          style={[styles.card, { padding: isIOS ? 0 : isMobile ? 16 : 22, marginTop: isIOS ? 0 : 16 }]}
         >
-          {/* Section Header */}
-          <View style={styles.sectionTitleRow}>
-            <View style={[styles.sectionIconBox, { backgroundColor: colors.tint + '1A' }]}>
-              <Binary size={22} color={colors.tint} strokeWidth={2.4} />
+          {/* Section Header (Android / Web) */}
+          {!isIOS && (
+            <View style={styles.sectionTitleRow}>
+              <View style={[styles.sectionIconBox, { backgroundColor: colors.tint + '1A' }]}>
+                <Binary size={22} color={colors.tint} strokeWidth={2.4} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>App Info</Text>
+                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+                  Detalles técnicos y estado de la versión instalada.
+                </Text>
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>App Info</Text>
-              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-                Detalles técnicos y estado de la versión instalada.
-              </Text>
-            </View>
-          </View>
+          )}
 
           {/* App Info Tile */}
           <View
             style={[
               styles.infoCardRow,
-              {
-                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-              },
+              isIOS
+                ? {
+                    backgroundColor: 'transparent',
+                    borderWidth: 0,
+                    borderRadius: 0,
+                    paddingVertical: 14,
+                    paddingHorizontal: 16,
+                  }
+                : {
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                  },
             ]}
           >
             <View
               style={[
                 styles.itemIconBox,
-                {
-                  backgroundColor: colors.tint + '18',
-                },
+                isIOS
+                  ? {
+                      width: 34,
+                      height: 34,
+                      borderRadius: 9,
+                      borderCurve: 'continuous',
+                      backgroundColor: '#5E5CE6',
+                    }
+                  : {
+                      backgroundColor: colors.tint + '18',
+                    },
               ]}
             >
-              <Binary size={20} color={colors.tint} strokeWidth={2.2} />
+              <Binary size={isIOS ? 18 : 20} color={isIOS ? '#FFFFFF' : colors.tint} strokeWidth={2.2} />
             </View>
 
             <View style={styles.itemTextCol}>
-              <Text style={[styles.itemTitle, { color: colors.text }]}>Versión de App</Text>
-              <Text style={[styles.itemSubtitle, { color: colors.textSecondary }]}>
+              <Text
+                style={[
+                  styles.itemTitle,
+                  {
+                    color: colors.text,
+                    fontSize: isIOS ? 16 : 14,
+                    fontWeight: isIOS ? '600' : '700',
+                    letterSpacing: isIOS ? -0.3 : 0,
+                  },
+                ]}
+              >
+                Versión de App
+              </Text>
+              <Text
+                style={[
+                  styles.itemSubtitle,
+                  {
+                    color: colors.textSecondary,
+                    fontSize: isIOS ? 13 : 11,
+                    fontWeight: isIOS ? '400' : '500',
+                  },
+                ]}
+              >
                 v{appVersion} · Native {Platform.OS.toUpperCase()}
               </Text>
             </View>

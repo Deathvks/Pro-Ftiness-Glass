@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Droplet, Edit2 } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 
 interface WaterTrackerCardProps {
   currentMl: number;
@@ -20,6 +21,8 @@ export const WaterTrackerCard: React.FC<WaterTrackerCardProps> = ({
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
+  const useGlass = shouldUseContentGlass(theme);
 
   const percentage = targetMl > 0 ? Math.min(100, Math.round((currentMl / targetMl) * 100)) : 0;
 
@@ -36,13 +39,21 @@ export const WaterTrackerCard: React.FC<WaterTrackerCardProps> = ({
       onPress={handlePress}
       style={styles.container}
     >
-      <View style={[styles.glassWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={styles.card}>
+      <View
+        style={[
+          styles.glassWrapper,
+          { borderColor: colors.border, backgroundColor: colors.card },
+          isIOS && getAppleCardSurfaceStyle(theme, 20),
+        ]}
+      >
+        {useGlass && (
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
+        <View style={[styles.card, isIOS && { borderRadius: 20 }]}>
           {/* Watermark in bottom right */}
           <View style={styles.watermark}>
             <Droplet size={140} color="#3b82f6" />
@@ -53,12 +64,17 @@ export const WaterTrackerCard: React.FC<WaterTrackerCardProps> = ({
             style={[
               styles.header,
               {
-                borderBottomColor: colors.border,
+                borderBottomColor: isIOS
+                  ? isDark
+                    ? 'rgba(84, 84, 88, 0.45)'
+                    : 'rgba(60, 60, 67, 0.14)'
+                  : colors.border,
+                borderBottomWidth: isIOS ? StyleSheet.hairlineWidth : 1,
               },
             ]}
           >
             <View style={styles.headerLeft}>
-              <Text style={[styles.title, { color: colors.text }]}>Agua</Text>
+              <Text style={[styles.title, { color: colors.text, fontWeight: isIOS ? '700' : '800' }]}>Agua</Text>
               <Text style={[styles.subtitle, { color: colors.textMuted }]}>
                 ({currentMl} / {targetMl} ml)
               </Text>
@@ -70,14 +86,10 @@ export const WaterTrackerCard: React.FC<WaterTrackerCardProps> = ({
                 {
                   backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)',
                   borderColor: isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)',
+                  borderWidth: isIOS ? 0 : 1,
                 },
               ]}
             >
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
-              />
               <Edit2 size={16} color="#3b82f6" />
             </View>
           </View>
@@ -88,21 +100,19 @@ export const WaterTrackerCard: React.FC<WaterTrackerCardProps> = ({
               style={[
                 styles.iconContainer,
                 {
-                  backgroundColor: isDark ? 'rgba(59, 130, 246, 0.12)' : 'rgba(59, 130, 246, 0.08)',
+                  backgroundColor: isDark ? 'rgba(59, 130, 246, 0.14)' : 'rgba(59, 130, 246, 0.1)',
                   borderColor: isDark ? 'rgba(59, 130, 246, 0.28)' : 'rgba(59, 130, 246, 0.2)',
+                  borderWidth: isIOS ? 0 : 1,
                 },
               ]}
             >
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 22 }]}
-              />
               <Droplet size={38} color="#3b82f6" fill="#3b82f6" />
             </View>
 
             <View style={styles.textRow}>
-              <Text style={[styles.mainValue, { color: colors.text }]}>{currentMl}</Text>
+              <Text style={[styles.mainValue, { color: colors.text, fontWeight: isIOS ? '700' : '900' }]}>
+                {currentMl}
+              </Text>
               <Text style={[styles.unitText, { color: colors.textMuted }]}>ml</Text>
             </View>
 
@@ -113,14 +123,10 @@ export const WaterTrackerCard: React.FC<WaterTrackerCardProps> = ({
                 {
                   backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
                   borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.04)',
+                  borderWidth: isIOS ? 0 : 1,
                 },
               ]}
             >
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={[StyleSheet.absoluteFill, { borderRadius: 5 }]}
-              />
               <View
                 style={[
                   styles.progressBarFill,
@@ -188,6 +194,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 12,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -203,7 +210,8 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 62,
     height: 62,
-    borderRadius: 22,
+    borderRadius: 20,
+    borderCurve: 'continuous',
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',

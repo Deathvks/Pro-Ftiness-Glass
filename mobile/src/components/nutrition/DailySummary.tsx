@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable, Platform } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 import { LayoutGrid, PieChart, Flame, Beef, Wheat, Salad, IceCream, AlertTriangle, CheckCircle2, Target } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 
 interface Totals {
   calories: number;
@@ -66,7 +67,10 @@ const NutritionStatCard: React.FC<NutritionStatCardProps> = ({
             : 'rgba(0, 0, 0, 0.03)',
           borderColor: isDanger
             ? '#ef4444'
+            : Platform.OS === 'ios'
+            ? 'transparent'
             : colors.border,
+          borderWidth: Platform.OS === 'ios' && !isDanger ? 0 : 1,
         },
       ]}
     >
@@ -257,12 +261,14 @@ export const DailySummary: React.FC<DailySummaryProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={[styles.glassWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
-        />
+      <View style={[styles.glassWrapper, { borderColor: colors.border, backgroundColor: colors.card }, Platform.OS === 'ios' && getAppleCardSurfaceStyle(theme, 20)]}>
+        {shouldUseContentGlass(theme) && (
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
         <View style={styles.card}>
           {/* Header with Switcher */}
           <View style={styles.headerRow}>

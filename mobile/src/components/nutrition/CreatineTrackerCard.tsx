@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Zap, Check, Plus } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 
 interface CreatineTrackerCardProps {
   creatineTarget: string | number;
@@ -20,6 +21,8 @@ export const CreatineTrackerCard: React.FC<CreatineTrackerCardProps> = ({
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
+  const useGlass = shouldUseContentGlass(theme);
 
   const hasLogged = dosesCount > 0;
 
@@ -36,13 +39,21 @@ export const CreatineTrackerCard: React.FC<CreatineTrackerCardProps> = ({
       onPress={handlePress}
       style={styles.container}
     >
-      <View style={[styles.glassWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={styles.card}>
+      <View
+        style={[
+          styles.glassWrapper,
+          { borderColor: colors.border, backgroundColor: colors.card },
+          isIOS && getAppleCardSurfaceStyle(theme, 20),
+        ]}
+      >
+        {useGlass && (
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
+        <View style={[styles.card, isIOS && { borderRadius: 20 }]}>
           {/* Watermark in bottom right */}
           <View style={styles.watermark}>
             <Zap size={140} color="#a855f7" />
@@ -53,12 +64,17 @@ export const CreatineTrackerCard: React.FC<CreatineTrackerCardProps> = ({
             style={[
               styles.header,
               {
-                borderBottomColor: colors.border,
+                borderBottomColor: isIOS
+                  ? isDark
+                    ? 'rgba(84, 84, 88, 0.45)'
+                    : 'rgba(60, 60, 67, 0.14)'
+                  : colors.border,
+                borderBottomWidth: isIOS ? StyleSheet.hairlineWidth : 1,
               },
             ]}
           >
             <View style={styles.headerLeft}>
-              <Text style={[styles.title, { color: colors.text }]}>Creatina</Text>
+              <Text style={[styles.title, { color: colors.text, fontWeight: isIOS ? '700' : '800' }]}>Creatina</Text>
               <Text style={[styles.subtitle, { color: colors.textMuted }]}>
                 (~{creatineTarget}g/día)
               </Text>
@@ -70,6 +86,7 @@ export const CreatineTrackerCard: React.FC<CreatineTrackerCardProps> = ({
                 {
                   backgroundColor: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)',
                   borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
+                  borderWidth: isIOS ? 0 : 1,
                 },
               ]}
             >
@@ -85,6 +102,7 @@ export const CreatineTrackerCard: React.FC<CreatineTrackerCardProps> = ({
                 {
                   backgroundColor: hasLogged ? '#a855f7' : isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
                   borderColor: hasLogged ? '#a855f7' : colors.border,
+                  borderWidth: isIOS ? 0 : 1,
                 },
               ]}
             >
@@ -96,7 +114,9 @@ export const CreatineTrackerCard: React.FC<CreatineTrackerCardProps> = ({
             </View>
 
             <View style={styles.textRow}>
-              <Text style={[styles.mainValue, { color: colors.text }]}>{dosesCount}</Text>
+              <Text style={[styles.mainValue, { color: colors.text, fontWeight: isIOS ? '700' : '900' }]}>
+                {dosesCount}
+              </Text>
               <Text style={[styles.unitText, { color: colors.textSecondary }]}>
                 {dosesCount === 1 ? 'Toma' : 'Tomas'}
               </Text>
@@ -167,6 +187,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 12,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -181,6 +202,7 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 20,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -204,7 +226,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
     marginTop: 2,
   },
 });

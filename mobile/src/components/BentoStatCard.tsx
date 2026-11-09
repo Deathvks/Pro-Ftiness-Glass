@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Info } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
+import useAppStore from '@/store/useAppStore';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 
 export default function BentoStatCard({ 
     title, 
@@ -15,6 +17,9 @@ export default function BentoStatCard({
     onPress, 
     onInfoPress 
 }: any) {
+    const theme = useAppStore(state => state.theme) || 'oled';
+    const isIOS = Platform.OS === 'ios';
+    const useGlass = shouldUseContentGlass(theme);
     const color = iconColor || themeColors?.tint || '#22c55e';
     const CardWrapper = onPress ? TouchableOpacity : View;
 
@@ -22,44 +27,51 @@ export default function BentoStatCard({
         <CardWrapper 
             onPress={onPress}
             activeOpacity={0.8}
-            style={{ 
-                backgroundColor: 'transparent', 
-                borderRadius: 28, 
-                padding: 20, 
-                flex: 1, 
-                minHeight: 160, 
-                justifyContent: 'space-between', 
-                borderWidth: 1, 
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                overflow: 'hidden',
-            }}
+            style={[
+                { 
+                    backgroundColor: 'transparent', 
+                    borderRadius: isIOS ? 20 : 28,
+                    borderCurve: 'continuous',
+                    padding: isIOS ? 18 : 20, 
+                    flex: 1, 
+                    minHeight: isIOS ? 150 : 160, 
+                    justifyContent: 'space-between', 
+                    borderWidth: 1, 
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                    overflow: 'hidden',
+                },
+                isIOS && getAppleCardSurfaceStyle(theme, 20),
+            ]}
         >
-            <GlassView 
-                glassEffectStyle="regular" 
-                colorScheme={isDark ? 'dark' : 'light'} 
-                style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} 
-            />
+            {useGlass && (
+                <GlassView 
+                    glassEffectStyle="regular" 
+                    colorScheme={isDark ? 'dark' : 'light'} 
+                    style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 28 }]} 
+                />
+            )}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <View style={{ 
-                    width: 48, 
-                    height: 48, 
-                    borderRadius: 20, 
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)', 
+                    width: isIOS ? 40 : 48, 
+                    height: isIOS ? 40 : 48, 
+                    borderRadius: isIOS ? 12 : 20,
+                    borderCurve: 'continuous',
+                    backgroundColor: isIOS ? color + '1F' : (isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)'), 
                     alignItems: 'center', 
                     justifyContent: 'center' 
                 }}>
-                    {Icon && <Icon size={24} color={color} />}
+                    {Icon && <Icon size={isIOS ? 21 : 24} color={color} strokeWidth={2.2} />}
                 </View>
             </View>
 
-            <View style={{ marginTop: 16 }}>
+            <View style={{ marginTop: 14 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Text style={{ 
-                        fontSize: 10, 
-                        fontWeight: '700', 
+                        fontSize: isIOS ? 12 : 10, 
+                        fontWeight: isIOS ? '600' : '700', 
                         color: themeColors?.textSecondary, 
-                        textTransform: 'uppercase', 
-                        letterSpacing: 1.5 
+                        textTransform: isIOS ? 'none' : 'uppercase', 
+                        letterSpacing: isIOS ? -0.1 : 1.5 
                     }}>
                         {title}
                     </Text>
@@ -70,10 +82,10 @@ export default function BentoStatCard({
                     )}
                 </View>
 
-                <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', marginTop: 3 }}>
                     <Text style={{ 
-                        fontSize: 28, 
-                        fontWeight: '900', 
+                        fontSize: isIOS ? 26 : 28, 
+                        fontWeight: isIOS ? '700' : '900', 
                         color: themeColors?.text, 
                         letterSpacing: -0.5 
                     }}>
@@ -81,7 +93,7 @@ export default function BentoStatCard({
                     </Text>
                     {unit && (
                         <Text style={{ 
-                            fontSize: 12, 
+                            fontSize: 13, 
                             fontWeight: '600', 
                             color: themeColors?.textSecondary, 
                             marginLeft: 4 
@@ -93,10 +105,10 @@ export default function BentoStatCard({
 
                 {subtext && (
                     <Text style={{ 
-                        fontSize: 10, 
-                        fontWeight: '500', 
+                        fontSize: isIOS ? 12 : 10, 
+                        fontWeight: isIOS ? '400' : '500', 
                         color: themeColors?.textSecondary, 
-                        opacity: 0.6, 
+                        opacity: isIOS ? 0.85 : 0.6, 
                         marginTop: 2 
                     }}>
                         {subtext}

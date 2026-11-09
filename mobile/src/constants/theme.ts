@@ -1,13 +1,15 @@
+import { Platform, StyleSheet, ViewStyle } from 'react-native';
+
 export type ThemeColor = keyof typeof Colors;
 
 export const Colors = {
   light: {
-    background: '#F3F4F6',
+    background: Platform.OS === 'ios' ? '#F2F2F7' : '#F3F4F6',
     card: '#FFFFFF',
     text: '#111827',
-    textSecondary: '#6B7280',
-    textMuted: '#9CA3AF',
-    border: '#E5E7EB',
+    textSecondary: Platform.OS === 'ios' ? 'rgba(60, 60, 67, 0.6)' : '#6B7280',
+    textMuted: Platform.OS === 'ios' ? '#8E8E93' : '#9CA3AF',
+    border: Platform.OS === 'ios' ? 'rgba(60, 60, 67, 0.14)' : '#E5E7EB',
     tint: '#22c55e',
     tabBar: '#FFFFFF',
     tabBarInactive: '#9CA3AF',
@@ -29,11 +31,11 @@ export const Colors = {
   },
   oled: {
     background: '#000000',
-    card: '#111111',
+    card: Platform.OS === 'ios' ? '#1C1C1E' : '#111111',
     text: '#FFFFFF',
-    textSecondary: '#A1A1AA',
-    textMuted: '#71717A',
-    border: 'rgba(255, 255, 255, 0.12)',
+    textSecondary: Platform.OS === 'ios' ? 'rgba(235, 235, 245, 0.6)' : '#A1A1AA',
+    textMuted: Platform.OS === 'ios' ? 'rgba(235, 235, 245, 0.38)' : '#71717A',
+    border: Platform.OS === 'ios' ? 'rgba(84, 84, 88, 0.45)' : 'rgba(255, 255, 255, 0.12)',
     tint: '#22c55e',
     tabBar: '#000000',
     tabBarInactive: '#52525B',
@@ -104,7 +106,80 @@ export const Colors = {
     tabBarInactive: '#deb887',
     success: '#10B981',
     warning: '#f59e0b',
+  },
+};
+
+export const isAtmosphericTheme = (theme?: string): boolean =>
+  ['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'].includes(theme || '');
+
+/**
+ * Returns true when content-layer cards should render a GlassView background.
+ * Per Apple iOS 26-27 HIG: Liquid Glass is reserved for the functional floating layer
+ * (navigation bars, tab bars, floating pills, sheets) or atmospheric themes where
+ * background canvas artwork refracts through. Standard iOS themes (oled, dark, light)
+ * use clean Apple Inset Grouped elevated surfaces (#1C1C1E / #1E293B / #FFFFFF).
+ */
+export const shouldUseContentGlass = (theme?: string): boolean => {
+  if (Platform.OS !== 'ios') return true;
+  return isAtmosphericTheme(theme);
+};
+
+export const getAppleCardSurfaceStyle = (theme?: string, defaultRadius = 20): ViewStyle => {
+  const active = theme || 'oled';
+  const isLight = active === 'light';
+  const isOled = active === 'oled';
+  const isDarkTheme = active === 'dark';
+  const isAtmos = isAtmosphericTheme(active);
+
+  if (Platform.OS !== 'ios') {
+    return {
+      borderRadius: defaultRadius,
+    };
   }
+
+  if (isAtmos) {
+    return {
+      borderRadius: 20,
+      borderCurve: 'continuous',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: ['ocean', 'desert'].includes(active)
+        ? 'rgba(0, 0, 0, 0.1)'
+        : 'rgba(255, 255, 255, 0.16)',
+    };
+  }
+
+  if (isLight) {
+    return {
+      backgroundColor: '#FFFFFF',
+      borderRadius: 20,
+      borderCurve: 'continuous',
+      borderWidth: 0,
+      borderColor: 'transparent',
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 10,
+    };
+  }
+
+  if (isDarkTheme) {
+    return {
+      backgroundColor: '#1E293B',
+      borderRadius: 20,
+      borderCurve: 'continuous',
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: 'rgba(255, 255, 255, 0.08)',
+    };
+  }
+
+  // Default: OLED (iOS Dark Mode secondarySystemGroupedBackground #1C1C1E)
+  return {
+    backgroundColor: isOled ? '#1C1C1E' : '#1C1C1E',
+    borderRadius: 20,
+    borderCurve: 'continuous',
+    borderWidth: 0,
+    borderColor: 'transparent',
+  };
 };
 
 export const getThemeBaseBackground = (theme: string): string => {
@@ -120,7 +195,7 @@ export const getThemeBaseBackground = (theme: string): string => {
     case 'galaxy':
       return '#080814';
     case 'light':
-      return '#F3F4F6';
+      return Platform.OS === 'ios' ? '#F2F2F7' : '#F3F4F6';
     case 'oled':
       return '#000000';
     case 'dark':

@@ -1,21 +1,23 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Lightbulb, Flame, Scale, Dumbbell, AlertTriangle, TrendingUp } from 'lucide-react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import { Flame, Scale, Dumbbell, TrendingUp } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import useAppStore from '@/store/useAppStore';
-import { Colors } from '@/constants/theme';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 
-export default function DashboardInsights({ workoutLog, bodyWeightLog, colors }) {
+export default function DashboardInsights({ workoutLog, bodyWeightLog, colors }: any) {
   const theme = useAppStore(state => state.theme);
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
+  const isIOS = Platform.OS === 'ios';
+  const useGlass = shouldUseContentGlass(theme);
 
   const insights = useMemo(() => {
     const alerts = [];
     const today = new Date();
 
-    const getDaysDiff = (dateStr) => {
+    const getDaysDiff = (dateStr: string) => {
       if (!dateStr) return 999;
-      const diffTime = Math.abs(today - new Date(dateStr));
+      const diffTime = Math.abs(today.getTime() - new Date(dateStr).getTime());
       return Math.floor(diffTime / (1000 * 60 * 60 * 24));
     };
 
@@ -69,29 +71,73 @@ export default function DashboardInsights({ workoutLog, bodyWeightLog, colors })
   if (!insights.length) return null;
 
   return (
-    <View style={{ marginBottom: 24 }}>
+    <View style={{ marginBottom: 20 }}>
       {insights.map(insight => {
         const Icon = insight.icon;
         return (
-          <View key={insight.id} style={{ 
-            borderRadius: 24, 
-            marginBottom: 12,
-            borderWidth: 1,
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-            overflow: 'hidden',
-            backgroundColor: 'transparent',
-          }}>
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
-            />
-            <View style={{ backgroundColor: insight.color + '12', padding: 20 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                <Icon size={24} color={insight.color} style={{ marginRight: 16, marginTop: 2 }} />
+          <View
+            key={insight.id}
+            style={[
+              {
+                borderRadius: isIOS ? 20 : 24,
+                borderCurve: 'continuous',
+                marginBottom: 12,
+                borderWidth: 1,
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                overflow: 'hidden',
+                backgroundColor: 'transparent',
+              },
+              isIOS && getAppleCardSurfaceStyle(theme, 20),
+            ]}
+          >
+            {useGlass && (
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDark ? 'dark' : 'light'}
+                style={[StyleSheet.absoluteFill, { borderRadius: isIOS ? 20 : 24 }]}
+              />
+            )}
+            <View style={{ backgroundColor: isIOS ? 'transparent' : insight.color + '12', padding: isIOS ? 16 : 20 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View
+                  style={
+                    isIOS
+                      ? {
+                          width: 38,
+                          height: 38,
+                          borderRadius: 10,
+                          borderCurve: 'continuous',
+                          backgroundColor: insight.color + '1F',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginRight: 14,
+                        }
+                      : { marginRight: 16 }
+                  }
+                >
+                  <Icon size={isIOS ? 20 : 24} color={insight.color} strokeWidth={2.2} />
+                </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 16, fontWeight: 'bold', color: insight.color, marginBottom: 4 }}>{insight.title}</Text>
-                  <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20 }}>{insight.message}</Text>
+                  <Text
+                    style={{
+                      fontSize: isIOS ? 16 : 16,
+                      fontWeight: isIOS ? '600' : 'bold',
+                      letterSpacing: isIOS ? -0.3 : 0,
+                      color: isIOS ? colors.text : insight.color,
+                      marginBottom: 2,
+                    }}
+                  >
+                    {insight.title}
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.textSecondary,
+                      fontSize: isIOS ? 13 : 14,
+                      lineHeight: isIOS ? 18 : 20,
+                    }}
+                  >
+                    {insight.message}
+                  </Text>
                 </View>
               </View>
             </View>

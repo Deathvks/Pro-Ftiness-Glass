@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import { Plus, Trash2, Edit2, Utensils, Copy, ScanBarcode } from 'lucide-react-native';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 
 export interface FoodLogItem {
@@ -61,12 +62,14 @@ export const MealSection: React.FC<MealSectionProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={[styles.glassWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
-        <GlassView
-          glassEffectStyle="regular"
-          colorScheme={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
-        />
+      <View style={[styles.glassWrapper, { borderColor: colors.border, backgroundColor: colors.card }, Platform.OS === 'ios' && getAppleCardSurfaceStyle(theme, 20)]}>
+        {shouldUseContentGlass(theme) && (
+          <GlassView
+            glassEffectStyle="regular"
+            colorScheme={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
         <View style={styles.card}>
           {/* Header */}
           <View style={styles.header}>
@@ -188,8 +191,12 @@ export const MealSection: React.FC<MealSectionProps> = ({
                     style={[
                       styles.foodCard,
                       {
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                        borderColor: colors.border,
+                        backgroundColor: Platform.OS === 'ios' && !shouldUseContentGlass(theme)
+                          ? (isDark ? '#2C2C2E' : '#F2F2F7')
+                          : (isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'),
+                        borderColor: Platform.OS === 'ios' ? 'transparent' : colors.border,
+                        borderWidth: Platform.OS === 'ios' ? 0 : 1,
+                        borderCurve: 'continuous',
                       },
                     ]}
                   >

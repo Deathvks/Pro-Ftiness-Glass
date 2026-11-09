@@ -1,9 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { View, Pressable, Animated, StyleSheet, ViewStyle, Platform } from 'react-native';
-import { GlassView } from 'expo-glass-effect';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { BlurView } from 'expo-blur';
-
-const AnimatedGlassBackground = Animated.createAnimatedComponent(View);
 
 interface GlassButtonProps {
     onPress: () => void;
@@ -20,8 +18,17 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
     const scaleAnim = useRef(new Animated.Value(1)).current;
     
     const isLight = ['light', 'ocean', 'desert'].includes(theme);
-    const baseOpacity = isLight ? 0.5 : 0.15;
-    const pressedOpacity = isLight ? 0.7 : 0.3;
+    const nativeGlassAvailable = useMemo(() => {
+        if (Platform.OS !== 'ios') return false;
+        try {
+            return isLiquidGlassAvailable();
+        } catch {
+            return false;
+        }
+    }, []);
+
+    const baseOpacity = nativeGlassAvailable ? (color ? 0.22 : 0) : (isLight ? 0.5 : 0.15);
+    const pressedOpacity = nativeGlassAvailable ? 0.18 : (isLight ? 0.7 : 0.3);
     
     const bgOpacityAnim = useRef(new Animated.Value(baseOpacity)).current;
 
@@ -63,7 +70,6 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
 
     const flattenedUserStyle: ViewStyle = (style ? StyleSheet.flatten(style) : {}) || {};
     
-    // Si no tiene flex ni width, le damos width fijo. Si tiene flex, forzamos width 100% interno.
     const hasPadding = flattenedUserStyle.padding !== undefined || flattenedUserStyle.paddingHorizontal !== undefined;
     
     let defaultWidth: number | undefined = undefined;
@@ -83,6 +89,8 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
         ...flattenedUserStyle 
     };
     const finalBorderRadius = (finalStyle.borderRadius as number) ?? 18;
+
+    const defaultBorderWidth = nativeGlassAvailable ? 0 : StyleSheet.hairlineWidth;
 
     return (
         <Pressable 
@@ -108,9 +116,9 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
         >
             <Animated.View style={[finalStyle, {
                 position: 'relative', 
-                flex: undefined, // Quitamos el flex interno para que no se estire verticalmente de forma extraña
-                width: finalStyle.width !== undefined ? '100%' : undefined,   // Forzamos que llene el Pressable horizontalmente si hay width fijo
-                height: finalStyle.height !== undefined ? '100%' : undefined, // Solo 100% cuando hay height explícito en el Pressable
+                flex: undefined,
+                width: finalStyle.width !== undefined ? '100%' : undefined,
+                height: finalStyle.height !== undefined ? '100%' : undefined,
                 margin: undefined,
                 marginTop: undefined,
                 marginBottom: undefined,
@@ -118,17 +126,19 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
                 marginRight: undefined,
                 marginVertical: undefined,
                 marginHorizontal: undefined,
-                borderRadius: finalBorderRadius, // FIX: Aplica el border radius al contenedor que tiene el borde
+                borderRadius: finalBorderRadius,
+                borderCurve: 'continuous',
                 transform: [{ scale: scaleAnim }],
-                borderWidth: finalStyle.borderWidth !== undefined ? finalStyle.borderWidth : 1,
-                borderColor: finalStyle.borderColor !== undefined ? finalStyle.borderColor : (isLight ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.12)'),
+                borderWidth: finalStyle.borderWidth !== undefined ? finalStyle.borderWidth : defaultBorderWidth,
+                borderColor: finalStyle.borderColor !== undefined ? finalStyle.borderColor : (isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.14)'),
             }]}>
                 {Platform.OS === 'ios' ? (
                     <GlassView 
                         pointerEvents="none"
                         glassEffectStyle="regular"
+                        isInteractive
                         colorScheme={isLight ? 'light' : 'dark'}
-                        style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius }]} 
+                        style={[StyleSheet.absoluteFill, { borderRadius: finalBorderRadius, borderCurve: 'continuous' }]} 
                     />
                 ) : (
                     <BlurView
@@ -144,6 +154,7 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
                         StyleSheet.absoluteFill,
                         { 
                             borderRadius: finalBorderRadius,
+                            borderCurve: 'continuous',
                             backgroundColor: color || (isLight ? '#ffffff' : '#000000'),
                             opacity: bgOpacityAnim
                         }

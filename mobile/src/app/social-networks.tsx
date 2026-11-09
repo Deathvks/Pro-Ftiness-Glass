@@ -7,6 +7,7 @@ import {
   Animated,
   Linking,
   Share,
+  Platform,
   useWindowDimensions,
   StyleProp,
   ViewStyle,
@@ -18,7 +19,6 @@ import {
   Share2,
   ChevronRight,
   Send,
-  Copy,
   ExternalLink,
 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
@@ -26,7 +26,7 @@ import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getThemeBaseBackground } from '@/constants/theme';
+import { getThemeBaseBackground, getAppleCardSurfaceStyle, shouldUseContentGlass } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import ThemeBackground from '@/components/ThemeBackground';
 
@@ -44,7 +44,7 @@ const SOCIAL_LINKS = {
     handle: '@pro_fitness_glass',
     webUrl: 'https://www.tiktok.com/@pro_fitness_glass',
     appUrl: 'snssdk1233://user/profile/pro_fitness_glass',
-    color: '#25F4EE',
+    color: '#00B4D8',
   },
   youtube: {
     title: 'YouTube',
@@ -85,14 +85,27 @@ function GlassSurface({
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
 }) {
-  const innerRadius = Math.max(0, radius - 1);
+  const theme = useAppStore(state => state.theme) || 'oled';
+  const isIOS = Platform.OS === 'ios';
+  const useGlass = shouldUseContentGlass(theme);
+  const innerRadius = Math.max(0, (isIOS ? 20 : radius) - 1);
+
   return (
-    <View style={[{ borderRadius: radius, borderWidth: 1, borderColor }, style]}>
-      <GlassView
-        glassEffectStyle="regular"
-        colorScheme={isDark ? 'dark' : 'light'}
-        style={[StyleSheet.absoluteFill, { borderRadius: innerRadius }]}
-      />
+    <View
+      style={[
+        isIOS
+          ? getAppleCardSurfaceStyle(theme, radius)
+          : { borderRadius: radius, borderWidth: 1, borderColor },
+        style,
+      ]}
+    >
+      {useGlass && (
+        <GlassView
+          glassEffectStyle="regular"
+          colorScheme={isDark ? 'dark' : 'light'}
+          style={[StyleSheet.absoluteFill, { borderRadius: innerRadius }]}
+        />
+      )}
       {tintColor ? (
         <View
           pointerEvents="none"
@@ -116,6 +129,7 @@ interface SocialItemProps {
   isDark: boolean;
   colors: any;
   brandColor?: string;
+  isLast?: boolean;
 }
 
 function SocialItem({
@@ -127,47 +141,100 @@ function SocialItem({
   isDark,
   colors,
   brandColor,
+  isLast = false,
 }: SocialItemProps) {
+  const isIOS = Platform.OS === 'ios';
+  const badgeColor = brandColor || colors.tint;
+
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      onLongPress={onLongPress}
-      activeOpacity={0.7}
-      style={[
-        styles.itemRow,
-        {
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-        },
-      ]}
-    >
-      <View
+    <View>
+      <TouchableOpacity
+        onPress={onPress}
+        onLongPress={onLongPress}
+        activeOpacity={0.65}
         style={[
-          styles.itemIconBox,
-          {
-            backgroundColor: brandColor ? brandColor + '18' : isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-          },
+          styles.itemRow,
+          isIOS
+            ? {
+                backgroundColor: 'transparent',
+                borderWidth: 0,
+                borderRadius: 0,
+                paddingVertical: 13,
+                paddingHorizontal: 16,
+              }
+            : {
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+              },
         ]}
       >
-        {Icon ? <Icon size={20} color={brandColor || colors.tint} strokeWidth={2.2} /> : null}
-      </View>
+        <View
+          style={[
+            styles.itemIconBox,
+            isIOS
+              ? {
+                  width: 34,
+                  height: 34,
+                  borderRadius: 9,
+                  borderCurve: 'continuous',
+                  backgroundColor: badgeColor,
+                }
+              : {
+                  backgroundColor: brandColor ? brandColor + '18' : isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                },
+          ]}
+        >
+          {Icon ? <Icon size={isIOS ? 18 : 20} color={isIOS ? '#FFFFFF' : badgeColor} strokeWidth={2.2} /> : null}
+        </View>
 
-      <View style={styles.itemTextCol}>
-        <Text style={[styles.itemTitle, { color: colors.text }]} numberOfLines={1}>
-          {title}
-        </Text>
-        {subtitle && (
-          <Text style={[styles.itemSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
-            {subtitle}
+        <View style={styles.itemTextCol}>
+          <Text
+            style={[
+              styles.itemTitle,
+              {
+                color: colors.text,
+                fontSize: isIOS ? 16 : 14,
+                fontWeight: isIOS ? '600' : '700',
+                letterSpacing: isIOS ? -0.3 : -0.2,
+              },
+            ]}
+            numberOfLines={1}
+          >
+            {title}
           </Text>
-        )}
-      </View>
+          {subtitle && (
+            <Text
+              style={[
+                styles.itemSubtitle,
+                {
+                  color: colors.textSecondary,
+                  fontSize: isIOS ? 13 : 11,
+                  fontWeight: isIOS ? '400' : '500',
+                },
+              ]}
+              numberOfLines={1}
+            >
+              {subtitle}
+            </Text>
+          )}
+        </View>
 
-      <View style={styles.itemRightWrap}>
-        <ExternalLink size={16} color={colors.textSecondary} style={{ opacity: 0.5, marginRight: 4 }} />
-        <ChevronRight size={18} color={colors.textSecondary} style={{ opacity: 0.6 }} />
-      </View>
-    </TouchableOpacity>
+        <View style={styles.itemRightWrap}>
+          {!isIOS && <ExternalLink size={16} color={colors.textSecondary} style={{ opacity: 0.5, marginRight: 4 }} />}
+          <ChevronRight size={isIOS ? 17 : 18} color={colors.textSecondary} style={{ opacity: isIOS ? 0.4 : 0.6 }} />
+        </View>
+      </TouchableOpacity>
+
+      {isIOS && !isLast && (
+        <View
+          style={{
+            height: StyleSheet.hairlineWidth,
+            marginLeft: 62,
+            backgroundColor: isDark ? 'rgba(84, 84, 88, 0.45)' : 'rgba(60, 60, 67, 0.16)',
+          }}
+        />
+      )}
+    </View>
   );
 }
 
@@ -177,6 +244,7 @@ export default function SocialLinksScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const isMobile = windowWidth < 600;
+  const isIOS = Platform.OS === 'ios';
 
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
@@ -233,7 +301,7 @@ export default function SocialLinksScreen() {
 
       <Animated.ScrollView
         contentContainerStyle={{
-          paddingHorizontal: isMobile ? 14 : Math.max(16, (windowWidth - 640) / 2),
+          paddingHorizontal: isMobile ? 16 : Math.max(16, (windowWidth - 640) / 2),
           paddingTop: insets.top + 52,
           paddingBottom: insets.bottom + 40,
         }}
@@ -244,27 +312,46 @@ export default function SocialLinksScreen() {
         scrollEventThrottle={16}
       >
         {/* ================= TARJETA PRINCIPAL: NUESTRAS REDES ================= */}
+        {isIOS && (
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: '600',
+              color: colors.textSecondary,
+              textTransform: 'uppercase',
+              letterSpacing: 0.4,
+              marginLeft: 16,
+              marginBottom: 8,
+              marginTop: 6,
+            }}
+          >
+            Canales Oficiales
+          </Text>
+        )}
+
         <GlassSurface
           radius={28}
           isDark={isDark}
           borderColor={glassBorder}
-          style={[styles.card, { padding: isMobile ? 16 : 22 }]}
+          style={[styles.card, { padding: isIOS ? 0 : isMobile ? 16 : 22 }]}
         >
-          {/* Cabecera de Sección */}
-          <View style={styles.sectionTitleRow}>
-            <View style={[styles.sectionIconBox, { backgroundColor: colors.tint + '1A' }]}>
-              <Share2 size={22} color={colors.tint} strokeWidth={2.4} />
+          {/* Cabecera de Sección (Android / Web) */}
+          {!isIOS && (
+            <View style={styles.sectionTitleRow}>
+              <View style={[styles.sectionIconBox, { backgroundColor: colors.tint + '1A' }]}>
+                <Share2 size={22} color={colors.tint} strokeWidth={2.4} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Nuestras Redes</Text>
+                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
+                  Síguenos en nuestras redes para rutinas exclusivas y novedades.
+                </Text>
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Nuestras Redes</Text>
-              <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-                Síguenos en nuestras redes para rutinas exclusivas y novedades.
-              </Text>
-            </View>
-          </View>
+          )}
 
           {/* Lista de Redes Sociales */}
-          <View style={styles.itemsList}>
+          <View style={[styles.itemsList, isIOS && { gap: 0 }]}>
             {/* Instagram */}
             <SocialItem
               icon={InstagramIcon}
@@ -282,7 +369,7 @@ export default function SocialLinksScreen() {
               icon={TikTokIcon}
               title={SOCIAL_LINKS.tiktok.title}
               subtitle={SOCIAL_LINKS.tiktok.handle}
-              brandColor={isDark ? '#25F4EE' : '#00b4d8'}
+              brandColor={isIOS ? '#00B4D8' : isDark ? '#25F4EE' : '#00b4d8'}
               onPress={() => handleOpenLink(SOCIAL_LINKS.tiktok.appUrl, SOCIAL_LINKS.tiktok.webUrl)}
               onLongPress={() => handleCopyHandle(SOCIAL_LINKS.tiktok.handle, 'TikTok')}
               isDark={isDark}
@@ -299,25 +386,67 @@ export default function SocialLinksScreen() {
               onLongPress={() => handleCopyHandle(SOCIAL_LINKS.youtube.handle, 'YouTube')}
               isDark={isDark}
               colors={colors}
+              isLast
             />
           </View>
         </GlassSurface>
 
         {/* ================= TARJETA SECUNDARIA: COMPARTIR LA COMUNIDAD ================= */}
+        {isIOS && (
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: '600',
+              color: colors.textSecondary,
+              textTransform: 'uppercase',
+              letterSpacing: 0.4,
+              marginLeft: 16,
+              marginBottom: 8,
+              marginTop: 24,
+            }}
+          >
+            Comunidad
+          </Text>
+        )}
+
         <GlassSurface
           radius={28}
           isDark={isDark}
           borderColor={glassBorder}
-          style={[styles.card, { padding: isMobile ? 16 : 22, marginTop: 16 }]}
+          style={[styles.card, { padding: isIOS ? 16 : isMobile ? 16 : 22, marginTop: isIOS ? 0 : 16 }]}
         >
-          <View style={styles.sectionTitleRow}>
-            <View style={[styles.sectionIconBox, { backgroundColor: '#10b9811A' }]}>
-              <Send size={20} color="#10b981" strokeWidth={2.4} />
+          <View style={[styles.sectionTitleRow, isIOS && { marginBottom: 14 }]}>
+            <View
+              style={[
+                styles.sectionIconBox,
+                isIOS
+                  ? {
+                      width: 34,
+                      height: 34,
+                      borderRadius: 9,
+                      borderCurve: 'continuous',
+                      backgroundColor: '#30D158',
+                    }
+                  : { backgroundColor: '#10b9811A' },
+              ]}
+            >
+              <Send size={isIOS ? 18 : 20} color={isIOS ? '#FFFFFF' : '#10b981'} strokeWidth={2.3} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Comunidad</Text>
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  {
+                    color: colors.text,
+                    fontSize: isIOS ? 16 : 18,
+                    fontWeight: isIOS ? '600' : '800',
+                  },
+                ]}
+              >
+                Comunidad Pro Fitness Glass
+              </Text>
               <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>
-                Comparte Pro Fitness Glass con tus compañeros de entrenamiento.
+                Comparte la app oficial con tus compañeros de entrenamiento.
               </Text>
             </View>
           </View>
@@ -327,14 +456,22 @@ export default function SocialLinksScreen() {
             activeOpacity={0.7}
             style={[
               styles.shareActionBtn,
-              {
-                backgroundColor: colors.tint + '18',
-                borderColor: colors.tint + '33',
-              },
+              isIOS
+                ? {
+                    backgroundColor: colors.tint,
+                    borderWidth: 0,
+                    borderRadius: 14,
+                    borderCurve: 'continuous',
+                    paddingVertical: 13,
+                  }
+                : {
+                    backgroundColor: colors.tint + '18',
+                    borderColor: colors.tint + '33',
+                  },
             ]}
           >
-            <Send size={18} color={colors.tint} strokeWidth={2.2} />
-            <Text style={[styles.shareActionBtnText, { color: colors.tint }]}>
+            <Send size={17} color={isIOS ? '#FFFFFF' : colors.tint} strokeWidth={2.2} />
+            <Text style={[styles.shareActionBtnText, { color: isIOS ? '#FFFFFF' : colors.tint }]}>
               Compartir App Oficial
             </Text>
           </TouchableOpacity>
@@ -419,7 +556,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   shareActionBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
 });

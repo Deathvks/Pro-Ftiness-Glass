@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Image, Text, StyleSheet, Animated, Platform } from 'react-native';
+import { View, Image, Text, StyleSheet, Animated, Platform, TouchableOpacity } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import { User, Sparkles, Bell, ChevronLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,7 +31,7 @@ const getHeaderThemeBg = (theme: string) => {
             return 'rgba(253, 248, 245, 0.85)';
         case 'light':
         default:
-            return 'rgba(243, 244, 246, 0.85)';
+            return Platform.OS === 'ios' ? 'rgba(242, 242, 247, 0.82)' : 'rgba(243, 244, 246, 0.85)';
     }
 };
 
@@ -75,6 +75,7 @@ export default function GlobalHeader({
     const isDark = !['light', 'ocean', 'desert'].includes(theme);
     const colorScheme = isDark ? 'dark' : 'light';
     const headerThemeBg = getHeaderThemeBg(theme);
+    const isIOS = Platform.OS === 'ios';
 
     // ¿El dispositivo soporta UIGlassEffect (iOS 26+)? En web siempre es false.
     const glassAvailable = useMemo(() => {
@@ -86,37 +87,61 @@ export default function GlobalHeader({
         }
     }, []);
 
-    // Para iOS nativo con UIGlassEffect (iOS 26+)
+    // Para iOS nativo: en iOS 26-27 los controles flotan sobre el contenido con un borde suave progresivo al hacer scroll
     const [isScrolled, setIsScrolled] = useState(!scrollY);
     const isScrolledRef = useRef(!scrollY);
 
     useEffect(() => {
-        if (!scrollY || !glassAvailable) return;
+        if (!scrollY || !isIOS) return;
         const id = scrollY.addListener(({ value }) => {
-            // Histeresis: se activa al pasar de 8px y solo se apaga si vuelve a <= 2px para evitar parpadeos
-            const next = isScrolledRef.current ? value > 2 : value > 8;
+            const next = isScrolledRef.current ? value > 4 : value > 12;
             if (next !== isScrolledRef.current) {
                 isScrolledRef.current = next;
                 setIsScrolled(next);
             }
         });
         return () => scrollY.removeListener(id);
-    }, [scrollY, glassAvailable]);
+    }, [scrollY, isIOS]);
 
-    // Opacidad fluida directa del scroll para Web y dispositivos sin UIGlassEffect (0 re-renders, 0 jitter)
+    // Opacidad fluida directa del scroll para Web y dispositivos sin UIGlassEffect
     const fallbackOpacity = useMemo(() => {
-        if (!scrollY) return new Animated.Value(1);
+        if (!scrollY) return new Animated.Value(isIOS ? 0 : 1);
+        if (isIOS) {
+            return scrollY.interpolate({
+                inputRange: [0, 28],
+                outputRange: [0, 0.92],
+                extrapolate: 'clamp',
+            });
+        }
         return scrollY.interpolate({
             inputRange: [0, 20],
             outputRange: [isDark ? 0.88 : 0.65, 1],
             extrapolate: 'clamp',
         });
-    }, [scrollY, isDark]);
+    }, [scrollY, isDark, isIOS]);
 
     return (
         <View style={{ position: 'relative', zIndex: 100 }} pointerEvents="box-none">
-            {/* Fondo Liquid Glass nativo (UIGlassEffect) en iOS 26+ */}
-            {glassAvailable ? (
+            {/* En iOS 26-27 el header no lleva barra de vidrio completa para no apilar Liquid Glass sobre Liquid Glass;
+                solo muestra un velo difuminado suave cuando el contenido pasa por debajo */}
+            {isIOS ? (
+                <Animated.View
+                    pointerEvents="none"
+                    style={[
+                        StyleSheet.absoluteFill,
+                        {
+                            overflow: 'hidden',
+                            opacity: fallbackOpacity,
+                        },
+                    ]}
+                >
+                    <BlurView
+                        intensity={55}
+                        tint={colorScheme === 'dark' ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
+                        style={StyleSheet.absoluteFill}
+                    />
+                </Animated.View>
+            ) : glassAvailable ? (
                 <GlassView
                     pointerEvents="none"
                     glassEffectStyle={{
@@ -193,7 +218,7 @@ export default function GlobalHeader({
                         noShadow
                         style={{ width: 40, height: 40, borderRadius: 20 }}
                     >
-                        <ChevronLeft size={24} color={colors.text} />
+                        <ChevronLeft size={23} color={colors.text} strokeWidth={2.3} />
                     </GlassButton>
                 ) : (
                     <GlassButton 
@@ -210,7 +235,18 @@ export default function GlobalHeader({
                     </GlassButton>
                 )}
                 {title && (
-                    <Text numberOfLines={1} style={{ color: colors.text, fontSize: 22, fontWeight: '900', letterSpacing: -0.5, flexShrink: 1 }}>{title}</Text>
+                    <Text
+                        numberOfLines={1}
+                        style={{
+                            color: colors.text,
+                            fontSize: isIOS ? 20 : 22,
+                            fontWeight: isIOS ? '700' : '900',
+                            letterSpacing: isIOS ? -0.45 : -0.5,
+                            flexShrink: 1,
+                        }}
+                    >
+                        {title}
+                    </Text>
                 )}
             </View>
 
@@ -223,24 +259,115 @@ export default function GlobalHeader({
 
             {/* Right: Sparkles & Notifications */}
             {!hideRightButtons && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, zIndex: 2 }}>
-                    <GlassButton 
-                        onPress={() => setShowAiModal(true)} 
-                        theme={theme}
-                        noShadow
-                        style={{ height: 36, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 18 }}
+                isIOS ? (
+                    /* Cápsula unificada Liquid Glass nativa de iOS 26-27 para acciones relacionadas de la barra superior */
+                    <View
+                        style={{
+                            height: 40,
+                            borderRadius: 20,
+                            borderCurve: 'continuous',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            overflow: 'hidden',
+                            borderWidth: glassAvailable ? 0 : StyleSheet.hairlineWidth,
+                            borderColor: isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)',
+                            zIndex: 2,
+                        }}
                     >
-                        <Sparkles size={14} color={colors.text} />
-                        <Text style={{ color: colors.text, fontSize: 12, fontWeight: '900' }}>{aiRemaining}/{aiLimit}</Text>
-                    </GlassButton>
+                        <GlassView
+                            pointerEvents="none"
+                            glassEffectStyle="regular"
+                            isInteractive
+                            colorScheme={colorScheme as any}
+                            style={[StyleSheet.absoluteFill, { borderRadius: 20, borderCurve: 'continuous' }]}
+                        />
+                        <TouchableOpacity
+                            activeOpacity={0.65}
+                            onPress={() => {
+                                try {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                } catch {}
+                                setShowAiModal(true);
+                            }}
+                            style={{
+                                height: '100%',
+                                paddingLeft: 13,
+                                paddingRight: 10,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 5,
+                            }}
+                        >
+                            <Sparkles size={14} color={colors.tint} strokeWidth={2.2} />
+                            <Text style={{ color: colors.text, fontSize: 13, fontWeight: '600', letterSpacing: -0.2 }}>
+                                {aiRemaining}/{aiLimit}
+                            </Text>
+                        </TouchableOpacity>
 
-                    <GlassButton onPress={() => router.push('/notifications')} theme={theme} colors={colors} noShadow>
-                        <Bell size={18} color={colors.text} />
-                        {unreadCount > 0 && (
-                            <View style={{ position: 'absolute', top: -2, right: -2, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.tint, borderWidth: 2, borderColor: colors.background }} />
-                        )}
-                    </GlassButton>
-                </View>
+                        <View
+                            style={{
+                                width: StyleSheet.hairlineWidth,
+                                height: 18,
+                                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(60, 60, 67, 0.2)',
+                            }}
+                        />
+
+                        <TouchableOpacity
+                            activeOpacity={0.65}
+                            onPress={() => {
+                                try {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                } catch {}
+                                router.push('/notifications');
+                            }}
+                            style={{
+                                height: '100%',
+                                paddingLeft: 10,
+                                paddingRight: 13,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <View style={{ position: 'relative' }}>
+                                <Bell size={17} color={colors.text} strokeWidth={2.1} />
+                                {unreadCount > 0 && (
+                                    <View
+                                        style={{
+                                            position: 'absolute',
+                                            top: -2,
+                                            right: -3,
+                                            width: 9,
+                                            height: 9,
+                                            borderRadius: 4.5,
+                                            backgroundColor: colors.tint,
+                                            borderWidth: 1.5,
+                                            borderColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                                        }}
+                                    />
+                                )}
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, zIndex: 2 }}>
+                        <GlassButton 
+                            onPress={() => setShowAiModal(true)} 
+                            theme={theme}
+                            noShadow
+                            style={{ height: 36, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 18 }}
+                        >
+                            <Sparkles size={14} color={colors.text} />
+                            <Text style={{ color: colors.text, fontSize: 12, fontWeight: '900' }}>{aiRemaining}/{aiLimit}</Text>
+                        </GlassButton>
+
+                        <GlassButton onPress={() => router.push('/notifications')} theme={theme} colors={colors} noShadow>
+                            <Bell size={18} color={colors.text} />
+                            {unreadCount > 0 && (
+                                <View style={{ position: 'absolute', top: -2, right: -2, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.tint, borderWidth: 2, borderColor: colors.background }} />
+                            )}
+                        </GlassButton>
+                    </View>
+                )
             )}
 
             <AiInfoModal visible={showAiModal} onClose={() => setShowAiModal(false)} />
