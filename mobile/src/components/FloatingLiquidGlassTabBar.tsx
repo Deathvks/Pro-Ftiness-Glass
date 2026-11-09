@@ -89,11 +89,9 @@ interface TabBarThemeConfig {
   capsuleBg: string;
   capsuleGradient: [string, string, string];
   capsuleBorder: string;
-  capsuleBorderTop: string;
   dropBg: string;
   dropGradient: [string, string];
   dropBorder: string;
-  dropBorderTop: string;
   dropGlow: string;
   shadowColor: string;
   shadowOpacity: number;
@@ -103,113 +101,97 @@ const getTabBarThemeConfig = (theme: string, tintColor: string): TabBarThemeConf
   switch (theme) {
     case 'galaxy':
       return {
-        capsuleBg: 'rgba(10, 10, 26, 0.50)',
-        capsuleGradient: ['rgba(168, 85, 247, 0.20)', 'rgba(59, 130, 246, 0.05)', 'transparent'],
-        capsuleBorder: 'rgba(168, 85, 247, 0.30)',
-        capsuleBorderTop: 'rgba(168, 85, 247, 0.55)',
-        dropBg: 'rgba(168, 85, 247, 0.22)',
-        dropGradient: ['rgba(168, 85, 247, 0.36)', 'rgba(59, 130, 246, 0.12)'],
+        capsuleBg: 'rgba(12, 10, 28, 0.85)',
+        capsuleGradient: ['rgba(168, 85, 247, 0.16)', 'rgba(59, 130, 246, 0.05)', 'rgba(12, 10, 28, 0)'],
+        capsuleBorder: 'rgba(168, 85, 247, 0.32)',
+        dropBg: 'rgba(168, 85, 247, 0.18)',
+        dropGradient: ['rgba(168, 85, 247, 0.28)', 'rgba(59, 130, 246, 0.08)'],
         dropBorder: 'rgba(168, 85, 247, 0.40)',
-        dropBorderTop: 'rgba(216, 180, 254, 0.75)',
         dropGlow: '#a855f7',
-        shadowColor: 'rgba(8, 8, 20, 0.35)',
-        shadowOpacity: 0.22,
+        shadowColor: 'rgba(0, 0, 0, 0.12)',
+        shadowOpacity: 0.08,
       };
     case 'ocean-dark':
       return {
-        capsuleBg: 'rgba(8, 47, 73, 0.50)',
-        capsuleGradient: ['rgba(56, 189, 248, 0.20)', 'rgba(14, 165, 233, 0.05)', 'transparent'],
-        capsuleBorder: 'rgba(56, 189, 248, 0.30)',
-        capsuleBorderTop: 'rgba(56, 189, 248, 0.55)',
-        dropBg: 'rgba(14, 165, 233, 0.22)',
-        dropGradient: ['rgba(56, 189, 248, 0.36)', 'rgba(14, 165, 233, 0.12)'],
+        capsuleBg: 'rgba(8, 47, 73, 0.85)',
+        capsuleGradient: ['rgba(56, 189, 248, 0.16)', 'rgba(14, 165, 233, 0.05)', 'rgba(8, 47, 73, 0)'],
+        capsuleBorder: 'rgba(56, 189, 248, 0.32)',
+        dropBg: 'rgba(14, 165, 233, 0.18)',
+        dropGradient: ['rgba(56, 189, 248, 0.28)', 'rgba(14, 165, 233, 0.08)'],
         dropBorder: 'rgba(56, 189, 248, 0.40)',
-        dropBorderTop: 'rgba(186, 230, 253, 0.75)',
         dropGlow: '#0ea5e9',
-        shadowColor: 'rgba(8, 47, 73, 0.35)',
-        shadowOpacity: 0.22,
+        shadowColor: 'rgba(0, 0, 0, 0.12)',
+        shadowOpacity: 0.08,
       };
     case 'desert-dark':
       return {
-        capsuleBg: 'rgba(44, 30, 22, 0.50)',
-        capsuleGradient: ['rgba(245, 158, 11, 0.18)', 'rgba(217, 119, 6, 0.04)', 'transparent'],
-        capsuleBorder: 'rgba(245, 158, 11, 0.28)',
-        capsuleBorderTop: 'rgba(245, 158, 11, 0.55)',
-        dropBg: 'rgba(217, 119, 6, 0.22)',
-        dropGradient: ['rgba(245, 158, 11, 0.36)', 'rgba(217, 119, 6, 0.10)'],
-        dropBorder: 'rgba(245, 158, 11, 0.38)',
-        dropBorderTop: 'rgba(254, 240, 138, 0.75)',
-        dropGlow: '#f59e0b',
-        shadowColor: 'rgba(44, 30, 22, 0.35)',
-        shadowOpacity: 0.22,
+        capsuleBg: 'rgba(44, 30, 22, 0.85)',
+        capsuleGradient: ['rgba(210, 180, 140, 0.16)', 'rgba(217, 119, 6, 0.05)', 'rgba(44, 30, 22, 0)'],
+        capsuleBorder: 'rgba(210, 180, 140, 0.32)',
+        dropBg: 'rgba(210, 180, 140, 0.18)',
+        dropGradient: ['rgba(210, 180, 140, 0.28)', 'rgba(217, 119, 6, 0.08)'],
+        dropBorder: 'rgba(210, 180, 140, 0.40)',
+        dropGlow: '#d2b48c',
+        shadowColor: 'rgba(0, 0, 0, 0.12)',
+        shadowOpacity: 0.08,
       };
     case 'ocean':
       return {
-        capsuleBg: 'rgba(240, 249, 255, 0.74)',
-        capsuleGradient: ['rgba(255, 255, 255, 0.90)', 'rgba(224, 242, 254, 0.40)', 'transparent'],
-        capsuleBorder: 'rgba(14, 165, 233, 0.20)',
-        capsuleBorderTop: '#ffffff',
+        capsuleBg: 'rgba(240, 249, 255, 0.84)',
+        capsuleGradient: ['rgba(255, 255, 255, 0.90)', 'rgba(224, 242, 254, 0.45)', 'rgba(240, 249, 255, 0)'],
+        capsuleBorder: 'rgba(14, 165, 233, 0.22)',
         dropBg: 'rgba(255, 255, 255, 0.88)',
         dropGradient: ['#ffffff', 'rgba(224, 242, 254, 0.75)'],
-        dropBorder: 'rgba(14, 165, 233, 0.25)',
-        dropBorderTop: '#ffffff',
+        dropBorder: 'rgba(14, 165, 233, 0.28)',
         dropGlow: '#0ea5e9',
         shadowColor: 'rgba(12, 74, 110, 0.08)',
         shadowOpacity: 0.06,
       };
     case 'desert':
       return {
-        capsuleBg: 'rgba(253, 248, 245, 0.74)',
-        capsuleGradient: ['rgba(255, 255, 255, 0.90)', 'rgba(254, 243, 199, 0.40)', 'transparent'],
-        capsuleBorder: 'rgba(210, 180, 140, 0.22)',
-        capsuleBorderTop: '#ffffff',
+        capsuleBg: 'rgba(253, 248, 245, 0.84)',
+        capsuleGradient: ['rgba(255, 255, 255, 0.90)', 'rgba(254, 243, 199, 0.45)', 'rgba(253, 248, 245, 0)'],
+        capsuleBorder: 'rgba(210, 180, 140, 0.24)',
         dropBg: 'rgba(255, 255, 255, 0.88)',
         dropGradient: ['#ffffff', 'rgba(254, 243, 199, 0.75)'],
-        dropBorder: 'rgba(210, 180, 140, 0.25)',
-        dropBorderTop: '#ffffff',
+        dropBorder: 'rgba(210, 180, 140, 0.30)',
         dropGlow: '#d2b48c',
         shadowColor: 'rgba(92, 64, 51, 0.08)',
         shadowOpacity: 0.06,
       };
     case 'oled':
       return {
-        capsuleBg: 'rgba(0, 0, 0, 0.52)',
-        capsuleGradient: ['rgba(255, 255, 255, 0.12)', 'rgba(255, 255, 255, 0.02)', 'transparent'],
-        capsuleBorder: 'rgba(255, 255, 255, 0.14)',
-        capsuleBorderTop: 'rgba(255, 255, 255, 0.30)',
-        dropBg: 'rgba(255, 255, 255, 0.16)',
-        dropGradient: ['rgba(255, 255, 255, 0.28)', 'rgba(255, 255, 255, 0.06)'],
-        dropBorder: 'rgba(255, 255, 255, 0.28)',
-        dropBorderTop: 'rgba(255, 255, 255, 0.70)',
+        capsuleBg: 'rgba(18, 18, 22, 0.86)',
+        capsuleGradient: ['rgba(255, 255, 255, 0.10)', 'rgba(255, 255, 255, 0.03)', 'rgba(18, 18, 22, 0)'],
+        capsuleBorder: 'rgba(255, 255, 255, 0.15)',
+        dropBg: 'rgba(255, 255, 255, 0.12)',
+        dropGradient: ['rgba(255, 255, 255, 0.22)', 'rgba(255, 255, 255, 0.06)'],
+        dropBorder: 'rgba(255, 255, 255, 0.24)',
         dropGlow: tintColor,
-        shadowColor: 'rgba(0, 0, 0, 0.38)',
-        shadowOpacity: 0.25,
+        shadowColor: 'rgba(0, 0, 0, 0.14)',
+        shadowOpacity: 0.08,
       };
     case 'dark':
       return {
-        capsuleBg: 'rgba(15, 23, 42, 0.50)',
-        capsuleGradient: ['rgba(255, 255, 255, 0.12)', 'rgba(255, 255, 255, 0.02)', 'transparent'],
+        capsuleBg: 'rgba(15, 23, 42, 0.85)',
+        capsuleGradient: ['rgba(255, 255, 255, 0.10)', 'rgba(255, 255, 255, 0.03)', 'rgba(15, 23, 42, 0)'],
         capsuleBorder: 'rgba(255, 255, 255, 0.15)',
-        capsuleBorderTop: 'rgba(255, 255, 255, 0.32)',
-        dropBg: 'rgba(255, 255, 255, 0.16)',
-        dropGradient: ['rgba(255, 255, 255, 0.28)', 'rgba(255, 255, 255, 0.06)'],
-        dropBorder: 'rgba(255, 255, 255, 0.28)',
-        dropBorderTop: 'rgba(255, 255, 255, 0.70)',
+        dropBg: 'rgba(255, 255, 255, 0.12)',
+        dropGradient: ['rgba(255, 255, 255, 0.22)', 'rgba(255, 255, 255, 0.06)'],
+        dropBorder: 'rgba(255, 255, 255, 0.24)',
         dropGlow: tintColor,
-        shadowColor: 'rgba(15, 23, 42, 0.30)',
-        shadowOpacity: 0.22,
+        shadowColor: 'rgba(0, 0, 0, 0.12)',
+        shadowOpacity: 0.08,
       };
     case 'light':
     default:
       return {
-        capsuleBg: 'rgba(255, 255, 255, 0.74)',
-        capsuleGradient: ['rgba(255, 255, 255, 0.90)', 'rgba(255, 255, 255, 0.40)', 'transparent'],
+        capsuleBg: 'rgba(255, 255, 255, 0.84)',
+        capsuleGradient: ['rgba(255, 255, 255, 0.90)', 'rgba(255, 255, 255, 0.45)', 'rgba(255, 255, 255, 0)'],
         capsuleBorder: 'rgba(0, 0, 0, 0.08)',
-        capsuleBorderTop: '#ffffff',
         dropBg: 'rgba(255, 255, 255, 0.88)',
         dropGradient: ['#ffffff', 'rgba(255, 255, 255, 0.65)'],
         dropBorder: 'rgba(0, 0, 0, 0.08)',
-        dropBorderTop: '#ffffff',
         dropGlow: 'rgba(15, 23, 42, 0.08)',
         shadowColor: 'rgba(15, 23, 42, 0.08)',
         shadowOpacity: 0.06,
@@ -492,7 +474,7 @@ export function FloatingLiquidGlassTabBar({
         offsetY: 2,
         blurRadius: 8,
         spreadDistance: 0,
-        color: isDark ? 'rgba(0, 0, 0, 0.15)' : 'rgba(15, 23, 42, 0.03)',
+        color: isDark ? 'rgba(0, 0, 0, 0.08)' : 'rgba(15, 23, 42, 0.03)',
       },
     ];
   };
@@ -530,19 +512,20 @@ export function FloatingLiquidGlassTabBar({
               styles.capsuleInner,
               {
                 borderColor: themeConfig.capsuleBorder,
-                borderTopColor: themeConfig.capsuleBorderTop,
               },
             ]}
           >
-            {/* Desenfoque de cristal líquido nativo */}
-            <BlurView
-              pointerEvents="none"
-              intensity={Platform.OS === 'android' ? (isDark ? 30 : 45) : 45}
-              tint={isDark ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFill}
-            />
+            {/* Desenfoque nativo en iOS (en Android BlurView sin target pinta un gris opaco plano) */}
+            {Platform.OS === 'ios' && (
+              <BlurView
+                pointerEvents="none"
+                intensity={45}
+                tint={isDark ? 'dark' : 'light'}
+                style={StyleSheet.absoluteFill}
+              />
+            )}
 
-            {/* Tinte translúcido suave ajustado por tema */}
+            {/* Tinte translúcido de cristal ajustado por tema */}
             <View
               pointerEvents="none"
               style={[
@@ -551,12 +534,12 @@ export function FloatingLiquidGlassTabBar({
               ]}
             />
 
-            {/* Brillo especular superior estilo Liquid Glass de Apple */}
+            {/* Gradiente diagonal completo de cristal líquido (sin línea de corte a mitad de altura) */}
             <LinearGradient
               pointerEvents="none"
               colors={themeConfig.capsuleGradient}
               start={{ x: 0, y: 0 }}
-              end={{ x: 0.5, y: 1 }}
+              end={{ x: 1, y: 1 }}
               style={styles.specularShine}
             />
 
@@ -575,9 +558,8 @@ export function FloatingLiquidGlassTabBar({
                   ],
                   backgroundColor: themeConfig.dropBg,
                   borderColor: themeConfig.dropBorder,
-                  borderTopColor: themeConfig.dropBorderTop,
                   shadowColor: themeConfig.dropGlow,
-                  shadowOpacity: isDark ? 0.35 : 0.10,
+                  shadowOpacity: isDark ? 0.25 : 0.08,
                 },
               ]}
             >
@@ -636,15 +618,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: PADDING_H,
     overflow: 'hidden',
-    borderWidth: 0.5,
-    borderTopWidth: 1,
+    borderWidth: 1,
   },
   specularShine: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 22,
+    ...StyleSheet.absoluteFill,
   },
   liquidDrop: {
     position: 'absolute',
@@ -653,7 +630,6 @@ const styles = StyleSheet.create({
     left: 0,
     borderRadius: DROP_HEIGHT / 2,
     borderWidth: 1,
-    borderTopWidth: 1.5,
     overflow: 'hidden',
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,

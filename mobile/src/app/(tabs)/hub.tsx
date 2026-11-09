@@ -44,12 +44,11 @@ const HubButton = ({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingVertical: 14,
-        minHeight: 74,
+        height: 78,
         borderRadius: 22,
         borderWidth: 1,
         borderColor: colors.border,
-        marginBottom: 12,
+        marginBottom: 14,
         opacity: isComingSoon ? 0.6 : 1,
       }}
     >
@@ -366,7 +365,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   sectionContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 12,

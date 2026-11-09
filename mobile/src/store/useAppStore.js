@@ -47,7 +47,7 @@ export const applyNativeColorScheme = (pref, resolved) => {
             } catch {}
             try {
                 const NavigationBar = require('expo-navigation-bar');
-                NavigationBar.setStyle(isDark ? 'dark' : 'light');
+                NavigationBar.setStyle(isDark ? 'light' : 'dark');
             } catch {}
             try {
                 const { StatusBar: RNStatusBar } = require('react-native');

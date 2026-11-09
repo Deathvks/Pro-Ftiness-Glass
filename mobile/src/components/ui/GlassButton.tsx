@@ -91,13 +91,33 @@ export function GlassButton({ onPress, children, theme, style, color, noShadow, 
             onPressOut={handlePressOut}
             disabled={disabled}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={[{ flex: finalStyle.flex, width: finalStyle.width, height: finalStyle.height, alignSelf: finalStyle.alignSelf }]}
+            style={[{
+                flex: finalStyle.flex,
+                width: finalStyle.width,
+                height: finalStyle.height,
+                minHeight: finalStyle.minHeight,
+                alignSelf: finalStyle.alignSelf,
+                margin: finalStyle.margin,
+                marginTop: finalStyle.marginTop,
+                marginBottom: finalStyle.marginBottom,
+                marginLeft: finalStyle.marginLeft,
+                marginRight: finalStyle.marginRight,
+                marginVertical: finalStyle.marginVertical,
+                marginHorizontal: finalStyle.marginHorizontal,
+            }]}
         >
             <Animated.View style={[finalStyle, {
                 position: 'relative', 
                 flex: undefined, // Quitamos el flex interno para que no se estire verticalmente de forma extraña
                 width: finalStyle.width !== undefined ? '100%' : undefined,   // Forzamos que llene el Pressable horizontalmente si hay width fijo
-                height: finalStyle.height || '100%', // Forzamos que llene verticalmente
+                height: finalStyle.height !== undefined ? '100%' : undefined, // Solo 100% cuando hay height explícito en el Pressable
+                margin: undefined,
+                marginTop: undefined,
+                marginBottom: undefined,
+                marginLeft: undefined,
+                marginRight: undefined,
+                marginVertical: undefined,
+                marginHorizontal: undefined,
                 borderRadius: finalBorderRadius, // FIX: Aplica el border radius al contenedor que tiene el borde
                 transform: [{ scale: scaleAnim }],
                 borderWidth: finalStyle.borderWidth !== undefined ? finalStyle.borderWidth : 1,
