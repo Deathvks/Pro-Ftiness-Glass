@@ -14,6 +14,7 @@ import { getThemeBaseBackground } from '@/constants/theme';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { DynamicIslandTimer } from '@/components/workout/DynamicIslandTimer';
 import { RestTimerModal } from '@/components/workout/RestTimerModal';
+import GalaxyStarBackground from '@/components/ui/GalaxyStarBackground';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -153,6 +154,7 @@ export default function RootLayout() {
         <DynamicIslandTimer />
         <RestTimerModal />
         <ToastContainer />
+        <GalaxyStarBackground />
       </ThemeProvider>
     </GestureHandlerRootView>
   );

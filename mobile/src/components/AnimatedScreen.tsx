@@ -2,7 +2,9 @@ import React, { useRef } from 'react';
 import { View, Animated, Platform, KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useAppStore from '@/store/useAppStore';
-import { Colors } from '@/constants/theme';
+import { useAppColors } from '@/hooks/useAppColors';
+import { getThemeBaseBackground } from '@/constants/theme';
+import ThemeBackground from '@/components/ThemeBackground';
 
 interface AnimatedScreenProps {
     header: React.ReactNode;
@@ -20,10 +22,11 @@ export default function AnimatedScreen({
     const scrollY = useRef(new Animated.Value(0)).current;
     const insets = useSafeAreaInsets();
     const theme = useAppStore(state => state.theme) || 'oled';
-    const colors = (Colors as any)[theme] || Colors.oled;
+    const colors = useAppColors();
 
     return (
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <View style={{ flex: 1, backgroundColor: colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background }}>
+            <ThemeBackground />
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
                 <Animated.ScrollView
                     showsVerticalScrollIndicator={false}
@@ -34,8 +37,7 @@ export default function AnimatedScreen({
                     scrollEventThrottle={16}
                     contentContainerStyle={{ 
                         paddingHorizontal, 
-                        // El padding top se calcula para dejar espacio al header sin pisarse
-                        paddingTop: insets.top + 70, 
+                        paddingTop: insets.top + 52, 
                         paddingBottom 
                     }}
                 >

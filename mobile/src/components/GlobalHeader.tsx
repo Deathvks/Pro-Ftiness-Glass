@@ -105,7 +105,7 @@ export default function GlobalHeader({
         if (!scrollY) return new Animated.Value(1);
         return scrollY.interpolate({
             inputRange: [0, 20],
-            outputRange: [0, 1],
+            outputRange: [0.35, 1],
             extrapolate: 'clamp',
         });
     }, [scrollY]);
@@ -164,8 +164,8 @@ export default function GlobalHeader({
                     alignItems: 'center', 
                     justifyContent: 'space-between', 
                     paddingHorizontal: 16, 
-                    paddingBottom: 12,
-                    paddingTop: insets.top + 12, 
+                    paddingBottom: 8,
+                    paddingTop: insets.top + 6, 
                 }}
             >
             {/* Left: Profile or Back Button & Title */}

@@ -9,6 +9,7 @@ import {
   ViewStyle,
   StyleProp,
   Modal,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -37,10 +38,11 @@ import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
 import { getContrastTextColor } from '@/utils/routineHelpers';
+import { getThemeBaseBackground } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import LevelBadge from '@/components/LevelBadge';
+import ThemeBackground from '@/components/ThemeBackground';
 
-// --- Constantes de Apariencia (Completamente idénticas a la web) ---
 export interface AccentOption {
   id: string;
   label: string;
@@ -80,7 +82,7 @@ const ACCENT_OPTIONS: AccentOption[] = [
   { id: 'lavender', label: 'Lavanda', hex: '#c5a3ff', reqLevel: 5 },
   { id: 'baby-blue', label: 'Azul Bebé', hex: '#a2cffe', reqLevel: 5 },
 
-  // Nivel 10 (5 tonos pastel vibrantes)
+  // Nivel 10 (5 tonos pastel)
   { id: 'sunset-pink', label: 'Rosa Atardecer', hex: '#ff9a9e', reqLevel: 10 },
   { id: 'pistachio', label: 'Pistacho', hex: '#c5e1a5', reqLevel: 10 },
   { id: 'mango', label: 'Mango Pastel', hex: '#ffbe76', reqLevel: 10 },
@@ -169,9 +171,6 @@ const SPECIAL_THEMES: SpecialTheme[] = [
 
 const SPECIAL_THEME_IDS = ['galaxy', 'ocean', 'ocean-dark', 'desert', 'desert-dark'];
 
-/**
- * Superficie Liquid Glass sin overflow:'hidden' para evitar bordes partidos.
- */
 function GlassSurface({
   radius,
   isDark,
@@ -212,6 +211,12 @@ function GlassSurface({
 }
 
 export default function AppearanceScreen() {
+  const { width: windowWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+
+  const isNarrow = windowWidth < 380;
+  const isTablet = windowWidth >= 680;
+
   const theme = useAppStore(state => state.theme) || 'oled';
   const themePreference = useAppStore(state => (state as any).themePreference) || theme;
   const setTheme = useAppStore(state => state.setTheme);
@@ -228,7 +233,6 @@ export default function AppearanceScreen() {
   const gamification = useAppStore(state => (state as any).gamification);
 
   const colors = useAppColors();
-  const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
@@ -245,10 +249,7 @@ export default function AppearanceScreen() {
   const subtleBg = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
   const glassBorder = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
 
-  // Desplegable de "Mis Temas"
   const [isMyThemesOpen, setIsMyThemesOpen] = useState(true);
-
-  // Modal de advertencia para efectos de Galaxia
   const [showGalaxyWarning, setShowGalaxyWarning] = useState(false);
 
   // Animación de pulso continuo para los acentos nivel 20
@@ -264,7 +265,7 @@ export default function AppearanceScreen() {
     return () => pulseLoop.stop();
   }, []);
 
-  // Toast ligero
+  // Toast
   const [toast, setToast] = useState<{ message: string; locked?: boolean } | null>(null);
   const toastAnim = useRef(new Animated.Value(0)).current;
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -348,11 +349,10 @@ export default function AppearanceScreen() {
     startThemeTest?.(themeId, 10);
   };
 
-  // --- Subcomponentes de interfaz ---
   const SectionTitle = ({ icon: Icon, title }: { icon: React.ComponentType<any>; title: string }) => (
     <View style={styles.sectionTitleRow}>
       <View style={[styles.sectionIconBox, { backgroundColor: subtleBg }]}>
-        <Icon size={24} color={accentText} strokeWidth={2.5} />
+        <Icon size={22} color={accentText} strokeWidth={2.5} />
       </View>
       <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
     </View>
@@ -362,12 +362,15 @@ export default function AppearanceScreen() {
     <Text style={[styles.subHeading, { color: colors.textSecondary }, style]}>{children}</Text>
   );
 
-  const renderSwatch = (opt: AccentOption, columns: number) => {
+  const swatchCols = isTablet ? 6 : (isNarrow ? 4 : 5);
+  const swatchSize = isNarrow ? 44 : 48;
+
+  const renderSwatch = (opt: AccentOption) => {
     const isLocked = !!opt.reqLevel && userLevel < opt.reqLevel && !isAdmin;
     const isSelected = accent.toLowerCase() === opt.hex.toLowerCase() && !isSpecialActive && !isLocked;
 
     return (
-      <View key={opt.id} style={{ width: `${100 / columns}%`, padding: 4, alignItems: 'center' }}>
+      <View key={opt.id} style={{ width: `${100 / swatchCols}%`, padding: 3, alignItems: 'center' }}>
         <Pressable
           onPress={() => {
             if (isLocked) {
@@ -380,6 +383,9 @@ export default function AppearanceScreen() {
           style={({ pressed }) => [
             styles.swatchRing,
             {
+              width: swatchSize,
+              height: swatchSize,
+              borderRadius: swatchSize / 2,
               borderColor: isSelected ? opt.hex : 'transparent',
               opacity: isLocked ? 0.4 : 1,
               transform: [{ scale: pressed ? 0.92 : 1 }],
@@ -403,8 +409,8 @@ export default function AppearanceScreen() {
                 style={StyleSheet.absoluteFill}
               />
             )}
-            {isSelected && <Check size={18} strokeWidth={3} color={getContrastTextColor(opt.hex)} />}
-            {isLocked && <Lock size={15} strokeWidth={2.5} color="rgba(0, 0, 0, 0.55)" />}
+            {isSelected && <Check size={16} strokeWidth={3} color={getContrastTextColor(opt.hex)} />}
+            {isLocked && <Lock size={14} strokeWidth={2.5} color="rgba(0, 0, 0, 0.55)" />}
           </Animated.View>
         </Pressable>
         <Text
@@ -442,16 +448,19 @@ export default function AppearanceScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background }}>
+      {/* Fondo de tema activo (desierto, océano, galaxia) */}
+      <ThemeBackground />
+
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
         <GlobalHeader title="Apariencia" scrollY={scrollY} showBackButton />
       </View>
 
       <Animated.ScrollView
         contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: insets.top + 76,
-          paddingBottom: insets.bottom + 48,
+          paddingHorizontal: Math.max(16, (windowWidth - 640) / 2),
+          paddingTop: insets.top + 52,
+          paddingBottom: insets.bottom + 40,
         }}
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
@@ -460,17 +469,17 @@ export default function AppearanceScreen() {
         scrollEventThrottle={16}
       >
         {/* ================= 1. MIS TEMAS (ARRIBA Y DESPLEGABLE) ================= */}
-        <GlassSurface radius={32} isDark={isDark} borderColor={glassBorder} style={styles.card}>
+        <GlassSurface radius={28} isDark={isDark} borderColor={glassBorder} style={[styles.card, { padding: isNarrow ? 16 : 22 }]}>
           <Pressable
             onPress={() => setIsMyThemesOpen(!isMyThemesOpen)}
             style={styles.myThemesHeaderRow}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
               <View style={[styles.sectionIconBox, { backgroundColor: subtleBg }]}>
-                <MeteorIcon size={24} color={accentText} />
+                <MeteorIcon size={22} color={accentText} />
               </View>
               <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>Mis Temas</Text>
                   {isSpecialActive && (
                     <View style={[styles.activeThemePill, { backgroundColor: colors.tint + '20' }]}>
@@ -500,8 +509,8 @@ export default function AppearanceScreen() {
           </Pressable>
 
           {isMyThemesOpen && (
-            <View style={{ marginTop: 20 }}>
-              <Text style={[styles.cardDescription, { color: colors.textSecondary, marginBottom: 16 }]}>
+            <View style={{ marginTop: 16 }}>
+              <Text style={[styles.cardDescription, { color: colors.textSecondary, marginBottom: 14 }]}>
                 Temas exclusivos desbloqueados mediante retos y progreso en la aplicación.
               </Text>
 
@@ -517,7 +526,7 @@ export default function AppearanceScreen() {
                     key={st.key}
                     style={[
                       styles.themeRow,
-                      index > 0 && { marginTop: 14 },
+                      index > 0 && { marginTop: 12 },
                       isGroupActive
                         ? {
                             backgroundColor: st.tint + '1A',
@@ -526,7 +535,7 @@ export default function AppearanceScreen() {
                         : { backgroundColor: subtleBg, borderColor: 'transparent' },
                     ]}
                   >
-                    <View style={styles.themeRowInner}>
+                    <View style={[styles.themeRowInner, isNarrow && { flexDirection: 'column', alignItems: 'stretch' }]}>
                       <View style={styles.themeRowLeft}>
                         <View
                           style={[
@@ -540,9 +549,9 @@ export default function AppearanceScreen() {
                             },
                           ]}
                         >
-                          <STIcon size={22} color={isUnlocked ? st.tint : colors.textSecondary} />
+                          <STIcon size={20} color={isUnlocked ? st.tint : colors.textSecondary} />
                         </View>
-                        <View style={{ flexShrink: 1 }}>
+                        <View style={{ flex: 1 }}>
                           <Text
                             style={[styles.themeRowTitle, { color: isUnlocked ? st.tint : colors.text }]}
                             numberOfLines={1}
@@ -552,14 +561,14 @@ export default function AppearanceScreen() {
                           <View style={styles.themeRowStatus}>
                             {isUnlocked ? (
                               <>
-                                <LockOpen size={12} color="#22c55e" />
+                                <LockOpen size={11} color="#22c55e" />
                                 <Text style={[styles.themeRowStatusText, { color: colors.textSecondary }]}>
                                   Desbloqueado
                                 </Text>
                               </>
                             ) : (
                               <>
-                                <Lock size={12} color={colors.textSecondary} />
+                                <Lock size={11} color={colors.textSecondary} />
                                 <Text style={[styles.themeRowStatusText, { color: colors.textSecondary }]}>
                                   Invita a {st.requiredReferrals} amigos
                                 </Text>
@@ -569,7 +578,7 @@ export default function AppearanceScreen() {
                         </View>
                       </View>
 
-                      <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                      <View style={[styles.variantButtonsRow, isNarrow && { justifyContent: 'flex-end', marginTop: 8 }]}>
                         {st.variants.map(v => {
                           if (isUnlocked) {
                             const isBtnActive = (themePreference === v.id || activeTheme === v.id) && !isTestingTheme;
@@ -618,7 +627,7 @@ export default function AppearanceScreen() {
                                 borderColor={st.tint + '4D'}
                                 tintColor={st.tint}
                                 tintOpacity={0.2}
-                                style={[isSingle ? styles.pillLarge : styles.pillSmall, isSingle && { minWidth: 105 }]}
+                                style={[isSingle ? styles.pillLarge : styles.pillSmall, isSingle && { minWidth: 100 }]}
                               >
                                 <Text
                                   style={[isSingle ? styles.pillLargeText : styles.pillSmallText, { color: st.tint }]}
@@ -634,7 +643,7 @@ export default function AppearanceScreen() {
 
                     {isGroupActive && (
                       <View style={styles.themeInfoRow}>
-                        <Info size={14} color={st.tint} />
+                        <Info size={13} color={st.tint} />
                         <Text style={[styles.themeInfoText, { color: st.tint }]}>{st.info}</Text>
                       </View>
                     )}
@@ -651,7 +660,7 @@ export default function AppearanceScreen() {
                         >
                           <View style={styles.switchInfo}>
                             <View style={[styles.switchIconBox, { backgroundColor: st.tint + '20' }]}>
-                              <MeteorIcon size={18} color={st.tint} />
+                              <MeteorIcon size={16} color={st.tint} />
                             </View>
                             <View style={{ flex: 1, minWidth: 0 }}>
                               <Text style={[styles.switchTitle, { color: colors.text }]}>
@@ -698,13 +707,13 @@ export default function AppearanceScreen() {
         </GlassSurface>
 
         {/* ================= 2. APARIENCIA DE LA APP ================= */}
-        <GlassSurface radius={32} isDark={isDark} borderColor={glassBorder} style={styles.card}>
+        <GlassSurface radius={28} isDark={isDark} borderColor={glassBorder} style={[styles.card, { padding: isNarrow ? 16 : 22 }]}>
           <SectionTitle icon={Palette} title="Apariencia de la App" />
 
           {/* Temas Base */}
-          <View style={{ marginBottom: 32 }}>
+          <View style={{ marginBottom: 26 }}>
             <SubHeading>Tema Principal</SubHeading>
-            <View style={styles.themeGrid}>
+            <View style={[styles.themeGrid, isNarrow && { flexWrap: 'wrap' }]}>
               {BASE_THEMES.map(mode => {
                 const isActive = themePreference === mode.id && !isTestingTheme && !isSpecialActive;
                 const ModeIcon = mode.icon;
@@ -715,18 +724,19 @@ export default function AppearanceScreen() {
                     onPress={() => handleThemeClick(mode.id)}
                     style={({ pressed }) => [
                       styles.themeTileWrap,
+                      isNarrow && { width: '48%', flex: undefined, marginBottom: 8 },
                       { transform: [{ scale: pressed ? 0.96 : isActive ? 1.04 : 1 }] },
                     ]}
                   >
                     <GlassSurface
-                      radius={20}
+                      radius={18}
                       isDark={isDark}
                       borderColor={isActive ? colors.tint : glassBorder}
                       tintColor={isActive ? colors.tint : isDark ? '#ffffff' : '#000000'}
                       tintOpacity={isActive ? 0.9 : 0.05}
                       style={styles.themeTile}
                     >
-                      <ModeIcon size={22} color={fg} />
+                      <ModeIcon size={20} color={fg} />
                       <Text style={[styles.themeTileLabel, { color: fg }]}>{mode.label}</Text>
                     </GlassSurface>
                   </Pressable>
@@ -737,38 +747,38 @@ export default function AppearanceScreen() {
 
           {/* Acentos de Color */}
           <View
-            style={{ marginBottom: 32, opacity: isSpecialActive ? 0.5 : 1 }}
+            style={{ marginBottom: 26, opacity: isSpecialActive ? 0.5 : 1 }}
             pointerEvents={isSpecialActive ? 'none' : 'auto'}
           >
             <SubHeading>Acento de Color</SubHeading>
-            <View style={[styles.swatchGrid, { marginBottom: 16 }]}>
-              {ACCENT_OPTIONS.filter(o => !o.reqLevel).map(opt => renderSwatch(opt, 5))}
+            <View style={[styles.swatchGrid, { marginBottom: 14 }]}>
+              {ACCENT_OPTIONS.filter(o => !o.reqLevel).map(opt => renderSwatch(opt))}
             </View>
 
-            <SubHeading style={{ marginTop: 20, marginBottom: 8 }}>Acento de color por niveles</SubHeading>
+            <SubHeading style={{ marginTop: 18, marginBottom: 8 }}>Acento de color por niveles</SubHeading>
 
             {/* Nivel 5 */}
             {renderLevelHeader(5)}
-            <View style={[styles.swatchGrid, { marginBottom: 16 }]}>
-              {ACCENT_OPTIONS.filter(o => o.reqLevel === 5).map(opt => renderSwatch(opt, 5))}
+            <View style={[styles.swatchGrid, { marginBottom: 14 }]}>
+              {ACCENT_OPTIONS.filter(o => o.reqLevel === 5).map(opt => renderSwatch(opt))}
             </View>
 
             {/* Nivel 10 */}
             {renderLevelHeader(10)}
-            <View style={[styles.swatchGrid, { marginBottom: 16 }]}>
-              {ACCENT_OPTIONS.filter(o => o.reqLevel === 10).map(opt => renderSwatch(opt, 5))}
+            <View style={[styles.swatchGrid, { marginBottom: 14 }]}>
+              {ACCENT_OPTIONS.filter(o => o.reqLevel === 10).map(opt => renderSwatch(opt))}
             </View>
 
             {/* Nivel 15 · Degradados */}
             {renderLevelHeader(15, 'Degradados')}
-            <View style={[styles.swatchGrid, { marginBottom: 16 }]}>
-              {ACCENT_OPTIONS.filter(o => o.reqLevel === 15).map(opt => renderSwatch(opt, 5))}
+            <View style={[styles.swatchGrid, { marginBottom: 14 }]}>
+              {ACCENT_OPTIONS.filter(o => o.reqLevel === 15).map(opt => renderSwatch(opt))}
             </View>
 
             {/* Nivel 20 · Dinámicos Animados */}
             {renderLevelHeader(20, 'Animados')}
             <View style={styles.swatchGrid}>
-              {ACCENT_OPTIONS.filter(o => o.reqLevel === 20).map(opt => renderSwatch(opt, 5))}
+              {ACCENT_OPTIONS.filter(o => o.reqLevel === 20).map(opt => renderSwatch(opt))}
             </View>
           </View>
 
@@ -789,7 +799,7 @@ export default function AppearanceScreen() {
                     { backgroundColor: hapticsEnabled ? colors.tint + '1A' : subtleBg },
                   ]}
                 >
-                  <Vibrate size={20} color={hapticsEnabled ? accentText : colors.textSecondary} />
+                  <Vibrate size={18} color={hapticsEnabled ? accentText : colors.textSecondary} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={[styles.switchTitle, { color: colors.text }]}>Vibración Háptica</Text>
@@ -838,7 +848,7 @@ export default function AppearanceScreen() {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContainer}>
             <GlassSurface
-              radius={28}
+              radius={26}
               isDark={isDark}
               borderColor={glassBorder}
               tintColor={isDark ? '#080814' : '#ffffff'}
@@ -854,7 +864,7 @@ export default function AppearanceScreen() {
               </Pressable>
 
               <View style={[styles.modalIconWrap, { backgroundColor: '#a855f720' }]}>
-                <Sparkles size={32} color="#a855f7" />
+                <Sparkles size={30} color="#a855f7" />
               </View>
 
               <Text style={[styles.modalTitle, { color: colors.text }]}>
@@ -940,21 +950,23 @@ export default function AppearanceScreen() {
 
 const styles = StyleSheet.create({
   card: {
-    padding: 22,
-    marginBottom: 20,
+    marginBottom: 16,
+    width: '100%',
+    maxWidth: 640,
+    alignSelf: 'center',
   },
   sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 20,
+    gap: 10,
+    marginBottom: 16,
   },
   sectionIconBox: {
-    padding: 10,
-    borderRadius: 16,
+    padding: 8,
+    borderRadius: 14,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     letterSpacing: -0.3,
   },
@@ -963,22 +975,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: 12,
-    marginLeft: 4,
+    marginBottom: 10,
+    marginLeft: 2,
   },
   cardDescription: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 17,
   },
 
-  // Encabezado de "Mis Temas"
   myThemesHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   myThemesSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 2,
     fontWeight: '500',
   },
@@ -994,44 +1005,40 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   chevronBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  // Temas Base
   themeGrid: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
+    justifyContent: 'space-between',
   },
   themeTileWrap: {
     flex: 1,
   },
   themeTile: {
-    paddingVertical: 14,
+    paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
   },
   themeTileLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
 
-  // Acentos
   swatchGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -4,
+    marginHorizontal: -3,
   },
   swatchRing: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
     borderWidth: 2.5,
     padding: 2,
     alignItems: 'center',
@@ -1040,7 +1047,7 @@ const styles = StyleSheet.create({
   swatchDot: {
     width: '100%',
     height: '100%',
-    borderRadius: 22,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -1051,19 +1058,19 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   swatchLabel: {
-    fontSize: 10,
+    fontSize: 9.5,
     textAlign: 'center',
-    marginTop: 4,
-    height: 24,
-    lineHeight: 12,
-    paddingHorizontal: 2,
+    marginTop: 3,
+    height: 22,
+    lineHeight: 11,
+    paddingHorizontal: 1,
   },
   levelHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginTop: 12,
-    marginBottom: 8,
+    marginTop: 10,
+    marginBottom: 6,
     marginLeft: 2,
   },
   levelBadgeBox: {
@@ -1073,7 +1080,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   levelTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
   },
   levelTag: {
@@ -1088,129 +1095,131 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // Fila de Temas Especiales
   themeRow: {
-    padding: 14,
-    borderRadius: 20,
+    padding: 12,
+    borderRadius: 18,
     borderWidth: 1,
   },
   themeRowInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 8,
   },
   themeRowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     flex: 1,
   },
   themeIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   themeRowTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
   },
   themeRowStatus: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
     marginTop: 2,
   },
   themeRowStatusText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '500',
+  },
+  variantButtonsRow: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
   },
   themeInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: 10,
-    paddingTop: 10,
+    marginTop: 8,
+    paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
   themeInfoText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '600',
     flex: 1,
   },
   galaxySwitchContainer: {
-    marginTop: 12,
-    paddingTop: 8,
+    marginTop: 10,
+    paddingTop: 6,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
 
-  // Píldoras de aplicar / probar
   pillLarge: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pillLargeText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  pillSmall: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 7,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pillSmallText: {
+  pillLargeText: {
     fontSize: 11,
     fontWeight: '700',
   },
+  pillSmall: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pillSmallText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+  },
 
-  // Switches
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 18,
-    gap: 12,
+    padding: 10,
+    borderRadius: 16,
+    gap: 10,
   },
   switchInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     flex: 1,
   },
   switchIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   switchTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   switchSubtitle: {
-    fontSize: 11,
+    fontSize: 10.5,
     marginTop: 2,
   },
   switchTrack: {
-    width: 48,
-    height: 28,
-    borderRadius: 14,
+    width: 46,
+    height: 26,
+    borderRadius: 13,
     padding: 2,
     borderWidth: 1.5,
     justifyContent: 'center',
   },
   switchThumb: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#ffffff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1219,53 +1228,52 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
-  // Modal
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.65)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
   },
   modalContainer: {
     width: '100%',
     maxWidth: 380,
   },
   modalCard: {
-    padding: 24,
+    padding: 22,
     alignItems: 'center',
   },
   modalCloseBtn: {
     position: 'absolute',
-    top: 16,
-    right: 16,
+    top: 14,
+    right: 14,
     padding: 6,
     zIndex: 10,
   },
   modalIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 22,
+    width: 58,
+    height: 58,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   modalMessage: {
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 12.5,
+    lineHeight: 18,
     textAlign: 'center',
-    marginBottom: 18,
+    marginBottom: 16,
   },
   modalBadgesRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 22,
+    gap: 10,
+    marginBottom: 20,
   },
   modalBadge: {
     flexDirection: 'row',
@@ -1273,28 +1281,28 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   modalBadgeText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '600',
   },
   modalActionsRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
     width: '100%',
   },
   modalBtnSecondary: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 14,
+    paddingVertical: 11,
+    borderRadius: 13,
     alignItems: 'center',
   },
   modalBtnSecondaryText: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '700',
   },
   modalBtnPrimary: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 14,
+    paddingVertical: 11,
+    borderRadius: 13,
     alignItems: 'center',
     shadowColor: '#a855f7',
     shadowOffset: { width: 0, height: 4 },
@@ -1303,12 +1311,11 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   modalBtnPrimaryText: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '700',
     color: '#ffffff',
   },
 
-  // Toast
   toastWrap: {
     position: 'absolute',
     left: 20,
@@ -1320,11 +1327,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
   toastText: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '600',
   },
 });

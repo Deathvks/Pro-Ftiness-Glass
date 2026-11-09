@@ -6,8 +6,9 @@ import { useRouter } from 'expo-router';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { getContrastColor } from '@/utils/colorUtils';
-import { Colors } from '@/constants/theme';
+import { Colors, getThemeBaseBackground } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
+import ThemeBackground from '@/components/ThemeBackground';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { 
   BarChart2, 
@@ -102,13 +103,14 @@ export default function Hub() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: colors.background === 'transparent' ? getThemeBaseBackground(theme) : colors.background }}>
+      <ThemeBackground />
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 100 }} pointerEvents="box-none">
         <GlobalHeader title="Menú" scrollY={scrollY} />
       </View>
 
       <Animated.ScrollView 
-        contentContainerStyle={{ padding: 16, paddingTop: insets.top + 70, paddingBottom: 150 }} 
+        contentContainerStyle={{ padding: 16, paddingTop: insets.top + 54, paddingBottom: 150 }} 
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
