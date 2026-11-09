@@ -161,7 +161,7 @@ export default function Hub() {
             title="Retos y Misiones"
             description="Gana XP y sube de nivel"
             colors={colors}
-            onPress={() => Alert.alert('Retos', 'Próximamente en la app móvil')}
+            onPress={() => router.push('/challenges' as any)}
           />
 
           <HubButton
