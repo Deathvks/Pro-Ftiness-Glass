@@ -217,7 +217,7 @@ export default function Hub() {
             title="Ajustes"
             description="Cuenta, privacidad y notificaciones"
             colors={colors}
-            onPress={() => Alert.alert('Ajustes', 'Próximamente en la app móvil')}
+            onPress={() => router.push('/settings' as any)}
           />
 
           {isTrainer && (

@@ -35,6 +35,17 @@ export const unsubscribeFromPush = (endpoint) => {
   });
 };
 
+export const getPushPreferences = () => {
+  return apiClient('/notifications/push-preferences');
+};
+
+export const updatePushPreferences = (purpose, granted, version) => {
+  return apiClient('/notifications/push-preferences', {
+    method: 'PUT',
+    body: { purpose, granted, version },
+  });
+};
+
 /* =========================================
    SECCIÓN 2: NOTIFICACIONES INTERNAS (App)
    ========================================= */

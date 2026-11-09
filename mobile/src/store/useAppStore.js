@@ -197,6 +197,25 @@ const useAppStore = create((set, get) => ({
         set({ hapticsEnabled: enabled });
     },
 
+    // --- Configuración Global: Sonido de Descanso ---
+    restSoundEnabled: (() => {
+        try {
+            const stored = (typeof localStorage !== 'undefined' ? localStorage.getItem('restSoundEnabled') : null);
+            return stored === null ? true : JSON.parse(stored);
+        } catch (e) {
+            return true;
+        }
+    })(),
+
+    setRestSoundEnabled: (enabled) => {
+        try {
+            if (typeof localStorage !== 'undefined') localStorage.setItem('restSoundEnabled', JSON.stringify(enabled));
+        } catch (e) {
+            console.warn('Error saving rest sound preference', e);
+        }
+        set({ restSoundEnabled: enabled });
+    },
+
     // --- Configuración Global: Tour Guiado General ---
     tourCompleted: (() => {
         try {
