@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, ImageBackground, Alert, Animated } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -99,6 +100,19 @@ export default function Hub() {
   const isTrainer = userProfile?.role === 'trainer' || isAdmin;
   const isClient = !isTrainer;
 
+  const unreadChats = useAppStore(state => state.unreadChats);
+  const fetchUnreadChats = useAppStore(state => state.fetchUnreadChats);
+  const [visitedAsesoria, setVisitedAsesoria] = useState(true);
+
+  useEffect(() => {
+    if (userProfile?.id) {
+      AsyncStorage.getItem(`visited_asesoria_${userProfile.id}`).then(val => {
+        setVisitedAsesoria(val === 'true');
+      });
+      fetchUnreadChats?.();
+    }
+  }, [userProfile?.id, fetchUnreadChats]);
+
   const scrollY = React.useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
 
@@ -152,7 +166,14 @@ export default function Hub() {
               title="Asesoría"
               description="Habla con tu entrenador"
               colors={colors}
-              onPress={() => Alert.alert('Asesoría', 'Próximamente en la app móvil')}
+              badge={!visitedAsesoria || (unreadChats && unreadChats > 0)}
+              onPress={() => {
+                if (userProfile?.id) {
+                  AsyncStorage.setItem(`visited_asesoria_${userProfile.id}`, 'true');
+                  setVisitedAsesoria(true);
+                }
+                router.push('/asesoria' as any);
+              }}
             />
           )}
 
