@@ -14,9 +14,10 @@ import {
   ScrollView,
   StyleProp,
   ViewStyle,
+  BackHandler,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import * as Clipboard from 'expo-clipboard';
@@ -163,8 +164,23 @@ export default function SettingsScreen() {
   const subtleItemBg = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)';
   const activeTintContrast = getContrastTextColor(colors.tint);
 
-  // activeTab es null al inicio para mostrar la lista vertical exactamente como pide el usuario
-  const [activeTab, setActiveTab] = useState<SettingsSection['id'] | null>(null);
+  const params = useLocalSearchParams<{ section?: string }>();
+  const initialTab = (
+    params.section && SETTINGS_SECTIONS.some(s => s.id === params.section)
+      ? params.section
+      : null
+  ) as SettingsSection['id'] | null;
+
+  // activeTab es null al inicio para mostrar la lista vertical salvo que venga por ruta
+  const [activeTab, setActiveTab] = useState<SettingsSection['id'] | null>(initialTab);
+
+  useEffect(() => {
+    if (params.section && SETTINGS_SECTIONS.some(s => s.id === params.section)) {
+      setActiveTab(params.section as SettingsSection['id']);
+    } else if (!params.section) {
+      setActiveTab(null);
+    }
+  }, [params.section]);
 
   // Modales
   const [showDataTransferModal, setShowDataTransferModal] = useState(false);
@@ -289,15 +305,36 @@ export default function SettingsScreen() {
     try {
       Haptics.selectionAsync();
     } catch {}
-    setActiveTab(sectionId);
+    router.push({ pathname: '/settings', params: { section: sectionId } } as any);
   };
 
-  const handleBackToMenu = () => {
+  const handleBackToMenu = useCallback(() => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
-    setActiveTab(null);
-  };
+    if (params.section) {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        setActiveTab(null);
+      }
+    } else if (activeTab !== null) {
+      setActiveTab(null);
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/hub' as any);
+    }
+  }, [params.section, activeTab, router]);
+
+  useEffect(() => {
+    if (activeTab === null || params.section) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setActiveTab(null);
+      return true;
+    });
+    return () => sub.remove();
+  }, [activeTab, params.section]);
 
   // Guardar visibilidad en Muro
   const handleChangeWorkoutVisibility = (val: 'public' | 'friends' | 'private') => {
@@ -608,7 +645,7 @@ export default function SettingsScreen() {
           title={headerTitle}
           scrollY={scrollY}
           showBackButton={true}
-          onBackPress={activeTab ? handleBackToMenu : undefined}
+          onBackPress={handleBackToMenu}
         />
       </View>
 
@@ -783,7 +820,7 @@ export default function SettingsScreen() {
 
                   <View style={styles.switchItemsList}>
                     <TouchableOpacity
-                      onPress={() => setActiveTab('offline')}
+                      onPress={() => handleSelectSection('offline')}
                       activeOpacity={0.7}
                       style={[styles.settingRowItem, { backgroundColor: subtleItemBg }]}
                     >

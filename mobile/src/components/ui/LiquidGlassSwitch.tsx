@@ -5,6 +5,7 @@ import {
   Pressable,
   Animated,
   Platform,
+  Switch,
   StyleProp,
   ViewStyle,
 } from 'react-native';
@@ -42,13 +43,32 @@ export const LiquidGlassSwitch: React.FC<LiquidGlassSwitchProps> = ({
   const pressAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (Platform.OS === 'ios') return;
     Animated.spring(switchAnim, {
       toValue: value ? 1 : 0,
       useNativeDriver: true,
       friction: 8,
       tension: 150,
     }).start();
-  }, [value]);
+  }, [value, switchAnim]);
+
+  // En iOS usamos el UISwitch nativo del sistema (que en iOS 26 incluye el efecto Liquid Glass nativo real)
+  if (Platform.OS === 'ios') {
+    return (
+      <Switch
+        value={Boolean(value)}
+        onValueChange={onValueChange}
+        disabled={disabled}
+        trackColor={{
+          false: isDark ? 'rgba(120, 120, 128, 0.32)' : 'rgba(120, 120, 128, 0.16)',
+          true: tintColor,
+        }}
+        ios_backgroundColor={isDark ? 'rgba(120, 120, 128, 0.32)' : 'rgba(120, 120, 128, 0.16)'}
+        accessibilityLabel={accessibilityLabel}
+        style={style}
+      />
+    );
+  }
 
   const handlePressIn = () => {
     if (disabled) return;
@@ -95,7 +115,7 @@ export const LiquidGlassSwitch: React.FC<LiquidGlassSwitchProps> = ({
     outputRange: [PADDING, PADDING + TRAVEL_DISTANCE],
   });
 
-  // Efecto elástico característico de iOS al presionar el interruptor
+  // Efecto elástico característico al presionar el interruptor
   const scaleX = pressAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [1, 1.15],

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { BackHandler } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
@@ -40,6 +41,8 @@ export default function ProgressScreen() {
   useEffect(() => {
     if (params.section && PROGRESS_SECTIONS.some(s => s.id === params.section)) {
       setActiveSection(params.section as ProgressSectionId);
+    } else if (!params.section) {
+      setActiveSection(null);
     }
   }, [params.section]);
 
@@ -47,23 +50,36 @@ export default function ProgressScreen() {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
-    setActiveSection(id);
+    router.push({ pathname: '/progress', params: { section: id } } as any);
   };
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
-    if (activeSection !== null) {
-      setActiveSection(null);
-    } else {
+    if (params.section) {
       if (router.canGoBack()) {
         router.back();
       } else {
-        router.replace('/(tabs)');
+        setActiveSection(null);
       }
+    } else if (activeSection !== null) {
+      setActiveSection(null);
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/hub' as any);
     }
-  };
+  }, [params.section, activeSection, router]);
+
+  useEffect(() => {
+    if (activeSection === null || params.section) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setActiveSection(null);
+      return true;
+    });
+    return () => sub.remove();
+  }, [activeSection, params.section]);
 
   const activeSectionObj = PROGRESS_SECTIONS.find(s => s.id === activeSection);
   const headerTitle = activeSection !== null ? (activeSectionObj?.label || 'Tu Progreso') : 'Tu Progreso';
