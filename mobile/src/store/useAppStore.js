@@ -1,6 +1,8 @@
 import '@/utils/localStoragePolyfill';
 import { create } from 'zustand';
-import { Appearance } from 'react-native';
+import { Appearance, Platform } from 'react-native';
+import * as SystemUI from 'expo-system-ui';
+import { getThemeBaseBackground } from '@/constants/theme';
 import { createAuthSlice } from './authSlice';
 import { createDataSlice } from './dataSlice';
 import { createWorkoutSlice } from './workoutSlice';
@@ -36,6 +38,23 @@ export const applyNativeColorScheme = (pref, resolved) => {
             Appearance.setColorScheme('unspecified');
         } else {
             Appearance.setColorScheme(isDark ? 'dark' : 'light');
+        }
+
+        if (Platform.OS === 'android') {
+            try {
+                const baseBg = getThemeBaseBackground(active);
+                SystemUI.setBackgroundColorAsync(baseBg).catch(() => {});
+            } catch {}
+            try {
+                const NavigationBar = require('expo-navigation-bar');
+                NavigationBar.setStyle(isDark ? 'dark' : 'light');
+            } catch {}
+            try {
+                const { StatusBar: RNStatusBar } = require('react-native');
+                RNStatusBar.setTranslucent(true);
+                RNStatusBar.setBackgroundColor('transparent');
+                RNStatusBar.setBarStyle(isDark ? 'light-content' : 'dark-content');
+            } catch {}
         }
     } catch (e) {
         // no-op

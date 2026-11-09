@@ -1,6 +1,8 @@
+import { Platform } from 'react-native';
 import { NativeTabs } from 'expo-router/native-tabs';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
+import { getThemeBaseBackground } from '@/constants/theme';
 
 export default function AppTabs() {
   const colors = useAppColors();
@@ -13,6 +15,10 @@ export default function AppTabs() {
     : (isDark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight');
 
   const userInterfaceStyle = isDark ? 'dark' : 'light';
+  const baseBg = getThemeBaseBackground(theme);
+  const tabBarBg = Platform.OS === 'android'
+    ? (isDark ? (theme === 'oled' ? '#000000' : (colors.tabBar?.startsWith('rgba') ? baseBg : colors.tabBar)) : colors.tabBar)
+    : colors.tabBar;
 
   return (
     <NativeTabs
@@ -20,7 +26,8 @@ export default function AppTabs() {
       tintColor={colors.tint}
       indicatorColor="transparent"
       disableIndicator={true}
-      backgroundColor={colors.tabBar}
+      rippleColor="transparent"
+      backgroundColor={tabBarBg}
       blurEffect={blurEffect}
       disableTransparentOnScrollEdge={true}
       shadowColor={isDark ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.08)'}

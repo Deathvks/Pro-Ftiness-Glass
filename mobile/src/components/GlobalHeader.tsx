@@ -16,22 +16,22 @@ import { BACKEND_BASE_URL } from '@/services/apiClient';
 const getHeaderThemeBg = (theme: string) => {
     switch (theme) {
         case 'oled':
-            return 'rgba(0, 0, 0, 0.70)';
+            return 'rgba(0, 0, 0, 0.88)';
         case 'dark':
-            return 'rgba(15, 23, 42, 0.75)';
+            return 'rgba(15, 23, 42, 0.88)';
         case 'galaxy':
-            return 'rgba(10, 10, 26, 0.75)';
+            return 'rgba(10, 10, 26, 0.88)';
         case 'ocean-dark':
-            return 'rgba(8, 47, 73, 0.75)';
+            return 'rgba(8, 47, 73, 0.88)';
         case 'desert-dark':
-            return 'rgba(44, 30, 22, 0.75)';
+            return 'rgba(44, 30, 22, 0.88)';
         case 'ocean':
-            return 'rgba(240, 249, 255, 0.80)';
+            return 'rgba(240, 249, 255, 0.85)';
         case 'desert':
-            return 'rgba(253, 248, 245, 0.80)';
+            return 'rgba(253, 248, 245, 0.85)';
         case 'light':
         default:
-            return 'rgba(243, 244, 246, 0.80)';
+            return 'rgba(243, 244, 246, 0.85)';
     }
 };
 
@@ -106,10 +106,10 @@ export default function GlobalHeader({
         if (!scrollY) return new Animated.Value(1);
         return scrollY.interpolate({
             inputRange: [0, 20],
-            outputRange: [0.35, 1],
+            outputRange: [isDark ? 0.88 : 0.65, 1],
             extrapolate: 'clamp',
         });
-    }, [scrollY]);
+    }, [scrollY, isDark]);
 
     return (
         <View style={{ position: 'relative', zIndex: 100 }} pointerEvents="box-none">
@@ -146,7 +146,7 @@ export default function GlobalHeader({
                     ]}
                 >
                     <BlurView
-                        intensity={80}
+                        intensity={Platform.OS === 'android' ? 95 : 80}
                         tint={colorScheme === 'dark' ? 'dark' : 'light'}
                         style={StyleSheet.absoluteFill}
                     />
