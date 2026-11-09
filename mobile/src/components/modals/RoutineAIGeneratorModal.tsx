@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, ActivityInd
 import { Sparkles, X, Zap, Loader2, AlertCircle } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
-import { getContrastTextColor } from '@/utils/colorUtils';
+import { getContrastTextColor, getContrastColor } from '@/utils/colorUtils';
 import { GlassView } from 'expo-glass-effect';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { askTrainerAI } from '@/services/aiService';
