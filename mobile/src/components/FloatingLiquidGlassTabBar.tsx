@@ -301,27 +301,77 @@ export function FloatingLiquidGlassTabBar({
     [activeIndex, snapToTab, state.index, triggerTabChange]
   );
 
-  // Tinte translúcido suave (30-38% de opacidad)
+  // Tinte translúcido idéntico al frontend (.liquid-glass-navbar)
   const getGlassTintBg = () => {
     switch (theme) {
       case 'oled':
-        return 'rgba(0, 0, 0, 0.35)';
+        return 'rgba(0, 0, 0, 0.55)';
       case 'dark':
-        return 'rgba(15, 23, 42, 0.36)';
+        return 'rgba(15, 23, 42, 0.46)';
       case 'galaxy':
-        return 'rgba(10, 10, 26, 0.38)';
+        return 'rgba(10, 10, 26, 0.46)';
       case 'ocean-dark':
-        return 'rgba(8, 47, 73, 0.38)';
+        return 'rgba(8, 47, 73, 0.46)';
       case 'desert-dark':
-        return 'rgba(44, 30, 22, 0.38)';
+        return 'rgba(44, 30, 22, 0.46)';
       case 'ocean':
-        return 'rgba(240, 249, 255, 0.42)';
+        return 'rgba(240, 249, 255, 0.68)';
       case 'desert':
-        return 'rgba(253, 248, 245, 0.42)';
+        return 'rgba(253, 248, 245, 0.68)';
       case 'light':
       default:
-        return 'rgba(255, 255, 255, 0.42)';
+        return 'rgba(255, 255, 255, 0.68)';
     }
+  };
+
+  // Sombra nativa idéntica al CSS box-shadow del frontend
+  // 0 12px 32px -4px rgba(0, 0, 0, 0.35), 0 4px 12px -2px rgba(0, 0, 0, 0.15)
+  const getBoxShadow = () => {
+    if (theme === 'oled') {
+      return [
+        {
+          offsetX: 0,
+          offsetY: 14,
+          blurRadius: 36,
+          spreadDistance: -4,
+          color: 'rgba(0, 0, 0, 0.90)',
+        },
+      ];
+    }
+    if (!isDark) {
+      return [
+        {
+          offsetX: 0,
+          offsetY: 10,
+          blurRadius: 28,
+          spreadDistance: -4,
+          color: 'rgba(15, 23, 42, 0.08)',
+        },
+        {
+          offsetX: 0,
+          offsetY: 4,
+          blurRadius: 10,
+          spreadDistance: 0,
+          color: 'rgba(15, 23, 42, 0.04)',
+        },
+      ];
+    }
+    return [
+      {
+        offsetX: 0,
+        offsetY: 12,
+        blurRadius: 32,
+        spreadDistance: -4,
+        color: 'rgba(0, 0, 0, 0.35)',
+      },
+      {
+        offsetX: 0,
+        offsetY: 4,
+        blurRadius: 12,
+        spreadDistance: -2,
+        color: 'rgba(0, 0, 0, 0.15)',
+      },
+    ];
   };
 
   const bottomOffset = Math.max(insets.bottom, 12);
@@ -330,31 +380,20 @@ export function FloatingLiquidGlassTabBar({
 
   return (
     <View style={[styles.outerWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
-        {/* Contenedor de sombra ambiental suave */}
+        {/* Contenedor de sombra Liquid Glass idéntico al box-shadow del frontend */}
         <View
           style={[
             styles.shadowContainer,
             {
+              boxShadow: getBoxShadow() as any,
               shadowColor: '#000',
-              shadowOpacity: isDark ? 0.08 : 0.03,
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: isDark ? 0.22 : 0.06,
+              shadowRadius: 16,
+              elevation: 0,
             },
           ]}
         >
-          {/* Sombra ambiental difusa suave para Android (sin elevation tosco) */}
-          {Platform.OS === 'android' && (
-            <LinearGradient
-              pointerEvents="none"
-              colors={
-                isDark
-                  ? ['transparent', 'rgba(0, 0, 0, 0.05)', 'transparent']
-                  : ['transparent', 'rgba(0, 0, 0, 0.02)', 'transparent']
-              }
-              start={{ x: 0.5, y: 0.3 }}
-              end={{ x: 0.5, y: 1 }}
-              style={styles.androidSoftShadow}
-            />
-          )}
-
           {/* Cápsula de cristal interior recortada con bordes redondeados perfectos */}
           <View
             {...panResponder.panHandlers}
@@ -367,15 +406,15 @@ export function FloatingLiquidGlassTabBar({
             style={[
               styles.capsuleInner,
               {
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.65)',
-                borderTopColor: isDark ? 'rgba(255, 255, 255, 0.32)' : 'rgba(255, 255, 255, 0.95)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+                borderTopColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.80)',
               },
             ]}
           >
             {/* Desenfoque de cristal líquido nativo */}
             <BlurView
               pointerEvents="none"
-              intensity={Platform.OS === 'android' ? 45 : 45}
+              intensity={45}
               tint={isDark ? 'dark' : 'light'}
               style={StyleSheet.absoluteFill}
             />
@@ -394,11 +433,11 @@ export function FloatingLiquidGlassTabBar({
               pointerEvents="none"
               colors={
                 isDark
-                  ? ['rgba(255, 255, 255, 0.10)', 'rgba(255, 255, 255, 0.02)', 'transparent']
-                  : ['rgba(255, 255, 255, 0.40)', 'rgba(255, 255, 255, 0.06)', 'transparent']
+                  ? ['rgba(255, 255, 255, 0.12)', 'rgba(255, 255, 255, 0.02)', 'transparent']
+                  : ['rgba(255, 255, 255, 0.85)', 'rgba(255, 255, 255, 0.35)', 'transparent']
               }
               start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
+              end={{ x: 0.5, y: 1 }}
               style={styles.specularShine}
             />
 
@@ -415,23 +454,22 @@ export function FloatingLiquidGlassTabBar({
                     { scaleX },
                     { scaleY },
                   ],
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.85)',
-                  borderTopColor: isDark ? 'rgba(255, 255, 255, 0.40)' : '#ffffff',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.20)' : 'rgba(0, 0, 0, 0.08)',
+                  borderTopColor: isDark ? 'rgba(255, 255, 255, 0.35)' : '#ffffff',
                 },
               ]}
             >
               <LinearGradient
                 colors={
                   isDark
-                    ? ['rgba(255, 255, 255, 0.20)', 'rgba(255, 255, 255, 0.04)']
-                    : ['rgba(255, 255, 255, 0.80)', 'rgba(255, 255, 255, 0.25)']
+                    ? ['rgba(255, 255, 255, 0.20)', 'rgba(255, 255, 255, 0.03)']
+                    : ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.50)']
                 }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.liquidDropGradient}
               />
             </Animated.View>
-
             {/* Iconos del Navbar centrados y distribuidos uniformemente */}
             {state.routes.map((route: any, index: number) => {
               const isEffectiveActive =
@@ -468,20 +506,7 @@ const styles = StyleSheet.create({
     maxWidth: 380,
     height: 60,
     borderRadius: 30,
-    // Sombra suave en iOS, sin elevation tosco en Android
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 8,
-    shadowOpacity: Platform.OS === 'ios' ? 0.08 : 0,
-    elevation: 0,
     position: 'relative',
-  },
-  androidSoftShadow: {
-    ...StyleSheet.absoluteFill,
-    top: 4,
-    bottom: -2,
-    left: 12,
-    right: 12,
-    borderRadius: 30,
   },
   capsuleInner: {
     width: '100%',
@@ -492,9 +517,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: PADDING_H,
     overflow: 'hidden',
-    // Bordes satinados de cristal
-    borderWidth: 1,
-    borderTopWidth: 1.5,
+    borderWidth: 0.5,
+    borderTopWidth: 1,
   },
   specularShine: {
     position: 'absolute',
@@ -508,8 +532,8 @@ const styles = StyleSheet.create({
     top: 9, // (60 - 42) / 2 = 9
     left: 0,
     borderRadius: 21,
-    borderWidth: 1,
-    borderTopWidth: 1.5,
+    borderWidth: 0.5,
+    borderTopWidth: 1,
     overflow: 'hidden',
     elevation: 0,
     zIndex: 1,
