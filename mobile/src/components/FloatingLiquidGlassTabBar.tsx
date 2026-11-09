@@ -6,6 +6,7 @@ import {
   Platform,
   Animated,
   Dimensions,
+  PanResponder,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -34,6 +35,9 @@ const TAB_CONFIG: Record<string, { label: string; icon: any }> = {
 };
 
 const TAB_KEYS = ['index', 'social', 'nutrition', 'routines', 'hub'];
+const PADDING_H = 8;
+const DROP_WIDTH = 50;
+const DROP_HEIGHT = 44;
 
 export function FloatingLiquidGlassTabBar({
   state,
@@ -48,91 +52,175 @@ export function FloatingLiquidGlassTabBar({
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
-  // Ancho inicial estimado para calcular la posición de la gota de inmediato
+  // Ancho estimado inicial
   const screenWidth = Dimensions.get('window').width;
   const initialCapsuleWidth = Math.min(screenWidth - 32, 380);
   const [capsuleWidth, setCapsuleWidth] = useState(initialCapsuleWidth);
 
-  // Dimensiones de la gota líquida
-  const availableWidth = Math.max(0, capsuleWidth - 12);
-  const tabWidth = availableWidth / TAB_KEYS.length;
-  const dropWidth = Math.min(tabWidth - 4, 58);
-  const dropHeight = 46;
+  // Pestaña visual activa (soporta arrastre táctil)
+  const [activeHoverIndex, setActiveHoverIndex] = useState<number | null>(null);
 
-  // Animaciones de traslación horizontal y deformación elástica (squish/stretch)
-  const getDropLeft = (index: number) => {
-    return 6 + index * tabWidth + (tabWidth - dropWidth) / 2;
+  // Cálculo matemático del centro exacto de cada pestaña
+  const innerWidth = Math.max(0, capsuleWidth - PADDING_H * 2);
+  const tabWidth = innerWidth / TAB_KEYS.length;
+
+  const getDropLeft = (idx: number) => {
+    const center = PADDING_H + (idx + 0.5) * tabWidth;
+    return Math.round(center - DROP_WIDTH / 2);
   };
 
   const activeIndex = state.index >= 0 ? state.index : 0;
+  const currentXRef = useRef(getDropLeft(activeIndex));
+  const isDraggingRef = useRef(false);
+  const startDragXRef = useRef(0);
+  const hoverIndexRef = useRef(activeIndex);
+
   const translateX = useRef(new Animated.Value(getDropLeft(activeIndex))).current;
   const scaleX = useRef(new Animated.Value(1)).current;
   const scaleY = useRef(new Animated.Value(1)).current;
 
-  // Seguimiento suave y elástico de la gota al cambiar de pestaña
-  useEffect(() => {
-    const targetLeft = getDropLeft(activeIndex);
+  // Animación suave con rebote elástico (spring) al centro del icono
+  const snapToTab = (idx: number) => {
+    const targetX = getDropLeft(idx);
+    currentXRef.current = targetX;
 
-    // Animación de traslación fluida con física de resorte (spring)
     Animated.parallel([
       Animated.spring(translateX, {
-        toValue: targetLeft,
+        toValue: targetX,
+        friction: 6.5,
+        tension: 75,
         useNativeDriver: true,
-        friction: 7,
-        tension: 80,
       }),
-      // Efecto elástico de líquido que se estira al saltar y vuelve a su forma
       Animated.sequence([
         Animated.parallel([
-          Animated.timing(scaleX, {
-            toValue: 1.25,
-            duration: 120,
-            useNativeDriver: true,
-          }),
-          Animated.timing(scaleY, {
-            toValue: 0.82,
-            duration: 120,
-            useNativeDriver: true,
-          }),
+          Animated.timing(scaleX, { toValue: 1.20, duration: 110, useNativeDriver: true }),
+          Animated.timing(scaleY, { toValue: 0.82, duration: 110, useNativeDriver: true }),
         ]),
         Animated.parallel([
-          Animated.spring(scaleX, {
-            toValue: 1,
-            friction: 5,
-            tension: 90,
-            useNativeDriver: true,
-          }),
-          Animated.spring(scaleY, {
-            toValue: 1,
-            friction: 5,
-            tension: 90,
-            useNativeDriver: true,
-          }),
+          Animated.spring(scaleX, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true }),
+          Animated.spring(scaleY, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true }),
         ]),
       ]),
     ]).start();
+  };
+
+  // Disparo de navegación al confirmar pestaña
+  const triggerTabChange = (idx: number) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+
+    const targetRoute = state.routes[idx];
+    if (!targetRoute) return;
+
+    if (emitter) {
+      emitter.emit({
+        type: 'tabPress',
+        target: targetRoute.key,
+        canPreventDefault: true,
+      });
+    } else if (navigation) {
+      navigation.emit({
+        type: 'tabPress',
+        target: targetRoute.key,
+        canPreventDefault: true,
+      });
+    }
+
+    if (navigateToTab) {
+      navigateToTab(targetRoute.key);
+    } else if (navigation) {
+      navigation.navigate(targetRoute.name);
+    }
+  };
+
+  // Sincronizar posición cuando el estado de navegación externo cambia (sin arrastrar)
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      snapToTab(activeIndex);
+    }
   }, [activeIndex, capsuleWidth]);
 
-  // Fondo translúcido suave idéntico al frontend (.liquid-glass-navbar con 40-45% de opacidad)
+  // Gestos táctiles de arrastre fluido idénticos al frontend (PanResponder a 60fps)
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_evt, gestureState) => {
+        // Solo capturar si hay intención clara de deslizar horizontalmente (> 7px)
+        return Math.abs(gestureState.dx) > 7;
+      },
+      onPanResponderGrant: () => {
+        isDraggingRef.current = true;
+        startDragXRef.current = currentXRef.current;
+        hoverIndexRef.current = activeIndex;
+
+        // Tensión líquida al presionar y arrastrar
+        Animated.parallel([
+          Animated.timing(scaleX, { toValue: 1.24, duration: 90, useNativeDriver: true }),
+          Animated.timing(scaleY, { toValue: 0.80, duration: 90, useNativeDriver: true }),
+        ]).start();
+      },
+      onPanResponderMove: (_evt, gestureState) => {
+        const minX = getDropLeft(0);
+        const maxX = getDropLeft(TAB_KEYS.length - 1);
+        const newX = Math.max(minX, Math.min(startDragXRef.current + gestureState.dx, maxX));
+        currentXRef.current = newX;
+        translateX.setValue(newX);
+
+        // Detectar icono más cercano y dar feedback háptico en tiempo real
+        const hoverIdx = Math.max(0, Math.min(TAB_KEYS.length - 1, Math.round((newX - minX) / tabWidth)));
+        if (hoverIdx !== hoverIndexRef.current) {
+          hoverIndexRef.current = hoverIdx;
+          try {
+            Haptics.selectionAsync();
+          } catch {}
+          setActiveHoverIndex(hoverIdx);
+        }
+      },
+      onPanResponderRelease: () => {
+        const minX = getDropLeft(0);
+        const nearestIdx = Math.max(0, Math.min(TAB_KEYS.length - 1, Math.round((currentXRef.current - minX) / tabWidth)));
+        setActiveHoverIndex(null);
+        snapToTab(nearestIdx);
+
+        if (nearestIdx !== state.index) {
+          triggerTabChange(nearestIdx);
+        }
+
+        setTimeout(() => {
+          isDraggingRef.current = false;
+        }, 120);
+      },
+      onPanResponderTerminate: () => {
+        setActiveHoverIndex(null);
+        snapToTab(state.index);
+        setTimeout(() => {
+          isDraggingRef.current = false;
+        }, 120);
+      },
+    })
+  ).current;
+
+  // Fondo translúcido delicado (32-36% de opacidad) para que el contenido bajo el navbar sea visible
   const getGlassTintBg = () => {
     switch (theme) {
       case 'oled':
-        return 'rgba(0, 0, 0, 0.45)';
+        return 'rgba(0, 0, 0, 0.35)';
       case 'dark':
-        return 'rgba(15, 23, 42, 0.42)';
+        return 'rgba(15, 23, 42, 0.36)';
       case 'galaxy':
-        return 'rgba(10, 10, 26, 0.45)';
+        return 'rgba(10, 10, 26, 0.38)';
       case 'ocean-dark':
-        return 'rgba(8, 47, 73, 0.45)';
+        return 'rgba(8, 47, 73, 0.38)';
       case 'desert-dark':
-        return 'rgba(44, 30, 22, 0.45)';
+        return 'rgba(44, 30, 22, 0.38)';
       case 'ocean':
-        return 'rgba(240, 249, 255, 0.48)';
+        return 'rgba(240, 249, 255, 0.42)';
       case 'desert':
-        return 'rgba(253, 248, 245, 0.48)';
+        return 'rgba(253, 248, 245, 0.42)';
       case 'light':
       default:
-        return 'rgba(255, 255, 255, 0.50)';
+        return 'rgba(255, 255, 255, 0.42)';
     }
   };
 
@@ -140,142 +228,132 @@ export function FloatingLiquidGlassTabBar({
 
   return (
     <View style={[styles.outerWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
+      {/* Contenedor de sombra exterior sin overflow:'hidden' (evita sombras cuadradas o cortadas en Android) */}
       <View
-        onLayout={(e) => {
-          const w = e.nativeEvent.layout.width;
-          if (w > 0 && Math.abs(w - capsuleWidth) > 1) {
-            setCapsuleWidth(w);
-          }
-        }}
         style={[
-          styles.capsule,
+          styles.shadowContainer,
           {
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.65)',
-            borderTopColor: isDark ? 'rgba(255, 255, 255, 0.32)' : 'rgba(255, 255, 255, 0.95)',
-            shadowOpacity: isDark ? 0.45 : 0.18,
+            shadowColor: '#000',
+            shadowOpacity: isDark ? 0.35 : 0.12,
           },
         ]}
       >
-        {/* Desenfoque de fondo nativo (RenderEffect en Android) con intensidad equilibrada para transparencia real */}
-        <BlurView
-          pointerEvents="none"
-          intensity={Platform.OS === 'android' ? 45 : 55}
-          tint={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
-        />
-
-        {/* Tinte de cristal adaptado al tema activo con transparencia real */}
+        {/* Cápsula de cristal interior recortada con bordes redondeados perfectos */}
         <View
-          pointerEvents="none"
+          {...panResponder.panHandlers}
+          onLayout={(e) => {
+            const w = e.nativeEvent.layout.width;
+            if (w > 0 && Math.abs(w - capsuleWidth) > 1) {
+              setCapsuleWidth(w);
+            }
+          }}
           style={[
-            StyleSheet.absoluteFill,
-            { backgroundColor: getGlassTintBg() },
-          ]}
-        />
-
-        {/* Brillo especular superior sutil estilo Apple Liquid Glass */}
-        <LinearGradient
-          pointerEvents="none"
-          colors={
-            isDark
-              ? ['rgba(255, 255, 255, 0.12)', 'rgba(255, 255, 255, 0.02)', 'transparent']
-              : ['rgba(255, 255, 255, 0.45)', 'rgba(255, 255, 255, 0.08)', 'transparent']
-          }
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.specularShine}
-        />
-
-        {/* GOTA LÍQUIDA DINÁMICA FLUIDA (.liquid-glass-drop) QUE SE DESLIZA ENTRE PESTAÑAS */}
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.liquidDrop,
+            styles.capsuleInner,
             {
-              width: dropWidth,
-              height: dropHeight,
-              transform: [
-                { translateX },
-                { scaleX },
-                { scaleY },
-              ],
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.24)' : 'rgba(255, 255, 255, 0.85)',
-              borderTopColor: isDark ? 'rgba(255, 255, 255, 0.42)' : '#ffffff',
-              shadowColor: colors.tint,
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.65)',
+              borderTopColor: isDark ? 'rgba(255, 255, 255, 0.32)' : 'rgba(255, 255, 255, 0.95)',
             },
           ]}
         >
+          {/* Desenfoque de fondo nativo (RenderEffect en Android) con intensidad balanceada */}
+          <BlurView
+            pointerEvents="none"
+            intensity={Platform.OS === 'android' ? 35 : 45}
+            tint={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
+
+          {/* Tinte translúcido suave */}
+          <View
+            pointerEvents="none"
+            style={[
+              StyleSheet.absoluteFill,
+              { backgroundColor: getGlassTintBg() },
+            ]}
+          />
+
+          {/* Brillo especular superior estilo Liquid Glass de Apple */}
           <LinearGradient
+            pointerEvents="none"
             colors={
               isDark
-                ? ['rgba(255, 255, 255, 0.20)', 'rgba(255, 255, 255, 0.04)']
-                : ['rgba(255, 255, 255, 0.85)', 'rgba(255, 255, 255, 0.30)']
+                ? ['rgba(255, 255, 255, 0.10)', 'rgba(255, 255, 255, 0.02)', 'transparent']
+                : ['rgba(255, 255, 255, 0.40)', 'rgba(255, 255, 255, 0.06)', 'transparent']
             }
             start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.liquidDropGradient}
+            end={{ x: 0, y: 1 }}
+            style={styles.specularShine}
           />
-        </Animated.View>
 
-        {/* Iconos interactivos del Navbar */}
-        {state.routes.map((route: any, index: number) => {
-          const tabInfo = TAB_CONFIG[route.name];
-          if (!tabInfo) return null;
-
-          const isFocused = state.index === index;
-          const Icon = tabInfo.icon;
-
-          const onPress = () => {
-            let defaultPrevented = false;
-            if (emitter) {
-              const res = emitter.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
-              defaultPrevented = !!res?.defaultPrevented;
-            } else if (navigation) {
-              const res = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
-              defaultPrevented = !!res?.defaultPrevented;
-            }
-
-            if (!isFocused && !defaultPrevented) {
-              try {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              } catch {}
-              if (navigateToTab) {
-                navigateToTab(route.key);
-              } else if (navigation) {
-                navigation.navigate(route.name);
+          {/* GOTA LÍQUIDA (.liquid-glass-drop) CENTRADA CON EXACTITUD SUB-PÍXEL */}
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.liquidDrop,
+              {
+                width: DROP_WIDTH,
+                height: DROP_HEIGHT,
+                transform: [
+                  { translateX },
+                  { scaleX },
+                  { scaleY },
+                ],
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.85)',
+                borderTopColor: isDark ? 'rgba(255, 255, 255, 0.40)' : '#ffffff',
+                shadowColor: colors.tint,
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={
+                isDark
+                  ? ['rgba(255, 255, 255, 0.20)', 'rgba(255, 255, 255, 0.04)']
+                  : ['rgba(255, 255, 255, 0.80)', 'rgba(255, 255, 255, 0.25)']
               }
-            }
-          };
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.liquidDropGradient}
+            />
+          </Animated.View>
 
-          const activeColor = colors.tint;
-          const inactiveColor = colors.tabBarInactive || colors.textSecondary;
-          const currentColor = isFocused ? activeColor : inactiveColor;
+          {/* Iconos del Navbar centrados y distribuidos uniformemente */}
+          {state.routes.map((route: any, index: number) => {
+            const tabInfo = TAB_CONFIG[route.name];
+            if (!tabInfo) return null;
 
-          return (
-            <Pressable
-              key={route.key}
-              onPress={onPress}
-              hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-              style={styles.tabButton}
-            >
-              <View style={[styles.iconContainer, isFocused && styles.activeIconContainer]}>
-                <Icon
-                  size={22}
-                  color={currentColor}
-                  strokeWidth={isFocused ? 2.5 : 1.9}
-                />
-              </View>
-            </Pressable>
-          );
-        })}
+            const isEffectiveActive = activeHoverIndex !== null ? activeHoverIndex === index : activeIndex === index;
+            const Icon = tabInfo.icon;
+
+            const handlePress = () => {
+              if (isDraggingRef.current) return;
+              snapToTab(index);
+              if (index !== state.index) {
+                triggerTabChange(index);
+              }
+            };
+
+            const activeColor = colors.tint;
+            const inactiveColor = colors.tabBarInactive || colors.textSecondary;
+            const currentColor = isEffectiveActive ? activeColor : inactiveColor;
+
+            return (
+              <Pressable
+                key={route.key}
+                onPress={handlePress}
+                hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                style={styles.tabButton}
+              >
+                <View style={[styles.iconContainer, isEffectiveActive && styles.activeIconContainer]}>
+                  <Icon
+                    size={22}
+                    color={currentColor}
+                    strokeWidth={isEffectiveActive ? 2.5 : 1.9}
+                  />
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
@@ -289,50 +367,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 1000,
   },
-  capsule: {
+  shadowContainer: {
     width: '100%',
     maxWidth: 380,
     height: 60,
     borderRadius: 30,
+    // Sombra suave sin overflow:'hidden' para que Android no la recorte como caja
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  capsuleInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 30,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 6,
+    paddingHorizontal: PADDING_H,
     overflow: 'hidden',
-    // Bordes satinados de cristal líquido
+    // Bordes satinados de cristal
     borderWidth: 1,
     borderTopWidth: 1.5,
-    // Sombra flotante profunda
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 20,
-    elevation: 12,
   },
   specularShine: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 24,
+    height: 22,
   },
   liquidDrop: {
     position: 'absolute',
-    top: 7,
+    top: 7, // (60 - 44) / 2 = 8, 7 para alineación óptica vertical perfecta
     left: 0,
-    borderRadius: 23,
+    borderRadius: 22,
     borderWidth: 1,
     borderTopWidth: 1.5,
     overflow: 'hidden',
     // Resplandor del color de acento
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowRadius: 8,
+    elevation: 4,
     zIndex: 1,
   },
   liquidDropGradient: {
     ...StyleSheet.absoluteFill,
-    borderRadius: 23,
+    borderRadius: 22,
   },
   tabButton: {
     flex: 1,
@@ -344,7 +426,6 @@ const styles = StyleSheet.create({
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    transform: [{ scale: 1 }],
   },
   activeIconContainer: {
     transform: [{ scale: 1.15 }],
