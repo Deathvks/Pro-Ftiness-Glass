@@ -14,6 +14,8 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
   Dimensions,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -74,6 +76,49 @@ const BADGE_DETAILS: Record<string, { name: string; desc: string; icon: any; col
   milestone_80: { name: 'Leyenda (Lvl 80)', desc: 'Alcanza el nivel 80', icon: Sparkles, color: '#FFD700', bg: 'rgba(255, 215, 0, 0.15)' },
   default: { name: 'Insignia', desc: 'Logro desbloqueado', icon: Trophy, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
 };
+
+/**
+ * Superficie Liquid Glass sin overflow:'hidden' (evita que los bordes laterales se corten):
+ * el GlassView y la capa de tinte reciben el mismo radio interior (radius - 1) que el contenedor.
+ */
+function GlassSurface({
+  radius = 24,
+  isDark,
+  borderColor,
+  tintColor,
+  tintOpacity = 1,
+  style,
+  children,
+}: {
+  radius?: number;
+  isDark: boolean;
+  borderColor: string;
+  tintColor?: string;
+  tintOpacity?: number;
+  style?: StyleProp<ViewStyle>;
+  children?: React.ReactNode;
+}) {
+  const innerRadius = Math.max(0, radius - 1);
+  return (
+    <View style={[{ borderRadius: radius, borderWidth: 1, borderColor }, style]}>
+      <GlassView
+        glassEffectStyle="regular"
+        colorScheme={isDark ? 'dark' : 'light'}
+        style={[StyleSheet.absoluteFill, { borderRadius: innerRadius }]}
+      />
+      {tintColor ? (
+        <View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            { borderRadius: innerRadius, backgroundColor: tintColor, opacity: tintOpacity },
+          ]}
+        />
+      ) : null}
+      {children}
+    </View>
+  );
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -236,284 +281,263 @@ export default function ProfileScreen() {
   const btnTextColor = getContrastTextColor(colors.tint);
   const unlockedBadges = gamification?.unlockedBadges || [];
 
+  const cardBorderColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
+  const cardBgColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)';
+
   return (
     <AnimatedScreen header={<GlobalHeader title="Editar Perfil" showBackButton />} paddingHorizontal={16} paddingBottom={insets.bottom + 100}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <View style={styles.container}>
-          {/* 1. SECCIÓN DE IDENTIDAD & AVATAR ESTILO FRONTEND */}
-          <View style={styles.identitySection}>
-            <TouchableOpacity onPress={handlePickImage} activeOpacity={0.9} style={styles.avatarTouch}>
-              <LinearGradient
-                colors={roleConfig.colors}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.avatarGradientRing}
-              >
-                <View style={[styles.avatarInnerPadding, { backgroundColor: isDark ? '#121214' : '#ffffff' }]}>
-                  <View style={[styles.avatarImageWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
-                    {displayImageUri ? (
-                      <Image source={{ uri: displayImageUri }} style={styles.avatarImage} />
-                    ) : (
-                      <User size={46} color={colors.textSecondary} strokeWidth={1.8} style={{ opacity: 0.6 }} />
-                    )}
-                  </View>
+      <View style={styles.container}>
+        {/* 1. SECCIÓN DE IDENTIDAD & AVATAR ESTILO FRONTEND */}
+        <View style={styles.identitySection}>
+          <TouchableOpacity onPress={handlePickImage} activeOpacity={0.9} style={styles.avatarTouch}>
+            <LinearGradient
+              colors={roleConfig.colors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.avatarGradientRing}
+            >
+              <View style={[styles.avatarInnerPadding, { backgroundColor: isDark ? '#121214' : '#ffffff' }]}>
+                <View style={[styles.avatarImageWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
+                  {displayImageUri ? (
+                    <Image source={{ uri: displayImageUri }} style={styles.avatarImage} />
+                  ) : (
+                    <User size={46} color={colors.textSecondary} strokeWidth={1.8} style={{ opacity: 0.6 }} />
+                  )}
                 </View>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={handlePickImage} activeOpacity={0.7} style={styles.editPhotoBtn}>
-              <Text style={[styles.editPhotoText, { color: colors.tint }]}>Editar foto</Text>
-            </TouchableOpacity>
-
-            <View style={styles.nameRow}>
-              <Text style={[styles.displayName, { color: colors.text }]} numberOfLines={1}>
-                {username || userProfile?.username || 'Usuario'}
-              </Text>
-              <View style={[styles.roleBadge, { backgroundColor: roleConfig.badgeBg, borderColor: roleConfig.badgeBorder }]}>
-                <Text style={[styles.roleBadgeText, { color: roleConfig.badgeText }]}>
-                  {roleConfig.label}
-                </Text>
               </View>
-            </View>
+            </LinearGradient>
+          </TouchableOpacity>
 
-            <Text style={[styles.displayEmail, { color: colors.textSecondary }]}>
-              {userProfile?.email || 'Sin correo asociado'}
+          <TouchableOpacity onPress={handlePickImage} activeOpacity={0.7} style={styles.editPhotoBtn}>
+            <Text style={[styles.editPhotoText, { color: colors.tint }]}>Editar foto</Text>
+          </TouchableOpacity>
+
+          <View style={styles.nameRow}>
+            <Text style={[styles.displayName, { color: colors.text }]} numberOfLines={1}>
+              {username || userProfile?.username || 'Usuario'}
             </Text>
-          </View>
-
-          {/* 2. GRUPO: DATOS BÁSICOS (Grouped Card iOS Style) */}
-          <View style={styles.groupSection}>
-            <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>DATOS BÁSICOS</Text>
-            <View
-              style={[
-                styles.groupedCard,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-            >
-              <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-
-              {/* Fila: Nombre de Usuario */}
-              <View style={styles.rowItem}>
-                <View style={styles.rowLeft}>
-                  <View style={[styles.iconSquircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-                    <UserCircle size={18} color={colors.text} strokeWidth={2} />
-                  </View>
-                  <Text style={[styles.rowLabel, { color: colors.text }]}>Usuario</Text>
-                </View>
-                <TextInput
-                  style={[styles.rowInput, { color: colors.textSecondary }]}
-                  value={username}
-                  onChangeText={handleUsernameChange}
-                  placeholder="Tu usuario"
-                  placeholderTextColor={colors.textSecondary}
-                  textAlign="right"
-                  autoCapitalize="none"
-                />
-              </View>
-
-              <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]} />
-
-              {/* Fila: Correo Electrónico (Solo lectura como en frontend) */}
-              <View style={styles.rowItem}>
-                <View style={styles.rowLeft}>
-                  <View style={[styles.iconSquircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-                    <AtSign size={18} color={colors.text} strokeWidth={2} />
-                  </View>
-                  <Text style={[styles.rowLabel, { color: colors.text }]}>Email</Text>
-                </View>
-                <Text style={[styles.rowStaticValue, { color: colors.textSecondary }]} numberOfLines={1}>
-                  {userProfile?.email || '-'}
-                </Text>
-              </View>
+            <View style={[styles.roleBadge, { backgroundColor: roleConfig.badgeBg, borderColor: roleConfig.badgeBorder }]}>
+              <Text style={[styles.roleBadgeText, { color: roleConfig.badgeText }]}>
+                {roleConfig.label}
+              </Text>
             </View>
           </View>
 
-          {/* 3. GRUPO: SEGURIDAD (Cambiar contraseña modal) */}
-          <View style={styles.groupSection}>
-            <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>SEGURIDAD</Text>
-            <View
-              style={[
-                styles.groupedCard,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-            >
-              <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-
-              <TouchableOpacity
-                onPress={() => {
-                  try {
-                    Haptics.selectionAsync();
-                  } catch {}
-                  setShowPasswordModal(true);
-                }}
-                activeOpacity={0.7}
-                style={styles.rowItemTouchable}
-              >
-                <View style={styles.rowLeft}>
-                  <View style={[styles.iconSquircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-                    <Key size={18} color={colors.text} strokeWidth={2} />
-                  </View>
-                  <Text style={[styles.rowLabel, { color: colors.text }]}>Cambiar contraseña</Text>
-                </View>
-                <ChevronRight size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* BOTÓN GUARDAR CAMBIOS (Visible solo si hay modificaciones, estilo frontend) */}
-          {isDirty && (
-            <TouchableOpacity
-              onPress={handleSave}
-              disabled={isSaving}
-              activeOpacity={0.85}
-              style={[
-                styles.saveChangesBtn,
-                {
-                  backgroundColor: colors.tint,
-                  shadowColor: colors.tint,
-                },
-              ]}
-            >
-              {isSaving ? (
-                <ActivityIndicator color={btnTextColor} />
-              ) : (
-                <Text style={[styles.saveChangesText, { color: btnTextColor }]}>Guardar Cambios</Text>
-              )}
-            </TouchableOpacity>
-          )}
-
-          {/* 4. GRUPO: PERFIL SOCIAL */}
-          <View style={styles.groupSection}>
-            <View
-              style={[
-                styles.groupedCard,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-            >
-              <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-
-              <TouchableOpacity
-                onPress={() => {
-                  try {
-                    Haptics.selectionAsync();
-                  } catch {}
-                  router.push('/(tabs)/social');
-                }}
-                activeOpacity={0.7}
-                style={styles.rowItemTouchable}
-              >
-                <View style={styles.rowLeft}>
-                  <View style={[styles.iconSquircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-                    <LayoutTemplate size={18} color={colors.text} strokeWidth={2} />
-                  </View>
-                  <Text style={[styles.rowLabel, { color: colors.text }]}>Ver mi perfil en comunidad</Text>
-                </View>
-                <ChevronRight size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* 5. GRUPO: MIS INSIGNIAS (Grid 3 columnas como en frontend) */}
-          <View style={styles.groupSection}>
-            <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>MIS INSIGNIAS</Text>
-
-            {unlockedBadges.length > 0 ? (
-              <View style={styles.badgeGrid}>
-                {unlockedBadges.map((badgeId: string) => {
-                  const badge = BADGE_DETAILS[badgeId] || BADGE_DETAILS.default;
-                  const IconComponent = badge.icon;
-                  return (
-                    <View
-                      key={badgeId}
-                      style={[
-                        styles.badgeCard,
-                        {
-                          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)',
-                          borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                        },
-                      ]}
-                    >
-                      <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-                      <View style={[styles.badgeIconSquircle, { backgroundColor: badge.bg }]}>
-                        <IconComponent size={20} color={badge.color} strokeWidth={2} />
-                      </View>
-                      <Text style={[styles.badgeName, { color: colors.text }]} numberOfLines={2}>
-                        {badge.name}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
-            ) : (
-              <View
-                style={[
-                  styles.emptyBadgeCard,
-                  {
-                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-                  },
-                ]}
-              >
-                <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-                <Trophy size={28} color={colors.textSecondary} style={{ marginBottom: 8, opacity: 0.6 }} />
-                <Text style={[styles.emptyBadgeTitle, { color: colors.text }]}>Aún no tienes insignias</Text>
-                <Text style={[styles.emptyBadgeSub, { color: colors.textSecondary }]}>
-                  Entrena y completa retos para desbloquear recompensas exclusivas.
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {/* 6. GRUPO: ZONA DE PELIGRO (Lista iOS en rojo como en frontend) */}
-          <View style={styles.groupSection}>
-            <Text style={[styles.sectionHeader, { color: '#ef4444' }]}>ZONA DE PELIGRO</Text>
-            <View
-              style={[
-                styles.groupedCard,
-                {
-                  backgroundColor: isDark ? 'rgba(239, 68, 68, 0.04)' : 'rgba(255, 255, 255, 0.8)',
-                  borderColor: isDark ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.2)',
-                },
-              ]}
-            >
-              <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-
-              {/* Borrar historial */}
-              <TouchableOpacity onPress={handleDeleteData} activeOpacity={0.7} style={styles.rowItemTouchable}>
-                <View style={styles.rowLeft}>
-                  <View style={[styles.iconSquircle, { backgroundColor: 'rgba(249, 115, 22, 0.12)' }]}>
-                    <Trash2 size={18} color="#f97316" strokeWidth={2} />
-                  </View>
-                  <Text style={[styles.rowLabel, { color: '#f97316' }]}>Borrar mi historial de datos</Text>
-                </View>
-                <ChevronRight size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-
-              <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]} />
-
-              {/* Borrar cuenta */}
-              <TouchableOpacity onPress={handleDeleteAccount} activeOpacity={0.7} style={styles.rowItemTouchable}>
-                <View style={styles.rowLeft}>
-                  <View style={[styles.iconSquircle, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
-                    <AlertTriangle size={18} color="#ef4444" strokeWidth={2} />
-                  </View>
-                  <Text style={[styles.rowLabel, { color: '#ef4444' }]}>Borrar cuenta definitivamente</Text>
-                </View>
-                <ChevronRight size={18} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-          </View>
+          <Text style={[styles.displayEmail, { color: colors.textSecondary }]}>
+            {userProfile?.email || 'Sin correo asociado'}
+          </Text>
         </View>
-      </KeyboardAvoidingView>
+
+        {/* 2. GRUPO: DATOS BÁSICOS (Grouped Card iOS Style) */}
+        <View style={styles.groupSection}>
+          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>DATOS BÁSICOS</Text>
+          <GlassSurface
+            radius={24}
+            isDark={isDark}
+            borderColor={cardBorderColor}
+            tintColor={cardBgColor}
+            style={styles.groupedCard}
+          >
+            {/* Fila: Nombre de Usuario */}
+            <View style={styles.rowItem}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconSquircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+                  <UserCircle size={18} color={colors.text} strokeWidth={2} />
+                </View>
+                <Text style={[styles.rowLabel, { color: colors.text }]}>Usuario</Text>
+              </View>
+              <TextInput
+                style={[styles.rowInput, { color: colors.textSecondary }]}
+                value={username}
+                onChangeText={handleUsernameChange}
+                placeholder="Tu usuario"
+                placeholderTextColor={colors.textSecondary}
+                textAlign="right"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]} />
+
+            {/* Fila: Correo Electrónico (Solo lectura como en frontend) */}
+            <View style={styles.rowItem}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconSquircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+                  <AtSign size={18} color={colors.text} strokeWidth={2} />
+                </View>
+                <Text style={[styles.rowLabel, { color: colors.text }]}>Email</Text>
+              </View>
+              <Text style={[styles.rowStaticValue, { color: colors.textSecondary }]} numberOfLines={1}>
+                {userProfile?.email || '-'}
+              </Text>
+            </View>
+          </GlassSurface>
+        </View>
+
+        {/* 3. GRUPO: SEGURIDAD (Cambiar contraseña modal) */}
+        <View style={styles.groupSection}>
+          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>SEGURIDAD</Text>
+          <GlassSurface
+            radius={24}
+            isDark={isDark}
+            borderColor={cardBorderColor}
+            tintColor={cardBgColor}
+            style={styles.groupedCard}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                try {
+                  Haptics.selectionAsync();
+                } catch {}
+                setShowPasswordModal(true);
+              }}
+              activeOpacity={0.7}
+              style={styles.rowItemTouchable}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconSquircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+                  <Key size={18} color={colors.text} strokeWidth={2} />
+                </View>
+                <Text style={[styles.rowLabel, { color: colors.text }]}>Cambiar contraseña</Text>
+              </View>
+              <ChevronRight size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </GlassSurface>
+        </View>
+
+        {/* BOTÓN GUARDAR CAMBIOS (Visible solo si hay modificaciones, estilo frontend) */}
+        {isDirty && (
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={isSaving}
+            activeOpacity={0.85}
+            style={[
+              styles.saveChangesBtn,
+              {
+                backgroundColor: colors.tint,
+                shadowColor: colors.tint,
+              },
+            ]}
+          >
+            {isSaving ? (
+              <ActivityIndicator color={btnTextColor} />
+            ) : (
+              <Text style={[styles.saveChangesText, { color: btnTextColor }]}>Guardar Cambios</Text>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {/* 4. GRUPO: PERFIL SOCIAL */}
+        <View style={styles.groupSection}>
+          <GlassSurface
+            radius={24}
+            isDark={isDark}
+            borderColor={cardBorderColor}
+            tintColor={cardBgColor}
+            style={styles.groupedCard}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                try {
+                  Haptics.selectionAsync();
+                } catch {}
+                router.push('/(tabs)/social');
+              }}
+              activeOpacity={0.7}
+              style={styles.rowItemTouchable}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconSquircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+                  <LayoutTemplate size={18} color={colors.text} strokeWidth={2} />
+                </View>
+                <Text style={[styles.rowLabel, { color: colors.text }]}>Ver mi perfil en comunidad</Text>
+              </View>
+              <ChevronRight size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </GlassSurface>
+        </View>
+
+        {/* 5. GRUPO: MIS INSIGNIAS (Grid 3 columnas como en frontend) */}
+        <View style={styles.groupSection}>
+          <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>MIS INSIGNIAS</Text>
+
+          {unlockedBadges.length > 0 ? (
+            <View style={styles.badgeGrid}>
+              {unlockedBadges.map((badgeId: string) => {
+                const badge = BADGE_DETAILS[badgeId] || BADGE_DETAILS.default;
+                const IconComponent = badge.icon;
+                return (
+                  <GlassSurface
+                    key={badgeId}
+                    radius={20}
+                    isDark={isDark}
+                    borderColor={cardBorderColor}
+                    tintColor={cardBgColor}
+                    style={styles.badgeCard}
+                  >
+                    <View style={[styles.badgeIconSquircle, { backgroundColor: badge.bg }]}>
+                      <IconComponent size={20} color={badge.color} strokeWidth={2} />
+                    </View>
+                    <Text style={[styles.badgeName, { color: colors.text }]} numberOfLines={2}>
+                      {badge.name}
+                    </Text>
+                  </GlassSurface>
+                );
+              })}
+            </View>
+          ) : (
+            <GlassSurface
+              radius={24}
+              isDark={isDark}
+              borderColor={cardBorderColor}
+              tintColor={cardBgColor}
+              style={styles.emptyBadgeCard}
+            >
+              <Trophy size={28} color={colors.textSecondary} style={{ marginBottom: 8, opacity: 0.6 }} />
+              <Text style={[styles.emptyBadgeTitle, { color: colors.text }]}>Aún no tienes insignias</Text>
+              <Text style={[styles.emptyBadgeSub, { color: colors.textSecondary }]}>
+                Entrena y completa retos para desbloquear recompensas exclusivas.
+              </Text>
+            </GlassSurface>
+          )}
+        </View>
+
+        {/* 6. GRUPO: ZONA DE PELIGRO (Lista iOS en rojo como en frontend) */}
+        <View style={styles.groupSection}>
+          <Text style={[styles.sectionHeader, { color: '#ef4444' }]}>ZONA DE PELIGRO</Text>
+          <GlassSurface
+            radius={24}
+            isDark={isDark}
+            borderColor={isDark ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.2)'}
+            tintColor={isDark ? 'rgba(239, 68, 68, 0.04)' : 'rgba(255, 255, 255, 0.8)'}
+            style={styles.groupedCard}
+          >
+            {/* Borrar historial */}
+            <TouchableOpacity onPress={handleDeleteData} activeOpacity={0.7} style={styles.rowItemTouchable}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconSquircle, { backgroundColor: 'rgba(249, 115, 22, 0.12)' }]}>
+                  <Trash2 size={18} color="#f97316" strokeWidth={2} />
+                </View>
+                <Text style={[styles.rowLabel, { color: '#f97316' }]}>Borrar mi historial de datos</Text>
+              </View>
+              <ChevronRight size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+
+            <View style={[styles.rowDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]} />
+
+            {/* Borrar cuenta */}
+            <TouchableOpacity onPress={handleDeleteAccount} activeOpacity={0.7} style={styles.rowItemTouchable}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.iconSquircle, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}>
+                  <AlertTriangle size={18} color="#ef4444" strokeWidth={2} />
+                </View>
+                <Text style={[styles.rowLabel, { color: '#ef4444' }]}>Borrar cuenta definitivamente</Text>
+              </View>
+              <ChevronRight size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </GlassSurface>
+        </View>
+      </View>
 
       {/* --- MODAL CAMBIAR CONTRASEÑA ESTILO FRONTEND --- */}
       <ChangePasswordModal
@@ -616,7 +640,7 @@ function ChangePasswordModal({ visible, onClose, hasPassword }: ChangePasswordMo
             },
           ]}
         >
-          <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <GlassView glassEffectStyle="regular" colorScheme={isDark ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, { borderTopLeftRadius: 31, borderTopRightRadius: 31 }]} />
 
           {/* Manija superior iOS */}
           <View style={[styles.sheetHandle, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }]} />
@@ -762,6 +786,7 @@ function ChangePasswordModal({ visible, onClose, hasPassword }: ChangePasswordMo
 
 const styles = StyleSheet.create({
   container: {
+    width: '100%',
     paddingTop: 12,
   },
   // --- IDENTIDAD ---
@@ -857,9 +882,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   groupedCard: {
-    borderRadius: 24,
-    borderWidth: 1,
-    overflow: 'hidden',
+    width: '100%',
+    position: 'relative',
   },
   rowItem: {
     flexDirection: 'row',
@@ -908,6 +932,7 @@ const styles = StyleSheet.create({
   rowDivider: {
     height: StyleSheet.hairlineWidth,
     marginLeft: 62,
+    marginRight: 16,
   },
 
   // --- BOTÓN GUARDAR CAMBIOS ---
@@ -935,13 +960,11 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   badgeCard: {
-    width: (SCREEN_WIDTH - 32 - 20) / 3,
-    borderRadius: 20,
-    borderWidth: 1,
+    width: Math.floor((SCREEN_WIDTH - 32 - 20) / 3),
     padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+    position: 'relative',
   },
   badgeIconSquircle: {
     width: 42,
@@ -958,12 +981,11 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   emptyBadgeCard: {
-    borderRadius: 24,
-    borderWidth: 1,
+    width: '100%',
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
+    position: 'relative',
   },
   emptyBadgeTitle: {
     fontSize: 16,
