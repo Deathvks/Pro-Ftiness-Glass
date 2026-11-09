@@ -10,6 +10,7 @@ import {
   Linking,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
+import YoutubePlayer from 'react-native-youtube-iframe';
 import { Play, Dumbbell, ExternalLink } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BACKEND_BASE_URL, API_BASE_URL } from '@/services/apiClient';
@@ -25,56 +26,40 @@ interface ExerciseMediaPreviewProps {
   onPress?: () => void;
 }
 
-// Plantilla HTML para reproductor de YouTube optimizado para móviles y Shorts verticales
-const getYouTubeHtml = (videoId: string) => `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    html, body {
-      width: 100%;
-      height: 100%;
-      background: #000000;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .video-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #000000;
-    }
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: 0;
-    }
-  </style>
-</head>
-<body>
-  <div class="video-container">
-    <iframe
-      src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&controls=1&rel=0&modestbranding=1&loop=1&playlist=${videoId}&enablejsapi=1"
-      frameborder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      allowfullscreen
-    ></iframe>
-  </div>
-</body>
-</html>
+// Inyección de estilos para adaptar el iframe al contenedor vertical o centrado
+const YOUTUBE_INJECTED_CSS = `
+  (function() {
+    try {
+      var style = document.createElement('style');
+      style.innerHTML = \`
+        html, body {
+          width: 100% !important;
+          height: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background-color: #000000 !important;
+          overflow: hidden !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+        .container {
+          width: 100% !important;
+          height: 100% !important;
+          padding-bottom: 0 !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+        .video, iframe, #player {
+          width: 100% !important;
+          height: 100% !important;
+        }
+      \`;
+      document.head.appendChild(style);
+    } catch(e) {}
+  })();
+  true;
 `;
 
 // Plantilla HTML para vídeos directos (MP4 / WebM)
@@ -120,11 +105,17 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   const [isPlaying, setIsPlaying] = useState(playYouTube);
   const [imageError, setImageError] = useState(false);
   const [webViewLoading, setWebViewLoading] = useState(true);
+  const [containerSize, setContainerSize] = useState({ width: 220, height: 390 });
+  const [playerError, setPlayerError] = useState<string | null>(null);
 
   const allExercises = useAppStore(state => state.allExercises) || [];
 
   useEffect(() => {
     setIsPlaying(Boolean(playYouTube));
+    if (playYouTube) {
+      setPlayerError(null);
+      setWebViewLoading(true);
+    }
   }, [playYouTube]);
 
   const rawTarget = details || item || {};
@@ -293,6 +284,11 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
     setImageError(false);
   }, [images]);
 
+  useEffect(() => {
+    setPlayerError(null);
+    setWebViewLoading(true);
+  }, [yid]);
+
   // 4. Efecto de animación GIF cíclico si hay más de una foto
   useEffect(() => {
     if (images.length > 1 && !isPlaying) {
@@ -307,29 +303,71 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   if ((rawVideo || yid) && isPlaying && !staticOnly) {
     if (yid) {
       return (
-        <View style={styles.fullContainer}>
-          <WebView
+        <View
+          style={styles.fullContainer}
+          onLayout={(e) => {
+            const { width, height } = e.nativeEvent.layout;
+            if (width > 50 && height > 50) {
+              setContainerSize({ width: Math.round(width), height: Math.round(height) });
+            }
+          }}
+        >
+          <YoutubePlayer
             key={`yt-${yid}`}
-            source={{
-              html: getYouTubeHtml(yid),
-              baseUrl: 'https://www.youtube.com',
+            width={containerSize.width}
+            height={containerSize.height}
+            videoId={yid}
+            play={isPlaying}
+            forceAndroidAutoplay={true}
+            onReady={() => {
+              setWebViewLoading(false);
             }}
-            style={styles.webView}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            allowsInlineMediaPlayback={true}
-            mediaPlaybackRequiresUserAction={false}
-            allowsFullscreenVideo={true}
-            scrollEnabled={false}
-            originWhitelist={['*']}
-            mixedContentMode="always"
-            onLoadStart={() => setWebViewLoading(true)}
-            onLoadEnd={() => setWebViewLoading(false)}
+            onChangeState={(state: string) => {
+              if (state === 'playing') {
+                setWebViewLoading(false);
+              }
+            }}
+            onError={(err: any) => {
+              console.warn('YouTube Player error:', err);
+              setPlayerError(String(err));
+              setWebViewLoading(false);
+            }}
+            initialPlayerParams={{
+              loop: true,
+              controls: true,
+              rel: false,
+              preventFullScreen: false,
+            }}
+            webViewProps={{
+              allowsInlineMediaPlayback: true,
+              mediaPlaybackRequiresUserAction: false,
+              androidLayerType: 'hardware',
+              injectedJavaScriptBeforeContentLoaded: YOUTUBE_INJECTED_CSS,
+              injectedJavaScript: YOUTUBE_INJECTED_CSS,
+            }}
+            webViewStyle={{
+              backgroundColor: '#000000',
+            }}
           />
 
-          {webViewLoading && (
+          {webViewLoading && !playerError && (
             <View style={[StyleSheet.absoluteFill, styles.loadingOverlay]} pointerEvents="none">
               <ActivityIndicator size="small" color="#ffffff" />
+            </View>
+          )}
+
+          {playerError && (
+            <View style={[StyleSheet.absoluteFill, styles.errorOverlay]}>
+              <Text style={styles.errorText}>No se pudo reproducir incrustado</Text>
+              <TouchableOpacity
+                style={styles.errorButton}
+                onPress={() => {
+                  Linking.openURL(`https://www.youtube.com/watch?v=${yid}`).catch(() => {});
+                }}
+              >
+                <ExternalLink size={12} color="#ffffff" />
+                <Text style={styles.errorButtonText}>Ver en YouTube</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -501,6 +539,33 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  errorOverlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.88)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    gap: 10,
+  },
+  errorText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  errorButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#ff0000',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 14,
+  },
+  errorButtonText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
   },
   openYtPill: {
     position: 'absolute',
