@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, ImageBackground, Alert, Animated } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ImageBackground, Alert, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,16 +23,7 @@ import {
   ChevronRight 
 } from 'lucide-react-native';
 
-const HubButton = ({
-  icon: Icon,
-  title,
-  description,
-  onPress,
-  badge = false,
-  isComingSoon = false,
-  colors,
-  rightContent,
-}: any) => {
+const HubButton = ({ icon: Icon, title, description, onPress, badge = false, isComingSoon = false, colors, rightContent }: any) => {
   const theme = useAppStore(state => state.theme) || 'oled';
   return (
     <GlassButton
@@ -45,84 +36,46 @@ const HubButton = ({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         height: 78,
-        borderRadius: 22,
+        borderRadius: 18,
         borderWidth: 1,
         borderColor: colors.border,
-        marginBottom: 14,
+        marginBottom: 12,
         opacity: isComingSoon ? 0.6 : 1,
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 14 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 }}>
         <View
           style={{
-            width: 44,
-            height: 44,
-            borderRadius: 14,
-            backgroundColor: colors.tint + '18',
-            borderWidth: 1,
-            borderColor: colors.tint + '28',
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            backgroundColor: colors.tint + '1A',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Icon size={22} color={colors.tint} strokeWidth={2.2} />
+          <Icon size={22} color={colors.tint} />
         </View>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text, letterSpacing: -0.2 }}>
-              {title}
-            </Text>
-            {Boolean(isComingSoon) && (
-              <View
-                style={{
-                  backgroundColor: colors.tint + '20',
-                  paddingHorizontal: 7,
-                  paddingVertical: 2,
-                  borderRadius: 8,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 10,
-                    fontWeight: '800',
-                    color: colors.tint,
-                    textTransform: 'uppercase',
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  Pronto
-                </Text>
+            <Text style={{ fontSize: 17, fontWeight: 'bold', color: colors.text }}>{title}</Text>
+            {Boolean(isComingSoon) ? (
+              <View style={{ backgroundColor: colors.tint + '20', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 }}>
+                <Text style={{ fontSize: 10, fontWeight: 'bold', color: colors.tint, textTransform: 'uppercase' }}>Pronto</Text>
               </View>
-            )}
-            {Boolean(badge) && !isComingSoon && (
-              <View
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: colors.tint,
-                }}
-              />
-            )}
+            ) : null}
+            {Boolean(badge) && !isComingSoon ? (
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.tint }} />
+            ) : null}
           </View>
-          {Boolean(description) && (
-            <Text
-              style={{
-                fontSize: 13,
-                color: colors.textSecondary,
-                marginTop: 3,
-                lineHeight: 18,
-              }}
-              numberOfLines={1}
-            >
-              {description}
-            </Text>
-          )}
+          {Boolean(description) ? (
+            <Text style={{ fontSize: 13, fontWeight: '500', color: colors.textSecondary, marginTop: 2 }}>{description}</Text>
+          ) : null}
         </View>
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
         {rightContent}
-        <ChevronRight size={18} color={colors.textSecondary} style={{ opacity: 0.5 }} />
+        <ChevronRight size={18} color={colors.textSecondary} style={{ opacity: 0.6 }} />
       </View>
     </GlassButton>
   );
@@ -167,7 +120,7 @@ export default function Hub() {
     }
   }, [userProfile?.id, fetchUnreadChats]);
 
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollY = React.useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
 
   return (
@@ -178,41 +131,34 @@ export default function Hub() {
       </View>
 
       <Animated.ScrollView 
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: insets.top + 62,
-          paddingBottom: 160,
-        }} 
+        contentContainerStyle={{ padding: 16, paddingTop: insets.top + 54, paddingBottom: 150 }} 
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
       >
         
         {/* Banner Hero */}
-        <View style={styles.heroBanner}>
+        <View style={{ width: '100%', height: 192, borderRadius: 24, overflow: 'hidden', marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 5 }}>
           <ImageBackground
             source={{ uri: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=800&q=80' }}
             style={{ flex: 1, justifyContent: 'flex-end' }}
           >
             <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.9)']}
+              colors={['transparent', 'rgba(0,0,0,0.45)', 'rgba(0,0,0,0.85)']}
               style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '100%' }}
             />
             <View style={{ padding: 20 }}>
-              <Text style={{ fontSize: 28, fontWeight: '900', color: '#fff', marginBottom: 6 }}>Explorar</Text>
-              <Text style={{ fontSize: 14, fontWeight: '500', color: 'rgba(255,255,255,0.8)', lineHeight: 20 }}>
+              <Text style={{ fontSize: 28, fontWeight: '900', color: '#fff', marginBottom: 4 }}>Explorar</Text>
+              <Text style={{ fontSize: 14, fontWeight: '500', color: 'rgba(255,255,255,0.9)', lineHeight: 20 }}>
                 Tu centro de control. Descubre retos, ajusta tu perfil y analiza todo tu progreso en un solo lugar.
               </Text>
             </View>
           </ImageBackground>
         </View>
 
-        {/* ================= SECCIÓN 1: ACTIVIDAD Y ENTRENAMIENTO ================= */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-            Actividad y Entrenamiento
-          </Text>
-
+        {/* Grid de Accesos Directos (idéntico al frontend) */}
+        <View>
+          
           <HubButton
             icon={BarChart2}
             title="Tu Progreso"
@@ -245,13 +191,6 @@ export default function Hub() {
             colors={colors}
             onPress={() => router.push('/challenges' as any)}
           />
-        </View>
-
-        {/* ================= SECCIÓN 2: PERSONALIZACIÓN Y COMUNIDAD ================= */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-            Personalización y Comunidad
-          </Text>
 
           <HubButton
             icon={Paintbrush}
@@ -292,13 +231,14 @@ export default function Hub() {
             colors={colors}
             onPress={() => router.push('/social-networks' as any)}
           />
-        </View>
 
-        {/* ================= SECCIÓN 3: PREFERENCIAS Y SOPORTE ================= */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-            Preferencias y Soporte
-          </Text>
+          <HubButton
+            icon={Info}
+            title="Soporte"
+            description="Ayuda, descargas y app info"
+            colors={colors}
+            onPress={() => router.push('/support' as any)}
+          />
 
           <HubButton
             icon={Settings}
@@ -308,72 +248,29 @@ export default function Hub() {
             onPress={() => router.push('/settings' as any)}
           />
 
-          <HubButton
-            icon={Info}
-            title="Soporte"
-            description="Ayuda, descargas y app info"
-            colors={colors}
-            onPress={() => router.push('/support' as any)}
-          />
+          {isTrainer && (
+            <HubButton
+              icon={Users}
+              title="Panel de Entrenador"
+              description="Gestión de clientes y cuestionarios"
+              colors={colors}
+              onPress={() => Alert.alert('Panel de Entrenador', 'Próximamente en la app móvil')}
+            />
+          )}
+
+          {isAdmin && (
+            <HubButton
+              icon={ShieldCheck}
+              title="Panel Admin"
+              description="Gestión de usuarios y sistema"
+              colors={colors}
+              onPress={() => Alert.alert('Panel Admin', 'Próximamente en la app móvil')}
+            />
+          )}
+
         </View>
-
-        {/* ================= SECCIÓN 4: ADMINISTRACIÓN ================= */}
-        {(isTrainer || isAdmin) && (
-          <View style={styles.sectionContainer}>
-            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-              Administración
-            </Text>
-
-            {isTrainer && (
-              <HubButton
-                icon={Users}
-                title="Panel de Entrenador"
-                description="Gestión de clientes y cuestionarios"
-                colors={colors}
-                onPress={() => Alert.alert('Panel de Entrenador', 'Próximamente en la app móvil')}
-              />
-            )}
-
-            {isAdmin && (
-              <HubButton
-                icon={ShieldCheck}
-                title="Panel Admin"
-                description="Gestión de usuarios y sistema"
-                colors={colors}
-                onPress={() => Alert.alert('Panel Admin', 'Próximamente en la app móvil')}
-              />
-            )}
-          </View>
-        )}
 
       </Animated.ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  heroBanner: {
-    width: '100%',
-    height: 195,
-    borderRadius: 24,
-    overflow: 'hidden',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 5,
-  },
-  sectionContainer: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.7,
-    textTransform: 'uppercase',
-    marginBottom: 10,
-    marginTop: 4,
-    paddingHorizontal: 4,
-  },
-});

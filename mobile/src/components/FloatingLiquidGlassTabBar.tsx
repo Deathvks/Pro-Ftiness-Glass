@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Home, Users, Flame, Zap, LayoutGrid } from 'lucide-react-native';
 
@@ -34,8 +33,8 @@ const TAB_CONFIG: Record<string, { label: string; icon: any }> = {
   hub: { label: 'Menú', icon: LayoutGrid },
 };
 
-const TAB_KEYS = ['index', 'social', 'nutrition', 'routines', 'hub'];
 const PADDING_H = 10;
+const CAPSULE_HEIGHT = 60;
 const DROP_WIDTH = 48;
 const DROP_HEIGHT = 44;
 
@@ -87,112 +86,85 @@ const TabItem = React.memo(function TabItem({
 
 interface TabBarThemeConfig {
   capsuleBg: string;
-  capsuleGradient: [string, string, string];
   capsuleBorder: string;
   dropBg: string;
-  dropGradient: [string, string];
   dropBorder: string;
-  dropGlow: string;
   shadowColor: string;
   shadowOpacity: number;
 }
 
-const getTabBarThemeConfig = (theme: string, tintColor: string): TabBarThemeConfig => {
+const getTabBarThemeConfig = (theme: string): TabBarThemeConfig => {
   switch (theme) {
     case 'galaxy':
       return {
-        capsuleBg: 'rgba(12, 10, 28, 0.85)',
-        capsuleGradient: ['rgba(168, 85, 247, 0.16)', 'rgba(59, 130, 246, 0.05)', 'rgba(12, 10, 28, 0)'],
+        capsuleBg: 'rgba(12, 10, 28, 0.92)',
         capsuleBorder: 'rgba(168, 85, 247, 0.32)',
-        dropBg: 'rgba(168, 85, 247, 0.18)',
-        dropGradient: ['rgba(168, 85, 247, 0.28)', 'rgba(59, 130, 246, 0.08)'],
-        dropBorder: 'rgba(168, 85, 247, 0.40)',
-        dropGlow: '#a855f7',
-        shadowColor: 'rgba(0, 0, 0, 0.12)',
+        dropBg: 'rgba(168, 85, 247, 0.22)',
+        dropBorder: 'rgba(168, 85, 247, 0.45)',
+        shadowColor: 'rgba(0, 0, 0, 0.14)',
         shadowOpacity: 0.08,
       };
     case 'ocean-dark':
       return {
-        capsuleBg: 'rgba(8, 47, 73, 0.85)',
-        capsuleGradient: ['rgba(56, 189, 248, 0.16)', 'rgba(14, 165, 233, 0.05)', 'rgba(8, 47, 73, 0)'],
+        capsuleBg: 'rgba(8, 47, 73, 0.92)',
         capsuleBorder: 'rgba(56, 189, 248, 0.32)',
-        dropBg: 'rgba(14, 165, 233, 0.18)',
-        dropGradient: ['rgba(56, 189, 248, 0.28)', 'rgba(14, 165, 233, 0.08)'],
-        dropBorder: 'rgba(56, 189, 248, 0.40)',
-        dropGlow: '#0ea5e9',
-        shadowColor: 'rgba(0, 0, 0, 0.12)',
+        dropBg: 'rgba(14, 165, 233, 0.24)',
+        dropBorder: 'rgba(56, 189, 248, 0.45)',
+        shadowColor: 'rgba(0, 0, 0, 0.14)',
         shadowOpacity: 0.08,
       };
     case 'desert-dark':
       return {
-        capsuleBg: 'rgba(44, 30, 22, 0.85)',
-        capsuleGradient: ['rgba(210, 180, 140, 0.16)', 'rgba(217, 119, 6, 0.05)', 'rgba(44, 30, 22, 0)'],
+        capsuleBg: 'rgba(44, 30, 22, 0.92)',
         capsuleBorder: 'rgba(210, 180, 140, 0.32)',
-        dropBg: 'rgba(210, 180, 140, 0.18)',
-        dropGradient: ['rgba(210, 180, 140, 0.28)', 'rgba(217, 119, 6, 0.08)'],
-        dropBorder: 'rgba(210, 180, 140, 0.40)',
-        dropGlow: '#d2b48c',
-        shadowColor: 'rgba(0, 0, 0, 0.12)',
+        dropBg: 'rgba(210, 180, 140, 0.20)',
+        dropBorder: 'rgba(210, 180, 140, 0.45)',
+        shadowColor: 'rgba(0, 0, 0, 0.14)',
         shadowOpacity: 0.08,
       };
     case 'ocean':
       return {
-        capsuleBg: 'rgba(240, 249, 255, 0.84)',
-        capsuleGradient: ['rgba(255, 255, 255, 0.90)', 'rgba(224, 242, 254, 0.45)', 'rgba(240, 249, 255, 0)'],
-        capsuleBorder: 'rgba(14, 165, 233, 0.22)',
-        dropBg: 'rgba(255, 255, 255, 0.88)',
-        dropGradient: ['#ffffff', 'rgba(224, 242, 254, 0.75)'],
-        dropBorder: 'rgba(14, 165, 233, 0.28)',
-        dropGlow: '#0ea5e9',
+        capsuleBg: 'rgba(224, 242, 254, 0.92)',
+        capsuleBorder: 'rgba(14, 165, 233, 0.28)',
+        dropBg: 'rgba(14, 165, 233, 0.15)',
+        dropBorder: 'rgba(14, 165, 233, 0.35)',
         shadowColor: 'rgba(12, 74, 110, 0.08)',
         shadowOpacity: 0.06,
       };
     case 'desert':
       return {
-        capsuleBg: 'rgba(253, 248, 245, 0.84)',
-        capsuleGradient: ['rgba(255, 255, 255, 0.90)', 'rgba(254, 243, 199, 0.45)', 'rgba(253, 248, 245, 0)'],
-        capsuleBorder: 'rgba(210, 180, 140, 0.24)',
-        dropBg: 'rgba(255, 255, 255, 0.88)',
-        dropGradient: ['#ffffff', 'rgba(254, 243, 199, 0.75)'],
-        dropBorder: 'rgba(210, 180, 140, 0.30)',
-        dropGlow: '#d2b48c',
+        capsuleBg: 'rgba(250, 240, 230, 0.92)',
+        capsuleBorder: 'rgba(210, 180, 140, 0.35)',
+        dropBg: 'rgba(210, 180, 140, 0.22)',
+        dropBorder: 'rgba(210, 180, 140, 0.45)',
         shadowColor: 'rgba(92, 64, 51, 0.08)',
         shadowOpacity: 0.06,
       };
     case 'oled':
       return {
-        capsuleBg: 'rgba(18, 18, 22, 0.86)',
-        capsuleGradient: ['rgba(255, 255, 255, 0.10)', 'rgba(255, 255, 255, 0.03)', 'rgba(18, 18, 22, 0)'],
-        capsuleBorder: 'rgba(255, 255, 255, 0.15)',
+        capsuleBg: 'rgba(18, 18, 20, 0.94)',
+        capsuleBorder: 'rgba(255, 255, 255, 0.14)',
         dropBg: 'rgba(255, 255, 255, 0.12)',
-        dropGradient: ['rgba(255, 255, 255, 0.22)', 'rgba(255, 255, 255, 0.06)'],
-        dropBorder: 'rgba(255, 255, 255, 0.24)',
-        dropGlow: tintColor,
-        shadowColor: 'rgba(0, 0, 0, 0.14)',
+        dropBorder: 'rgba(255, 255, 255, 0.22)',
+        shadowColor: 'rgba(0, 0, 0, 0.16)',
         shadowOpacity: 0.08,
       };
     case 'dark':
       return {
-        capsuleBg: 'rgba(15, 23, 42, 0.85)',
-        capsuleGradient: ['rgba(255, 255, 255, 0.10)', 'rgba(255, 255, 255, 0.03)', 'rgba(15, 23, 42, 0)'],
-        capsuleBorder: 'rgba(255, 255, 255, 0.15)',
+        capsuleBg: 'rgba(15, 23, 42, 0.92)',
+        capsuleBorder: 'rgba(255, 255, 255, 0.14)',
         dropBg: 'rgba(255, 255, 255, 0.12)',
-        dropGradient: ['rgba(255, 255, 255, 0.22)', 'rgba(255, 255, 255, 0.06)'],
-        dropBorder: 'rgba(255, 255, 255, 0.24)',
-        dropGlow: tintColor,
-        shadowColor: 'rgba(0, 0, 0, 0.12)',
+        dropBorder: 'rgba(255, 255, 255, 0.22)',
+        shadowColor: 'rgba(0, 0, 0, 0.14)',
         shadowOpacity: 0.08,
       };
     case 'light':
     default:
       return {
-        capsuleBg: 'rgba(255, 255, 255, 0.84)',
-        capsuleGradient: ['rgba(255, 255, 255, 0.90)', 'rgba(255, 255, 255, 0.45)', 'rgba(255, 255, 255, 0)'],
+        capsuleBg: 'rgba(255, 255, 255, 0.90)',
         capsuleBorder: 'rgba(0, 0, 0, 0.08)',
-        dropBg: 'rgba(255, 255, 255, 0.88)',
-        dropGradient: ['#ffffff', 'rgba(255, 255, 255, 0.65)'],
-        dropBorder: 'rgba(0, 0, 0, 0.08)',
-        dropGlow: 'rgba(15, 23, 42, 0.08)',
+        dropBg: 'rgba(15, 23, 42, 0.06)',
+        dropBorder: 'rgba(0, 0, 0, 0.10)',
         shadowColor: 'rgba(15, 23, 42, 0.08)',
         shadowOpacity: 0.06,
       };
@@ -211,7 +183,7 @@ export function FloatingLiquidGlassTabBar({
   const colors = useAppColors();
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
-  const themeConfig = useMemo(() => getTabBarThemeConfig(theme, colors.tint), [theme, colors.tint]);
+  const themeConfig = useMemo(() => getTabBarThemeConfig(theme), [theme]);
 
   // Ancho estimado inicial
   const screenWidth = Dimensions.get('window').width;
@@ -459,7 +431,7 @@ export function FloatingLiquidGlassTabBar({
     [activeIndex, snapToTab, state.index, triggerTabChange]
   );
 
-  // Sombra nativa idéntica al CSS box-shadow del frontend (suave y sin artefactos negros en Android)
+  // Sombra nativa suave sin artefactos
   const getBoxShadow = () => {
     return [
       {
@@ -485,112 +457,87 @@ export function FloatingLiquidGlassTabBar({
 
   return (
     <View style={[styles.outerWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
-        {/* Contenedor de sombra Liquid Glass idéntico al box-shadow del frontend */}
+      {/* Contenedor de sombra Liquid Glass */}
+      <View
+        style={[
+          styles.shadowContainer,
+          {
+            boxShadow: getBoxShadow() as any,
+            shadowColor: themeConfig.shadowColor,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: themeConfig.shadowOpacity,
+            shadowRadius: 16,
+            elevation: 0,
+          },
+        ]}
+      >
+        {/* Cápsula de cristal con fondo y borde nativo directo (sin hijos superpuestos al borde) */}
         <View
+          {...panResponder.panHandlers}
+          onLayout={(e) => {
+            const w = e.nativeEvent.layout.width;
+            if (w > 0 && Math.abs(w - capsuleWidth) > 1) {
+              setCapsuleWidth(w);
+            }
+          }}
           style={[
-            styles.shadowContainer,
+            styles.capsuleInner,
             {
-              boxShadow: getBoxShadow() as any,
-              shadowColor: themeConfig.shadowColor,
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: themeConfig.shadowOpacity,
-              shadowRadius: 16,
-              elevation: 0,
+              backgroundColor: themeConfig.capsuleBg,
+              borderColor: themeConfig.capsuleBorder,
             },
           ]}
         >
-          {/* Cápsula de cristal interior recortada con bordes redondeados perfectos */}
-          <View
-            {...panResponder.panHandlers}
-            onLayout={(e) => {
-              const w = e.nativeEvent.layout.width;
-              if (w > 0 && Math.abs(w - capsuleWidth) > 1) {
-                setCapsuleWidth(w);
-              }
-            }}
+          {/* Desenfoque nativo solo en iOS */}
+          {Platform.OS === 'ios' && (
+            <BlurView
+              pointerEvents="none"
+              intensity={45}
+              tint={isDark ? 'dark' : 'light'}
+              style={[StyleSheet.absoluteFill, { borderRadius: 30, overflow: 'hidden' }]}
+            />
+          )}
+
+          {/* GOTA LÍQUIDA: vista única con fondo y borde nativos (sin hijos ni clipPath que deformen el borde) */}
+          <Animated.View
+            pointerEvents="none"
             style={[
-              styles.capsuleInner,
+              styles.liquidDrop,
               {
-                borderColor: themeConfig.capsuleBorder,
+                width: DROP_WIDTH,
+                height: DROP_HEIGHT,
+                transform: [
+                  { translateX },
+                  { scaleX },
+                  { scaleY },
+                ],
+                backgroundColor: themeConfig.dropBg,
+                borderColor: themeConfig.dropBorder,
               },
             ]}
-          >
-            {/* Desenfoque nativo en iOS (en Android BlurView sin target pinta un gris opaco plano) */}
-            {Platform.OS === 'ios' && (
-              <BlurView
-                pointerEvents="none"
-                intensity={45}
-                tint={isDark ? 'dark' : 'light'}
-                style={StyleSheet.absoluteFill}
+          />
+
+          {/* Iconos del Navbar centrados y distribuidos uniformemente */}
+          {state.routes.map((route: any, index: number) => {
+            const isEffectiveActive =
+              activeHoverIndex !== null ? activeHoverIndex === index : activeIndex === index;
+
+            return (
+              <TabItem
+                key={route.key}
+                route={route}
+                index={index}
+                isActive={isEffectiveActive}
+                activeColor={activeColor}
+                inactiveColor={inactiveColor}
+                onPress={handleTabPress}
+                onLayout={handleTabLayout}
               />
-            )}
-
-            {/* Tinte translúcido de cristal ajustado por tema */}
-            <View
-              pointerEvents="none"
-              style={[
-                StyleSheet.absoluteFill,
-                { backgroundColor: themeConfig.capsuleBg },
-              ]}
-            />
-
-            {/* Gradiente diagonal completo de cristal líquido (sin línea de corte a mitad de altura) */}
-            <LinearGradient
-              pointerEvents="none"
-              colors={themeConfig.capsuleGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.specularShine}
-            />
-
-            {/* GOTA LÍQUIDA (.liquid-glass-drop) CENTRADA CON EXACTITUD SUB-PÍXEL */}
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                styles.liquidDrop,
-                {
-                  width: DROP_WIDTH,
-                  height: DROP_HEIGHT,
-                  transform: [
-                    { translateX },
-                    { scaleX },
-                    { scaleY },
-                  ],
-                  backgroundColor: themeConfig.dropBg,
-                  borderColor: themeConfig.dropBorder,
-                  shadowColor: themeConfig.dropGlow,
-                  shadowOpacity: isDark ? 0.25 : 0.08,
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={themeConfig.dropGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.liquidDropGradient}
-              />
-            </Animated.View>
-            {/* Iconos del Navbar centrados y distribuidos uniformemente */}
-            {state.routes.map((route: any, index: number) => {
-              const isEffectiveActive =
-                activeHoverIndex !== null ? activeHoverIndex === index : activeIndex === index;
-
-              return (
-                <TabItem
-                  key={route.key}
-                  route={route}
-                  index={index}
-                  isActive={isEffectiveActive}
-                  activeColor={activeColor}
-                  inactiveColor={inactiveColor}
-                  onPress={handleTabPress}
-                  onLayout={handleTabLayout}
-                />
-              );
-            })}
-          </View>
+            );
+          })}
         </View>
       </View>
+    </View>
   );
 }
 
@@ -605,40 +552,27 @@ const styles = StyleSheet.create({
   shadowContainer: {
     width: '100%',
     maxWidth: 380,
-    height: 60,
-    borderRadius: 30,
+    height: CAPSULE_HEIGHT,
+    borderRadius: CAPSULE_HEIGHT / 2,
     position: 'relative',
   },
   capsuleInner: {
     width: '100%',
     height: '100%',
-    borderRadius: 30,
+    borderRadius: CAPSULE_HEIGHT / 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: PADDING_H,
-    overflow: 'hidden',
     borderWidth: 1,
-  },
-  specularShine: {
-    ...StyleSheet.absoluteFill,
   },
   liquidDrop: {
     position: 'absolute',
-    top: '50%',
-    marginTop: -DROP_HEIGHT / 2,
+    top: (CAPSULE_HEIGHT - 2 - DROP_HEIGHT) / 2,
     left: 0,
     borderRadius: DROP_HEIGHT / 2,
     borderWidth: 1,
-    overflow: 'hidden',
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    elevation: 0,
     zIndex: 1,
-  },
-  liquidDropGradient: {
-    ...StyleSheet.absoluteFill,
-    borderRadius: DROP_HEIGHT / 2,
   },
   tabButton: {
     flex: 1,
