@@ -7,6 +7,7 @@ import { Stack, useRouter, useSegments, usePathname } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { initLocalStorage } from '@/utils/localStoragePolyfill';
+import { installHapticsInterceptor } from '@/utils/haptics';
 import useAppStore, { resolveTheme, applyNativeColorScheme } from '@/store/useAppStore';
 import ThemeBackground from '@/components/ThemeBackground';
 import { useAppColors } from '@/hooks/useAppColors';
@@ -32,18 +33,21 @@ export default function RootLayout() {
   useEffect(() => {
     async function prepare() {
       await initLocalStorage();
+      installHapticsInterceptor();
       useAppStore.getState().hydrateFromStorage();
       
       const token = localStorage.getItem('pro_fitness_token');
       const savedTheme = localStorage.getItem('theme');
       const savedAccent = localStorage.getItem('accent');
+      const savedHaptics = localStorage.getItem('hapticsEnabled');
       
-      if (token || savedTheme || savedAccent) {
+      if (token || savedTheme || savedAccent || savedHaptics !== null) {
         useAppStore.setState({ 
           isAuthenticated: !!token, 
           token: token || null,
           ...(savedTheme ? { themePreference: savedTheme, theme: resolveTheme(savedTheme) } : {}),
-          ...(savedAccent ? { accent: savedAccent } : {})
+          ...(savedAccent ? { accent: savedAccent } : {}),
+          ...(savedHaptics !== null ? { hapticsEnabled: JSON.parse(savedHaptics) } : {})
         });
       }
 

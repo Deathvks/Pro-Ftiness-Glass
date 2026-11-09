@@ -42,6 +42,7 @@ import { getThemeBaseBackground } from '@/constants/theme';
 import GlobalHeader from '@/components/GlobalHeader';
 import LevelBadge from '@/components/LevelBadge';
 import ThemeBackground from '@/components/ThemeBackground';
+import LiquidGlassSwitch from '@/components/ui/LiquidGlassSwitch';
 
 export interface AccentOption {
   id: string;
@@ -286,30 +287,12 @@ export default function AppearanceScreen() {
     if (toastTimer.current) clearTimeout(toastTimer.current);
   }, []);
 
-  // Switch Hápticos
-  const switchAnim = useRef(new Animated.Value(hapticsEnabled ? 1 : 0)).current;
-  useEffect(() => {
-    Animated.spring(switchAnim, {
-      toValue: hapticsEnabled ? 1 : 0,
-      useNativeDriver: true,
-      friction: 7,
-      tension: 120,
-    }).start();
-  }, [hapticsEnabled]);
-
-  // Switch Galaxia Efectos
-  const galaxySwitchAnim = useRef(new Animated.Value(galaxyEffectsEnabled ? 1 : 0)).current;
-  useEffect(() => {
-    Animated.spring(galaxySwitchAnim, {
-      toValue: galaxyEffectsEnabled ? 1 : 0,
-      useNativeDriver: true,
-      friction: 7,
-      tension: 120,
-    }).start();
-  }, [galaxyEffectsEnabled]);
-
   const tap = () => {
-    if (hapticsEnabled) Haptics.selectionAsync();
+    if (hapticsEnabled) {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {}
+    }
   };
 
   const handleThemeClick = (mode: string) => {
@@ -322,10 +305,18 @@ export default function AppearanceScreen() {
     setAccent(opt.hex);
   };
 
-  const handleToggleHaptics = () => {
-    const newValue = !hapticsEnabled;
+  const handleToggleHaptics = (forcedValue?: boolean) => {
+    const newValue = typeof forcedValue === 'boolean' ? forcedValue : !hapticsEnabled;
     setHapticsEnabled?.(newValue);
-    if (newValue) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (newValue) {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } catch {}
+    } else {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {}
+    }
     showToast(newValue ? 'Vibración activada' : 'Vibración desactivada');
   };
 
@@ -698,30 +689,13 @@ export default function AppearanceScreen() {
                             </View>
                           </View>
 
-                          <View
-                            style={[
-                              styles.switchTrack,
-                              galaxyEffectsEnabled
-                                ? { backgroundColor: st.tint, borderColor: 'rgba(255, 255, 255, 0.3)' }
-                                : { backgroundColor: isDark ? '#4b5563' : '#9ca3af', borderColor: 'transparent' },
-                            ]}
-                          >
-                            <Animated.View
-                              style={[
-                                styles.switchThumb,
-                                {
-                                  transform: [
-                                    {
-                                      translateX: galaxySwitchAnim.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [0, 20],
-                                      }),
-                                    },
-                                  ],
-                                },
-                              ]}
-                            />
-                          </View>
+                          <LiquidGlassSwitch
+                            value={galaxyEffectsEnabled}
+                            onValueChange={handleToggleGalaxyEffects}
+                            tintColor={st.tint}
+                            isDark={isDark}
+                            accessibilityLabel="Estrellas animadas y meteoros"
+                          />
                         </Pressable>
                       </View>
                     )}
@@ -835,30 +809,13 @@ export default function AppearanceScreen() {
                 </View>
               </View>
 
-              <View
-                style={[
-                  styles.switchTrack,
-                  hapticsEnabled
-                    ? { backgroundColor: colors.tint, borderColor: 'rgba(255, 255, 255, 0.3)' }
-                    : { backgroundColor: isDark ? '#4b5563' : '#9ca3af', borderColor: 'transparent' },
-                ]}
-              >
-                <Animated.View
-                  style={[
-                    styles.switchThumb,
-                    {
-                      transform: [
-                        {
-                          translateX: switchAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [0, 20],
-                          }),
-                        },
-                      ],
-                    },
-                  ]}
-                />
-              </View>
+              <LiquidGlassSwitch
+                value={hapticsEnabled}
+                onValueChange={(val) => handleToggleHaptics(val)}
+                tintColor={colors.tint}
+                isDark={isDark}
+                accessibilityLabel="Vibración Háptica"
+              />
             </Pressable>
           </View>
         </GlassSurface>
@@ -1268,25 +1225,6 @@ const styles = StyleSheet.create({
   switchSubtitle: {
     fontSize: 10.5,
     marginTop: 2,
-  },
-  switchTrack: {
-    width: 46,
-    height: 26,
-    borderRadius: 13,
-    padding: 2,
-    borderWidth: 1.5,
-    justifyContent: 'center',
-  },
-  switchThumb: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    elevation: 3,
   },
 
   modalBackdrop: {
