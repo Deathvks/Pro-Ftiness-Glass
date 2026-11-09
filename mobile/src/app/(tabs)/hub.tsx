@@ -201,7 +201,7 @@ export default function Hub() {
             title="Nuestras Redes"
             description="Instagram, TikTok y YouTube"
             colors={colors}
-            onPress={() => Alert.alert('Redes', 'Próximamente en la app móvil')}
+            onPress={() => router.push('/social-networks' as any)}
           />
 
           <HubButton
