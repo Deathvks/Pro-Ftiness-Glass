@@ -70,6 +70,8 @@ export function FloatingLiquidGlassTabBar({
   };
 
   const activeIndex = state.index >= 0 ? state.index : 0;
+  const currentTargetIdxRef = useRef(activeIndex);
+  const currentAnimRef = useRef<Animated.CompositeAnimation | null>(null);
   const currentXRef = useRef(getDropLeft(activeIndex));
   const isDraggingRef = useRef(false);
   const startDragXRef = useRef(0);
@@ -79,29 +81,59 @@ export function FloatingLiquidGlassTabBar({
   const scaleX = useRef(new Animated.Value(1)).current;
   const scaleY = useRef(new Animated.Value(1)).current;
 
-  // Animación suave con rebote elástico (spring) al centro del icono
-  const snapToTab = (idx: number) => {
-    const targetX = getDropLeft(idx);
-    currentXRef.current = targetX;
+  // Seguimiento en tiempo real de la posición física exacta de la gota (evita saltos bruscos)
+  useEffect(() => {
+    const listenerId = translateX.addListener(({ value }) => {
+      currentXRef.current = value;
+    });
+    return () => {
+      translateX.removeListener(listenerId);
+    };
+  }, [translateX]);
 
-    Animated.parallel([
+  // Animación suave con física elástica (spring) sin doble-disparo ni tirones
+  const snapToTab = (idx: number, force = false) => {
+    const targetX = getDropLeft(idx);
+
+    // Si ya estamos dirigiéndonos a este índice y no es forzado, no reiniciar para evitar que se trabe
+    if (!force && currentTargetIdxRef.current === idx && Math.abs(currentXRef.current - targetX) < 1) {
+      return;
+    }
+
+    currentTargetIdxRef.current = idx;
+
+    // Frenar limpiamente cualquier animación previa para evitar colisiones
+    if (currentAnimRef.current) {
+      currentAnimRef.current.stop();
+      currentAnimRef.current = null;
+    }
+
+    const anim = Animated.parallel([
       Animated.spring(translateX, {
         toValue: targetX,
-        friction: 6.5,
-        tension: 75,
+        stiffness: 180,
+        damping: 18,
+        mass: 0.8,
         useNativeDriver: true,
       }),
       Animated.sequence([
         Animated.parallel([
-          Animated.timing(scaleX, { toValue: 0.90, duration: 100, useNativeDriver: true }),
-          Animated.timing(scaleY, { toValue: 0.90, duration: 100, useNativeDriver: true }),
+          Animated.timing(scaleX, { toValue: 0.90, duration: 85, useNativeDriver: true }),
+          Animated.timing(scaleY, { toValue: 0.90, duration: 85, useNativeDriver: true }),
         ]),
         Animated.parallel([
-          Animated.spring(scaleX, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true }),
-          Animated.spring(scaleY, { toValue: 1, friction: 5, tension: 90, useNativeDriver: true }),
+          Animated.spring(scaleX, { toValue: 1, stiffness: 220, damping: 16, mass: 0.6, useNativeDriver: true }),
+          Animated.spring(scaleY, { toValue: 1, stiffness: 220, damping: 16, mass: 0.6, useNativeDriver: true }),
         ]),
       ]),
-    ]).start();
+    ]);
+
+    currentAnimRef.current = anim;
+    anim.start(({ finished }) => {
+      if (finished) {
+        currentAnimRef.current = null;
+      }
+    });
   };
 
   // Disparo de navegación al confirmar pestaña
@@ -134,40 +166,42 @@ export function FloatingLiquidGlassTabBar({
     }
   };
 
-  // Sincronizar posición cuando el estado de navegación externo cambia (sin arrastrar)
+  // Sincronizar posición SOLO si cambia externamente (sin arrastrar y sin doble trigger)
   useEffect(() => {
-    if (!isDraggingRef.current) {
+    if (!isDraggingRef.current && currentTargetIdxRef.current !== activeIndex) {
       snapToTab(activeIndex);
     }
   }, [activeIndex, capsuleWidth]);
 
-  // Gestos táctiles de arrastre fluido idénticos al frontend (PanResponder a 60fps)
+  // Gestos táctiles de arrastre fluido a 60-120fps (PanResponder optimizado)
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_evt, gestureState) => {
-        // Solo capturar si hay intención clara de deslizar horizontalmente (> 7px)
         return Math.abs(gestureState.dx) > 7;
       },
       onPanResponderGrant: () => {
+        if (currentAnimRef.current) {
+          currentAnimRef.current.stop();
+          currentAnimRef.current = null;
+        }
+
         isDraggingRef.current = true;
         startDragXRef.current = currentXRef.current;
         hoverIndexRef.current = activeIndex;
 
-        // Tensión líquida al presionar y arrastrar
         Animated.parallel([
-          Animated.timing(scaleX, { toValue: 0.90, duration: 80, useNativeDriver: true }),
-          Animated.timing(scaleY, { toValue: 0.90, duration: 80, useNativeDriver: true }),
+          Animated.timing(scaleX, { toValue: 0.90, duration: 70, useNativeDriver: true }),
+          Animated.timing(scaleY, { toValue: 0.90, duration: 70, useNativeDriver: true }),
         ]).start();
       },
       onPanResponderMove: (_evt, gestureState) => {
         const minX = getDropLeft(0);
         const maxX = getDropLeft(TAB_KEYS.length - 1);
         const newX = Math.max(minX, Math.min(startDragXRef.current + gestureState.dx, maxX));
-        currentXRef.current = newX;
         translateX.setValue(newX);
 
-        // Detectar icono más cercano y dar feedback háptico en tiempo real
+        // Feedback háptico al sobrevolar un icono distinto
         const hoverIdx = Math.max(0, Math.min(TAB_KEYS.length - 1, Math.round((newX - minX) / tabWidth)));
         if (hoverIdx !== hoverIndexRef.current) {
           hoverIndexRef.current = hoverIdx;
@@ -181,7 +215,7 @@ export function FloatingLiquidGlassTabBar({
         const minX = getDropLeft(0);
         const nearestIdx = Math.max(0, Math.min(TAB_KEYS.length - 1, Math.round((currentXRef.current - minX) / tabWidth)));
         setActiveHoverIndex(null);
-        snapToTab(nearestIdx);
+        snapToTab(nearestIdx, true);
 
         if (nearestIdx !== state.index) {
           triggerTabChange(nearestIdx);
@@ -189,19 +223,19 @@ export function FloatingLiquidGlassTabBar({
 
         setTimeout(() => {
           isDraggingRef.current = false;
-        }, 120);
+        }, 150);
       },
       onPanResponderTerminate: () => {
         setActiveHoverIndex(null);
-        snapToTab(state.index);
+        snapToTab(state.index, true);
         setTimeout(() => {
           isDraggingRef.current = false;
-        }, 120);
+        }, 150);
       },
     })
   ).current;
 
-  // Fondo translúcido delicado (32-36% de opacidad) para que el contenido bajo el navbar sea visible
+  // Tinte translúcido suave (30-38% de opacidad)
   const getGlassTintBg = () => {
     switch (theme) {
       case 'oled':
@@ -227,139 +261,191 @@ export function FloatingLiquidGlassTabBar({
   const bottomOffset = Math.max(insets.bottom, 12);
 
   return (
-    <View style={[styles.outerWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
-      {/* Contenedor de sombra exterior sin overflow:'hidden' (evita sombras cuadradas o cortadas en Android) */}
+    <>
+      {/* 1. DESENFOQUE INFERIOR (Dock Blur): difumina con elegancia el contenido que se desplaza bajo el navbar */}
       <View
+        pointerEvents="none"
         style={[
-          styles.shadowContainer,
+          styles.bottomDockBackdrop,
           {
-            shadowColor: '#000',
-            shadowOpacity: isDark ? 0.35 : 0.12,
+            height: bottomOffset + 68,
           },
         ]}
       >
-        {/* Cápsula de cristal interior recortada con bordes redondeados perfectos */}
+        <BlurView
+          intensity={Platform.OS === 'android' ? 45 : 35}
+          tint={isDark ? 'dark' : 'light'}
+          style={StyleSheet.absoluteFill}
+          experimentalBlurMethod="dimezisBlurView"
+        />
+        <LinearGradient
+          colors={
+            isDark
+              ? ['transparent', 'rgba(0, 0, 0, 0.22)', 'rgba(0, 0, 0, 0.65)']
+              : ['transparent', 'rgba(255, 255, 255, 0.30)', 'rgba(255, 255, 255, 0.75)']
+          }
+          style={StyleSheet.absoluteFill}
+        />
+      </View>
+
+      {/* 2. BARRA FLOTANTE CON CÁPSULA DE VIDRIO LÍQUIDO */}
+      <View style={[styles.outerWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
+        {/* Contenedor de sombra ambiental suave (sin elevation tosca ni sombras cuadradas de Android) */}
         <View
-          {...panResponder.panHandlers}
-          onLayout={(e) => {
-            const w = e.nativeEvent.layout.width;
-            if (w > 0 && Math.abs(w - capsuleWidth) > 1) {
-              setCapsuleWidth(w);
-            }
-          }}
           style={[
-            styles.capsuleInner,
+            styles.shadowContainer,
             {
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.65)',
-              borderTopColor: isDark ? 'rgba(255, 255, 255, 0.32)' : 'rgba(255, 255, 255, 0.95)',
+              shadowColor: '#000',
+              shadowOpacity: isDark ? 0.32 : 0.12,
             },
           ]}
         >
-          {/* Desenfoque de fondo nativo (RenderEffect en Android) con intensidad balanceada */}
-          <BlurView
-            pointerEvents="none"
-            intensity={Platform.OS === 'android' ? 35 : 45}
-            tint={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
+          {/* Sombra ambiental difusa suave para Android */}
+          {Platform.OS === 'android' && (
+            <LinearGradient
+              pointerEvents="none"
+              colors={
+                isDark
+                  ? ['transparent', 'rgba(0, 0, 0, 0.25)', 'rgba(0, 0, 0, 0.08)', 'transparent']
+                  : ['transparent', 'rgba(0, 0, 0, 0.10)', 'rgba(0, 0, 0, 0.03)', 'transparent']
+              }
+              start={{ x: 0.5, y: 0.3 }}
+              end={{ x: 0.5, y: 1 }}
+              style={styles.androidSoftShadow}
+            />
+          )}
 
-          {/* Tinte translúcido suave */}
+          {/* Cápsula de cristal interior recortada con bordes redondeados perfectos */}
           <View
-            pointerEvents="none"
+            {...panResponder.panHandlers}
+            onLayout={(e) => {
+              const w = e.nativeEvent.layout.width;
+              if (w > 0 && Math.abs(w - capsuleWidth) > 1) {
+                setCapsuleWidth(w);
+              }
+            }}
             style={[
-              StyleSheet.absoluteFill,
-              { backgroundColor: getGlassTintBg() },
-            ]}
-          />
-
-          {/* Brillo especular superior estilo Liquid Glass de Apple */}
-          <LinearGradient
-            pointerEvents="none"
-            colors={
-              isDark
-                ? ['rgba(255, 255, 255, 0.10)', 'rgba(255, 255, 255, 0.02)', 'transparent']
-                : ['rgba(255, 255, 255, 0.40)', 'rgba(255, 255, 255, 0.06)', 'transparent']
-            }
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={styles.specularShine}
-          />
-
-          {/* GOTA LÍQUIDA (.liquid-glass-drop) CENTRADA CON EXACTITUD SUB-PÍXEL */}
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.liquidDrop,
+              styles.capsuleInner,
               {
-                width: DROP_WIDTH,
-                height: DROP_HEIGHT,
-                transform: [
-                  { translateX },
-                  { scaleX },
-                  { scaleY },
-                ],
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.85)',
-                borderTopColor: isDark ? 'rgba(255, 255, 255, 0.40)' : '#ffffff',
-                shadowColor: colors.tint,
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.65)',
+                borderTopColor: isDark ? 'rgba(255, 255, 255, 0.32)' : 'rgba(255, 255, 255, 0.95)',
               },
             ]}
           >
+            {/* Desenfoque de fondo nativo de alta intensidad */}
+            <BlurView
+              pointerEvents="none"
+              intensity={Platform.OS === 'android' ? 55 : 45}
+              tint={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+              experimentalBlurMethod="dimezisBlurView"
+            />
+
+            {/* Tinte translúcido suave */}
+            <View
+              pointerEvents="none"
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: getGlassTintBg() },
+              ]}
+            />
+
+            {/* Brillo especular superior estilo Liquid Glass de Apple */}
             <LinearGradient
+              pointerEvents="none"
               colors={
                 isDark
-                  ? ['rgba(255, 255, 255, 0.20)', 'rgba(255, 255, 255, 0.04)']
-                  : ['rgba(255, 255, 255, 0.80)', 'rgba(255, 255, 255, 0.25)']
+                  ? ['rgba(255, 255, 255, 0.10)', 'rgba(255, 255, 255, 0.02)', 'transparent']
+                  : ['rgba(255, 255, 255, 0.40)', 'rgba(255, 255, 255, 0.06)', 'transparent']
               }
               start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.liquidDropGradient}
+              end={{ x: 0, y: 1 }}
+              style={styles.specularShine}
             />
-          </Animated.View>
 
-          {/* Iconos del Navbar centrados y distribuidos uniformemente */}
-          {state.routes.map((route: any, index: number) => {
-            const tabInfo = TAB_CONFIG[route.name];
-            if (!tabInfo) return null;
+            {/* GOTA LÍQUIDA (.liquid-glass-drop) CENTRADA CON EXACTITUD SUB-PÍXEL */}
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.liquidDrop,
+                {
+                  width: DROP_WIDTH,
+                  height: DROP_HEIGHT,
+                  transform: [
+                    { translateX },
+                    { scaleX },
+                    { scaleY },
+                  ],
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.85)',
+                  borderTopColor: isDark ? 'rgba(255, 255, 255, 0.40)' : '#ffffff',
+                },
+              ]}
+            >
+              <LinearGradient
+                colors={
+                  isDark
+                    ? ['rgba(255, 255, 255, 0.20)', 'rgba(255, 255, 255, 0.04)']
+                    : ['rgba(255, 255, 255, 0.80)', 'rgba(255, 255, 255, 0.25)']
+                }
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.liquidDropGradient}
+              />
+            </Animated.View>
 
-            const isEffectiveActive = activeHoverIndex !== null ? activeHoverIndex === index : activeIndex === index;
-            const Icon = tabInfo.icon;
+            {/* Iconos del Navbar centrados y distribuidos uniformemente */}
+            {state.routes.map((route: any, index: number) => {
+              const tabInfo = TAB_CONFIG[route.name];
+              if (!tabInfo) return null;
 
-            const handlePress = () => {
-              if (isDraggingRef.current) return;
-              snapToTab(index);
-              if (index !== state.index) {
-                triggerTabChange(index);
-              }
-            };
+              const isEffectiveActive = activeHoverIndex !== null ? activeHoverIndex === index : activeIndex === index;
+              const Icon = tabInfo.icon;
 
-            const activeColor = colors.tint;
-            const inactiveColor = colors.tabBarInactive || colors.textSecondary;
-            const currentColor = isEffectiveActive ? activeColor : inactiveColor;
+              const handlePress = () => {
+                if (isDraggingRef.current) return;
+                if (currentTargetIdxRef.current === index && activeIndex === index) return;
+                snapToTab(index);
+                if (index !== state.index) {
+                  triggerTabChange(index);
+                }
+              };
 
-            return (
-              <Pressable
-                key={route.key}
-                onPress={handlePress}
-                hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-                style={styles.tabButton}
-              >
-                <View style={[styles.iconContainer, isEffectiveActive && styles.activeIconContainer]}>
-                  <Icon
-                    size={22}
-                    color={currentColor}
-                    strokeWidth={isEffectiveActive ? 2.5 : 1.9}
-                  />
-                </View>
-              </Pressable>
-            );
-          })}
+              const activeColor = colors.tint;
+              const inactiveColor = colors.tabBarInactive || colors.textSecondary;
+              const currentColor = isEffectiveActive ? activeColor : inactiveColor;
+
+              return (
+                <Pressable
+                  key={route.key}
+                  onPress={handlePress}
+                  hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                  style={styles.tabButton}
+                >
+                  <View style={[styles.iconContainer, isEffectiveActive && styles.activeIconContainer]}>
+                    <Icon
+                      size={22}
+                      color={currentColor}
+                      strokeWidth={isEffectiveActive ? 2.5 : 1.9}
+                    />
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
       </View>
-    </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  bottomDockBackdrop: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 990,
+  },
   outerWrapper: {
     position: 'absolute',
     left: 16,
@@ -372,10 +458,20 @@ const styles = StyleSheet.create({
     maxWidth: 380,
     height: 60,
     borderRadius: 30,
-    // Sombra suave sin overflow:'hidden' para que Android no la recorte como caja
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 16,
-    elevation: 6,
+    // Sombra suave en iOS, sin elevation tosco en Android
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 18,
+    shadowOpacity: Platform.OS === 'ios' ? 0.25 : 0,
+    elevation: 0,
+    position: 'relative',
+  },
+  androidSoftShadow: {
+    ...StyleSheet.absoluteFill,
+    top: 10,
+    bottom: -10,
+    left: 6,
+    right: 6,
+    borderRadius: 30,
   },
   capsuleInner: {
     width: '100%',
@@ -405,11 +501,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderTopWidth: 1.5,
     overflow: 'hidden',
-    // Resplandor del color de acento
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 4,
+    elevation: 0,
     zIndex: 1,
   },
   liquidDropGradient: {
