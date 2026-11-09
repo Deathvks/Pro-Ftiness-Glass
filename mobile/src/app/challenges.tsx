@@ -314,15 +314,7 @@ export default function ChallengesScreen() {
           />
         }
       >
-        {/* ================= 1. CABECERA ================= */}
-        <View style={styles.headerBox}>
-          <Text style={[styles.mainHeading, { color: colors.text }]}>Retos y Misiones</Text>
-          <Text style={[styles.mainSubheading, { color: colors.textSecondary }]}>
-            Completa retos para ganar XP y subir de nivel.
-          </Text>
-        </View>
-
-        {/* ================= 2. RETO INFINITO: INVITAR A UN AMIGO ================= */}
+        {/* ================= RETO INFINITO: INVITAR A UN AMIGO ================= */}
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleCopyReferral}
@@ -712,19 +704,6 @@ export default function ChallengesScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerBox: {
-    marginBottom: 16,
-  },
-  mainHeading: {
-    fontSize: 26,
-    fontWeight: '900',
-    letterSpacing: -0.4,
-  },
-  mainSubheading: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginTop: 3,
-  },
   referralBanner: {
     borderRadius: 24,
     padding: 18,
