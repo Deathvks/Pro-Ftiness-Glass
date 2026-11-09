@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Image, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { Play, Volume2, VolumeX, Dumbbell } from 'lucide-react-native';
+import { Play, Dumbbell } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { BACKEND_BASE_URL, API_BASE_URL } from '@/services/apiClient';
 import useAppStore from '@/store/useAppStore';
@@ -28,15 +28,12 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(playYouTube);
-  const [isMuted, setIsMuted] = useState(true);
   const [imageError, setImageError] = useState(false);
 
   const allExercises = useAppStore(state => state.allExercises) || [];
 
   useEffect(() => {
-    if (playYouTube) {
-      setIsPlaying(true);
-    }
+    setIsPlaying(Boolean(playYouTube));
   }, [playYouTube]);
 
   const rawTarget = details || item || {};
@@ -205,31 +202,12 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   // 5. Reproductor de Vídeo interactivo (YouTube o MP4 directo)
   if ((rawVideo || yid) && isPlaying && !staticOnly) {
     if (yid) {
-      const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { margin: 0; padding: 0; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; }
-            iframe { width: 100%; height: 100%; border: none; }
-          </style>
-        </head>
-        <body>
-          <iframe 
-            src="https://www.youtube.com/embed/${yid}?autoplay=1&mute=${isMuted ? '1' : '0'}&controls=0&modestbranding=1&rel=0&playsinline=1&loop=1&playlist=${yid}&enablejsapi=1" 
-            frameborder="0" 
-            allow="autoplay; encrypted-media; picture-in-picture" 
-            allowfullscreen>
-          </iframe>
-        </body>
-        </html>
-      `;
+      const embedUrl = `https://www.youtube-nocookie.com/embed/${yid}?autoplay=1&playsinline=1&controls=1&rel=0&modestbranding=1&enablejsapi=1`;
       return (
         <View style={styles.fullContainer}>
           <WebView
-            source={{ html, baseUrl: 'https://www.youtube.com' }}
+            key={`yt-${yid}`}
+            source={{ uri: embedUrl }}
             style={styles.webView}
             javaScriptEnabled={true}
             domStorageEnabled={true}
@@ -239,25 +217,8 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
             scrollEnabled={false}
             originWhitelist={['*']}
             mixedContentMode="always"
-            pointerEvents="none"
+            userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"
           />
-          <TouchableOpacity
-            activeOpacity={0.7}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            onPress={() => {
-              try {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              } catch {}
-              setIsMuted(prev => !prev);
-            }}
-            style={styles.muteButton}
-          >
-            {isMuted ? (
-              <VolumeX size={15} color="#ffffff" strokeWidth={2.5} />
-            ) : (
-              <Volume2 size={15} color="#ffffff" strokeWidth={2.5} />
-            )}
-          </TouchableOpacity>
         </View>
       );
     }
@@ -265,14 +226,16 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
     return (
       <View style={styles.fullContainer}>
         <WebView
+          key={`vid-${rawVideo}`}
           source={{ uri: rawVideo }}
           style={styles.webView}
           javaScriptEnabled={true}
           domStorageEnabled={true}
           allowsInlineMediaPlayback={true}
           mediaPlaybackRequiresUserAction={false}
+          allowsFullscreenVideo={true}
           scrollEnabled={false}
-          pointerEvents="none"
+          originWhitelist={['*']}
         />
       </View>
     );
@@ -406,24 +369,5 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '800',
-  },
-  muteButton: {
-    position: 'absolute',
-    bottom: 12,
-    right: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
   },
 });

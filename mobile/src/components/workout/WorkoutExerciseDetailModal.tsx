@@ -17,6 +17,7 @@ import {
   X,
   Dumbbell,
   Repeat,
+  Play,
   Clock,
   Target,
   Sparkles,
@@ -43,11 +44,19 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
   const theme = useAppStore(state => state.theme) || 'oled';
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
 
+  const allExercises = useAppStore(state => state.allExercises) || [];
   const getOrFetchAllExercises = useAppStore(state => state.getOrFetchAllExercises);
   const gamification = useAppStore(state => state.gamification || {});
 
   const [localDetails, setLocalDetails] = useState<any>(exercise?.exercise_details || {});
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
+  // Asegurar que el catálogo completo de ejercicios esté disponible para multimedia y técnica
+  useEffect(() => {
+    if (allExercises.length === 0 && getOrFetchAllExercises) {
+      getOrFetchAllExercises().catch(() => {});
+    }
+  }, [allExercises.length, getOrFetchAllExercises]);
 
   // Animación de arrastre hacia abajo y cierre suave
   const translateY = useRef(new Animated.Value(0)).current;
@@ -129,61 +138,124 @@ export const WorkoutExerciseDetailModal: React.FC<WorkoutExerciseDetailModalProp
     setLocalDetails(initDetails);
     setAiExplanation(null);
     setAiError(null);
+  }, [exercise]);
 
-    // Auto-enriquecimiento: si faltan datos descriptivos o multimedia, buscar en allExercises
-    const hasMissingData =
-      (!initDetails.description && !initDetails.description_es) ||
-      (!initDetails.video_url && !initDetails.youtube_id && !initDetails.images?.length);
+  // Buscar coincidencia en el catálogo completo de ejercicios
+  const matchedFromStore = useMemo(() => {
+    if (!exercise) return null;
+    const targetId = exercise.exercise_list_id || exercise.exercise_id || exercise.id;
+    const targetName = (exercise.name || '').trim().toLowerCase();
 
-    if (hasMissingData && getOrFetchAllExercises) {
-      setIsLoadingDetails(true);
-      getOrFetchAllExercises()
-        .then((fullList: any[]) => {
-          if (Array.isArray(fullList)) {
-            const match = fullList.find(
-              (e: any) =>
-                (e.id && (e.id === exercise.id || e.id === exercise.exercise_id || e.id === exercise.exercise_list_id)) ||
-                (e.name && exercise.name && e.name.toLowerCase().trim() === exercise.name.toLowerCase().trim())
-            );
-            if (match) {
-              setLocalDetails((prev: any) => ({
-                ...match,
-                ...prev,
-                video_url: prev.video_url || match.video_url,
-                youtube_id: prev.youtube_id || match.youtube_id,
-                image_url: prev.image_url || match.image_url,
-                images: (prev.images && prev.images.length > 0) ? prev.images : match.images,
-                description: match.description_es || match.description || prev.description,
-                description_es: match.description_es || prev.description_es,
-                muscle_group: prev.muscle_group || match.muscle_group || match.muscles,
-              }));
-            }
-          }
-        })
-        .catch(() => {})
-        .finally(() => setIsLoadingDetails(false));
-    }
-  }, [exercise, getOrFetchAllExercises]);
+    return allExercises.find((ex: any) => {
+      if (targetId && (ex.id === targetId || ex.exercise_list_id === targetId)) return true;
+      if (targetName && ex.name?.trim().toLowerCase() === targetName) return true;
+      return false;
+    });
+  }, [exercise, allExercises]);
 
   const mergedDetails = useMemo(() => {
     const rawEx = exercise || {};
     const rawLoc = localDetails || {};
+    const rawMatch = matchedFromStore || {};
+    const rawSubEx = rawEx.exercise_details || rawEx.exercise || {};
+    const rawSubMatch = rawMatch.exercise_details || rawMatch.exercise || {};
+
+    const video_url =
+      rawEx.video_url ||
+      rawSubEx.video_url ||
+      rawLoc.video_url ||
+      rawMatch.video_url ||
+      rawSubMatch.video_url ||
+      null;
+
+    const youtube_id =
+      rawEx.youtube_id ||
+      rawSubEx.youtube_id ||
+      rawLoc.youtube_id ||
+      rawMatch.youtube_id ||
+      rawSubMatch.youtube_id ||
+      null;
+
+    const images =
+      (rawEx.images && rawEx.images.length > 0)
+        ? rawEx.images
+        : (rawSubEx.images && rawSubEx.images.length > 0)
+          ? rawSubEx.images
+          : (rawLoc.images && rawLoc.images.length > 0)
+            ? rawLoc.images
+            : (rawMatch.images && rawMatch.images.length > 0)
+              ? rawMatch.images
+              : (rawSubMatch.images && rawSubMatch.images.length > 0)
+                ? rawSubMatch.images
+                : [];
+
+    const image_url =
+      rawEx.image_url ||
+      rawSubEx.image_url ||
+      rawLoc.image_url ||
+      rawMatch.image_url ||
+      rawMatch.image_url_start ||
+      rawSubMatch.image_url ||
+      null;
+
+    const description =
+      rawLoc.description_es ||
+      rawLoc.description ||
+      rawEx.description_es ||
+      rawEx.description ||
+      rawMatch.description_es ||
+      rawMatch.description ||
+      null;
+
+    const muscle_group =
+      rawLoc.muscle_group ||
+      rawLoc.muscles ||
+      rawEx.muscle_group ||
+      rawEx.muscles ||
+      rawMatch.muscle_group ||
+      rawMatch.muscles ||
+      'General';
+
     return {
+      ...rawMatch,
       ...rawLoc,
       ...rawEx,
-      video_url: rawLoc.video_url || rawEx.video_url || rawEx.exercise_details?.video_url,
-      youtube_id: rawLoc.youtube_id || rawEx.youtube_id || rawEx.exercise_details?.youtube_id,
-      image_url: rawLoc.image_url || rawEx.image_url || rawEx.exercise_details?.image_url,
-      images: (rawLoc.images && rawLoc.images.length > 0)
-        ? rawLoc.images
-        : (rawEx.images && rawEx.images.length > 0)
-          ? rawEx.images
-          : rawEx.exercise_details?.images,
-      description: rawLoc.description_es || rawLoc.description || rawEx.description_es || rawEx.description,
-      description_es: rawLoc.description_es || rawEx.description_es,
-      muscle_group: rawLoc.muscle_group || rawLoc.muscles || rawEx.muscle_group || rawEx.muscles,
+      video_url,
+      youtube_id,
+      images,
+      image_url,
+      description,
+      description_es: rawMatch.description_es || rawLoc.description_es || rawEx.description_es,
+      muscle_group,
     };
-  }, [exercise, localDetails]);
+  }, [exercise, localDetails, matchedFromStore]);
+
+  // Detección de disponibilidad de Video y Animación de fotos
+  const hasVideo = Boolean(
+    mergedDetails.video_url ||
+    mergedDetails.youtube_id ||
+    mergedDetails.exercise_details?.video_url ||
+    mergedDetails.exercise_details?.youtube_id
+  );
+
+  const hasImages = Boolean(
+    (mergedDetails.images && mergedDetails.images.length > 0) ||
+    mergedDetails.image_url ||
+    mergedDetails.image_url_start ||
+    mergedDetails.exercise_details?.images?.length ||
+    mergedDetails.exercise_details?.image_url
+  );
+
+  // Modo multimedia activo: 'video' prioritario si existe vídeo, o 'images' como alternativa
+  const [mediaMode, setMediaMode] = useState<'video' | 'images'>('video');
+
+  useEffect(() => {
+    if (hasVideo) {
+      setMediaMode('video');
+    } else {
+      setMediaMode('images');
+    }
+  }, [hasVideo, exercise?.id, exercise?.name]);
 
   // Limpieza y formateo de descripción (remueve tags html residuales como <p>, </p>, <br>)
   const rawDescription =
@@ -318,13 +390,80 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
               keyboardShouldPersistTaps="handled"
               bounces={true}
             >
-              {/* 1. Reproductor de Vídeo / Formato Shorts 9:16 */}
+              {/* 1. Selector Vídeo / Animación + Reproductor Multimedia */}
               <View style={styles.mediaContainerWrapper}>
+                {hasVideo && hasImages && (
+                  <View
+                    style={[
+                      styles.mediaModeSelector,
+                      {
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                      },
+                    ]}
+                  >
+                    <TouchableOpacity
+                      activeOpacity={0.75}
+                      onPress={() => {
+                        try {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        } catch {}
+                        setMediaMode('video');
+                      }}
+                      style={[
+                        styles.mediaModeTab,
+                        mediaMode === 'video' && [styles.mediaModeTabActive, { backgroundColor: colors.tint }],
+                      ]}
+                    >
+                      <Play
+                        size={11}
+                        color={mediaMode === 'video' ? '#ffffff' : colors.textSecondary}
+                        fill={mediaMode === 'video' ? '#ffffff' : 'transparent'}
+                      />
+                      <Text
+                        style={[
+                          styles.mediaModeTabText,
+                          { color: mediaMode === 'video' ? '#ffffff' : colors.textSecondary },
+                        ]}
+                      >
+                        Vídeo
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      activeOpacity={0.75}
+                      onPress={() => {
+                        try {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        } catch {}
+                        setMediaMode('images');
+                      }}
+                      style={[
+                        styles.mediaModeTab,
+                        mediaMode === 'images' && [styles.mediaModeTabActive, { backgroundColor: colors.tint }],
+                      ]}
+                    >
+                      <Repeat
+                        size={11}
+                        color={mediaMode === 'images' ? '#ffffff' : colors.textSecondary}
+                      />
+                      <Text
+                        style={[
+                          styles.mediaModeTabText,
+                          { color: mediaMode === 'images' ? '#ffffff' : colors.textSecondary },
+                        ]}
+                      >
+                        Animación
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
                 <View
                   style={[
-                    styles.mediaHeroCard,
+                    mediaMode === 'video' ? styles.mediaHeroCardVideo : styles.mediaHeroCardImages,
                     {
-                      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.40)' : 'rgba(0, 0, 0, 0.04)',
+                      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.50)' : 'rgba(0, 0, 0, 0.04)',
                       borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
                     },
                   ]}
@@ -338,7 +477,7 @@ Sé directo, motivador y usa un formato limpio con viñetas.`;
                       item={mergedDetails}
                       details={mergedDetails}
                       fitMode="contain"
-                      playYouTube={true}
+                      playYouTube={mediaMode === 'video'}
                     />
                   )}
                 </View>
@@ -629,7 +768,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  mediaHeroCard: {
+  mediaModeSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 3,
+    borderRadius: 24,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  mediaModeTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  mediaModeTabActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  mediaModeTabText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  mediaHeroCardVideo: {
+    width: '100%',
+    maxWidth: 340,
+    aspectRatio: 16 / 9,
+    borderRadius: 22,
+    borderWidth: 1,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000000',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  mediaHeroCardImages: {
     width: 220,
     maxWidth: '100%',
     aspectRatio: 9 / 16,
