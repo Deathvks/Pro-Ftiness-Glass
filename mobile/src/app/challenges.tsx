@@ -131,7 +131,7 @@ function ChallengeCard({ challenge, isDark, colors }: ChallengeCardProps) {
         style={[
           styles.cardProgressFill,
           isCompleted
-            ? StyleSheet.absoluteFillObject
+            ? StyleSheet.absoluteFill
             : {
                 top: 0,
                 left: 0,

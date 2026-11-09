@@ -56,7 +56,10 @@ import {
   Flame,
   Trash2,
   Share2,
+  Play,
 } from 'lucide-react-native';
+import { File as ExpoFile, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 import GlobalHeader from '@/components/GlobalHeader';
 import ThemeBackground from '@/components/ThemeBackground';
@@ -69,7 +72,8 @@ import { getContrastTextColor } from '@/utils/colorUtils';
 import * as userService from '@/services/userService';
 import * as sessionService from '@/services/sessionService';
 import * as notificationService from '@/services/notificationService';
-import { logoutUser } from '@/services/authService';
+import { logoutUser, disable2FA } from '@/services/authService';
+import { getExerciseList } from '@/services/exerciseService';
 import {
   SETTINGS_SECTIONS,
   SettingsSection,
@@ -182,6 +186,7 @@ export default function SettingsScreen() {
 
   // Modo offline stats
   const [offlineDownloaded, setOfflineDownloaded] = useState(false);
+  const [exerciseCount, setExerciseCount] = useState(160);
   const [isDownloadingOffline, setIsDownloadingOffline] = useState(false);
   const [offlineProgress, setOfflineProgress] = useState(0);
 
@@ -204,6 +209,10 @@ export default function SettingsScreen() {
         const savedOffline = localStorage.getItem('pfg_offline_exercises_ready');
         if (savedOffline === 'true') {
           setOfflineDownloaded(true);
+        }
+        const savedCount = localStorage.getItem('pfg_offline_exercises_count');
+        if (savedCount) {
+          setExerciseCount(parseInt(savedCount, 10) || 160);
         }
       }
     } catch {}
@@ -389,65 +398,128 @@ export default function SettingsScreen() {
   const handleExportData = async (format: 'json' | 'csv') => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      useAppStore.getState().showToast?.(`Preparando exportación en ${format.toUpperCase()}...`);
+      useAppStore.getState().showToast?.(`Generando archivo ${format.toUpperCase()}...`);
       const blob = await userService.exportMyData(format);
       const textData = await blob.text();
+      const filename = `profitnessglass_datos_${new Date().toISOString().slice(0, 10)}.${format}`;
+      const exportFile = new ExpoFile(Paths.cache, filename);
+      await exportFile.write(textData);
 
-      await Share.share({
-        title: `Copia de Seguridad Pro Fitness Glass (${format.toUpperCase()})`,
-        message: textData,
-      });
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        await Sharing.shareAsync(exportFile.uri, {
+          mimeType: format === 'json' ? 'application/json' : 'text/csv',
+          dialogTitle: `Exportar datos completos (${format.toUpperCase()})`,
+        });
+      } else {
+        await Share.share({
+          title: `Copia de Seguridad Pro Fitness Glass (${format.toUpperCase()})`,
+          message: textData,
+        });
+      }
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {}
     } catch (err) {
       console.warn('Error exportando datos:', err);
       Alert.alert('Exportar Datos', 'No se pudo completar la exportación de datos.');
     }
   };
 
-  // Modo offline: simulación y guardado local
-  const handleStartOfflineDownload = () => {
+  // Modo offline: descarga real de ejercicios y guardado local
+  const handleStartOfflineDownload = async () => {
     if (isDownloadingOffline) return;
     setIsDownloadingOffline(true);
-    setOfflineProgress(0);
+    setOfflineProgress(15);
+    try {
+      useAppStore.getState().showToast?.('Descargando catálogo completo de ejercicios...');
+      const data = await getExerciseList();
+      const exercises = Array.isArray(data) ? data : [];
+      setOfflineProgress(70);
 
-    let current = 0;
-    const interval = setInterval(() => {
-      current += 10;
-      setOfflineProgress(current);
-      if (current >= 100) {
-        clearInterval(interval);
-        setIsDownloadingOffline(false);
-        setOfflineDownloaded(true);
-        try {
-          if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('pfg_offline_exercises_ready', 'true');
-          }
-        } catch {}
-        useAppStore.getState().showToast?.('¡Biblioteca offline descargada con éxito!');
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('pfg_offline_exercises_cache', JSON.stringify(exercises));
+        localStorage.setItem('pfg_offline_exercises_count', String(exercises.length));
+        localStorage.setItem('pfg_offline_exercises_ready', 'true');
+        localStorage.setItem('pfg_offline_exercises_date', new Date().toISOString());
       }
-    }, 250);
+      setOfflineProgress(100);
+      setOfflineDownloaded(true);
+      setExerciseCount(exercises.length);
+      useAppStore.getState().showToast?.(`¡Biblioteca offline lista: ${exercises.length} ejercicios guardados!`);
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {}
+    } catch (err) {
+      console.warn('Error descargando biblioteca offline:', err);
+      Alert.alert('Descarga Offline', 'No se pudieron descargar los ejercicios. Comprueba tu conexión e inténtalo de nuevo.');
+    } finally {
+      setIsDownloadingOffline(false);
+    }
   };
 
   const handleDeleteOfflineCache = () => {
     Alert.alert(
       'Liberar espacio offline',
-      '¿Seguro que deseas eliminar todos los ejercicios y animaciones guardadas en la memoria local? Se liberarán ~45 MB.',
+      '¿Seguro que deseas eliminar todos los ejercicios guardados en la memoria local?',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Eliminar',
+          text: 'Eliminar y liberar espacio',
           style: 'destructive',
           onPress: () => {
-            setOfflineDownloaded(false);
             try {
               if (typeof localStorage !== 'undefined') {
+                localStorage.removeItem('pfg_offline_exercises_cache');
+                localStorage.removeItem('pfg_offline_exercises_count');
                 localStorage.removeItem('pfg_offline_exercises_ready');
+                localStorage.removeItem('pfg_offline_exercises_date');
               }
             } catch {}
+            setOfflineDownloaded(false);
             useAppStore.getState().showToast?.('Espacio offline liberado correctamente.');
           },
         },
       ]
     );
+  };
+
+  // Gestión de 2FA
+  const handleManage2FA = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+
+    if (userProfile?.two_factor_enabled) {
+      Alert.alert(
+        'Seguridad 2FA Activa',
+        'Tu cuenta está protegida con verificación en dos pasos mediante códigos de seguridad.\n\n¿Deseas desactivar la verificación en dos pasos?',
+        [
+          { text: 'Mantener activo', style: 'cancel' },
+          {
+            text: 'Desactivar 2FA',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await disable2FA();
+                setUserProfile({ ...userProfile, two_factor_enabled: false });
+                useAppStore.getState().showToast?.('2FA desactivado correctamente');
+              } catch {
+                Alert.alert('Error', 'No se pudo desactivar el 2FA. Inténtalo de nuevo.');
+              }
+            },
+          },
+        ]
+      );
+    } else {
+      Alert.alert(
+        'Verificación en 2 pasos (2FA)',
+        'La verificación en dos pasos añade una capa extra de protección a tu cuenta solicitando un código temporal al iniciar sesión desde dispositivos nuevos.\n\nPuedes activarla vinculando tu cuenta de correo o una aplicación autenticadora (Google Authenticator, Authy, etc.).',
+        [
+          { text: 'Entendido', style: 'default' },
+        ]
+      );
+    }
   };
 
   // Sesiones: revocar
@@ -897,8 +969,12 @@ export default function SettingsScreen() {
                     <View style={styles.metricsGrid}>
                       <View style={[styles.metricItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }]}>
                         <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>EJERCICIOS</Text>
-                        <Text style={[styles.metricValue, { color: colors.text }]}>150+</Text>
-                        <Text style={[styles.metricSub, { color: colors.textSecondary }]}>Disponibles</Text>
+                        <Text style={[styles.metricValue, { color: colors.text }]}>
+                          {offlineDownloaded ? exerciseCount : `${exerciseCount}+`}
+                        </Text>
+                        <Text style={[styles.metricSub, { color: colors.textSecondary }]}>
+                          {offlineDownloaded ? 'Guardados' : 'Disponibles'}
+                        </Text>
                       </View>
                       <View style={[styles.metricItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }]}>
                         <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>MULTIMEDIA</Text>
@@ -979,6 +1055,58 @@ export default function SettingsScreen() {
                     </View>
                   </View>
 
+                  {/* Resumen del perfil del atleta */}
+                  <View
+                    style={[
+                      styles.storageStatusBox,
+                      {
+                        backgroundColor: subtleItemBg,
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                        marginBottom: 12,
+                      },
+                    ]}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={[styles.rowIconCircle, { width: 44, height: 44, borderRadius: 16, backgroundColor: colors.tint + '22' }]}>
+                        <User size={24} color={colors.tint} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.rowItemTitle, { color: colors.text, fontSize: 16 }]}>
+                          {userProfile?.username || userProfile?.name || 'Atleta Pro'}
+                        </Text>
+                        <Text style={[styles.rowItemSubtitle, { color: colors.textSecondary }]}>
+                          {userProfile?.email || 'Cuenta vinculada'}
+                        </Text>
+                      </View>
+                      <View style={[styles.badgePill, { backgroundColor: colors.tint + '18' }]}>
+                        <Text style={[styles.badgePillText, { color: colors.tint }]}>
+                          {(userProfile?.role || 'user').toUpperCase()}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.metricsGrid}>
+                      <View style={[styles.metricItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }]}>
+                        <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>PESO</Text>
+                        <Text style={[styles.metricValue, { color: colors.text }]}>
+                          {userProfile?.weight ? `${userProfile.weight} kg` : '--'}
+                        </Text>
+                      </View>
+                      <View style={[styles.metricItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }]}>
+                        <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>ALTURA</Text>
+                        <Text style={[styles.metricValue, { color: colors.text }]}>
+                          {userProfile?.height ? `${userProfile.height} cm` : '--'}
+                        </Text>
+                      </View>
+                      <View style={[styles.metricItem, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)' }]}>
+                        <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>OBJETIVO</Text>
+                        <Text style={[styles.metricValue, { color: colors.tint, fontSize: 11 }]} numberOfLines={1}>
+                          {userProfile?.goal ? userProfile.goal.toUpperCase() : 'SALUD'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
                   <View style={styles.switchItemsList}>
                     <TouchableOpacity
                       onPress={() => router.push('/profile')}
@@ -990,10 +1118,10 @@ export default function SettingsScreen() {
                       </View>
                       <View style={{ flex: 1, marginRight: 8 }}>
                         <Text style={[styles.rowItemTitle, { color: colors.text }]}>
-                          Datos Físicos y Objetivos
+                          Editar Datos Físicos y Objetivos
                         </Text>
                         <Text style={[styles.rowItemSubtitle, { color: colors.textSecondary }]}>
-                          Editar peso, altura, calorías objetivo y nivel
+                          Modificar peso, altura, calorías objetivo y nivel de entreno
                         </Text>
                       </View>
                       <ChevronRight size={18} color={colors.textSecondary} />
@@ -1170,6 +1298,35 @@ export default function SettingsScreen() {
                         disabled={isUpdatingPrivacy}
                       />
                     </View>
+
+                    {/* Recordatorios de asesoría */}
+                    <View style={[styles.settingRowItem, { backgroundColor: subtleItemBg }]}>
+                      <View style={[styles.rowIconCircle, { backgroundColor: colors.tint + '15' }]}>
+                        <Mail size={20} color={colors.tint} />
+                      </View>
+                      <View style={{ flex: 1, marginRight: 12 }}>
+                        <Text style={[styles.rowItemTitle, { color: colors.text }]}>
+                          Recordatorios de asesoría
+                        </Text>
+                        <Text style={[styles.rowItemSubtitle, { color: colors.textSecondary }]}>
+                          {EMAIL_CONSENT_TEXT.coaching}
+                        </Text>
+                      </View>
+                      <LiquidGlassSwitch
+                        value={Boolean(userProfile?.email_coaching_consent)}
+                        onValueChange={() =>
+                          handleToggleProfileField(
+                            'email_coaching_consent',
+                            'Recordatorios de asesoría',
+                            false,
+                            EMAIL_CONSENT_VERSION
+                          )
+                        }
+                        tintColor={colors.tint}
+                        isDark={isDark}
+                        disabled={isUpdatingPrivacy}
+                      />
+                    </View>
                   </View>
                 </GlassSurface>
               </View>
@@ -1195,7 +1352,11 @@ export default function SettingsScreen() {
 
                   <View style={styles.switchItemsList}>
                     {/* 2FA */}
-                    <View style={[styles.settingRowItem, { backgroundColor: subtleItemBg }]}>
+                    <TouchableOpacity
+                      onPress={handleManage2FA}
+                      activeOpacity={0.7}
+                      style={[styles.settingRowItem, { backgroundColor: subtleItemBg }]}
+                    >
                       <View style={[styles.rowIconCircle, { backgroundColor: colors.tint + '15' }]}>
                         <Smartphone size={20} color={colors.tint} />
                       </View>
@@ -1205,8 +1366,8 @@ export default function SettingsScreen() {
                         </Text>
                         <Text style={[styles.rowItemSubtitle, { color: colors.textSecondary }]}>
                           {userProfile?.two_factor_enabled
-                            ? 'Protegido con aplicación autenticadora'
-                            : 'Mayor seguridad para tu cuenta'}
+                            ? 'Protegido con aplicación autenticadora (Toca para gestionar)'
+                            : 'Mayor seguridad para tu cuenta (Toca para info)'}
                         </Text>
                       </View>
                       <View
@@ -1230,7 +1391,7 @@ export default function SettingsScreen() {
                           {userProfile?.two_factor_enabled ? 'ACTIVADO' : 'DESACTIVADO'}
                         </Text>
                       </View>
-                    </View>
+                    </TouchableOpacity>
 
                     {/* Exportar datos */}
                     <View style={[styles.settingRowItem, { backgroundColor: subtleItemBg }]}>
@@ -1330,6 +1491,31 @@ export default function SettingsScreen() {
                         <Text style={[styles.rowItemTitle, { color: colors.text }]}>Aviso Legal (LSSI-CE)</Text>
                         <Text style={[styles.rowItemSubtitle, { color: colors.textSecondary }]}>
                           Datos del prestador y titularidad de la plataforma
+                        </Text>
+                      </View>
+                      <ChevronRight size={18} color={colors.textSecondary} />
+                    </TouchableOpacity>
+
+                    {/* Tutoriales y Guías */}
+                    <TouchableOpacity
+                      onPress={() => {
+                        try {
+                          if (typeof localStorage !== 'undefined') {
+                            localStorage.setItem('open_tutorials_on_hub', 'true');
+                          }
+                        } catch {}
+                        router.push('/(tabs)/hub');
+                      }}
+                      activeOpacity={0.7}
+                      style={[styles.settingRowItem, { backgroundColor: subtleItemBg }]}
+                    >
+                      <View style={[styles.rowIconCircle, { backgroundColor: colors.tint + '15' }]}>
+                        <Play size={20} color={colors.tint} />
+                      </View>
+                      <View style={{ flex: 1, marginRight: 8 }}>
+                        <Text style={[styles.rowItemTitle, { color: colors.text }]}>Tutoriales y Guías</Text>
+                        <Text style={[styles.rowItemSubtitle, { color: colors.textSecondary }]}>
+                          Guías visuales y ayuda interactiva en el Hub
                         </Text>
                       </View>
                       <ChevronRight size={18} color={colors.textSecondary} />
