@@ -497,16 +497,19 @@ export function FloatingLiquidGlassTabBar({
                     { scaleX },
                     { scaleY },
                   ],
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.20)' : 'rgba(0, 0, 0, 0.08)',
-                  borderTopColor: isDark ? 'rgba(255, 255, 255, 0.35)' : '#ffffff',
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.85)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.32)' : 'rgba(0, 0, 0, 0.10)',
+                  borderTopColor: isDark ? 'rgba(255, 255, 255, 0.75)' : '#ffffff',
+                  shadowColor: isDark ? colors.tint : '#000000',
+                  shadowOpacity: isDark ? 0.38 : 0.12,
                 },
               ]}
             >
               <LinearGradient
                 colors={
                   isDark
-                    ? ['rgba(255, 255, 255, 0.20)', 'rgba(255, 255, 255, 0.03)']
-                    : ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.50)']
+                    ? ['rgba(255, 255, 255, 0.28)', 'rgba(255, 255, 255, 0.07)']
+                    : ['#ffffff', 'rgba(255, 255, 255, 0.65)']
                 }
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -577,10 +580,12 @@ const styles = StyleSheet.create({
     marginTop: -DROP_HEIGHT / 2,
     left: 0,
     borderRadius: DROP_HEIGHT / 2,
-    borderWidth: 0.5,
-    borderTopWidth: 1,
+    borderWidth: 1,
+    borderTopWidth: 1.5,
     overflow: 'hidden',
-    elevation: 0,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 10,
+    elevation: 4,
     zIndex: 1,
   },
   liquidDropGradient: {

@@ -13,6 +13,7 @@ import {
   Alert,
   Switch,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
 } from 'react-native';
 import {
@@ -136,6 +137,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
   useEffect(() => {
     if (visible) {
       if (initialScan) {
+        Keyboard.dismiss();
         setShowScanner(true);
       }
       if (logToEdit) {
@@ -714,8 +716,9 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-        <KeyboardAvoidingView
+      <View style={StyleSheet.absoluteFill}>
+        <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
+          <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={StyleSheet.absoluteFill}
         >
@@ -1249,6 +1252,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                             try {
                               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             } catch {}
+                            Keyboard.dismiss();
                             setShowScanner(true);
                           }}
                           style={styles.tabItem}
@@ -1416,6 +1420,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                             try {
                               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             } catch {}
+                            Keyboard.dismiss();
                             setShowScanner(true);
                           }}
                           style={[
@@ -2295,15 +2300,20 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
             </Pressable>
           </Pressable>
         </KeyboardAvoidingView>
-        {/* Full Native Barcode Scanner Modal */}
+      </GlassView>
+
+      {/* Full Native Barcode Scanner (embedded overlay, sin modal anidado ni márgenes negros) */}
+      {showScanner && (
         <BarcodeScannerModal
           visible={showScanner}
+          embedded={true}
           onClose={() => setShowScanner(false)}
           onFoodScanned={handleFoodScanned}
           onManualCreate={handleManualCreateFromBarcode}
         />
-      </GlassView>
-    </Modal>
+      )}
+    </View>
+  </Modal>
   );
 };
 

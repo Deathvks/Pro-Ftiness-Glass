@@ -38,6 +38,7 @@ interface BarcodeScannerModalProps {
   onClose: () => void;
   onFoodScanned: (food: any) => void;
   onManualCreate?: (barcode: string) => void;
+  embedded?: boolean;
 }
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -49,6 +50,7 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
   onClose,
   onFoodScanned,
   onManualCreate,
+  embedded = false,
 }) => {
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
@@ -226,72 +228,83 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
 
   // Pantalla de solicitud de permisos
   if (!permission?.granted) {
-    return (
-      <Modal visible={visible} animationType="slide" transparent={true}>
-        <View style={styles.modalBackdrop}>
-          <BlurView intensity={isDark ? 50 : 65} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
-          <View
+    const permContent = (
+      <View style={styles.modalBackdrop}>
+        <BlurView intensity={isDark ? 50 : 65} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <View
+          style={[
+            styles.permissionCard,
+            {
+              backgroundColor: isDark ? 'rgba(24, 24, 27, 0.90)' : 'rgba(255, 255, 255, 0.92)',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+            },
+          ]}
+        >
+          <View style={[styles.permissionIconBadge, { backgroundColor: colors.tint + '18' }]}>
+            <CameraIcon size={34} color={colors.tint} strokeWidth={2.2} />
+          </View>
+
+          <Text style={[styles.permissionTitle, { color: colors.text }]}>Permiso de Cámara Requerido</Text>
+          <Text style={[styles.permissionDesc, { color: colors.textSecondary }]}>
+            Para poder leer códigos de barras de alimentos en iOS y Android, ProFitnessGlass necesita acceder a la cámara de tu dispositivo.
+          </Text>
+
+          <TouchableOpacity
+            onPress={async () => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              } catch {}
+              const res = await requestPermission();
+              if (!res.granted) {
+                Alert.alert(
+                  'Acceso Denegado',
+                  'Puedes habilitar el permiso de cámara en los Ajustes de tu dispositivo o introducir el código de barras manualmente.',
+                  [{ text: 'Entendido' }]
+                );
+              }
+            }}
+            style={[styles.primaryBtn, { backgroundColor: colors.tint }]}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.primaryBtnText, { color: getContrastTextColor(colors.tint) }]}>
+              Permitir Acceso a la Cámara
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setShowManualInput(true)}
             style={[
-              styles.permissionCard,
+              styles.secondaryBtn,
               {
-                backgroundColor: isDark ? 'rgba(24, 24, 27, 0.90)' : 'rgba(255, 255, 255, 0.92)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.08)',
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
               },
             ]}
+            activeOpacity={0.75}
           >
-            <View style={[styles.permissionIconBadge, { backgroundColor: colors.tint + '18' }]}>
-              <CameraIcon size={34} color={colors.tint} strokeWidth={2.2} />
-            </View>
+            <Keyboard size={16} color={colors.text} style={{ marginRight: 8 }} />
+            <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Introducir código manualmente</Text>
+          </TouchableOpacity>
 
-            <Text style={[styles.permissionTitle, { color: colors.text }]}>Permiso de Cámara Requerido</Text>
-            <Text style={[styles.permissionDesc, { color: colors.textSecondary }]}>
-              Para poder leer códigos de barras de alimentos en iOS y Android, ProFitnessGlass necesita acceder a la cámara de tu dispositivo.
-            </Text>
-
-            <TouchableOpacity
-              onPress={async () => {
-                try {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                } catch {}
-                const res = await requestPermission();
-                if (!res.granted) {
-                  Alert.alert(
-                    'Acceso Denegado',
-                    'Puedes habilitar el permiso de cámara en los Ajustes de tu dispositivo o introducir el código de barras manualmente.',
-                    [{ text: 'Entendido' }]
-                  );
-                }
-              }}
-              style={[styles.primaryBtn, { backgroundColor: colors.tint }]}
-              activeOpacity={0.85}
-            >
-              <Text style={[styles.primaryBtnText, { color: getContrastTextColor(colors.tint) }]}>
-                Permitir Acceso a la Cámara
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setShowManualInput(true)}
-              style={[
-                styles.secondaryBtn,
-                {
-                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)',
-                },
-              ]}
-              activeOpacity={0.75}
-            >
-              <Keyboard size={16} color={colors.text} style={{ marginRight: 8 }} />
-              <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Introducir código manualmente</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={onClose} style={styles.cancelBtn} activeOpacity={0.7}>
-              <Text style={[styles.cancelBtnText, { color: colors.textMuted }]}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity onPress={onClose} style={styles.cancelBtn} activeOpacity={0.7}>
+            <Text style={[styles.cancelBtnText, { color: colors.textMuted }]}>Cancelar</Text>
+          </TouchableOpacity>
         </View>
+      </View>
+    );
 
-        {/* Modal secundario para entrada manual */}
+    if (embedded) {
+      return (
+        <View style={styles.fullContainer}>
+          {permContent}
+          {renderManualInputModal()}
+        </View>
+      );
+    }
+
+    return (
+      <Modal visible={visible} animationType="slide" transparent={true}>
+        {permContent}
         {renderManualInputModal()}
       </Modal>
     );
@@ -374,9 +387,8 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
     );
   }
 
-  return (
-    <Modal visible={visible} animationType="fade" transparent={false} statusBarTranslucent={true}>
-      <View style={styles.fullContainer}>
+  const scannerBody = (
+    <View style={styles.fullContainer}>
         {/* Vista nativa de la cámara */}
         <CameraView
           style={StyleSheet.absoluteFill}
@@ -532,15 +544,25 @@ export const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
 
         {/* Modal de entrada manual */}
         {renderManualInputModal()}
-      </View>
+    </View>
+  );
+
+  if (embedded) {
+    return scannerBody;
+  }
+
+  return (
+    <Modal visible={visible} animationType="fade" transparent={false} statusBarTranslucent={true}>
+      {scannerBody}
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
   fullContainer: {
-    flex: 1,
+    ...StyleSheet.absoluteFill as any,
     backgroundColor: '#000000',
+    zIndex: 99999,
   },
   modalBackdrop: {
     flex: 1,
@@ -660,7 +682,7 @@ const styles = StyleSheet.create({
   },
   maskTop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.62)',
+    backgroundColor: 'rgba(0, 0, 0, 0.38)',
   },
   maskMiddleRow: {
     height: SCAN_FRAME_HEIGHT,
@@ -668,7 +690,7 @@ const styles = StyleSheet.create({
   },
   maskSide: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.62)',
+    backgroundColor: 'rgba(0, 0, 0, 0.38)',
   },
   scanTargetFrame: {
     width: SCAN_FRAME_WIDTH,
@@ -725,7 +747,7 @@ const styles = StyleSheet.create({
   },
   maskBottom: {
     flex: 1.3,
-    backgroundColor: 'rgba(0, 0, 0, 0.62)',
+    backgroundColor: 'rgba(0, 0, 0, 0.38)',
     alignItems: 'center',
     paddingTop: 28,
   },
