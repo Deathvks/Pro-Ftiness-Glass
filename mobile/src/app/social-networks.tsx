@@ -13,12 +13,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassView } from 'expo-glass-effect';
-import Svg, { Path } from 'react-native-svg';
+import { FontAwesome5 } from '@expo/vector-icons';
 import {
   Share2,
   ChevronRight,
-  Instagram,
-  Youtube,
   Send,
   Copy,
   ExternalLink,
@@ -57,22 +55,17 @@ const SOCIAL_LINKS = {
   },
 };
 
-// Icono TikTok fiel al SVG original del frontend
-function TikTokIcon({ size = 20, color = '#25F4EE' }: { size?: number; color?: string }) {
-  return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <Path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
-    </Svg>
-  );
+// Iconos oficiales mediante FontAwesome5
+function InstagramIcon({ size = 20, color }: { size?: number; color: string }) {
+  return <FontAwesome5 name="instagram" size={size} color={color} brand />;
+}
+
+function TikTokIcon({ size = 19, color }: { size?: number; color: string }) {
+  return <FontAwesome5 name="tiktok" size={size} color={color} brand />;
+}
+
+function YoutubeIcon({ size = 18, color }: { size?: number; color: string }) {
+  return <FontAwesome5 name="youtube" size={size} color={color} brand />;
 }
 
 function GlassSurface({
@@ -156,7 +149,7 @@ function SocialItem({
           },
         ]}
       >
-        <Icon size={20} color={brandColor || colors.tint} strokeWidth={2.2} />
+        {Icon ? <Icon size={20} color={brandColor || colors.tint} strokeWidth={2.2} /> : null}
       </View>
 
       <View style={styles.itemTextCol}>
@@ -274,7 +267,7 @@ export default function SocialLinksScreen() {
           <View style={styles.itemsList}>
             {/* Instagram */}
             <SocialItem
-              icon={Instagram}
+              icon={InstagramIcon}
               title={SOCIAL_LINKS.instagram.title}
               subtitle={SOCIAL_LINKS.instagram.handle}
               brandColor={SOCIAL_LINKS.instagram.color}
@@ -298,7 +291,7 @@ export default function SocialLinksScreen() {
 
             {/* YouTube */}
             <SocialItem
-              icon={Youtube}
+              icon={YoutubeIcon}
               title={SOCIAL_LINKS.youtube.title}
               subtitle={SOCIAL_LINKS.youtube.handle}
               brandColor={SOCIAL_LINKS.youtube.color}
