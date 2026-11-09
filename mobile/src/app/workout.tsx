@@ -155,7 +155,7 @@ export default function WorkoutScreen() {
   // Si no hay entrenamiento activo (Pantalla exacta del frontend)
   if (!activeWorkout) {
     return (
-      <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <View style={[styles.screen, { paddingTop: insets.top }]}>
         <NoActiveWorkout
           onGoToRoutines={() => router.replace('/(tabs)/routines')}
           onStartQuickCardio={() => {
@@ -323,13 +323,19 @@ export default function WorkoutScreen() {
   };
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+    <View style={styles.screen}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
         <ScrollView
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: insets.top > 0 ? insets.top + 8 : 16,
+              paddingBottom: insets.bottom + 90,
+            },
+          ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -510,9 +516,10 @@ export default function WorkoutScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
-    padding: 16,
+    paddingHorizontal: 16,
     maxWidth: 640,
     width: '100%',
     alignSelf: 'center',
