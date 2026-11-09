@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Pressable,
@@ -39,6 +39,44 @@ const PADDING_H = 10;
 const DROP_WIDTH = 44;
 const DROP_HEIGHT = 42;
 
+interface TabItemProps {
+  route: any;
+  index: number;
+  isActive: boolean;
+  activeColor: string;
+  inactiveColor: string;
+  onPress: (index: number) => void;
+}
+
+const TabItem = React.memo(function TabItem({
+  route,
+  index,
+  isActive,
+  activeColor,
+  inactiveColor,
+  onPress,
+}: TabItemProps) {
+  const tabInfo = TAB_CONFIG[route.name];
+  if (!tabInfo) return null;
+  const Icon = tabInfo.icon;
+
+  return (
+    <Pressable
+      onPress={() => onPress(index)}
+      hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+      style={styles.tabButton}
+    >
+      <View style={[styles.iconContainer, isActive && styles.activeIconContainer]}>
+        <Icon
+          size={22}
+          color={isActive ? activeColor : inactiveColor}
+          strokeWidth={isActive ? 2.5 : 1.9}
+        />
+      </View>
+    </Pressable>
+  );
+});
+
 export function FloatingLiquidGlassTabBar({
   state,
   emitter,
@@ -64,10 +102,13 @@ export function FloatingLiquidGlassTabBar({
   const innerWidth = Math.max(0, capsuleWidth - PADDING_H * 2);
   const tabWidth = innerWidth / TAB_KEYS.length;
 
-  const getDropLeft = (idx: number) => {
-    const center = PADDING_H + (idx + 0.5) * tabWidth;
-    return Math.round(center - DROP_WIDTH / 2);
-  };
+  const getDropLeft = useCallback(
+    (idx: number) => {
+      const center = PADDING_H + (idx + 0.5) * tabWidth;
+      return Math.round(center - DROP_WIDTH / 2);
+    },
+    [tabWidth]
+  );
 
   const activeIndex = state.index >= 0 ? state.index : 0;
   const currentTargetIdxRef = useRef(activeIndex);
@@ -92,86 +133,95 @@ export function FloatingLiquidGlassTabBar({
   }, [translateX]);
 
   // Animación suave con física elástica (spring) sin doble-disparo ni tirones
-  const snapToTab = (idx: number, force = false) => {
-    const targetX = getDropLeft(idx);
+  const snapToTab = useCallback(
+    (idx: number, force = false) => {
+      const targetX = getDropLeft(idx);
 
-    // Si ya estamos dirigiéndonos a este índice y no es forzado, no reiniciar para evitar que se trabe
-    if (!force && currentTargetIdxRef.current === idx && Math.abs(currentXRef.current - targetX) < 1) {
-      return;
-    }
+      // Si ya estamos dirigiéndonos a este índice y no es forzado, no reiniciar para evitar que se trabe
+      if (!force && currentTargetIdxRef.current === idx && Math.abs(currentXRef.current - targetX) < 1) {
+        return;
+      }
 
-    currentTargetIdxRef.current = idx;
+      currentTargetIdxRef.current = idx;
 
-    // Frenar limpiamente cualquier animación previa para evitar colisiones
-    if (currentAnimRef.current) {
-      currentAnimRef.current.stop();
-      currentAnimRef.current = null;
-    }
-
-    const anim = Animated.parallel([
-      Animated.spring(translateX, {
-        toValue: targetX,
-        stiffness: 180,
-        damping: 18,
-        mass: 0.8,
-        useNativeDriver: true,
-      }),
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(scaleX, { toValue: 0.90, duration: 85, useNativeDriver: true }),
-          Animated.timing(scaleY, { toValue: 0.90, duration: 85, useNativeDriver: true }),
-        ]),
-        Animated.parallel([
-          Animated.spring(scaleX, { toValue: 1, stiffness: 220, damping: 16, mass: 0.6, useNativeDriver: true }),
-          Animated.spring(scaleY, { toValue: 1, stiffness: 220, damping: 16, mass: 0.6, useNativeDriver: true }),
-        ]),
-      ]),
-    ]);
-
-    currentAnimRef.current = anim;
-    anim.start(({ finished }) => {
-      if (finished) {
+      // Frenar limpiamente cualquier animación previa para evitar colisiones
+      if (currentAnimRef.current) {
+        currentAnimRef.current.stop();
         currentAnimRef.current = null;
       }
-    });
-  };
 
-  // Disparo de navegación al confirmar pestaña
-  const triggerTabChange = (idx: number) => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {}
+      const anim = Animated.parallel([
+        Animated.spring(translateX, {
+          toValue: targetX,
+          stiffness: 180,
+          damping: 18,
+          mass: 0.8,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(scaleX, { toValue: 0.90, duration: 80, useNativeDriver: true }),
+            Animated.timing(scaleY, { toValue: 0.90, duration: 80, useNativeDriver: true }),
+          ]),
+          Animated.parallel([
+            Animated.spring(scaleX, { toValue: 1, stiffness: 220, damping: 16, mass: 0.6, useNativeDriver: true }),
+            Animated.spring(scaleY, { toValue: 1, stiffness: 220, damping: 16, mass: 0.6, useNativeDriver: true }),
+          ]),
+        ]),
+      ]);
 
-    const targetRoute = state.routes[idx];
-    if (!targetRoute) return;
-
-    if (emitter) {
-      emitter.emit({
-        type: 'tabPress',
-        target: targetRoute.key,
-        canPreventDefault: true,
+      currentAnimRef.current = anim;
+      anim.start(({ finished }) => {
+        if (finished) {
+          currentAnimRef.current = null;
+        }
       });
-    } else if (navigation) {
-      navigation.emit({
-        type: 'tabPress',
-        target: targetRoute.key,
-        canPreventDefault: true,
-      });
-    }
+    },
+    [getDropLeft, scaleX, scaleY, translateX]
+  );
 
-    if (navigateToTab) {
-      navigateToTab(targetRoute.key);
-    } else if (navigation) {
-      navigation.navigate(targetRoute.name);
-    }
-  };
+  // Disparo de navegación desacoplado al siguiente frame (0 lag en el hilo JS)
+  const triggerTabChange = useCallback(
+    (idx: number) => {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {}
+
+      const targetRoute = state.routes[idx];
+      if (!targetRoute) return;
+
+      if (emitter) {
+        emitter.emit({
+          type: 'tabPress',
+          target: targetRoute.key,
+          canPreventDefault: true,
+        });
+      } else if (navigation) {
+        navigation.emit({
+          type: 'tabPress',
+          target: targetRoute.key,
+          canPreventDefault: true,
+        });
+      }
+
+      if (navigateToTab) {
+        navigateToTab(targetRoute.key);
+      } else if (navigation) {
+        // requestAnimationFrame desacopla la transición de pantalla del hilo de animación física
+        requestAnimationFrame(() => {
+          navigation.navigate(targetRoute.name);
+        });
+      }
+    },
+    [emitter, navigation, navigateToTab, state.routes]
+  );
 
   // Sincronizar posición SOLO si cambia externamente (sin arrastrar y sin doble trigger)
   useEffect(() => {
     if (!isDraggingRef.current && currentTargetIdxRef.current !== activeIndex) {
       snapToTab(activeIndex);
     }
-  }, [activeIndex, capsuleWidth]);
+  }, [activeIndex, capsuleWidth, snapToTab]);
 
   // Gestos táctiles de arrastre fluido a 60-120fps (PanResponder optimizado)
   const panResponder = useRef(
@@ -218,22 +268,38 @@ export function FloatingLiquidGlassTabBar({
         snapToTab(nearestIdx, true);
 
         if (nearestIdx !== state.index) {
-          triggerTabChange(nearestIdx);
+          requestAnimationFrame(() => {
+            triggerTabChange(nearestIdx);
+          });
         }
 
         setTimeout(() => {
           isDraggingRef.current = false;
-        }, 150);
+        }, 100);
       },
       onPanResponderTerminate: () => {
         setActiveHoverIndex(null);
         snapToTab(state.index, true);
         setTimeout(() => {
           isDraggingRef.current = false;
-        }, 150);
+        }, 100);
       },
     })
   ).current;
+
+  const handleTabPress = useCallback(
+    (index: number) => {
+      if (isDraggingRef.current) return;
+      if (currentTargetIdxRef.current === index && activeIndex === index) return;
+      snapToTab(index);
+      if (index !== state.index) {
+        requestAnimationFrame(() => {
+          triggerTabChange(index);
+        });
+      }
+    },
+    [activeIndex, snapToTab, state.index, triggerTabChange]
+  );
 
   // Tinte translúcido suave (30-38% de opacidad)
   const getGlassTintBg = () => {
@@ -259,10 +325,12 @@ export function FloatingLiquidGlassTabBar({
   };
 
   const bottomOffset = Math.max(insets.bottom, 12);
+  const activeColor = colors.tint;
+  const inactiveColor = colors.tabBarInactive || colors.textSecondary;
 
   return (
     <>
-      {/* 1. DESENFOQUE INFERIOR (Dock Blur): difumina con elegancia el contenido que se desplaza bajo el navbar */}
+      {/* 1. DIFUMINADO INFERIOR SUAVE (Dock Backdrop con aceleración por hardware) */}
       <View
         pointerEvents="none"
         style={[
@@ -272,17 +340,11 @@ export function FloatingLiquidGlassTabBar({
           },
         ]}
       >
-        <BlurView
-          intensity={Platform.OS === 'android' ? 45 : 35}
-          tint={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
-          experimentalBlurMethod="dimezisBlurView"
-        />
         <LinearGradient
           colors={
             isDark
-              ? ['transparent', 'rgba(0, 0, 0, 0.22)', 'rgba(0, 0, 0, 0.65)']
-              : ['transparent', 'rgba(255, 255, 255, 0.30)', 'rgba(255, 255, 255, 0.75)']
+              ? ['transparent', 'rgba(0, 0, 0, 0.20)', 'rgba(0, 0, 0, 0.65)']
+              : ['transparent', 'rgba(255, 255, 255, 0.30)', 'rgba(255, 255, 255, 0.85)']
           }
           style={StyleSheet.absoluteFill}
         />
@@ -290,7 +352,7 @@ export function FloatingLiquidGlassTabBar({
 
       {/* 2. BARRA FLOTANTE CON CÁPSULA DE VIDRIO LÍQUIDO */}
       <View style={[styles.outerWrapper, { bottom: bottomOffset }]} pointerEvents="box-none">
-        {/* Contenedor de sombra ambiental suave (sin elevation tosca ni sombras cuadradas de Android) */}
+        {/* Contenedor de sombra ambiental suave */}
         <View
           style={[
             styles.shadowContainer,
@@ -300,14 +362,14 @@ export function FloatingLiquidGlassTabBar({
             },
           ]}
         >
-          {/* Sombra ambiental difusa suave para Android */}
+          {/* Sombra ambiental difusa suave para Android (sin elevation tosco) */}
           {Platform.OS === 'android' && (
             <LinearGradient
               pointerEvents="none"
               colors={
                 isDark
-                  ? ['transparent', 'rgba(0, 0, 0, 0.25)', 'rgba(0, 0, 0, 0.08)', 'transparent']
-                  : ['transparent', 'rgba(0, 0, 0, 0.10)', 'rgba(0, 0, 0, 0.03)', 'transparent']
+                  ? ['transparent', 'rgba(0, 0, 0, 0.22)', 'rgba(0, 0, 0, 0.06)', 'transparent']
+                  : ['transparent', 'rgba(0, 0, 0, 0.08)', 'rgba(0, 0, 0, 0.02)', 'transparent']
               }
               start={{ x: 0.5, y: 0.3 }}
               end={{ x: 0.5, y: 1 }}
@@ -332,13 +394,12 @@ export function FloatingLiquidGlassTabBar({
               },
             ]}
           >
-            {/* Desenfoque de fondo nativo de alta intensidad */}
+            {/* Desenfoque de cristal líquido nativo */}
             <BlurView
               pointerEvents="none"
-              intensity={Platform.OS === 'android' ? 55 : 45}
+              intensity={Platform.OS === 'android' ? 45 : 45}
               tint={isDark ? 'dark' : 'light'}
               style={StyleSheet.absoluteFill}
-              experimentalBlurMethod="dimezisBlurView"
             />
 
             {/* Tinte translúcido suave */}
@@ -395,40 +456,19 @@ export function FloatingLiquidGlassTabBar({
 
             {/* Iconos del Navbar centrados y distribuidos uniformemente */}
             {state.routes.map((route: any, index: number) => {
-              const tabInfo = TAB_CONFIG[route.name];
-              if (!tabInfo) return null;
-
-              const isEffectiveActive = activeHoverIndex !== null ? activeHoverIndex === index : activeIndex === index;
-              const Icon = tabInfo.icon;
-
-              const handlePress = () => {
-                if (isDraggingRef.current) return;
-                if (currentTargetIdxRef.current === index && activeIndex === index) return;
-                snapToTab(index);
-                if (index !== state.index) {
-                  triggerTabChange(index);
-                }
-              };
-
-              const activeColor = colors.tint;
-              const inactiveColor = colors.tabBarInactive || colors.textSecondary;
-              const currentColor = isEffectiveActive ? activeColor : inactiveColor;
+              const isEffectiveActive =
+                activeHoverIndex !== null ? activeHoverIndex === index : activeIndex === index;
 
               return (
-                <Pressable
+                <TabItem
                   key={route.key}
-                  onPress={handlePress}
-                  hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-                  style={styles.tabButton}
-                >
-                  <View style={[styles.iconContainer, isEffectiveActive && styles.activeIconContainer]}>
-                    <Icon
-                      size={22}
-                      color={currentColor}
-                      strokeWidth={isEffectiveActive ? 2.5 : 1.9}
-                    />
-                  </View>
-                </Pressable>
+                  route={route}
+                  index={index}
+                  isActive={isEffectiveActive}
+                  activeColor={activeColor}
+                  inactiveColor={inactiveColor}
+                  onPress={handleTabPress}
+                />
               );
             })}
           </View>

@@ -21,6 +21,8 @@ export default function AppTabs() {
         screenOptions={{
           headerShown: false,
           tabBarShowLabel: false,
+          lazy: false,
+          animation: 'none',
           tabBarStyle: {
             position: 'absolute',
             bottom: 0,
