@@ -35,6 +35,7 @@ export function XPGuideModal({
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={onClose}
       isDark={isDark}

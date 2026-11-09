@@ -218,6 +218,7 @@ export function WorkoutDataTransferModal({
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={isModalVisible}
       onClose={onClose}
       isDark={isDark}

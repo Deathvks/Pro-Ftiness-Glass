@@ -78,6 +78,7 @@ export function RewardsModal({ visible, onClose }: RewardsModalProps) {
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={onClose}
       isDark={isDark}

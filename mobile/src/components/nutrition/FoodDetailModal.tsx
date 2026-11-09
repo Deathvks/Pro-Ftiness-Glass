@@ -99,6 +99,7 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={handleClose}
       isDark={isDark}

@@ -438,85 +438,9 @@ export default function RoutinesScreen() {
       </View>
 
       {/* 2. PROMO BANNER */}
-      <PromoBanner type="routines" onPress={() => router.push('/chat' as any)} />
+      <PromoBanner type="routines" onPress={() => router.push('/asesoria' as any)} />
 
-      {/* 3. BOTONES DE ACCIÓN (2 FILAS - IDÉNTICO AL FRONTEND) */}
-      <View style={styles.actionButtonsContainer}>
-        {/* Fila 1: Crear Rutina (destacado) + IA */}
-        <View style={styles.actionRow1}>
-          <GlassButton
-            noShadow={true}
-            theme={theme}
-            color={isIOS ? colors.tint + '28' : colors.tint}
-            onPress={handleCreateRoutineClick}
-            style={styles.createRoutineBtn}
-          >
-            <View style={styles.createRoutineInner}>
-              <Plus size={18} color={createBtnForeground} style={{ marginRight: 6 }} strokeWidth={2.5} />
-              <Text
-                style={[styles.createRoutineBtnText, { color: createBtnForeground }]}
-                numberOfLines={1}
-              >
-                Crear Rutina
-              </Text>
-            </View>
-          </GlassButton>
-
-          <GlassButton
-            noShadow={true}
-            theme={theme}
-            color={colors.tint + '20'}
-            onPress={() => setShowAIGenerator(true)}
-            style={styles.aiBtn}
-          >
-            <View style={styles.aiBtnInner}>
-              <Sparkles size={16} color={colors.tint} style={{ marginRight: 6 }} />
-              <Text style={[styles.aiBtnText, { color: colors.tint }]}>IA</Text>
-            </View>
-          </GlassButton>
-        </View>
-
-        {/* Fila 2: Importar CSV + Muro + Papelera */}
-        <View style={styles.actionRow2}>
-          <GlassButton
-            noShadow={true}
-            theme={theme}
-            onPress={() => setShowDataTransferModal(true)}
-            style={styles.toolBtn}
-          >
-            <View style={styles.toolBtnInner}>
-              <FileSpreadsheet size={15} color={colors.tint} style={{ marginRight: 6 }} />
-              <Text style={[styles.toolBtnText, { color: colors.text }]}>Importar CSV</Text>
-            </View>
-          </GlassButton>
-
-          <GlassButton
-            noShadow={true}
-            theme={theme}
-            onPress={() => setShowPrivacyModal(true)}
-            style={styles.toolBtn}
-          >
-            <View style={styles.toolBtnInner}>
-              <Globe size={15} color={colors.textSecondary} style={{ marginRight: 6 }} />
-              <Text style={[styles.toolBtnText, { color: colors.text }]}>Muro</Text>
-            </View>
-          </GlassButton>
-
-          {routines.length > 0 && (
-            <GlassButton
-              noShadow={true}
-              theme={theme}
-              color="rgba(239, 68, 68, 0.12)"
-              onPress={handleDeleteAll}
-              style={styles.trashBtn}
-            >
-              <Trash2 size={16} color="#ef4444" />
-            </GlassButton>
-          )}
-        </View>
-      </View>
-
-      {/* 4. TABS PRINCIPALES (MIS RUTINAS, EXPLORAR, MANUALES, CARDIO RÁPIDO) */}
+      {/* 3. TABS PRINCIPALES (MIS RUTINAS, EXPLORAR, MANUALES, CARDIO RÁPIDO) */}
       <View style={styles.tabsRow}>
         <RoutinesTabs
           activeTab={activeTab}
@@ -525,9 +449,85 @@ export default function RoutinesScreen() {
         />
       </View>
 
-      {/* 5. CONTENIDO DE PESTAÑA: MIS RUTINAS */}
+      {/* 4. CONTENIDO DE PESTAÑA: MIS RUTINAS */}
       {activeTab === 'myRoutines' && (
         <>
+          {/* BOTONES DE ACCIÓN (DEBAJO DE LAS PESTAÑAS, IGUAL QUE EN EL FRONTEND) */}
+          <View style={styles.actionButtonsContainer}>
+            {/* Fila 1: Crear Rutina (destacado) + IA */}
+            <View style={styles.actionRow1}>
+              <GlassButton
+                noShadow={true}
+                theme={theme}
+                color={isIOS ? colors.tint + '28' : colors.tint}
+                onPress={handleCreateRoutineClick}
+                style={styles.createRoutineBtn}
+              >
+                <View style={styles.createRoutineInner}>
+                  <Plus size={18} color={createBtnForeground} style={{ marginRight: 6 }} strokeWidth={2.5} />
+                  <Text
+                    style={[styles.createRoutineBtnText, { color: createBtnForeground }]}
+                    numberOfLines={1}
+                  >
+                    Crear Rutina
+                  </Text>
+                </View>
+              </GlassButton>
+
+              <GlassButton
+                noShadow={true}
+                theme={theme}
+                color={colors.tint + '20'}
+                onPress={() => setShowAIGenerator(true)}
+                style={styles.aiBtn}
+              >
+                <View style={styles.aiBtnInner}>
+                  <Sparkles size={16} color={colors.tint} style={{ marginRight: 6 }} />
+                  <Text style={[styles.aiBtnText, { color: colors.tint }]}>IA</Text>
+                </View>
+              </GlassButton>
+            </View>
+
+            {/* Fila 2: Importar CSV + Muro + Papelera */}
+            <View style={styles.actionRow2}>
+              <GlassButton
+                noShadow={true}
+                theme={theme}
+                onPress={() => setShowDataTransferModal(true)}
+                style={styles.toolBtn}
+              >
+                <View style={styles.toolBtnInner}>
+                  <FileSpreadsheet size={15} color={colors.tint} style={{ marginRight: 6 }} />
+                  <Text style={[styles.toolBtnText, { color: colors.text }]}>Importar CSV</Text>
+                </View>
+              </GlassButton>
+
+              <GlassButton
+                noShadow={true}
+                theme={theme}
+                onPress={() => setShowPrivacyModal(true)}
+                style={styles.toolBtn}
+              >
+                <View style={styles.toolBtnInner}>
+                  <Globe size={15} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                  <Text style={[styles.toolBtnText, { color: colors.text }]}>Muro</Text>
+                </View>
+              </GlassButton>
+
+              {routines.length > 0 && (
+                <GlassButton
+                  noShadow={true}
+                  theme={theme}
+                  color="rgba(239, 68, 68, 0.12)"
+                  onPress={handleDeleteAll}
+                  style={styles.trashBtn}
+                >
+                  <Trash2 size={16} color="#ef4444" />
+                </GlassButton>
+              )}
+            </View>
+          </View>
+
           {/* BANNER "VER TU PROGRESO" */}
           <TouchableOpacity
             activeOpacity={0.88}
@@ -591,42 +591,44 @@ export default function RoutinesScreen() {
             }}
           />
 
-          {/* BARRA DE BÚSQUEDA */}
-          <View
-            style={[
-              styles.searchContainer,
-              {
-                backgroundColor: isDark ? (isIOS ? '#1C1C1E' : 'rgba(255, 255, 255, 0.05)') : (isIOS ? '#FFFFFF' : 'rgba(0, 0, 0, 0.04)'),
-                borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
-                borderWidth: isIOS ? 0 : 1,
-              },
-            ]}
-          >
-            <Search size={18} color={colors.textSecondary} style={{ marginRight: 10 }} />
-            <TextInput
-              style={[styles.searchInput, { color: colors.text }]}
-              placeholder="Buscar rutinas..."
-              placeholderTextColor={colors.textSecondary}
-              value={query}
-              onChangeText={setQuery}
-            />
-            {query.length > 0 && (
-              <TouchableOpacity onPress={() => setQuery('')}>
-                <X size={16} color={colors.textSecondary} />
-              </TouchableOpacity>
+          {/* BLOQUE DE BÚSQUEDA Y CARPETAS */}
+          <View style={styles.filterSection}>
+            <View
+              style={[
+                styles.searchContainer,
+                {
+                  backgroundColor: isDark ? (isIOS ? '#1C1C1E' : 'rgba(255, 255, 255, 0.05)') : (isIOS ? '#FFFFFF' : 'rgba(0, 0, 0, 0.04)'),
+                  borderColor: isIOS ? 'transparent' : (isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)'),
+                  borderWidth: isIOS ? 0 : 1,
+                },
+              ]}
+            >
+              <Search size={18} color={colors.textSecondary} style={{ marginRight: 10 }} />
+              <TextInput
+                style={[styles.searchInput, { color: colors.text }]}
+                placeholder="Buscar rutinas..."
+                placeholderTextColor={colors.textSecondary}
+                value={query}
+                onChangeText={setQuery}
+              />
+              {query.length > 0 && (
+                <TouchableOpacity onPress={() => setQuery('')}>
+                  <X size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* SELECTOR DE CARPETAS */}
+            {routines && routines.length > 0 && (
+              <View style={styles.foldersContainer}>
+                <FolderList
+                  folders={uniqueFolders}
+                  selectedFolder={selectedFolder}
+                  onSelectFolder={setSelectedFolder}
+                />
+              </View>
             )}
           </View>
-
-          {/* SELECTOR DE CARPETAS */}
-          {routines && routines.length > 0 && (
-            <View style={styles.foldersContainer}>
-              <FolderList
-                folders={uniqueFolders}
-                selectedFolder={selectedFolder}
-                onSelectFolder={setSelectedFolder}
-              />
-            </View>
-          )}
 
           {/* LISTADO DE RUTINAS */}
           <View style={styles.routinesList}>
@@ -779,9 +781,11 @@ const styles = StyleSheet.create({
     marginTop: 6,
     lineHeight: 20,
   },
+  tabsRow: {
+    marginBottom: 24,
+  },
   actionButtonsContainer: {
-    marginTop: 4,
-    marginBottom: 22,
+    marginBottom: 24,
     gap: 12,
   },
   actionRow1: {
@@ -847,15 +851,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabsRow: {
-    marginBottom: 22,
-  },
   progressBanner: {
     borderRadius: 24,
     borderCurve: 'continuous',
     borderWidth: 1,
     overflow: 'hidden',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   progressGlow: {
     position: 'absolute',
@@ -907,6 +908,10 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginTop: 4,
   },
+  filterSection: {
+    marginBottom: 24,
+    gap: 12,
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -915,8 +920,6 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
     borderWidth: 1,
     paddingHorizontal: 16,
-    marginTop: 2,
-    marginBottom: 18,
   },
   searchInput: {
     flex: 1,
@@ -924,10 +927,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   foldersContainer: {
-    marginBottom: 22,
+    marginTop: 0,
   },
   routinesList: {
-    paddingBottom: 28,
+    paddingBottom: 32,
     gap: 6,
   },
   emptyCard: {

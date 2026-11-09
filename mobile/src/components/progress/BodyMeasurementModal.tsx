@@ -71,6 +71,7 @@ export function BodyMeasurementModal({
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={onClose}
       isDark={isDark}

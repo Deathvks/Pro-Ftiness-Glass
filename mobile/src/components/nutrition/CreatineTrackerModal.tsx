@@ -276,6 +276,7 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
   return (
     <>
       <SwipeableBottomSheet
+        scrollable
         visible={visible}
         onClose={onClose}
         isDark={isDark}

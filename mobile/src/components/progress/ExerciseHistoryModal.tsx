@@ -79,6 +79,7 @@ export function ExerciseHistoryModal({
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={onClose}
       isDark={isDark}

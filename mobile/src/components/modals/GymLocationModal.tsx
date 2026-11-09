@@ -438,6 +438,7 @@ export function GymLocationModal({
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={isModalVisible}
       onClose={onClose}
       isDark={isDark}

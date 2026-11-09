@@ -136,6 +136,7 @@ export function RoutineAIGeneratorModal({
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={isLoading ? () => {} : onClose}
       isDark={isDark}

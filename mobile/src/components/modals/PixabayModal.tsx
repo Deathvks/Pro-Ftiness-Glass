@@ -99,6 +99,7 @@ export const PixabayModal: React.FC<PixabayModalProps> = ({
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={onClose}
       isDark={isDark}

@@ -307,6 +307,7 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={() => !isCopying && onClose()}
       isDark={isDark}

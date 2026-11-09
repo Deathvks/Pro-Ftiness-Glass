@@ -115,7 +115,7 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: 24,
   },
   glassWrapper: {
     borderRadius: 24,

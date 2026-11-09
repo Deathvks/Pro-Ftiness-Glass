@@ -104,6 +104,7 @@ const ManualExerciseInfoModal: React.FC<InfoModalProps> = ({
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={onClose}
       isDark={isDark}
@@ -358,6 +359,7 @@ const ManualExerciseTransferModal: React.FC<TransferModalProps> = ({
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={onClose}
       isDark={isDark}

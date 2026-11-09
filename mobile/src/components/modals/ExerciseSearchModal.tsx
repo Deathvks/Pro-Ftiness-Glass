@@ -365,6 +365,8 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
       backgroundColor={colors.background}
       height="92%"
       maxHeight="92%"
+      scrollable
+      headerDragHeight={280}
       avoidKeyboard
     >
       <View style={styles.container}>

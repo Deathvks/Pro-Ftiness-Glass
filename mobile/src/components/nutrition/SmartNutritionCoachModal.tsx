@@ -109,6 +109,7 @@ export const SmartNutritionCoachModal: React.FC<SmartNutritionCoachModalProps> =
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={onClose}
       isDark={isDark}

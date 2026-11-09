@@ -309,6 +309,7 @@ export function RoutineVolumeFilterModal({
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={onClose}
       isDark={isDark}
@@ -883,6 +884,7 @@ export function WeeklyMuscleVolumeCard({
       {/* Modal Desglose por Músculo */}
       {selectedMuscle && (
         <SwipeableBottomSheet
+          scrollable
           visible={!!selectedMuscle}
           onClose={() => setSelectedMuscle(null)}
           isDark={isDark}
@@ -982,7 +984,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderCurve: 'continuous',
     borderWidth: 1,
-    marginBottom: 20,
+    marginBottom: 26,
     overflow: 'hidden',
   },
   cardHeaderButton: {

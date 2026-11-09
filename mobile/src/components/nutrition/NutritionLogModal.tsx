@@ -717,6 +717,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={onClose}
       isDark={isDark}

@@ -29,6 +29,7 @@ export const PRListModal: React.FC<PRListModalProps> = ({
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={onClose}
       isDark={isDark}

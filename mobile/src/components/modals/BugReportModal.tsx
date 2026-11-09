@@ -218,6 +218,7 @@ export function BugReportModal({ visible, onClose }: BugReportModalProps) {
 
   return (
     <SwipeableBottomSheet
+      scrollable
       visible={visible}
       onClose={handleClose}
       isDark={isDark}

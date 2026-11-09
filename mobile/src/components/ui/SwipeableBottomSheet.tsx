@@ -17,11 +17,21 @@ import * as Haptics from 'expo-haptics';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
-export function useSwipeToDismiss(onClose: () => void, visible?: boolean) {
+export function useSwipeToDismiss(
+  onClose: () => void,
+  visible?: boolean,
+  options?: {
+    scrollable?: boolean;
+    headerDragHeight?: number;
+  }
+) {
+  const scrollable = options?.scrollable ?? false;
+  const headerDragHeight = options?.headerDragHeight ?? 260;
+
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
-  const sheetTopYRef = useRef<number>(0);
-  const touchStartRelativeYRef = useRef<number>(0);
+  const sheetHeightRef = useRef<number>(0);
+  const touchStartYRef = useRef<number>(0);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
@@ -74,7 +84,8 @@ export function useSwipeToDismiss(onClose: () => void, visible?: boolean) {
   };
 
   const handleRelease = (dy: number, vy: number) => {
-    if (dy > 75 || (dy > 24 && vy > 0.5)) {
+    // Easy natural dismiss threshold: dragged down > 48px OR a light flick downward
+    if (dy > 48 || (dy > 16 && vy > 0.3)) {
       dismissAnimated();
     } else {
       Animated.parallel([
@@ -97,37 +108,47 @@ export function useSwipeToDismiss(onClose: () => void, visible?: boolean) {
   const updateDrag = (dy: number) => {
     if (dy > 0) {
       translateY.setValue(dy);
-      const nextOpacity = Math.max(0.2, 1 - dy / (SCREEN_HEIGHT * 0.6));
+      const nextOpacity = Math.max(0.2, 1 - dy / (SCREEN_HEIGHT * 0.55));
       backdropOpacity.setValue(nextOpacity);
     } else {
       translateY.setValue(dy * 0.12);
     }
   };
 
-  // PanResponder for the sheet container (captures downward swipes from top/header + bubble swipes on body)
+  // PanResponder for the sheet container (captures downward swipes smoothly)
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: evt => {
-        touchStartRelativeYRef.current = evt.nativeEvent.pageY - sheetTopYRef.current;
-        return false;
-      },
+      onStartShouldSetPanResponder: () => false,
       onStartShouldSetPanResponderCapture: evt => {
-        touchStartRelativeYRef.current = evt.nativeEvent.pageY - sheetTopYRef.current;
+        touchStartYRef.current = evt.nativeEvent.pageY;
         return false;
       },
       onMoveShouldSetPanResponderCapture: (evt, g) => {
-        const relY =
-          touchStartRelativeYRef.current ||
-          evt.nativeEvent.pageY - sheetTopYRef.current;
-        const isVerticalDown = g.dy > 7 && Math.abs(g.dy) > Math.abs(g.dx) * 1.15;
-        // Always capture downward drag if started in the top 115px (grabber + header)
-        if (isVerticalDown && relY <= 115) {
+        // Must be a predominantly downward movement
+        const isVerticalDown = g.dy > 5 && Math.abs(g.dy) > Math.abs(g.dx) * 1.05;
+        if (!isVerticalDown) return false;
+
+        // If the modal has no inner scroll view (like options, cards, confirmation dialogs),
+        // ANY downward swipe anywhere on the modal immediately captures and starts sliding down!
+        if (!scrollable) {
           return true;
         }
+
+        // For scrollable modals, capture downward drags starting in the upper zone
+        // (grabber + header + top of content): at least headerDragHeight or 40% of the sheet
+        const sheetH = sheetHeightRef.current || SCREEN_HEIGHT * 0.85;
+        const sheetTop = Math.max(0, SCREEN_HEIGHT - sheetH);
+        const touchRelY = (touchStartYRef.current || evt.nativeEvent.pageY) - sheetTop;
+        const dragZone = Math.max(headerDragHeight, sheetH * 0.4);
+
+        if (touchRelY <= dragZone) {
+          return true;
+        }
+
         return false;
       },
       onMoveShouldSetPanResponder: (_, g) =>
-        g.dy > 7 && Math.abs(g.dy) > Math.abs(g.dx) * 1.15,
+        g.dy > 5 && Math.abs(g.dy) > Math.abs(g.dx) * 1.05,
       onPanResponderMove: (_, g) => updateDrag(g.dy),
       onPanResponderRelease: (_, g) => handleRelease(g.dy, g.vy),
       onPanResponderTerminate: (_, g) => handleRelease(g.dy, g.vy),
@@ -135,13 +156,14 @@ export function useSwipeToDismiss(onClose: () => void, visible?: boolean) {
     })
   ).current;
 
-  // PanResponder specifically for the top grabber pill & header (responds immediately on drag)
+  // Dedicated PanResponder for the top grabber pill area (instant capture on any touch)
   const grabberPanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
       onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 2,
       onMoveShouldSetPanResponderCapture: (_, g) =>
-        g.dy > 4 && Math.abs(g.dy) > Math.abs(g.dx),
+        g.dy > 2 && Math.abs(g.dy) > Math.abs(g.dx),
       onPanResponderMove: (_, g) => updateDrag(g.dy),
       onPanResponderRelease: (_, g) => handleRelease(g.dy, g.vy),
       onPanResponderTerminate: (_, g) => handleRelease(g.dy, g.vy),
@@ -150,9 +172,9 @@ export function useSwipeToDismiss(onClose: () => void, visible?: boolean) {
   ).current;
 
   const onSheetLayout = (e: any) => {
-    const pageY = e?.nativeEvent?.layout?.y;
-    if (typeof pageY === 'number') {
-      sheetTopYRef.current = pageY;
+    const h = e?.nativeEvent?.layout?.height;
+    if (typeof h === 'number' && h > 0) {
+      sheetHeightRef.current = h;
     }
   };
 
@@ -201,6 +223,8 @@ interface SwipeableBottomSheetProps {
   height?: number | `${number}%`;
   showGrabber?: boolean;
   avoidKeyboard?: boolean;
+  scrollable?: boolean;
+  headerDragHeight?: number;
   sheetStyle?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   children: React.ReactNode;
@@ -215,6 +239,8 @@ export function SwipeableBottomSheet({
   height,
   showGrabber = true,
   avoidKeyboard = false,
+  scrollable = false,
+  headerDragHeight = 260,
   sheetStyle,
   contentContainerStyle,
   children,
@@ -228,7 +254,7 @@ export function SwipeableBottomSheet({
     grabberPanHandlers,
     onSheetLayout,
     dismissAnimated,
-  } = useSwipeToDismiss(onClose, visible);
+  } = useSwipeToDismiss(onClose, visible, { scrollable, headerDragHeight });
 
   const resolvedBg = isIOS
     ? isDark
@@ -260,14 +286,18 @@ export function SwipeableBottomSheet({
         ]}
       >
         {showGrabber && (
-          <View {...grabberPanHandlers} style={styles.grabberTouchArea}>
+          <View
+            {...grabberPanHandlers}
+            style={styles.grabberTouchArea}
+            hitSlop={{ top: 15, bottom: 15, left: 40, right: 40 }}
+          >
             <View
               style={[
                 styles.grabberPill,
                 {
                   backgroundColor: isDark
-                    ? 'rgba(235, 235, 245, 0.34)'
-                    : 'rgba(60, 60, 67, 0.28)',
+                    ? 'rgba(235, 235, 245, 0.38)'
+                    : 'rgba(60, 60, 67, 0.32)',
                 },
               ]}
             />
@@ -332,10 +362,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 12,
-    paddingBottom: 8,
+    paddingBottom: 10,
+    minHeight: 34,
   },
   grabberPill: {
-    width: 40,
+    width: 44,
     height: 5,
     borderRadius: 2.5,
   },
