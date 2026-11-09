@@ -92,6 +92,17 @@ const getDirectVideoHtml = (videoUrl: string) => `
 </html>
 `;
 
+const isNonEmptyMedia = (val: any): boolean => {
+  if (!val || val === 'null' || val === 'undefined') return false;
+  if (typeof val === 'string') {
+    const t = val.trim();
+    if (!t || t === '[]' || t.includes('/muscle_groups/')) return false;
+    return true;
+  }
+  if (Array.isArray(val)) return val.length > 0;
+  return false;
+};
+
 export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   item,
   details,
@@ -105,10 +116,20 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   const [isPlaying, setIsPlaying] = useState(playYouTube);
   const [imageError, setImageError] = useState(false);
   const [webViewLoading, setWebViewLoading] = useState(true);
-  const [containerSize, setContainerSize] = useState({ width: 220, height: 390 });
+  const [containerSize, setContainerSize] = useState({ width: 320, height: 200 });
   const [playerError, setPlayerError] = useState<string | null>(null);
 
   const allExercises = useAppStore(state => state.allExercises) || [];
+
+  // Asegurar que el catálogo de ejercicios esté cargado para enriquecer ejercicios de rutinas
+  useEffect(() => {
+    if (!allExercises || allExercises.length === 0) {
+      const fetchAll = useAppStore.getState()?.getOrFetchAllExercises;
+      if (typeof fetchAll === 'function') {
+        fetchAll().catch(() => {});
+      }
+    }
+  }, [allExercises?.length]);
 
   useEffect(() => {
     setIsPlaying(Boolean(playYouTube));
@@ -121,48 +142,63 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
   const rawTarget = details || item || {};
   const rawSubDetails = rawTarget.exercise_details || rawTarget.exercise || {};
 
-  // Si el ejercicio viene sin fotos/vídeo, buscar en el catálogo completo
+  // Buscar siempre en el catálogo para completar imágenes GIF o vídeo de YouTube si faltan
   const matchedFromStore = useMemo(() => {
-    const hasMedia =
-      rawTarget.images ||
-      rawTarget.image_url_start ||
-      rawTarget.image_url ||
-      rawTarget.video_url ||
-      rawTarget.youtube_id ||
-      rawTarget.video ||
-      rawTarget.youtube_url ||
-      rawSubDetails.images ||
-      rawSubDetails.image_url_start ||
-      rawSubDetails.image_url ||
-      rawSubDetails.video_url ||
-      rawSubDetails.youtube_id ||
-      rawSubDetails.video ||
-      rawSubDetails.youtube_url;
+    if (!allExercises || allExercises.length === 0) return null;
 
-    if (hasMedia) return null;
-
-    const targetId =
+    const catalogId =
       rawTarget.exercise_list_id ||
       rawTarget.exercise_id ||
-      rawTarget.id ||
-      rawTarget.exercise?.id;
+      rawSubDetails.id ||
+      rawSubDetails.exercise_list_id;
+
     const targetName = (
       rawTarget.name ||
       rawTarget.exercise_name ||
-      rawTarget.exercise?.name ||
+      rawSubDetails.name ||
       ''
     )
       .trim()
       .toLowerCase();
 
     return allExercises.find((ex: any) => {
-      if (targetId && (ex.id === targetId || ex.exercise_list_id === targetId)) return true;
-      if (targetName && ex.name?.trim().toLowerCase() === targetName) return true;
+      if (!ex) return false;
+      if (
+        catalogId !== undefined &&
+        catalogId !== null &&
+        (String(ex.id) === String(catalogId) ||
+          (ex.exercise_list_id && String(ex.exercise_list_id) === String(catalogId)))
+      ) {
+        return true;
+      }
+      if (
+        rawTarget.id !== undefined &&
+        rawTarget.id !== null &&
+        !rawTarget.routine_id &&
+        String(ex.id) === String(rawTarget.id)
+      ) {
+        return true;
+      }
+      if (targetName && ex.name?.trim().toLowerCase() === targetName) {
+        return true;
+      }
       return false;
     });
   }, [rawTarget, rawSubDetails, allExercises]);
 
-  const target = matchedFromStore ? { ...matchedFromStore, ...rawTarget } : rawTarget;
+  // Combinar sin que valores nulos/vacíos de la rutina pisen las URLs reales del catálogo
+  const target = useMemo(() => {
+    if (!matchedFromStore) return rawTarget;
+    const merged: Record<string, any> = { ...matchedFromStore };
+    Object.keys(rawTarget).forEach(k => {
+      const val = rawTarget[k];
+      if (val !== null && val !== undefined && val !== '' && val !== 'null') {
+        merged[k] = val;
+      }
+    });
+    return merged;
+  }, [matchedFromStore, rawTarget]);
+
   const subDetails = target.exercise_details || target.exercise || {};
 
   // 1. Extractor y normalizador de ID de YouTube
@@ -177,6 +213,8 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
     subDetails.video ||
     subDetails.youtube_url ||
     subDetails.videoUrl ||
+    matchedFromStore?.video_url ||
+    matchedFromStore?.youtube_id ||
     '';
 
   const getYoutubeId = (url?: string | null) => {
@@ -196,7 +234,13 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
 
   // 2. Normalizador de URLs de imágenes
   const getNormalizedUrl = (url: any): string | null => {
-    if (!url || typeof url !== 'string' || url.trim() === '' || url === 'null' || url === 'undefined') {
+    if (
+      !url ||
+      typeof url !== 'string' ||
+      url.trim() === '' ||
+      url === 'null' ||
+      url === 'undefined'
+    ) {
       return null;
     }
     const clean = url.trim();
@@ -212,7 +256,10 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
     const path = clean.startsWith('/') ? clean.substring(1) : clean;
     const filename = path.split('/').pop() || '';
 
-    const isWgerUuid = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(filename);
+    const isWgerUuid =
+      /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/.test(
+        filename
+      );
     if (isWgerUuid || path.includes('exercise-images')) {
       return `https://wger.de/media/exercise-images/${filename}`;
     }
@@ -221,41 +268,56 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
     return `${base}/${path}`;
   };
 
-  // 3. Extracción de lista completa de imágenes (para efecto GIF)
+  // 3. Extracción de lista completa de imágenes reales (para efecto GIF)
   const images = useMemo(() => {
     const list: string[] = [];
 
-    const rawImages = target.images || subDetails.images;
-    if (Array.isArray(rawImages)) {
-      rawImages.forEach((imgItem: any) => {
-        if (typeof imgItem === 'string') list.push(imgItem);
-        else if (imgItem && typeof imgItem === 'object' && imgItem.image) list.push(imgItem.image);
-      });
-    } else if (typeof rawImages === 'string') {
-      const trimmed = rawImages.trim();
-      if (trimmed.startsWith('[')) {
-        try {
-          const parsed = JSON.parse(trimmed);
-          if (Array.isArray(parsed)) {
-            parsed.forEach((imgItem: any) => {
-              if (typeof imgItem === 'string') list.push(imgItem);
-              else if (imgItem && typeof imgItem === 'object' && imgItem.image) list.push(imgItem.image);
-            });
-          }
-        } catch {}
-      } else if (trimmed.includes(',')) {
-        list.push(...trimmed.split(',').map(s => s.trim()));
-      } else if (trimmed !== '') {
-        list.push(trimmed);
+    const pushRawImages = (rawImages: any) => {
+      if (!rawImages) return;
+      if (Array.isArray(rawImages)) {
+        rawImages.forEach((imgItem: any) => {
+          if (typeof imgItem === 'string') list.push(imgItem);
+          else if (imgItem && typeof imgItem === 'object' && imgItem.image)
+            list.push(imgItem.image);
+        });
+      } else if (typeof rawImages === 'string') {
+        const trimmed = rawImages.trim();
+        if (trimmed.startsWith('[')) {
+          try {
+            const parsed = JSON.parse(trimmed);
+            if (Array.isArray(parsed)) {
+              parsed.forEach((imgItem: any) => {
+                if (typeof imgItem === 'string') list.push(imgItem);
+                else if (imgItem && typeof imgItem === 'object' && imgItem.image)
+                  list.push(imgItem.image);
+              });
+            }
+          } catch {}
+        } else if (trimmed.includes(',')) {
+          list.push(...trimmed.split(',').map(s => s.trim()));
+        } else if (trimmed !== '') {
+          list.push(trimmed);
+        }
       }
+    };
+
+    pushRawImages(target.images);
+    pushRawImages(subDetails.images);
+    if (list.length === 0 && matchedFromStore?.images) {
+      pushRawImages(matchedFromStore.images);
     }
 
-    const startImg = target.image_url_start || subDetails.image_url_start;
-    const endImg = target.image_url_end || subDetails.image_url_end;
-    if (startImg && !list.includes(startImg)) {
+    const startImg =
+      target.image_url_start ||
+      subDetails.image_url_start ||
+      matchedFromStore?.image_url_start;
+    const endImg =
+      target.image_url_end || subDetails.image_url_end || matchedFromStore?.image_url_end;
+
+    if (isNonEmptyMedia(startImg) && !list.includes(startImg)) {
       list.unshift(startImg);
     }
-    if (endImg && !list.includes(endImg)) {
+    if (isNonEmptyMedia(endImg) && !list.includes(endImg)) {
       list.push(endImg);
     }
 
@@ -264,24 +326,40 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       target.image ||
       subDetails.image_url ||
       subDetails.image ||
-      (getImageUrl ? getImageUrl(target) : '');
-    if (singleImg && !list.includes(singleImg)) {
+      matchedFromStore?.image_url ||
+      matchedFromStore?.image;
+
+    if (isNonEmptyMedia(singleImg) && !list.includes(singleImg)) {
       list.push(singleImg);
     }
 
-    const normalized = Array.from(
-      new Set(list.map(getNormalizedUrl).filter((u): u is string => Boolean(u)))
+    // Filtrar iconos genéricos de grupo muscular si tenemos miniatura de YouTube o imágenes reales
+    const realImages = Array.from(
+      new Set(
+        list
+          .filter(u => typeof u === 'string' && !u.includes('/muscle_groups/'))
+          .map(getNormalizedUrl)
+          .filter((u): u is string => Boolean(u))
+      )
     );
 
-    if (normalized.length === 0 && youtubeThumbnail) {
+    if (realImages.length > 0) {
+      return realImages;
+    }
+
+    if (youtubeThumbnail) {
       return [youtubeThumbnail];
     }
 
-    return normalized;
-  }, [target, subDetails, getImageUrl, youtubeThumbnail]);
+    // Último fallback si no hay ni fotos del ejercicio ni miniatura de YouTube
+    const fallbackUrl = getImageUrl ? getImageUrl(target) : '';
+    const normFallback = getNormalizedUrl(fallbackUrl);
+    return normFallback && !normFallback.includes('/muscle_groups/') ? [normFallback] : [];
+  }, [target, subDetails, matchedFromStore, getImageUrl, youtubeThumbnail]);
 
   useEffect(() => {
     setImageError(false);
+    setCurrentIndex(0);
   }, [images]);
 
   useEffect(() => {
@@ -294,7 +372,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
     if (images.length > 1 && !isPlaying) {
       const interval = setInterval(() => {
         setCurrentIndex(prev => (prev + 1) % images.length);
-      }, 1300);
+      }, 1150);
       return () => clearInterval(interval);
     }
   }, [images.length, isPlaying]);
@@ -305,7 +383,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       return (
         <View
           style={styles.fullContainer}
-          onLayout={(e) => {
+          onLayout={e => {
             const { width, height } = e.nativeEvent.layout;
             if (width > 50 && height > 50) {
               setContainerSize({ width: Math.round(width), height: Math.round(height) });
@@ -408,21 +486,21 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
     );
   }
 
-  // 6. Imagen activa
+  // 6. Imagen activa (con fallback a miniatura de YouTube si falla una imagen externa)
   const activeImageUri =
     !imageError && images.length > 0
       ? images[currentIndex % images.length]
-      : !imageError
-      ? youtubeThumbnail
-      : null;
+      : youtubeThumbnail || null;
 
   if (!activeImageUri) {
     return (
       <View style={[styles.fullContainer, styles.placeholderContainer]}>
-        <Dumbbell size={38} color="rgba(255,255,255,0.3)" />
+        <Dumbbell size={36} color="rgba(255,255,255,0.3)" />
       </View>
     );
   }
+
+  const isShowingYoutubeThumb = activeImageUri === youtubeThumbnail;
 
   return (
     <TouchableOpacity
@@ -444,14 +522,14 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
         key={activeImageUri}
         source={{ uri: activeImageUri }}
         style={styles.imageFill}
-        resizeMode={fitMode}
+        resizeMode={isShowingYoutubeThumb ? 'cover' : fitMode}
         onError={() => setImageError(true)}
       />
 
       {images.length > 1 && !isPlaying && (
         <View style={styles.gifBadge}>
           <Text style={styles.gifBadgeText}>
-            {currentIndex + 1}/{images.length}
+            GIF {currentIndex + 1}/{images.length}
           </Text>
         </View>
       )}
@@ -459,7 +537,7 @@ export const ExerciseMediaPreview: React.FC<ExerciseMediaPreviewProps> = ({
       {!staticOnly && (rawVideo || yid) && !isPlaying && (
         <View style={styles.playOverlay}>
           <View style={styles.playPill}>
-            <Play size={16} color="#ffffff" fill="#ffffff" />
+            <Play size={15} color="#ffffff" fill="#ffffff" />
             <Text style={styles.playText}>Ver Vídeo</Text>
           </View>
         </View>
@@ -494,7 +572,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.72)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
@@ -509,13 +587,16 @@ const styles = StyleSheet.create({
   },
   playOverlay: {
     position: 'absolute',
-    inset: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.20)',
+    backgroundColor: 'rgba(0, 0, 0, 0.22)',
   },
   playPill: {
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.78)',
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 30,

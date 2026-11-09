@@ -35,6 +35,7 @@ import { useRouter } from 'expo-router';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import {
   SmartNutritionCoachPlan,
   PillarDiagnostic,
@@ -107,45 +108,15 @@ export const SmartNutritionCoachModal: React.FC<SmartNutritionCoachModalProps> =
   };
 
   return (
-    <Modal
+    <SwipeableBottomSheet
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
+      onClose={onClose}
+      isDark={isDark}
+      backgroundColor={colors.card}
+      height="92%"
+      maxHeight="92%"
     >
-      <View style={styles.backdrop}>
-        <TouchableOpacity
-          style={StyleSheet.absoluteFill}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-
-        <View
-          style={[
-            styles.modalContainer,
-            {
-              backgroundColor: isDark ? 'rgba(20, 20, 22, 0.96)' : 'rgba(250, 250, 252, 0.98)',
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          {/* iOS Liquid Glass Effect layer */}
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
-
-          {/* Grabber Bar */}
-          <View style={styles.grabberContainer}>
-            <View
-              style={[
-                styles.grabber,
-                { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' },
-              ]}
-            />
-          </View>
-
+      <View style={{ flex: 1 }}>
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
             <View style={styles.headerLeft}>
@@ -554,9 +525,8 @@ export const SmartNutritionCoachModal: React.FC<SmartNutritionCoachModalProps> =
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
       </View>
-    </Modal>
+    </SwipeableBottomSheet>
   );
 };
 

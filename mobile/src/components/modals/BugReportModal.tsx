@@ -32,6 +32,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { createBugReport } from '@/services/reportService';
+import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 
 const REPORT_CATEGORIES = [
   { value: 'bug', label: 'Error técnico / Bug' },
@@ -216,32 +217,16 @@ export function BugReportModal({ visible, onClose }: BugReportModalProps) {
   const selectedCategoryLabel = REPORT_CATEGORIES.find(c => c.value === category)?.label;
 
   return (
-    <Modal
+    <SwipeableBottomSheet
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={handleClose}
+      onClose={handleClose}
+      isDark={isDark}
+      backgroundColor={colors.card}
+      height="88%"
+      maxHeight="90%"
+      avoidKeyboard
     >
-      <View style={styles.backdrop}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.keyboardWrap}
-        >
-          <View
-            style={[
-              styles.modalCard,
-              {
-                backgroundColor: isDark ? 'rgba(18, 18, 20, 0.95)' : 'rgba(255, 255, 255, 0.96)',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.08)',
-              },
-            ]}
-          >
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
-            />
-
+      <View style={{ flex: 1 }}>
             {/* Header */}
             <View
               style={[
@@ -529,35 +514,33 @@ export function BugReportModal({ visible, onClose }: BugReportModalProps) {
                 )}
               </TouchableOpacity>
             </View>
-          </View>
-        </KeyboardAvoidingView>
-
-        {/* Modal de Lightbox para ver la captura a pantalla completa */}
-        <Modal
-          visible={!!selectedLightboxImage}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setSelectedLightboxImage(null)}
-        >
-          <View style={styles.lightboxBackdrop}>
-            <TouchableOpacity
-              onPress={() => setSelectedLightboxImage(null)}
-              style={styles.lightboxCloseBtn}
-            >
-              <X size={24} color="#ffffff" strokeWidth={2.5} />
-            </TouchableOpacity>
-
-            {selectedLightboxImage && (
-              <Image
-                source={{ uri: selectedLightboxImage }}
-                style={styles.lightboxImg}
-                resizeMode="contain"
-              />
-            )}
-          </View>
-        </Modal>
       </View>
-    </Modal>
+
+      {/* Modal de Lightbox para ver la captura a pantalla completa */}
+      <Modal
+        visible={!!selectedLightboxImage}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedLightboxImage(null)}
+      >
+        <View style={styles.lightboxBackdrop}>
+          <TouchableOpacity
+            onPress={() => setSelectedLightboxImage(null)}
+            style={styles.lightboxCloseBtn}
+          >
+            <X size={24} color="#ffffff" strokeWidth={2.5} />
+          </TouchableOpacity>
+
+          {selectedLightboxImage && (
+            <Image
+              source={{ uri: selectedLightboxImage }}
+              style={styles.lightboxImg}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
+    </SwipeableBottomSheet>
   );
 }
 

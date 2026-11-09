@@ -90,17 +90,17 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     paddingVertical: 6,
-    gap: 8,
+    gap: 10,
   },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    height: 38,
-    borderRadius: 19,
+    paddingHorizontal: 18,
+    height: 42,
+    borderRadius: 21,
     borderCurve: 'continuous',
   },
   tabText: {
-    fontSize: 13,
+    fontSize: 13.5,
   }
 });

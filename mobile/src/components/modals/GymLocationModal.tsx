@@ -30,6 +30,7 @@ import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import { GYM_BRANDS, enrichGymWithMedia } from '@/utils/gymMedia';
 import {
   searchLocalGyms,
@@ -436,36 +437,16 @@ export function GymLocationModal({
   const activeGym = currentGym ? enrichGymWithMedia(currentGym) : null;
 
   return (
-    <Modal visible={isModalVisible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-
-        <View
-          style={[
-            styles.card,
-            {
-              backgroundColor: isDark ? 'rgba(20, 20, 22, 0.96)' : 'rgba(250, 250, 252, 0.98)',
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          {/* iOS Liquid Glass Effect layer */}
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-          />
-
-          {/* Grabber Handle */}
-          <View style={styles.grabberContainer}>
-            <View
-              style={[
-                styles.grabber,
-                { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' },
-              ]}
-            />
-          </View>
-
+    <SwipeableBottomSheet
+      visible={isModalVisible}
+      onClose={onClose}
+      isDark={isDark}
+      backgroundColor={colors.card}
+      height="90%"
+      maxHeight="90%"
+      avoidKeyboard
+    >
+      <View style={{ flex: 1 }}>
           {/* Header */}
           <View
             style={[
@@ -966,9 +947,8 @@ export function GymLocationModal({
               </View>
             ) : null}
           </ScrollView>
-        </View>
       </View>
-    </Modal>
+    </SwipeableBottomSheet>
   );
 }
 

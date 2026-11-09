@@ -6,20 +6,19 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Modal,
   FlatList,
   Image,
   ActivityIndicator,
-  KeyboardAvoidingView,
   Platform,
   Dimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, X, Image as ImageIcon } from 'lucide-react-native';
 import useAppStore from '@/store/useAppStore';
 import { Colors } from '@/constants/theme';
-import { GlassButton } from '@/components/ui/GlassButton';
-import { getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
+import {
+  SwipeableBottomSheet,
+  getAppleSheetCardStyle,
+} from '@/components/ui/SwipeableBottomSheet';
 
 interface PixabayModalProps {
   visible: boolean;
@@ -29,14 +28,13 @@ interface PixabayModalProps {
 
 const numColumns = 2;
 const screenWidth = Dimensions.get('window').width;
-const imageSize = (screenWidth - 48 - (numColumns - 1) * 12) / numColumns;
+const imageSize = (screenWidth - 40 - (numColumns - 1) * 12) / numColumns;
 
 export const PixabayModal: React.FC<PixabayModalProps> = ({
   visible,
   onClose,
   onSelectImage,
 }) => {
-  const insets = useSafeAreaInsets();
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = Colors[theme as keyof typeof Colors] || Colors.oled;
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
@@ -75,6 +73,7 @@ export const PixabayModal: React.FC<PixabayModalProps> = ({
 
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity
+      activeOpacity={0.85}
       style={[
         styles.imageCard,
         {
@@ -99,106 +98,95 @@ export const PixabayModal: React.FC<PixabayModalProps> = ({
   );
 
   return (
-    <Modal
+    <SwipeableBottomSheet
       visible={visible}
-      animationType="slide"
-      presentationStyle={isIOS ? 'pageSheet' : 'fullScreen'}
-      onRequestClose={onClose}
+      onClose={onClose}
+      isDark={isDark}
+      backgroundColor={colors.background}
+      height="88%"
+      maxHeight="88%"
+      avoidKeyboard
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
+      <View style={styles.container}>
+        {/* Header */}
         <View
           style={[
-            styles.container,
+            styles.header,
             {
-              backgroundColor: isIOS ? (isDark ? '#1C1C1E' : '#F2F2F7') : colors.background,
-              paddingTop: isIOS ? 8 : insets.top,
+              borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
             },
           ]}
         >
-          {isIOS && (
-            <View style={{ alignItems: 'center', paddingTop: 4, paddingBottom: 4 }}>
-              <View
-                style={{
-                  width: 38,
-                  height: 5,
-                  borderRadius: 2.5,
-                  backgroundColor: isDark
-                    ? 'rgba(235, 235, 245, 0.3)'
-                    : 'rgba(60, 60, 67, 0.25)',
-                }}
-              />
-            </View>
-          )}
-
-          {/* Header */}
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.title, { color: colors.text }]}>Pixabay</Text>
-            <GlassButton
-              theme={theme}
-              colors={colors}
-              onPress={onClose}
-              style={{ width: 38, height: 38, borderRadius: 19 }}
-            >
-              <X size={20} color={colors.textSecondary} />
-            </GlassButton>
-          </View>
-
-          {/* Search Bar */}
-          <View style={styles.searchContainer}>
-            <View
-              style={[
-                styles.searchInputWrapper,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: colors.border,
-                  borderWidth: isIOS ? 0 : 1,
-                },
-                getAppleSheetCardStyle(isDark, 16),
-              ]}
-            >
-              <Search size={20} color={colors.textSecondary} style={styles.searchIcon} />
-              <TextInput
-                style={[styles.searchInput, { color: colors.text }]}
-                placeholder="Buscar imágenes..."
-                placeholderTextColor={colors.textSecondary}
-                value={query}
-                onChangeText={setQuery}
-                onSubmitEditing={() => searchImages(query)}
-                returnKeyType="search"
-              />
-            </View>
-          </View>
-
-          {/* Images Grid */}
-          {isLoading ? (
-            <View style={styles.centerContainer}>
-              <ActivityIndicator size="large" color={getContrastColor(colors.tint, theme)} />
-            </View>
-          ) : images.length > 0 ? (
-            <FlatList
-              data={images}
-              keyExtractor={item => item.id.toString()}
-              numColumns={numColumns}
-              renderItem={renderItem}
-              contentContainerStyle={styles.listContent}
-              columnWrapperStyle={styles.row}
-            />
-          ) : (
-            <View style={styles.centerContainer}>
-              <ImageIcon
-                size={48}
-                color={colors.textSecondary}
-                style={{ marginBottom: 16, opacity: 0.5 }}
-              />
-              <Text style={{ color: colors.textSecondary }}>No se encontraron imágenes</Text>
-            </View>
-          )}
+          <Text style={[styles.title, { color: colors.text }]}>Imágenes de Portada</Text>
+          <TouchableOpacity
+            onPress={onClose}
+            activeOpacity={0.75}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <X size={19} color={colors.text} />
+          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View
+            style={[
+              styles.searchInputWrapper,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                borderWidth: isIOS ? 0 : 1,
+              },
+              getAppleSheetCardStyle(isDark, 16),
+            ]}
+          >
+            <Search size={19} color={colors.textSecondary} style={styles.searchIcon} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder="Buscar imágenes..."
+              placeholderTextColor={colors.textSecondary}
+              value={query}
+              onChangeText={setQuery}
+              onSubmitEditing={() => searchImages(query)}
+              returnKeyType="search"
+            />
+          </View>
+        </View>
+
+        {/* Images Grid */}
+        {isLoading ? (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={getContrastColor(colors.tint, theme)} />
+          </View>
+        ) : images.length > 0 ? (
+          <FlatList
+            data={images}
+            keyExtractor={item => item.id.toString()}
+            numColumns={numColumns}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+            columnWrapperStyle={styles.row}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <View style={styles.centerContainer}>
+            <ImageIcon
+              size={48}
+              color={colors.textSecondary}
+              style={{ marginBottom: 16, opacity: 0.5 }}
+            />
+            <Text style={{ color: colors.textSecondary }}>No se encontraron imágenes</Text>
+          </View>
+        )}
+      </View>
+    </SwipeableBottomSheet>
   );
 };
 
@@ -210,38 +198,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    paddingTop: 2,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: Platform.OS === 'ios' ? '700' : '900',
     letterSpacing: -0.4,
   },
   searchContainer: {
-    padding: 20,
-    paddingBottom: 14,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 12,
   },
   searchInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
+    height: 46,
     borderRadius: 16,
     borderCurve: 'continuous',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
   },
   searchIcon: {
     marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
   },
   listContent: {
-    padding: 24,
+    paddingHorizontal: 20,
     paddingTop: 4,
-    paddingBottom: 40,
+    paddingBottom: 32,
   },
   row: {
     justifyContent: 'space-between',

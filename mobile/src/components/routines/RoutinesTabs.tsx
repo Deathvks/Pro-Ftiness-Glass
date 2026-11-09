@@ -116,15 +116,15 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingHorizontal: 16,
-    height: 40,
-    gap: 8,
+    paddingVertical: 4,
+    gap: 10,
   },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    height: 40,
-    borderRadius: 20,
+    paddingHorizontal: 18,
+    height: 44,
+    borderRadius: 22,
     borderCurve: 'continuous',
   },
   tabText: {

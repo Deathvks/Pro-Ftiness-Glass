@@ -554,14 +554,13 @@ export default function Dashboard() {
       {/* 1. HEADER & GYM LOCATOR */}
       <View style={styles.topHeader}>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.mainTitle, { color: colors.text }]}>Dashboard</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-            <Text style={{ fontSize: 18, color: colors.textSecondary }}>Hola, </Text>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.tint }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+            <Text style={[styles.mainTitle, { color: colors.text }]}>Hola, </Text>
+            <Text style={[styles.mainTitle, { color: colors.tint }]}>
               {userProfile?.username || 'Atleta'}
             </Text>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
             <Text style={[styles.dateSubtitle, { color: colors.textSecondary }]}>
               {formattedTodayDate}
             </Text>

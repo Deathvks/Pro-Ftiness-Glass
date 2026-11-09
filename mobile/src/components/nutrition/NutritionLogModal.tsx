@@ -40,6 +40,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 import * as nutritionService from '@/services/nutritionService';
@@ -715,48 +716,16 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={StyleSheet.absoluteFill}>
-        <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-          <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={StyleSheet.absoluteFill}
-        >
-          <Pressable
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                justifyContent: 'flex-end',
-                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.55)' : 'rgba(0, 0, 0, 0.25)',
-              },
-            ]}
-            onPress={onClose}
-          >
-            <Pressable
-              onPress={e => e.stopPropagation()}
-              style={[
-                styles.sheetWrapper,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
-                },
-              ]}
-            >
-              <GlassView
-                glassEffectStyle="regular"
-                colorScheme={isDark ? 'dark' : 'light'}
-                style={StyleSheet.absoluteFill}
-              />
-
-              <View style={styles.sheetContent}>
-                {/* Drag pill handle */}
-                <View
-                  style={[
-                    styles.dragPill,
-                    { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.15)' },
-                  ]}
-                />
-
+    <SwipeableBottomSheet
+      visible={visible}
+      onClose={onClose}
+      isDark={isDark}
+      backgroundColor={colors.card}
+      height="92%"
+      maxHeight="92%"
+      avoidKeyboard
+    >
+      <View style={styles.sheetContent}>
                 {/* Header */}
                 <View style={styles.headerRow}>
                   <View style={{ flex: 1, marginRight: 12 }}>
@@ -2296,11 +2265,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
                     )}
                   </>
                 )}
-              </View>
-            </Pressable>
-          </Pressable>
-        </KeyboardAvoidingView>
-      </GlassView>
+      </View>
 
       {/* Full Native Barcode Scanner (embedded overlay, sin modal anidado ni márgenes negros) */}
       {showScanner && (
@@ -2312,8 +2277,7 @@ export const NutritionLogModal: React.FC<NutritionLogModalProps> = ({
           onManualCreate={handleManualCreateFromBarcode}
         />
       )}
-    </View>
-  </Modal>
+    </SwipeableBottomSheet>
   );
 };
 

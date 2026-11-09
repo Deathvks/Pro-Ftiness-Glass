@@ -30,6 +30,7 @@ import { GlassView } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import { getContrastTextColor } from '@/utils/colorUtils';
 import {
   formatDateForDisplay,
@@ -274,39 +275,16 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
 
   return (
     <>
-      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-        <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={StyleSheet.absoluteFill}
-          >
-            <Pressable
-              style={[
-                StyleSheet.absoluteFill,
-                styles.modalOverlay,
-                {
-                  backgroundColor: isDark ? 'rgba(0, 0, 0, 0.55)' : 'rgba(0, 0, 0, 0.25)',
-                },
-              ]}
-              onPress={onClose}
-            >
-              <Pressable
-                onPress={e => e.stopPropagation()}
-                style={[
-                  styles.cardWrapper,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.08)',
-                  },
-                ]}
-              >
-                <GlassView
-                  glassEffectStyle="regular"
-                  colorScheme={isDark ? 'dark' : 'light'}
-                  style={StyleSheet.absoluteFill}
-                />
-
-                <View style={styles.card}>
+      <SwipeableBottomSheet
+        visible={visible}
+        onClose={onClose}
+        isDark={isDark}
+        backgroundColor={colors.card}
+        height="88%"
+        maxHeight="90%"
+        avoidKeyboard
+      >
+        <View style={{ flex: 1 }}>
                   {/* Header (Liquid Glass) */}
                   <View
                     style={[
@@ -808,12 +786,8 @@ export const CreatineTrackerModal: React.FC<CreatineTrackerModalProps> = ({
                     )}
                   </View>
                 </ScrollView>
-              </View>
-            </Pressable>
-          </Pressable>
-        </KeyboardAvoidingView>
-      </GlassView>
-    </Modal>
+        </View>
+      </SwipeableBottomSheet>
 
       {/* 4. MODAL DE EDICIÓN (Liquid Glass) */}
       {showEditModal && editingLog && (

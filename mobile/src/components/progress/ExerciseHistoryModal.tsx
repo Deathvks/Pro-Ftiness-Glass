@@ -12,6 +12,7 @@ import { GlassView } from 'expo-glass-effect';
 import { X, Calendar as CalendarIcon, Flame, Dumbbell } from 'lucide-react-native';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
+import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 
 interface ExerciseHistoryModalProps {
   visible: boolean;
@@ -77,26 +78,15 @@ export function ExerciseHistoryModal({
   }, [workoutLog, exerciseName, selectedYear, selectedMonth]);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-        <View style={styles.overlay}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-          <View
-            style={[
-              styles.card,
-              {
-                borderColor: isDark
-                  ? 'rgba(255, 255, 255, 0.15)'
-                  : 'rgba(0, 0, 0, 0.1)',
-              },
-            ]}
-          >
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-            />
-
+    <SwipeableBottomSheet
+      visible={visible}
+      onClose={onClose}
+      isDark={isDark}
+      backgroundColor={colors.card}
+      height="86%"
+      maxHeight="88%"
+    >
+      <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 4 }}>
             {/* Header */}
             <View style={styles.header}>
               <View style={{ flex: 1 }}>
@@ -272,10 +262,8 @@ export function ExerciseHistoryModal({
                 })
               )}
             </ScrollView>
-          </View>
-        </View>
-      </GlassView>
-    </Modal>
+      </View>
+    </SwipeableBottomSheet>
   );
 }
 

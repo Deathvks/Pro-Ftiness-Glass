@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
+import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 
 interface FoodDetailModalProps {
   visible: boolean;
@@ -97,27 +98,14 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-        <Pressable
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: 20,
-              backgroundColor: isDark ? 'rgba(0, 0, 0, 0.45)' : 'rgba(255, 255, 255, 0.25)',
-            },
-          ]}
-          onPress={onClose}
-        >
-          <Pressable onPress={e => e.stopPropagation()} style={[styles.cardWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFill}
-            />
-            <View style={styles.card}>
+    <SwipeableBottomSheet
+      visible={visible}
+      onClose={handleClose}
+      isDark={isDark}
+      backgroundColor={colors.card}
+      maxHeight="88%"
+    >
+      <View style={styles.card}>
               {/* Image banner */}
               <View
                 style={[
@@ -304,11 +292,8 @@ export const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
                   <Text style={[styles.bottomCloseText, { color: colors.text }]}>Cerrar</Text>
                 </TouchableOpacity>
               </ScrollView>
-            </View>
-          </Pressable>
-        </Pressable>
-      </GlassView>
-    </Modal>
+      </View>
+    </SwipeableBottomSheet>
   );
 };
 

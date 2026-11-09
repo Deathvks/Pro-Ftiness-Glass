@@ -4,25 +4,36 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
   TextInput,
   ActivityIndicator,
   Platform,
-  Animated,
+  ScrollView,
+  FlatList,
 } from 'react-native';
-import { useSafeAreaInsets as useSafeAreaInsetsNative } from 'react-native-safe-area-context';
-import { GlassView } from 'expo-glass-effect';
-import { X, Search, Plus, Trash2, Check, ArrowLeft, Sparkles } from 'lucide-react-native';
+import {
+  X,
+  Search,
+  Plus,
+  Trash2,
+  Check,
+  ArrowLeft,
+  Sparkles,
+  ListChecks,
+} from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { getExerciseList } from '@/services/exerciseService';
-import apiClient, { API_BASE_URL } from '@/services/apiClient';
+import apiClient from '@/services/apiClient';
 import { SelectModal, SelectOption } from '@/components/ui/SelectModal';
 import { SETS_OPTIONS, REPS_OPTIONS, REST_OPTIONS } from '@/constants/exerciseOptions';
 import { ExerciseMediaPreview } from '@/components/routines/ExerciseMediaPreview';
-import { getAppleSheetCardStyle } from '@/components/ui/SwipeableBottomSheet';
+import {
+  SwipeableBottomSheet,
+  getAppleSheetCardStyle,
+} from '@/components/ui/SwipeableBottomSheet';
 
 interface ExerciseSearchModalProps {
   visible: boolean;
@@ -31,13 +42,23 @@ interface ExerciseSearchModalProps {
   isReadOnly?: boolean;
 }
 
+const MUSCLE_FILTERS = [
+  { id: 'all', label: 'Todos', keywords: [] },
+  { id: 'chest', label: 'Pecho', keywords: ['pecho', 'chest', 'pectoral'] },
+  { id: 'back', label: 'Espalda', keywords: ['espalda', 'back', 'dorsal', 'trapecio', 'lats', 'lumbar'] },
+  { id: 'legs', label: 'Piernas', keywords: ['pierna', 'legs', 'cuádriceps', 'cuadriceps', 'quads', 'isquio', 'hamstring', 'glúteo', 'glute', 'gemelo', 'calves'] },
+  { id: 'shoulders', label: 'Hombros', keywords: ['hombro', 'shoulder', 'deltoid'] },
+  { id: 'arms', label: 'Brazos', keywords: ['brazo', 'arm', 'bíceps', 'biceps', 'tríceps', 'triceps', 'antebrazo', 'forearm'] },
+  { id: 'core', label: 'Core / Abs', keywords: ['abdom', 'core', 'abs', 'oblicuo'] },
+  { id: 'cardio', label: 'Cardio', keywords: ['cardio', 'aeróbico', 'hiit'] },
+];
+
 export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
   visible,
   onClose,
   onAddExercises = () => {},
   isReadOnly = false,
 }) => {
-  const insets = useSafeAreaInsetsNative();
   const theme = useAppStore(state => state.theme) || 'oled';
   const colors = useAppColors();
   const isDark = !['light', 'ocean', 'desert'].includes(theme);
@@ -47,6 +68,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
   const [exercises, setExercises] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMuscleFilter, setSelectedMuscleFilter] = useState<string>('all');
 
   const [stagedExercises, setStagedExercises] = useState<any[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<any | null>(null);
@@ -96,7 +118,11 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
   const loadExercises = async () => {
     setIsLoading(true);
     try {
-      const data = await getExerciseList();
+      const fetchFromStore = useAppStore.getState()?.getOrFetchAllExercises;
+      const data =
+        typeof fetchFromStore === 'function'
+          ? await fetchFromStore()
+          : await getExerciseList();
       setExercises(data || []);
     } catch (error) {
       console.error(error);
@@ -106,14 +132,43 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
   };
 
   const filteredExercises = useMemo(() => {
-    if (!searchQuery) return exercises;
-    const lowerQ = searchQuery.toLowerCase();
-    return exercises.filter(
-      e =>
-        e.name.toLowerCase().includes(lowerQ) ||
-        (e.muscle_group && e.muscle_group.toLowerCase().includes(lowerQ))
-    );
-  }, [exercises, searchQuery]);
+    const stripAccents = (str: string) =>
+      str
+        ? str
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+        : '';
+
+    const lowerQ = stripAccents(searchQuery.trim());
+    const activeFilterObj = MUSCLE_FILTERS.find(f => f.id === selectedMuscleFilter);
+
+    return exercises.filter(e => {
+      if (!e) return false;
+      const nameNorm = stripAccents(e.name || '');
+      const muscleNorm = stripAccents(
+        `${e.muscle_group || ''} ${e.category || ''}`
+      );
+
+      const matchesSearch =
+        !lowerQ || nameNorm.includes(lowerQ) || muscleNorm.includes(lowerQ);
+
+      if (!matchesSearch) return false;
+
+      if (
+        selectedMuscleFilter !== 'all' &&
+        activeFilterObj &&
+        activeFilterObj.keywords.length > 0
+      ) {
+        const matchesMuscle = activeFilterObj.keywords.some(kw =>
+          muscleNorm.includes(stripAccents(kw))
+        );
+        if (!matchesMuscle) return false;
+      }
+
+      return true;
+    });
+  }, [exercises, searchQuery, selectedMuscleFilter]);
 
   const stagedIds = useMemo(
     () => new Set(stagedExercises.map(item => item.exercise.id)),
@@ -121,6 +176,9 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
   );
 
   const toggleStaged = (exercise: any) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
     if (stagedIds.has(exercise.id)) {
       setStagedExercises(prev => prev.filter(item => item.exercise.id !== exercise.id));
     } else {
@@ -137,6 +195,9 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
   };
 
   const handleConfirm = () => {
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {}
     onAddExercises(stagedExercises);
     setStagedExercises([]);
     setView('list');
@@ -173,53 +234,36 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
     }
   };
 
-  const getImageUrl = (item: any) => {
-    if (item.image_url_start) return item.image_url_start;
-    if (item.image_url) return item.image_url;
-    if (item.images && Array.isArray(item.images) && item.images.length > 0) return item.images[0];
-    if (item.images && typeof item.images === 'string') {
-      try {
-        const parsed = JSON.parse(item.images);
-        if (parsed.length > 0) return parsed[0];
-      } catch (e) {}
-    }
-
-    let youtubeId = item.youtube_id;
-    if (!youtubeId && item.video_url) {
-      const ytMatch = item.video_url.match(
-        /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
-      );
-      if (ytMatch) youtubeId = ytMatch[1];
-    }
-
-    if (youtubeId) {
-      return `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`;
-    }
-
-    const finalUrl = item.muscle_group_image_url || '';
-    if (finalUrl && finalUrl.startsWith('/')) {
-      const baseUrl = API_BASE_URL.replace('/api', '');
-      return baseUrl + finalUrl;
-    }
-    return finalUrl;
-  };
+  const innerPillBg = isIOS
+    ? isDark
+      ? '#3A3A3C'
+      : '#F2F2F7'
+    : isDark
+    ? 'rgba(255,255,255,0.06)'
+    : 'rgba(0,0,0,0.05)';
 
   const renderExerciseItem = ({ item }: { item: any }) => {
     const isStaged = stagedIds.has(item.id);
+    const rawMuscles = (item.muscle_group || item.category || 'General')
+      .split(',')
+      .map((m: string) => m.trim())
+      .filter(Boolean);
 
     return (
       <TouchableOpacity
-        activeOpacity={0.85}
+        activeOpacity={0.88}
         style={[
           styles.exerciseCard,
           {
             backgroundColor: colors.card,
-            borderColor: colors.border,
-            borderWidth: isIOS ? 0 : 1,
-            flexDirection: 'column',
-            alignItems: 'stretch',
+            borderColor: isStaged ? colors.tint : colors.border,
+            borderWidth: isStaged ? 1.5 : isIOS ? 0 : 1,
           },
-          getAppleSheetCardStyle(isDark, 20),
+          getAppleSheetCardStyle(isDark, 22),
+          isStaged && {
+            borderWidth: 1.5,
+            borderColor: colors.tint,
+          },
         ]}
         onPress={() => {
           setSelectedExercise(item);
@@ -227,45 +271,45 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
         }}
       >
         <View
-          style={{
-            width: '100%',
-            aspectRatio: 16 / 10,
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            overflow: 'hidden',
-            backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
-          }}
+          style={[
+            styles.mediaPreviewBox,
+            {
+              backgroundColor: isDark ? '#0B0B0E' : '#18181B',
+            },
+          ]}
         >
-          <ExerciseMediaPreview item={item} fitMode="contain" staticOnly={false} />
+          <ExerciseMediaPreview
+            item={item}
+            details={item}
+            fitMode="contain"
+            staticOnly={false}
+          />
         </View>
-        <View style={{ padding: 14, flex: 1 }}>
+
+        <View style={styles.cardContentBox}>
           <Text style={[styles.exerciseName, { color: colors.text }]} numberOfLines={2}>
             {item.name}
           </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
-            <View
-              style={{
-                backgroundColor: colors.tint + '18',
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                borderRadius: 8,
-              }}
-            >
-              <Text
-                style={{
-                  color: colors.tint,
-                  fontSize: 10,
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
-                }}
+
+          <View style={styles.musclePillsWrap}>
+            {rawMuscles.slice(0, 3).map((m: string, idx: number) => (
+              <View
+                key={idx}
+                style={[
+                  styles.muscleBadge,
+                  { backgroundColor: colors.tint + '1A' },
+                ]}
               >
-                {item.muscle_group || item.category || 'OTRO'}
-              </Text>
-            </View>
+                <Text style={[styles.muscleBadgeText, { color: colors.tint }]}>
+                  {m}
+                </Text>
+              </View>
+            ))}
           </View>
+
           {item.description ? (
             <Text
-              style={{ color: colors.textSecondary, fontSize: 12.5, marginTop: 8, lineHeight: 17 }}
+              style={[styles.exerciseDescription, { color: colors.textSecondary }]}
               numberOfLines={2}
             >
               {item.description.replace(/<[^>]*>?/gm, '')}
@@ -273,269 +317,273 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
           ) : null}
 
           {!isReadOnly && (
-            <View style={{ marginTop: 12, alignItems: 'stretch' }}>
-              <GlassButton
-                noShadow
-                theme={theme}
-                color={isStaged ? colors.tint : undefined}
-                style={{
-                  width: '100%',
-                  height: 44,
-                  borderRadius: 14,
-                }}
-                onPress={() => toggleStaged(item)}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  {isStaged ? (
-                    <>
-                      <Check
-                        size={18}
-                        color={isIOS ? colors.tint : getContrastColor(colors.tint, theme)}
-                      />
-                      <Text
-                        style={{
-                          color: isIOS ? colors.tint : getContrastColor(colors.tint, theme),
-                          fontWeight: '700',
-                        }}
-                      >
-                        Añadido
-                      </Text>
-                    </>
-                  ) : (
-                    <>
-                      <Plus size={18} color={colors.text} />
-                      <Text style={{ color: colors.text, fontWeight: '700' }}>Añadir</Text>
-                    </>
-                  )}
-                </View>
-              </GlassButton>
-            </View>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => toggleStaged(item)}
+              style={[
+                styles.stageActionBtn,
+                isStaged
+                  ? {
+                      backgroundColor: 'rgba(34, 197, 94, 0.16)',
+                      borderColor: 'rgba(34, 197, 94, 0.4)',
+                      borderWidth: 1,
+                    }
+                  : {
+                      backgroundColor: innerPillBg,
+                      borderColor: isIOS ? 'transparent' : colors.border,
+                      borderWidth: isIOS ? 0 : 1,
+                    },
+              ]}
+            >
+              {isStaged ? (
+                <>
+                  <Check size={18} color="#22c55e" strokeWidth={2.6} />
+                  <Text style={{ color: '#22c55e', fontWeight: '700', fontSize: 14 }}>
+                    Añadido
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Plus size={18} color={colors.tint} strokeWidth={2.4} />
+                  <Text style={{ color: colors.text, fontWeight: '700', fontSize: 14 }}>
+                    Añadir ejercicio
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
           )}
         </View>
       </TouchableOpacity>
     );
   };
 
-  const topPad = isIOS ? 12 : insets.top;
-  const headerHeight = 56 + topPad;
-
-  const scrollY = React.useRef(new Animated.Value(0)).current;
-  const bgOpacity = scrollY.interpolate({
-    inputRange: [0, 50],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
-
-  useEffect(() => {
-    scrollY.setValue(0);
-  }, [view, scrollY]);
-
   return (
-    <Modal
+    <SwipeableBottomSheet
       visible={visible}
-      animationType="slide"
-      presentationStyle={isIOS ? 'pageSheet' : 'fullScreen'}
-      onRequestClose={onClose}
+      onClose={onClose}
+      isDark={isDark}
+      backgroundColor={colors.background}
+      height="92%"
+      maxHeight="92%"
+      avoidKeyboard
     >
-      <View
-        style={[
-          styles.container,
-          {
-            backgroundColor: isIOS ? (isDark ? '#1C1C1E' : '#F2F2F7') : colors.background,
-          },
-        ]}
-      >
-        {/* Header */}
+      <View style={styles.container}>
+        {/* Sheet Header */}
         <View
           style={[
             styles.header,
             {
-              borderBottomColor: colors.border,
-              paddingTop: topPad,
-              height: headerHeight,
-              backgroundColor: 'transparent',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              zIndex: 100,
+              borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+              borderBottomWidth: StyleSheet.hairlineWidth,
             },
           ]}
         >
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
-          {isIOS && (
-            <View
-              style={{
-                position: 'absolute',
-                top: 6,
-                left: 0,
-                right: 0,
-                alignItems: 'center',
-              }}
-              pointerEvents="none"
-            >
-              <View
-                style={{
-                  width: 38,
-                  height: 5,
-                  borderRadius: 2.5,
-                  backgroundColor: isDark
-                    ? 'rgba(235, 235, 245, 0.3)'
-                    : 'rgba(60, 60, 67, 0.25)',
-                }}
-              />
-            </View>
-          )}
-          <Animated.View
-            style={{
-              height: StyleSheet.hairlineWidth,
-              backgroundColor: colors.border,
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              opacity: bgOpacity,
-            }}
-          />
-
           {view !== 'list' ? (
-            <GlassButton
-              noShadow
-              theme={theme}
+            <TouchableOpacity
               onPress={() => setView('list')}
-              style={styles.iconButton}
+              activeOpacity={0.75}
+              style={[styles.headerCircleBtn, { backgroundColor: innerPillBg }]}
             >
-              <ArrowLeft size={20} color={colors.text} />
-            </GlassButton>
+              <ArrowLeft size={19} color={colors.text} />
+            </TouchableOpacity>
           ) : (
-            <GlassButton noShadow theme={theme} onPress={onClose} style={styles.iconButton}>
-              <X size={20} color={colors.text} />
-            </GlassButton>
+            <TouchableOpacity
+              onPress={onClose}
+              activeOpacity={0.75}
+              style={[styles.headerCircleBtn, { backgroundColor: innerPillBg }]}
+            >
+              <X size={19} color={colors.text} />
+            </TouchableOpacity>
           )}
 
-          <Text
-            style={[styles.title, { color: colors.text, flex: 1, textAlign: 'center' }]}
-            numberOfLines={1}
-          >
-            {view === 'list'
-              ? 'Biblioteca'
-              : view === 'summary'
-                ? 'Carrito'
-                : selectedExercise?.name}
-          </Text>
+          <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 8 }}>
+            <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
+              {view === 'list'
+                ? isReadOnly
+                  ? 'Biblioteca de Ejercicios'
+                  : 'Añadir Ejercicios'
+                : view === 'summary'
+                ? `Selección (${stagedExercises.length})`
+                : selectedExercise?.name || 'Detalle'}
+            </Text>
+          </View>
 
           {isReadOnly || view === 'summary' || view === 'detail' ? (
-            <View style={{ width: 40 }} />
+            <View style={{ width: 38 }} />
           ) : (
-            <GlassButton
-              noShadow
-              theme={theme}
-              color={stagedExercises.length > 0 ? colors.tint : undefined}
+            <TouchableOpacity
+              activeOpacity={0.8}
               onPress={() => setView('summary')}
-              style={{
-                paddingHorizontal: 14,
-                height: 36,
-                borderRadius: 18,
-              }}
+              style={[
+                styles.cartPillBtn,
+                {
+                  backgroundColor:
+                    stagedExercises.length > 0 ? colors.tint : innerPillBg,
+                },
+              ]}
             >
+              <ListChecks
+                size={15}
+                color={
+                  stagedExercises.length > 0
+                    ? getContrastColor(colors.tint, theme)
+                    : colors.textSecondary
+                }
+              />
               <Text
                 style={{
                   color:
                     stagedExercises.length > 0
-                      ? isIOS
-                        ? colors.tint
-                        : getContrastColor(colors.tint, theme)
-                      : colors.tint,
-                  fontWeight: '700',
+                      ? getContrastColor(colors.tint, theme)
+                      : colors.textSecondary,
+                  fontWeight: '800',
                   fontSize: 13,
                 }}
               >
                 Ver ({stagedExercises.length})
               </Text>
-            </GlassButton>
+            </TouchableOpacity>
           )}
         </View>
 
+        {/* LIST VIEW */}
         {view === 'list' && (
           <View style={{ flex: 1 }}>
+            {/* Search & Muscle Filter Bar */}
+            <View style={styles.filtersContainer}>
+              <View
+                style={[
+                  styles.searchInputWrapper,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                    borderWidth: isIOS ? 0 : 1,
+                  },
+                  getAppleSheetCardStyle(isDark, 16),
+                ]}
+              >
+                <Search size={18} color={colors.textSecondary} style={styles.searchIcon} />
+                <TextInput
+                  style={[styles.searchInput, { color: colors.text }]}
+                  placeholder="Buscar ejercicio o grupo muscular..."
+                  selectionColor={colors.tint}
+                  placeholderTextColor={colors.textSecondary}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setSearchQuery('')}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <X size={16} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Muscle Filter Pills */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filterPillsScroll}
+              >
+                {MUSCLE_FILTERS.map(f => {
+                  const active = selectedMuscleFilter === f.id;
+                  return (
+                    <TouchableOpacity
+                      key={f.id}
+                      activeOpacity={0.75}
+                      onPress={() => {
+                        try {
+                          Haptics.selectionAsync();
+                        } catch {}
+                        setSelectedMuscleFilter(f.id);
+                      }}
+                      style={[
+                        styles.filterChip,
+                        active
+                          ? {
+                              backgroundColor: isIOS ? colors.tint + '24' : colors.tint,
+                              borderColor: colors.tint,
+                              borderWidth: isIOS ? 1 : 0,
+                            }
+                          : {
+                              backgroundColor: isIOS
+                                ? isDark
+                                  ? '#2C2C2E'
+                                  : '#FFFFFF'
+                                : innerPillBg,
+                              borderWidth: isIOS ? 0 : 1,
+                              borderColor: colors.border,
+                            },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          fontWeight: active ? '700' : '600',
+                          color: active
+                            ? isIOS
+                              ? colors.tint
+                              : getContrastColor(colors.tint, theme)
+                            : colors.textSecondary,
+                        }}
+                      >
+                        {f.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
+              <View style={styles.resultsCountRow}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
+                  {filteredExercises.length}{' '}
+                  {filteredExercises.length === 1 ? 'ejercicio disponible' : 'ejercicios disponibles'}
+                </Text>
+              </View>
+            </View>
+
             {isLoading ? (
-              <View style={[styles.centerContainer, { paddingTop: headerHeight }]}>
+              <View style={styles.centerContainer}>
                 <ActivityIndicator size="large" color={colors.tint} />
               </View>
             ) : (
-              <Animated.FlatList
+              <FlatList
                 data={filteredExercises}
-                keyExtractor={item => item.id}
+                keyExtractor={item => String(item.id)}
                 renderItem={renderExerciseItem}
-                contentContainerStyle={[styles.listContent, { paddingTop: headerHeight + 16 }]}
-                initialNumToRender={10}
-                onScroll={Animated.event(
-                  [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                  { useNativeDriver: true }
-                )}
-                scrollEventThrottle={16}
-                ListHeaderComponent={
-                  <View style={{ marginBottom: 16 }}>
-                    <View
-                      style={[
-                        styles.searchInputWrapper,
-                        {
-                          backgroundColor: colors.card,
-                          borderColor: colors.border,
-                          borderWidth: isIOS ? 0 : 1,
-                        },
-                        getAppleSheetCardStyle(isDark, 16),
-                      ]}
-                    >
-                      <Search size={20} color={colors.textSecondary} style={styles.searchIcon} />
-                      <TextInput
-                        style={[styles.searchInput, { color: colors.text }]}
-                        placeholder="Buscar ejercicios..."
-                        selectionColor={colors.tint}
-                        placeholderTextColor={colors.textSecondary}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                      />
-                    </View>
-                  </View>
-                }
+                contentContainerStyle={styles.listContent}
+                initialNumToRender={8}
+                maxToRenderPerBatch={8}
+                windowSize={7}
+                showsVerticalScrollIndicator={false}
               />
             )}
           </View>
         )}
 
+        {/* DETAIL VIEW */}
         {view === 'detail' && selectedExercise && (
-          <Animated.ScrollView
-            style={{ flex: 1, paddingTop: headerHeight }}
-            contentContainerStyle={{ paddingBottom: 80 }}
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-              { useNativeDriver: true }
-            )}
-            scrollEventThrottle={16}
-          >
-            <View style={{ alignItems: 'center', width: '100%', paddingVertical: 14 }}>
+          <View style={{ flex: 1 }}>
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ padding: 16, paddingBottom: 110 }}
+              showsVerticalScrollIndicator={false}
+            >
               <View
-                style={{
-                  width: 220,
-                  maxWidth: '90%',
-                  aspectRatio: 9 / 16,
-                  maxHeight: 390,
-                  borderRadius: 26,
-                  backgroundColor: '#000000',
-                  overflow: 'hidden',
-                  borderWidth: isIOS ? 0 : 1,
-                  borderColor: colors.border,
-                }}
+                style={[
+                  styles.detailMediaBox,
+                  {
+                    backgroundColor: '#0B0B0E',
+                    borderColor: colors.border,
+                    borderWidth: isIOS ? 0 : 1,
+                  },
+                ]}
               >
                 <ExerciseMediaPreview
                   item={selectedExercise}
                   details={selectedExercise}
-                  getImageUrl={getImageUrl}
                   fitMode="contain"
                   playYouTube={playingVideo}
                   onPress={() => {
@@ -549,55 +597,77 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                   }}
                 />
               </View>
-            </View>
 
-            <View style={{ padding: 24, flex: 1, paddingBottom: isReadOnly ? 40 : 100 }}>
-              <Text
-                style={{
-                  fontSize: 24,
-                  fontWeight: '700',
-                  letterSpacing: -0.4,
-                  color: colors.text,
-                  marginBottom: 8,
-                }}
+              <View
+                style={[
+                  {
+                    padding: 18,
+                    marginTop: 16,
+                    backgroundColor: colors.card,
+                    borderRadius: 20,
+                  },
+                  getAppleSheetCardStyle(isDark, 20),
+                ]}
               >
-                {selectedExercise.name}
-              </Text>
-              <Text style={{ color: colors.textSecondary, marginBottom: 16 }}>
-                Músculo: {selectedExercise.muscle_group}
-              </Text>
-              <Text style={{ color: colors.text, lineHeight: 22, marginBottom: 24 }}>
-                {selectedExercise.description
-                  ? selectedExercise.description.replace(/<[^>]*>?/gm, '')
-                  : 'Sin descripción detallada disponible.'}
-              </Text>
+                <Text
+                  style={{
+                    fontSize: 22,
+                    fontWeight: '700',
+                    letterSpacing: -0.4,
+                    color: colors.text,
+                    marginBottom: 8,
+                  }}
+                >
+                  {selectedExercise.name}
+                </Text>
+
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+                  <View
+                    style={[
+                      styles.muscleBadge,
+                      { backgroundColor: colors.tint + '1A' },
+                    ]}
+                  >
+                    <Text style={[styles.muscleBadgeText, { color: colors.tint }]}>
+                      {selectedExercise.muscle_group || selectedExercise.category || 'General'}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={{ color: colors.textSecondary, lineHeight: 22, fontSize: 14.5 }}>
+                  {selectedExercise.description
+                    ? selectedExercise.description.replace(/<[^>]*>?/gm, '')
+                    : 'Sin descripción detallada disponible.'}
+                </Text>
+              </View>
 
               {/* AI Explain Button */}
               <TouchableOpacity
                 onPress={handleAskAI}
                 disabled={isAiLoading || !!aiExplanation}
+                activeOpacity={0.8}
                 style={[
                   {
                     backgroundColor: colors.card,
                     borderColor: colors.tint,
                     borderWidth: isIOS ? 0 : 1,
                     padding: 16,
-                    borderRadius: 16,
+                    borderRadius: 18,
                     flexDirection: 'row',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginBottom: 24,
-                    gap: 12,
+                    marginTop: 14,
+                    gap: 10,
                   },
-                  getAppleSheetCardStyle(isDark, 16),
+                  getAppleSheetCardStyle(isDark, 18),
                 ]}
               >
                 {isAiLoading ? (
                   <ActivityIndicator color={colors.tint} size="small" />
                 ) : (
-                  <Sparkles size={20} color={colors.tint} />
+                  <Sparkles size={19} color={colors.tint} />
                 )}
-                <Text style={{ color: colors.tint, fontWeight: '700', fontSize: 16 }}>
+                <Text style={{ color: colors.tint, fontWeight: '700', fontSize: 15 }}>
                   {isAiLoading ? 'Generando explicación...' : 'Explicación por IA (Coach)'}
                 </Text>
               </TouchableOpacity>
@@ -607,14 +677,14 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                 <View
                   style={[
                     {
-                      backgroundColor: colors.tint + '10',
+                      backgroundColor: colors.tint + '12',
                       borderColor: colors.tint + '30',
                       borderWidth: isIOS ? 0 : 1,
                       padding: 16,
-                      borderRadius: 16,
-                      marginBottom: 24,
+                      borderRadius: 18,
+                      marginTop: 14,
                     },
-                    getAppleSheetCardStyle(isDark, 16),
+                    getAppleSheetCardStyle(isDark, 18),
                   ]}
                 >
                   <View
@@ -622,7 +692,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                       flexDirection: 'row',
                       alignItems: 'center',
                       gap: 8,
-                      marginBottom: 12,
+                      marginBottom: 10,
                     }}
                   >
                     <Sparkles size={16} color={colors.tint} />
@@ -630,24 +700,19 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                       Pro-Fitness Coach
                     </Text>
                   </View>
-                  <Text style={{ color: colors.text, lineHeight: 24, fontSize: 15 }}>
+                  <Text style={{ color: colors.text, lineHeight: 23, fontSize: 14.5 }}>
                     {aiExplanation}
                   </Text>
                 </View>
               )}
-            </View>
+            </ScrollView>
 
             {!isReadOnly && (
               <View
                 style={[
                   styles.footer,
                   {
-                    borderTopColor: colors.border,
-                    backgroundColor: isIOS ? (isDark ? '#1C1C1E' : '#F2F2F7') : colors.background,
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
+                    borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
                   },
                 ]}
               >
@@ -669,32 +734,31 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                     }}
                   >
                     {stagedIds.has(selectedExercise.id)
-                      ? 'Quitar del carrito'
-                      : 'Añadir al carrito'}
+                      ? 'Quitar de la selección'
+                      : 'Añadir a la selección'}
                   </Text>
                 </GlassButton>
               </View>
             )}
-          </Animated.ScrollView>
+          </View>
         )}
 
+        {/* SUMMARY / PREVIEW BEFORE CONFIRMING */}
         {view === 'summary' && (
           <View style={{ flex: 1 }}>
             {stagedExercises.length === 0 ? (
               <View style={styles.centerContainer}>
-                <Text style={{ color: colors.textSecondary }}>El carrito está vacío.</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 15, fontWeight: '600' }}>
+                  No has seleccionado ningún ejercicio todavía.
+                </Text>
               </View>
             ) : (
-              <Animated.FlatList
+              <FlatList
                 data={stagedExercises}
-                keyExtractor={item => item.exercise.id}
-                contentContainerStyle={[styles.listContent, { paddingTop: headerHeight + 16 }]}
-                onScroll={Animated.event(
-                  [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                  { useNativeDriver: true }
-                )}
-                scrollEventThrottle={16}
-                renderItem={({ item }) => (
+                keyExtractor={item => String(item.exercise.id)}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
+                renderItem={({ item, index }) => (
                   <View
                     style={[
                       styles.exerciseCard,
@@ -702,31 +766,66 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                         backgroundColor: colors.card,
                         borderColor: colors.border,
                         borderWidth: isIOS ? 0 : 1,
-                        flexDirection: 'column',
-                        alignItems: 'stretch',
                       },
-                      getAppleSheetCardStyle(isDark, 20),
+                      getAppleSheetCardStyle(isDark, 22),
                     ]}
                   >
+                    {/* Header row inside preview card */}
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        paddingHorizontal: 14,
+                        paddingTop: 14,
+                        paddingBottom: 10,
+                      }}
+                    >
+                      <View
+                        style={{
+                          backgroundColor: colors.tint + '1F',
+                          paddingHorizontal: 10,
+                          paddingVertical: 4,
+                          borderRadius: 9,
+                        }}
+                      >
+                        <Text style={{ color: colors.tint, fontSize: 12, fontWeight: '800' }}>
+                          #{index + 1}
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => toggleStaged(item.exercise)}
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: 10,
+                          backgroundColor: 'rgba(239, 68, 68, 0.14)',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Trash2 size={17} color="#ef4444" />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Large Media Preview (YouTube Thumbnail / Video or Animated GIF) */}
                     <View
                       style={{
                         width: '100%',
                         aspectRatio: 16 / 10,
-                        borderTopLeftRadius: 16,
-                        borderTopRightRadius: 16,
+                        backgroundColor: isDark ? '#0B0B0E' : '#18181B',
                         overflow: 'hidden',
-                        backgroundColor: isDark
-                          ? 'rgba(255,255,255,0.03)'
-                          : 'rgba(0,0,0,0.03)',
                       }}
                     >
                       <ExerciseMediaPreview
                         item={item.exercise}
+                        details={item.exercise}
                         fitMode="contain"
                         staticOnly={false}
                       />
                     </View>
-                    <View style={{ padding: 14, flex: 1 }}>
+
+                    <View style={{ padding: 16 }}>
                       <Text
                         style={[styles.exerciseName, { color: colors.text }]}
                         numberOfLines={2}
@@ -739,15 +838,10 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                         <TouchableOpacity
                           style={{
                             flex: 1,
-                            backgroundColor: isIOS
-                              ? isDark
-                                ? '#3A3A3C'
-                                : '#F2F2F7'
-                              : colors.card,
-                            padding: 8,
+                            backgroundColor: innerPillBg,
+                            paddingVertical: 10,
+                            paddingHorizontal: 8,
                             borderRadius: 12,
-                            borderWidth: isIOS ? 0 : 1,
-                            borderColor: colors.border,
                             alignItems: 'center',
                           }}
                           onPress={() =>
@@ -781,15 +875,10 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                         <TouchableOpacity
                           style={{
                             flex: 1,
-                            backgroundColor: isIOS
-                              ? isDark
-                                ? '#3A3A3C'
-                                : '#F2F2F7'
-                              : colors.card,
-                            padding: 8,
+                            backgroundColor: innerPillBg,
+                            paddingVertical: 10,
+                            paddingHorizontal: 8,
                             borderRadius: 12,
-                            borderWidth: isIOS ? 0 : 1,
-                            borderColor: colors.border,
                             alignItems: 'center',
                           }}
                           onPress={() => {
@@ -828,15 +917,10 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                         <TouchableOpacity
                           style={{
                             flex: 1,
-                            backgroundColor: isIOS
-                              ? isDark
-                                ? '#3A3A3C'
-                                : '#F2F2F7'
-                              : colors.card,
-                            padding: 8,
+                            backgroundColor: innerPillBg,
+                            paddingVertical: 10,
+                            paddingHorizontal: 8,
                             borderRadius: 12,
-                            borderWidth: isIOS ? 0 : 1,
-                            borderColor: colors.border,
                             alignItems: 'center',
                           }}
                           onPress={() => {
@@ -864,42 +948,24 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
                               marginBottom: 4,
                             }}
                           >
-                            Desc. (s)
+                            Descanso
                           </Text>
                           <Text style={{ color: colors.text, fontSize: 16, fontWeight: '700' }}>
                             {item.rest_seconds || 60}s
                           </Text>
                         </TouchableOpacity>
                       </View>
-
-                      <View style={{ marginTop: 12, alignItems: 'stretch' }}>
-                        <GlassButton
-                          noShadow
-                          theme={theme}
-                          style={{
-                            width: '100%',
-                            height: 44,
-                            borderRadius: 12,
-                          }}
-                          onPress={() => toggleStaged(item.exercise)}
-                        >
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <Trash2 size={18} color="#ef4444" />
-                            <Text style={{ color: '#ef4444', fontWeight: '700' }}>Eliminar</Text>
-                          </View>
-                        </GlassButton>
-                      </View>
                     </View>
                   </View>
                 )}
               />
             )}
+
             <View
               style={[
                 styles.footer,
                 {
-                  borderTopColor: colors.border,
-                  backgroundColor: isIOS ? (isDark ? '#1C1C1E' : '#F2F2F7') : colors.background,
+                  borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
                 },
               ]}
             >
@@ -935,7 +1001,7 @@ export const ExerciseSearchModal: React.FC<ExerciseSearchModalProps> = ({
         theme={theme as 'light' | 'dark'}
         colors={colors}
       />
-    </Modal>
+    </SwipeableBottomSheet>
   );
 };
 
@@ -948,61 +1014,142 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    height: 56,
+    paddingBottom: 12,
+    paddingTop: 2,
   },
-  iconButton: {
-    width: 40,
-    height: 40,
+  headerCircleBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  cartPillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 13,
+    height: 36,
+    borderRadius: 18,
   },
   title: {
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: -0.3,
   },
+  filtersContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    gap: 10,
+  },
   searchInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
+    height: 46,
     borderRadius: 16,
     borderCurve: 'continuous',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
   },
   searchIcon: {
     marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  filterPillsScroll: {
+    gap: 8,
+    paddingVertical: 2,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 16,
+    borderCurve: 'continuous',
+  },
+  resultsCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
   },
   listContent: {
-    padding: 16,
-    paddingTop: 0,
-    paddingBottom: 40,
+    paddingHorizontal: 16,
+    paddingTop: 6,
+    paddingBottom: 36,
+    gap: 16,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 24,
   },
   exerciseCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 0,
-    borderRadius: 20,
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    borderRadius: 22,
     borderCurve: 'continuous',
-    marginBottom: 14,
     overflow: 'hidden',
+  },
+  mediaPreviewBox: {
+    width: '100%',
+    aspectRatio: 16 / 10,
+    overflow: 'hidden',
+  },
+  cardContentBox: {
+    padding: 16,
   },
   exerciseName: {
     fontWeight: '700',
-    fontSize: 16,
-    marginBottom: 4,
+    fontSize: 17,
+    letterSpacing: -0.3,
+  },
+  musclePillsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+  },
+  muscleBadge: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  muscleBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  exerciseDescription: {
+    fontSize: 13,
+    marginTop: 8,
+    lineHeight: 18,
+  },
+  stageActionBtn: {
+    marginTop: 14,
+    height: 44,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  detailMediaBox: {
+    width: '100%',
+    aspectRatio: 16 / 10,
+    borderRadius: 22,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
   },
   footer: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
-    paddingBottom: 32,
   },
 });

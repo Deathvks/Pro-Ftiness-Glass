@@ -160,6 +160,9 @@ export const createDataSlice = (set, get) => ({
           creatineStats: creatineStats.data || null,
           personalRecords: safePRs
         });
+
+        // Precargar catálogo de ejercicios en segundo plano para miniaturas YouTube y GIFs
+        get().getOrFetchAllExercises().catch(() => {});
       }
     } catch (error) {
       console.error("Error de autenticación o carga de datos:", error);

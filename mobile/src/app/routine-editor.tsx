@@ -136,6 +136,17 @@ export default function RoutineEditorScreen() {
   };
 
   const routines = useAppStore(state => state.routines || []);
+  const allExercises = useAppStore(state => state.allExercises || []);
+
+  React.useEffect(() => {
+    if (!allExercises || allExercises.length === 0) {
+      const fetchAll = useAppStore.getState()?.getOrFetchAllExercises;
+      if (typeof fetchAll === 'function') {
+        fetchAll().catch(() => {});
+      }
+    }
+  }, [allExercises?.length]);
+
   const uniqueFolders = useMemo(() => {
     const folders = routines
       .map((r: any) => r.folder)
@@ -612,7 +623,7 @@ export default function RoutineEditorScreen() {
               </Text>
             </View>
           ) : (
-            <View style={{ gap: 14, marginBottom: 24 }}>
+            <View style={{ gap: 18, marginBottom: 26 }}>
               {exercises.map((item: any, index: number) => (
                 <View
                   key={item.id || String(index)}
@@ -642,11 +653,11 @@ export default function RoutineEditorScreen() {
                       ]}
                     >
                       <Text style={[styles.orderBadgeText, { color: colors.tint }]}>
-                        #{index + 1}
+                        Ejercicio #{index + 1}
                       </Text>
                     </View>
 
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <TouchableOpacity
                         disabled={index === 0}
                         onPress={() => moveExercise(index, 'up')}
@@ -654,7 +665,7 @@ export default function RoutineEditorScreen() {
                           styles.iconCtrlBtn,
                           {
                             backgroundColor: isDark
-                              ? 'rgba(255,255,255,0.07)'
+                              ? 'rgba(255,255,255,0.08)'
                               : 'rgba(0,0,0,0.05)',
                             opacity: index === 0 ? 0.3 : 1,
                           },
@@ -670,7 +681,7 @@ export default function RoutineEditorScreen() {
                           styles.iconCtrlBtn,
                           {
                             backgroundColor: isDark
-                              ? 'rgba(255,255,255,0.07)'
+                              ? 'rgba(255,255,255,0.08)'
                               : 'rgba(0,0,0,0.05)',
                             opacity: index === exercises.length - 1 ? 0.3 : 1,
                           },
@@ -693,115 +704,116 @@ export default function RoutineEditorScreen() {
                     </View>
                   </View>
 
-                  {/* Media + Name Row */}
-                  <View style={styles.exerciseMainRow}>
+                  {/* Full-Width Visual Media Preview (YouTube Thumbnail / Video or Animated GIF) */}
+                  {!item.is_manual && (
                     <View
                       style={[
-                        styles.exerciseThumbBox,
+                        styles.exerciseMediaBanner,
                         {
-                          backgroundColor: isDark
-                            ? 'rgba(255, 255, 255, 0.05)'
-                            : 'rgba(0, 0, 0, 0.04)',
+                          backgroundColor: isDark ? '#0B0B0E' : '#18181B',
                         },
                       ]}
                     >
-                      {!item.is_manual ? (
-                        <ExerciseMediaPreview
-                          item={item}
-                          getImageUrl={getImageUrl}
-                          fitMode="contain"
-                          staticOnly={false}
-                        />
-                      ) : (
-                        <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-                          <ImageIcon
-                            size={28}
-                            color={colors.textSecondary}
-                            style={{ opacity: 0.4 }}
-                          />
-                        </View>
-                      )}
+                      <ExerciseMediaPreview
+                        item={item}
+                        details={item}
+                        fitMode="contain"
+                        staticOnly={false}
+                      />
                     </View>
+                  )}
 
-                    <View style={{ flex: 1 }}>
-                      {item.is_manual ? (
-                        <View style={{ gap: 8 }}>
-                          <TextInput
-                            style={[
-                              styles.manualNameInput,
-                              {
-                                color: colors.text,
-                                backgroundColor: colors.background,
-                                borderColor: colors.border,
-                              },
-                              iosInnerSurface,
-                            ]}
-                            placeholder="Nombre del ejercicio..."
-                            selectionColor={colors.tint}
-                            placeholderTextColor={colors.textSecondary}
-                            value={item.name}
-                            onChangeText={val => updateExerciseField(item.id, 'name', val)}
-                          />
-                          <TouchableOpacity
-                            style={[
-                              styles.manualMusclePill,
-                              {
-                                backgroundColor: colors.background,
-                                borderColor: colors.border,
-                              },
-                              iosInnerSurface,
-                            ]}
-                            onPress={() =>
-                              setSelectModalConfig({
-                                visible: true,
-                                title: 'Músculo Principal',
-                                options: MUSCLE_OPTIONS,
-                                value: item.muscle_group || 'Otro',
-                                onSelect: val =>
-                                  updateExerciseField(item.id, 'muscle_group', val),
-                              })
-                            }
-                          >
-                            <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-                              Músculo:{' '}
-                            </Text>
-                            <Text
-                              style={{
-                                color: colors.tint,
-                                fontSize: 12,
-                                fontWeight: '700',
-                              }}
-                            >
-                              {item.muscle_group || 'Otro'}
-                            </Text>
-                            <ChevronDown
-                              size={14}
-                              color={colors.tint}
-                              style={{ marginLeft: 4 }}
-                            />
-                          </TouchableOpacity>
-                        </View>
-                      ) : (
-                        <>
-                          <Text
-                            style={[styles.exerciseTitleText, { color: colors.text }]}
-                            numberOfLines={2}
-                          >
-                            {item.name}
+                  {/* Exercise Name & Muscle Badge */}
+                  <View style={styles.exerciseInfoBlock}>
+                    {item.is_manual ? (
+                      <View style={{ gap: 10 }}>
+                        <TextInput
+                          style={[
+                            styles.manualNameInput,
+                            {
+                              color: colors.text,
+                              backgroundColor: colors.background,
+                              borderColor: colors.border,
+                            },
+                            iosInnerSurface,
+                          ]}
+                          placeholder="Nombre del ejercicio..."
+                          selectionColor={colors.tint}
+                          placeholderTextColor={colors.textSecondary}
+                          value={item.name}
+                          onChangeText={val => updateExerciseField(item.id, 'name', val)}
+                        />
+                        <TouchableOpacity
+                          style={[
+                            styles.manualMusclePill,
+                            {
+                              backgroundColor: colors.background,
+                              borderColor: colors.border,
+                            },
+                            iosInnerSurface,
+                          ]}
+                          onPress={() =>
+                            setSelectModalConfig({
+                              visible: true,
+                              title: 'Músculo Principal',
+                              options: MUSCLE_OPTIONS,
+                              value: item.muscle_group || 'Otro',
+                              onSelect: val =>
+                                updateExerciseField(item.id, 'muscle_group', val),
+                            })
+                          }
+                        >
+                          <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                            Músculo:{' '}
                           </Text>
                           <Text
                             style={{
-                              color: colors.textSecondary,
-                              fontSize: 13,
-                              fontWeight: '500',
-                              marginTop: 3,
+                              color: colors.tint,
+                              fontSize: 12,
+                              fontWeight: '700',
                             }}
                           >
-                            {item.muscle_group || item.category || 'General'}
+                            {item.muscle_group || 'Otro'}
                           </Text>
-                        </>
-                      )}
-                    </View>
+                          <ChevronDown
+                            size={14}
+                            color={colors.tint}
+                            style={{ marginLeft: 4 }}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <View style={{ gap: 6 }}>
+                        <Text
+                          style={[styles.exerciseTitleText, { color: colors.text }]}
+                          numberOfLines={2}
+                        >
+                          {item.name}
+                        </Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                          <View
+                            style={{
+                              backgroundColor: colors.tint + '1A',
+                              paddingHorizontal: 10,
+                              paddingVertical: 4,
+                              borderRadius: 8,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: colors.tint,
+                                fontSize: 11,
+                                fontWeight: '700',
+                                textTransform: 'uppercase',
+                                letterSpacing: 0.3,
+                              }}
+                            >
+                              {item.muscle_group || item.category || 'General'}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    )}
                   </View>
 
                   {/* Series / Reps / Rest Pills */}
@@ -1284,10 +1296,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   exerciseCard: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderCurve: 'continuous',
     borderWidth: 1,
-    padding: 14,
+    padding: 16,
     overflow: 'hidden',
   },
   exerciseCardTopRow: {
@@ -1297,8 +1309,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   orderBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
     borderRadius: 10,
   },
   orderBadgeText: {
@@ -1306,29 +1318,25 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   iconCtrlBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  exerciseMainRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 14,
-  },
-  exerciseThumbBox: {
-    width: 78,
-    height: 78,
-    borderRadius: 14,
+  exerciseMediaBanner: {
+    width: '100%',
+    aspectRatio: 16 / 10,
+    borderRadius: 16,
     borderCurve: 'continuous',
     overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  exerciseInfoBlock: {
+    marginBottom: 14,
   },
   exerciseTitleText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     letterSpacing: -0.3,
   },

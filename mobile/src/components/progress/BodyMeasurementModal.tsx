@@ -17,6 +17,7 @@ import * as Haptics from 'expo-haptics';
 import { useAppColors } from '@/hooks/useAppColors';
 import useAppStore from '@/store/useAppStore';
 import { getContrastTextColor } from '@/utils/colorUtils';
+import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 
 export const MEASUREMENT_TYPES = [
   { value: 'cintura', label: 'Cintura' },
@@ -69,30 +70,14 @@ export function BodyMeasurementModal({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <GlassView glassEffectStyle="regular" style={StyleSheet.absoluteFill}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.overlay}
-        >
-          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-          <Pressable
-            onPress={e => e.stopPropagation()}
-            style={[
-              styles.card,
-              {
-                borderColor: isDark
-                  ? 'rgba(255, 255, 255, 0.15)'
-                  : 'rgba(0, 0, 0, 0.1)',
-              },
-            ]}
-          >
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDark ? 'dark' : 'light'}
-              style={[StyleSheet.absoluteFill, { borderRadius: 32 }]}
-            />
-
+    <SwipeableBottomSheet
+      visible={visible}
+      onClose={onClose}
+      isDark={isDark}
+      backgroundColor={colors.card}
+      avoidKeyboard
+    >
+      <View style={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 8 }}>
             {/* Header */}
             <View style={styles.header}>
               <View
@@ -221,10 +206,8 @@ export function BodyMeasurementModal({
                 Guardar Medida
               </Text>
             </TouchableOpacity>
-          </Pressable>
-        </KeyboardAvoidingView>
-      </GlassView>
-    </Modal>
+      </View>
+    </SwipeableBottomSheet>
   );
 }
 

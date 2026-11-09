@@ -27,6 +27,7 @@ import * as Haptics from 'expo-haptics';
 
 import useAppStore from '@/store/useAppStore';
 import { useAppColors } from '@/hooks/useAppColors';
+import { SwipeableBottomSheet } from '@/components/ui/SwipeableBottomSheet';
 import * as nutritionService from '@/services/nutritionService';
 import { BACKEND_BASE_URL } from '@/services/apiClient';
 import { FoodLogItem } from './MealSection';
@@ -305,39 +306,14 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
     MEAL_TYPE_LABELS[sourceMealType]?.toLowerCase() || sourceMealType;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={() => !isCopying && onClose()}
-        />
-
-        <View
-          style={[
-            styles.modalCard,
-            {
-              backgroundColor: isDark ? 'rgba(20, 20, 22, 0.98)' : 'rgba(255, 255, 255, 0.98)',
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          {/* iOS Liquid Glass Effect layer */}
-          <GlassView
-            glassEffectStyle="regular"
-            colorScheme={isDark ? 'dark' : 'light'}
-            style={StyleSheet.absoluteFill}
-          />
-
-          {/* Grabber Bar */}
-          <View style={styles.grabberContainer}>
-            <View
-              style={[
-                styles.grabber,
-                { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' },
-              ]}
-            />
-          </View>
-
+    <SwipeableBottomSheet
+      visible={visible}
+      onClose={() => !isCopying && onClose()}
+      isDark={isDark}
+      backgroundColor={colors.card}
+      maxHeight="90%"
+    >
+      <View style={{ paddingBottom: 12 }}>
           {/* Header (Matching frontend 1:1) */}
           <View style={styles.header}>
             <View style={styles.headerTextGroup}>
@@ -771,9 +747,8 @@ export const MealCopyModal: React.FC<MealCopyModalProps> = ({
               )}
             </TouchableOpacity>
           </View>
-        </View>
       </View>
-    </Modal>
+    </SwipeableBottomSheet>
   );
 };
 
