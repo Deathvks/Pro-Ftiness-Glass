@@ -712,7 +712,7 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
             );
         }
 
-        const activeGym = gymMeta?.myGym || myCurrentGym || {};
+        const activeGym = enrichGymWithMedia(gymMeta?.myGym || myCurrentGym || {});
         const sameGymCount = gymMeta?.sameGymCount || 0;
         const sameCityCount = gymMeta?.sameCityCount || 0;
 
@@ -723,7 +723,27 @@ export default function Feed({ setView, visibleStories = [], myStories = [] }) {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
                         <div className="flex items-start sm:items-center gap-3.5 min-w-0">
                             <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-[16px] bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30 flex items-center justify-center shrink-0">
-                                <FaDumbbell className="w-5 h-5" />
+                                {activeGym.logo ? (
+                                    <img
+                                        src={activeGym.logo}
+                                        alt={activeGym.brand || activeGym.name || 'Logo del gimnasio'}
+                                        width="36"
+                                        height="36"
+                                        className="w-8 h-8 sm:w-9 sm:h-9 object-contain"
+                                        decoding="async"
+                                        onError={(event) => {
+                                            event.currentTarget.style.display = 'none';
+                                            if (event.currentTarget.nextElementSibling) {
+                                                event.currentTarget.nextElementSibling.style.display = 'block';
+                                            }
+                                        }}
+                                    />
+                                ) : null}
+                                <FaDumbbell
+                                    className="w-5 h-5"
+                                    style={{ display: activeGym.logo ? 'none' : 'block' }}
+                                    aria-hidden="true"
+                                />
                             </div>
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5 min-w-0">

@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import db from '../models/index.js';
 import { createEmailUnsubscribeToken } from '../utils/emailUnsubscribeToken.js';
-import { canSendPromotionalEmail } from './emailConsentService.js';
+import { getPromotionalEmailConsentStatuses } from './emailConsentService.js';
 import { domainMailboxes, isDomainSmtpConfigured, privacyContact, publicApiOrigin, smtpHost, smtpPort, supportContact } from '../config/mailContacts.js';
 
 const promotionalSender = 'Dylan Jesús Suárez Falcón';
@@ -68,9 +68,41 @@ const findOptionalEmailRecipient = (email, userId) => db.User.findOne({
   attributes: ['id', 'email', 'is_verified', 'email_activity_notifications', 'email_marketing_consent', 'email_coaching_consent']
 });
 
+export const getOptionalEmailEligibility = async (users, category) => {
+  const results = new Map();
+  const recipients = (Array.isArray(users) ? users : []).filter(user => {
+    const id = Number(user?.id);
+    const validAddress = Boolean(user?.is_verified)
+      && Boolean(user?.email)
+      && !/@(?:x-auth\.local|profitnessglass\.internal)$/i.test(user.email);
+    if (!validAddress) results.set(id, { allowed: false, reason: 'email_unverified_or_invalid' });
+    return validAddress;
+  });
+
+  if (category === 'activity') {
+    for (const user of recipients) {
+      const allowed = Boolean(user.email_activity_notifications);
+      results.set(Number(user.id), {
+        allowed,
+        reason: allowed ? null : 'email_preference_disabled',
+      });
+    }
+    return results;
+  }
+
+  const consentStatuses = await getPromotionalEmailConsentStatuses(recipients, category);
+  for (const user of recipients) {
+    results.set(Number(user.id), consentStatuses.get(Number(user.id)) || {
+      allowed: false,
+      reason: 'consent_missing_or_invalid',
+    });
+  }
+  return results;
+};
+
 export const canSendOptionalEmail = async (user, category) => {
-  if (!user?.is_verified || !user.email || /@(?:x-auth\.local|profitnessglass\.internal)$/i.test(user.email)) return false;
-  return category === 'activity' ? !!user.email_activity_notifications : canSendPromotionalEmail(user, category);
+  const eligibility = await getOptionalEmailEligibility([user], category);
+  return eligibility.get(Number(user?.id))?.allowed === true;
 };
 
 const sendOptionalMailAndLog = async (mailOptions, purpose, userId) => {
@@ -402,8 +434,10 @@ export const sendBugReportResolvedEmail = async (email, userName, reportSubject)
 
 export const sendRetentionRescueEmail = async ({ userId, email, userName, loadPayload }) => {
   const recipient = await findOptionalEmailRecipient(email, userId);
-  if (!(await canSendOptionalEmail(recipient, 'training'))) {
-    return { success: true, skipped: true };
+  const eligibility = await getOptionalEmailEligibility([recipient], 'training');
+  const emailStatus = eligibility.get(Number(recipient?.id));
+  if (!emailStatus?.allowed) {
+    return { success: true, skipped: true, skipReason: emailStatus?.reason || 'consent_missing_or_invalid' };
   }
 
   const {

@@ -1,6 +1,6 @@
 {
-  "version": "7.16.27",
-  "releaseNotes": "Actualización v7.16.27: Reajuste en tiempo real por fatiga previa entre ejercicios del mismo músculo según objetivo y particularidades del material.",
+  "version": "7.16.28",
+  "releaseNotes": "Actualización v7.16.28: logos de gimnasios en Comunidad y panel de retención 72h con permisos de correo y envíos reales diferenciados.",
   "welcome": {
     "title": "Aviso de Migración Ultracompacto",
     "subtitle": "Diseño pulido en móvil en solo 2 líneas y elementos centrados y agrupados en PC.",

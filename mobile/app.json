@@ -2,7 +2,7 @@
   "expo": {
     "name": "mobile",
     "slug": "mobile",
-    "version": "7.16.27",
+    "version": "7.16.28",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mobile",
@@ -15,7 +15,7 @@
       }
     },
     "android": {
-      "versionCode": 377,
+      "versionCode": 378,
       "package": "com.profitnessglass.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",

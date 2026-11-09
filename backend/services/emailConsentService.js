@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { Op } from 'sequelize';
 import EmailConsentEvent from '../models/emailConsentEventModel.js';
 
 // Al cambiar el aviso, actualizar también su versión en frontend/src/config/emailConsent.js.
@@ -46,13 +47,56 @@ export const updateEmailConsents = async (user, choices, source, transaction) =>
   }
 };
 
-export const canSendPromotionalEmail = async (user, purpose) => {
-  if (!user.is_verified || user.email.endsWith('@x-auth.local') || !user[purposes[purpose].field]) return false;
+export const getPromotionalEmailConsentStatuses = async (users, purpose) => {
+  const config = purposes[purpose];
+  if (!config || !Array.isArray(users) || users.length === 0) return new Map();
 
-  const event = await EmailConsentEvent.findOne({
-    where: { user_id: user.id, purpose },
-    order: [['id', 'DESC']],
-    attributes: ['granted', 'email_fingerprint', 'notice_version']
+  const statuses = new Map();
+  const candidates = users.filter((user) => {
+    const id = Number(user?.id);
+    const valid = Number.isFinite(id)
+      && Boolean(user?.is_verified)
+      && Boolean(user?.email)
+      && !user.email.endsWith('@x-auth.local')
+      && Boolean(user[config.field]);
+    if (!valid) statuses.set(id, { allowed: false, reason: 'consent_missing_or_invalid' });
+    return valid;
   });
-  return Boolean(event?.granted && event.notice_version && event.email_fingerprint === fingerprint(user.email));
+
+  if (candidates.length === 0) return statuses;
+
+  const events = await EmailConsentEvent.findAll({
+    where: {
+      user_id: { [Op.in]: candidates.map(user => user.id) },
+      purpose,
+    },
+    order: [['id', 'DESC']],
+    attributes: ['user_id', 'granted', 'email_fingerprint', 'notice_version'],
+    raw: true,
+  });
+  const latestEventByUser = new Map();
+  for (const event of events) {
+    const id = Number(event.user_id);
+    if (!latestEventByUser.has(id)) latestEventByUser.set(id, event);
+  }
+
+  for (const user of candidates) {
+    const event = latestEventByUser.get(Number(user.id));
+    const allowed = Boolean(
+      event?.granted
+      && event.notice_version
+      && event.email_fingerprint === fingerprint(user.email)
+    );
+    statuses.set(Number(user.id), {
+      allowed,
+      reason: allowed ? null : 'consent_missing_or_invalid',
+    });
+  }
+
+  return statuses;
+};
+
+export const canSendPromotionalEmail = async (user, purpose) => {
+  const statuses = await getPromotionalEmailConsentStatuses([user], purpose);
+  return statuses.get(Number(user?.id))?.allowed === true;
 };

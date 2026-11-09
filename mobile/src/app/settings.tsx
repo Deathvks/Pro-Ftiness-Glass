@@ -745,7 +745,7 @@ export default function SettingsScreen() {
             {/* Versión de la App y Atajos */}
             <View style={styles.footerInfoBox}>
               <Text style={[styles.footerInfoText, { color: colors.textSecondary }]}>
-                Pro Fitness Glass • v7.16.27
+                Pro Fitness Glass • v7.16.28
               </Text>
               <Text style={[styles.footerSubText, { color: colors.textSecondary }]}>
                 Diseño Liquid Glass y Alto Rendimiento

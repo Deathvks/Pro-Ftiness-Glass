@@ -2,7 +2,7 @@
 import { Op } from 'sequelize';
 import db from '../models/index.js';
 import { createNotification } from './notificationService.js';
-import { sendRetentionRescueEmail } from './emailService.js';
+import { getOptionalEmailEligibility, sendRetentionRescueEmail } from './emailService.js';
 
 const formatWeightKg = (val) => {
   const num = parseFloat(val);
@@ -193,6 +193,7 @@ export const getRetentionRescueOverview = async () => {
         'username',
         'name',
         'email',
+        'is_verified',
         'profile_image_url',
         'role',
         'timezone',
@@ -359,6 +360,7 @@ export const getRetentionRescueOverview = async () => {
       name: plain.name || plain.username || 'Atleta',
       email: plain.email,
       emailMarketingConsent: [true, 1, '1'].includes(plain.email_marketing_consent),
+      emailVerified: Boolean(plain.is_verified),
       profile_image_url: plain.profile_image_url,
       timezone: plain.timezone || 'Europe/Madrid',
       createdAt: createdAt.toISOString(),
@@ -410,6 +412,26 @@ export const getRetentionRescueOverview = async () => {
     }
   }
 
+  const eligibleEmailStatuses = await getOptionalEmailEligibility(
+    [...eligibleInactiveUsers, ...upcomingUsers].map(user => ({
+      id: user.id,
+      email: user.email,
+      is_verified: user.emailVerified,
+      email_marketing_consent: user.emailMarketingConsent,
+    })),
+    'training'
+  );
+  const applyEmailEligibility = users => users.map(user => {
+    const status = eligibleEmailStatuses.get(Number(user.id));
+    return {
+      ...user,
+      emailWillSend: status?.allowed === true,
+      emailSkipReason: status?.reason || 'consent_missing_or_invalid',
+    };
+  });
+  eligibleInactiveUsers.splice(0, eligibleInactiveUsers.length, ...applyEmailEligibility(eligibleInactiveUsers));
+  upcomingUsers.splice(0, upcomingUsers.length, ...applyEmailEligibility(upcomingUsers));
+
   // Ordenar inactivos >=72h: primero los pendientes de envío (y dentro de ellos, los más recientes a 72h primero)
   eligibleInactiveUsers.sort((a, b) => {
     if (a.alreadyRescuedInCurrentCycle !== b.alreadyRescuedInCurrentCycle) {
@@ -439,6 +461,12 @@ export const getRetentionRescueOverview = async () => {
   });
 
   const pendingToRescueCount = eligibleInactiveUsers.filter(u => !u.alreadyRescuedInCurrentCycle).length;
+  const emailEligibleInactiveCount = eligibleInactiveUsers.filter(u => u.emailWillSend).length;
+  const emailIneligibleInactiveCount = eligibleInactiveUsers.length - emailEligibleInactiveCount;
+  const pendingEmailSendCount = eligibleInactiveUsers.filter(
+    u => !u.alreadyRescuedInCurrentCycle && u.emailWillSend
+  ).length;
+  const pendingEmailSkipCount = pendingToRescueCount - pendingEmailSendCount;
   const earlyCohortPendingCount = eligibleInactiveUsers.filter(
     u => !u.alreadyRescuedInCurrentCycle && u.isEarlyCohort
   ).length;
@@ -447,17 +475,27 @@ export const getRetentionRescueOverview = async () => {
   const errorSentCount = formattedLogs.filter(
     l => l.overall_status === 'error' || l.email_status === 'error' || l.push_status === 'error'
   ).length;
+  const emailSentCount = formattedLogs.filter(l => l.email_status === 'success').length;
+  const emailSkippedCount = formattedLogs.filter(l => l.email_status === 'skipped').length;
+  const emailErrorCount = formattedLogs.filter(l => l.email_status === 'error').length;
   const recoveredCount = formattedLogs.filter(l => l.recovered).length;
 
   return {
     summary: {
       totalInactive72h: eligibleInactiveUsers.length,
       pendingToRescueCount,
+      emailEligibleInactiveCount,
+      emailIneligibleInactiveCount,
+      pendingEmailSendCount,
+      pendingEmailSkipCount,
       earlyCohortPendingCount,
       upcomingCount: upcomingUsers.length,
       totalSentCount,
       successSentCount,
       errorSentCount,
+      emailSentCount,
+      emailSkippedCount,
+      emailErrorCount,
       recoveredCount,
     },
     eligibleInactiveUsers,
@@ -594,6 +632,10 @@ export const runRetentionRescueBatch = async ({
   return {
     processedCount: results.length,
     remainingEligibleCount: Math.max(0, candidates.length - results.length),
+    emailSentCount: results.filter(log => log.email_status === 'success').length,
+    emailSkippedCount: results.filter(log => log.email_status === 'skipped').length,
+    emailErrorCount: results.filter(log => log.email_status === 'error').length,
+    pushSentCount: results.filter(log => log.push_status === 'success').length,
     results,
   };
 };

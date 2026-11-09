@@ -170,6 +170,22 @@ export const getGymPhotoForName = (name = '') => {
   return GENERIC_GYM_PHOTOS[index];
 };
 
+const getHighResolutionGymLogo = (logo) => {
+  if (!logo || typeof logo !== 'string') return logo || null;
+
+  try {
+    const url = new URL(logo);
+    if (url.hostname === 'www.google.com' && url.pathname === '/s2/favicons') {
+      url.searchParams.set('sz', '256');
+      return url.toString();
+    }
+  } catch {
+    // Preserve non-URL and relative logo values as supplied.
+  }
+
+  return logo;
+};
+
 /**
  * Obtiene la información visual (imagen de club, logo oficial de cadena y color de marca)
  * para un gimnasio o nombre de gimnasio.
@@ -192,7 +208,7 @@ export const getGymMedia = (gymOrName) => {
     if (item.matches.some(m => rawText.includes(m))) {
       return {
         brand: item.name,
-        logo: item.domain ? `https://www.google.com/s2/favicons?domain=${item.domain}&sz=128` : null,
+        logo: item.domain ? `https://www.google.com/s2/favicons?domain=${item.domain}&sz=256` : null,
         image: item.image,
         brandColor: item.color,
       };
@@ -220,7 +236,7 @@ export const enrichGymWithMedia = (gym) => {
   return {
     ...gym,
     image: resolvedImage,
-    logo: gym.logo || media.logo,
+    logo: getHighResolutionGymLogo(gym.logo || media.logo),
     brand: gym.brand || media.brand,
     brandColor: gym.brandColor || media.brandColor,
   };

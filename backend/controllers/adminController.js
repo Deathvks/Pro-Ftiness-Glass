@@ -1029,6 +1029,10 @@ export const triggerRetentionRescue = async (req, res, next) => {
       success: true,
       processedCount: batchResult.processedCount,
       remainingEligibleCount: batchResult.remainingEligibleCount,
+      emailSentCount: batchResult.emailSentCount,
+      emailSkippedCount: batchResult.emailSkippedCount,
+      emailErrorCount: batchResult.emailErrorCount,
+      pushSentCount: batchResult.pushSentCount,
       overview: updatedOverview,
     });
   } catch (error) {
